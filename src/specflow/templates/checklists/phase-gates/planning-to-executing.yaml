@@ -1,0 +1,42 @@
+id: CKL-GATE-004
+name: "Planning to Executing Gate"
+phase_from: planning
+phase_to: executing
+version: 1
+
+items:
+  - id: CKL-GATE-004-01
+    check: "ARCH artifacts exist for approved requirements"
+    automated: true
+    script: "ls _specflow/specs/architecture/*.md 2>/dev/null | grep -v _index.yaml | head -1 | grep -q . && exit 0 || exit 1"
+    severity: blocking
+
+  - id: CKL-GATE-004-02
+    check: "All ARCH artifacts pass schema validation"
+    automated: true
+    script: "scripts/validate-schema.sh"
+    severity: blocking
+
+  - id: CKL-GATE-004-03
+    check: "STORY artifacts exist and link to approved specs"
+    automated: true
+    script: "ls _specflow/work/stories/*.md 2>/dev/null | grep -v _index.yaml | head -1 | grep -q . && exit 0 || exit 1"
+    severity: blocking
+
+  - id: CKL-GATE-004-04
+    check: "No broken links in architecture or stories"
+    automated: true
+    script: "scripts/validate-links.sh"
+    severity: blocking
+
+  - id: CKL-GATE-004-05
+    check: "Every STORY has a clear acceptance definition"
+    automated: false
+    llm_prompt: "Review each STORY artifact. Confirm it has clear, testable acceptance criteria and links to at least one approved specification artifact."
+    severity: blocking
+
+  - id: CKL-GATE-004-06
+    check: "Architecture defines component interfaces"
+    automated: false
+    llm_prompt: "Review each ARCH artifact. Confirm every component defines its public interface, failure modes, and dependencies."
+    severity: warning

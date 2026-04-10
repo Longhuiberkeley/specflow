@@ -1,0 +1,36 @@
+id: CKL-GATE-005
+name: "Executing to Verifying Gate"
+phase_from: executing
+phase_to: verifying
+version: 1
+
+items:
+  - id: CKL-GATE-005-01
+    check: "All STORY artifacts have status: implemented or verified"
+    automated: true
+    script: "scripts/validate-status.sh"
+    severity: blocking
+
+  - id: CKL-GATE-005-02
+    check: "Implementation artifacts (code) exist for each story"
+    automated: false
+    llm_prompt: "Review each STORY artifact. Confirm that corresponding implementation exists (code commits, files created). Flag stories without implementation evidence."
+    severity: blocking
+
+  - id: CKL-GATE-005-03
+    check: "SPEC artifacts are updated to status: implemented"
+    automated: true
+    script: "scripts/validate-status.sh"
+    severity: warning
+
+  - id: CKL-GATE-005-04
+    check: "No suspect flags unresolved on implemented artifacts"
+    automated: true
+    script: "scripts/validate-fingerprints.sh"
+    severity: warning
+
+  - id: CKL-GATE-005-05
+    check: "Test artifacts (UT, IT, QT) exist for implemented specs"
+    automated: false
+    llm_prompt: "Review implemented REQ, ARCH, and DDD artifacts. Check that corresponding test artifacts (QT, IT, UT) exist with verified_by links. Flag missing verification pairs."
+    severity: blocking

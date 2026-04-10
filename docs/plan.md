@@ -8,7 +8,7 @@ SpecFlow is a cross-CLI spec-driven development framework that combines proactiv
 
 1. **Modeless.** The framework is an accounting system, not a police system. The full V-model structure always exists and tracking is always on. The user's behavior is the toggle.
 2. **Filesystem-native.** Markdown + YAML frontmatter. No databases, no cloud dependencies, no proprietary runtime.
-3. **Programmatic-first.** Shell scripts/Python for deterministic work (zero tokens). LLM for judgment only.
+3. **Programmatic-first.** Python CLI for deterministic work (zero tokens). LLM for judgment only. See D-16, D-17.
 4. **Ceremony adapts to ambiguity.** Not to which command you typed. The readiness assessment detects scope automatically.
 5. **Bring-Your-Own-Standard.** Artifact types are schema-driven. Users provide their own compliance documents (e.g., PDFs), which are parsed locally into executable YAML schemas and checklists.
 6. **Cross-platform.** AGENTS.md (universal) + SKILL.md (portable) + platform adapters. Works on Claude Code, OpenCode, Gemini CLI, and degrades gracefully on Cursor, Windsurf, Cline.
@@ -22,7 +22,7 @@ SpecFlow is a cross-CLI spec-driven development framework that combines proactiv
 | P2 | Verification | Zero-token validation scripts, `specflow status`, phase-gate checklists | P0, P1 | v0.1.0 |
 | P3 | Core Workflow | AI-driven discovery conversation, planning, artifact CRUD, `_index.yaml` | P0, P1, P2 | v0.2.0 |
 | P4 | Traceability | Impact analysis, suspect flags, fingerprints, cross-artifact consistency | P2, P3 | v0.2.0 |
-| P5 | Execution & Review | `specflow-go` orchestration, `specflow-check` context-specific review | P3, P4 | v0.2.0 |
+| P5 | Execution & Review | `specflow go` orchestration, `specflow check` context-specific review | P3, P4 | v0.2.0 |
 | P6 | Compliance & Standards| PDF standard ingestion, gap analysis, baselines, retroactive CRs | P4 | v0.3.0 |
 | P7 | Team & Enterprise | RBAC via git, draft IDs + CI renumbering, defect lifecycle, test records | P5, P6 | v1.0.0 |
 | P8 | Intelligence & Scaling| Tiered dedup, shared checklist matching, reactive challenge engine, multi-repo | P7 | v1.x |

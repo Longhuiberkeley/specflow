@@ -1,0 +1,36 @@
+id: CKL-GATE-002
+name: "Discovering to Specifying Gate"
+phase_from: discovering
+phase_to: specifying
+version: 1
+
+items:
+  - id: CKL-GATE-002-01
+    check: "At least one REQ artifact exists"
+    automated: true
+    script: "ls _specflow/specs/requirements/*.md 2>/dev/null | grep -v _index.yaml | head -1 | grep -q . && exit 0 || exit 1"
+    severity: blocking
+
+  - id: CKL-GATE-002-02
+    check: "All REQ artifacts have valid YAML frontmatter"
+    automated: true
+    script: "scripts/validate-schema.sh"
+    severity: blocking
+
+  - id: CKL-GATE-002-03
+    check: "Every REQ has at least one acceptance criterion"
+    automated: true
+    script: "scripts/check-acceptance-criteria.sh"
+    severity: blocking
+
+  - id: CKL-GATE-002-04
+    check: "Requirements use normative language (SHALL/SHOULD/MAY)"
+    automated: false
+    llm_prompt: "Review each REQ artifact. Flag any requirement that does not use SHALL, SHOULD, or MAY (or equivalent normative language). Requirements should state what the system shall do, not describe features or observations."
+    severity: warning
+
+  - id: CKL-GATE-002-05
+    check: "Non-functional requirements are quantified with measurable thresholds"
+    automated: false
+    llm_prompt: "Review each REQ tagged 'nonfunctional'. Flag any qualitative terms (fast, responsive, scalable) without measurable thresholds (e.g., 'within 2 seconds', 'support 1000 concurrent users')."
+    severity: warning

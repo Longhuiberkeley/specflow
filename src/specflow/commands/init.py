@@ -123,10 +123,15 @@ def run(root: Path, args: dict) -> int:
     # 7. Copy schemas (already done in create_internal_dirs)
     print("  ✓ Schema files copied")
 
-    # 8. Append AGENTS.md section
+    # 8. Copy checklist templates
+    print("  Copying checklist templates...")
+    scaffold_lib.copy_checklists(root, _get_package_templates())
+    print("  ✓ Checklist templates copied")
+
+    # 9. Append AGENTS.md section
     _append_agents_section(root, instruction_file)
 
-    # 9. Install skills
+    # 10. Install skills
     print(f"  Installing skills for {platform_label}...")
     _install_skills(root, platform_label)
     skill_names = plat_lib.get_skill_names()

@@ -1,0 +1,37 @@
+id: CKL-IP-002
+name: "Architecture Writing Constraints"
+category: in-process
+applies_to:
+  types: [architecture]
+version: 1
+
+items:
+  - id: CKL-IP-002-01
+    check: "No user-facing behavior described (belongs in REQ)"
+    automated: false
+    llm_prompt: "Review the architecture body. Flag any user-facing behavior descriptions, user stories, or user interaction flows. These belong in REQ artifacts, not architecture."
+    severity: blocking
+
+  - id: CKL-IP-002-02
+    check: "No algorithmic detail described (belongs in DDD)"
+    automated: false
+    llm_prompt: "Review the architecture body. Flag any algorithm descriptions, data structure implementations, or function-level logic. These belong in DDD artifacts."
+    severity: blocking
+
+  - id: CKL-IP-002-03
+    check: "Every component defines its public interface"
+    automated: false
+    llm_prompt: "Review each component described in the architecture. Confirm each one defines its public interface (API, events, data contracts). Flag components without interface definitions."
+    severity: blocking
+
+  - id: CKL-IP-002-04
+    check: "Failure modes addressed for critical components"
+    automated: false
+    llm_prompt: "Review the architecture. For each critical component, check whether failure modes and recovery strategies are described. Flag components without failure mode analysis."
+    severity: warning
+
+  - id: CKL-IP-002-05
+    check: "Dependencies between components are explicitly stated"
+    automated: false
+    llm_prompt: "Review the architecture. Confirm that component dependencies and data flows are explicitly stated. Flag implicit or undocumented dependencies."
+    severity: warning

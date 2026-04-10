@@ -27,19 +27,19 @@ Enable industry-specific compliance by introducing standards packs that add arti
 
 ### Compliance gap analysis
 
-- `specflow-compliance --standard iso26262` walks link graph
+- `specflow compliance --standard iso26262` walks link graph
 - Reports every standard clause with no project artifact satisfying it
 - Coverage/traceability matrix output
 
 ### Baselines
 
-- `specflow-baseline create v1.0` snapshots artifact state, fingerprints, test summaries
-- `specflow-baseline diff v1.0 v2.0` compares two baselines
+- `specflow baseline create v1.0` snapshots artifact state, fingerprints, test summaries
+- `specflow baseline diff v1.0 v2.0` compares two baselines
 - Baselines stored as individual immutable YAML files in `.specflow/baselines/`
 
 ### Retroactive change records
 
-- `specflow-document-changes --since HEAD~3` synthesizes CR/DEC from git diffs + impact-log
+- `specflow document-changes --since HEAD~3` synthesizes CR/DEC from git diffs + impact-log
 - CR is a projection, not a separate maintenance burden
 
 ## Dependencies

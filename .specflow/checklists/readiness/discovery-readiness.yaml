@@ -1,0 +1,29 @@
+id: CKL-RD-001
+name: "Discovery Readiness Assessment"
+category: readiness
+version: 1
+
+items:
+  - id: CKL-RD-001-01
+    check: "Project scope is defined (even if vague)"
+    automated: false
+    llm_prompt: "Assess whether the user has provided a basic project scope or problem statement. If completely absent, ask clarifying questions before proceeding."
+    severity: blocking
+
+  - id: CKL-RD-001-02
+    check: "Primary stakeholders identified"
+    automated: false
+    llm_prompt: "Check if primary users and stakeholders of the system have been identified or discussed. If not, probe for this information."
+    severity: warning
+
+  - id: CKL-RD-001-03
+    check: "Key constraints understood (time, technology, regulatory)"
+    automated: false
+    llm_prompt: "Assess whether key constraints (timeline, technology stack, regulatory requirements, budget) have been discussed. If not, ask about constraints."
+    severity: warning
+
+  - id: CKL-RD-001-04
+    check: "Success criteria defined"
+    automated: false
+    llm_prompt: "Check if the user has defined what success looks like for this project. If not, ask about success criteria and acceptance conditions."
+    severity: warning

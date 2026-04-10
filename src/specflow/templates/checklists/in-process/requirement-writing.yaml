@@ -1,0 +1,37 @@
+id: CKL-IP-001
+name: "Requirement Writing Constraints"
+category: in-process
+applies_to:
+  types: [requirement]
+version: 1
+
+items:
+  - id: CKL-IP-001-01
+    check: "No implementation details (technology, code, algorithms) present"
+    automated: false
+    llm_prompt: "Review the requirement body. Flag any mention of specific technologies, programming languages, frameworks, algorithms, or implementation patterns. Requirements should state WHAT, not HOW."
+    severity: blocking
+
+  - id: CKL-IP-001-02
+    check: "Every statement uses SHALL/SHOULD/MAY (normative language)"
+    automated: true
+    script: "grep -qiE '\\b(shall|should|may|must|will)\\b' \"$1\" && exit 0 || exit 1"
+    severity: blocking
+
+  - id: CKL-IP-001-03
+    check: "Every requirement has acceptance criteria"
+    automated: true
+    script: "scripts/check-acceptance-criteria.sh"
+    severity: blocking
+
+  - id: CKL-IP-001-04
+    check: "Requirement is testable (not vague or subjective)"
+    automated: false
+    llm_prompt: "Review the requirement. Flag any vague terms like 'user-friendly', 'intuitive', 'adequate', 'robust' without measurable definitions. Each requirement must be objectively testable."
+    severity: blocking
+
+  - id: CKL-IP-001-05
+    check: "Requirement is atomic (single concern, not compound)"
+    automated: false
+    llm_prompt: "Review the requirement. If it contains multiple 'shall' statements addressing different concerns, flag it for decomposition into separate artifacts."
+    severity: warning

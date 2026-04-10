@@ -95,6 +95,13 @@ project/
 │   ├── checklist-log/            # One file per execution, timestamp-first naming
 │   │   ├── 2026-03-20T14-30-00Z_CKL-GATE-002.yaml
 │   │   └── 2026-03-22T10-00-00Z_CKL-HTTP-001.yaml
+│   ├── checklists/               # Checklist definitions (copied during init, grows over time)
+│   │   ├── phase-gates/          # Pre-task: entry criteria between phases
+│   │   ├── in-process/           # Writing constraints during artifact generation
+│   │   ├── review/               # Post-task: validation before user sees output
+│   │   ├── readiness/            # Discovery/planning readiness assessments
+│   │   ├── shared/               # Auto-matched by tags/types (user-extensible)
+│   │   └── learned/              # Prevention patterns extracted from past work
 │   ├── baselines/                # One file per baseline, immutable
 │   │   ├── v1.0.yaml
 │   │   └── v2.0.yaml
@@ -123,7 +130,20 @@ project/
         └── specflow-verify/
 ```
 
-Core scripts live in the global uv tool / python package. Platform-specific skill files are lightweight facades pointing to the global installation.
+### Framework vs. project instance
+
+The **framework** (Python package) ships scripts, templates, and checklists. During `specflow init`, templates are copied into the **project instance**:
+
+| Framework (ships with package) | Project instance (created by init) |
+|-------------------------------|-----------------------------------|
+| `src/specflow/templates/schemas/` | `.specflow/schema/` |
+| `src/specflow/templates/checklists/` | `.specflow/checklists/` (phase-gates, in-process, review, readiness) |
+| `src/specflow/templates/skills/<platform>/` | `.claude/skills/` (or `.gemini/`, `.opencode/`) |
+| `scripts/` (thin CI/CD wrappers) | — (delegate to `specflow validate`, not copied) |
+
+After init, per-project checklists grow:
+- `.specflow/checklists/shared/` — user-defined, auto-matched by tags
+- `.specflow/checklists/learned/` — extracted from completed work by the reactive challenge engine
 
 ## Artifact Format
 
@@ -202,20 +222,20 @@ Three layers at every phase:
 
 ### Layer 1: Pre-task (phase gates)
 
-Entry criteria checklists between every phase transition. Catch missing inputs, unresolved issues, and readiness gaps before work begins. Stored in `checklists/phase-gates/`.
+Entry criteria checklists between every phase transition. Catch missing inputs, unresolved issues, and readiness gaps before work begins. Stored in `.specflow/checklists/phase-gates/`.
 
 ### Layer 2: In-process (writing constraints)
 
-Constraint checklists loaded while generating or reviewing artifacts. Enforce level boundaries, normative language, interface completeness. Stored in `checklists/in-process/`.
+Constraint checklists loaded while generating or reviewing artifacts. Enforce level boundaries, normative language, interface completeness. Stored in `.specflow/checklists/in-process/`.
 
 ### Layer 3: Post-task (review)
 
-Validate generated output before the user sees it. Assembled from artifact type + domain tags + shared checklists + learned patterns. Stored in `checklists/review/`.
+Validate generated output before the user sees it. Assembled from artifact type + domain tags + shared checklists + learned patterns. Stored in `.specflow/checklists/review/`.
 
 ### Automated vs LLM-judged
 
 Every checklist item declares `automated: true|false`:
-- **Automated** (zero tokens): verified by shell script (schema, links, status, fingerprints)
+- **Automated** (zero tokens): verified by Python CLI (schema, links, status, fingerprints)
 - **LLM-judged** (token cost): requires intelligence (quality, ambiguity, contradiction)
 
 CI runs automated checks first. LLM-judged checks run only if automated checks pass.
@@ -233,7 +253,7 @@ items:
   - id: CKL-GATE-002-01
     check: "All REQ-* artifacts have status: approved"
     automated: true
-    script: "scripts/validate-status.sh --type REQ --expected approved"
+    script: "uv run specflow validate --type status"
     severity: blocking
 
   - id: CKL-GATE-002-02
@@ -247,7 +267,7 @@ Severity levels: `blocking` (must fix), `warning` (should fix), `info` (nice to 
 
 ### Shared checklists
 
-Defined once in `checklists/shared/`, auto-matched to artifacts by `applies_to` tags and types:
+Defined once in `.specflow/checklists/shared/`, auto-matched to artifacts by `applies_to` tags and types:
 
 ```yaml
 id: CKL-HTTP-001
@@ -265,28 +285,31 @@ Per-artifact (in frontmatter `checklists_applied`) and global audit log (`.specf
 
 ### Conversational commands (agent-driven)
 
-These are skill file invocations. The agent follows structured SKILL.md workflows, calls shell scripts for validation, and conducts conversations with the user.
+These are the **primary user interface** — skill file invocations via `/specflow-*` commands in the AI coding tool. The agent follows structured SKILL.md workflows, calls Python CLI commands for validation, and conducts conversations with the user. Each command maps to a skill directory (e.g., `specflow new` invokes `.claude/skills/specflow-discover/`). See D-17.
+
+| Command | Skill directory | What it does |
+|---------|----------------|-------------|
+| `specflow new` | `specflow-discover/` | Discovery conversation (3-phase progressive disclosure with readiness assessment). Generates REQ artifacts. Adapts ceremony to ambiguity — bounded changes get lean artifacts automatically. |
+| `specflow plan` | `specflow-plan/` | Architecture and story breakdown discussion. Proposes architecture, design, stories. Populates `specs/` and `work/`. |
+| `specflow go` | `specflow-execute/` | Orchestrates parallel subagent execution per story wave. Reports progress, handles locks, auto-commits per task. |
+| `specflow check` | `specflow-verify/` | Context-specific review. Assembles criteria from artifact type + domain tags + shared + learned checklists. Runs automated then LLM-judged checks. |
+| `specflow done` | (none — inline) | Phase closure. Reviews completed work, extracts prevention patterns into `.specflow/checklists/learned/`, archives phase. |
+
+### Programmatic commands (Python CLI, zero tokens)
+
+All programmatic commands are `specflow <subcommand>` subcommands of the Python CLI. All logic lives in Python `lib/` modules. Shell scripts in `scripts/` are optional thin CI/CD wrappers that delegate to the CLI. See D-16.
 
 | Command | What it does |
 |---------|-------------|
-| `specflow-new` | Discovery conversation (3-phase progressive disclosure with readiness assessment). Generates REQ artifacts. Adapts ceremony to ambiguity — bounded changes get lean artifacts automatically. |
-| `specflow-plan` | Architecture and story breakdown discussion. Proposes architecture, design, stories. Populates `specs/` and `work/`. |
-| `specflow-go` | Orchestrates parallel subagent execution per story wave. Reports progress, handles locks, auto-commits per task. |
-| `specflow-check` | Context-specific review. Assembles criteria from artifact type + domain tags + shared + learned checklists. Runs automated then LLM-judged checks. |
-| `specflow-done` | Phase closure. Reviews completed work, extracts prevention patterns into `checklists/learned/`, archives phase. |
-
-### Programmatic commands (shell scripts, zero tokens)
-
-| Command | What it does |
-|---------|-------------|
-| `specflow-status` | Reads state, prints dashboard: current phase, flag counts, checklist warnings, suggested next action |
-| `specflow-validate` | Runs all validation scripts: schema, links, status, IDs, fingerprints, checklists |
-| `specflow-impact` | Reads fingerprints, prints flagged artifacts, change history, recommended review order |
 | `specflow init` | Auto-detects platform, generates correct file structure |
-| `specflow-document-changes` | Synthesizes CR/DEC artifact from git diffs + impact-log entries |
-| `specflow-compliance` | Gap analysis against imported standard clauses |
-| `specflow-baseline create` | Snapshot current state into immutable baseline YAML |
-| `specflow-baseline diff` | Compare two baselines |
+| `specflow status` | Reads state, prints dashboard: current phase, flag counts, checklist warnings, suggested next action |
+| `specflow validate` | Runs all validation scripts: schema, links, status, IDs, fingerprints, checklists |
+| `specflow impact` | Reads fingerprints, prints flagged artifacts, change history, recommended review order |
+| `specflow tweak` | Recompute fingerprint for minor edit without triggering suspect cascade |
+| `specflow document-changes` | Synthesizes CR/DEC artifact from git diffs + impact-log entries |
+| `specflow compliance` | Gap analysis against imported standard clauses |
+| `specflow baseline create` | Snapshot current state into immutable baseline YAML |
+| `specflow baseline diff` | Compare two baselines |
 
 ### State machine
 
@@ -294,7 +317,7 @@ These are skill file invocations. The agent follows structured SKILL.md workflow
 idle -> discovering -> specifying -> planning -> executing -> verifying -> complete
 ```
 
-State persists in `.specflow/state.yaml` with history. `specflow-rollback --to <phase>` navigates without deleting artifacts.
+State persists in `.specflow/state.yaml` with history. `specflow rollback --to <phase>` navigates without deleting artifacts.
 
 ## Cross-Platform Strategy
 
@@ -322,7 +345,7 @@ Each artifact stores a SHA256 fingerprint of its normative content (title + body
 ### Typo cascade defense (3-tier)
 
 1. **Explicit intent** — User adds `update_type: minor` in frontmatter for cosmetic edits. Framework skips cascade.
-2. **`specflow-tweak` command** — Convenience wrapper that recomputes fingerprint and logs as minor.
+2. **`specflow tweak` command** — Convenience wrapper that recomputes fingerprint and logs as minor.
 3. **Magnitude heuristic** — Git-based fallback: if change ratio < 5% AND only frontmatter changed, auto-classify minor. Otherwise: always cascade.
 
 Design principle: when in doubt, cascade.

@@ -1,0 +1,29 @@
+id: CKL-RD-004
+name: "Review Readiness Assessment"
+category: readiness
+version: 1
+
+items:
+  - id: CKL-RD-004-01
+    check: "Artifact is complete (has body content, not just frontmatter)"
+    automated: true
+    script: "python3 -c \"\nimport sys\nfrom pathlib import Path\npath = Path(sys.argv[1])\ntext = path.read_text().strip()\nend = text.find('---', 3)\nif end == -1: sys.exit(1)\nbody = text[end+3:].strip()\nsys.exit(0 if len(body) > 50 else 1)\n\" \"\$1\""
+    severity: blocking
+
+  - id: CKL-RD-004-02
+    check: "Artifact passes schema validation"
+    automated: true
+    script: "scripts/validate-schema.sh"
+    severity: blocking
+
+  - id: CKL-RD-004-03
+    check: "All links in artifact resolve to existing targets"
+    automated: true
+    script: "scripts/validate-links.sh"
+    severity: blocking
+
+  - id: CKL-RD-004-04
+    check: "Artifact fingerprint is current (if previously reviewed)"
+    automated: true
+    script: "scripts/validate-fingerprints.sh"
+    severity: info

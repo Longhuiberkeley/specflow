@@ -1,0 +1,42 @@
+id: CKL-GATE-003
+name: "Requirements to Planning Gate"
+phase_from: specifying
+phase_to: planning
+version: 1
+
+items:
+  - id: CKL-GATE-003-01
+    check: "All REQ artifacts have status: approved"
+    automated: true
+    script: "scripts/validate-status.sh"
+    severity: blocking
+
+  - id: CKL-GATE-003-02
+    check: "Every REQ has at least one acceptance criterion"
+    automated: true
+    script: "scripts/check-acceptance-criteria.sh"
+    severity: blocking
+
+  - id: CKL-GATE-003-03
+    check: "No broken links in REQ artifacts"
+    automated: true
+    script: "scripts/validate-links.sh"
+    severity: blocking
+
+  - id: CKL-GATE-003-04
+    check: "All REQ IDs are unique and well-formed"
+    automated: true
+    script: "scripts/validate-ids.sh"
+    severity: blocking
+
+  - id: CKL-GATE-003-05
+    check: "Architecture readiness: requirements are stable and complete"
+    automated: false
+    llm_prompt: "Review all approved REQ artifacts. Assess whether they form a stable, complete basis for architecture design. Flag any ambiguities, contradictions, or gaps."
+    severity: blocking
+
+  - id: CKL-GATE-003-06
+    check: "Non-functional requirements are quantified"
+    automated: false
+    llm_prompt: "Review each REQ tagged 'nonfunctional'. Flag qualitative terms without measurable thresholds."
+    severity: warning

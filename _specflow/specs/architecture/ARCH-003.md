@@ -4,17 +4,23 @@ title: Skill & Platform System
 type: architecture
 status: draft
 priority: high
-rationale: "The skill system enables AI agents to perform SpecFlow workflows through modular, platform-specific skill files with progressive disclosure"
-tags: [skills, platform, ai, progressive-disclosure]
+rationale: The skill system enables AI agents to perform SpecFlow workflows through
+  modular, platform-specific skill files with progressive disclosure
+tags:
+- skills
+- platform
+- ai
+- progressive-disclosure
 suspect: false
-fingerprint: "sha256:ce1a77ba990230701b7b0113a01cada7d2ecafcef4f46eec462a99a81143e1cb"
+fingerprint: sha256:161c26527ec8b6c8e3cb0169222f2925c5788d81fd7582f5ab67b003107cae20
 links:
-  - target: REQ-004
-    role: derives_from
-  - target: REQ-005
-    role: derives_from
+- target: REQ-004
+  role: derives_from
+- target: REQ-005
+  role: derives_from
 created: 2026-04-10
 ---
+
 
 # Skill & Platform System
 

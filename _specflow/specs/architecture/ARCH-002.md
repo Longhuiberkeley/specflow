@@ -4,19 +4,24 @@ title: Framework Machinery
 type: architecture
 status: draft
 priority: high
-rationale: "The .specflow/ directory contains all framework internals: configuration, state, schemas, impact tracking, and baselines"
-tags: [framework, internals, core]
+rationale: 'The .specflow/ directory contains all framework internals: configuration,
+  state, schemas, impact tracking, and baselines'
+tags:
+- framework
+- internals
+- core
 suspect: false
-fingerprint: "sha256:aee3bf225b5d4839e2855c7c8aed36830bcc4acec6d6730118fa4b73ffcfd4c2"
+fingerprint: sha256:8ba9f7b64cfec10457a0df5b4b3363414743c5dea1054571ab6516ba2e3bb8cb
 links:
-  - target: REQ-002
-    role: derives_from
-  - target: REQ-003
-    role: derives_from
-  - target: REQ-005
-    role: derives_from
+- target: REQ-002
+  role: derives_from
+- target: REQ-003
+  role: derives_from
+- target: REQ-005
+  role: derives_from
 created: 2026-04-10
 ---
+
 
 # Framework Machinery
 

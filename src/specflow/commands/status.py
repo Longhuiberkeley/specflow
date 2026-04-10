@@ -1,52 +1,117 @@
 """specflow status — Show project dashboard."""
 
+from __future__ import annotations
+
 from pathlib import Path
 
 import yaml
 
+from specflow.lib import artifacts as art_lib
 from specflow.lib import config as config_lib
 
+# Color codes
+RED = "\033[0;31m"
+GREEN = "\033[0;32m"
+YELLOW = "\033[1;33m"
+CYAN = "\033[0;36m"
+NC = "\033[0m"  # No Color
 
-def _count_artifacts(root: Path) -> dict[str, int]:
-    """Count artifact files in each _specflow/ subdirectory."""
+# Display labels for artifact types
+TYPE_LABELS = {
+    "specs/requirements": "REQ",
+    "specs/architecture": "ARCH",
+    "specs/detailed-design": "DDD",
+    "specs/unit-tests": "UT",
+    "specs/integration-tests": "IT",
+    "specs/qualification-tests": "QT",
+    "work/stories": "STORY",
+    "work/spikes": "SPIKE",
+    "work/decisions": "DEC",
+    "work/defects": "DEF",
+}
+
+
+def _count_by_type(root: Path) -> dict[str, int]:
+    """Count artifacts by their type prefix."""
+    artifacts = art_lib.discover_artifacts(root)
     counts: dict[str, int] = {}
-    specflow_dir = root / "_specflow"
-    if not specflow_dir.exists():
-        return counts
 
-    for d in sorted(specflow_dir.rglob("*")):
-        if d.is_dir() and d.name not in ("specs", "work"):
-            md_count = len(list(d.glob("*.md")))
-            rel = str(d.relative_to(specflow_dir))
-            if md_count > 0:
-                counts[rel] = md_count
+    for art in artifacts:
+        prefix = art_lib.get_prefix_from_id(art.id)
+        label = prefix if prefix else art.type
+        counts[label] = counts.get(label, 0) + 1
 
     return counts
 
 
+def _count_by_status(root: Path) -> dict[str, int]:
+    """Count artifacts by their status."""
+    artifacts = art_lib.discover_artifacts(root)
+    counts: dict[str, int] = {}
+
+    for art in artifacts:
+        s = art.status if art.status else "draft"
+        counts[s] = counts.get(s, 0) + 1
+
+    return counts
+
+
+def _count_link_health(root: Path) -> dict[str, int]:
+    """Count broken links and orphans."""
+    artifacts = art_lib.discover_artifacts(root)
+    id_index = art_lib.build_id_index(artifacts)
+
+    broken = 0
+    for art in artifacts:
+        for link in art.links:
+            if link.target not in id_index:
+                broken += 1
+
+    orphans = len(art_lib.find_orphans(artifacts))
+    missing_pairs = len(art_lib.find_missing_v_pairs(artifacts))
+
+    return {"broken": broken, "orphans": orphans, "missing_pairs": missing_pairs}
+
+
 def _count_issues(root: Path) -> int:
-    """Count artifacts with suspect=true or invalid status."""
-    issues = 0
-    specflow_dir = root / "_specflow"
-    if not specflow_dir.exists():
-        return 0
+    """Count artifacts with suspect=true."""
+    artifacts = art_lib.discover_artifacts(root)
+    return sum(1 for a in artifacts if a.suspect)
 
-    for md_file in specflow_dir.rglob("*.md"):
-        if md_file.name.startswith("_"):
-            continue
-        try:
-            text = md_file.read_text(encoding="utf-8")
-            if text.strip().startswith("---"):
-                end = text.find("---", 3)
-                if end != -1:
-                    fm = yaml.safe_load(text[3:end])
-                    if isinstance(fm, dict):
-                        if fm.get("suspect"):
-                            issues += 1
-        except Exception:
-            pass
 
-    return issues
+def _suggest_action(root: Path, phase: str, artifact_counts: dict[str, int]) -> str:
+    """Suggest next action based on current phase and artifact state."""
+    total = sum(artifact_counts.values())
+
+    if total == 0:
+        return "Start with 'specflow-new' to capture your first requirement"
+
+    req_count = artifact_counts.get("REQ", 0)
+    arch_count = artifact_counts.get("ARCH", 0)
+    story_count = artifact_counts.get("STORY", 0)
+
+    if phase == "idle":
+        return "Run 'specflow-new' to begin discovery"
+    elif phase == "discovering":
+        return "Continue capturing requirements with 'specflow-new'"
+    elif phase == "specifying":
+        if req_count > 0 and arch_count == 0:
+            return "Run 'specflow-plan' to create architecture and stories"
+        else:
+            return "Review and approve requirements before planning"
+    elif phase == "planning":
+        if story_count == 0:
+            return "Run 'specflow-plan' to decompose requirements into stories"
+        else:
+            return "Review architecture and stories, then run 'specflow-go'"
+    elif phase == "executing":
+        return "Run 'specflow-go' to execute story waves"
+    elif phase == "verifying":
+        return "Run 'specflow-check' to review artifacts"
+    elif phase == "complete":
+        return "Run 'specflow-done' to close the phase"
+
+    return "Run 'specflow validate' to check artifact integrity"
 
 
 def run(root: Path, args: dict) -> int:
@@ -74,34 +139,61 @@ def run(root: Path, args: dict) -> int:
     phase = state.get("current", "idle")
     created = config.get("project", {}).get("created", "unknown")
 
-    print(f"\n{'=' * 50}")
-    print(f"  SpecFlow — {project_name}")
-    print(f"{'=' * 50}")
+    # Count artifacts
+    by_type = _count_by_type(root)
+    total = sum(by_type.values())
+
+    # Count by status
+    by_status = _count_by_status(root)
+
+    # Link health
+    health = _count_link_health(root)
+
+    # Issues
+    issues = _count_issues(root)
+
+    # Print dashboard
+    print(f"\n{CYAN}SpecFlow Status{NC}")
+    print(f"{CYAN}{'─' * 50}{NC}")
     print(f"  Phase:     {phase}")
+    print(f"  Project:   {project_name}")
     print(f"  Created:   {created}")
 
-    # Count artifacts
-    artifacts = _count_artifacts(root)
-    total = sum(artifacts.values())
-    print(f"  Artifacts: {total}")
+    # Specs
+    spec_types = ["REQ", "ARCH", "DDD", "UT", "IT", "QT"]
+    spec_parts = []
+    for t in spec_types:
+        c = by_type.get(t, 0)
+        spec_parts.append(f"{c} {t}")
+    print(f"\n  Specs:   {' | '.join(spec_parts)}")
 
-    if artifacts:
-        print("\n  By directory:")
-        for dir_name, count in sorted(artifacts.items()):
-            print(f"    {dir_name}: {count}")
+    # Work
+    work_types = ["STORY", "SPIKE", "DEC", "DEF"]
+    work_parts = []
+    for t in work_types:
+        c = by_type.get(t, 0)
+        work_parts.append(f"{c} {t}")
+    print(f"  Work:    {' | '.join(work_parts)}")
 
-    # Count issues
-    issues = _count_issues(root)
+    # Status distribution
+    status_parts = []
+    for s in ["draft", "approved", "implemented", "verified"]:
+        c = by_status.get(s, 0)
+        if c > 0:
+            status_parts.append(f"{c} {s}")
+    if status_parts:
+        print(f"\n  Status:  {' | '.join(status_parts)}")
+
+    # Link health
+    print(f"\n  Links:   {health['broken']} broken | {health['orphans']} orphans | {health['missing_pairs']} missing verification pairs")
+
+    # Issues
     if issues > 0:
-        print(f"\n  ⚠ Issues: {issues} artifact(s) flagged as suspect")
-    else:
-        print(f"\n  ✓ No issues")
+        print(f"\n  {YELLOW}⚠ Issues: {issues} artifact(s) flagged as suspect{NC}")
 
     # Suggested next action
-    if total == 0:
-        print(f"\n  → Suggested: Start with 'specflow-new' to capture your first requirement")
-    elif phase == "idle":
-        print(f"\n  → Suggested: Run 'specflow-new' to begin discovery")
-
+    suggestion = _suggest_action(root, phase, by_type)
+    print(f"\n  → {suggestion}")
     print()
+
     return 0

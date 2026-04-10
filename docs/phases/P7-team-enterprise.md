@@ -20,7 +20,7 @@ Make SpecFlow viable for multi-developer teams and enterprise compliance require
 ### Draft IDs + CI renumbering
 
 - Feature branches use readable draft IDs (e.g., `REQ-AUTH-a7b9`)
-- On merge to main, `specflow-sequence` assigns sequential integers
+- On merge to main, `specflow sequence` assigns sequential integers
 - `yq` rewrites all links across repo in single merge commit
 - Eliminates ID collision conflicts between branches
 
@@ -29,13 +29,13 @@ Make SpecFlow viable for multi-developer teams and enterprise compliance require
 - DEF-* artifacts: open -> investigating -> fixing -> verified -> closed
 - Links: `fails_to_meet` (broken requirement), `exposed_by` (catching test)
 - On closure: reactive challenge engine extracts prevention pattern
-- Dashboard integration in `specflow-status`
+- Dashboard integration in `specflow status`
 
 ### Test execution records
 
 - Default: CI owns execution, repo owns summaries in baselines
 - Opt-in: `_specflow/test-runs/TR-*.md` for regulated audit trail
-- CI pipeline step updates test summary via `specflow-baseline update-test-summary`
+- CI pipeline step updates test summary via `specflow baseline update-test-summary`
 
 ### CI integration
 
@@ -45,7 +45,7 @@ Make SpecFlow viable for multi-developer teams and enterprise compliance require
 
 ### ReqIF import/export
 
-- `specflow import reqif` / `specflow export reqif` shell scripts
+- `specflow import reqif` / `specflow export reqif` CLI subcommands (Python)
 - Mechanical transformation between SpecFlow YAML and ReqIF XML
 - Enables interchange with DOORS, Polarion
 

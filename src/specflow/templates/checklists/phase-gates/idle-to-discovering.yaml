@@ -1,0 +1,24 @@
+id: CKL-GATE-001
+name: "Idle to Discovering Gate"
+phase_from: idle
+phase_to: discovering
+version: 1
+
+items:
+  - id: CKL-GATE-001-01
+    check: "Project has been initialized with specflow init"
+    automated: true
+    script: "test -d _specflow && test -d .specflow"
+    severity: blocking
+
+  - id: CKL-GATE-001-02
+    check: "No existing REQ artifacts (fresh project)"
+    automated: true
+    script: "test ! -d _specflow/specs/requirements || [ -z \"$(ls -A _specflow/specs/requirements/*.md 2>/dev/null | grep -v _index.yaml)\" ]"
+    severity: info
+
+  - id: CKL-GATE-001-03
+    check: "Discovery readiness assessment passed"
+    automated: false
+    llm_prompt: "Review the project scope. Confirm that the discovery readiness dimensions (scope, stakeholders, constraints, success criteria) are understood."
+    severity: warning

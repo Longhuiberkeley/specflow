@@ -1,32 +1,48 @@
 artifacts:
   REQ-001:
-    title: "CLI Interface"
+    fingerprint: sha256:ccde4a9d0080af7bcea2cad1872332e704d27fe4051f1624b787a38fe0748f5e
+    id: REQ-001
     status: draft
-    tags: [cli, core, mvp]
-    fingerprint: "sha256:ccde4a9d0080af7bcea2cad1872332e704d27fe4051f1624b787a38fe0748f5e"
-    children: []
+    tags:
+    - cli
+    - core
+    - mvp
+    title: CLI Interface
   REQ-002:
-    title: "Artifact Structure"
+    fingerprint: sha256:8cfaca50ccf6c7e65247a8a6c401192dc5cdcf4f8eab806d100bd949054bf68e
+    id: REQ-002
     status: draft
-    tags: [core, format, mvp]
-    fingerprint: "sha256:8cfaca50ccf6c7e65247a8a6c401192dc5cdcf4f8eab806d100bd949054bf68e"
-    children: []
+    tags:
+    - core
+    - format
+    - mvp
+    title: Artifact Structure
   REQ-003:
-    title: "Trace & Suspect Propagation"
+    fingerprint: sha256:0609efefc2e07eb603690abde0e5c634f46ac4092f438ebe43bf9568e2580117
+    id: REQ-003
     status: draft
-    tags: [traceability, impact, core]
-    fingerprint: "sha256:0609efefc2e07eb603690abde0e5c634f46ac4092f438ebe43bf9568e2580117"
-    children: []
+    tags:
+    - traceability
+    - impact
+    - core
+    title: Trace & Suspect Propagation
   REQ-004:
-    title: "AI Execution Boundaries"
+    fingerprint: sha256:aec5aa0cb65360ce24ce4e5280c9c66e11b1f4898449325a21692a300ea2bc65
+    id: REQ-004
     status: draft
-    tags: [ai, skills, token-optimization, core]
-    fingerprint: "sha256:aec5aa0cb65360ce24ce4e5280c9c66e11b1f4898449325a21692a300ea2bc65"
-    children: []
+    tags:
+    - ai
+    - skills
+    - token-optimization
+    - core
+    title: AI Execution Boundaries
   REQ-005:
-    title: "Cross-Platform & Compliance"
+    fingerprint: sha256:eafd94fc4e2cad110c5f99d2ecaf3e7dab4d911bd82a888a3217ce99ef1625e9
+    id: REQ-005
     status: draft
-    tags: [cross-platform, compliance, baselines]
-    fingerprint: "sha256:eafd94fc4e2cad110c5f99d2ecaf3e7dab4d911bd82a888a3217ce99ef1625e9"
-    children: []
+    tags:
+    - cross-platform
+    - compliance
+    - baselines
+    title: Cross-Platform & Compliance
 next_id: 6

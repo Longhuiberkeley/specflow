@@ -6,61 +6,28 @@ Build the validation layer that ensures artifact integrity, enforces phase gates
 
 ## Deliverables
 
-### 1. Validation shell scripts
+### 1. Validation checks (Python CLI)
 
-```
-scripts/
-├── validate.sh              # Master orchestrator: runs all checks
-├── validate-schema.sh       # YAML frontmatter vs artifact schema
-├── validate-links.sh        # Link integrity + orphan detection
-├── validate-status.sh       # Status consistency + transition rules
-├── validate-ids.sh          # ID uniqueness + format compliance
-├── validate-fingerprints.sh # Content fingerprint freshness
-├── validate-gate.sh         # Run a specific phase-gate checklist
-└── check-acceptance-criteria.sh  # Every REQ has acceptance criteria
-```
+All validation logic lives in Python `lib/` modules (`lib/validation.py`, `lib/artifacts.py`), exposed via `specflow validate`. Shell scripts in `scripts/` are thin CI/CD wrappers (see D-16). The checks:
 
-**`validate-schema.sh`:**
-- Reads artifact file's YAML frontmatter
-- Loads corresponding `.specflow/schema/<type>.yaml`
-- Checks all required fields present
-- Checks field values against allowed enums (status, link roles)
-- Checks ID format matches `id_format` regex
-- Reports: blocking (missing required field), warning (unknown field), info
+| Check | CLI flag | Implementation | What it validates |
+|-------|---------|----------------|-------------------|
+| Schema | `--type schema` | `lib/validation.py` | YAML frontmatter vs artifact schema: required fields, allowed enums, ID format regex |
+| Links | `--type links` | `lib/artifacts.py` | Link integrity, orphan detection, V-model pairing (REQ/QT, ARCH/IT, DDD/UT) |
+| Status | `--type status` | `lib/validation.py` | Status values vs allowed map, parent/child hierarchy consistency |
+| IDs | `--type ids` | `lib/artifacts.py` | ID uniqueness, format compliance, dot-notation depth |
+| Fingerprints | `--type fingerprints` | `lib/artifacts.py` | SHA256 recomputation, stale fingerprint detection |
+| Gate | `--type gate --gate <name>` | `commands/validate.py` | Phase-gate checklist execution (automated items only) |
+| Acceptance | `--type acceptance` | `lib/validation.py` | Every REQ has acceptance criteria |
 
-**`validate-links.sh`:**
-- Walks every artifact's `links` array
-- Verifies each `target` resolves to an existing file
-- Detects orphans: artifacts with no incoming or outgoing links
-- Detects broken V-model pairing: REQ without QT, ARCH without IT, DDD without UT
-- Reports: blocking (broken link), warning (orphan), info (missing verification pair)
-
-**`validate-status.sh`:**
-- Checks status values against schema's `allowed_status` map
-- For hierarchical artifacts: parent can't be `verified` unless all children are `verified`
-- Checks project phase in `state.yaml` matches artifact statuses (e.g., can't have `executing` phase if REQs are still `draft`)
-
-**`validate-ids.sh`:**
-- Scans all artifact directories for ID uniqueness
-- Validates ID format matches schema regex (e.g., `REQ-\d{3}(\.\d{1,3})?$`)
-- Checks dot-notation depth doesn't exceed 3 levels
-- Checks children reference valid parents in `_index.yaml`
-
-**`validate-fingerprints.sh`:**
-- Recomputes SHA256 for each artifact's title + body
-- Compares against stored `fingerprint` in frontmatter
-- Reports mismatches (artifact modified without framework awareness)
-
-**`validate-gate.sh`:**
-- Reads a phase-gate checklist (e.g., `specifying-to-planning.yaml`)
-- Executes the `script` defined for each `automated: true` item
-- Returns exit code 0 if all blocking items pass, 1 otherwise
-- Used by both the CI pipeline and conversational skills before phase transitions
+Shell scripts in `scripts/` are thin CI/CD wrappers (3 lines each) that delegate to the CLI. See D-16.
 
 ### 2. Phase-gate checklists
 
+Checklist definitions are authored in `src/specflow/templates/checklists/` (framework source) and copied to `.specflow/checklists/` during `specflow init`. P2 populates:
+
 ```
-checklists/
+.specflow/checklists/
 ├── phase-gates/
 │   ├── idle-to-discovering.yaml
 │   ├── discovering-to-specifying.yaml
@@ -88,13 +55,13 @@ items:
   - id: CKL-GATE-002-01
     check: "All REQ-* artifacts have status: approved"
     automated: true
-    script: "scripts/validate-status.sh --type REQ --expected approved"
+    script: "uv run specflow validate --type status"
     severity: blocking
 
   - id: CKL-GATE-002-02
     check: "Every requirement has at least one acceptance criterion"
     automated: true
-    script: "scripts/check-acceptance-criteria.sh"
+    script: "uv run specflow validate --type acceptance"
     severity: blocking
 
   - id: CKL-GATE-002-03
@@ -124,15 +91,15 @@ Loaded during artifact generation to enforce level boundaries:
 - Data structures defined
 - Error handling at system boundaries
 
-### 4. `specflow-validate` command
+### 4. `specflow validate` command
 
-The Python CLI orchestrator that runs all underlying validation scripts:
+The Python CLI subcommand that orchestrates all validation checks:
 
 ```bash
-specflow-validate                  # Run all checks
-specflow-validate --type schema    # Run only schema checks
-specflow-validate --type links     # Run only link checks
-specflow-validate --fix            # Auto-fix what's possible (rebuild _index.yaml, recompute fingerprints)
+specflow validate                  # Run all checks
+specflow validate --type schema    # Run only schema checks
+specflow validate --type links     # Run only link checks
+specflow validate --fix            # Auto-fix what's possible (rebuild _index.yaml, recompute fingerprints)
 ```
 
 Output:
@@ -149,7 +116,7 @@ Fprints:   ⚠ 2 fingerprints stale: REQ-002, ARCH-001
 Result: FAIL (1 blocking, 2 warnings)
 ```
 
-### 5. `specflow-status` command (enhanced)
+### 5. `specflow status` command (enhanced)
 
 Reads state.yaml, scans artifacts, produces dashboard:
 
@@ -172,7 +139,7 @@ Suggests next action based on current phase and artifact state.
 ### 6. Readiness assessment templates
 
 ```
-checklists/
+.specflow/checklists/
 └── readiness/
     ├── discovery-readiness.yaml     # Before generating REQs
     ├── planning-readiness.yaml      # Before creating architecture
@@ -182,31 +149,41 @@ checklists/
 
 These are loaded by skill files during conversational commands. The agent evaluates readiness silently after each user exchange.
 
-### 7. `validate-gate.sh` script
+### 7. Phase-gate validation
 
 Runs a specific phase-gate checklist and outputs results:
 
 ```bash
-specflow-validate-gate specifying-to-planning
+specflow validate --type gate --gate specifying-to-planning
 ```
 
 Returns exit code 0 if all blocking items pass, 1 otherwise. Used by CI and by conversational commands before phase transitions.
 
 ## Acceptance Criteria
 
-- [ ] All 6 validation scripts run independently and as a group via `specflow-validate`
-- [ ] Schema validation catches missing required fields and invalid status values
-- [ ] Link validation detects broken links and orphaned artifacts
-- [ ] Status validation catches invalid transitions and parent/child inconsistencies
-- [ ] ID validation catches duplicates and format violations
-- [ ] Fingerprint validation detects modified artifacts with stale fingerprints
-- [ ] `specflow-validate` on a well-formed project returns exit code 0
-- [ ] `specflow-validate` on a project with issues returns exit code 1 with clear messages
-- [ ] Phase-gate checklists exist for all 6 transitions
-- [ ] In-process checklists exist for REQ, ARCH, DDD, and STORY writing
-- [ ] `validate-gate.sh` can be run for any specific transition
-- [ ] `specflow-status` displays phase, artifact counts, link health, and suggested next action
-- [ ] All validation is programmatic — zero LLM tokens consumed
+- [x] All 6 validation checks run independently and as a group via `specflow validate`
+- [x] Schema validation catches missing required fields and invalid status values
+- [x] Link validation detects broken links and orphaned artifacts
+- [x] Status validation catches invalid transitions and parent/child inconsistencies
+- [x] ID validation catches duplicates and format violations
+- [x] Fingerprint validation detects modified artifacts with stale fingerprints
+- [x] `specflow validate` on a well-formed project returns exit code 0
+- [x] `specflow validate` on a project with issues returns exit code 1 with clear messages
+- [x] Phase-gate checklists exist for all 6 transitions in `.specflow/checklists/phase-gates/`
+- [x] In-process checklists exist for REQ, ARCH, DDD, and STORY writing in `.specflow/checklists/in-process/`
+- [x] `specflow validate --type gate --gate <name>` runs any specific phase-gate transition
+- [x] `specflow status` displays phase, artifact counts, link health, and suggested next action
+- [x] All validation is programmatic — zero LLM tokens consumed
+
+## Remediation (2026-04-11)
+
+Review identified structural issues (see `P2-verification-review.md`). Resolved:
+- Deleted dead modules: `lib/schema_validator.py`, `lib/fingerprint.py`
+- Removed dead code: `_run_script()` and `CHECKS` dict from `commands/validate.py`
+- Converted 8 shell scripts (~1000 lines) to thin 3-line CLI wrappers
+- Added `--gate` flag to `specflow validate` CLI
+- Recorded decisions D-16 (Python-primary) and D-17 (skills-first UI) in `docs/decisions.md`
+- Updated architecture doc and all future phase docs (P3, P4, P7, P8) to reflect Python-primary approach
 
 ## Dependencies
 
@@ -216,4 +193,4 @@ Returns exit code 0 if all blocking items pass, 1 otherwise. Used by CI and by c
 ## Verification Gate
 
 The "Self-Validation" Gate:
-- We run our P2 `specflow-validate` command against our P1 manually written specs. If P2 throws errors, we know either our P1 specs violated our own rules, or our P0 schemas/P2 validators are broken. We don't move on until `specflow-validate` passes on its own codebase.
+- We run our P2 `specflow validate` command against our P1 manually written specs. If P2 throws errors, we know either our P1 specs violated our own rules, or our P0 schemas/P2 validators are broken. We don't move on until `specflow validate` passes on its own codebase.

@@ -32,18 +32,23 @@ specflow/
 │           │   ├── gemini/
 │           │   ├── claude/
 │           │   └── opencode/
-│           └── schemas/          # All artifact type schemas
-│               ├── requirement.yaml
-│               ├── architecture.yaml
-│               ├── detailed-design.yaml
-│               ├── unit-test.yaml
-│               ├── integration-test.yaml
-│               ├── qualification-test.yaml
-│               ├── story.yaml
-│               ├── spike.yaml
-│               ├── decision.yaml
-│               └── defect.yaml
-├── scripts/                  # Validation shell scripts (used by P2+)
+│           ├── schemas/          # All artifact type schemas
+│           │   ├── requirement.yaml
+│           │   ├── architecture.yaml
+│           │   ├── detailed-design.yaml
+│           │   ├── unit-test.yaml
+│           │   ├── integration-test.yaml
+│           │   ├── qualification-test.yaml
+│           │   ├── story.yaml
+│           │   ├── spike.yaml
+│           │   ├── decision.yaml
+│           │   └── defect.yaml
+│           └── checklists/       # Checklist definitions (copied to .specflow/checklists/)
+│               ├── phase-gates/  # Empty stubs, populated in P2
+│               ├── in-process/   # Empty stubs, populated in P2
+│               ├── review/       # Empty stubs, populated in P5
+│               └── readiness/    # Empty stubs, populated in P2
+├── scripts/                  # Validation & CRUD shell scripts (called by CLI, not copied to projects)
 │   └── validate-schema.sh    # Minimal: validate YAML frontmatter
 └── README.md
 ```
@@ -54,7 +59,7 @@ Programmatic setup command that runs once to initialize a project:
 1. Detects platform (`.claude/` = Claude Code, `.opencode/` = OpenCode, `.gemini/` = Gemini CLI)
 2. If no platform detected, asks user to select one
 3. Asks which instruction file to append SpecFlow section to (AGENTS.md, CLAUDE.md, or other)
-4. Creates `.specflow/` with config.yaml, state.yaml, schema/, empty impact-log/, empty checklist-log/, empty baselines/, empty locks/
+4. Creates `.specflow/` with config.yaml, state.yaml, schema/, checklists/ (from templates), empty impact-log/, empty checklist-log/, empty baselines/, empty locks/
 5. Creates `_specflow/` with specs/ (6 directories, each with `_index.yaml` stub) and work/ (4 directories, each with `_index.yaml` stub)
 6. Appends SpecFlow section to chosen instruction file
 7. Copies platform-specific skill files from `src/specflow/templates/skills/` into the detected platform's skills directory

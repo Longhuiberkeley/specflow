@@ -14,7 +14,7 @@ Each decision documents the context, options considered, the resolution, and rat
 - Git-only (no CR artifacts) — simplest, weaker for compliance
 - Hybrid (git tracks live, .md synthesized on demand)
 
-**Decision:** Hybrid. Git is the live record. Impact-log entries are automatic. Suspect flags are automatic. The `.md` CR artifact is only materialized on demand via `specflow-document-changes` — before a PR, before a baseline, or when a compliance audit asks for it.
+**Decision:** Hybrid. Git is the live record. Impact-log entries are automatic. Suspect flags are automatic. The `.md` CR artifact is only materialized on demand via `specflow document-changes` — before a PR, before a baseline, or when a compliance audit asks for it.
 
 **Rationale:** The `.md` CR is a projection of what git + impact-log already know, not a separate thing to maintain. This satisfies compliance requirements (traceability + impact analysis evidence) without developer friction. Compliance standards require evidence and traceability — they do not mandate manual form-filling before writing code.
 
@@ -44,7 +44,7 @@ Each decision documents the context, options considered, the resolution, and rat
 - Multiple Personas (PM Agent vs. Architect Agent) — requires user to choose "who" to talk to
 - Auto-detect scope via readiness assessment convergence speed
 
-**Decision:** The readiness assessment IS the scope detector. There is only one entry point (`specflow-new`) and one generalized agent. If all required readiness dimensions are satisfied within the first exchange, the framework silently chooses the lean path (minimal artifacts, auto-approved). No explicit tracks, no toggles, and no distinct agent personas. Lean artifacts grow naturally through standard workflow.
+**Decision:** The readiness assessment IS the scope detector. There is only one entry point (`specflow new`) and one generalized agent. If all required readiness dimensions are satisfied within the first exchange, the framework silently chooses the lean path (minimal artifacts, auto-approved). No explicit tracks, no toggles, and no distinct agent personas. Lean artifacts grow naturally through standard workflow.
 
 **Rationale:** Explicit tracks or multiple agent personas contradict the modeless philosophy by forcing the user to make meta-decisions before working. Ceremony should be proportional to ambiguity automatically. If a lean artifact later needs depth, standard validation and readiness checks apply — it's just a spec that evolved.
 
@@ -55,7 +55,7 @@ Each decision documents the context, options considered, the resolution, and rat
 **Context:** As the framework evolves, schemas gain new fields. Existing artifacts don't have them. How to handle upgrades?
 
 **Options considered:**
-- Versioned migrations (`specflow-upgrade` rewrites frontmatter)
+- Versioned migrations (`specflow upgrade` rewrites frontmatter)
 - Additive-only schemas (new fields always optional)
 - Lazy migration (fields added when artifact is touched)
 
@@ -141,7 +141,7 @@ Each decision documents the context, options considered, the resolution, and rat
 
 **Decision:** 3-tier defense, all zero-token:
 1. `update_type: minor` frontmatter field — user explicitly declares cosmetic edits
-2. `specflow-tweak` command — convenience wrapper
+2. `specflow tweak` command — convenience wrapper
 3. Magnitude heuristic fallback — git-based ratio check (<5% = auto-classify minor)
 
 **Rationale:** Explicit intent is better than LLM or Levenshtein guessing. Levenshtein on multi-line markdown is unreliable. LLM calls in pre-commit hooks are slow and expensive. The frontmatter field is explicit, instant, and free. Conservative default: when in doubt, cascade.
@@ -152,7 +152,7 @@ Each decision documents the context, options considered, the resolution, and rat
 
 **Context:** Compliance requires snapshots of the complete project state at milestones. How to store and compare baselines?
 
-**Decision:** One YAML file per baseline in `.specflow/baselines/`, immutable after creation. Includes artifact statuses, fingerprints, and test summaries. `specflow-baseline diff` reads two files directly — no git round-trip needed.
+**Decision:** One YAML file per baseline in `.specflow/baselines/`, immutable after creation. Includes artifact statuses, fingerprints, and test summaries. `specflow baseline diff` reads two files directly — no git round-trip needed.
 
 **Rationale:** Each baseline is a standalone file that an LLM or human can diff side-by-side. History is explicitly visible in the repo. Separate files prevent accidental corruption of a monolithic baseline store.
 
@@ -190,3 +190,28 @@ Each decision documents the context, options considered, the resolution, and rat
 **Decision:** SpecFlow is not installed globally. Users will initialize it in their project directory using `uv run specflow init`, acting exactly like `npx`. This fetches the tool ephemerally, locks it to the local `.venv` or `pyproject.toml`, and scaffolds `.specflow/` and `.claude/skills/` locally.
 
 **Rationale:** This mimics modern javascript tooling (`npx`), ensuring zero system-level pollution while guaranteeing that every developer cloning the repository runs the exact same version of the compliance engine.
+
+---
+
+### D-16: Python-Primary, Shell Wrappers Optional
+
+**Context:** P2's implementation revealed that the original design principle ("all programmatic commands call shell scripts internally") led to ~1000 lines of inline Python duplicated inside shell scripts. The Python CLI already bypassed these scripts entirely — `commands/validate.py` dispatched directly to `lib/validation.py` and `lib/artifacts.py`, never invoking the shell scripts. Bug fixes had to be applied in two places, and the scripts couldn't reliably import from the installed `specflow` package.
+
+**Options considered:**
+- Shell-primary (original intent) — Python CLI calls shell scripts, which contain all logic
+- Python-primary, no shell scripts — delete scripts entirely
+- Python-primary, shell scripts as thin wrappers — keep scripts as 3-line delegators for CI/CD
+
+**Decision:** Python-primary with optional thin shell wrappers. All deterministic logic lives in Python `lib/` modules, exposed via `specflow <subcommand>` CLI commands. Shell scripts in `scripts/` are 3-line wrappers (`exec uv run specflow validate --type <check> "$@"`) that exist solely for CI/CD pipeline compatibility. Future phases (P3 CRUD, P4 impact, P6 compliance) must implement new logic as Python lib functions + CLI subcommands, not as standalone shell scripts.
+
+**Rationale:** Python modules are testable, importable, type-checkable, and have a single maintenance point. Shell wrappers preserve backward compatibility at zero maintenance cost. The P2 duplication incident proved that non-trivial logic in shell scripts is unmaintainable when the same logic must exist in Python for the CLI.
+
+---
+
+### D-17: Skills Are the Primary User Interface
+
+**Context:** The architecture doc presented two parallel user-facing command surfaces: conversational skills (`/specflow-verify`) and programmatic CLI (`uv run specflow validate`). Users experienced confusion about which surface to use and when. The intended workflow is that skills orchestrate everything — calling CLI commands internally as needed.
+
+**Decision:** Users interact with SpecFlow exclusively through `/specflow-*` skill commands in their AI coding tool (Claude Code, OpenCode, Gemini CLI). The Python CLI (`specflow validate`, `specflow status`, etc.) is infrastructure — called by skills internally, by CI/CD pipelines, and by power users who know what they're doing. Documentation and onboarding teach skills first; CLI is referenced as "under the hood."
+
+**Rationale:** The user's mental model should be: type `/specflow-verify`, it just works. The skill decides whether to run the program silently or engage in conversation based on context. Presenting two parallel surfaces forces users to make meta-decisions about which tool to use, violating the modeless design philosophy (D-03).

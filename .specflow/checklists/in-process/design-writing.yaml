@@ -1,0 +1,37 @@
+id: CKL-IP-003
+name: "Design Writing Constraints"
+category: in-process
+applies_to:
+  types: [detailed-design]
+version: 1
+
+items:
+  - id: CKL-IP-003-01
+    check: "Every function/component specifies preconditions"
+    automated: false
+    llm_prompt: "Review the detailed design. For each function or component described, confirm preconditions are specified (what must be true before calling). Flag missing preconditions."
+    severity: blocking
+
+  - id: CKL-IP-003-02
+    check: "Data structures are defined"
+    automated: false
+    llm_prompt: "Review the detailed design. Confirm that all data structures, types, and schemas are defined. Flag references to undefined data types or structures."
+    severity: blocking
+
+  - id: CKL-IP-003-03
+    check: "Error handling at system boundaries is specified"
+    automated: false
+    llm_prompt: "Review the detailed design. Confirm that error handling is specified at system boundaries (API endpoints, file I/O, network calls, database queries). Flag missing error handling."
+    severity: blocking
+
+  - id: CKL-IP-003-04
+    check: "No system-level concerns (belongs in ARCH)"
+    automated: false
+    llm_prompt: "Review the detailed design. Flag any system-level architecture decisions, component deployment descriptions, or infrastructure concerns. These belong in ARCH artifacts."
+    severity: warning
+
+  - id: CKL-IP-003-05
+    check: "Design is complete enough for implementation without ambiguity"
+    automated: false
+    llm_prompt: "Review the detailed design. Assess whether a developer could implement the code without ambiguity or needing to make design decisions. Flag underspecified areas."
+    severity: blocking

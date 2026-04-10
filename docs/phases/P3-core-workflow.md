@@ -2,7 +2,7 @@
 
 ## Goal
 
-Enable the full conversational lifecycle: discover requirements through AI-driven conversation, plan architecture and stories, create and manage artifacts. The LLM agent conducts structured conversations guided by skill files, while shell scripts handle all deterministic operations.
+Enable the full conversational lifecycle: discover requirements through AI-driven conversation, plan architecture and stories, create and manage artifacts. The LLM agent conducts structured conversations guided by skill files, while Python CLI commands handle all deterministic operations (see D-16).
 
 ## Deliverables
 
@@ -43,7 +43,7 @@ src/
 │           └── references/
 ```
 
-### 2. `specflow-new` — Discovery conversation
+### 2. `specflow new` — Discovery conversation
 
 **3-phase progressive disclosure:**
 
@@ -92,7 +92,7 @@ If all required + threshold met within first exchange -> lean artifacts (REQ + S
 
 **Output:** Generates `REQ-*.md` files in `_specflow/specs/requirements/`, updates `_index.yaml`.
 
-### 3. `specflow-plan` — Architecture and story breakdown
+### 3. `specflow plan` — Architecture and story breakdown
 
 **Conversation flow:**
 1. Agent reads all approved requirements from `_index.yaml`
@@ -108,17 +108,18 @@ If all required + threshold met within first exchange -> lean artifacts (REQ + S
 
 ### 4. Artifact CRUD operations
 
-Shell scripts for programmatic artifact management:
+Python CLI subcommands for programmatic artifact management, implemented in `src/specflow/lib/` modules and exposed via the CLI (per D-16):
 
-```
-scripts/
-├── create-artifact.sh       # Create artifact, assign next ID, update _index.yaml
-├── update-artifact.sh       # Update frontmatter fields, bump version
-├── update-index.sh          # Rebuild _index.yaml from directory contents
-└── compute-fingerprint.sh   # SHA256 of title + body (excludes frontmatter)
-```
+| CLI subcommand | Lib function | What it does |
+|---------------|-------------|-------------|
+| `specflow create` | `lib/artifacts.py:create_artifact()` | Create artifact, assign next ID, update `_index.yaml` |
+| `specflow update` | `lib/artifacts.py:update_artifact()` | Update frontmatter fields, bump version |
+| (internal) | `lib/artifacts.py:rebuild_index()` | Rebuild `_index.yaml` from directory contents |
+| (internal) | `lib/artifacts.py:compute_fingerprint()` | SHA256 of title + body (excludes frontmatter) |
 
-`create-artifact.sh`:
+Skills call these CLI commands directly — no intermediate wrappers needed.
+
+`specflow create`:
 - Reads artifact type from argument
 - Looks up schema from `.specflow/schema/<type>.yaml`
 - Gets next ID from `_index.yaml` (`next_id` field, increments)
@@ -149,19 +150,19 @@ artifacts:
 next_id: 2
 ```
 
-The index is always rebuilt from filesystem by `update-index.sh` — it's a cache, not a source of truth. If it's deleted, `specflow-validate` detects the mismatch and rebuilds it.
+The index is always rebuilt from filesystem by `lib/artifacts.py:rebuild_index()` — it's a cache, not a source of truth. If it's deleted, `specflow validate` detects the mismatch and rebuilds it.
 
 ### 6. Link management
 
 When creating artifacts, the agent or user specifies links. Links are stored in frontmatter. The framework:
 
-- Validates that link targets exist (`validate-links.sh`)
+- Validates that link targets exist (`specflow validate --type links`)
 - Validates that link roles are allowed for the source artifact type (from schema)
 - Maintains bidirectional awareness (if REQ-001 links to ARCH-001 with `refined_by`, the system knows ARCH-001 is downstream of REQ-001)
 
 ### 7. Status transitions
 
-Status changes are validated against the schema's `allowed_status` map. Invalid transitions are rejected by `update-artifact.sh`. The state machine for the overall project is tracked in `.specflow/state.yaml`:
+Status changes are validated against the schema's `allowed_status` map. Invalid transitions are rejected by `specflow update`. The state machine for the overall project is tracked in `.specflow/state.yaml`:
 
 ```yaml
 current: specifying
@@ -214,19 +215,19 @@ Defects link to the V-model to show what is broken (`fails_to_meet`). They under
 
 ## Acceptance Criteria
 
-- [ ] `specflow-new "My App"` starts a discovery conversation
+- [ ] `specflow new "My App"` starts a discovery conversation
 - [ ] Agent asks questions one at a time, adapts based on answers
 - [ ] Project type classification triggers domain-specific checklist
 - [ ] Simple changes ("add dark mode") produce lean artifacts within 1-2 exchanges
 - [ ] Complex features produce full REQ artifacts with acceptance criteria
 - [ ] Requirements are generated with sequential numeric IDs (e.g., `REQ-006`) assigned from `_index.yaml`'s `next_id` counter
 - [ ] `_index.yaml` is updated after each artifact creation
-- [ ] `specflow-plan` produces ARCH, DDD, and STORY artifacts linked to REQs
+- [ ] `specflow plan` produces ARCH, DDD, and STORY artifacts linked to REQs
 - [ ] Stories have acceptance criteria (minimum 3 per story)
 - [ ] Status transitions follow schema rules (draft -> approved -> implemented -> verified)
 - [ ] Defect artifacts can be created and transitioned through their lifecycle
 - [ ] Invalid status transitions are rejected with clear error message
-- [ ] `specflow-status` shows current phase and artifact counts
+- [ ] `specflow status` shows current phase and artifact counts
 - [ ] Fingerprints are computed on artifact creation
 - [ ] Links between artifacts are stored in frontmatter and validated for existence
 
@@ -237,4 +238,4 @@ Defects link to the V-model to show what is broken (`fails_to_meet`). They under
 ## Verification Gate
 
 The "Self-Planning" Gate:
-- We invoke the newly built `specflow-plan` AI skill and point it at the `_specflow/specs/` folder we populated in P1 and validated in P2. If the AI successfully reads the specs and generates valid `STORY-*` and `DDD-*` artifacts for P4-P8, we know the AI context loading and generation work.
+- We invoke the newly built `specflow plan` AI skill and point it at the `_specflow/specs/` folder we populated in P1 and validated in P2. If the AI successfully reads the specs and generates valid `STORY-*` and `DDD-*` artifacts for P4-P8, we know the AI context loading and generation work.

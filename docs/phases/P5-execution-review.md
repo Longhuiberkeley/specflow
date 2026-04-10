@@ -6,7 +6,7 @@ Enable parallel subagent execution of stories, context-specific review that asse
 
 ## Deliverables
 
-### 1. `specflow-go` — Parallel subagent orchestration
+### 1. `specflow go` — Parallel subagent orchestration
 
 **Orchestration logic:**
 
@@ -52,15 +52,15 @@ execution:
   queued: [STORY-001d, STORY-003a]
 ```
 
-### 2. `specflow-check` — Context-specific review
+### 2. `specflow check` — Context-specific review
 
 **Review assembly pipeline:**
 
 1. Identify artifact type and domain tags from frontmatter
-2. Load applicable post-task checklist from `checklists/review/`
+2. Load applicable post-task checklist from `.specflow/checklists/review/`
 3. Load any shared checklists matching via `applies_to` tags/types
 4. Load domain-specific review rules
-5. Load learned patterns from `checklists/learned/` matching artifact tags (reactive mode)
+5. Load learned patterns from `.specflow/checklists/learned/` matching artifact tags (reactive mode)
 6. Run automated items first (zero tokens) — schema, links, status, fingerprints
 7. Run proactive challenge items — "What's missing? What branches unhandled?"
 8. Run reactive challenge items — "Does this repeat a past mistake?"
@@ -127,10 +127,10 @@ items:
 
 After work completes, reactive challenges extract prevention patterns:
 
-**`checklists/learned/` directory grows over time:**
+**`.specflow/checklists/learned/` directory grows over time:**
 
 ```yaml
-# checklists/learned/PREV-001.yaml
+# .specflow/checklists/learned/PREV-001.yaml
 id: PREV-001
 name: "Token Rotation Race Condition"
 discovered_from: STORY-003
@@ -143,15 +143,15 @@ items:
     severity: warning
 ```
 
-**`specflow-done` triggers pattern extraction:**
+**`specflow done` triggers pattern extraction:**
 1. Review completed story for patterns worth remembering
-2. If pattern found: create `checklists/learned/PREV-*.yaml`
+2. If pattern found: create `.specflow/checklists/learned/PREV-*.yaml`
 3. Next time any artifact with matching tags is reviewed, the pattern auto-loads
 
-### 5. `specflow-done` — Phase closure
+### 5. `specflow done` — Phase closure
 
 1. Review all completed work in current phase
-2. Extract prevention patterns into `checklists/learned/`
+2. Extract prevention patterns into `.specflow/checklists/learned/`
 3. Update all artifact statuses as appropriate
 4. Archive phase in `state.yaml` history
 5. Tag git release if all verification complete
@@ -187,7 +187,7 @@ blocking_failures: 1
 ### 7. Review checklists
 
 ```
-checklists/
+.specflow/checklists/
 └── review/
     ├── requirement-review.yaml
     ├── architecture-review.yaml
@@ -201,7 +201,7 @@ Each defines context-specific THINK and CHECK items for its artifact type.
 ### 8. Shared checklists with auto-matching
 
 ```
-checklists/
+.specflow/checklists/
 └── shared/
     ├── http-client.yaml
     ├── database-access.yaml
@@ -213,18 +213,18 @@ Auto-matched by `applies_to` tags and types when reviewing or generating artifac
 
 ## Acceptance Criteria
 
-- [ ] `specflow-go` spawns subagents per story wave with isolated context
+- [ ] `specflow go` spawns subagents per story wave with isolated context
 - [ ] Subagents receive only their story + relevant design + conventions
 - [ ] Stories are grouped into parallel waves respecting dependencies
 - [ ] Locked artifacts cause subagent to queue for next wave, not fail
 - [ ] Progress is reported between waves
-- [ ] `specflow-check` assembles unique review criteria per artifact
+- [ ] `specflow check` assembles unique review criteria per artifact
 - [ ] Review loads artifact type + domain tags + shared checklists + learned patterns
 - [ ] Automated checks run before LLM-judged checks
 - [ ] Checklist results are persisted to `.specflow/checklist-log/`
 - [ ] Proactive challenges persist edge cases in story frontmatter
-- [ ] Reactive mode extracts prevention patterns to `checklists/learned/`
-- [ ] `specflow-done` triggers pattern extraction and phase archival
+- [ ] Reactive mode extracts prevention patterns to `.specflow/checklists/learned/`
+- [ ] `specflow done` triggers pattern extraction and phase archival
 - [ ] Review is never generic — always assembled from context-specific sources
 
 ## Dependencies
@@ -235,4 +235,4 @@ Auto-matched by `applies_to` tags and types when reviewing or generating artifac
 ## Verification Gate
 
 The "Autonomous Execution" Gate:
-- We use `specflow-go` to autonomously execute the stories for P6 (Compliance). If the subagent can read the isolated story, write the Python code, and pass the `specflow-check` review, the execution engine is fully operational.
+- We use `specflow go` to autonomously execute the stories for P6 (Compliance). If the subagent can read the isolated story, write the Python code, and pass the `specflow check` review, the execution engine is fully operational.

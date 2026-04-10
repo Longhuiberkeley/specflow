@@ -26,6 +26,14 @@ def cmd_status(args: argparse.Namespace) -> int:
     return status_cmd.run(root, vars(args))
 
 
+def cmd_validate(args: argparse.Namespace) -> int:
+    """Handle 'specflow validate'."""
+    from specflow.commands import validate as validate_cmd
+
+    root = _find_project_root()
+    return validate_cmd.run(root, vars(args))
+
+
 def main(argv: list[str] | None = None) -> int:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
@@ -40,6 +48,23 @@ def main(argv: list[str] | None = None) -> int:
     # specflow status
     status_parser = subparsers.add_parser("status", help="Show project dashboard")
 
+    # specflow validate
+    validate_parser = subparsers.add_parser("validate", help="Run validation checks on artifacts")
+    validate_parser.add_argument(
+        "--type",
+        choices=["schema", "links", "status", "ids", "fingerprints", "acceptance", "gate"],
+        help="Run only a specific validation check",
+    )
+    validate_parser.add_argument(
+        "--fix",
+        action="store_true",
+        help="Auto-fix what's possible (rebuild indexes, recompute fingerprints)",
+    )
+    validate_parser.add_argument(
+        "--gate",
+        help="Phase-gate checklist name (e.g., idle-to-discovering)",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command is None:
@@ -49,6 +74,7 @@ def main(argv: list[str] | None = None) -> int:
     commands = {
         "init": cmd_init,
         "status": cmd_status,
+        "validate": cmd_validate,
     }
 
     handler = commands.get(args.command)

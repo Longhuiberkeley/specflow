@@ -8,7 +8,7 @@ Build the impact analysis engine: fingerprint-based change detection, suspect fl
 
 ### 1. Fingerprint-based change detection
 
-**`scripts/validate-fingerprints.sh` (enhanced):**
+**`specflow validate --type fingerprints` (enhanced via `lib/artifacts.py`):**
 
 On every run:
 1. Recompute SHA256 of each artifact's normative content (title + body, excluding frontmatter)
@@ -19,18 +19,14 @@ On every run:
    - Create an event file in `.specflow/impact-log/`
    - Bump artifact `version` by 1
 
-**Fingerprint computation:**
-
-```bash
-compute-fingerprint.sh <file>
-# Extracts content after YAML frontmatter delimiter (---)
-# Hashes with SHA256
-# Returns "sha256:<hash>"
-```
+**Fingerprint computation** (via `lib/artifacts.py:compute_fingerprint()`):
+- Extracts content after YAML frontmatter delimiter (`---`)
+- Hashes with SHA256
+- Returns `"sha256:<hash>"`
 
 ### 2. Suspect flag propagation
 
-**`scripts/impact.sh`:**
+**`specflow impact` (via `lib/impact.py`):**
 
 The core impact analysis engine. When an artifact changes:
 
@@ -65,14 +61,14 @@ flagged_suspects:
 resolved: false
 ```
 
-### 3. `specflow-impact` command
+### 3. `specflow impact` command
 
 Reads impact-log and artifact state to produce a report:
 
 ```bash
-specflow-impact                   # All unresolved flags
-specflow-impact REQ-001           # Flags caused by specific artifact
-specflow-impact --resolve ARCH-001  # Clear suspect flag after review
+specflow impact                   # All unresolved flags
+specflow impact REQ-001           # Flags caused by specific artifact
+specflow impact --resolve ARCH-001  # Clear suspect flag after review
 ```
 
 Output:
@@ -93,7 +89,7 @@ Source: ARCH-003 (status_changed, 2026-03-21)
 
 Oldest unresolved: 5 days (REQ-001)
 
-→ Run `specflow-impact --resolve <ID>` to clear a flag after review
+→ Run `specflow impact --resolve <ID>` to clear a flag after review
 ```
 
 Resolving a flag:
@@ -120,11 +116,11 @@ Pre-commit hook flow:
 3. If `minor`: update fingerprint silently, log as minor in impact-log, **remove the field**, skip cascade
 4. If `semantic` or absent: trigger cascade
 
-**Tier 2: `specflow-tweak` convenience command**
+**Tier 2: `specflow tweak` convenience command**
 
 ```bash
-specflow-tweak _specflow/specs/requirements/REQ-001.md
-specflow-tweak _specflow/specs/requirements/REQ-001.md "recieve -> receive"
+specflow tweak _specflow/specs/requirements/REQ-001.md
+specflow tweak _specflow/specs/requirements/REQ-001.md "recieve -> receive"
 ```
 
 Recomputes fingerprint, logs `update_type: minor`, skips cascade.
@@ -143,7 +139,7 @@ RATIO=$(echo "scale=2; $CHANGED_LINES / $TOTAL_LINES" | bc)
 
 ### 5. Cross-artifact consistency operations
 
-**`scripts/impact.sh` (extended):**
+**`specflow impact` (extended via `lib/impact.py`):**
 
 **Split events** (ARCH-001 -> ARCH-001 + ARCH-002):
 
@@ -168,11 +164,11 @@ yq -i '(.links[] | select(.target == "ARCH-002")).target = "ARCH-001"' \
   _specflow/specs/detailed-design/DDD-001.md
 ```
 
-### 6. `specflow-validate` (enhanced)
+### 6. `specflow validate` (enhanced)
 
 Adds fingerprint freshness to the validation suite:
 - Detects artifacts where file content hash differs from stored fingerprint
-- Reports as warnings (stale fingerprints, suggesting `specflow-impact` to review)
+- Reports as warnings (stale fingerprints, suggesting `specflow impact` to review)
 
 ### 7. Filesystem locks for parallel operations
 
@@ -198,10 +194,10 @@ rm "$lockfile"
 - [ ] Changing an artifact's body text updates its fingerprint
 - [ ] Fingerprint change propagates `suspect: true` to all downstream-linked artifacts
 - [ ] Impact-log events are created as individual files in `.specflow/impact-log/`
-- [ ] `specflow-impact` shows all unresolved suspect flags with lineage
-- [ ] `specflow-impact --resolve <ID>` clears a suspect flag and records who/when/why
+- [ ] `specflow impact` shows all unresolved suspect flags with lineage
+- [ ] `specflow impact --resolve <ID>` clears a suspect flag and records who/when/why
 - [ ] Typo defense tier 1: `update_type: minor` in frontmatter skips cascade
-- [ ] Typo defense tier 2: `specflow-tweak` recomputes fingerprint without cascade
+- [ ] Typo defense tier 2: `specflow tweak` recomputes fingerprint without cascade
 - [ ] Typo defense tier 3: magnitude heuristic classifies <5% changes as minor
 - [ ] Conservative default: when in doubt, cascade
 - [ ] Split operation reassigns selected downstream links to new artifact

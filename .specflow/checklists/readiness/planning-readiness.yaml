@@ -1,0 +1,29 @@
+id: CKL-RD-002
+name: "Planning Readiness Assessment"
+category: readiness
+version: 1
+
+items:
+  - id: CKL-RD-002-01
+    check: "At least 3 approved REQ artifacts exist"
+    automated: true
+    script: "count=$(ls _specflow/specs/requirements/*.md 2>/dev/null | grep -v _index.yaml | wc -l); [ \"$count\" -ge 3 ] && exit 0 || exit 1"
+    severity: blocking
+
+  - id: CKL-RD-002-02
+    check: "No REQ artifacts in draft status"
+    automated: true
+    script: "python3 -c \"\nimport yaml, sys\nfrom pathlib import Path\ndrafts = 0\nfor f in Path('_specflow/specs/requirements').glob('*.md'):\n    if f.name.startswith('_'): continue\n    text = f.read_text().strip()\n    end = text.find('---', 3)\n    if end == -1: continue\n    fm = yaml.safe_load(text[3:end])\n    if isinstance(fm, dict) and fm.get('status') == 'draft': drafts += 1\nsys.exit(1 if drafts > 0 else 0)\n\""
+    severity: blocking
+
+  - id: CKL-RD-002-03
+    check: "Requirements are stable (no recent changes)"
+    automated: false
+    llm_prompt: "Review the REQ artifact history. Flag any requirements that have been recently modified or are marked suspect. Unstable requirements risk architecture rework."
+    severity: warning
+
+  - id: CKL-RD-002-04
+    check: "Requirements cover the core system scope"
+    automated: false
+    llm_prompt: "Review all REQ artifacts. Assess whether they collectively cover the core system scope or if significant areas are missing. Flag gaps."
+    severity: blocking

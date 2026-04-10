@@ -1,0 +1,23 @@
+id: CKL-RD-003
+name: "Architecture Readiness Assessment"
+category: readiness
+version: 1
+
+items:
+  - id: CKL-RD-003-01
+    check: "Approved REQ artifacts exist"
+    automated: true
+    script: "python3 -c \"\nimport yaml, sys\nfrom pathlib import Path\napproved = 0\nfor f in Path('_specflow/specs/requirements').glob('*.md'):\n    if f.name.startswith('_'): continue\n    text = f.read_text().strip()\n    end = text.find('---', 3)\n    if end == -1: continue\n    fm = yaml.safe_load(text[3:end])\n    if isinstance(fm, dict) and fm.get('status') == 'approved': approved += 1\nsys.exit(0 if approved > 0 else 1)\n\""
+    severity: blocking
+
+  - id: CKL-RD-003-02
+    check: "Non-functional requirements are quantified"
+    automated: false
+    llm_prompt: "Review REQ artifacts tagged 'nonfunctional', 'performance', 'security', 'scalability'. Confirm they have measurable thresholds. Flag qualitative terms without numbers."
+    severity: blocking
+
+  - id: CKL-RD-003-03
+    check: "System boundaries are defined"
+    automated: false
+    llm_prompt: "Review REQ artifacts. Confirm the system's external interfaces, inputs, and outputs are defined. Architecture cannot be designed without knowing system boundaries."
+    severity: blocking

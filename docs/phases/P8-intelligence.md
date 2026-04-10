@@ -11,7 +11,7 @@ Add intelligence features that make the framework smarter over time, and scaling
 ### Tiered duplicate detection
 
 - 4-tier pipeline: tag overlap -> TF-IDF keyword similarity -> local embeddings -> LLM
-- `specflow-check --dedup` runs full pipeline
+- `specflow check --dedup` runs full pipeline
 - Search-before-create: agent always reads `_index.yaml` before creating new artifacts
 - On-demand computation, no pre-cached embeddings
 - Results stored in `.specflow/dedup-candidates.yaml` as suggestions
@@ -20,18 +20,18 @@ Add intelligence features that make the framework smarter over time, and scaling
 
 - `applies_to` field on shared checklists matches artifacts by tag + type
 - Automatically loaded during generation and review without user awareness
-- Extensible: teams add their own shared checklists to `checklists/shared/`
+- Extensible: teams add their own shared checklists to `.specflow/checklists/shared/`
 
 ### Reactive challenge engine (full)
 
-- `checklists/learned/PREV-*.yaml` auto-loaded when artifact tags match
+- `.specflow/checklists/learned/PREV-*.yaml` auto-loaded when artifact tags match
 - System compounds: every project makes the framework better at catching issues
 - Pattern extraction from defects, failed reviews, and course corrections
 
 ### Dead code and similarity detection
 
-- `detect-dead-code.sh`: unreachable/uncalled code identification
-- `detect-similarity.sh`: highly similar code blocks
+- `specflow detect dead-code`: unreachable/uncalled code identification (Python `lib/analysis.py`)
+- `specflow detect similarity`: highly similar code blocks (Python `lib/analysis.py`)
 - Results surfaced as informational warnings, not blocking
 
 ### Multi-repo traceability (future)

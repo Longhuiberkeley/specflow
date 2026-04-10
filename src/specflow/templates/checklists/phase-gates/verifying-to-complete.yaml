@@ -1,0 +1,48 @@
+id: CKL-GATE-006
+name: "Verifying to Complete Gate"
+phase_from: verifying
+phase_to: complete
+version: 1
+
+items:
+  - id: CKL-GATE-006-01
+    check: "All spec artifacts have status: verified"
+    automated: true
+    script: "scripts/validate-status.sh"
+    severity: blocking
+
+  - id: CKL-GATE-006-02
+    check: "All fingerprints are current"
+    automated: true
+    script: "scripts/validate-fingerprints.sh"
+    severity: blocking
+
+  - id: CKL-GATE-006-03
+    check: "No broken links in any artifact"
+    automated: true
+    script: "scripts/validate-links.sh"
+    severity: blocking
+
+  - id: CKL-GATE-006-04
+    check: "All IDs are unique and well-formed"
+    automated: true
+    script: "scripts/validate-ids.sh"
+    severity: blocking
+
+  - id: CKL-GATE-006-05
+    check: "Full validation passes"
+    automated: true
+    script: "scripts/validate.sh"
+    severity: blocking
+
+  - id: CKL-GATE-006-06
+    check: "Prevention patterns extracted from completed work"
+    automated: false
+    llm_prompt: "Review the completed work. Identify any patterns, mistakes, or lessons learned that should be captured as prevention patterns in the learned checklists."
+    severity: warning
+
+  - id: CKL-GATE-006-07
+    check: "Baseline created for this phase completion"
+    automated: true
+    script: "test -d .specflow/baselines && ls .specflow/baselines/*.yaml 2>/dev/null | head -1 | grep -q . && exit 0 || exit 1"
+    severity: info

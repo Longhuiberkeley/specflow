@@ -1,0 +1,31 @@
+id: CKL-IP-004
+name: "Story Writing Constraints"
+category: in-process
+applies_to:
+  types: [story]
+version: 1
+
+items:
+  - id: CKL-IP-004-01
+    check: "Story links to at least one approved specification artifact"
+    automated: true
+    script: "python3 -c \"\nimport yaml, sys\nfrom pathlib import Path\npath = Path(sys.argv[1])\ntext = path.read_text().strip()\nend = text.find('---', 3)\nif end == -1: sys.exit(1)\nfm = yaml.safe_load(text[3:end])\nlinks = fm.get('links', []) or []\nhas_spec_link = any(l.get('role') in ('implements', 'guided_by', 'specified_by') for l in links if isinstance(l, dict))\nsys.exit(0 if has_spec_link else 1)\n\" \"\$1\""
+    severity: blocking
+
+  - id: CKL-IP-004-02
+    check: "Story describes user-visible value (not technical detail)"
+    automated: false
+    llm_prompt: "Review the story body. Confirm it describes user-visible value or behavior ('As a user, I can...'). Flag stories that are purely technical tasks without user value."
+    severity: blocking
+
+  - id: CKL-IP-004-03
+    check: "Story has clear acceptance criteria"
+    automated: false
+    llm_prompt: "Review the story. Confirm it has clear, testable acceptance criteria (Given/When/Then format preferred). Flag stories with vague or missing acceptance criteria."
+    severity: blocking
+
+  - id: CKL-IP-004-04
+    check: "Story is vertically sliceable (not horizontally layered)"
+    automated: false
+    llm_prompt: "Review the story. Confirm it delivers end-to-end value (UI → logic → data) rather than being a horizontal layer (e.g., 'build all APIs'). Flag horizontal slicing."
+    severity: warning

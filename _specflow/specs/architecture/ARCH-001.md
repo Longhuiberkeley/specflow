@@ -4,15 +4,20 @@ title: CLI Core
 type: architecture
 status: draft
 priority: high
-rationale: "The CLI core is the programmatic entry point that dispatches commands and coordinates all SpecFlow operations"
-tags: [cli, python, core]
+rationale: The CLI core is the programmatic entry point that dispatches commands and
+  coordinates all SpecFlow operations
+tags:
+- cli
+- python
+- core
 suspect: false
-fingerprint: "sha256:78e3e6665c22b155fcf297e6be21f84e51c9b037b9f49684757a4657aa0756e6"
+fingerprint: sha256:cadc52a15cc2721b9fd26430aa30bde50a3d3cbec766a77faf0a7a730186e35a
 links:
-  - target: REQ-001
-    role: derives_from
+- target: REQ-001
+  role: derives_from
 created: 2026-04-10
 ---
+
 
 # CLI Core
 
