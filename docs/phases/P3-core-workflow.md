@@ -197,7 +197,7 @@ created: 2026-03-15
 
 ```yaml
 ---
-id: DEF-AUTH-b8c1
+id: DEF-001
 title: "Token refresh fails under concurrent requests"
 status: open          # open -> investigating -> fixing -> verified -> closed
 severity: major
@@ -219,7 +219,7 @@ Defects link to the V-model to show what is broken (`fails_to_meet`). They under
 - [ ] Project type classification triggers domain-specific checklist
 - [ ] Simple changes ("add dark mode") produce lean artifacts within 1-2 exchanges
 - [ ] Complex features produce full REQ artifacts with acceptance criteria
-- [ ] Requirements are generated with hash-based Draft IDs (e.g., `REQ-AUTH-a7b9`) to avoid collisions
+- [ ] Requirements are generated with sequential numeric IDs (e.g., `REQ-006`) assigned from `_index.yaml`'s `next_id` counter
 - [ ] `_index.yaml` is updated after each artifact creation
 - [ ] `specflow-plan` produces ARCH, DDD, and STORY artifacts linked to REQs
 - [ ] Stories have acceptance criteria (minimum 3 per story)

@@ -1,2 +1,32 @@
-artifacts: {}
-next_id: 1
+artifacts:
+  REQ-001:
+    title: "CLI Interface"
+    status: draft
+    tags: [cli, core, mvp]
+    fingerprint: "sha256:ccde4a9d0080af7bcea2cad1872332e704d27fe4051f1624b787a38fe0748f5e"
+    children: []
+  REQ-002:
+    title: "Artifact Structure"
+    status: draft
+    tags: [core, format, mvp]
+    fingerprint: "sha256:8cfaca50ccf6c7e65247a8a6c401192dc5cdcf4f8eab806d100bd949054bf68e"
+    children: []
+  REQ-003:
+    title: "Trace & Suspect Propagation"
+    status: draft
+    tags: [traceability, impact, core]
+    fingerprint: "sha256:0609efefc2e07eb603690abde0e5c634f46ac4092f438ebe43bf9568e2580117"
+    children: []
+  REQ-004:
+    title: "AI Execution Boundaries"
+    status: draft
+    tags: [ai, skills, token-optimization, core]
+    fingerprint: "sha256:aec5aa0cb65360ce24ce4e5280c9c66e11b1f4898449325a21692a300ea2bc65"
+    children: []
+  REQ-005:
+    title: "Cross-Platform & Compliance"
+    status: draft
+    tags: [cross-platform, compliance, baselines]
+    fingerprint: "sha256:eafd94fc4e2cad110c5f99d2ecaf3e7dab4d911bd82a888a3217ce99ef1625e9"
+    children: []
+next_id: 6

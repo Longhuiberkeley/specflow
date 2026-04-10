@@ -1,2 +1,20 @@
-artifacts: {}
-next_id: 1
+artifacts:
+  ARCH-001:
+    title: "CLI Core"
+    status: draft
+    tags: [cli, python, core]
+    fingerprint: "sha256:78e3e6665c22b155fcf297e6be21f84e51c9b037b9f49684757a4657aa0756e6"
+    children: []
+  ARCH-002:
+    title: "Framework Machinery"
+    status: draft
+    tags: [framework, internals, core]
+    fingerprint: "sha256:aee3bf225b5d4839e2855c7c8aed36830bcc4acec6d6730118fa4b73ffcfd4c2"
+    children: []
+  ARCH-003:
+    title: "Skill & Platform System"
+    status: draft
+    tags: [skills, platform, ai, progressive-disclosure]
+    fingerprint: "sha256:ce1a77ba990230701b7b0113a01cada7d2ecafcef4f46eec462a99a81143e1cb"
+    children: []
+next_id: 4

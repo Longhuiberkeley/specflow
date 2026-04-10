@@ -112,8 +112,7 @@ project/
 │       ├── stories/              # STORY-*
 │       ├── spikes/               # SPIKE-*
 │       ├── defects/              # DEF-*
-│       ├── decisions/            # DEC-*
-│       └── change-requests/      # CR-* (synthesized on demand)
+│       └── decisions/            # DEC-*
 ├── src/                          # Project source code
 ├── AGENTS.md                     # Universal instructions (appended by init)
 └── .claude/                      # Platform adapter (or .opencode/, .gemini/)
