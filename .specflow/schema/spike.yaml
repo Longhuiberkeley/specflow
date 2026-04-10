@@ -1,0 +1,12 @@
+type: spike
+prefix: SPIKE
+id_format: "SPIKE-\\d{3}(\\.\\d{1,3})?$"
+required_fields: [id, title, type, status, created]
+optional_fields: [priority, version, rationale, tags, suspect, fingerprint, links, upstream, checklists_applied, modified, timebox]
+allowed_status:
+  draft: []
+  approved: [draft]
+  completed: [approved]
+  abandoned: [draft, approved]
+allowed_link_roles: [derives_from, guided_by]
+directory: _specflow/work/spikes/

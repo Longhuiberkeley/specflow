@@ -1,0 +1,19 @@
+[project]
+name = "specflow"
+version = "0.1.0"
+description = "Spec-driven development framework for ASPICE-compliant verification"
+readme = "README.md"
+authors = [
+    { name = "longhuiberkeley", email = "longhui@berkeley.edu" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "pyyaml>=6.0",
+]
+
+[project.scripts]
+specflow = "specflow.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

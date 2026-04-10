@@ -1,0 +1,19 @@
+project:
+  name: specflow
+  created: '2026-04-10'
+impact_analysis:
+  auto_flag: true
+  auto_resolve: false
+  remind_after: 7d
+artifact_types:
+- requirement
+- architecture
+- detailed-design
+- unit-test
+- integration-test
+- qualification-test
+- story
+- spike
+- decision
+- defect
+active_packs: []
