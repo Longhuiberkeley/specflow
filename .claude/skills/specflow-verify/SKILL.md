@@ -33,16 +33,21 @@ Present the status summary to the user. Note any:
 - Missing verification pairs
 - Suspect flags
 
-### Step 3: Assemble Review Checklists
+### Step 3: Context-Specific Review
 
-Based on what's being reviewed, assemble relevant checklists:
+Run `uv run specflow check <ARTIFACT_ID>` to assemble and execute context-specific checklists, or `uv run specflow check --all` for all artifacts. The check command automatically:
 
-1. **Artifact type checklists** — Load from `.specflow/checklists/in-process/` based on the artifact types being reviewed (e.g., `requirement-writing.yaml` for REQs).
-2. **Domain tag checklists** — Load from `.specflow/checklists/shared/` if any match the artifact's tags.
-3. **Phase-gate checklists** — Load from `.specflow/checklists/phase-gates/` if a phase transition is pending.
-4. **Learned checklists** — Load from `.specflow/checklists/learned/` for prevention patterns from past work.
+1. Loads **artifact type checklists** from `.specflow/checklists/in-process/`
+2. Loads **review checklists** from `.specflow/checklists/review/`
+3. Loads **domain tag checklists** from `.specflow/checklists/shared/` matching artifact tags
+4. Loads **phase-gate checklists** from `.specflow/checklists/phase-gates/` (with `--gate`)
+5. Loads **learned patterns** from `.specflow/checklists/learned/` matching artifact tags
 
 Read `references/checklist-assembly.md` for the full assembly algorithm.
+
+### Step 3.5: Proactive Challenges (Optional)
+
+Run `uv run specflow check --proactive <ARTIFACT_ID>` to include proactive challenge items that ask "What could go wrong? What's missing?" Read `references/challenge-engine.md` for details.
 
 ### Step 4: Run LLM-Judged Checks
 
@@ -74,14 +79,26 @@ Present results organized by severity:
 - Status transitions: all valid
 ```
 
+### Step 6: Phase Closure
+
+After all work is done, run `uv run specflow done` to:
+1. Review completed work in the current phase
+2. Extract prevention patterns into `.specflow/checklists/learned/`
+3. Close the phase and archive in `state.yaml`
+4. Suggest the next phase
+
+Use `--no-patterns` to skip pattern extraction, or `--auto` to skip prompts.
+
 ## Rules
 
 - Automated checks (zero tokens) always run first.
 - LLM-judged checks only run if automated checks pass.
 - Severity levels: `blocking` (must fix), `warning` (should fix), `info` (nice to know).
 - Never skip automated checks, even if the user asks for "just a quick review."
+- Review is never generic — it's assembled from artifact type + domain + shared + learned sources.
 
 ## References
 
 - `references/checklist-assembly.md` — How checklists are assembled for review.
 - `references/severity-levels.md` — Severity level definitions and escalation rules.
+- `references/challenge-engine.md` — Proactive and reactive challenge modes.

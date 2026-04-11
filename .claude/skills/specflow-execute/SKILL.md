@@ -16,20 +16,21 @@ Orchestrate the implementation of planned stories and update tracking artifacts.
 3. Check for blocking `suspect: true` flags on linked artifacts. If upstream specs are suspect, warn the user before proceeding.
 4. Run `uv run specflow status` silently to get the current state overview.
 
-### Step 2: Story Selection
+### Step 2: Wave Planning
 
-1. Present available stories to the user with their priorities and dependencies.
-2. Ask: "Which story (or stories) should we implement?"
-3. If multiple stories are independent (no shared dependencies), they can be implemented in parallel waves.
-4. If stories depend on each other, implement in dependency order.
+1. Run `uv run specflow go --dry-run` to compute the execution wave plan.
+2. Review the wave groupings — stories in the same wave can run in parallel.
+3. If the wave plan looks wrong, check story dependencies (`derives_from`, shared `specified_by`).
+4. Read `references/wave-computation.md` for algorithm details.
 
 ### Step 3: Implementation
 
-For each story being implemented:
+For each story (or wave of stories):
 
-1. **Load context:** Read the story, its linked REQ, ARCH, and DDD artifacts. This gives the full specification context.
-2. **Implement the code** per the detailed design in DDD artifacts.
-3. **Follow the acceptance criteria** — implement each criterion from the story.
+1. Run `uv run specflow go` to execute all waves, or implement manually:
+   a. **Load context:** Read the story, its linked REQ, ARCH, and DDD artifacts.
+   b. **Implement the code** per the detailed design in DDD artifacts.
+   c. **Follow the acceptance criteria** — implement each criterion from the story.
 
 ### Step 4: Status Updates
 
@@ -83,3 +84,4 @@ Report results and fix any issues.
 
 - `references/status-lifecycle.md` — Valid status transitions for all artifact types.
 - `references/test-pairing.md` — V-model verification test pairing rules.
+- `references/wave-computation.md` — Wave computation algorithm and context isolation.

@@ -16,9 +16,10 @@ links:
 - target: ARCH-002
   role: guided_by
 created: '2026-04-11'
+checklists_applied:
+- checklist: check-STORY-016
+  timestamp: '2026-04-11T13:45:49Z'
 ---
-
-# Implement defect lifecycle tracking with V-model linkage
 
 # Implement defect lifecycle tracking with V-model linkage
 

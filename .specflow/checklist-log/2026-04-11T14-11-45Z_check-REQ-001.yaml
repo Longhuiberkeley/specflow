@@ -1,0 +1,13 @@
+id: 2026-04-11T14-11-45Z_check-REQ-001
+timestamp: '2026-04-11T14:11:45Z'
+checklist: check-REQ-001
+trigger: review
+artifacts_checked:
+- REQ-001
+results:
+- item: CKL-IP-001-02
+  result: passed
+- item: CKL-IP-001-03
+  result: passed
+overall: passed
+blocking_failures: 0

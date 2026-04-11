@@ -50,6 +50,46 @@ def cmd_update(args: argparse.Namespace) -> int:
     return update_cmd.run(root, vars(args))
 
 
+def cmd_go(args: argparse.Namespace) -> int:
+    """Handle 'specflow go'."""
+    from specflow.commands import go as go_cmd
+
+    root = _find_project_root()
+    return go_cmd.run(root, vars(args))
+
+
+def cmd_check(args: argparse.Namespace) -> int:
+    """Handle 'specflow check'."""
+    from specflow.commands import check as check_cmd
+
+    root = _find_project_root()
+    return check_cmd.run(root, vars(args))
+
+
+def cmd_done(args: argparse.Namespace) -> int:
+    """Handle 'specflow done'."""
+    from specflow.commands import done as done_cmd
+
+    root = _find_project_root()
+    return done_cmd.run(root, vars(args))
+
+
+def cmd_impact(args: argparse.Namespace) -> int:
+    """Handle 'specflow impact'."""
+    from specflow.commands import impact as impact_cmd
+
+    root = _find_project_root()
+    return impact_cmd.run(root, vars(args))
+
+
+def cmd_tweak(args: argparse.Namespace) -> int:
+    """Handle 'specflow tweak'."""
+    from specflow.commands import tweak as tweak_cmd
+
+    root = _find_project_root()
+    return tweak_cmd.run(root, vars(args))
+
+
 def main(argv: list[str] | None = None) -> int:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
@@ -101,6 +141,33 @@ def main(argv: list[str] | None = None) -> int:
     update_parser.add_argument("--rationale", help="New rationale")
     update_parser.add_argument("--tags", help="Comma-separated tags (replaces existing)")
 
+    # specflow go
+    go_parser = subparsers.add_parser("go", help="Execute approved stories in parallel waves")
+    go_parser.add_argument("--dry-run", action="store_true", dest="dry_run", help="Show wave plan without executing")
+    go_parser.add_argument("--wave", type=int, help="Execute only a specific wave number")
+    go_parser.add_argument("--timeout", type=int, default=600, help="Per-story timeout in seconds (default: 600)")
+
+    # specflow check
+    check_parser = subparsers.add_parser("check", help="Run context-specific review on artifacts")
+    check_parser.add_argument("artifact_id", nargs="?", help="Artifact ID to check (e.g., REQ-001)")
+    check_parser.add_argument("--all", action="store_true", help="Check all artifacts")
+    check_parser.add_argument("--gate", help="Phase-gate checklist (e.g., planning-to-executing)")
+    check_parser.add_argument("--proactive", action="store_true", help="Include proactive challenge items")
+
+    # specflow done
+    done_parser = subparsers.add_parser("done", help="Close current phase and extract prevention patterns")
+    done_parser.add_argument("--auto", action="store_true", help="Skip interactive pattern extraction prompts")
+    done_parser.add_argument("--no-patterns", action="store_true", dest="no_patterns", help="Skip pattern extraction entirely")
+
+    # specflow impact
+    impact_parser = subparsers.add_parser("impact", help="Report and resolve suspect flags")
+    impact_parser.add_argument("artifact_id", nargs="?", help="Filter by source artifact ID")
+    impact_parser.add_argument("--resolve", help="Resolve suspect flag on artifact ID")
+
+    # specflow tweak
+    tweak_parser = subparsers.add_parser("tweak", help="Minor edit — update fingerprint without suspect cascade")
+    tweak_parser.add_argument("filepath", help="Path to the artifact file")
+
     args = parser.parse_args(argv)
 
     if args.command is None:
@@ -113,6 +180,11 @@ def main(argv: list[str] | None = None) -> int:
         "validate": cmd_validate,
         "create": cmd_create,
         "update": cmd_update,
+        "go": cmd_go,
+        "check": cmd_check,
+        "done": cmd_done,
+        "impact": cmd_impact,
+        "tweak": cmd_tweak,
     }
 
     handler = commands.get(args.command)

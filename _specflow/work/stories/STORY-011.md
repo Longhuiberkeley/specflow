@@ -15,9 +15,10 @@ links:
 - target: ARCH-002
   role: guided_by
 created: '2026-04-11'
+checklists_applied:
+- checklist: check-STORY-011
+  timestamp: '2026-04-11T13:45:49Z'
 ---
-
-# Create and compare immutable baselines for project state snapshots
 
 # Create and compare immutable baselines for project state snapshots
 

@@ -1,0 +1,28 @@
+id: CKL-REV-DDD
+name: "Detailed Design Review"
+category: review
+applies_to:
+  types: [detailed-design]
+version: 1
+
+items:
+  - id: CKL-REV-DDD-01
+    check: "Data structures are defined with types and constraints"
+    automated: false
+    llm_prompt: "Verify all data structures have explicit type annotations and documented constraints/invariants."
+    severity: blocking
+    mode: standard
+
+  - id: CKL-REV-DDD-02
+    check: "Algorithms have defined complexity and error handling"
+    automated: false
+    llm_prompt: "Check that algorithms specify time/space complexity and handle edge cases (empty input, overflow, etc.)."
+    severity: warning
+    mode: standard
+
+  - id: CKL-REV-DDD-03
+    check: "Design aligns with architecture interfaces"
+    automated: false
+    llm_prompt: "Verify this detailed design implements the interfaces defined in its parent architecture component."
+    severity: blocking
+    mode: standard

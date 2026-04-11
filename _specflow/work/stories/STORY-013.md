@@ -15,9 +15,10 @@ links:
 - target: ARCH-002
   role: guided_by
 created: '2026-04-11'
+checklists_applied:
+- checklist: check-STORY-013
+  timestamp: '2026-04-11T13:45:49Z'
 ---
-
-# Generate retroactive change records from git history and impact-log
 
 # Generate retroactive change records from git history and impact-log
 

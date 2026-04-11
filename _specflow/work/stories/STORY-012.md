@@ -16,9 +16,10 @@ links:
 - target: ARCH-002
   role: guided_by
 created: '2026-04-11'
+checklists_applied:
+- checklist: check-STORY-012
+  timestamp: '2026-04-11T13:45:49Z'
 ---
-
-# Implement standards pack architecture and compliance gap analysis
 
 # Implement standards pack architecture and compliance gap analysis
 

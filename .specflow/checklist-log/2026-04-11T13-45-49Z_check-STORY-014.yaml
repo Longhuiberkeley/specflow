@@ -1,0 +1,9 @@
+id: 2026-04-11T13-45-49Z_check-STORY-014
+timestamp: '2026-04-11T13:45:49Z'
+checklist: check-STORY-014
+trigger: review
+artifacts_checked:
+- STORY-014
+results: []
+overall: passed
+blocking_failures: 0

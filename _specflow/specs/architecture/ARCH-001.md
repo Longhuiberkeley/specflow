@@ -11,11 +11,14 @@ tags:
 - python
 - core
 suspect: false
-fingerprint: sha256:cadc52a15cc2721b9fd26430aa30bde50a3d3cbec766a77faf0a7a730186e35a
+fingerprint: sha256:28d09baae8eb9b77a8bbb367285cf3f6970e6fa7ab67bfc7a1ae285bcc5f60c2
 links:
 - target: REQ-001
   role: derives_from
 created: 2026-04-10
+checklists_applied:
+- checklist: check-ARCH-001
+  timestamp: '2026-04-11T13:45:48Z'
 ---
 
 

@@ -1,6 +1,6 @@
 artifacts:
   ARCH-001:
-    fingerprint: sha256:cadc52a15cc2721b9fd26430aa30bde50a3d3cbec766a77faf0a7a730186e35a
+    fingerprint: sha256:28d09baae8eb9b77a8bbb367285cf3f6970e6fa7ab67bfc7a1ae285bcc5f60c2
     id: ARCH-001
     status: draft
     tags:
@@ -9,7 +9,7 @@ artifacts:
     - core
     title: CLI Core
   ARCH-002:
-    fingerprint: sha256:8ba9f7b64cfec10457a0df5b4b3363414743c5dea1054571ab6516ba2e3bb8cb
+    fingerprint: sha256:e7baed037004c3bdb32b1ef1655804a53e7f5de42094eb12c99f2f8ea81d6dd7
     id: ARCH-002
     status: draft
     tags:
@@ -18,7 +18,7 @@ artifacts:
     - core
     title: Framework Machinery
   ARCH-003:
-    fingerprint: sha256:161c26527ec8b6c8e3cb0169222f2925c5788d81fd7582f5ab67b003107cae20
+    fingerprint: sha256:14b81a2fe72b86d1f65df2fd9031d3a8fb315651abfa8e71c576327e0ecb108a
     id: ARCH-003
     status: draft
     tags:

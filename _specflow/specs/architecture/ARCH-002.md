@@ -11,7 +11,7 @@ tags:
 - internals
 - core
 suspect: false
-fingerprint: sha256:8ba9f7b64cfec10457a0df5b4b3363414743c5dea1054571ab6516ba2e3bb8cb
+fingerprint: sha256:e7baed037004c3bdb32b1ef1655804a53e7f5de42094eb12c99f2f8ea81d6dd7
 links:
 - target: REQ-002
   role: derives_from
@@ -20,6 +20,9 @@ links:
 - target: REQ-005
   role: derives_from
 created: 2026-04-10
+checklists_applied:
+- checklist: check-ARCH-002
+  timestamp: '2026-04-11T13:45:49Z'
 ---
 
 

@@ -1,0 +1,12 @@
+id: 2026-04-11T13-35-56Z_check-REQ-001
+timestamp: '2026-04-11T13:35:56Z'
+checklist: check-REQ-001
+trigger: review
+artifacts_checked:
+- REQ-001
+results:
+- item: CKL-IP-001-02
+  result: failed
+  detail: 'grep: : No such file or directory'
+overall: failed
+blocking_failures: 1

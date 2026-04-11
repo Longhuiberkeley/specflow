@@ -1,0 +1,28 @@
+id: CKL-REV-ARCH
+name: "Architecture Review"
+category: review
+applies_to:
+  types: [architecture]
+version: 1
+
+items:
+  - id: CKL-REV-ARCH-01
+    check: "Public interfaces are defined and documented"
+    automated: false
+    llm_prompt: "Check that this architecture component defines clear public interfaces. Flag any components without interface definitions."
+    severity: blocking
+    mode: standard
+
+  - id: CKL-REV-ARCH-02
+    check: "Component responsibilities are clearly bounded"
+    automated: false
+    llm_prompt: "Verify the architecture component has a single clear responsibility. Flag overlapping concerns."
+    severity: warning
+    mode: standard
+
+  - id: CKL-REV-ARCH-03
+    check: "Error handling strategy defined"
+    automated: false
+    llm_prompt: "Check that error handling is specified for this component's interfaces. Flag any missing error paths."
+    severity: warning
+    mode: proactive

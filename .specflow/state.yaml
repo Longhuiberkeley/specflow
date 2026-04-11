@@ -1,8 +1,9 @@
 current: planning
 history:
-  - phase: idle
-    entered: '2026-04-10'
-    exited: '2026-04-11'
-  - phase: planning
-    entered: '2026-04-11'
+- phase: idle
+  entered: '2026-04-10'
+  exited: '2026-04-11'
+- phase: planning
+  entered: '2026-04-11'
+  exited: '2026-04-11'
 created: '2026-04-10'

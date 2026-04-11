@@ -471,7 +471,7 @@ def _auto_fix(root: Path) -> None:
     artifacts = art_lib.discover_artifacts(root)
     fixed_count = 0
     for art in artifacts:
-        actual = art_lib.compute_fingerprint(art.title, art.body)
+        actual = art_lib.compute_fingerprint(art.body)
         if art.fingerprint and art.fingerprint != actual:
             # Read, update frontmatter, write back
             text = art.path.read_text(encoding="utf-8")

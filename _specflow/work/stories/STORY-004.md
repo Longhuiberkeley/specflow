@@ -2,7 +2,7 @@
 id: STORY-004
 title: Implement split and merge operations for artifact refactoring
 type: story
-status: draft
+status: implemented
 priority: medium
 tags:
 - traceability
@@ -17,9 +17,13 @@ links:
 - target: DDD-001
   role: specified_by
 created: '2026-04-11'
+modified: '2026-04-11'
+fingerprint: sha256:8b507fe4c303ad6020988de6f6886a9d8e54ae6c302f01751a058a5e81446410
+checklists_applied:
+- checklist: check-STORY-004
+  timestamp: '2026-04-11T13:45:49Z'
 ---
 
-# Implement split and merge operations for artifact refactoring
 
 # Implement split and merge operations for artifact refactoring
 

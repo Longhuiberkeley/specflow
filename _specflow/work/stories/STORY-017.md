@@ -16,9 +16,10 @@ links:
 - target: ARCH-001
   role: guided_by
 created: '2026-04-11'
+checklists_applied:
+- checklist: check-STORY-017
+  timestamp: '2026-04-11T13:45:49Z'
 ---
-
-# Implement CI integration job with two-pass validation
 
 # Implement CI integration job with two-pass validation
 

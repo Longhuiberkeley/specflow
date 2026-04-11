@@ -1,46 +1,51 @@
 artifacts:
   REQ-001:
-    fingerprint: sha256:451849116ebc732c9af5961179e12382ac66ac34d2f949fa91c988980f0bfbd3
+    fingerprint: sha256:c71b2509598429b849bb6b3dfc9d3f3a37c93475736199d25d4eb1824aeeea21
     id: REQ-001
     status: approved
     tags:
+    - functional
     - cli
     - core
     - mvp
     title: CLI Interface
   REQ-002:
-    fingerprint: sha256:c4938c0128de2648b3e6aa91ee6f5fc7e65c4a21e6d0588d7e7cff0366bfa596
+    fingerprint: sha256:4ba4d17ec1bb8ae1c807faa04b0db738afc6efe4bb682c552ac7949abb8ae38e
     id: REQ-002
     status: approved
     tags:
+    - functional
     - core
     - format
     - mvp
     title: Artifact Structure
   REQ-003:
-    fingerprint: sha256:51c39100a15940c9f439eb4a38e3735058897519a665f180eee070baeb678ad7
+    fingerprint: sha256:005378fce8f74131c61a89a6d115791d59e95ff534b1718e980e8d4e3bce1fc5
     id: REQ-003
     status: approved
     tags:
+    - functional
     - traceability
     - impact
     - core
     title: Trace & Suspect Propagation
   REQ-004:
-    fingerprint: sha256:8c71e15cde74ca96f3549e4f225fcc9add1788078f17ec5cb7fdf1057688dcf6
+    fingerprint: sha256:6a83f01fd52a521a4be98b456c2e8eae0c1491a4f5407667f789aa38350973e1
     id: REQ-004
     status: approved
     tags:
+    - functional
     - ai
     - skills
     - token-optimization
     - core
     title: AI Execution Boundaries
   REQ-005:
-    fingerprint: sha256:8cd778896ef1c770097cb5e21c3625bc0b421021a018366a83ffcd370171f81e
+    fingerprint: sha256:a1ae6910e33d7f655918767e06c1bf3ae624105573ed7543ac68614f18d70e08
     id: REQ-005
     status: approved
     tags:
+    - functional
     - cross-platform
     - compliance
     - baselines
