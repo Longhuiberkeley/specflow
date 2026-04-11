@@ -34,6 +34,22 @@ def cmd_validate(args: argparse.Namespace) -> int:
     return validate_cmd.run(root, vars(args))
 
 
+def cmd_create(args: argparse.Namespace) -> int:
+    """Handle 'specflow create'."""
+    from specflow.commands import create as create_cmd
+
+    root = _find_project_root()
+    return create_cmd.run(root, vars(args))
+
+
+def cmd_update(args: argparse.Namespace) -> int:
+    """Handle 'specflow update'."""
+    from specflow.commands import update as update_cmd
+
+    root = _find_project_root()
+    return update_cmd.run(root, vars(args))
+
+
 def main(argv: list[str] | None = None) -> int:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
@@ -65,6 +81,26 @@ def main(argv: list[str] | None = None) -> int:
         help="Phase-gate checklist name (e.g., idle-to-discovering)",
     )
 
+    # specflow create
+    create_parser = subparsers.add_parser("create", help="Create a new artifact")
+    create_parser.add_argument("--type", required=True, help="Artifact type (e.g., requirement, story, architecture)")
+    create_parser.add_argument("--title", required=True, help="Artifact title")
+    create_parser.add_argument("--status", default="draft", help="Initial status (default: draft)")
+    create_parser.add_argument("--priority", help="Priority level")
+    create_parser.add_argument("--rationale", help="Rationale for this artifact")
+    create_parser.add_argument("--tags", help="Comma-separated tags")
+    create_parser.add_argument("--links", help="Links as JSON array or comma-separated target:role pairs")
+    create_parser.add_argument("--body", default="", help="Markdown body content")
+
+    # specflow update
+    update_parser = subparsers.add_parser("update", help="Update an artifact's frontmatter")
+    update_parser.add_argument("artifact_id", help="Artifact ID to update (e.g., REQ-001)")
+    update_parser.add_argument("--status", help="New status")
+    update_parser.add_argument("--title", help="New title")
+    update_parser.add_argument("--priority", help="New priority")
+    update_parser.add_argument("--rationale", help="New rationale")
+    update_parser.add_argument("--tags", help="Comma-separated tags (replaces existing)")
+
     args = parser.parse_args(argv)
 
     if args.command is None:
@@ -75,6 +111,8 @@ def main(argv: list[str] | None = None) -> int:
         "init": cmd_init,
         "status": cmd_status,
         "validate": cmd_validate,
+        "create": cmd_create,
+        "update": cmd_update,
     }
 
     handler = commands.get(args.command)

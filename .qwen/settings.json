@@ -1,0 +1,17 @@
+{
+  "context": {
+    "fileName": ["AGENTS.md"]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(rmdir *)",
+      "Bash(chmod *)",
+      "Bash(./scripts/validate-schema.sh *)",
+      "Bash(find *)",
+      "Bash(do *)",
+      "Bash(done)",
+      "Bash(bash *)"
+    ]
+  },
+  "$version": 3
+}

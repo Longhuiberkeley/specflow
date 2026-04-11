@@ -1,2 +1,212 @@
-artifacts: {}
-next_id: 1
+artifacts:
+  STORY-001:
+    id: STORY-001
+    title: Detect fingerprint changes and propagate suspect flags for downstream artifacts
+    status: draft
+    tags:
+    - traceability
+    - impact
+    - P4
+    fingerprint: sha256:cacd5375c5b0a03ef3a853eb0d3edd87c5af5dc022dff8129523ecdd94ec9394
+    children: []
+  STORY-002:
+    id: STORY-002
+    title: Report and resolve suspect flags via specflow impact command
+    status: draft
+    tags:
+    - traceability
+    - impact
+    - cli
+    - P4
+    fingerprint: sha256:357558f695103e11a70f274a65f650ec812b9a3c8b9575d61184052617735b63
+    children: []
+  STORY-003:
+    id: STORY-003
+    title: Implement typo cascade defense with 3-tier classification
+    status: draft
+    tags:
+    - traceability
+    - typo-defense
+    - P4
+    fingerprint: sha256:f3389df32603f402f3543ef21b324c1e022cdd7211e885a091f39d867e0e1528
+    children: []
+  STORY-004:
+    id: STORY-004
+    title: Implement split and merge operations for artifact refactoring
+    status: draft
+    tags:
+    - traceability
+    - refactoring
+    - P4
+    fingerprint: sha256:f1bffff466f3630e99ce053ed3454ab353c4055fa07183a2838c1df7eb211306
+    children: []
+  STORY-005:
+    id: STORY-005
+    title: Implement filesystem locks for concurrent artifact modification
+    status: draft
+    tags:
+    - concurrency
+    - locks
+    - P4
+    fingerprint: sha256:bc83178e615c1a4a0028cd1ecb3f7e3017c0cf79e51e63d8eefb9124214fef6f
+    children: []
+  STORY-006:
+    id: STORY-006
+    title: Group stories into dependency-free waves for parallel execution
+    status: draft
+    tags:
+    - execution
+    - orchestration
+    - P5
+    fingerprint: sha256:d7af314fb71b6bb31982e085e7f4067d1f8f522e4ae68a4386c1e8d00c219f2b
+    children: []
+  STORY-007:
+    id: STORY-007
+    title: Orchestrate parallel subagent execution with isolated context per story
+    status: draft
+    tags:
+    - execution
+    - orchestration
+    - subagents
+    - P5
+    fingerprint: sha256:d3b549000a1b25273b97445a715e5f932723acd7d57a14edbc43ba8c18f17fcd
+    children: []
+  STORY-008:
+    id: STORY-008
+    title: Assemble context-specific review criteria for specflow check
+    status: draft
+    tags:
+    - review
+    - checklists
+    - P5
+    fingerprint: sha256:c7f06999272f58dbd4f23ce04b61c641f541917f0d45b0b77e94cd4104612b57
+    children: []
+  STORY-009:
+    id: STORY-009
+    title: Implement proactive challenge engine for edge case discovery
+    status: draft
+    tags:
+    - challenge
+    - proactive
+    - review
+    - P5
+    fingerprint: sha256:3ff3cbdd3659f06b2a4c65466fc4c65793af9d0bc155d187ff1b8e798d156f4e
+    children: []
+  STORY-010:
+    id: STORY-010
+    title: Extract prevention patterns into learned checklists via specflow done
+    status: draft
+    tags:
+    - challenge
+    - reactive
+    - learning
+    - P5
+    fingerprint: sha256:6099e2869e091ba351eae0fe92d3bb8fca6a6534b28753f321e6be7c0fae3e16
+    children: []
+  STORY-011:
+    id: STORY-011
+    title: Create and compare immutable baselines for project state snapshots
+    status: draft
+    tags:
+    - compliance
+    - baselines
+    - P6
+    fingerprint: sha256:cf77d65a61b42b49e0e6b9c42f723f4e2afa99f67fe0568e16cffd0d6265e213
+    children: []
+  STORY-012:
+    id: STORY-012
+    title: Implement standards pack architecture and compliance gap analysis
+    status: draft
+    tags:
+    - compliance
+    - standards
+    - gap-analysis
+    - P6
+    fingerprint: sha256:5198f25fa448ea622faf7c27fbf26e06aac2e36d83a2e68751db41a95fcbd3fb
+    children: []
+  STORY-013:
+    id: STORY-013
+    title: Generate retroactive change records from git history and impact-log
+    status: draft
+    tags:
+    - compliance
+    - change-records
+    - P6
+    fingerprint: sha256:ad1e1bbc96c11585a72114bc8701ad8c33235a28de94fe05375ccdfd1591adac
+    children: []
+  STORY-014:
+    id: STORY-014
+    title: Enforce role-based access control via git hooks and CODEOWNERS
+    status: draft
+    tags:
+    - team
+    - rbac
+    - security
+    - P7
+    fingerprint: sha256:d2c3a151886afb75577e4db86a345c43bbd3573c8a510ae2350b6d8e994aad29
+    children: []
+  STORY-015:
+    id: STORY-015
+    title: Implement draft IDs on branches with CI renumbering on merge
+    status: draft
+    tags:
+    - team
+    - ids
+    - branching
+    - P7
+    fingerprint: sha256:ee2e3882e0cebdd82a076f97af5695e82fa9050d7521cbcbedff05472281810d
+    children: []
+  STORY-016:
+    id: STORY-016
+    title: Implement defect lifecycle tracking with V-model linkage
+    status: draft
+    tags:
+    - team
+    - defects
+    - lifecycle
+    - P7
+    fingerprint: sha256:47bd149df81f302c0b946ba1259d79879fdf7738f93973528d10fe1425f75108
+    children: []
+  STORY-017:
+    id: STORY-017
+    title: Implement CI integration job with two-pass validation
+    status: draft
+    tags:
+    - team
+    - ci
+    - validation
+    - P7
+    fingerprint: sha256:78dec1a1a27ae820a1b40a42c5a2dbf3e7ef025463d5045dd61c13437aea9fcf
+    children: []
+  STORY-018:
+    id: STORY-018
+    title: Implement ReqIF import and export for DOORS/Polarion interchange
+    status: draft
+    tags:
+    - team
+    - reqif
+    - interchange
+    - P7
+    fingerprint: sha256:effa9577e5e380b83f0833f5abd56565aa56d763625408970ea6947f2820cea6
+    children: []
+  STORY-019:
+    id: STORY-019
+    title: Implement tiered duplicate detection pipeline for artifacts
+    status: draft
+    tags:
+    - intelligence
+    - dedup
+    - P8
+    fingerprint: sha256:b2a8c7df2f58c46d7f42bc1d19ed608505c5c9b7cbe49800f496691609a602a6
+    children: []
+  STORY-020:
+    id: STORY-020
+    title: Implement dead code and code similarity detection for project hygiene
+    status: draft
+    tags:
+    - intelligence
+    - analysis
+    - P8
+    fingerprint: sha256:c9ab68d12e29efb75290e11d666fc87b5498c7edc9bc67a294ab3346a2051d59
+    children: []
+next_id: 21
