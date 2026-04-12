@@ -1,0 +1,28 @@
+id: CKL-REV-REQ
+name: "Requirement Review"
+category: review
+applies_to:
+  types: [requirement]
+version: 1
+
+items:
+  - id: CKL-REV-REQ-01
+    check: "Requirement is traceable (linked to architecture or stories)"
+    automated: false
+    llm_prompt: "Check if this requirement has downstream links (architecture, stories). If orphaned, flag as warning."
+    severity: warning
+    mode: standard
+
+  - id: CKL-REV-REQ-02
+    check: "Acceptance criteria are complete and unambiguous"
+    automated: false
+    llm_prompt: "Review each acceptance criterion. Flag any that are vague, unmeasurable, or missing expected/actual outcomes."
+    severity: blocking
+    mode: standard
+
+  - id: CKL-REV-REQ-03
+    check: "No conflicting requirements"
+    automated: false
+    llm_prompt: "Check if this requirement conflicts with or duplicates other requirements in the same domain."
+    severity: warning
+    mode: proactive

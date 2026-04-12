@@ -3,6 +3,11 @@
 Run after merging feature branches to main: every `PREFIX-SLUG-hash4` ID is
 replaced with `PREFIX-NNN` (continuing from each type's `_index.yaml.next_id`),
 and every reference to those IDs across the repo is rewritten in place.
+
+Operation is atomic with respect to on-disk state: the planning phase is
+read-only, then file content rewrites happen, then file renames, and only
+after all of that do the per-type indexes advance. A crash in any earlier
+step leaves indexes pointing at their pre-run values so re-running is safe.
 """
 
 from __future__ import annotations
@@ -21,11 +26,19 @@ CYAN = "\033[0;36m"
 NC = "\033[0m"
 
 
-def _build_id_map(root: Path, drafts: list[Path]) -> dict[str, str]:
-    """Allocate sequential IDs for every draft, grouped by artifact type."""
+def _plan_id_map(
+    root: Path,
+    drafts: list[Path],
+) -> tuple[dict[str, str], dict[str, tuple[Path, int]]]:
+    """Compute the draft-ID → sequential-ID mapping without touching disk.
+
+    Returns (id_map, per_prefix_counters) where per_prefix_counters[prefix]
+    is (index_path, new_next_id) — fed to _commit_indexes after all file
+    operations succeed.
+    """
     by_prefix: dict[str, list[tuple[Path, dict]]] = {}
     for path in drafts:
-        fm = draft_lib._read_frontmatter(path) or {}
+        fm = draft_lib.read_frontmatter(path) or {}
         draft_id = fm.get("id", "")
         if not draft_id:
             continue
@@ -33,6 +46,7 @@ def _build_id_map(root: Path, drafts: list[Path]) -> dict[str, str]:
         by_prefix.setdefault(prefix, []).append((path, fm))
 
     id_map: dict[str, str] = {}
+    counters: dict[str, tuple[Path, int]] = {}
     for prefix, entries in by_prefix.items():
         type_name = art_lib.PREFIX_TO_TYPE.get(prefix)
         if not type_name:
@@ -41,7 +55,7 @@ def _build_id_map(root: Path, drafts: list[Path]) -> dict[str, str]:
         if not rel_dir:
             continue
         index_path = root / "_specflow" / rel_dir / "_index.yaml"
-        index = art_lib._read_index(index_path)
+        index = art_lib.read_index(index_path)
         next_num = index.get("next_id", 1)
 
         # Stable ordering so two runs yield identical IDs.
@@ -51,10 +65,18 @@ def _build_id_map(root: Path, drafts: list[Path]) -> dict[str, str]:
             id_map[draft_id] = new_id
             next_num += 1
 
-        index["next_id"] = next_num
-        art_lib._write_index(index_path, index)
+        counters[prefix] = (index_path, next_num)
 
-    return id_map
+    return id_map, counters
+
+
+def _commit_indexes(counters: dict[str, tuple[Path, int]]) -> None:
+    """Advance each touched index's next_id. Called last so a crash earlier
+    leaves indexes at their original values."""
+    for _prefix, (index_path, next_num) in counters.items():
+        index = art_lib.read_index(index_path)
+        index["next_id"] = next_num
+        art_lib.write_index(index_path, index)
 
 
 def _rename_files(root: Path, id_map: dict[str, str]) -> int:
@@ -99,34 +121,17 @@ def run(root: Path, args: dict) -> int:
         print(f"{GREEN}✓ No draft IDs found — nothing to renumber.{NC}")
         return 0
 
-    # Build the plan first (mutates indexes only when dry-run is False).
-    if dry_run:
-        # Show a preview without writing; rebuild an ephemeral plan.
-        plan: dict[str, str] = {}
-        counters: dict[str, int] = {}
-        for path in drafts:
-            fm = draft_lib._read_frontmatter(path) or {}
-            draft_id = fm.get("id", "")
-            prefix = art_lib.get_prefix_from_id(draft_id)
-            type_name = art_lib.PREFIX_TO_TYPE.get(prefix)
-            rel_dir = art_lib.TYPE_TO_DIR.get(type_name or "")
-            if not rel_dir:
-                continue
-            idx_path = root / "_specflow" / rel_dir / "_index.yaml"
-            counter = counters.get(prefix)
-            if counter is None:
-                counter = art_lib._read_index(idx_path).get("next_id", 1)
-            plan[draft_id] = f"{prefix}-{counter:03d}"
-            counters[prefix] = counter + 1
+    id_map, counters = _plan_id_map(root, drafts)
 
-        print(f"{CYAN}Dry-run: would renumber {len(plan)} draft ID(s){NC}")
-        for draft_id, new_id in sorted(plan.items()):
+    if dry_run:
+        print(f"{CYAN}Dry-run: would renumber {len(id_map)} draft ID(s){NC}")
+        for draft_id, new_id in sorted(id_map.items()):
             print(f"  {draft_id} → {new_id}")
         return 0
 
-    id_map = _build_id_map(root, drafts)
     replacements = draft_lib.rewrite_references(root, id_map)
     renamed = _rename_files(root, id_map)
+    _commit_indexes(counters)
     _refresh_indexes(root)
 
     print(f"{GREEN}✓ Renumbered {len(id_map)} artifact(s){NC}")

@@ -1,0 +1,28 @@
+id: CKL-REV-STORY
+name: "Story Review"
+category: review
+applies_to:
+  types: [story]
+version: 1
+
+items:
+  - id: CKL-REV-STORY-01
+    check: "All acceptance criteria have Given/When/Then structure"
+    automated: false
+    llm_prompt: "Verify each acceptance criterion follows Given/When/Then or equivalent structured format with clear preconditions, actions, and expected outcomes."
+    severity: warning
+    mode: standard
+
+  - id: CKL-REV-STORY-02
+    check: "Story is implementable without ambiguity"
+    automated: false
+    llm_prompt: "Check if the story has enough detail to implement without requiring clarification. Flag vague requirements."
+    severity: blocking
+    mode: standard
+
+  - id: CKL-REV-STORY-03
+    check: "Edge cases identified"
+    automated: false
+    llm_prompt: "Enumerate edge cases for this story: null inputs, boundary conditions, concurrent access, error paths. Flag any unhandled."
+    severity: warning
+    mode: proactive

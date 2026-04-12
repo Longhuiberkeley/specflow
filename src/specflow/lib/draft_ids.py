@@ -105,6 +105,9 @@ def _read_frontmatter(path: Path) -> dict | None:
     return fm if isinstance(fm, dict) else None
 
 
+read_frontmatter = _read_frontmatter
+
+
 def rewrite_references(root: Path, id_map: dict[str, str]) -> int:
     """Replace every occurrence of a draft ID with its sequential replacement.
 

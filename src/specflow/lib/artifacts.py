@@ -371,6 +371,10 @@ def _write_index(index_path: Path, data: dict[str, Any]) -> None:
     index_path.write_text(yaml.dump(data, default_flow_style=False, sort_keys=False), encoding="utf-8")
 
 
+read_index = _read_index
+write_index = _write_index
+
+
 def _read_schema(schema_dir: Path, artifact_type: str) -> dict[str, Any] | None:
     schema_path = schema_dir / f"{artifact_type}.yaml"
     if not schema_path.exists():

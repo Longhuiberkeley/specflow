@@ -76,7 +76,7 @@ def copy_checklists(root: Path, template_dir: Path) -> None:
     if not checklists_src.exists():
         return
 
-    for category in ("phase-gates", "in-process", "readiness"):
+    for category in ("phase-gates", "in-process", "readiness", "review", "shared"):
         src_cat = checklists_src / category
         dst_cat = checklists_dst / category
         if not src_cat.exists():

@@ -1,0 +1,21 @@
+id: CKL-REV-IMPL
+name: "Implementation Review"
+category: review
+applies_to:
+  types: [unit-test, integration-test, qualification-test]
+version: 1
+
+items:
+  - id: CKL-REV-IMPL-01
+    check: "Test cases cover all acceptance criteria"
+    automated: false
+    llm_prompt: "Verify that test cases map to each acceptance criterion in the linked specification. Flag any untested criteria."
+    severity: blocking
+    mode: standard
+
+  - id: CKL-REV-IMPL-02
+    check: "Error cases are tested"
+    automated: false
+    llm_prompt: "Check that error handling paths are tested: invalid input, timeout, missing dependencies."
+    severity: warning
+    mode: standard
