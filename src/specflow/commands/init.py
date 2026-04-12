@@ -1,11 +1,13 @@
 """specflow init — Scaffold a SpecFlow project."""
 
 import shutil
+import stat
 from pathlib import Path
 
 import yaml
 
 from specflow.lib import platform as plat_lib
+from specflow.lib import rbac as rbac_lib
 from specflow.lib import scaffold as scaffold_lib
 from specflow.lib import config as config_lib
 
@@ -183,6 +185,64 @@ def run(root: Path, args: dict) -> int:
     for name in skill_names:
         print(f"  ✓ {name}")
 
+    # 11. Install git pre-commit hook (no-op if no roles configured)
+    _install_pre_commit_hook(root)
+
+    # 12. Render CODEOWNERS if roles are populated
+    _render_codeowners(root)
+
+    # 13. Install CI workflow unless --no-ci
+    want_ci = not args.get("no_ci", False)
+    if want_ci:
+        _install_ci_workflow(root)
+
     print(f"\n✓ SpecFlow initialized in {root}")
     print("  Run 'uv run specflow status' to see the project dashboard.")
     return 0
+
+
+def _install_pre_commit_hook(root: Path) -> None:
+    git_dir = root / ".git"
+    if not git_dir.is_dir():
+        return
+    hooks_dir = git_dir / "hooks"
+    hooks_dir.mkdir(parents=True, exist_ok=True)
+    hook_path = hooks_dir / "pre-commit"
+    if hook_path.exists() and "specflow hook pre-commit" not in hook_path.read_text(encoding="utf-8", errors="ignore"):
+        print(f"  ⚠ .git/hooks/pre-commit exists and is not specflow-owned — leaving as-is")
+        return
+    hook_path.write_text(
+        "#!/usr/bin/env bash\n"
+        "# specflow pre-commit hook — installed by `specflow init`\n"
+        "exec uv run specflow hook pre-commit \"$@\"\n",
+        encoding="utf-8",
+    )
+    mode = hook_path.stat().st_mode
+    hook_path.chmod(mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+    print(f"  ✓ Installed .git/hooks/pre-commit")
+
+
+def _render_codeowners(root: Path) -> None:
+    body = rbac_lib.render_codeowners(root)
+    if not body:
+        return
+    target = root / "CODEOWNERS"
+    if target.exists():
+        print(f"  ⚠ CODEOWNERS already exists — leaving as-is")
+        return
+    target.write_text(body, encoding="utf-8")
+    print(f"  ✓ Generated CODEOWNERS")
+
+
+def _install_ci_workflow(root: Path) -> None:
+    template = _get_package_templates() / "ci" / "github-actions.yml"
+    if not template.exists():
+        return
+    workflows_dir = root / ".github" / "workflows"
+    workflows_dir.mkdir(parents=True, exist_ok=True)
+    dst = workflows_dir / "specflow.yml"
+    if dst.exists():
+        print(f"  ⚠ .github/workflows/specflow.yml already exists — leaving as-is")
+        return
+    shutil.copy2(str(template), str(dst))
+    print(f"  ✓ Installed .github/workflows/specflow.yml")

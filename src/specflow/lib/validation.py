@@ -74,14 +74,18 @@ def validate_artifact_schema(
                 "message": f'Missing required field "{field_name}"',
             })
 
-    # ID format
+    # ID format — accept either the schema's format or the draft-ID format.
+    # Draft IDs (e.g. REQ-AUTH-a7b9) are generated on feature branches and
+    # renumbered to sequential integers by `specflow sequence` on merge.
     art_id = fm.get("id", "")
     id_fmt = schema.get("id_format")
     if id_fmt and art_id and not re.match(id_fmt, art_id):
-        issues.append({
-            "severity": "blocking",
-            "message": f'Invalid ID format "{art_id}" (expected pattern: {id_fmt})',
-        })
+        from specflow.lib import draft_ids as _draft
+        if not _draft.is_draft_id(art_id):
+            issues.append({
+                "severity": "blocking",
+                "message": f'Invalid ID format "{art_id}" (expected pattern: {id_fmt})',
+            })
 
     # Status allowed values
     status = fm.get("status", "")

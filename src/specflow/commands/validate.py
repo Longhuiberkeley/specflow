@@ -188,12 +188,15 @@ def _check_ids(
         else:
             seen[art.id] = art.path.name
 
-    # Format
+    # Format (draft IDs are always accepted; renumbered by `specflow sequence`)
+    from specflow.lib import draft_ids as _draft
     for art in artifacts:
         schema = schemas.get(art.type)
         if schema:
             id_fmt = schema.get("id_format")
             if id_fmt and not art_lib.validate_id_format(art.id, id_fmt):
+                if _draft.is_draft_id(art.id):
+                    continue
                 blocking += 1
                 details.append(f"  ✗ [{art.id}] invalid format (expected: {id_fmt})")
 
@@ -297,6 +300,19 @@ def run(root: Path, args: dict) -> int:
         print(f"{YELLOW}⚠ No _specflow/ directory found{NC}")
         print("   Run 'uv run specflow init' first.")
         return 1
+
+    # --method llm: delegate to the Pass-2 orchestrator (non-blocking summary).
+    method = args.get("method", "programmatic")
+    if method == "llm":
+        from specflow.lib import ci as ci_lib
+        outcome = ci_lib.run_pass_two(root)
+        report = ci_lib.format_pass_two_report(outcome)
+        print(f"\n{CYAN}SpecFlow Validate — Pass 2 (LLM-judged){NC}")
+        print(f"{CYAN}{'─' * 50}{NC}")
+        print(report)
+        print(f"{CYAN}{'─' * 50}{NC}")
+        # Pass 2 never blocks: always exit 0 so CI can post the comment.
+        return 0
 
     # Handle --gate mode
     check_type = args.get("type")

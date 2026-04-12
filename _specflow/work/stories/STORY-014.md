@@ -2,7 +2,7 @@
 id: STORY-014
 title: Enforce role-based access control via git hooks and CODEOWNERS
 type: story
-status: draft
+status: implemented
 priority: medium
 tags:
 - team
@@ -19,6 +19,8 @@ created: '2026-04-11'
 checklists_applied:
 - checklist: check-STORY-014
   timestamp: '2026-04-11T13:45:49Z'
+modified: '2026-04-12'
+fingerprint: sha256:91ea8b11001c247d1b63a6ec3ddb2b39d16ee5cc9a6704b7fab576010d764531
 ---
 
 # Enforce role-based access control via git hooks and CODEOWNERS

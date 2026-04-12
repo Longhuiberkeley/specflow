@@ -122,9 +122,9 @@ artifacts:
     - P6
     title: Generate retroactive change records from git history and impact-log
   STORY-014:
-    fingerprint: ''
+    fingerprint: sha256:91ea8b11001c247d1b63a6ec3ddb2b39d16ee5cc9a6704b7fab576010d764531
     id: STORY-014
-    status: draft
+    status: implemented
     tags:
     - team
     - rbac
@@ -132,9 +132,9 @@ artifacts:
     - P7
     title: Enforce role-based access control via git hooks and CODEOWNERS
   STORY-015:
-    fingerprint: ''
+    fingerprint: sha256:c4a2d22865de0d44d6edaabb3f8f091aadd20f4972a88cb754b6234b75800e5a
     id: STORY-015
-    status: draft
+    status: implemented
     tags:
     - team
     - ids
@@ -142,9 +142,9 @@ artifacts:
     - P7
     title: Implement draft IDs on branches with CI renumbering on merge
   STORY-016:
-    fingerprint: ''
+    fingerprint: sha256:bcd75bb30bed322477702cb5db806913fc0cc9cecb992d7ecf28e724a6ba021c
     id: STORY-016
-    status: draft
+    status: implemented
     tags:
     - team
     - defects
@@ -152,9 +152,9 @@ artifacts:
     - P7
     title: Implement defect lifecycle tracking with V-model linkage
   STORY-017:
-    fingerprint: ''
+    fingerprint: sha256:802ee56ce791816f7c25d7c679bd59b7464b47082d75609232399697daac96ad
     id: STORY-017
-    status: draft
+    status: implemented
     tags:
     - team
     - ci
@@ -162,9 +162,9 @@ artifacts:
     - P7
     title: Implement CI integration job with two-pass validation
   STORY-018:
-    fingerprint: ''
+    fingerprint: sha256:2cfa543fa94c9517dd2cf52907a4574c4ce116f02a12c6f85babd3916b6c23b9
     id: STORY-018
-    status: draft
+    status: implemented
     tags:
     - team
     - reqif

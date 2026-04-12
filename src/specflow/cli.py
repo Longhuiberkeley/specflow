@@ -114,6 +114,38 @@ def cmd_document_changes(args: argparse.Namespace) -> int:
     return doc_changes_cmd.run(root, vars(args))
 
 
+def cmd_hook(args: argparse.Namespace) -> int:
+    """Handle 'specflow hook'."""
+    from specflow.commands import hook as hook_cmd
+
+    root = _find_project_root()
+    return hook_cmd.run(root, vars(args))
+
+
+def cmd_sequence(args: argparse.Namespace) -> int:
+    """Handle 'specflow sequence'."""
+    from specflow.commands import sequence as sequence_cmd
+
+    root = _find_project_root()
+    return sequence_cmd.run(root, vars(args))
+
+
+def cmd_import(args: argparse.Namespace) -> int:
+    """Handle 'specflow import'."""
+    from specflow.commands import import_cmd as import_mod
+
+    root = _find_project_root()
+    return import_mod.run(root, vars(args))
+
+
+def cmd_export(args: argparse.Namespace) -> int:
+    """Handle 'specflow export'."""
+    from specflow.commands import export_cmd as export_mod
+
+    root = _find_project_root()
+    return export_mod.run(root, vars(args))
+
+
 def main(argv: list[str] | None = None) -> int:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
@@ -127,6 +159,18 @@ def main(argv: list[str] | None = None) -> int:
     init_parser.add_argument(
         "--preset",
         help="Industry pack preset to apply during init (e.g., iso26262)",
+    )
+    init_parser.add_argument(
+        "--with-ci",
+        action="store_true",
+        dest="with_ci",
+        help="Install the GitHub Actions workflow for SpecFlow validation (default on)",
+    )
+    init_parser.add_argument(
+        "--no-ci",
+        action="store_true",
+        dest="no_ci",
+        help="Skip CI workflow installation",
     )
 
     # specflow status
@@ -147,6 +191,12 @@ def main(argv: list[str] | None = None) -> int:
     validate_parser.add_argument(
         "--gate",
         help="Phase-gate checklist name (e.g., idle-to-discovering)",
+    )
+    validate_parser.add_argument(
+        "--method",
+        choices=["programmatic", "llm"],
+        default="programmatic",
+        help="Validation method: 'programmatic' (zero tokens, default) or 'llm' (LLM-judged, opt-in)",
     )
 
     # specflow create
@@ -236,6 +286,49 @@ def main(argv: list[str] | None = None) -> int:
         help="Git ref (tag, branch, or SHA) to start from",
     )
 
+    # specflow hook (nested subcommands)
+    hook_parser = subparsers.add_parser(
+        "hook",
+        help="Manage git hooks for RBAC enforcement",
+    )
+    hook_sub = hook_parser.add_subparsers(dest="hook_subcommand")
+    hook_sub.add_parser("install", help="Install .git/hooks/pre-commit")
+    hook_sub.add_parser("pre-commit", help="Run the pre-commit check (invoked by git)")
+
+    # specflow sequence
+    sequence_parser = subparsers.add_parser(
+        "sequence",
+        help="Renumber draft IDs to sequential integers and rewrite references",
+    )
+    sequence_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        dest="dry_run",
+        help="Print the proposed renumber plan without writing",
+    )
+
+    # specflow import (nested: reqif)
+    import_parser = subparsers.add_parser(
+        "import",
+        help="Import artifacts from an external format",
+    )
+    import_sub = import_parser.add_subparsers(dest="import_subcommand")
+    import_reqif_parser = import_sub.add_parser("reqif", help="Import requirements from ReqIF XML")
+    import_reqif_parser.add_argument("file", help="Path to the ReqIF XML file")
+
+    # specflow export (nested: reqif)
+    export_parser = subparsers.add_parser(
+        "export",
+        help="Export artifacts to an external format",
+    )
+    export_sub = export_parser.add_subparsers(dest="export_subcommand")
+    export_reqif_parser = export_sub.add_parser("reqif", help="Export requirements to ReqIF XML")
+    export_reqif_parser.add_argument(
+        "--output",
+        required=True,
+        help="Path to write the ReqIF XML file",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command is None:
@@ -256,6 +349,10 @@ def main(argv: list[str] | None = None) -> int:
         "baseline": cmd_baseline,
         "compliance": cmd_compliance,
         "document-changes": cmd_document_changes,
+        "hook": cmd_hook,
+        "sequence": cmd_sequence,
+        "import": cmd_import,
+        "export": cmd_export,
     }
 
     handler = commands.get(args.command)

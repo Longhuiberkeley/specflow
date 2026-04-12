@@ -464,8 +464,12 @@ def create_artifact(
     if artifact_id:
         new_id = artifact_id
     else:
-        next_num = index_data.get("next_id", 1)
-        new_id = f"{prefix}-{next_num:03d}"
+        from specflow.lib import draft_ids as draft_lib
+        if draft_lib.is_feature_branch(root):
+            new_id = draft_lib.generate_draft_id(title, prefix)
+        else:
+            next_num = index_data.get("next_id", 1)
+            new_id = f"{prefix}-{next_num:03d}"
 
     for existing_id in index_data.get("artifacts", {}):
         if existing_id == new_id:
@@ -496,7 +500,8 @@ def create_artifact(
         "fingerprint": fingerprint,
         "children": [],
     }
-    if artifact_id is None:
+    from specflow.lib import draft_ids as _draft
+    if artifact_id is None and not _draft.is_draft_id(new_id):
         index_data["next_id"] = next_num + 1
     _write_index(index_path, index_data)
 

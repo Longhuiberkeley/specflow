@@ -2,7 +2,7 @@
 id: STORY-018
 title: Implement ReqIF import and export for DOORS/Polarion interchange
 type: story
-status: draft
+status: implemented
 priority: low
 tags:
 - team
@@ -19,6 +19,8 @@ created: '2026-04-11'
 checklists_applied:
 - checklist: check-STORY-018
   timestamp: '2026-04-11T13:45:49Z'
+modified: '2026-04-12'
+fingerprint: sha256:2cfa543fa94c9517dd2cf52907a4574c4ce116f02a12c6f85babd3916b6c23b9
 ---
 
 # Implement ReqIF import and export for DOORS/Polarion interchange
