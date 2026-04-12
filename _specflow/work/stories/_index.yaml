@@ -19,7 +19,7 @@ artifacts:
     - P4
     title: Report and resolve suspect flags via specflow impact command
   STORY-003:
-    fingerprint: sha256:a32999724d08e684a4ed4d62bdd860492663eeb99e5d924301fd819b8c77129b
+    fingerprint: sha256:ffd852f3fbc25b46c53f68130ee55a44686570452d8bbc443c5cfbf211d26843
     id: STORY-003
     status: implemented
     tags:
@@ -94,9 +94,9 @@ artifacts:
     - P5
     title: Extract prevention patterns into learned checklists via specflow done
   STORY-011:
-    fingerprint: ''
+    fingerprint: sha256:fe09bc983eda809862e7cda375cb70c5ce864cee9467237cb7e228123b42f750
     id: STORY-011
-    status: draft
+    status: implemented
     tags:
     - compliance
     - baselines
@@ -113,9 +113,9 @@ artifacts:
     - P6
     title: Implement standards pack architecture and compliance gap analysis
   STORY-013:
-    fingerprint: ''
+    fingerprint: sha256:ca1d162d382f6650201384478ca2213e4bdaa93e398dc48373fae8fb94e6c85f
     id: STORY-013
-    status: draft
+    status: implemented
     tags:
     - compliance
     - change-records

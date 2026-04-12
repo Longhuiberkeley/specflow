@@ -90,6 +90,30 @@ def cmd_tweak(args: argparse.Namespace) -> int:
     return tweak_cmd.run(root, vars(args))
 
 
+def cmd_baseline(args: argparse.Namespace) -> int:
+    """Handle 'specflow baseline'."""
+    from specflow.commands import baseline as baseline_cmd
+
+    root = _find_project_root()
+    return baseline_cmd.run(root, vars(args))
+
+
+def cmd_compliance(args: argparse.Namespace) -> int:
+    """Handle 'specflow compliance'."""
+    from specflow.commands import compliance as compliance_cmd
+
+    root = _find_project_root()
+    return compliance_cmd.run(root, vars(args))
+
+
+def cmd_document_changes(args: argparse.Namespace) -> int:
+    """Handle 'specflow document-changes'."""
+    from specflow.commands import document_changes as doc_changes_cmd
+
+    root = _find_project_root()
+    return doc_changes_cmd.run(root, vars(args))
+
+
 def main(argv: list[str] | None = None) -> int:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
@@ -100,6 +124,10 @@ def main(argv: list[str] | None = None) -> int:
 
     # specflow init
     init_parser = subparsers.add_parser("init", help="Scaffold a SpecFlow project")
+    init_parser.add_argument(
+        "--preset",
+        help="Industry pack preset to apply during init (e.g., iso26262)",
+    )
 
     # specflow status
     status_parser = subparsers.add_parser("status", help="Show project dashboard")
@@ -168,6 +196,46 @@ def main(argv: list[str] | None = None) -> int:
     tweak_parser = subparsers.add_parser("tweak", help="Minor edit — update fingerprint without suspect cascade")
     tweak_parser.add_argument("filepath", help="Path to the artifact file")
 
+    # specflow baseline (nested subcommands)
+    baseline_parser = subparsers.add_parser(
+        "baseline",
+        help="Create and compare immutable baselines",
+    )
+    baseline_sub = baseline_parser.add_subparsers(dest="baseline_subcommand")
+
+    baseline_create_parser = baseline_sub.add_parser(
+        "create", help="Create a new immutable baseline snapshot"
+    )
+    baseline_create_parser.add_argument(
+        "baseline_name", help="Baseline name (e.g., v1.0)"
+    )
+
+    baseline_diff_parser = baseline_sub.add_parser(
+        "diff", help="Compare two baselines"
+    )
+    baseline_diff_parser.add_argument("baseline_a", help="First baseline name")
+    baseline_diff_parser.add_argument("baseline_b", help="Second baseline name")
+
+    # specflow compliance
+    compliance_parser = subparsers.add_parser(
+        "compliance", help="Show compliance coverage and gaps against a standard"
+    )
+    compliance_parser.add_argument(
+        "--standard",
+        help="Standard name to report on (e.g., iso26262); required if multiple standards are installed",
+    )
+
+    # specflow document-changes
+    doc_changes_parser = subparsers.add_parser(
+        "document-changes",
+        help="Generate retroactive change records (DEC artifacts) from git history",
+    )
+    doc_changes_parser.add_argument(
+        "--since",
+        required=True,
+        help="Git ref (tag, branch, or SHA) to start from",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command is None:
@@ -185,6 +253,9 @@ def main(argv: list[str] | None = None) -> int:
         "done": cmd_done,
         "impact": cmd_impact,
         "tweak": cmd_tweak,
+        "baseline": cmd_baseline,
+        "compliance": cmd_compliance,
+        "document-changes": cmd_document_changes,
     }
 
     handler = commands.get(args.command)

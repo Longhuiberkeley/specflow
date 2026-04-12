@@ -10,6 +10,44 @@ from specflow.lib import scaffold as scaffold_lib
 from specflow.lib import config as config_lib
 
 
+def _get_packs_dir() -> Path:
+    """Return the path to the bundled industry packs inside the package."""
+    return Path(__file__).parent.parent / "packs"
+
+
+def _apply_preset(root: Path, preset: str) -> int:
+    """Apply a pack preset and update config. Returns 0 on success, 1 on failure."""
+    packs_dir = _get_packs_dir()
+    result = scaffold_lib.apply_pack(root, preset, packs_dir)
+    if not result["ok"]:
+        print(f"  ✗ Pack '{preset}' not applied: {result['error']}")
+        return 1
+
+    config = config_lib.read_config(root)
+    active = config.setdefault("active_packs", [])
+    if preset not in active:
+        active.append(preset)
+
+    types_added = result.get("types_added", []) or []
+    if types_added:
+        registered_types = config.setdefault("artifact_types", [])
+        for t in types_added:
+            if t not in registered_types:
+                registered_types.append(t)
+
+    config_lib.write_config(root, config)
+
+    pieces = []
+    if types_added:
+        pieces.append(f"{len(types_added)} artifact type(s)")
+    standards_added = result.get("standards_added", []) or []
+    if standards_added:
+        pieces.append(f"{len(standards_added)} standard(s)")
+    detail = ", ".join(pieces) if pieces else "no new items"
+    print(f"  ✓ Pack '{preset}' applied ({detail})")
+    return 0
+
+
 def _get_package_templates() -> Path:
     """Return the path to the bundled templates inside the package."""
     return Path(__file__).parent.parent / "templates"
@@ -127,6 +165,13 @@ def run(root: Path, args: dict) -> int:
     print("  Copying checklist templates...")
     scaffold_lib.copy_checklists(root, _get_package_templates())
     print("  ✓ Checklist templates copied")
+
+    # 8b. Apply preset pack if requested
+    preset = args.get("preset")
+    if preset:
+        print(f"  Applying preset pack '{preset}'...")
+        if _apply_preset(root, preset) != 0:
+            return 1
 
     # 9. Append AGENTS.md section
     _append_agents_section(root, instruction_file)

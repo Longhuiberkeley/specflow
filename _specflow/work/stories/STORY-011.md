@@ -2,7 +2,7 @@
 id: STORY-011
 title: Create and compare immutable baselines for project state snapshots
 type: story
-status: draft
+status: implemented
 priority: high
 tags:
 - compliance
@@ -18,6 +18,8 @@ created: '2026-04-11'
 checklists_applied:
 - checklist: check-STORY-011
   timestamp: '2026-04-11T13:45:49Z'
+modified: '2026-04-12'
+fingerprint: sha256:fe09bc983eda809862e7cda375cb70c5ce864cee9467237cb7e228123b42f750
 ---
 
 # Create and compare immutable baselines for project state snapshots

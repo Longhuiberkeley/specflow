@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 
 from specflow.lib import artifacts as art_lib
+from specflow.lib import standards as standards_lib
 from specflow.lib import validation as val_lib
 
 # ANSI color codes
@@ -90,11 +90,21 @@ def _check_links(
     warnings = 0
     details: list[str] = []
 
+    # Clause IDs from installed standards are valid targets for `complies_with` links.
+    standard_clause_ids: set[str] = set()
+    for standard in standards_lib.load_standards(root):
+        for clause in standard.get("clauses", []) or []:
+            if isinstance(clause, dict) and clause.get("id"):
+                standard_clause_ids.add(clause["id"])
+
     for art in artifacts:
         for link in art.links:
-            if link.target not in id_index:
-                blocking += 1
-                details.append(f"  ✗ [{art.id}] broken link: {link.target} (not found)")
+            if link.target in id_index:
+                continue
+            if link.role == "complies_with" and link.target in standard_clause_ids:
+                continue
+            blocking += 1
+            details.append(f"  ✗ [{art.id}] broken link: {link.target} (not found)")
 
     # Orphans
     orphans = art_lib.find_orphans(artifacts)

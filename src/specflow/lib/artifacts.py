@@ -38,7 +38,8 @@ PREFIX_TO_TYPE: dict[str, str] = {
     "DEF": "defect",
 }
 
-# V-model verification pairs: (spec_type, test_type)
+TYPE_TO_PREFIX: dict[str, str] = {v: k for k, v in PREFIX_TO_TYPE.items()}
+
 V_MODEL_PAIRS: dict[str, str] = {
     "requirement": "qualification-test",
     "architecture": "integration-test",
@@ -144,6 +145,48 @@ def parse_artifact(path: Path) -> Artifact | None:
     return Artifact(path=path, frontmatter=fm, body=body, links=links)
 
 
+def register_artifact_type(type_name: str, prefix: str, rel_dir: str) -> None:
+    """Register a new artifact type at runtime (used when applying a pack).
+
+    Mutates the module-level TYPE_TO_DIR, PREFIX_TO_TYPE, and TYPE_TO_PREFIX
+    dicts. Idempotent — safe to call multiple times with the same arguments.
+    """
+    TYPE_TO_DIR[type_name] = rel_dir
+    PREFIX_TO_TYPE[prefix] = type_name
+    TYPE_TO_PREFIX[type_name] = prefix
+
+
+def _load_active_packs(root: Path) -> None:
+    """Register artifact types declared in installed pack schema files.
+
+    Reads .specflow/schema/*.yaml and registers any type/prefix/directory
+    combinations that are not already present. Lightweight and idempotent.
+    """
+    schema_dir = root / ".specflow" / "schema"
+    if not schema_dir.exists():
+        return
+    for schema_file in schema_dir.glob("*.yaml"):
+        try:
+            data = yaml.safe_load(schema_file.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        if not isinstance(data, dict):
+            continue
+        type_name = data.get("type", "")
+        prefix = data.get("prefix", "")
+        directory = data.get("directory", "")
+        if not (type_name and prefix and directory):
+            continue
+        if type_name in TYPE_TO_DIR:
+            continue
+        # Strip leading "_specflow/" if present; TYPE_TO_DIR stores relative paths.
+        rel = directory
+        if rel.startswith("_specflow/"):
+            rel = rel[len("_specflow/"):]
+        rel = rel.rstrip("/")
+        register_artifact_type(type_name, prefix, rel)
+
+
 def discover_artifacts(root: Path, artifact_type: str | None = None) -> list[Artifact]:
     """Discover all artifacts in _specflow/ directory.
 
@@ -157,6 +200,9 @@ def discover_artifacts(root: Path, artifact_type: str | None = None) -> list[Art
     specflow_dir = root / "_specflow"
     if not specflow_dir.exists():
         return []
+
+    # Register any pack-added artifact types before scanning.
+    _load_active_packs(root)
 
     artifacts = []
 
@@ -277,14 +323,6 @@ def find_missing_v_pairs(artifacts: list[Artifact]) -> list[tuple[Artifact, str]
             continue
 
         test_type = V_MODEL_PAIRS[spec_type]
-        # Determine the expected test prefix
-        test_prefix_map = {
-            "qualification-test": "QT",
-            "integration-test": "IT",
-            "unit-test": "UT",
-        }
-        # Reverse: get spec prefix
-        spec_prefix_map = {v: k for k, v in test_prefix_map.items()}
         spec_prefix = None
         for prefix, stype in PREFIX_TO_TYPE.items():
             if stype == spec_type:
@@ -308,9 +346,6 @@ def find_missing_v_pairs(artifacts: list[Artifact]) -> list[tuple[Artifact, str]
             missing.append((art, spec_prefix))
 
     return missing
-
-
-TYPE_TO_PREFIX: dict[str, str] = {v: k for k, v in PREFIX_TO_TYPE.items()}
 
 
 def get_stories_by_status(root: Path, status: str) -> list[Artifact]:
@@ -398,6 +433,9 @@ def create_artifact(
     body: str = "",
     artifact_id: str | None = None,
 ) -> dict[str, Any]:
+    # Register any pack-added artifact types before lookup.
+    _load_active_packs(root)
+
     specflow_dir = root / "_specflow"
     schema_dir = root / ".specflow" / "schema"
 
@@ -470,6 +508,8 @@ def update_artifact(
     artifact_id: str,
     **updates: Any,
 ) -> dict[str, Any]:
+    _load_active_packs(root)
+
     file_path = resolve_link_target(root, artifact_id)
     if file_path is None:
         return {"ok": False, "error": f"Artifact '{artifact_id}' not found"}
@@ -541,6 +581,7 @@ def rebuild_index(root: Path, artifact_type: str | None = None) -> dict[str, Any
     if not specflow_dir.exists():
         return {"rebuilt": 0}
 
+    _load_active_packs(root)
     types_to_rebuild = [artifact_type] if artifact_type else list(TYPE_TO_DIR.keys())
     total_rebuilt = 0
 

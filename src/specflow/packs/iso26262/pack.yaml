@@ -1,0 +1,7 @@
+name: iso26262
+version: "0.1-demo"
+description: "ISO 26262 demo pack — minimal stubs to prove pack architecture. NOT a real compliance pack."
+adds_artifact_types:
+  - hazard
+adds_directories:
+  - specs/hazards
