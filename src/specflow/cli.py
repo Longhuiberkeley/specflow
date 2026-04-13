@@ -146,6 +146,14 @@ def cmd_export(args: argparse.Namespace) -> int:
     return export_mod.run(root, vars(args))
 
 
+def cmd_detect(args: argparse.Namespace) -> int:
+    """Handle 'specflow detect'."""
+    from specflow.commands import detect as detect_cmd
+
+    root = _find_project_root()
+    return detect_cmd.run(root, vars(args))
+
+
 def main(argv: list[str] | None = None) -> int:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
@@ -209,6 +217,17 @@ def main(argv: list[str] | None = None) -> int:
     create_parser.add_argument("--tags", help="Comma-separated tags")
     create_parser.add_argument("--links", help="Links as JSON array or comma-separated target:role pairs")
     create_parser.add_argument("--body", default="", help="Markdown body content")
+    create_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Skip the duplicate-check prompt and create anyway",
+    )
+    create_parser.add_argument(
+        "--skip-dedup-check",
+        action="store_true",
+        dest="skip_dedup_check",
+        help="Bypass the search-before-create duplicate check entirely",
+    )
 
     # specflow update
     update_parser = subparsers.add_parser("update", help="Update an artifact's frontmatter")
@@ -231,6 +250,11 @@ def main(argv: list[str] | None = None) -> int:
     check_parser.add_argument("--all", action="store_true", help="Check all artifacts")
     check_parser.add_argument("--gate", help="Phase-gate checklist (e.g., planning-to-executing)")
     check_parser.add_argument("--proactive", action="store_true", help="Include proactive challenge items")
+    check_parser.add_argument(
+        "--dedup",
+        action="store_true",
+        help="Run the 3-tier duplicate-detection pipeline (tier 1+2 here, tier 3 in skill)",
+    )
 
     # specflow done
     done_parser = subparsers.add_parser("done", help="Close current phase and extract prevention patterns")
@@ -329,6 +353,46 @@ def main(argv: list[str] | None = None) -> int:
         help="Path to write the ReqIF XML file",
     )
 
+    # specflow detect (nested subcommands)
+    detect_parser = subparsers.add_parser(
+        "detect",
+        help="Project-hygiene scans (dead code, function similarity) — informational only",
+    )
+    detect_sub = detect_parser.add_subparsers(dest="detect_subcommand")
+
+    detect_dead_parser = detect_sub.add_parser(
+        "dead-code", help="Report top-level functions/classes never referenced"
+    )
+    detect_dead_parser.add_argument(
+        "--src-dir",
+        dest="src_dir",
+        default="src",
+        help="Source root to scan (default: src)",
+    )
+
+    detect_sim_parser = detect_sub.add_parser(
+        "similarity", help="Report function pairs with near-identical bodies"
+    )
+    detect_sim_parser.add_argument(
+        "--src-dir",
+        dest="src_dir",
+        default="src",
+        help="Source root to scan (default: src)",
+    )
+    detect_sim_parser.add_argument(
+        "--min-statements",
+        dest="min_statements",
+        type=int,
+        default=10,
+        help="Minimum function length to consider (default: 10)",
+    )
+    detect_sim_parser.add_argument(
+        "--threshold",
+        type=float,
+        default=0.9,
+        help="Jaccard similarity threshold (default: 0.9)",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command is None:
@@ -353,6 +417,7 @@ def main(argv: list[str] | None = None) -> int:
         "sequence": cmd_sequence,
         "import": cmd_import,
         "export": cmd_export,
+        "detect": cmd_detect,
     }
 
     handler = commands.get(args.command)

@@ -310,6 +310,8 @@ All programmatic commands are `specflow <subcommand>` subcommands of the Python 
 | `specflow compliance` | Gap analysis against imported standard clauses |
 | `specflow baseline create` | Snapshot current state into immutable baseline YAML |
 | `specflow baseline diff` | Compare two baselines |
+| `specflow detect dead-code` | AST-based informational scan for declared-but-unreferenced functions/classes (exit 0 regardless of findings) |
+| `specflow detect similarity` | Token-level informational scan for near-duplicate function bodies (exit 0 regardless of findings) |
 
 ### State machine
 
@@ -370,6 +372,23 @@ fingerprint_new: "sha256:def..."
 flagged_suspects: [ARCH-001, DDD-001, DDD-002, UT-001]
 resolved: false
 ```
+
+## Duplicate Detection
+
+Invoked via `specflow check --dedup` and as a search-before-create step inside `specflow create`. A three-tier pipeline escalates only as needed:
+
+1. **Tag Jaccard** (Python, zero tokens) — filters artifact pairs by set similarity of `tags`.
+2. **TF-IDF cosine** (Python, zero tokens, stdlib only) — filters survivors by keyword similarity on title + normative body.
+3. **LLM confirmation** (agent, token cost) — the check skill reads the candidates file and asks the user to confirm/merge/ignore.
+
+Surviving candidates are written to `.specflow/dedup-candidates.yaml` with tier scores and a confidence label. The file is advisory — the user decides whether to merge artifacts. `specflow create` runs tiers 1 and 2 against the proposed `{title, tags}` before writing the new file and warns on likely duplicates.
+
+## Project Hygiene (detect commands)
+
+Two informational subcommands analyze project source code. Neither blocks any workflow; both return exit code 0 regardless of findings.
+
+- `specflow detect dead-code` walks Python ASTs in the configured source root, builds a declaration and call graph, and reports functions/classes declared but never referenced. Framework entry points are excluded: `[project.scripts]` / `[project.entry-points]` from `pyproject.toml`, `pytest` fixtures and `test_*` functions, symbols in `__all__`, and dunder methods.
+- `specflow detect similarity` compares normalized token sequences across function bodies longer than a configurable minimum and reports pairs whose Jaccard similarity exceeds a threshold (default 0.9) with both file paths, line ranges, and similarity percentage.
 
 ## Change Management (Hybrid)
 

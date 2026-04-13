@@ -25,7 +25,7 @@ SpecFlow is a cross-CLI spec-driven development framework that combines proactiv
 | P5 | Execution & Review | `specflow go` orchestration, `specflow check` context-specific review | P3, P4 | v0.2.0 |
 | P6 | Compliance & Standards| PDF standard ingestion, gap analysis, baselines, retroactive CRs | P4 | v0.3.0 |
 | P7 | Team & Enterprise | RBAC via git, draft IDs + CI renumbering, defect lifecycle, test records | P5, P6 | v1.0.0 |
-| P8 | Intelligence & Scaling| Tiered dedup, shared checklist matching, reactive challenge engine, multi-repo | P7 | v1.x |
+| P8 | Intelligence & Scaling| 3-tier dedup (tag Jaccard, TF-IDF, LLM), dead-code and similarity detection | P7 | v1.x |
 
 ## Dependency Graph
 
@@ -55,7 +55,7 @@ Within phases, work flows:
 | v0.2.0 | P3 + P4 + P5 | Full AI lifecycle with discovery, traceability, execution, and review |
 | v0.3.0 | P6 | Compliance-ready: Industry standards and gap analysis |
 | v1.0.0 | P7 | Team-ready: RBAC, defect tracking, CI integration |
-| v1.x | P8 | Intelligence features, scaling, multi-repo |
+| v1.x | P8 | Dedup pipeline and project-hygiene detect commands |
 
 Each release is a tagged Python package version managed by `uv`. Phases within a release can ship incrementally as minor bumps (v0.1.1, v0.1.2, etc.).
 

@@ -1,6 +1,7 @@
 # SpecFlow
 .specflow/locks/
 .specflow/checklist-log/
+.specflow/dedup-candidates.yaml
 
 # Python
 __pycache__/

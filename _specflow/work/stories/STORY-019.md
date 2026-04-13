@@ -2,7 +2,7 @@
 id: STORY-019
 title: Implement tiered duplicate detection pipeline for artifacts
 type: story
-status: draft
+status: implemented
 priority: medium
 tags:
 - intelligence
@@ -18,13 +18,15 @@ created: '2026-04-11'
 checklists_applied:
 - checklist: check-STORY-019
   timestamp: '2026-04-11T13:45:49Z'
+modified: '2026-04-13'
+fingerprint: sha256:74a95266e364fa376658d1fe7b2571567fdc5f590fbb0f3eab4be65e253a8872
 ---
 
 # Implement tiered duplicate detection pipeline for artifacts
 
 ## Description
 
-Implement a 4-tier duplicate detection pipeline: tag overlap -> TF-IDF keyword similarity -> local embeddings -> LLM confirmation. Results are stored in .specflow/dedup-candidates.yaml as suggestions. The pipeline runs on-demand (specflow check --dedup) and also as search-before-create during artifact creation.
+Implement a 3-tier duplicate detection pipeline: tag overlap (Jaccard) -> TF-IDF keyword cosine similarity -> LLM confirmation via the check skill. Results are stored in .specflow/dedup-candidates.yaml as suggestions. The pipeline runs on-demand (specflow check --dedup) and also as search-before-create during artifact creation. Tiers 1 and 2 run in Python with stdlib only (no external dependencies); tier 3 is handled by the agent loop reading the candidates file.
 
 ## Acceptance Criteria
 
@@ -38,6 +40,8 @@ Implement a 4-tier duplicate detection pipeline: tag overlap -> TF-IDF keyword s
 
 - Automatic dedup resolution (human decides)
 - Pre-cached embeddings storage
+- Embedding-based similarity tier (sentence-transformers / torch) — deferred per P8 scoping; TF-IDF + LLM confirmation is sufficient
+- Cross-repo dedup (multi-repo deferred post-P8)
 
 ## Dependencies
 

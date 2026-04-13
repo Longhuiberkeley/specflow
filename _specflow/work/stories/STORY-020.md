@@ -2,7 +2,7 @@
 id: STORY-020
 title: Implement dead code and code similarity detection for project hygiene
 type: story
-status: draft
+status: implemented
 priority: low
 tags:
 - intelligence
@@ -18,6 +18,8 @@ created: '2026-04-11'
 checklists_applied:
 - checklist: check-STORY-020
   timestamp: '2026-04-11T13:45:49Z'
+modified: '2026-04-13'
+fingerprint: sha256:77229e571f6cf319154ad74bfba6123f181c933a3a451ef24abc2003ebc76d5a
 ---
 
 # Implement dead code and code similarity detection for project hygiene
@@ -32,7 +34,7 @@ Implement specflow detect dead-code and specflow detect similarity commands that
 
 2. Given a project with two code blocks that are 90% identical (copy-paste pattern), when specflow detect similarity runs, then the pair is flagged with their file paths, line ranges, and a similarity percentage
 
-3. Given specflow detect dead-code runs on a project with no dead code, then the output shows 'No dead code detected' and returns exit code 0 with no false positives for framework entry points or plugin hooks
+3. Given specflow detect dead-code runs on a project with no dead code, then the output shows 'No dead code detected' and returns exit code 0 with no false positives for framework entry points: [project.scripts] / [project.entry-points] in pyproject.toml, pytest fixtures and test_* functions, symbols listed in __all__, and dunder methods (__init__, __main__, etc.)
 
 ## Out of Scope
 

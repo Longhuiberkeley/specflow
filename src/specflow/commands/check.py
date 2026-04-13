@@ -11,6 +11,7 @@ from specflow.lib.checklists import (
     update_artifact_checklists_applied,
 )
 from specflow.lib.challenge import extract_proactive_items, format_proactive_prompt
+from specflow.lib.dedup import find_duplicates, write_candidates_file
 
 
 def _check_artifact(
@@ -73,8 +74,44 @@ def _check_artifact(
     return 1 if blocking_failed else 0
 
 
+def _run_dedup(root: Path) -> int:
+    """Tier 1 + tier 2 dedup across all artifacts. Writes candidates file for the skill."""
+    artifacts = discover_artifacts(root)
+    candidates = find_duplicates(artifacts)
+    out_path = write_candidates_file(root, candidates)
+
+    rel = out_path.relative_to(root) if out_path.is_absolute() else out_path
+    print(f"\033[1mSpecFlow Dedup\033[0m — analyzed {len(artifacts)} artifact(s)")
+
+    if not candidates:
+        print(f"  \033[0;32m✓\033[0m No duplicate candidates found")
+        print(f"  Candidates file: {rel}")
+        return 0
+
+    by_conf: dict[str, int] = {"high": 0, "medium": 0, "low": 0}
+    for c in candidates:
+        by_conf[c.confidence] = by_conf.get(c.confidence, 0) + 1
+
+    print(f"  \033[0;33m{len(candidates)} candidate pair(s)\033[0m — "
+          f"{by_conf.get('high', 0)} high, {by_conf.get('medium', 0)} medium, {by_conf.get('low', 0)} low")
+
+    for c in candidates[:10]:
+        a, b = c.pair
+        print(f"    [{c.confidence}] {a} <-> {b}  "
+              f"tag={c.tag_jaccard:.2f}  tfidf={c.tfidf_cosine:.2f}")
+    if len(candidates) > 10:
+        print(f"    ... and {len(candidates) - 10} more")
+
+    print(f"  Candidates file: {rel}")
+    print("  Review with the check skill for LLM confirmation (tier 3).")
+    return 0
+
+
 def run(root: Path, args: dict[str, Any]) -> int:
     """Run the check command."""
+    if args.get("dedup", False):
+        return _run_dedup(root)
+
     artifact_id = args.get("artifact_id")
     check_all = args.get("all", False)
     gate = args.get("gate")

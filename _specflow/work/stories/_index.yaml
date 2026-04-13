@@ -103,9 +103,9 @@ artifacts:
     - P6
     title: Create and compare immutable baselines for project state snapshots
   STORY-012:
-    fingerprint: ''
+    fingerprint: sha256:61abebf22c956f48a124c82e3174d10892c124c95e155d0864431b6f34e4f23a
     id: STORY-012
-    status: draft
+    status: implemented
     tags:
     - compliance
     - standards
@@ -172,18 +172,18 @@ artifacts:
     - P7
     title: Implement ReqIF import and export for DOORS/Polarion interchange
   STORY-019:
-    fingerprint: ''
+    fingerprint: sha256:74a95266e364fa376658d1fe7b2571567fdc5f590fbb0f3eab4be65e253a8872
     id: STORY-019
-    status: draft
+    status: implemented
     tags:
     - intelligence
     - dedup
     - P8
     title: Implement tiered duplicate detection pipeline for artifacts
   STORY-020:
-    fingerprint: ''
+    fingerprint: sha256:77229e571f6cf319154ad74bfba6123f181c933a3a451ef24abc2003ebc76d5a
     id: STORY-020
-    status: draft
+    status: implemented
     tags:
     - intelligence
     - analysis
