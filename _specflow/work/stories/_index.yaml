@@ -189,4 +189,102 @@ artifacts:
     - analysis
     - P8
     title: Implement dead code and code similarity detection for project hygiene
-next_id: 21
+  STORY-021:
+    fingerprint: sha256:9aec67613f634ddf362df22d2752b35c7fa8e0abe2a5cbafc9b355a96a65811f
+    id: STORY-021
+    status: draft
+    tags:
+    - quality
+    - skills
+    - M1-clarity
+    title: Audit and rewrite the four existing SKILL.md prompts
+  STORY-022:
+    fingerprint: sha256:551ac3dd3f687800880df763209b5f3df9e798ac2a0e302ba0e719c5e071be5e
+    id: STORY-022
+    status: draft
+    tags:
+    - rename
+    - CLI
+    - skills
+    - M1-clarity
+    title: Ship command rename and thin-skill wrappers for all Tier 2/3 CLI commands
+  STORY-023:
+    fingerprint: sha256:4375776624c5952dcc080984db3cb63aaf45a6c6b5f974b05502e8ec402473b3
+    id: STORY-023
+    status: draft
+    tags:
+    - documentation
+    - M1-clarity
+    title: Archive docs/phases and restructure docs/ directory
+  STORY-024:
+    fingerprint: sha256:44920b9648a2f386cd6aacb0e74923339409c7e85a422aa59e9d7c44f6f9d5a2
+    id: STORY-024
+    status: draft
+    tags:
+    - review
+    - quality
+    - M1-clarity
+    title: Ship /specflow-artifact-review with tiered depth and adversarial lens fan-out
+  STORY-025:
+    fingerprint: sha256:7e9f49e2c6cc500aa957d5f511ec5b09778200745bf3896712ed0e1fe49790b0
+    id: STORY-025
+    status: draft
+    tags:
+    - pipeline
+    - audit
+    - M1-clarity
+    title: Ship the change-audit pipeline with review_status field
+  STORY-026:
+    fingerprint: sha256:1214a681ea1ff560bb535d7e7fbd87e6079bc9ff432a5e046cfdad29308a63ec
+    id: STORY-026
+    status: draft
+    tags:
+    - architecture
+    - adapters
+    - M2-extensible
+    title: Build the unified adapter framework
+  STORY-027:
+    fingerprint: sha256:3b2ad58b485d3da86a8d64c3ec2835d38d7973491127b6ebad14ebf3c1a36137
+    id: STORY-027
+    status: draft
+    tags:
+    - cleanup
+    - CLI
+    - M2-extensible
+    title: Expose recovery primitives as CLI commands and clean up dead code
+  STORY-028:
+    fingerprint: sha256:863604877676fc6dee8511963037dfe9bd410aeddcbdc155513105b6ecb10ccf
+    id: STORY-028
+    status: draft
+    tags:
+    - compliance
+    - BYOC
+    - M2-extensible
+    title: Compliance rework — BYOC with /specflow-pack-author
+  STORY-029:
+    fingerprint: sha256:ba8530df15d370c41030c76d91dabb8642567ca7199381e5312977c5254ac85d
+    id: STORY-029
+    status: draft
+    tags:
+    - analysis
+    - V-model
+    - M3-depth
+    title: Add deterministic analytical passes to the V-model
+  STORY-030:
+    fingerprint: sha256:c618cacce791a6d3b0b6fa4b64f01cbd7742dcabd8da088f5e042fbf0a79fc71
+    id: STORY-030
+    status: draft
+    tags:
+    - audit
+    - M3-depth
+    title: Ship /specflow-project-audit with conversational scope and chunked fan-out
+  STORY-031:
+    fingerprint: sha256:02d8c922fb8ee09ee8ee3023c000fd3042f24a3ed19c5472a51749371cd2075c
+    id: STORY-031
+    status: draft
+    tags:
+    - UX
+    - documentation
+    - M3-depth
+    title: Install UX — one-line install path and getting-started tutorial
+next_id: 32
