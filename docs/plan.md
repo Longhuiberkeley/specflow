@@ -10,7 +10,7 @@ SpecFlow is a cross-CLI spec-driven development framework that combines proactiv
 2. **Filesystem-native.** Markdown + YAML frontmatter. No databases, no cloud dependencies, no proprietary runtime.
 3. **Programmatic-first.** Python CLI for deterministic work (zero tokens). LLM for judgment only. See D-16, D-17.
 4. **Ceremony adapts to ambiguity.** Not to which command you typed. The readiness assessment detects scope automatically.
-5. **Bring-Your-Own-Standard.** Artifact types are schema-driven. Users provide their own compliance documents (e.g., PDFs), which are parsed locally into executable YAML schemas and checklists.
+5. **Bring-Your-Own-Standard.** Artifact types are schema-driven. Users author their own compliance packs via LLM-assisted `/specflow-pack-author` (from PDF/URL/text) or manually via YAML, documented in `docs/authoring-a-pack.md` (pending).
 6. **Cross-platform.** AGENTS.md (universal) + SKILL.md (portable) + platform adapters. Works on Claude Code, OpenCode, Gemini CLI, and degrades gracefully on Cursor, Windsurf, Cline.
 
 ## Phase Overview (Bootstrapped Sequence)
@@ -58,18 +58,6 @@ Within phases, work flows:
 | v1.x | P8 | Dedup pipeline and project-hygiene detect commands |
 
 Each release is a tagged Python package version managed by `uv`. Phases within a release can ship incrementally as minor bumps (v0.1.1, v0.1.2, etc.).
-
-## Detailed Phase Documents
-
-- [P0 — Foundation](phases/P0-foundation.md)
-- [P1 — Self-Specification](phases/P1-self-specification.md)
-- [P2 — Verification](phases/P2-verification.md)
-- [P3 — Core Workflow](phases/P3-core-workflow.md)
-- [P4 — Traceability](phases/P4-traceability.md)
-- [P5 — Execution & Review](phases/P5-execution-review.md)
-- [P6 — Compliance & Standards](phases/P6-compliance.md)
-- [P7 — Team & Enterprise](phases/P7-team-enterprise.md)
-- [P8 — Intelligence & Scaling](phases/P8-intelligence.md)
 
 ## Supporting Documents
 
