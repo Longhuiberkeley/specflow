@@ -19,8 +19,10 @@ created: '2026-04-11'
 checklists_applied:
 - checklist: check-STORY-018
   timestamp: '2026-04-11T13:45:49Z'
-modified: '2026-04-12'
-fingerprint: sha256:2cfa543fa94c9517dd2cf52907a4574c4ce116f02a12c6f85babd3916b6c23b9
+- checklist: check-STORY-018
+  timestamp: '2026-04-14T17:03:23Z'
+modified: '2026-04-14'
+fingerprint: sha256:2cfa543fa94c
 ---
 
 # Implement ReqIF import and export for DOORS/Polarion interchange

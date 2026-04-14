@@ -12,7 +12,7 @@ Conduct a structured discovery conversation to capture requirements.
 1. **Readiness Assessment** — Ask clarifying questions about scope.
 2. **Progressive Disclosure** — Uncover WHAT the system must do (not HOW).
 3. **Artifact Creation** — Generate REQ Markdown files in `_specflow/specs/requirements/`.
-4. **Validation** — Run `uv run specflow validate`.
+4. **Validation** — Run `uv run specflow artifact-lint`.
 
 ## Rules
 

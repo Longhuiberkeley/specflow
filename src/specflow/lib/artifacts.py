@@ -104,9 +104,12 @@ class Artifact:
 
 
 def compute_fingerprint(body: str) -> str:
-    """Compute SHA256 fingerprint of artifact's normative content (body after frontmatter)."""
+    """Compute SHA256 fingerprint of artifact's normative content (body after frontmatter).
+
+    Truncated to 12 hex chars (48 bits) for compact storage — e.g., `sha256:6ae8a7555520`.
+    """
     content = body.strip()
-    return f"sha256:{hashlib.sha256(content.encode('utf-8')).hexdigest()}"
+    return f"sha256:{hashlib.sha256(content.encode('utf-8')).hexdigest()[:12]}"
 
 
 def parse_artifact(path: Path) -> Artifact | None:

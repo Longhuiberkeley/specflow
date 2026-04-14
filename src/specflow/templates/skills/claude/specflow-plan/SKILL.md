@@ -13,7 +13,7 @@ Break down approved requirements into architecture, detailed design, and user st
 
 1. Read all REQ artifacts from `_specflow/specs/requirements/`.
 2. Verify all REQs have `status: approved`. If any are still `draft`, tell the user which ones need approval before planning can proceed.
-3. Optionally run the phase gate: `uv run specflow validate --type gate --gate specifying-to-planning`.
+3. Optionally run the phase gate: `uv run specflow artifact-lint --type gate --gate specifying-to-planning`.
 4. If gate fails, report blockers and stop.
 
 ### Step 2: Read & Understand Requirements
@@ -101,7 +101,7 @@ uv run specflow create \
 
 Run full validation:
 ```
-uv run specflow validate
+uv run specflow artifact-lint
 ```
 
 Report any issues. Fix broken links or schema violations.

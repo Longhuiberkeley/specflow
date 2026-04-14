@@ -5,10 +5,13 @@ type: story
 status: draft
 priority: medium
 tags:
-  - documentation
-  - M1-clarity
+- documentation
+- M1-clarity
 suspect: false
 created: '2026-04-14'
+checklists_applied:
+- checklist: check-STORY-023
+  timestamp: '2026-04-14T17:03:23Z'
 ---
 
 # Archive docs/phases and restructure docs/ directory

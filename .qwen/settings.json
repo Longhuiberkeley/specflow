@@ -1,6 +1,8 @@
 {
   "context": {
-    "fileName": ["AGENTS.md"]
+    "fileName": [
+      "AGENTS.md"
+    ]
   },
   "permissions": {
     "allow": [
@@ -10,7 +12,9 @@
       "Bash(find *)",
       "Bash(do *)",
       "Bash(done)",
-      "Bash(bash *)"
+      "Bash(bash *)",
+      "Bash(mv *)",
+      "Bash(rm *)"
     ]
   },
   "$version": 3

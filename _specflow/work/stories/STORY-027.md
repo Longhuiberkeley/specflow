@@ -5,11 +5,14 @@ type: story
 status: draft
 priority: medium
 tags:
-  - cleanup
-  - CLI
-  - M2-extensible
+- cleanup
+- CLI
+- M2-extensible
 suspect: false
 created: '2026-04-14'
+checklists_applied:
+- checklist: check-STORY-027
+  timestamp: '2026-04-14T17:03:23Z'
 ---
 
 # Expose recovery primitives as CLI commands and clean up dead code

@@ -8,7 +8,7 @@ Draft ID format: `{PREFIX}-{SLUG}-{hash4}`
 Example: `REQ-AUTH-a7b9`
 
 Draft IDs let parallel feature branches create artifacts without colliding on
-sequential integers. `specflow sequence` rewrites them to sequential integers
+sequential integers. `specflow renumber-drafts` rewrites them to sequential integers
 on merge to main.
 """
 

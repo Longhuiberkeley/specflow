@@ -1,15 +1,18 @@
 ---
 id: STORY-031
-title: Install UX — one-line install path and getting-started tutorial
+title: "Install UX \u2014 one-line install path and getting-started tutorial"
 type: story
 status: draft
 priority: high
 tags:
-  - UX
-  - documentation
-  - M3-depth
+- UX
+- documentation
+- M3-depth
 suspect: false
 created: '2026-04-14'
+checklists_applied:
+- checklist: check-STORY-031
+  timestamp: '2026-04-14T17:03:23Z'
 ---
 
 # Install UX — one-line install path and getting-started tutorial

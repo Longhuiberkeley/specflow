@@ -5,11 +5,14 @@ type: story
 status: draft
 priority: high
 tags:
-  - review
-  - quality
-  - M1-clarity
+- review
+- quality
+- M1-clarity
 suspect: false
 created: '2026-04-14'
+checklists_applied:
+- checklist: check-STORY-024
+  timestamp: '2026-04-14T17:03:23Z'
 ---
 
 # Ship /specflow-artifact-review with tiered depth and thinking techniques

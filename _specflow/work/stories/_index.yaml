@@ -1,6 +1,6 @@
 artifacts:
   STORY-001:
-    fingerprint: sha256:7e927cb96b506b366f8bd56952e71cb2622bf6364fdfbf276b5449c652f6ced9
+    fingerprint: sha256:7e927cb96b50
     id: STORY-001
     status: implemented
     tags:
@@ -9,7 +9,7 @@ artifacts:
     - P4
     title: Detect fingerprint changes and propagate suspect flags for downstream artifacts
   STORY-002:
-    fingerprint: sha256:e6c357dd6dd6f16db86a8e922a2fe950097e1dcafa93ec11b5cdcde01482b8f5
+    fingerprint: sha256:e6c357dd6dd6
     id: STORY-002
     status: implemented
     tags:
@@ -19,7 +19,7 @@ artifacts:
     - P4
     title: Report and resolve suspect flags via specflow impact command
   STORY-003:
-    fingerprint: sha256:ffd852f3fbc25b46c53f68130ee55a44686570452d8bbc443c5cfbf211d26843
+    fingerprint: sha256:ffd852f3fbc2
     id: STORY-003
     status: implemented
     tags:
@@ -28,7 +28,7 @@ artifacts:
     - P4
     title: Implement typo cascade defense with 3-tier classification
   STORY-004:
-    fingerprint: sha256:8b507fe4c303ad6020988de6f6886a9d8e54ae6c302f01751a058a5e81446410
+    fingerprint: sha256:8b507fe4c303
     id: STORY-004
     status: implemented
     tags:
@@ -37,7 +37,7 @@ artifacts:
     - P4
     title: Implement split and merge operations for artifact refactoring
   STORY-005:
-    fingerprint: sha256:c26bcff9ced0e3c28a7aacd6e0b488db3d8ec639ed83d3cca44aaad61b5dab1b
+    fingerprint: sha256:c26bcff9ced0
     id: STORY-005
     status: implemented
     tags:
@@ -46,7 +46,7 @@ artifacts:
     - P4
     title: Implement filesystem locks for concurrent artifact modification
   STORY-006:
-    fingerprint: sha256:915847809d40bb206b3707bdd6501e70e5f65ad61bebc54785c287e1e32e7d5d
+    fingerprint: sha256:915847809d40
     id: STORY-006
     status: implemented
     tags:
@@ -55,7 +55,7 @@ artifacts:
     - P5
     title: Group stories into dependency-free waves for parallel execution
   STORY-007:
-    fingerprint: sha256:7a3c7d9dac0b6eded2246be5f26534b7b9923cf3de6b70cee7a0b4420f62f4d9
+    fingerprint: sha256:7a3c7d9dac0b
     id: STORY-007
     status: implemented
     tags:
@@ -65,7 +65,7 @@ artifacts:
     - P5
     title: Orchestrate parallel subagent execution with isolated context per story
   STORY-008:
-    fingerprint: sha256:bde4ab3a1b2eb0bd5b4f339b910f9799b866147b39bf46be1e1d4ff7e433206e
+    fingerprint: sha256:bde4ab3a1b2e
     id: STORY-008
     status: implemented
     tags:
@@ -74,7 +74,7 @@ artifacts:
     - P5
     title: Assemble context-specific review criteria for specflow check
   STORY-009:
-    fingerprint: sha256:4a4c20106519c46047f6e3c40c54743711803282bd0f35969c3ae2bb077b7a3f
+    fingerprint: sha256:4a4c20106519
     id: STORY-009
     status: implemented
     tags:
@@ -84,7 +84,7 @@ artifacts:
     - P5
     title: Implement proactive challenge engine for edge case discovery
   STORY-010:
-    fingerprint: sha256:fbbc5a2ad9c7f15138a4496eaf81798eda8d083061a6ffddc29368054adee7d5
+    fingerprint: sha256:fbbc5a2ad9c7
     id: STORY-010
     status: implemented
     tags:
@@ -94,7 +94,7 @@ artifacts:
     - P5
     title: Extract prevention patterns into learned checklists via specflow done
   STORY-011:
-    fingerprint: sha256:fe09bc983eda809862e7cda375cb70c5ce864cee9467237cb7e228123b42f750
+    fingerprint: sha256:fe09bc983eda
     id: STORY-011
     status: implemented
     tags:
@@ -103,7 +103,7 @@ artifacts:
     - P6
     title: Create and compare immutable baselines for project state snapshots
   STORY-012:
-    fingerprint: sha256:61abebf22c956f48a124c82e3174d10892c124c95e155d0864431b6f34e4f23a
+    fingerprint: sha256:61abebf22c95
     id: STORY-012
     status: implemented
     tags:
@@ -113,7 +113,7 @@ artifacts:
     - P6
     title: Implement standards pack architecture and compliance gap analysis
   STORY-013:
-    fingerprint: sha256:ca1d162d382f6650201384478ca2213e4bdaa93e398dc48373fae8fb94e6c85f
+    fingerprint: sha256:ca1d162d382f
     id: STORY-013
     status: implemented
     tags:
@@ -122,7 +122,7 @@ artifacts:
     - P6
     title: Generate retroactive change records from git history and impact-log
   STORY-014:
-    fingerprint: sha256:91ea8b11001c247d1b63a6ec3ddb2b39d16ee5cc9a6704b7fab576010d764531
+    fingerprint: sha256:91ea8b11001c
     id: STORY-014
     status: implemented
     tags:
@@ -132,7 +132,7 @@ artifacts:
     - P7
     title: Enforce role-based access control via git hooks and CODEOWNERS
   STORY-015:
-    fingerprint: sha256:c4a2d22865de0d44d6edaabb3f8f091aadd20f4972a88cb754b6234b75800e5a
+    fingerprint: sha256:c4a2d22865de
     id: STORY-015
     status: implemented
     tags:
@@ -142,7 +142,7 @@ artifacts:
     - P7
     title: Implement draft IDs on branches with CI renumbering on merge
   STORY-016:
-    fingerprint: sha256:bcd75bb30bed322477702cb5db806913fc0cc9cecb992d7ecf28e724a6ba021c
+    fingerprint: sha256:bcd75bb30bed
     id: STORY-016
     status: implemented
     tags:
@@ -152,7 +152,7 @@ artifacts:
     - P7
     title: Implement defect lifecycle tracking with V-model linkage
   STORY-017:
-    fingerprint: sha256:802ee56ce791816f7c25d7c679bd59b7464b47082d75609232399697daac96ad
+    fingerprint: sha256:802ee56ce791
     id: STORY-017
     status: implemented
     tags:
@@ -162,7 +162,7 @@ artifacts:
     - P7
     title: Implement CI integration job with two-pass validation
   STORY-018:
-    fingerprint: sha256:2cfa543fa94c9517dd2cf52907a4574c4ce116f02a12c6f85babd3916b6c23b9
+    fingerprint: sha256:2cfa543fa94c
     id: STORY-018
     status: implemented
     tags:
@@ -172,7 +172,7 @@ artifacts:
     - P7
     title: Implement ReqIF import and export for DOORS/Polarion interchange
   STORY-019:
-    fingerprint: sha256:74a95266e364fa376658d1fe7b2571567fdc5f590fbb0f3eab4be65e253a8872
+    fingerprint: sha256:74a95266e364
     id: STORY-019
     status: implemented
     tags:
@@ -181,7 +181,7 @@ artifacts:
     - P8
     title: Implement tiered duplicate detection pipeline for artifacts
   STORY-020:
-    fingerprint: sha256:77229e571f6cf319154ad74bfba6123f181c933a3a451ef24abc2003ebc76d5a
+    fingerprint: sha256:77229e571f6c
     id: STORY-020
     status: implemented
     tags:
@@ -190,18 +190,18 @@ artifacts:
     - P8
     title: Implement dead code and code similarity detection for project hygiene
   STORY-021:
-    fingerprint: sha256:9aec67613f634ddf362df22d2752b35c7fa8e0abe2a5cbafc9b355a96a65811f
+    fingerprint: sha256:9aec67613f63
     id: STORY-021
-    status: draft
+    status: implemented
     tags:
     - quality
     - skills
     - M1-clarity
     title: Audit and rewrite the four existing SKILL.md prompts
   STORY-022:
-    fingerprint: sha256:551ac3dd3f687800880df763209b5f3df9e798ac2a0e302ba0e719c5e071be5e
+    fingerprint: sha256:551ac3dd3f68
     id: STORY-022
-    status: draft
+    status: implemented
     tags:
     - rename
     - CLI
@@ -209,7 +209,7 @@ artifacts:
     - M1-clarity
     title: Ship command rename and thin-skill wrappers for all Tier 2/3 CLI commands
   STORY-023:
-    fingerprint: sha256:4375776624c5952dcc080984db3cb63aaf45a6c6b5f974b05502e8ec402473b3
+    fingerprint: sha256:4375776624c5
     id: STORY-023
     status: draft
     tags:
@@ -217,7 +217,7 @@ artifacts:
     - M1-clarity
     title: Archive docs/phases and restructure docs/ directory
   STORY-024:
-    fingerprint: sha256:44920b9648a2f386cd6aacb0e74923339409c7e85a422aa59e9d7c44f6f9d5a2
+    fingerprint: sha256:44920b9648a2
     id: STORY-024
     status: draft
     tags:
@@ -226,7 +226,7 @@ artifacts:
     - M1-clarity
     title: Ship /specflow-artifact-review with tiered depth and adversarial lens fan-out
   STORY-025:
-    fingerprint: sha256:7e9f49e2c6cc500aa957d5f511ec5b09778200745bf3896712ed0e1fe49790b0
+    fingerprint: sha256:7e9f49e2c6cc
     id: STORY-025
     status: draft
     tags:
@@ -235,7 +235,7 @@ artifacts:
     - M1-clarity
     title: Ship the change-audit pipeline with review_status field
   STORY-026:
-    fingerprint: sha256:1214a681ea1ff560bb535d7e7fbd87e6079bc9ff432a5e046cfdad29308a63ec
+    fingerprint: sha256:1214a681ea1f
     id: STORY-026
     status: draft
     tags:
@@ -244,7 +244,7 @@ artifacts:
     - M2-extensible
     title: Build the unified adapter framework
   STORY-027:
-    fingerprint: sha256:3b2ad58b485d3da86a8d64c3ec2835d38d7973491127b6ebad14ebf3c1a36137
+    fingerprint: sha256:3b2ad58b485d
     id: STORY-027
     status: draft
     tags:
@@ -253,16 +253,16 @@ artifacts:
     - M2-extensible
     title: Expose recovery primitives as CLI commands and clean up dead code
   STORY-028:
-    fingerprint: sha256:863604877676fc6dee8511963037dfe9bd410aeddcbdc155513105b6ecb10ccf
+    fingerprint: sha256:863604877676
     id: STORY-028
     status: draft
     tags:
     - compliance
     - BYOC
     - M2-extensible
-    title: Compliance rework — BYOC with /specflow-pack-author
+    title: "Compliance rework \u2014 BYOC with /specflow-pack-author"
   STORY-029:
-    fingerprint: sha256:ba8530df15d370c41030c76d91dabb8642567ca7199381e5312977c5254ac85d
+    fingerprint: sha256:ba8530df15d3
     id: STORY-029
     status: draft
     tags:
@@ -271,7 +271,7 @@ artifacts:
     - M3-depth
     title: Add deterministic analytical passes to the V-model
   STORY-030:
-    fingerprint: sha256:c618cacce791a6d3b0b6fa4b64f01cbd7742dcabd8da088f5e042fbf0a79fc71
+    fingerprint: sha256:c618cacce791
     id: STORY-030
     status: draft
     tags:
@@ -279,12 +279,12 @@ artifacts:
     - M3-depth
     title: Ship /specflow-project-audit with conversational scope and chunked fan-out
   STORY-031:
-    fingerprint: sha256:02d8c922fb8ee09ee8ee3023c000fd3042f24a3ed19c5472a51749371cd2075c
+    fingerprint: sha256:02d8c922fb8e
     id: STORY-031
     status: draft
     tags:
     - UX
     - documentation
     - M3-depth
-    title: Install UX — one-line install path and getting-started tutorial
+    title: "Install UX \u2014 one-line install path and getting-started tutorial"
 next_id: 32

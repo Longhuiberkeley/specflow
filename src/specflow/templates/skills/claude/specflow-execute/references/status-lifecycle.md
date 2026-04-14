@@ -48,5 +48,5 @@ uv run specflow status
 
 To validate status consistency:
 ```bash
-uv run specflow validate --type status
+uv run specflow artifact-lint --type status
 ```

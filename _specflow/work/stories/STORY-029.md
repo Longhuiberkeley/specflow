@@ -5,11 +5,14 @@ type: story
 status: draft
 priority: medium
 tags:
-  - analysis
-  - V-model
-  - M3-depth
+- analysis
+- V-model
+- M3-depth
 suspect: false
 created: '2026-04-14'
+checklists_applied:
+- checklist: check-STORY-029
+  timestamp: '2026-04-14T17:03:23Z'
 ---
 
 # Add deterministic analytical passes to the V-model

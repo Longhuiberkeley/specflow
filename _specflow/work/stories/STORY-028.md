@@ -1,15 +1,18 @@
 ---
 id: STORY-028
-title: Compliance rework — BYOC with /specflow-pack-author
+title: "Compliance rework \u2014 BYOC with /specflow-pack-author"
 type: story
 status: draft
 priority: medium
 tags:
-  - compliance
-  - BYOC
-  - M2-extensible
+- compliance
+- BYOC
+- M2-extensible
 suspect: false
 created: '2026-04-14'
+checklists_applied:
+- checklist: check-STORY-028
+  timestamp: '2026-04-14T17:03:23Z'
 ---
 
 # Compliance rework — BYOC with /specflow-pack-author

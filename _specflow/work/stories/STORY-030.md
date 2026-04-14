@@ -5,10 +5,13 @@ type: story
 status: draft
 priority: medium
 tags:
-  - audit
-  - M3-depth
+- audit
+- M3-depth
 suspect: false
 created: '2026-04-14'
+checklists_applied:
+- checklist: check-STORY-030
+  timestamp: '2026-04-14T17:03:23Z'
 ---
 
 # Ship /specflow-project-audit with conversational scope and chunked fan-out

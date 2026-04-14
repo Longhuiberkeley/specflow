@@ -12,7 +12,7 @@ tags:
 - ai
 - progressive-disclosure
 suspect: false
-fingerprint: sha256:14b81a2fe72b86d1f65df2fd9031d3a8fb315651abfa8e71c576327e0ecb108a
+fingerprint: sha256:14b81a2fe72b
 links:
 - target: REQ-004
   role: derives_from
@@ -22,8 +22,10 @@ created: 2026-04-10
 checklists_applied:
 - checklist: check-ARCH-003
   timestamp: '2026-04-11T13:45:49Z'
+- checklist: check-ARCH-003
+  timestamp: '2026-04-14T17:03:22Z'
+modified: '2026-04-14'
 ---
-
 
 # Skill & Platform System
 

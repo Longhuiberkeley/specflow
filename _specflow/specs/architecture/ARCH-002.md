@@ -11,7 +11,7 @@ tags:
 - internals
 - core
 suspect: false
-fingerprint: sha256:e7baed037004c3bdb32b1ef1655804a53e7f5de42094eb12c99f2f8ea81d6dd7
+fingerprint: sha256:e7baed037004
 links:
 - target: REQ-002
   role: derives_from
@@ -23,8 +23,10 @@ created: 2026-04-10
 checklists_applied:
 - checklist: check-ARCH-002
   timestamp: '2026-04-11T13:45:49Z'
+- checklist: check-ARCH-002
+  timestamp: '2026-04-14T17:03:22Z'
+modified: '2026-04-14'
 ---
-
 
 # Framework Machinery
 

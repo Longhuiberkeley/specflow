@@ -15,13 +15,14 @@ links:
 - target: ARCH-002
   role: guided_by
 created: '2026-04-11'
-modified: '2026-04-11'
-fingerprint: sha256:c26bcff9ced0e3c28a7aacd6e0b488db3d8ec639ed83d3cca44aaad61b5dab1b
+modified: '2026-04-14'
+fingerprint: sha256:c26bcff9ced0
 checklists_applied:
 - checklist: check-STORY-005
   timestamp: '2026-04-11T13:45:49Z'
+- checklist: check-STORY-005
+  timestamp: '2026-04-14T17:03:22Z'
 ---
-
 
 # Implement filesystem locks for concurrent artifact modification
 

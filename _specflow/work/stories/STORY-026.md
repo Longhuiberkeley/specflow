@@ -5,11 +5,14 @@ type: story
 status: draft
 priority: high
 tags:
-  - architecture
-  - adapters
-  - M2-extensible
+- architecture
+- adapters
+- M2-extensible
 suspect: false
 created: '2026-04-14'
+checklists_applied:
+- checklist: check-STORY-026
+  timestamp: '2026-04-14T17:03:23Z'
 ---
 
 # Build the unified adapter framework

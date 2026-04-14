@@ -12,7 +12,7 @@ Conduct a structured discovery conversation to capture requirements.
 1. **Readiness Assessment** — Ask clarifying questions about scope. If all dimensions are satisfied within 1 exchange, proceed with lean artifacts.
 2. **Progressive Disclosure** — Uncover WHAT the system must do (not HOW). Focus on observable behavior.
 3. **Artifact Creation** — Generate REQ Markdown files in `_specflow/specs/requirements/` with proper YAML frontmatter.
-4. **Validation** — Run `uv run specflow validate` to check schema compliance.
+4. **Validation** — Run `uv run specflow artifact-lint` to check schema compliance.
 
 ## Rules
 

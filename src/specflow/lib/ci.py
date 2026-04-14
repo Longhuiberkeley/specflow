@@ -1,7 +1,7 @@
 """CI support: two-pass validation + OpenRouter LLM client.
 
 Pass 1 (method=programmatic): zero-token schema/link/status/ID/fingerprint
-checks. Implemented by the existing `specflow validate` check suite.
+checks. Implemented by the existing `specflow artifact-lint` check suite.
 
 Pass 2 (method=llm): LLM-judged review of items flagged as `automated: false`
 in assembled checklists. Calls OpenRouter so any supported model can back it

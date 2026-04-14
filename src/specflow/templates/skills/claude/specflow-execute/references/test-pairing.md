@@ -68,7 +68,7 @@ uv run specflow create \
 ## Traceability
 
 When a test is created and linked to a spec, the validation engine can:
-- Detect missing verification pairs (`specflow validate --type links` reports warnings)
+- Detect missing verification pairs (`specflow artifact-lint --type links` reports warnings)
 - Verify that every spec has at least one test artifact linked via `verified_by`
 
 This is the core of the V-model compliance proof: every specification has corresponding verification evidence.

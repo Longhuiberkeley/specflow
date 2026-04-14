@@ -66,7 +66,7 @@ uv run specflow create \
 
 Run full validation after all changes:
 ```
-uv run specflow validate
+uv run specflow artifact-lint
 ```
 
 Report results and fix any issues.
@@ -75,7 +75,7 @@ Report results and fix any issues.
 
 - Always update `status` and `modified` timestamp via `specflow update` — never edit artifact files directly.
 - Link tests to what they verify using `verified_by` role.
-- Run `uv run specflow validate` after status changes.
+- Run `uv run specflow artifact-lint` after status changes.
 - When unsure about valid status transitions, read `references/status-lifecycle.md`.
 - When unsure about V-model test pairing, read `references/test-pairing.md`.
 

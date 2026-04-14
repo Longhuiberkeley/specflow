@@ -13,7 +13,7 @@ Break down approved requirements into architecture, detailed design, and user st
 2. **Architecture Proposal** — Discuss component structure, interfaces, and data flow. Create ARCH artifacts.
 3. **Detailed Design** — For each ARCH component, create DDD artifacts.
 4. **Story Breakdown** — Create STORY artifacts that link to specs via `links:` frontmatter.
-5. **Validation** — Run `uv run specflow validate` on all generated artifacts.
+5. **Validation** — Run `uv run specflow artifact-lint` on all generated artifacts.
 
 ## Rules
 

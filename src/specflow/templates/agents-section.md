@@ -14,7 +14,7 @@ This project uses **SpecFlow** — a spec-driven development framework. All spec
 |---------|---------|
 | `specflow init` | Scaffold the project structure |
 | `specflow status` | Show current phase, artifact counts, and issues |
-| `specflow validate` | Run validation checks on all artifacts |
+| `specflow artifact-lint` | Run validation checks on all artifacts |
 
 ### How to work with SpecFlow
 

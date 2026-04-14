@@ -18,8 +18,10 @@ created: '2026-04-11'
 checklists_applied:
 - checklist: check-STORY-020
   timestamp: '2026-04-11T13:45:49Z'
-modified: '2026-04-13'
-fingerprint: sha256:77229e571f6cf319154ad74bfba6123f181c933a3a451ef24abc2003ebc76d5a
+- checklist: check-STORY-020
+  timestamp: '2026-04-14T17:03:23Z'
+modified: '2026-04-14'
+fingerprint: sha256:77229e571f6c
 ---
 
 # Implement dead code and code similarity detection for project hygiene

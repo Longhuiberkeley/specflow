@@ -21,7 +21,7 @@ items:
   - id: CKL-IP-001-03
     check: "Every requirement has acceptance criteria"
     automated: true
-    script: "scripts/check-acceptance-criteria.sh"
+    script: "scripts/checklist-run-acceptance.sh"
     severity: blocking
 
   - id: CKL-IP-001-04

@@ -200,7 +200,7 @@ def propagate_suspects(
     Args:
         root: Project root.
         changed_artifact_id: ID of the artifact that was modified.
-        force_minor: If True, treat as minor change (skip cascade). Used by specflow tweak.
+        force_minor: If True, treat as minor change (skip cascade). Used by specflow fingerprint-refresh.
 
     Returns:
         dict with ok, event_path, flagged_count, update_type keys.
@@ -290,7 +290,7 @@ def classify_change_magnitude(
     Design decision: Without access to git diff data or the previous body content
     at this call site, we cannot compute the line-level change ratio described in
     DDD-001. We default to "semantic" (conservative — triggers cascade). Users
-    should use Tier 1 (update_type: minor in frontmatter) or Tier 2 (specflow tweak)
+    should use Tier 1 (update_type: minor in frontmatter) or Tier 2 (specflow fingerprint-refresh)
     to explicitly classify known minor changes.
     """
     if old_fingerprint == new_fingerprint:

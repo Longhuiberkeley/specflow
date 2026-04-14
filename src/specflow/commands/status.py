@@ -107,11 +107,11 @@ def _suggest_action(root: Path, phase: str, artifact_counts: dict[str, int]) -> 
     elif phase == "executing":
         return "Run 'specflow-go' to execute story waves"
     elif phase == "verifying":
-        return "Run 'specflow-check' to review artifacts"
+        return "Run 'specflow checklist-run' to review artifacts"
     elif phase == "complete":
         return "Run 'specflow-done' to close the phase"
 
-    return "Run 'specflow validate' to check artifact integrity"
+    return "Run 'specflow artifact-lint' to check artifact integrity"
 
 
 def run(root: Path, args: dict) -> int:

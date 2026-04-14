@@ -5,11 +5,14 @@ type: story
 status: draft
 priority: high
 tags:
-  - pipeline
-  - audit
-  - M1-clarity
+- pipeline
+- audit
+- M1-clarity
 suspect: false
 created: '2026-04-14'
+checklists_applied:
+- checklist: check-STORY-025
+  timestamp: '2026-04-14T17:03:23Z'
 ---
 
 # Ship the change-audit pipeline with review_status field

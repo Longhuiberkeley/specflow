@@ -118,7 +118,7 @@ Every REQ must have **at least 2 acceptance criteria** (happy path + at least on
 
 After creating all REQs, run validation:
 ```
-uv run specflow validate
+uv run specflow artifact-lint
 ```
 
 Report results to user.

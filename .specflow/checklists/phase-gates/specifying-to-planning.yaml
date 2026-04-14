@@ -14,7 +14,7 @@ items:
   - id: CKL-GATE-003-02
     check: "Every REQ has at least one acceptance criterion"
     automated: true
-    script: "scripts/check-acceptance-criteria.sh"
+    script: "scripts/checklist-run-acceptance.sh"
     severity: blocking
 
   - id: CKL-GATE-003-03

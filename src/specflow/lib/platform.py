@@ -34,4 +34,4 @@ def get_skills_platform_dir(platform: str) -> str:
 
 def get_skill_names() -> list[str]:
     """Return the list of skill names to install."""
-    return ["specflow-discover", "specflow-plan", "specflow-execute", "specflow-verify"]
+    return ["specflow-discover", "specflow-plan", "specflow-execute", "specflow-artifact-review"]

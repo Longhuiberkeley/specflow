@@ -19,7 +19,7 @@ jobs:
       - name: Install SpecFlow
         run: uv sync
       - name: Validate artifacts (zero tokens)
-        run: uv run specflow validate --method programmatic
+        run: uv run specflow artifact-lint --method programmatic
 
   specflow-pass-2:
     name: Pass 2 — LLM-judged review (opt-in)
@@ -39,7 +39,7 @@ jobs:
       - name: LLM-judged review
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-        run: uv run specflow validate --method llm | tee llm-report.txt
+        run: uv run specflow artifact-lint --method llm | tee llm-report.txt
       - name: Post PR comment
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7

@@ -1,6 +1,6 @@
 artifacts:
   REQ-001:
-    fingerprint: sha256:c71b2509598429b849bb6b3dfc9d3f3a37c93475736199d25d4eb1824aeeea21
+    fingerprint: sha256:c71b25095984
     id: REQ-001
     status: approved
     tags:
@@ -10,7 +10,7 @@ artifacts:
     - mvp
     title: CLI Interface
   REQ-002:
-    fingerprint: sha256:4ba4d17ec1bb8ae1c807faa04b0db738afc6efe4bb682c552ac7949abb8ae38e
+    fingerprint: sha256:4ba4d17ec1bb
     id: REQ-002
     status: approved
     tags:
@@ -20,7 +20,7 @@ artifacts:
     - mvp
     title: Artifact Structure
   REQ-003:
-    fingerprint: sha256:005378fce8f74131c61a89a6d115791d59e95ff534b1718e980e8d4e3bce1fc5
+    fingerprint: sha256:005378fce8f7
     id: REQ-003
     status: approved
     tags:
@@ -30,7 +30,7 @@ artifacts:
     - core
     title: Trace & Suspect Propagation
   REQ-004:
-    fingerprint: sha256:6a83f01fd52a521a4be98b456c2e8eae0c1491a4f5407667f789aa38350973e1
+    fingerprint: sha256:6a83f01fd52a
     id: REQ-004
     status: approved
     tags:
@@ -41,7 +41,7 @@ artifacts:
     - core
     title: AI Execution Boundaries
   REQ-005:
-    fingerprint: sha256:a1ae6910e33d7f655918767e06c1bf3ae624105573ed7543ac68614f18d70e08
+    fingerprint: sha256:a1ae6910e33d
     id: REQ-005
     status: approved
     tags:
