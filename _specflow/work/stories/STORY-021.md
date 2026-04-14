@@ -28,10 +28,14 @@ The reasoning layer in SpecFlow's four core skills (specflow-discover, specflow-
 
 4. Each skill correctly references only CLI commands that exist (no phantom commands), and references deterministic scripts in scripts/ where applicable
 
+5. The artifact-review skill prompt instructs the agent to read existing assembled checklists for target artifacts before running thinking techniques, so findings complement rather than duplicate existing checklist coverage
+
+6. Each skill that creates or modifies artifacts (discover, plan, execute, artifact-review) presents a structured human-review summary at exit, surfacing: key decisions made, assumptions that need validation, and explicit "please review" points for the human
+
 ## Out of Scope
 
 - Renaming the verify skill directory (that's STORY-022)
-- Writing new skills (artifact-review depth/lenses is STORY-024)
+- Writing new skills (artifact-review depth/thinking techniques is STORY-024)
 - Thin-skill wrappers for Tier 2/3 commands (STORY-022)
 
 ## Dependencies
