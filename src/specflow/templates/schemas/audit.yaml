@@ -1,0 +1,11 @@
+type: audit
+prefix: AUD
+id_format: "AUD-\\d{3,4}$"
+required_fields: [id, title, type, status, created]
+optional_fields: [review_status, priority, rationale, tags, links, modified]
+allowed_status:
+  open: []
+  closed: [open]
+allowed_review_status: [unreviewed, reviewed, flagged, addressed, accepted, stale]
+allowed_link_roles: [refers_to]
+directory: _specflow/specs/audits/

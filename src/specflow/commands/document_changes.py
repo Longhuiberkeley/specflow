@@ -60,6 +60,19 @@ def _build_rationale(commit: dict[str, str], changed_art_ids: list[str]) -> str:
     return f"{commit['subject']}. Changed: {ids_str}."
 
 
+def _collect_documented_shas(root: Path) -> set[str]:
+    """Return the set of commit SHAs already recorded in existing DEC artifacts."""
+    existing = art_lib.discover_artifacts(root, artifact_type="decision")
+    shas: set[str] = set()
+    for art in existing:
+        for line in art.body.splitlines():
+            if line.startswith("- Hash:"):
+                sha = line.split("`")[1] if "`" in line else ""
+                if sha:
+                    shas.add(sha)
+    return shas
+
+
 def run(root: Path, args: dict[str, Any]) -> int:
     """Run the document-changes command."""
     since_ref = args.get("since")
@@ -67,7 +80,6 @@ def run(root: Path, args: dict[str, Any]) -> int:
         print("\033[0;31m✗ --since <git-ref> is required\033[0m")
         return 1
 
-    # Preflight: need a git repo and an initialized project
     if not git_utils.is_git_repo(root):
         print("\033[0;31m✗ Not a git repository\033[0m")
         return 1
@@ -91,10 +103,16 @@ def run(root: Path, args: dict[str, Any]) -> int:
     print(f"Processing {len(commits)} commit(s) since {since_ref}...\n")
 
     all_events = load_impact_events(root)
+    documented_shas = _collect_documented_shas(root)
     created_count = 0
     skipped_count = 0
+    deduped_count = 0
 
     for commit in commits:
+        if commit["sha"] in documented_shas:
+            deduped_count += 1
+            continue
+
         changed_files = git_utils.get_changed_files(root, commit["sha"])
         spec_files = [f for f in changed_files if git_utils.is_spec_artifact_path(f)]
         if not spec_files:
@@ -119,6 +137,7 @@ def run(root: Path, args: dict[str, Any]) -> int:
             tags=["change-record", "auto-generated"],
             links=links,
             body=body,
+            review_status="unreviewed",
         )
         if not result.get("ok"):
             print(f"  \033[0;31m✗ Failed to create DEC for {commit['sha'][:8]}: "
@@ -131,5 +150,7 @@ def run(root: Path, args: dict[str, Any]) -> int:
     print()
     if skipped_count:
         print(f"  - skipped {skipped_count} commit(s) with no spec artifact changes")
+    if deduped_count:
+        print(f"  - deduplicated {deduped_count} commit(s) already recorded in existing DECs")
     print(f"\nGenerated {created_count} change record(s).")
     return 0

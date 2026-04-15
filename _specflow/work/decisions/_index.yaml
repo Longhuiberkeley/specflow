@@ -1,2 +1,20 @@
-artifacts: {}
-next_id: 1
+artifacts:
+  DEC-001:
+    id: DEC-001
+    title: 'Change Record: Another dummy commit'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:19592f42220d
+    children: []
+  DEC-002:
+    id: DEC-002
+    title: 'Change Record: Third dummy commit'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:d242f83b33dc
+    children: []
+next_id: 3

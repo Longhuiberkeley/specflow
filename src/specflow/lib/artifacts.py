@@ -395,6 +395,7 @@ def _render_artifact_file(
     tags: list[str] | None = None,
     links: list[dict[str, str]] | None = None,
     body: str = "",
+    **kwargs: Any,
 ) -> str:
     from datetime import date
 
@@ -414,6 +415,9 @@ def _render_artifact_file(
     fm["suspect"] = False
     fm["links"] = links or []
     fm["created"] = today
+    for k, v in kwargs.items():
+        if v is not None:
+            fm[k] = v
 
     fm_yaml = yaml.dump(fm, default_flow_style=False, sort_keys=False)
     body_stripped = body.strip()
@@ -433,6 +437,7 @@ def create_artifact(
     links: list[dict[str, str]] | None = None,
     body: str = "",
     artifact_id: str | None = None,
+    **kwargs: Any,
 ) -> dict[str, Any]:
     # Register any pack-added artifact types before lookup.
     _load_active_packs(root)
@@ -488,6 +493,7 @@ def create_artifact(
         tags=tags,
         links=links,
         body=body,
+        **kwargs,
     )
 
     file_path = target_dir / f"{new_id}.md"

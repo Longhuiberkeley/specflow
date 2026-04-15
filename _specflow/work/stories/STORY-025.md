@@ -2,7 +2,7 @@
 id: STORY-025
 title: Ship the change-audit pipeline with review_status field
 type: story
-status: draft
+status: implemented
 priority: high
 tags:
 - pipeline
@@ -38,7 +38,7 @@ Per-commit work is bounded by the impact cone of each unreviewed DEC (via `specf
 
 ## Acceptance Criteria
 
-1. `specflow document-changes --since <ref>` creates DEC artifacts in `_specflow/specs/decisions/` with `review_status: unreviewed` and links to affected artifacts
+1. `specflow document-changes --since <ref>` creates DEC artifacts in `_specflow/work/decisions/` with `review_status: unreviewed` and links to affected artifacts
 
 2. `/specflow-change-impact-review` finds all DECs with `review_status: unreviewed`, computes blast radius per DEC via `specflow change-impact`, and launches subagent review scoped to each cone
 

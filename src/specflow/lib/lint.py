@@ -104,6 +104,16 @@ def validate_artifact_schema(
                     "message": f'Unknown link role "{link.role}" on link to {link.target}',
                 })
 
+    # review_status validation
+    review_status = fm.get("review_status")
+    allowed_review = schema.get("allowed_review_status", [])
+    if review_status and allowed_review and review_status not in allowed_review:
+        issues.append({
+            "severity": "blocking",
+            "message": f'Invalid review_status "{review_status}" '
+                       f'(allowed: {", ".join(allowed_review)})',
+        })
+
     # Unknown fields (warning only)
     known_fields = set(schema.get("required_fields", [])) | set(schema.get("optional_fields", []))
     for key in fm:
