@@ -2,7 +2,7 @@
 id: STORY-028
 title: "Compliance rework \u2014 BYOC with /specflow-pack-author"
 type: story
-status: draft
+status: implemented
 priority: medium
 tags:
 - compliance

@@ -1,4 +1,4 @@
-standard: iso26262
+standard: iso26262-demo
 title: "Road vehicles — Functional safety (demo stub)"
 version: "0.1-demo"
 clauses:

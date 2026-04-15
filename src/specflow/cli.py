@@ -211,7 +211,7 @@ def _alias_compliance(args: argparse.Namespace) -> int:
 
 def _add_init_parser(subparsers):
     p = subparsers.add_parser("init", help="Scaffold a SpecFlow project")
-    p.add_argument("--preset", help="Industry pack preset (e.g., iso26262)")
+    p.add_argument("--preset", help="Industry pack preset (e.g., iso26262-demo)")
     p.add_argument("--with-ci", action="store_true", dest="with_ci", help="Install CI workflow (default on)")
     p.add_argument("--no-ci", action="store_true", dest="no_ci", help="Skip CI workflow installation")
 

@@ -253,9 +253,9 @@ artifacts:
     - M2-extensible
     title: Expose recovery primitives as CLI commands and clean up dead code
   STORY-028:
-    fingerprint: sha256:863604877676
+    fingerprint: sha256:2b3cc0030f5c
     id: STORY-028
-    status: draft
+    status: implemented
     tags:
     - compliance
     - BYOC
