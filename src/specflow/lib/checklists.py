@@ -378,7 +378,7 @@ def update_artifact_checklists_applied(
     checklist_id: str,
     timestamp: str,
 ) -> None:
-    """Append a checklist execution record to the artifact's checklists_applied list."""
+    """Upsert a checklist execution record (updates timestamp if already present, appends if new)."""
     from specflow.lib.artifacts import resolve_link_target
 
     file_path = resolve_link_target(root, artifact_id)
@@ -409,7 +409,11 @@ def update_artifact_checklists_applied(
     if not isinstance(applied, list):
         applied = []
 
-    applied.append({"checklist": checklist_id, "timestamp": timestamp})
+    existing = next((e for e in applied if e.get("checklist") == checklist_id), None)
+    if existing is not None:
+        existing["timestamp"] = timestamp
+    else:
+        applied.append({"checklist": checklist_id, "timestamp": timestamp})
     fm["checklists_applied"] = applied
 
     body = text[end + 3:].strip()
