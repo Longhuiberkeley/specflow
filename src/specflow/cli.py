@@ -165,6 +165,12 @@ def cmd_merge(args: argparse.Namespace) -> int:
     return merge_cmd.run(root, vars(args))
 
 
+def cmd_ci(args: argparse.Namespace) -> int:
+    from specflow.commands import ci as ci_cmd
+    root = _find_project_root()
+    return ci_cmd.run(root, vars(args))
+
+
 # ── Hidden alias handlers (print deprecation then delegate) ───────
 
 def _alias_validate(args: argparse.Namespace) -> int:
@@ -304,14 +310,22 @@ def _add_renumber_drafts_parser(subparsers):
 def _add_import_parser(subparsers):
     p = subparsers.add_parser("import", help="Import artifacts from an external format")
     sub = p.add_subparsers(dest="import_subcommand")
-    rp = sub.add_parser("reqif", help="Import requirements from ReqIF XML")
+    # Primary: --adapter flag (handled by the parent parser, not subcommand)
+    p.add_argument("--adapter", help="Adapter name (e.g. reqif)")
+    p.add_argument("file", nargs="?", help="Path to the source file")
+    # Legacy: reqif subcommand
+    rp = sub.add_parser("reqif", help="Import requirements from ReqIF XML (deprecated, use --adapter reqif)")
     rp.add_argument("file", help="Path to the ReqIF XML file")
 
 
 def _add_export_parser(subparsers):
     p = subparsers.add_parser("export", help="Export artifacts to an external format")
     sub = p.add_subparsers(dest="export_subcommand")
-    rp = sub.add_parser("reqif", help="Export requirements to ReqIF XML")
+    # Primary: --adapter flag
+    p.add_argument("--adapter", help="Adapter name (e.g. reqif)")
+    p.add_argument("--output", help="Path to write the exported file")
+    # Legacy: reqif subcommand
+    rp = sub.add_parser("reqif", help="Export requirements to ReqIF XML (deprecated, use --adapter reqif)")
     rp.add_argument("--output", required=True, help="Path to write the ReqIF XML file")
 
 
@@ -338,7 +352,7 @@ def _add_fingerprint_refresh_parser(subparsers):
 
 
 def _add_artifact_review_parser(subparsers):
-    p = subparsers.add_parser("artifact-review", help="Compose lint + checklist review (quick depth only; STORY-024 adds normal/deep)")
+    p = subparsers.add_parser("artifact-review", help="Compose lint, checklist review, and LLM judgement/techniques")
     _add_artifact_review_args(p)
 
 
@@ -375,6 +389,12 @@ def _add_merge_parser(subparsers):
     p.add_argument("target_id", help="Target artifact ID (receives links)")
 
 
+def _add_ci_parser(subparsers):
+    p = subparsers.add_parser("ci", help="CI adapter commands")
+    sub = p.add_subparsers(dest="ci_subcommand")
+    sub.add_parser("generate", help="Generate CI workflow files from adapters.yaml")
+
+
 # ── Workflow-phase grouping for --help ────────────────────────────
 # argparse doesn't support subparser groups natively. Render groups via epilog
 # so `specflow --help` actually shows the phase headers, not just the source.
@@ -386,7 +406,7 @@ commands by workflow phase:
   Review:     artifact-lint, checklist-run, artifact-review, project-audit
   Release:    baseline, document-changes
   CI:         hook, renumber-drafts, import, export, detect, change-impact,
-              fingerprint-refresh
+              fingerprint-refresh, ci
   Recovery:   unlock, locks, rebuild-index, split, merge
 """
 
@@ -433,6 +453,7 @@ def main(argv: list[str] | None = None) -> int:
     _add_detect_parser(subparsers)
     _add_change_impact_parser(subparsers)
     _add_fingerprint_refresh_parser(subparsers)
+    _add_ci_parser(subparsers)
 
     # ── Recovery ────────────────────────────────────────────────
     _add_unlock_parser(subparsers)
@@ -483,6 +504,7 @@ def main(argv: list[str] | None = None) -> int:
         "rebuild-index": cmd_rebuild_index,
         "split": cmd_split,
         "merge": cmd_merge,
+        "ci": cmd_ci,
         # Hidden aliases
         "validate": _alias_validate,
         "check": _alias_check,
@@ -555,7 +577,8 @@ def _add_artifact_review_args(p):
     p.add_argument("artifact_id", nargs="?", help="Artifact ID to review (omit with --all)")
     p.add_argument("--all", action="store_true", help="Review all artifacts")
     p.add_argument("--depth", choices=["quick", "normal", "deep"], default="quick",
-                   help="Review depth (quick=lint+checklist only; normal/deep pending STORY-024)")
+                   help="Review depth (quick=lint+checklist; normal=add LLM judgement; deep=add thinking techniques)")
+    p.add_argument("--techniques", help="Comma-separated list of thinking techniques to run (for --depth deep)")
     p.add_argument("--gate", help="Phase-gate checklist")
     p.add_argument("--proactive", action="store_true", help="Include proactive challenge items")
 

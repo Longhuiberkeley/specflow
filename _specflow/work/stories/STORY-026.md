@@ -2,7 +2,7 @@
 id: STORY-026
 title: Build the unified adapter framework
 type: story
-status: draft
+status: implemented
 priority: high
 tags:
 - architecture
@@ -64,6 +64,7 @@ No GitLab/Bitbucket/Jenkins adapters. No Jira/Linear/GitHub Issues exchange adap
 - Additional CI/exchange adapters (community contribution territory)
 - `/specflow-pack-author` (STORY-028, uses the standards-ingestion axis)
 - Scheduled audit, RBAC doctor, compliance dashboard (enterprise features)
+- **`/specflow-adapter` unified conversational skill** — deferred to a future story. A Tier 1 skill that wraps `ci generate`, `import --adapter`, `export --adapter`, and `hook install` behind a single interactive prompt.
 
 ## Dependencies
 

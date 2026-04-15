@@ -12,6 +12,7 @@ import stat
 from pathlib import Path
 
 from specflow.lib import rbac as rbac_lib
+from specflow.lib.adapters import load_adapters_config, get_adapter
 
 RED = "\033[0;31m"
 GREEN = "\033[0;32m"
@@ -19,7 +20,19 @@ YELLOW = "\033[1;33m"
 NC = "\033[0m"
 
 
-def _hook_template() -> str:
+def _hook_template(root: Path) -> str:
+    config = load_adapters_config(root)
+    ci_cfg = config.get("ci") or {}
+    provider = ci_cfg.get("provider")
+
+    if provider:
+        try:
+            adapter = get_adapter(provider)
+            if "get_hook_script" in adapter.supported_operations:
+                return adapter.get_hook_script()
+        except ValueError:
+            pass
+
     return (
         "#!/usr/bin/env bash\n"
         "# specflow pre-commit hook — installed by `specflow hook install`\n"
@@ -37,7 +50,7 @@ def _install(root: Path) -> int:
     hooks_dir = git_dir / "hooks"
     hooks_dir.mkdir(parents=True, exist_ok=True)
     hook_path = hooks_dir / "pre-commit"
-    hook_path.write_text(_hook_template(), encoding="utf-8")
+    hook_path.write_text(_hook_template(root), encoding="utf-8")
     mode = hook_path.stat().st_mode
     hook_path.chmod(mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
     print(f"{GREEN}✓ Installed .git/hooks/pre-commit{NC}")

@@ -1,0 +1,96 @@
+name: SpecFlow
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+jobs:
+  specflow-pass-1:
+    name: Pass 1 — programmatic validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install uv
+        run: pip install uv
+      - name: Install SpecFlow
+        run: uv sync
+      - name: Validate artifacts (zero tokens)
+        run: uv run specflow artifact-lint --method programmatic
+  specflow-pass-2:
+    name: Pass 2 — LLM-judged review (opt-in)
+    runs-on: ubuntu-latest
+    needs: specflow-pass-1
+    if: ${{ vars.SPECFLOW_LLM_CHECKS == 'true' }}
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install uv
+        run: pip install uv
+      - name: Install SpecFlow
+        run: uv sync
+      - name: LLM-judged review
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: uv run specflow artifact-lint --method llm | tee llm-report.txt
+      - name: Post PR comment
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('llm-report.txt', 'utf8');
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '### SpecFlow Pass 2 (LLM-judged)\n\n```\n' + body + '\n```',
+            });
+  specflow-project-audit:
+    name: Project audit
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' }}
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install uv
+        run: pip install uv
+      - name: Install SpecFlow
+        run: uv sync
+      - name: Project audit
+        run: uv run specflow project-audit 2>&1 | tee audit-report.txt
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-report
+          path: audit-report.txt
+  specflow-change-impact:
+    name: Change-impact review
+    runs-on: ubuntu-latest
+    needs: specflow-pass-1
+    if: ${{ github.event_name == 'pull_request' }}
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install uv
+        run: pip install uv
+      - name: Install SpecFlow
+        run: uv sync
+      - name: Change-impact review
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: uv run specflow change-impact --all || true

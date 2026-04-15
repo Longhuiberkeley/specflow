@@ -2,7 +2,7 @@
 id: STORY-024
 title: Ship /specflow-artifact-review with tiered depth and thinking techniques
 type: story
-status: draft
+status: implemented
 priority: high
 tags:
 - review
@@ -13,6 +13,8 @@ created: '2026-04-14'
 checklists_applied:
 - checklist: check-STORY-024
   timestamp: '2026-04-14T17:03:23Z'
+modified: '2026-04-15'
+fingerprint: sha256:b95df92dbbbb
 ---
 
 # Ship /specflow-artifact-review with tiered depth and thinking techniques

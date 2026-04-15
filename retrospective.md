@@ -940,6 +940,10 @@ No "coming soon" in public docs. These are possibilities the adapter framework e
 - **M2 = v0.Y "extensible."** Ships the adapter framework. This is the public-launch readiness milestone.
 - **M3 = v1.0 "complete."** Post-launch depth. Public watches this land in master.
 
+### Deferred from M2
+
+- **`/specflow-adapter` unified conversational skill** — A Tier 1 skill wrapping `ci generate`, `import --adapter`, `export --adapter`, and `hook install` behind a single interactive prompt. The adapter framework (STORY-026) ships CLI commands only; the conversational UX is a follow-up.
+
 Public launch lands between M2 and M3. Launching earlier (without adapter framework) means shipping a tool whose only CI story is a hand-maintained GitHub Actions YAML and whose only exchange format is hardcoded. Launching later (after M3) delays hitting the market without changing the differentiator.
 
 ---

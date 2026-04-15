@@ -64,6 +64,20 @@ def create_internal_dirs(root: Path, template_dir: Path) -> None:
         shutil.copytree(str(schema_src), str(schema_dst))
 
 
+def copy_adapters_config(root: Path, template_dir: Path) -> None:
+    """Copy the default adapters.yaml template into .specflow/.
+
+    Only copies if the destination doesn't already exist (preserves user edits).
+    """
+    src = template_dir / "adapters.yaml"
+    dst = root / ".specflow" / "adapters.yaml"
+    if not src.exists():
+        return
+    if dst.exists():
+        return
+    shutil.copy2(str(src), str(dst))
+
+
 def copy_checklists(root: Path, template_dir: Path) -> None:
     """Copy checklist templates from package to project instance.
 

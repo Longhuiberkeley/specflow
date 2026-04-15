@@ -1,0 +1,9 @@
+artifacts:
+  CHL-001:
+    id: CHL-001
+    title: Error executing devils_advocate
+    status: stale
+    tags: []
+    fingerprint: sha256:2af47150b370
+    children: []
+next_id: 2

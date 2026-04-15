@@ -10,6 +10,7 @@ from specflow.lib import platform as plat_lib
 from specflow.lib import rbac as rbac_lib
 from specflow.lib import scaffold as scaffold_lib
 from specflow.lib import config as config_lib
+from specflow.lib.adapters import load_adapters_config, get_adapter
 
 
 def _get_packs_dir() -> Path:
@@ -168,6 +169,11 @@ def run(root: Path, args: dict) -> int:
     scaffold_lib.copy_checklists(root, _get_package_templates())
     print("  ✓ Checklist templates copied")
 
+    # 8a. Copy adapters.yaml config template
+    print("  Copying adapters config...")
+    scaffold_lib.copy_adapters_config(root, _get_package_templates())
+    print("  ✓ adapters.yaml copied")
+
     # 8b. Apply preset pack if requested
     preset = args.get("preset")
     if preset:
@@ -235,14 +241,31 @@ def _render_codeowners(root: Path) -> None:
 
 
 def _install_ci_workflow(root: Path) -> None:
-    template = _get_package_templates() / "ci" / "github-actions.yml"
-    if not template.exists():
+    config = load_adapters_config(root)
+    ci_cfg = config.get("ci") or {}
+    provider = ci_cfg.get("provider")
+
+    if not provider:
         return
-    workflows_dir = root / ".github" / "workflows"
-    workflows_dir.mkdir(parents=True, exist_ok=True)
-    dst = workflows_dir / "specflow.yml"
-    if dst.exists():
-        print(f"  ⚠ .github/workflows/specflow.yml already exists — leaving as-is")
+
+    try:
+        adapter = get_adapter(provider)
+    except ValueError:
         return
-    shutil.copy2(str(template), str(dst))
-    print(f"  ✓ Installed .github/workflows/specflow.yml")
+
+    if "generate_ci_workflow" not in adapter.supported_operations:
+        return
+
+    ops = ci_cfg.get("operations", []) or []
+    if not ops:
+        return
+
+    files = adapter.generate_ci_workflow(ops)
+    for rel_path, content in files.items():
+        out_path = root / rel_path
+        if out_path.exists():
+            print(f"  ⚠ {rel_path} already exists — leaving as-is")
+            continue
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(content, encoding="utf-8")
+        print(f"  ✓ Generated {rel_path}")
