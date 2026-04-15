@@ -165,7 +165,7 @@ Wait for user acknowledgement.
 - Preserve the original clause IDs from the source standard.
 - Keep descriptions concise but complete — one to two sentences.
 - If the user provides a multi-part standard (e.g., ISO 26262 Parts 1-12), ask which parts to include before extraction.
-- If the adapter framework (STORY-026) is available in the codebase, use its standards-ingestion axis for clause extraction. Otherwise, extract clauses directly via LLM parsing as described above.
+- **Adapter framework (optional):** If `src/specflow/lib/adapters/base.py` is present, use `StandardsAdapter.ingest_standard(source, source_type)` for clause extraction — it returns a structured list of `{id, title, description}` dicts. Falls back to direct LLM parsing if the adapter is unavailable or returns empty results.
 
 ## References
 

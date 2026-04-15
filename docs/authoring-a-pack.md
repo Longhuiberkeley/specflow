@@ -247,6 +247,62 @@ artifact_types:
   - security-finding    # add your new types
 ```
 
+## Step 8: Declare Coverage in Artifacts
+
+Installing a pack makes its clauses available, but coverage is only recorded when artifacts explicitly link to them. Use the `complies_with` link role in any artifact's frontmatter:
+
+```yaml
+---
+id: REQ-001
+title: Access Control
+type: requirement
+status: approved
+links:
+  - target: "SEC-1"
+    role: complies_with
+  - target: "SEC-2"
+    role: complies_with
+---
+```
+
+`target` must match a clause `id` exactly as written in your `standards/{name}.yaml`.
+
+You can link any artifact type — requirements, architecture specs, stories, test records — to clause IDs. Multiple artifacts can cover the same clause; the audit report lists all of them.
+
+## Step 9: Audit Coverage with `specflow project-audit`
+
+Once at least one artifact has a `complies_with` link, run the audit command to see your coverage gap:
+
+```bash
+uv run specflow project-audit
+```
+
+If you have multiple standards installed, specify which one:
+
+```bash
+uv run specflow project-audit --standard my-standard
+```
+
+**Example output:**
+
+```
+Project Audit — Standards Coverage: my-standard — My Internal Security Compliance Standard
+──────────────────────────────────────────────────────────
+  Covered Clauses (2/3):
+    ✓ SEC-1  Access Control
+        → REQ-001
+    ✓ SEC-2  Audit Logging
+        → REQ-001, ARCH-003
+
+  Compliance Gaps (1 uncovered):
+    ✗ SEC-3  Data Encryption
+
+──────────────────────────────────────────────────────────
+  Coverage: 2/3 clauses (66%)
+```
+
+Each uncovered clause is a gap — add a `complies_with` link from an existing artifact, or create a new one. Re-run the audit after each change to track progress.
+
 ## Complete Example: Minimal Pack
 
 A pack that adds clauses but no new artifact types — the simplest valid pack:
@@ -288,4 +344,24 @@ clauses:
 
 3 clauses covering password policy, session management, and access review.
 Derived from the company security policy v1.0 (2024-01).
+```
+
+**After installing, link an artifact and audit:**
+```yaml
+# _specflow/specs/requirements/REQ-001.md
+---
+id: REQ-001
+title: Authentication
+type: requirement
+status: approved
+links:
+  - target: "POL-1"
+    role: complies_with
+---
+```
+
+```bash
+uv run specflow project-audit
+# Covered Clauses (1/3): ✓ POL-1  Password Policy → REQ-001
+# Compliance Gaps (2 uncovered): ✗ POL-2  Session Timeout, ✗ POL-3  Access Review
 ```
