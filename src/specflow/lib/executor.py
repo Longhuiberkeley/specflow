@@ -15,6 +15,13 @@ from specflow.lib.locks import acquire_lock, check_lock, release_lock
 from specflow.lib.waves import compute_waves, filter_executable_stories
 
 
+__all__ = [
+    "ExecutionState",
+    "run_execution",
+    "load_execution_state",
+]
+
+
 # Approximate token budget: 4 chars ~ 1 token
 MAX_CONTEXT_CHARS = 16000  # ~4000 tokens
 

@@ -238,8 +238,3 @@ def write_candidates_file(root: Path, candidates: list[DedupCandidate]) -> Path:
     return path
 
 
-def run_dedup(root: Path) -> list[DedupCandidate]:
-    artifacts = discover_artifacts(root)
-    candidates = find_duplicates(artifacts)
-    write_candidates_file(root, candidates)
-    return candidates

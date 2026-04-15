@@ -90,14 +90,3 @@ def read_state(root: Path) -> dict:
     return yaml.safe_load(path.read_text()) or {}
 
 
-def update_execution_state(root: Path, execution_data: dict) -> None:
-    """Merge execution state into state.yaml."""
-    state = read_state(root)
-    state["execution"] = execution_data
-    write_state(root, state)
-
-
-def read_execution_state(root: Path) -> dict | None:
-    """Read the execution block from state.yaml."""
-    state = read_state(root)
-    return state.get("execution")

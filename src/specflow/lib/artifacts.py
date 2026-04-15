@@ -351,12 +351,6 @@ def find_missing_v_pairs(artifacts: list[Artifact]) -> list[tuple[Artifact, str]
     return missing
 
 
-def get_stories_by_status(root: Path, status: str) -> list[Artifact]:
-    """Return all story artifacts with the given status."""
-    stories = discover_artifacts(root, "story")
-    return [s for s in stories if s.status == status]
-
-
 def _read_index(index_path: Path) -> dict[str, Any]:
     if not index_path.exists():
         return {"artifacts": {}, "next_id": 1}

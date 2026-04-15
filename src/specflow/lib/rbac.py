@@ -158,34 +158,9 @@ def check_independence(
     return (True, "")
 
 
-def check_gpg_signature(root: Path, commit_ref: str = "HEAD") -> dict[str, Any]:
-    """Return GPG signature info for a commit.
-
-    Uses `git verify-commit` (returns 0 only if signed AND trusted).
-    When the commit is signed but untrusted, we still surface the key ID.
-    """
-    verify = _run_git(root, ["verify-commit", "--raw", commit_ref])
-    signed = verify.returncode == 0
-
-    show = _run_git(
-        root,
-        ["log", "-1", "--format=%GK|%GS|%G?", commit_ref],
-    )
-    key_id = ""
-    signer = ""
-    status_char = ""
-    if show.returncode == 0 and show.stdout.strip():
-        parts = show.stdout.strip().split("|", 2)
-        if len(parts) == 3:
-            key_id, signer, status_char = parts
-
-    return {
-        "signed": signed or status_char in ("G", "U", "X", "Y"),
-        "trusted": signed,
-        "key_id": key_id,
-        "signer": signer,
-        "status": status_char,
-    }
+# Note: GPG signature enforcement is delegated to GitHub branch protection
+# ("Require signed commits"), not this pre-commit hook. See hook.py for the
+# advisory-not-enforcement philosophy.
 
 
 def current_git_author_email(root: Path) -> str:

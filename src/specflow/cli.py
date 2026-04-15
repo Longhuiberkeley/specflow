@@ -135,6 +135,36 @@ def cmd_detect(args: argparse.Namespace) -> int:
     return detect_cmd.run(root, vars(args))
 
 
+def cmd_unlock(args: argparse.Namespace) -> int:
+    from specflow.commands import unlock as unlock_cmd
+    root = _find_project_root()
+    return unlock_cmd.run(root, vars(args))
+
+
+def cmd_locks(args: argparse.Namespace) -> int:
+    from specflow.commands import locks as locks_cmd
+    root = _find_project_root()
+    return locks_cmd.run(root, vars(args))
+
+
+def cmd_rebuild_index(args: argparse.Namespace) -> int:
+    from specflow.commands import rebuild_index as rebuild_index_cmd
+    root = _find_project_root()
+    return rebuild_index_cmd.run(root, vars(args))
+
+
+def cmd_split(args: argparse.Namespace) -> int:
+    from specflow.commands import split as split_cmd
+    root = _find_project_root()
+    return split_cmd.run(root, vars(args))
+
+
+def cmd_merge(args: argparse.Namespace) -> int:
+    from specflow.commands import merge as merge_cmd
+    root = _find_project_root()
+    return merge_cmd.run(root, vars(args))
+
+
 # ── Hidden alias handlers (print deprecation then delegate) ───────
 
 def _alias_validate(args: argparse.Namespace) -> int:
@@ -317,6 +347,34 @@ def _add_project_audit_parser(subparsers):
     _add_project_audit_args(p)
 
 
+def _add_unlock_parser(subparsers):
+    p = subparsers.add_parser("unlock", help="Break a stale lock on an artifact")
+    p.add_argument("artifact_id", help="Artifact ID to unlock")
+
+
+def _add_locks_parser(subparsers):
+    subparsers.add_parser("locks", help="List all active locks")
+
+
+def _add_rebuild_index_parser(subparsers):
+    p = subparsers.add_parser("rebuild-index", help="Regenerate stale _index.yaml files")
+    p.add_argument("--type", help="Rebuild only one artifact type (default: all)")
+
+
+def _add_split_parser(subparsers):
+    p = subparsers.add_parser("split", help="Split an artifact into two")
+    p.add_argument("source_id", help="Source artifact ID being split")
+    p.add_argument("new_id", help="ID of the new artifact that receives some links")
+    p.add_argument("--reassign", dest="reassign_links", action="append", default=[],
+                   help="Artifact ID whose links should move to new_id (repeatable)")
+
+
+def _add_merge_parser(subparsers):
+    p = subparsers.add_parser("merge", help="Merge two artifacts (source → target)")
+    p.add_argument("source_id", help="Source artifact ID (status becomes merged_into)")
+    p.add_argument("target_id", help="Target artifact ID (receives links)")
+
+
 # ── Workflow-phase grouping for --help ────────────────────────────
 # argparse doesn't support subparser groups natively. Render groups via epilog
 # so `specflow --help` actually shows the phase headers, not just the source.
@@ -329,6 +387,7 @@ commands by workflow phase:
   Release:    baseline, document-changes
   CI:         hook, renumber-drafts, import, export, detect, change-impact,
               fingerprint-refresh
+  Recovery:   unlock, locks, rebuild-index, split, merge
 """
 
 
@@ -375,6 +434,13 @@ def main(argv: list[str] | None = None) -> int:
     _add_change_impact_parser(subparsers)
     _add_fingerprint_refresh_parser(subparsers)
 
+    # ── Recovery ────────────────────────────────────────────────
+    _add_unlock_parser(subparsers)
+    _add_locks_parser(subparsers)
+    _add_rebuild_index_parser(subparsers)
+    _add_split_parser(subparsers)
+    _add_merge_parser(subparsers)
+
     # ── Hidden aliases (old names → deprecation warning) ────────
     _add_hidden_alias_parser(subparsers, "validate", "artifact-lint", _add_artifact_lint_args)
     _add_hidden_alias_parser(subparsers, "check", "checklist-run", _add_checklist_run_args)
@@ -412,6 +478,11 @@ def main(argv: list[str] | None = None) -> int:
         "detect": cmd_detect,
         "artifact-review": cmd_artifact_review,
         "project-audit": cmd_project_audit,
+        "unlock": cmd_unlock,
+        "locks": cmd_locks,
+        "rebuild-index": cmd_rebuild_index,
+        "split": cmd_split,
+        "merge": cmd_merge,
         # Hidden aliases
         "validate": _alias_validate,
         "check": _alias_check,

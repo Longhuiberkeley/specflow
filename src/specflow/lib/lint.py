@@ -11,6 +11,18 @@ import yaml
 from specflow.lib import artifacts as art_lib
 
 
+__all__ = [
+    "load_schemas",
+    "validate_artifact_schema",
+    "validate_status_hierarchy",
+    "validate_fingerprint",
+    "has_acceptance_criteria",
+    "recompute_fingerprint",
+    "discover_checklists",
+    "run_automated_checklist",
+]
+
+
 # ---------------------------------------------------------------------------
 # Schema loading
 # ---------------------------------------------------------------------------
@@ -34,20 +46,6 @@ def load_schemas(schema_dir: Path) -> dict[str, dict[str, Any]]:
             pass
 
     return schemas
-
-
-def load_schema_for_type(schema_dir: Path, artifact_type: str) -> dict[str, Any] | None:
-    """Load a single schema by type name or prefix."""
-    schemas = load_schemas(schema_dir)
-    if artifact_type in schemas:
-        return schemas[artifact_type]
-
-    # Try resolving from prefix
-    if artifact_type.upper() in art_lib.PREFIX_TO_TYPE:
-        type_name = art_lib.PREFIX_TO_TYPE[artifact_type.upper()]
-        return schemas.get(type_name)
-
-    return None
 
 
 # ---------------------------------------------------------------------------
@@ -130,7 +128,7 @@ def validate_artifact_schema(
 VALID_STATUS_ORDER = ["draft", "approved", "implemented", "verified"]
 
 
-def validate_status_transition(current: str, expected: str) -> bool:
+def _validate_status_transition(current: str, expected: str) -> bool:
     """Check if a status is valid (exists in the lifecycle)."""
     return expected in VALID_STATUS_ORDER
 
@@ -236,19 +234,6 @@ def has_acceptance_criteria(artifact: art_lib.Artifact) -> bool:
 # ---------------------------------------------------------------------------
 # Checklist loading and execution
 # ---------------------------------------------------------------------------
-
-def load_checklist(path: Path) -> dict[str, Any] | None:
-    """Load a checklist YAML file."""
-    if not path.exists():
-        return None
-    try:
-        data = yaml.safe_load(path.read_text(encoding="utf-8"))
-        if isinstance(data, dict):
-            return data
-    except Exception:
-        pass
-    return None
-
 
 def discover_checklists(checklists_dir: Path, category: str = "") -> list[Path]:
     """Discover checklist YAML files in a category subdirectory.
