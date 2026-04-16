@@ -2,7 +2,7 @@
 id: STORY-029
 title: Add deterministic analytical passes to the V-model
 type: story
-status: draft
+status: implemented
 priority: medium
 tags:
 - analysis
@@ -10,6 +10,11 @@ tags:
 - M3-depth
 suspect: false
 created: '2026-04-14'
+links:
+- target: STORY-022
+  role: depends_on
+- target: STORY-024
+  role: depends_on
 checklists_applied:
 - checklist: check-STORY-029
   timestamp: '2026-04-14T17:03:23Z'

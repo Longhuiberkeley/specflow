@@ -2,7 +2,7 @@
 id: STORY-031
 title: "Install UX \u2014 one-line install path and getting-started tutorial"
 type: story
-status: draft
+status: implemented
 priority: high
 tags:
 - UX
@@ -10,6 +10,13 @@ tags:
 - M3-depth
 suspect: false
 created: '2026-04-14'
+links:
+- target: STORY-022
+  role: depends_on
+- target: STORY-023
+  role: depends_on
+- target: STORY-026
+  role: depends_on
 checklists_applied:
 - checklist: check-STORY-031
   timestamp: '2026-04-14T17:03:23Z'

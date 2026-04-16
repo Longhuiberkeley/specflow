@@ -30,6 +30,13 @@ When writing AI skills for SpecFlow's internal agents (e.g., inside `.claude/ski
 ### 6. Ephemeral Local Execution (Like npx)
 We do not install SpecFlow globally for users. Users will install it directly into their repository ephemerally using `uv run specflow install` to scaffold directories. Ensure scripts and instructions respect this local execution paradigm to avoid system-level pollution.
 
+### 7. The User Interface Is CLI Skills
+The user's primary interface to SpecFlow is **`/specflow-*` conversational skills** invoked inside their AI coding assistant (Claude, Cursor, Cline, etc.). Raw CLI commands like `specflow create` or `uv run specflow artifact-lint` are the deterministic backend that skills call under the hood — they are implementation details, not the user-facing product.
+
+When writing documentation, tutorials, or onboarding material, emphasize skill-based workflows (`/specflow-discover`, `/specflow-plan`, `/specflow-execute`, `/specflow-project-audit`). Only mention raw CLI commands when explaining what a skill does internally or when providing CI/automation examples.
+
+The install mechanism (`uv tool install`, `uvx`, `python -m specflow`) is our concern, not the user's. Once installed, the user thinks in terms of skills, not shell commands.
+
 
 <!-- SpecFlow section (auto-generated, do not edit manually) -->
 ## SpecFlow

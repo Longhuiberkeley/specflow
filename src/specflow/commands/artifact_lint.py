@@ -15,7 +15,7 @@ YELLOW = "\033[1;33m"
 CYAN = "\033[0;36m"
 NC = "\033[0m"  # No Color
 
-CHECK_NAMES = ["schema", "links", "status", "ids", "fingerprints", "acceptance"]
+CHECK_NAMES = ["schema", "links", "status", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size"]
 
 
 def _run_check(
@@ -41,6 +41,12 @@ def _run_check(
         return _check_fingerprints(artifacts)
     elif check_name == "acceptance":
         return _check_acceptance(artifacts)
+    elif check_name == "conflicts":
+        return _check_conflicts(artifacts)
+    elif check_name == "coverage":
+        return _check_coverage(artifacts)
+    elif check_name == "story-size":
+        return _check_story_size(artifacts)
 
     return {"status_icon": "?", "detail": f"Unknown check: {check_name}",
             "blocking_count": 0, "warning_count": 0}
@@ -270,6 +276,250 @@ def _check_acceptance(
 
     icon = GREEN + "✓" + NC if blocking == 0 else RED + "✗" + NC
     detail_msg = "; ".join(details) if details else f"All {len(reqs)} requirement(s) have acceptance criteria"
+
+    return {
+        "status_icon": icon,
+        "detail": detail_msg,
+        "blocking_count": blocking,
+        "warning_count": warnings,
+    }
+
+
+def _check_conflicts(
+    artifacts: list[art_lib.Artifact],
+) -> dict[str, str | int]:
+    """Detect contradictory constraints between requirements.
+
+    Uses zero-token pattern matching to find numeric constraints in REQ bodies,
+    groups them by system element (extracted from title keywords and tags),
+    and flags pairs specifying contradictory ranges on the same metric.
+    """
+    import re as _re
+
+    blocking = 0
+    warnings = 0
+    details: list[str] = []
+
+    reqs = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "REQ"]
+
+    _NUM_PATTERN = _re.compile(
+        r"(?P<metric>[\w\s]{3,40}?)"
+        r"\s*(?P<op><|<=|>=|>|==|=|!=|at\s+least|at\s+most|under|over|below|above)"
+        r"\s*(?P<value>\d+\.?\d*)\s*(?P<unit>%|ms|s|sec|seconds?|min|minutes?|mb|gb|kb|bytes?|rpm|rps)?",
+        _re.IGNORECASE,
+    )
+
+    _HEADING_PATTERN = _re.compile(r"^##\s+(.+)$", _re.MULTILINE)
+
+    constraints_by_req: dict[str, list[dict]] = {}
+    for art in reqs:
+        found = []
+        for m in _NUM_PATTERN.finditer(art.body):
+            metric = m.group("metric").strip().lower()
+            op = m.group("op").strip().lower()
+            val = float(m.group("value"))
+            unit = (m.group("unit") or "").strip().lower()
+            if not metric:
+                continue
+            found.append({"metric": metric, "op": op, "value": val, "unit": unit, "id": art.id})
+        if found:
+            title_words = set(art.title.lower().split())
+            tag_words = set(t.lower() for t in art.tags)
+            heading_words: set[str] = set()
+            for hm in _HEADING_PATTERN.finditer(art.body):
+                for w in hm.group(1).lower().split():
+                    if len(w) > 3:
+                        heading_words.add(w)
+            key = frozenset(title_words | tag_words | heading_words)
+            for c in found:
+                c["element_key"] = key
+            constraints_by_req[art.id] = found
+
+    _OP_BOUNDS = {
+        "<": ("upper", False), "<=": ("upper", True),
+        ">": ("lower", False), ">=": ("lower", True),
+        "at least": ("lower", True), "at most": ("upper", True),
+        "under": ("upper", False), "over": ("lower", False),
+        "below": ("upper", False), "above": ("lower", False),
+    }
+
+    seen_pairs: set[frozenset[str]] = set()
+    for req_id_a, constraints_a in constraints_by_req.items():
+        for c_a in constraints_a:
+            for req_id_b, constraints_b in constraints_by_req.items():
+                if req_id_a >= req_id_b:
+                    continue
+                pair_key = frozenset({req_id_a, req_id_b})
+                if pair_key in seen_pairs:
+                    continue
+                for c_b in constraints_b:
+                    if c_a["element_key"] != c_b["element_key"]:
+                        continue
+                    if c_a["metric"] != c_b["metric"]:
+                        continue
+                    if c_a["unit"] != c_b["unit"]:
+                        continue
+
+                    bounds_a = _OP_BOUNDS.get(c_a["op"])
+                    bounds_b = _OP_BOUNDS.get(c_b["op"])
+                    if not bounds_a or not bounds_b:
+                        continue
+
+                    def _bound_val(bound_type: str, inclusive: bool, val: float) -> float:
+                        eps = 1e-9
+                        if bound_type == "upper":
+                            return val if inclusive else val - eps
+                        return val if inclusive else val + eps
+
+                    if bounds_a[0] == "upper" and bounds_b[0] == "lower":
+                        upper = _bound_val("upper", bounds_a[1], c_a["value"])
+                        lower = _bound_val("lower", bounds_b[1], c_b["value"])
+                        if upper < lower:
+                            seen_pairs.add(pair_key)
+                            warnings += 1
+                            details.append(
+                                f"  ⚠ [{req_id_a}] vs [{req_id_b}] conflicting: "
+                                f"'{c_a['metric']} {c_a['op']} {c_a['value']}{c_a['unit']}' "
+                                f"vs '{c_b['metric']} {c_b['op']} {c_b['value']}{c_b['unit']}'"
+                            )
+                    elif bounds_a[0] == "lower" and bounds_b[0] == "upper":
+                        lower = _bound_val("lower", bounds_a[1], c_a["value"])
+                        upper = _bound_val("upper", bounds_b[1], c_b["value"])
+                        if upper < lower:
+                            seen_pairs.add(pair_key)
+                            warnings += 1
+                            details.append(
+                                f"  ⚠ [{req_id_a}] vs [{req_id_b}] conflicting: "
+                                f"'{c_a['metric']} {c_a['op']} {c_a['value']}{c_a['unit']}' "
+                                f"vs '{c_b['metric']} {c_b['op']} {c_b['value']}{c_b['unit']}'"
+                            )
+
+    icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
+    detail_msg = "; ".join(details) if details else "No conflicting REQ constraints detected"
+
+    return {
+        "status_icon": icon,
+        "detail": detail_msg,
+        "blocking_count": blocking,
+        "warning_count": warnings,
+    }
+
+
+def _check_coverage(
+    artifacts: list[art_lib.Artifact],
+) -> dict[str, str | int]:
+    """Check REQ→STORY→test coverage completeness at all V-model levels.
+
+    For each approved REQ, verifies:
+      - At least one STORY links to it via 'implements'
+    For each approved STORY, verifies:
+      - At least one test at each required V-model level links via 'verified_by'
+    """
+    blocking = 0
+    warnings = 0
+    details: list[str] = []
+
+    id_index = art_lib.build_id_index(artifacts)
+
+    reqs = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "REQ" and a.status in ("approved", "implemented", "verified")]
+    stories = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "STORY"]
+    tests_by_type: dict[str, list[art_lib.Artifact]] = {
+        "unit-test": [], "integration-test": [], "qualification-test": [],
+    }
+    for a in artifacts:
+        if a.type in tests_by_type:
+            tests_by_type[a.type].append(a)
+
+    req_to_stories: dict[str, list[art_lib.Artifact]] = {}
+    for story in stories:
+        for link in story.links:
+            if link.role == "implements" and art_lib.get_prefix_from_id(link.target) == "REQ":
+                req_to_stories.setdefault(link.target, []).append(story)
+
+    for req in reqs:
+        linked_stories = req_to_stories.get(req.id, [])
+        if not linked_stories:
+            warnings += 1
+            details.append(f"  ⚠ [{req.id}] no STORY implements this approved requirement")
+            continue
+
+        for story in linked_stories:
+            if story.status not in ("approved", "implemented", "verified"):
+                continue
+
+            test_links_by_type: dict[str, list[art_lib.Artifact]] = {
+                "unit-test": [], "integration-test": [], "qualification-test": [],
+            }
+            for t_type, t_arts in tests_by_type.items():
+                for t_art in t_arts:
+                    for t_link in t_art.links:
+                        if t_link.target == story.id and t_link.role == "verified_by":
+                            test_links_by_type[t_type].append(t_art)
+                            break
+
+            for t_type in ("unit-test", "integration-test", "qualification-test"):
+                prefix = art_lib.TYPE_TO_PREFIX.get(t_type, "")
+                if not test_links_by_type[t_type]:
+                    warnings += 1
+                    details.append(
+                        f"  ⚠ [{story.id}] no {prefix} linked via 'verified_by' "
+                        f"(covers REQ {req.id})"
+                    )
+
+    icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
+    detail_msg = "; ".join(details) if details else "All approved REQs have STORY and test coverage"
+
+    return {
+        "status_icon": icon,
+        "detail": detail_msg,
+        "blocking_count": blocking,
+        "warning_count": warnings,
+    }
+
+
+def _check_story_size(
+    artifacts: list[art_lib.Artifact],
+) -> dict[str, str | int]:
+    """Warn on stories exceeding size heuristics.
+
+    Flags stories with >8 acceptance criteria or >5 distinct subsystem references.
+    """
+    import re as _re
+
+    blocking = 0
+    warnings = 0
+    details: list[str] = []
+
+    stories = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "STORY"]
+
+    for art in stories:
+        ac_section = _re.search(
+            r"##\s*Acceptance\s+Criteria\s*\n(.*)",
+            art.body,
+            _re.IGNORECASE | _re.DOTALL,
+        )
+        if ac_section:
+            ac_text = ac_section.group(1)
+            next_header = _re.search(r"^##\s", ac_text, _re.MULTILINE)
+            if next_header:
+                ac_text = ac_text[:next_header.start()]
+            ac_items = _re.findall(r"^\d+\.\s+", ac_text, _re.MULTILINE)
+            ac_count = len(ac_items)
+            if ac_count > 8:
+                warnings += 1
+                details.append(f"  ⚠ [{art.id}] has {ac_count} acceptance criteria (max 8 recommended)")
+
+        subsystem_refs = set(
+            _re.findall(r"\bsrc/[\w./-]+", art.body)
+            + _re.findall(r"\blib/[\w./-]+", art.body)
+            + _re.findall(r"commands/[\w./-]+", art.body)
+        )
+        if len(subsystem_refs) > 5:
+            warnings += 1
+            details.append(f"  ⚠ [{art.id}] references {len(subsystem_refs)} distinct subsystems (max 5 recommended)")
+
+    icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
+    detail_msg = "; ".join(details) if details else f"All {len(stories)} story/stories within size limits"
 
     return {
         "status_icon": icon,

@@ -30,10 +30,10 @@ def build_dependency_graph(
     for s in stories:
         depends_on.setdefault(s.id, set())
 
-    # Hard dependencies: derives_from links between stories
+    # Hard dependencies: derives_from and depends_on links between stories
     for story in stories:
         for link in story.links:
-            if link.role == "derives_from" and link.target in story_ids:
+            if link.role in ("derives_from", "depends_on") and link.target in story_ids:
                 depends_on[story.id].add(link.target)
                 depended_by[link.target].add(story.id)
 
