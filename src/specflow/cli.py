@@ -238,6 +238,8 @@ def _add_create_parser(subparsers):
     p.add_argument("--body", default="", help="Markdown body content")
     p.add_argument("--force", action="store_true", help="Skip duplicate-check prompt")
     p.add_argument("--skip-dedup-check", action="store_true", dest="skip_dedup_check", help="Bypass search-before-create")
+    p.add_argument("--nfr-category", dest="nfr_category",
+                   help="Non-functional requirement category (performance, security, reliability, usability, maintainability, scalability, compliance)")
 
 
 def _add_update_parser(subparsers):
@@ -265,7 +267,7 @@ def _add_done_parser(subparsers):
 
 def _add_artifact_lint_parser(subparsers):
     p = subparsers.add_parser("artifact-lint", help="Run deterministic validation checks on artifacts")
-    p.add_argument("--type", choices=["schema", "links", "status", "ids", "fingerprints", "acceptance", "gate"], help="Run only a specific check")
+    p.add_argument("--type", choices=["schema", "links", "status", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "gate"], help="Run only a specific check")
     p.add_argument("--fix", action="store_true", help="Auto-fix (rebuild indexes, recompute fingerprints)")
     p.add_argument("--gate", help="Phase-gate checklist name")
     p.add_argument("--method", choices=["programmatic", "llm"], default="programmatic", help="Validation method")
@@ -357,7 +359,7 @@ def _add_artifact_review_parser(subparsers):
 
 
 def _add_project_audit_parser(subparsers):
-    p = subparsers.add_parser("project-audit", help="Full-project health review (standards-coverage scope; STORY-030 adds more)")
+    p = subparsers.add_parser("project-audit", help="Full-project health review")
     _add_project_audit_args(p)
 
 
@@ -541,7 +543,7 @@ def _add_hidden_alias_parser(subparsers, old_name: str, new_name: str, add_arg_f
 
 def _add_artifact_lint_args(p):
     """Add artifact-lint arguments to parser p."""
-    p.add_argument("--type", choices=["schema", "links", "status", "ids", "fingerprints", "acceptance", "gate"], help="Run only a specific check")
+    p.add_argument("--type", choices=["schema", "links", "status", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "gate"], help="Run only a specific check")
     p.add_argument("--fix", action="store_true", help="Auto-fix (rebuild indexes, recompute fingerprints)")
     p.add_argument("--gate", help="Phase-gate checklist name")
     p.add_argument("--method", choices=["programmatic", "llm"], default="programmatic", help="Validation method")
@@ -586,6 +588,9 @@ def _add_artifact_review_args(p):
 def _add_project_audit_args(p):
     """Add project-audit arguments to parser p."""
     p.add_argument("--standard", help="Standard name (auto-detect first installed if omitted)")
+    p.add_argument("--baseline", help="Baseline name for drift comparison (auto-detect latest if omitted)")
+    p.add_argument("--sample-pct", dest="sample_pct", type=int, default=100,
+                   help="Sample percentage for STORYs (default: 100)")
 
 
 if __name__ == "__main__":

@@ -14,7 +14,8 @@
       "Bash(done)",
       "Bash(bash *)",
       "Bash(mv *)",
-      "Bash(rm *)"
+      "Bash(rm *)",
+      "Bash(.claude/skills/specflow-pack-author/scripts/validate-pack.sh *)"
     ]
   },
   "$version": 3

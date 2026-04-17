@@ -44,6 +44,7 @@ def run(root: Path, args: dict) -> int:
     tags_str = args.get("tags", "")
     links_str = args.get("links", "")
     body = args.get("body", "")
+    nfr_category = args.get("nfr_category")
 
     if not artifact_type:
         print(f"{RED}✗ --type is required{NC}")
@@ -97,6 +98,7 @@ def run(root: Path, args: dict) -> int:
         tags=tags,
         links=links,
         body=body,
+        non_functional_category=nfr_category,
     )
 
     if result["ok"]:

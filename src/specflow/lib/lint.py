@@ -121,7 +121,8 @@ def validate_artifact_schema(
             # Only flag if it looks like a user field (not a known meta field)
             known_meta = {"created", "modified", "version", "priority", "rationale",
                           "tags", "suspect", "fingerprint", "links", "upstream",
-                          "checklists_applied", "edge_cases_identified", "execution_wave"}
+                          "checklists_applied", "edge_cases_identified", "execution_wave",
+                          "non_functional_category"}
             if key not in known_meta:
                 issues.append({
                     "severity": "info",
