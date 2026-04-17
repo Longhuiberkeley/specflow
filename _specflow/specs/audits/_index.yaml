@@ -1,0 +1,83 @@
+artifacts:
+  AUD-001:
+    id: AUD-001
+    title: Project Audit 20260415T174143Z
+    status: open
+    tags:
+    - project-audit
+    - auto-generated
+    fingerprint: sha256:598d4c928e12
+    children: []
+  AUD-002:
+    id: AUD-002
+    title: Project Audit 20260415T174156Z
+    status: open
+    tags:
+    - project-audit
+    - auto-generated
+    fingerprint: sha256:9d45dd4c8507
+    children: []
+  AUD-003:
+    id: AUD-003
+    title: Project Audit 20260415T174306Z
+    status: open
+    tags:
+    - project-audit
+    - auto-generated
+    fingerprint: ''
+    children: []
+  AUD-004:
+    id: AUD-004
+    title: Project Audit 20260416T034444Z
+    status: open
+    tags:
+    - project-audit
+    - auto-generated
+    fingerprint: ''
+    children: []
+  AUD-005:
+    id: AUD-005
+    title: Project Audit 20260416T034453Z
+    status: open
+    tags:
+    - project-audit
+    - auto-generated
+    fingerprint: ''
+    children: []
+  AUD-006:
+    id: AUD-006
+    title: Project Audit 20260416T034528Z
+    status: open
+    tags:
+    - project-audit
+    - auto-generated
+    fingerprint: ''
+    children: []
+  AUD-007:
+    id: AUD-007
+    title: Project Audit 20260416T034551Z
+    status: open
+    tags:
+    - project-audit
+    - auto-generated
+    fingerprint: ''
+    children: []
+  AUD-008:
+    id: AUD-008
+    title: Project Audit 20260416T034604Z
+    status: open
+    tags:
+    - project-audit
+    - auto-generated
+    fingerprint: ''
+    children: []
+  AUD-009:
+    id: AUD-009
+    title: Project Audit 20260416T091959Z
+    status: open
+    tags:
+    - project-audit
+    - auto-generated
+    fingerprint: ''
+    children: []
+next_id: 10
