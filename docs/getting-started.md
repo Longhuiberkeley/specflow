@@ -1,171 +1,158 @@
 # Getting Started with SpecFlow
 
-A transcript-style walkthrough from cold install to a complete discover→plan→execute cycle.
+A walkthrough from cold install to a complete discover → plan → execute → ship cycle, using the `/specflow-*` slash command surface.
 
 ## Prerequisites
 
-- Python 3.11+
+- An AI coding assistant that supports slash commands (Claude Code, Cursor, OpenCode, Gemini CLI, etc.)
 - [uv](https://docs.astral.sh/uv/) installed (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
 
-## 1. Install
+## 1. Initialize your project
 
-```bash
-uv tool install specflow
+In your project repository, invoke:
+
+```
+/specflow-init
 ```
 
-Verify:
+The skill will ask a few questions about your project type, whether you want a standards preset, and which CI provider you use. It then scaffolds everything: directory structure, schemas, checklists, skill files, git hooks, and optionally a CI workflow.
 
-```bash
-$ specflow --help
-```
-
-You should see the command list grouped by workflow phase: Discover, Plan, Execute, Review, Release, CI, Recovery.
-
-## 2. Initialize a project
-
-In your project repository:
-
-```bash
-$ cd my-project
-$ specflow init
-```
-
-This creates:
+What gets created:
 
 ```
 _specflow/
 ├── specs/
-│   ├── requirements/    # REQ artifacts
-│   ├── architecture/    # ARCH artifacts
-│   ├── detailed-design/ # DDD artifacts
-│   ├── unit-tests/      # UT artifacts
-│   ├── integration-tests/  # IT artifacts
-│   └── qualification-tests/ # QT artifacts
+│   ├── requirements/     # REQ artifacts
+│   ├── architecture/     # ARCH artifacts
+│   ├── detailed-design/  # DDD artifacts
+│   └── tests/            # UT, IT, QT artifacts
 └── work/
-    ├── stories/         # STORY artifacts
-    ├── spikes/          # SPIKE artifacts
-    └── decisions/       # DEC artifacts
-.specflow/
-├── schema/              # YAML schemas per artifact type
-├── checklists/          # Phase-gate and review checklists
-└── config.yaml          # Project configuration
+    ├── stories/          # STORY artifacts
+    ├── spikes/           # SPIKE artifacts
+    └── decisions/        # DEC artifacts
+.specflow/                # Framework internals (don't edit manually)
+.claude/skills/           # 9 slash command skill files
 ```
 
-## 3. Discover requirements
-
-Use the `/specflow-discover` conversational skill to capture your first requirement. In your AI coding assistant (Claude, Cursor, etc.):
+## 2. Discover requirements
 
 ```
 /specflow-discover
 ```
 
-The skill will guide you through a progressive disclosure conversation to extract requirements and create REQ artifacts. Alternatively, create one manually:
+This starts a guided conversation to capture what your system needs to do. The skill asks one question at a time, assesses readiness after each exchange, and takes the appropriate path:
 
-```bash
-$ specflow create --type requirement --title "User authentication via OAuth 2.0" --priority high
-✓ Created REQ-001
-  Path: _specflow/specs/requirements/REQ-001.md
-```
+- **Lean path** — for simple changes (bug fixes, small features). One exchange, auto-approves a REQ + STORY.
+- **Full path** — for new capabilities. Multi-exchange with domain deep-dive and cross-cutting concerns.
 
-For non-functional requirements, specify a category:
+Each REQ includes acceptance criteria written in Given/When/Then format.
 
-```bash
-$ specflow create --type requirement \
-    --title "Login response under 200ms" \
-    --nfr-category performance \
-    --priority high
-```
+If you have installed standards packs, the skill automatically checks for uncovered clauses and offers to scaffold REQs from them.
 
-## 4. Plan the work
+## 3. Plan the work
 
-Use the `/specflow-plan` conversational skill once requirements are approved:
+Once requirements are approved:
 
 ```
 /specflow-plan
 ```
 
-This breaks approved REQs into architecture (ARCH), detailed design (DDD), and story (STORY) artifacts. The skill creates the V-model traceability links automatically.
+This breaks approved REQs into:
+- **ARCH** artifacts — component structure and interfaces
+- **DDD** artifacts — detailed design for complex components
+- **STORY** artifacts — implementable vertical slices
 
-To approve a requirement first:
+Stories are decomposed using the SPIDR method (Spike, Path, Interface, Data, Rules) and linked to their source REQs, ARCHs, and DDDs for full V-model traceability.
 
-```bash
-$ specflow update REQ-001 --status approved
-```
-
-## 5. Execute stories
-
-With stories planned and approved, run execution:
-
-```bash
-# See what will execute (dry run)
-$ specflow go --dry-run
-
-# Execute all approved stories
-$ specflow go
-```
-
-The `/specflow-execute` conversational skill orchestrates this with subagents:
+## 4. Execute stories
 
 ```
 /specflow-execute
 ```
 
-Stories are executed in dependency waves — independent stories run in parallel.
+Select which stories to implement. The skill:
+- Loads the full specification context (STORY → DDD → ARCH → REQ)
+- Implements the code
+- Creates V-model verification tests (UT for DDD, IT for ARCH, QT for REQ)
+- Updates artifact statuses
+- Optionally closes the phase with prevention pattern extraction
 
-## 6. Verify and review
+## 5. Review artifacts
 
-After implementation, run validation:
-
-```bash
-# Deterministic checks (zero tokens)
-$ specflow artifact-lint
-
-# Run a specific check
-$ specflow artifact-lint --type coverage
-$ specflow artifact-lint --type conflicts
-$ specflow artifact-lint --type story-size
-
-# Full review with LLM judgement
-$ specflow artifact-review --all --depth normal
+```
+/specflow-artifact-review
 ```
 
-Available lint checks:
+Runs a quality gate on your artifacts: deterministic lint checks first (zero tokens), then LLM-judged checklist review. Reports findings by severity — blocking, warning, info.
 
-| Check | What it validates |
-|-------|-------------------|
-| `schema` | Required fields, ID format, status values |
-| `links` | Link integrity, orphan detection, V-model pairs |
-| `status` | Status lifecycle consistency |
-| `ids` | ID uniqueness, format, dot-notation depth |
-| `fingerprints` | Content fingerprint staleness |
-| `acceptance` | REQs have acceptance criteria |
-| `conflicts` | Cross-REQ constraint contradictions |
-| `coverage` | REQ→STORY→test completeness |
-| `story-size` | Story decomposition heuristics |
+For reviewing the impact of recent commits:
 
-## 7. Check project status
-
-At any point, see the current project state:
-
-```bash
-$ specflow status
+```
+/specflow-change-impact-review
 ```
 
-This shows the current phase, artifact counts by status, and any flagged issues.
+This finds unreviewed change records, computes their blast radius, and reviews only the affected artifacts. Idempotent — running twice with no new changes does nothing.
 
-## 8. Finish a phase
+## 6. Ship a release
 
-When all stories in a phase are implemented:
-
-```bash
-$ specflow done
+```
+/specflow-ship
 ```
 
-This closes the current phase and extracts prevention patterns for future work.
+The release workflow:
+1. Creates an immutable baseline snapshot
+2. Generates change records (DECs) since the last release
+3. Runs a quick project audit
+4. Presents a release summary with an advisory gate if errors were found
 
-## Next steps
+For periodic full-project health checks at any time:
+
+```
+/specflow-audit
+```
+
+This runs a deterministic core (zero questions) with optional adversarial wings for deeper qualitative review.
+
+---
+
+## Standards and Compliance
+
+### The Standards ↔ REQ Mental Model
+
+**Standards** (installed via packs or `/specflow-pack-author`) are **immutable reference material** — the source of truth from external bodies (ISO, ASPICE, internal policies). They define what clauses exist but don't dictate your implementation.
+
+**REQs** are the **project's own requirements** — owned, editable, and adapted to your project's context. They may be inspired by or copied from standard clauses, but you tailor them to your specific system.
+
+The `complies_with` link provides **traceability** — "this REQ exists because of that standard clause" — not content equivalence. It answers the auditor's question: "how does your project address clause X?"
+
+### Workflow
+
+1. Install a standards pack (via `/specflow-init --preset` or `/specflow-pack-author`)
+2. Run `/specflow-discover` — the skill detects uncovered standard clauses and offers to scaffold REQs for them
+3. Each scaffolded REQ comes pre-populated with the clause's title, description, and a `complies_with` link
+4. Adapt the REQ text to your project's context — you own it now
+
+Power users can check coverage directly:
+
+```bash
+specflow standards gaps              # Show clauses with no linked REQs
+specflow create --from-standard ISO26262-3.7   # Scaffold a REQ from a specific clause
+```
+
+### Authoring Custom Standards
+
+If your organization has internal policies or needs to comply with a standard not yet available as a pack:
+
+```
+/specflow-pack-author
+```
+
+Feed it a PDF, URL, or pasted text. It extracts clauses, generates a pack directory with schemas, and validates the structure. Then install via `/specflow-init --preset <name>`.
+
+---
+
+## Next Steps
 
 - Read the [lifecycle overview](lifecycle.md) to understand the full workflow
-- Read the [command reference](commands.md) for all available commands and skills
-- Run `specflow artifact-lint` regularly to keep artifacts healthy
-- Use `specflow baseline create` to snapshot project state before major changes
+- Read the [command reference](commands.md) for detailed slash command interface specs
+- Use `/specflow-audit` periodically to keep your project healthy

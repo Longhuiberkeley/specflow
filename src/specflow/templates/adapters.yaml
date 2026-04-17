@@ -8,8 +8,6 @@ ci:
     - artifact-lint
     - change-impact
     - project-audit
-  release_gate:
-    severity: error                  # block release if findings ≥ this severity
 
 exchange:
   - name: reqif

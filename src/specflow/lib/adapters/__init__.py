@@ -41,7 +41,7 @@ DEFAULT_ADAPTERS_CONFIG: dict[str, Any] = {
     "ci": {
         "provider": "github-actions",
         "operations": ["artifact-lint", "change-impact", "project-audit"],
-        "release_gate": {"severity": "error"},
+
     },
     "exchange": [
         {"name": "reqif", "provider": "reqif", "direction": "bidirectional"},

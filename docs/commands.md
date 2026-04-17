@@ -1,65 +1,52 @@
 # SpecFlow Command Reference
 
-Interface spec for each Tier 1 skill. Source of record: [`retrospective.md`](../retrospective.md) §4.
-
-> **Status note:** Some commands documented here (`/specflow-init`, `/specflow-project-audit`, `/specflow-document-changes`, `/specflow-change-impact-review`, `/specflow-release`, `/specflow-pack-author`) are documented-but-not-yet-shipped; they come from retrospective §4 as the target surface. See `_specflow/work/stories/` for delivery stories. The current CLI ships a subset (see `specflow --help`).
-
-For a lifecycle overview and tier breakdown, see [lifecycle.md](lifecycle.md).
+Interface specs for each Tier 1 slash command. For a lifecycle overview, see [lifecycle.md](lifecycle.md). For raw CLI commands, see the [CLI Reference](cli-reference.md).
 
 ---
 
 ## /specflow-init
 
-**One-line:** Bootstrap a SpecFlow project.
+**One-line:** Bootstrap a SpecFlow project — scaffolds directories, installs skills, optional CI and standards packs.
 
-**Composes:** directory scaffolding, schema installation, optional pack installation, optional CI template.
+**Composes:** `specflow init`, `specflow hook install`, `specflow ci generate`
 
-**Inputs:**
-- Project root directory (default: cwd)
-- Preset selection (conversational: "what kind of project?")
-- Optional standards pack
-- Optional CI template (GitHub Actions today; more providers deferred)
-
-**Reads:** nothing on first run; on re-init, reads existing `.specflow/config.yaml` to avoid clobber.
+**Flow:**
+1. Ask: project type, standards preset, CI provider, compliance packs
+2. Run `specflow init` with appropriate flags
+3. Install git pre-commit hook
+4. Optionally generate CI workflow
+5. Report what was scaffolded; recommend `/specflow-discover`
 
 **Writes:**
-- `.specflow/config.yaml`, `.specflow/state.yaml`
-- `.specflow/schema/*.yaml` (from templates)
-- `.specflow/checklists/` (from templates)
-- `_specflow/specs/**/_index.yaml` scaffold
-- `_specflow/work/` scaffold
+- `.specflow/` internals (config, schemas, checklists, adapters)
+- `_specflow/` artifact directories (specs/, work/)
+- `.claude/skills/` (or `.opencode/`, `.gemini/`) — 9 skill directories
+- SpecFlow section appended to `AGENTS.md` (or `CLAUDE.md`)
 - `.github/workflows/specflow.yml` (if CI requested)
-- Standards pack content if a pack chosen
-
-**Side effects:** none beyond directory creation.
-
-**Exit:** summary of what was scaffolded + recommended next skill (`/specflow-discover`).
 
 ---
 
 ## /specflow-discover
 
-**One-line:** Author requirement artifacts through conversation.
+**One-line:** Author requirement artifacts through guided conversation.
 
-**Composes:** readiness assessment → lean or full path → REQ creation (+ STORY for lean path).
+**Composes:** `specflow status`, `specflow standards gaps`, `specflow create`, `specflow artifact-lint`
 
-**Inputs:**
-- Free-text description of the need
-- Optional domain context (LLM may ask)
-
-**Reads:**
-- `.specflow/state.yaml` (for phase awareness)
-- `_specflow/specs/requirements/*.md` (to detect duplicate REQs via dedup)
-- `.specflow/checklists/discovery/*.yaml` (domain prompts)
+**Flow:**
+1. Read project state; assess existing artifacts
+2. Progressive disclosure conversation — one question at a time
+3. Silent readiness assessment after each exchange (problem clarity, users, scope, success criteria)
+4. **Standards gap check** — silently run `specflow standards gaps`; if uncovered clauses found, offer to scaffold REQs via `specflow create --from-standard <clause-id>`
+5. Lean path (1 exchange) or full path (multi-exchange with domain deep-dive and cross-cutting concerns)
+6. Create REQ artifacts with acceptance criteria; run `specflow artifact-lint`
+7. Recommend `/specflow-plan` (full path) or `/specflow-execute` (lean path)
 
 **Writes:**
-- `_specflow/specs/requirements/REQ-*.md` (status `approved` if lean, `draft` otherwise)
-- For lean path: `_specflow/work/stories/STORY-*.md` (status `approved`)
-- `.specflow/state.yaml` (transition to `specifying` or next phase)
+- `_specflow/specs/requirements/REQ-*.md`
+- For lean path: `_specflow/work/stories/STORY-*.md`
+- `.specflow/state.yaml` (phase transition)
 
-**Side effects:** transitions project state; links REQs upstream if user mentions related existing REQs.
-
-**Exit:** artifact IDs created + next recommended skill (`/specflow-plan` for full path, `/specflow-execute` for lean).
+**Key rules:** 15-20 question cap; escape hatch on "move on"/"skip"; `(Recommended)` labels on defaults.
 
 ---
 
@@ -67,231 +54,143 @@ For a lifecycle overview and tier breakdown, see [lifecycle.md](lifecycle.md).
 
 **One-line:** Break approved REQs into architecture, detailed design, and implementable stories.
 
-**Composes:** REQ gate check → ARCH design conversation → optional DDD → STORY breakdown.
+**Composes:** `specflow artifact-lint`, `specflow create`
 
-**Inputs:**
-- Target REQ IDs (explicit or LLM-resolved)
-- Free-text architectural preferences
-
-**Reads:**
-- `_specflow/specs/requirements/*.md` (source REQs — gates on `status: approved`)
-- `_specflow/specs/architecture/*.md` (existing ARCHs for reuse)
-- `_specflow/specs/detailed-design/*.md`
-- `.specflow/schema/` (for new artifact validation)
+**Flow:**
+1. Gate check — all target REQs must be `status: approved`
+2. Read and summarize requirements back to user
+3. Architecture proposal — discuss component structure; create ARCH artifacts
+4. Detailed design (where needed) — create DDD artifacts for complex logic
+5. Story breakdown using SPIDR decomposition — Spike, Path, Interface, Data, Rules
+6. Validate with `specflow artifact-lint`
+7. Present artifact set; user approves; recommend `/specflow-execute`
 
 **Writes:**
 - `_specflow/specs/architecture/ARCH-*.md`
-- `_specflow/specs/detailed-design/DDD-*.md` (when granularity warrants)
+- `_specflow/specs/detailed-design/DDD-*.md`
 - `_specflow/work/stories/STORY-*.md`
-- Links: REQ→ARCH (`refined_by`), ARCH→DDD (`specified_by`), STORY→{REQ,ARCH,DDD}
-
-**Side effects:** none.
-
-**Exit:** artifact summary + story count + next skill (`/specflow-execute`).
+- Links: REQ→ARCH (`derives_from`), ARCH→DDD (`refined_by`), STORY→{REQ,ARCH,DDD}
 
 ---
 
 ## /specflow-execute
 
-**One-line:** Implement approved stories; generate unit/integration/qualification tests.
+**One-line:** Implement approved stories with test generation and optional phase closure.
 
-**Composes:** STORY gate check → wave planning (`specflow go --dry-run`) → parallel wave execution → test artifact creation.
+**Composes:** `specflow go`, `specflow update`, `specflow create`, `specflow done`, `specflow artifact-lint`
 
-**Inputs:**
-- Target STORY IDs (default: all `status: approved` stories)
-- Optional wave-size override
-
-**Reads:**
-- `_specflow/work/stories/STORY-*.md` (gates on `status: approved`)
-- Linked ARCH, DDD, REQ artifacts
-- `.specflow/schema/`
+**Flow:**
+1. Verify stories are `status: approved`; check for suspect flags on linked specs
+2. Present stories with priorities and dependencies; user selects
+3. Implement in parallel waves (independent stories) or dependency order
+4. Update story status to `implemented`
+5. Create V-model verification tests: REQ→QT, ARCH→IT, DDD→UT
+6. Validate with `specflow artifact-lint`
+7. **Phase closure** (optional): offer to run `specflow done` — summarize accomplishments, extract prevention patterns, recommend archival
 
 **Writes:**
-- Source code (language-agnostic; writes wherever the story specifies)
-- `_specflow/specs/tests/unit/UT-*.md`
-- `_specflow/specs/tests/integration/IT-*.md`
-- `_specflow/specs/tests/qualification/QT-*.md`
-- Updated STORY status (`implemented`)
-- `.specflow/locks/*.json` (during execution; released on completion)
-- `.specflow/execution-state.yaml`
-
-**Side effects:** code changes; status transitions on stories and tests. Locks are acquired per-artifact for parallel safety.
-
-**Exit:** implemented story count + test count + next skill (`/specflow-artifact-review`).
+- Source code per story specifications
+- `_specflow/specs/tests/unit/UT-*.md`, `integration/IT-*.md`, `qualification/QT-*.md`
+- Updated STORY/DDD status (`implemented`)
 
 ---
 
 ## /specflow-artifact-review
 
-**One-line:** LLM-driven quality review of one or more artifacts.
+**One-line:** Quality review of one or more specific artifacts — deterministic lint + checklist + LLM judgment.
 
-**Composes:** `artifact-lint` (deterministic) → `checklist-run` → LLM judgment → optional adversarial lenses.
+**Composes:** `specflow artifact-lint`, `specflow checklist-run`
 
-**Inputs:**
-- Artifact IDs (explicit) or free-text scope ("the auth redesign", "everything changed this week")
-- Depth selector: `quick` | `normal` | `deep` (LLM resolves or user chooses)
-- Optional lens selection (adversarial modes)
-
-**Reads:**
-- `_specflow/specs/**/*.md` (target artifacts)
-- `_specflow/work/**/*.md`
-- `.specflow/checklists/review/*.yaml`
-- `.specflow/schema/*.yaml`
+**Flow:**
+1. Run deterministic validation (`specflow artifact-lint`) — zero tokens, all 6 checks
+2. If blocking issues found, report and stop
+3. Show status dashboard (`specflow status`)
+4. Assemble review checklists by artifact type, domain tags, phase gates, and learned patterns
+5. Run LLM-judged checks against non-automated checklist items
+6. Report findings by severity: blocking, warning, info
 
 **Writes:**
-- `_specflow/specs/challenges/CHL-*.md` — one artifact per finding, status `open`
-- `.specflow/impact-log/*.yaml` — if fingerprints shift during review
-- (Never mutates target artifact status without user confirm)
+- `_specflow/specs/challenges/CHL-*.md` for findings (status `open`)
 
-**Side effects:** creates CHL links to targets; may recompute fingerprints.
-
-**Exit:** findings summary (by severity) + "improve now?" prompt offering concrete remediation commands.
-
-**Exit codes (CLI):** 0 = clean; 2 = open findings; 3 = tool error.
-
----
-
-## /specflow-project-audit
-
-**One-line:** Project-wide health review, scope and depth chosen conversationally.
-
-**Composes:** horizontal fan-out (per artifact type) + vertical fan-out (per V-model thread) + cross-cutting concerns, all via subagents.
-
-**Inputs (conversational):**
-- Scope:
-  - (a) Internal coherence only
-  - (b) Against installed standard X (auto-detected from `.specflow/standards/`)
-  - (c) Both
-  - (d) Full (above + adversarial lenses)
-- Depth:
-  - Quick (~2 min, programmatic-heavy, sampled artifacts)
-  - Detailed (~10 min, LLM per artifact type)
-  - Exhaustive (~30 min, per-artifact + cross-cutting + full lens fan-out)
-
-**Reads:**
-- Entire `_specflow/specs/` and `_specflow/work/`
-- `.specflow/standards/*.yaml` (auto-detection source)
-- `.specflow/baselines/*.yaml` (drift anchors)
-- `.specflow/impact-log/`
-
-**Writes:**
-- `.specflow/audits/{timestamp}/report.md` — top-level summary
-- `.specflow/audits/{timestamp}/subagent-*.md` — per-lens/per-chunk findings
-- `_specflow/specs/audits/AUD-*.md` — audit artifact (new type) with `review_status: open`
-- CHL artifacts for specific findings
-
-**Side effects:** may spawn many subagents; always announces expected token budget before starting.
-
-**Exit:** summary + link to audit report + severity counts.
-
-**Exit codes (CLI):** 0 = clean; 2 = findings at severity ≥ warn; 3 = findings at severity ≥ error; 4 = tool error.
-
----
-
-## /specflow-document-changes
-
-**One-line:** Emit decision records (DECs) from git history — meant to be read by humans.
-
-**Composes:** git log since anchor → grouping by concern → DEC artifact generation.
-
-**Rationale for standalone existence:** safety-critical users are expected to *read* DECs themselves as part of their audit process. This skill does not perform LLM review; it produces readable records. LLM review is a separate skill (`/specflow-change-impact-review`) that the user invokes when they want automated analysis.
-
-**Inputs:**
-- Anchor: baseline tag, commit SHA, or date (default: most recent baseline)
-- Optional filter: paths, artifact types, authors
-
-**Reads:**
-- Git history via `git log`
-- `.specflow/baselines/` (for default anchor resolution)
-- `_specflow/specs/**` (to tag which artifacts changed)
-
-**Writes:**
-- `_specflow/specs/decisions/DEC-*.md` with `review_status: unreviewed`
-- Links from DEC to affected artifacts
-
-**Side effects:** none beyond DEC creation. Does not flip any existing status.
-
-**Exit:** DEC count + list of IDs + "run `/specflow-change-impact-review` to analyze" prompt.
+**Never:** skip automated checks, mutate target artifact status without user confirmation.
 
 ---
 
 ## /specflow-change-impact-review
 
-**One-line:** LLM-review of unreviewed DECs, scoped by blast radius.
+**One-line:** Blast-radius review of recent commits/PRs via unreviewed change records.
 
-**Composes:** preflight `document-changes` (if no unreviewed DECs exist) → blast-radius computation → subagent review per DEC → `review_status` flip.
+**Composes:** `specflow document-changes` (precondition if no unreviewed DECs), `specflow change-impact`
 
-**Key property:** idempotent. Running twice in a row with no new commits finds nothing to do. Work scales with the delta, not project size.
-
-**Inputs:**
-- Optional DEC filter (default: all `review_status: unreviewed`)
-- Optional review depth (quick / normal / deep)
-
-**Reads:**
-- `_specflow/specs/decisions/DEC-*.md`
-- `.specflow/impact-log/`
-- Linked artifacts (blast-radius expansion)
+**Flow:**
+1. Discover all DEC artifacts with `review_status: unreviewed`; if none found, exit cleanly (idempotent)
+2. For each DEC, compute blast radius via `specflow change-impact`
+3. Review impacted artifacts against architectural constraints and requirements
+4. File CHL artifacts for findings; set DEC `review_status` to `reviewed` (clean) or `flagged` (issues)
 
 **Writes:**
-- CHL artifacts for findings, linked to affected DEC + downstream artifacts
-- Updates DEC `review_status`: `unreviewed` → `reviewed` or `flagged`
-- `.specflow/impact-log/*.yaml` entries for suspect cascades
+- `_specflow/specs/challenges/CHL-*.md` for findings
+- Updated DEC `review_status`
 
-**Side effects:** may flag downstream artifacts as `suspect`; user clears via `specflow change-impact --resolve`.
-
-**Exit:** DEC-reviewed count + findings summary + suspect-artifact list.
+**Key property:** Idempotent — running twice with no new commits does nothing. Work scales with delta, not project size.
 
 ---
 
-## /specflow-release
+## /specflow-audit
 
-**One-line:** Cut a release: baseline + document-changes + quick project-audit.
+**One-line:** Full-project periodic health review — deterministic core with optional adversarial wings.
 
-**Composes:** `specflow baseline create` → `/specflow-document-changes` → `/specflow-project-audit --quick` → release report.
+**Composes:** `specflow project-audit`
 
-**Inputs:**
-- Release version / tag (conversational)
-- Optional "do full audit instead of quick"
+**Flow:**
+1. **Deterministic core** (zero questions) — runs horizontal + vertical + cross-cutting checks via `specflow project-audit`
+2. Offer **adversarial wings** — up to 16 lenses (security, performance, coupling, edge cases) via parallel subagents (Recommended: Yes, if preparing for a release/milestone)
+3. Create AUD artifact for overall run and CHL artifacts for specific findings
+4. Present severity breakdown, links to artifacts, next steps
 
-**Reads:** everything the three sub-skills read.
+**Writes:**
+- `_specflow/specs/audits/AUD-*.md`
+- `_specflow/specs/challenges/CHL-*.md`
+
+---
+
+## /specflow-ship
+
+**One-line:** Release workflow — immutable baseline, change records, quick audit.
+
+**Composes:** `specflow baseline create`, `specflow document-changes`, `specflow project-audit --quick`
+
+**Flow:**
+1. Ask for release tag; create baseline snapshot
+2. Ask for previous tag/commit; generate DEC trail since that anchor
+3. Run quick audit on final release state
+4. Present release summary (baseline link, DEC list, audit summary)
+5. **Advisory gate** — if audit severity ≥ error, warn and require explicit user confirmation to proceed
 
 **Writes:**
 - `.specflow/baselines/{tag}.yaml`
-- DEC artifacts since previous baseline
-- `.specflow/audits/{release-tag}/report.md`
-- Release summary at `.specflow/releases/{tag}.md`
+- `_specflow/work/decisions/DEC-*.md` (change records)
+- Audit report
 
-**Side effects:** creates an immutable baseline; subsequent changes are measured against it.
-
-**Exit:** release summary + links to baseline, DECs, audit report.
-
-**Release-gate behavior:** if audit severity exceeds `error`, release is advisory only — user must explicitly confirm to proceed.
+**Never:** skip the quick audit step.
 
 ---
 
 ## /specflow-pack-author
 
-**One-line:** LLM-assisted authoring of a standards pack from PDF, URL, or pasted text.
+**One-line:** LLM-assisted authoring of a standards compliance pack from PDF, URL, or pasted text.
 
-**Composes:** source ingestion → clause extraction → schema scaffolding → pack manifest generation → optional install.
+**Composes:** `specflow create`, pack validation script
 
-**Replaces:** the P6 PDF-ingestion promise that was never shipped as a parser. Now it's an LLM-assisted authoring tool, which is more pragmatic and more correct.
-
-**Inputs:**
-- Source: PDF file, URL, or pasted text
-- Pack name, version
-- Optional artifact type(s) the pack should add
-
-**Reads:**
-- Source document
-- `.specflow/schema/` (to know what schemas already exist)
+**Flow:**
+1. Ingest source (PDF, URL, or pasted text); extract clauses (`{id, title, description}`)
+2. Confirm pack metadata with user; edit as needed
+3. Optionally scaffold new artifact type schemas
+4. Generate pack directory: `pack.yaml`, `standards/*.yaml`, optional `schemas/*.yaml`, `README.md`
+5. Validate with `scripts/validate-pack.sh`
+6. Present summary; recommend `/specflow-init --preset {name}` to install
 
 **Writes:**
-- `.specflow/packs/{name}/pack.yaml`
-- `.specflow/packs/{name}/standards/{name}.yaml`
-- `.specflow/packs/{name}/schemas/*.yaml` (if pack defines new artifact types)
-- `.specflow/packs/{name}/README.md`
+- `.specflow/packs/{name}/` with all pack files
 
-**Side effects:** none until user runs `specflow init --pack {name}` to install.
-
-**Exit:** pack directory + preview of generated clauses + install command.
+**Key rule:** Never fabricate clauses not in the source. Preserve original clause IDs.

@@ -1,8 +1,8 @@
 # SpecFlow Lifecycle
 
-The user journey from cold clone to shipped feature, side-by-side with the command surface that realizes it.
+The user journey from cold clone to shipped feature, driven by 9 Tier 1 slash commands.
 
-## Lifecycle flowchart
+## Lifecycle Flowchart
 
 ```
                         ┌───────────────┐
@@ -12,71 +12,59 @@ The user journey from cold clone to shipped feature, side-by-side with the comma
                 /specflow-init (preset? CI? standards?)
                                 │
                  ┌──────────────┴──────────────┐
-                 ▼                             ▼
-      ┌───────────────────┐         ┌────────────────────┐
-      │  lean path        │         │  full path         │
-      │  (simple change)  │         │  (new capability)  │
-      └─────────┬─────────┘         └──────────┬─────────┘
-                ▼                              ▼
-       /specflow-discover              /specflow-discover
+                 ▼                              ▼
+      ┌───────────────────┐          ┌────────────────────┐
+      │  lean path        │          │  full path         │
+      │  (simple change)  │          │  (new capability)  │
+      └─────────┬─────────┘          └──────────┬─────────┘
+                ▼                               ▼
+       /specflow-discover               /specflow-discover
           (1 exchange)                   (multi-exchange;
                 │                         readiness gate)
-                │     REQ.status=approved                 │
-                ▼                              ▼
-       /specflow-plan                  /specflow-plan
+                │     REQ.status=approved                │
+                ▼                               ▼
+       /specflow-plan                   /specflow-plan
           (just STORY)                   (ARCH → DDD → STORY)
-                │                              │
-                │     STORY.status=approved    │
-                ▼                              ▼
-       /specflow-execute               /specflow-execute
+                │                               │
+                │     STORY.status=approved     │
+                ▼                               ▼
+       /specflow-execute                /specflow-execute
           (impl + UT/IT/QT, parallel waves via specflow go)
                                 │
                                 ▼
                 /specflow-artifact-review
-                (deterministic lint + checklist + LLM +
-                 optional adversarial lenses; auto-runs
-                 dedup + similarity internally)
+                (deterministic lint + checklist + LLM review)
                                 │
          ┌──────────────────────┼──────────────────────┐
          ▼                      ▼                      ▼
-  iterate again        /specflow-release     /specflow-change-
-                       (baseline +            impact-review
-                        document-changes +    (per-commit/PR;
-                        project-audit)         only unreviewed DECs)
-                                │
-                                ▼
-                       /specflow-project-audit
-                       (periodic; scope + depth chosen conversationally;
-                        composes subagent fan-out)
+  iterate again      /specflow-change-        /specflow-audit
+                     impact-review             (periodic; full-project
+                     (per-commit/PR;            health check; produces
+                      blast-radius              AUD + CHL artifacts)
+                      analysis)                         │
+                                │                        │
+                                └───────────┬────────────┘
+                                            ▼
+                                    /specflow-ship
+                                    (baseline + DECs + quick audit)
 ```
 
-## Tiered command table
+## Tier 1 — Slash Commands (the product)
 
-### Tier 1 — featured user-facing skills
+These are what a user learns and uses day-to-day. Each is documented in [commands.md](commands.md) with a full interface spec.
 
-These are what a user learns and uses day-to-day. Each is documented in [commands.md](commands.md) with full interface spec.
+| # | Slash Command | When to Use |
+|---|---------------|-------------|
+| 1 | `/specflow-init` | Starting a new project; installing skills, packs, CI |
+| 2 | `/specflow-discover` | Capturing a new requirement through conversation |
+| 3 | `/specflow-plan` | Breaking approved REQs into architecture + stories |
+| 4 | `/specflow-execute` | Implementing approved stories with test generation |
+| 5 | `/specflow-artifact-review` | Quality review of one or more specific artifacts |
+| 6 | `/specflow-change-impact-review` | Blast-radius review of recent commits/PRs |
+| 7 | `/specflow-audit` | Periodic full-project health check |
+| 8 | `/specflow-ship` | Cutting a release: baseline + change records + quick audit |
+| 9 | `/specflow-pack-author` | Authoring a standards compliance pack |
 
-| Skill | When to use |
-|---|---|
-| `/specflow-init` | Starting a new project; installing a standards pack |
-| `/specflow-discover` | Capturing a new requirement |
-| `/specflow-plan` | Breaking an approved REQ into architecture + stories |
-| `/specflow-execute` | Implementing approved stories |
-| `/specflow-artifact-review` | Reviewing one or more artifacts for quality |
-| `/specflow-project-audit` | Periodic full-project health check |
-| `/specflow-document-changes` | Emitting DEC records from git history (readable by humans) |
-| `/specflow-change-impact-review` | Reviewing unreviewed DECs with LLM + blast-radius analysis |
-| `/specflow-release` | Cutting a release: baseline + document-changes + quick audit |
-| `/specflow-pack-author` | LLM-assisted authoring of a standards pack |
+## CLI Reference for Power Users
 
-### Tier 2 — CLI commands available via the thin `/cmd [optional message]` skill wrapper pattern
-
-These are reachable by chat but not featured; use when composed from Tier 1 or invoked explicitly.
-
-`specflow baseline`, `specflow status`, `specflow create`, `specflow update`, `specflow go`, `specflow done`, `specflow fingerprint-refresh`, `specflow renumber-drafts`, `specflow import`, `specflow export`, `specflow hook`.
-
-### Tier 3 — CLI-only, intended for CI or power users
-
-No headline skill. Invoked from `specflow` directly or from CI workflows.
-
-`specflow artifact-lint`, `specflow checklist-run`, `specflow detect {dead-code,similarity}`.
+The slash commands above compose underlying CLI commands (`uv run specflow ...`) behind the scenes. Power users and CI pipelines can invoke these directly. See the [CLI Reference](cli-reference.md) for the full catalog organized by workflow phase.
