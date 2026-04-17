@@ -71,6 +71,20 @@ uv run specflow artifact-lint
 
 Report results and fix any issues.
 
+**Exit message:** Report the count of stories marked `implemented` and tests created (UT/IT/QT). Recommend the next skill — `/specflow-artifact-review`.
+
+### Step 7: Phase Closure (Optional)
+
+1. After all stories are implemented and validated, offer phase closure: "All planned stories are implemented. Would you like to close this phase and extract prevention patterns?" (Recommended: Not yet, if more work remains, or Yes if the sprint/wave is complete).
+2. If the user declines ("not yet", "skip"), do not force closure.
+3. If accepted, run `uv run specflow done`.
+4. Engage in a conversational review:
+   - Summarize the accomplishments (count of stories, tests).
+   - Review any extracted prevention patterns with the user to ensure they are actionable.
+   - Recommend archiving or cleaning up any temporary context files from the implementation phase.
+
+**Final Exit message:** If the phase was closed, recommend the next logical skill: `/specflow-ship`.
+
 ## Rules
 
 - Always update `status` and `modified` timestamp via `specflow update` — never edit artifact files directly.

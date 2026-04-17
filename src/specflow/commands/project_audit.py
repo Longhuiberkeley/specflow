@@ -505,10 +505,15 @@ def run(root: Path, args: dict[str, Any]) -> int:
         vertical = _vertical_analysis(artifacts)
         print(f"  {GREEN}✓{NC} Vertical: {len(vertical)} thread finding(s)")
 
-        print(f"  {CYAN}Running cross-cutting analysis...{NC}")
-        cross_cutting = _cross_cutting_analysis(artifacts, root)
-        cc_concerns = len(cross_cutting)
-        print(f"  {GREEN}✓{NC} Cross-cutting: {cc_concerns} concern(s) analyzed")
+        quick = args.get("quick", False)
+        if quick:
+            cross_cutting: dict[str, list[dict[str, str]]] = {}
+            print(f"  {GREEN}✓{NC} Cross-cutting: skipped (--quick mode)")
+        else:
+            print(f"  {CYAN}Running cross-cutting analysis...{NC}")
+            cross_cutting = _cross_cutting_analysis(artifacts, root)
+            cc_concerns = len(cross_cutting)
+            print(f"  {GREEN}✓{NC} Cross-cutting: {cc_concerns} concern(s) analyzed")
     else:
         print(f"  {GREEN}✓{NC} Using cached findings")
 

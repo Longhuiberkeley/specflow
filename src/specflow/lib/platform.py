@@ -32,6 +32,21 @@ def get_skills_platform_dir(platform: str) -> str:
     return "claude"
 
 
+def get_skills_template_dir() -> str:
+    """Return the skills template subdirectory name."""
+    return "shared"
+
+
 def get_skill_names() -> list[str]:
     """Return the list of skill names to install."""
-    return ["specflow-discover", "specflow-plan", "specflow-execute", "specflow-artifact-review"]
+    return [
+        "specflow-init",
+        "specflow-discover",
+        "specflow-plan",
+        "specflow-execute",
+        "specflow-artifact-review",
+        "specflow-change-impact-review",
+        "specflow-audit",
+        "specflow-ship",
+        "specflow-pack-author",
+    ]

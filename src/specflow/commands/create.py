@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 from specflow.lib import artifacts as art_lib
+from specflow.lib import standards as std_lib
 from specflow.lib.dedup import find_similar_to
 
 RED = "\033[0;31m"
@@ -33,9 +34,19 @@ def _parse_links(links_json: str) -> list[dict[str, str]]:
     return results
 
 
+def _lookup_standard_clause(root: Path, clause_id: str) -> dict | None:
+    standards = std_lib.load_standards(root)
+    for std in standards:
+        for clause in std.get("clauses", []):
+            if isinstance(clause, dict) and clause.get("id") == clause_id:
+                return clause
+    return None
+
+
 def run(root: Path, args: dict) -> int:
     root = root.resolve()
 
+    from_standard = args.get("from_standard")
     artifact_type = args.get("type", "")
     title = args.get("title", "")
     status = args.get("status", "draft")
@@ -46,6 +57,18 @@ def run(root: Path, args: dict) -> int:
     body = args.get("body", "")
     nfr_category = args.get("nfr_category")
 
+    links = _parse_links(links_str) if links_str else []
+
+    if from_standard:
+        clause = _lookup_standard_clause(root, from_standard)
+        if not clause:
+            print(f"{RED}✗ Standard clause '{from_standard}' not found in installed standards{NC}")
+            return 1
+        artifact_type = "requirement"
+        title = clause.get("title", f"Compliance with {from_standard}")
+        body = clause.get("description", body)
+        links.append({"target": from_standard, "role": "complies_with"})
+
     if not artifact_type:
         print(f"{RED}✗ --type is required{NC}")
         return 1
@@ -54,7 +77,6 @@ def run(root: Path, args: dict) -> int:
         return 1
 
     tags = [t.strip() for t in tags_str.split(",") if t.strip()] if tags_str else None
-    links = _parse_links(links_str) if links_str else None
 
     if not body and not sys.stdin.isatty():
         body = sys.stdin.read()

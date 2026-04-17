@@ -69,6 +69,12 @@ def cmd_done(args: argparse.Namespace) -> int:
     return done_cmd.run(root, vars(args))
 
 
+def cmd_standards_gaps(args: argparse.Namespace) -> int:
+    from specflow.commands import standards_gaps as gaps_cmd
+    root = _find_project_root()
+    return gaps_cmd.run(root, vars(args))
+
+
 def cmd_change_impact(args: argparse.Namespace) -> int:
     from specflow.commands import change_impact as cmd
     root = _find_project_root()
@@ -228,8 +234,9 @@ def _add_status_parser(subparsers):
 
 def _add_create_parser(subparsers):
     p = subparsers.add_parser("create", help="Create a new artifact")
-    p.add_argument("--type", required=True, help="Artifact type")
-    p.add_argument("--title", required=True, help="Artifact title")
+    p.add_argument("--type", help="Artifact type (required unless --from-standard is used)")
+    p.add_argument("--title", help="Artifact title (required unless --from-standard is used)")
+    p.add_argument("--from-standard", dest="from_standard", help="Create a REQ from a standard clause ID")
     p.add_argument("--status", default="draft", help="Initial status (default: draft)")
     p.add_argument("--priority", help="Priority level")
     p.add_argument("--rationale", help="Rationale for this artifact")
@@ -240,6 +247,13 @@ def _add_create_parser(subparsers):
     p.add_argument("--skip-dedup-check", action="store_true", dest="skip_dedup_check", help="Bypass search-before-create")
     p.add_argument("--nfr-category", dest="nfr_category",
                    help="Non-functional requirement category (performance, security, reliability, usability, maintainability, scalability, compliance)")
+
+
+def _add_standards_parser(subparsers):
+    p = subparsers.add_parser("standards", help="Manage standards")
+    sub = p.add_subparsers(dest="standards_subcommand")
+    gaps_p = sub.add_parser("gaps", help="List uncovered standard clauses")
+    gaps_p.add_argument("--standard", help="Standard name (auto-detect if omitted)")
 
 
 def _add_update_parser(subparsers):
@@ -415,6 +429,11 @@ commands by workflow phase:
 
 # ── Main ──────────────────────────────────────────────────────────
 
+def cmd_standards(args: argparse.Namespace) -> int:
+    if args.standards_subcommand == "gaps":
+        return cmd_standards_gaps(args)
+    return 1
+
 def main(argv: list[str] | None = None) -> int:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
@@ -428,6 +447,7 @@ def main(argv: list[str] | None = None) -> int:
     # ── Discover ────────────────────────────────────────────────
     _add_init_parser(subparsers)
     _add_status_parser(subparsers)
+    _add_standards_parser(subparsers)
 
     # ── Plan ────────────────────────────────────────────────────
     _add_create_parser(subparsers)
@@ -484,6 +504,7 @@ def main(argv: list[str] | None = None) -> int:
         # New names
         "init": cmd_init,
         "status": cmd_status,
+        "standards": cmd_standards,
         "artifact-lint": cmd_artifact_lint,
         "create": cmd_create,
         "update": cmd_update,
@@ -589,6 +610,7 @@ def _add_project_audit_args(p):
     """Add project-audit arguments to parser p."""
     p.add_argument("--standard", help="Standard name (auto-detect first installed if omitted)")
     p.add_argument("--baseline", help="Baseline name for drift comparison (auto-detect latest if omitted)")
+    p.add_argument("--quick", action="store_true", help="Skip cross-cutting analysis (horizontal + vertical only)")
     p.add_argument("--sample-pct", dest="sample_pct", type=int, default=100,
                    help="Sample percentage for STORYs (default: 100)")
 

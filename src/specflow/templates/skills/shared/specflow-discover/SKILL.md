@@ -34,6 +34,16 @@ After each user response, silently evaluate readiness dimensions:
 **If threshold met within 1 exchange:** Take the **lean path** (Step 2L).
 **Otherwise:** Continue to the **full discovery** (Step 2F).
 
+### Step 1.5: Standards Gap Check (Silent, Auto-Run)
+
+1. After the initial readiness assessment, silently run `uv run specflow standards gaps`.
+2. If the command returns uncovered standard clauses:
+   - Present: "You have N uncovered standard clauses (e.g., ISO26262-3.7: Hazard analysis). Want me to scaffold REQs for them? (Recommended: Yes)"
+   - Allow the user to accept all, pick specific clauses, or skip.
+   - For each accepted clause, run `uv run specflow create --from-standard <clause-id>` to create a draft REQ pre-populated with the clause's title, description, and a `complies_with` link.
+   - The user then adapts these draft REQs during the normal discovery flow.
+3. If no uncovered clauses are found, proceed normally without mentioning standard gaps.
+
 ### Step 2L: Lean Path (Simple Changes)
 
 For bounded changes like "add dark mode" or "fix the login redirect":
@@ -135,6 +145,9 @@ If this was the first discovery and the project was in `idle` state, update stat
 - No implementation details, technology choices, or architectural decisions in REQs.
 - Each REQ must have acceptance criteria.
 - One question at a time — never batch.
+- **Escape Hatch Rule**: If the user signals they've provided enough context (e.g., 'that's enough', 'move on', 'skip'), immediately proceed to artifact generation with what you have.
+- **Question Cap**: Limit the discovery conversation to 15-20 questions total. If more are needed, suggest the user may want to refine requirements first (which likely means the discover->plan pipeline needs restructuring).
+- Every skill that offers the user a choice must include "(Recommended)" labels on the suggested default.
 - When in doubt about level boundaries, read `references/level-boundaries.md`.
 
 ## References

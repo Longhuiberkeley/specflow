@@ -61,7 +61,7 @@ def _install_skills(root: Path, platform_label: str) -> None:
     template_dir = _get_package_templates()
     skills_src = template_dir / "skills"
 
-    platform_key = plat_lib.get_skills_platform_dir(platform_label)
+    template_key = plat_lib.get_skills_template_dir()
     skills_dst = root / ".claude"  # default
 
     # Determine destination based on platform
@@ -79,10 +79,10 @@ def _install_skills(root: Path, platform_label: str) -> None:
     skills_dst.mkdir(parents=True, exist_ok=True)
 
     # Copy skill directories
-    if not (skills_src / platform_key).exists():
-        platform_key = "claude"  # fallback
+    src = skills_src / template_key
+    if not src.exists():
+        src = skills_src / "shared"  # fallback
 
-    src = skills_src / platform_key
     for skill_dir in src.iterdir():
         if skill_dir.is_dir():
             dst = skills_dst / skill_dir.name
