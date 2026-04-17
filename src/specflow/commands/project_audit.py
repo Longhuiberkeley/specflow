@@ -1,6 +1,6 @@
 """specflow project-audit — Full-project health review (deterministic core).
 
-The CLI command is the deterministic backend. The /specflow-project-audit SKILL
+The CLI command is the deterministic backend. The /specflow-audit SKILL
 orchestrates the conversational flow and optional adversarial wing subagents.
 
 Analysis axes:

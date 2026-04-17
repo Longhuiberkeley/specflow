@@ -33,7 +33,7 @@ We do not install SpecFlow globally for users. Users will install it directly in
 ### 7. The User Interface Is CLI Skills
 The user's primary interface to SpecFlow is **`/specflow-*` conversational skills** invoked inside their AI coding assistant (Claude, Cursor, Cline, etc.). Raw CLI commands like `specflow create` or `uv run specflow artifact-lint` are the deterministic backend that skills call under the hood — they are implementation details, not the user-facing product.
 
-When writing documentation, tutorials, or onboarding material, emphasize skill-based workflows (`/specflow-discover`, `/specflow-plan`, `/specflow-execute`, `/specflow-project-audit`). Only mention raw CLI commands when explaining what a skill does internally or when providing CI/automation examples.
+When writing documentation, tutorials, or onboarding material, emphasize skill-based workflows (`/specflow-discover`, `/specflow-plan`, `/specflow-execute`, `/specflow-audit`). Only mention raw CLI commands when explaining what a skill does internally or when providing CI/automation examples.
 
 The install mechanism (`uv tool install`, `uvx`, `python -m specflow`) is our concern, not the user's. Once installed, the user thinks in terms of skills, not shell commands.
 
@@ -55,7 +55,7 @@ This project uses **SpecFlow** — a spec-driven development framework. All spec
 |---------|---------|
 | `specflow init` | Scaffold the project structure |
 | `specflow status` | Show current phase, artifact counts, and issues |
-| `specflow validate` | Run validation checks on all artifacts |
+| `specflow artifact-lint` | Run deterministic validation checks on artifacts |
 
 ### How to work with SpecFlow
 

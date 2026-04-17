@@ -93,23 +93,23 @@ def _suggest_action(root: Path, phase: str, artifact_counts: dict[str, int]) -> 
     if phase == "idle":
         return "Run 'specflow-new' to begin discovery"
     elif phase == "discovering":
-        return "Continue capturing requirements with 'specflow-new'"
+        return "Continue capturing requirements with 'specflow discover'"
     elif phase == "specifying":
         if req_count > 0 and arch_count == 0:
-            return "Run 'specflow-plan' to create architecture and stories"
+            return "Run 'specflow plan' to create architecture and stories"
         else:
             return "Review and approve requirements before planning"
     elif phase == "planning":
         if story_count == 0:
-            return "Run 'specflow-plan' to decompose requirements into stories"
+            return "Run 'specflow plan' to decompose requirements into stories"
         else:
-            return "Review architecture and stories, then run 'specflow-go'"
+            return "Review architecture and stories, then run 'specflow go'"
     elif phase == "executing":
-        return "Run 'specflow-go' to execute story waves"
+        return "Run 'specflow go' to execute story waves"
     elif phase == "verifying":
         return "Run 'specflow checklist-run' to review artifacts"
     elif phase == "complete":
-        return "Run 'specflow-done' to close the phase"
+        return "Run 'specflow done' to close the phase"
 
     return "Run 'specflow artifact-lint' to check artifact integrity"
 
