@@ -2,7 +2,7 @@
 id: STORY-023
 title: Archive docs/phases and restructure docs/ directory
 type: story
-status: draft
+status: implemented
 priority: medium
 tags:
 - documentation

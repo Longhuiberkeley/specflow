@@ -6,7 +6,7 @@ artifacts:
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:19592f42220d
+    fingerprint: ''
     children: []
   DEC-002:
     id: DEC-002
@@ -15,6 +15,6 @@ artifacts:
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:d242f83b33dc
+    fingerprint: ''
     children: []
 next_id: 3

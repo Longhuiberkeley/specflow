@@ -1,29 +1,32 @@
 artifacts:
   DDD-001:
-    fingerprint: ''
     id: DDD-001
+    title: Impact Analysis Engine
     status: draft
     tags:
     - traceability
     - impact
     - core
-    title: Impact Analysis Engine
-  DDD-002:
     fingerprint: ''
+    children: []
+  DDD-002:
     id: DDD-002
+    title: Execution Orchestrator
     status: draft
     tags:
     - execution
     - orchestration
     - parallel
-    title: Execution Orchestrator
-  DDD-003:
     fingerprint: ''
+    children: []
+  DDD-003:
     id: DDD-003
+    title: Checklist Assembly Pipeline
     status: draft
     tags:
     - checklists
     - review
     - assembly
-    title: Checklist Assembly Pipeline
+    fingerprint: ''
+    children: []
 next_id: 4

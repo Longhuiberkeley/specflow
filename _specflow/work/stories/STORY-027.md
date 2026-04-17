@@ -2,7 +2,7 @@
 id: STORY-027
 title: Expose recovery primitives as CLI commands and clean up dead code
 type: story
-status: draft
+status: implemented
 priority: medium
 tags:
 - cleanup

@@ -1,37 +1,40 @@
 artifacts:
   REQ-001:
-    fingerprint: sha256:c71b25095984
     id: REQ-001
+    title: CLI Interface
     status: approved
     tags:
     - functional
     - cli
     - core
     - mvp
-    title: CLI Interface
+    fingerprint: sha256:c71b25095984
+    children: []
   REQ-002:
-    fingerprint: sha256:4ba4d17ec1bb
     id: REQ-002
+    title: Artifact Structure
     status: approved
     tags:
     - functional
     - core
     - format
     - mvp
-    title: Artifact Structure
+    fingerprint: sha256:4ba4d17ec1bb
+    children: []
   REQ-003:
-    fingerprint: sha256:005378fce8f7
     id: REQ-003
+    title: Trace & Suspect Propagation
     status: approved
     tags:
     - functional
     - traceability
     - impact
     - core
-    title: Trace & Suspect Propagation
+    fingerprint: sha256:005378fce8f7
+    children: []
   REQ-004:
-    fingerprint: sha256:6a83f01fd52a
     id: REQ-004
+    title: AI Execution Boundaries
     status: approved
     tags:
     - functional
@@ -39,15 +42,17 @@ artifacts:
     - skills
     - token-optimization
     - core
-    title: AI Execution Boundaries
+    fingerprint: sha256:6a83f01fd52a
+    children: []
   REQ-005:
-    fingerprint: sha256:a1ae6910e33d
     id: REQ-005
+    title: Cross-Platform & Compliance
     status: approved
     tags:
     - functional
     - cross-platform
     - compliance
     - baselines
-    title: Cross-Platform & Compliance
+    fingerprint: sha256:a1ae6910e33d
+    children: []
 next_id: 6
