@@ -8,7 +8,18 @@ I believe spec-driven AI development is going mainstream for this reason. The sp
 
 SpecFlow is my attempt at an easy-to-use agentic framework with a small set of `/skills` that make it easy to start and easy to scale. Inspired by compliance-as-code, I want to enable **vibe-compliance**: the same way vibe-coding lets you build by intent, vibe-compliance lets you verify by intent. Vibe-ASPICE, vibe-SOC2, vibe-ISO26262, vibe-DO-178C -- the framework handles the ceremony so you can focus on the decisions.
 
-**9 slash commands. No database. No cloud. Your repo IS the compliance artifact.**
+**10 slash commands. No database. No cloud. Your repo IS the compliance artifact.**
+
+## Why SpecFlow?
+
+**Zero-database, zero-cloud, zero-lock-in.** Your repository IS the compliance artifact. Every spec, traceability link, and audit record lives in Markdown + YAML — version-controlled, diffable, and auditable by humans and CI alike.
+
+- **Seamless onboarding.** One command (`/specflow-init`) scaffolds everything. No servers to provision, no accounts to create, no web UI to learn. Your AI assistant already knows what to do.
+- **Scale-adaptive ceremony.** Fixing a typo? SpecFlow stays out of your way. Building a safety-critical subsystem? Full V-model traceability activates automatically. No toggles, no modes — the framework reads the room.
+- **Compliance as code, not paperwork.** Traceability matrices, linkage rules, and phase-gate checklists run as deterministic Python in CI — zero LLM tokens, zero guesswork. Compliance evidence is generated from your git history on demand.
+- **Bring-your-own-standard.** Feed SpecFlow a PDF, URL, or pasted text from ISO 26262, DO-178C, SOC 2, or your internal policy. It extracts clauses into executable compliance schemas. No proprietary extension packs.
+- **14 AI coding platforms.** Works with Claude Code, Cursor, Windsurf, Cline, Gemini CLI, OpenCode, GitHub Copilot, Roo Code, and more — today. The skill layer is portable by design.
+- **Built for AI speed.** Token budgets, progressive disclosure, subagent isolation, and zero-token programmatic validation mean your AI assistant spends tokens on decisions, not bookkeeping.
 
 ## Quick Start
 
@@ -39,7 +50,7 @@ SpecFlow has two interfaces that work together:
 
 Skills compose CLI commands under the hood. Use skills for day-to-day work; use the CLI for automation and CI.
 
-## The 9 Slash Commands
+## The 10 Slash Commands
 
 | Command | Purpose |
 |---------|---------|
@@ -52,6 +63,7 @@ Skills compose CLI commands under the hood. Use skills for day-to-day work; use 
 | `/specflow-audit` | Full-project periodic health check |
 | `/specflow-ship` | Release: baseline + change records + audit |
 | `/specflow-pack-author` | Author a standards compliance pack |
+| `/specflow-adapter` | Manage CI, exchange, standards ingestion, team RBAC |
 
 ## Install
 
@@ -76,6 +88,7 @@ Supports 14 AI coding platforms: Claude Code, Cursor, Windsurf, Cline, Gemini CL
 - [CLI reference](docs/cli-reference.md) -- raw CLI commands for power users and CI
 - [Architecture](docs/architecture.md) -- technical design
 - [Design decisions](docs/decisions.md) -- resolved trade-offs
+- [Team setup](docs/team-setup.md) -- RBAC and role-based access control
 
 ## For Power Users
 
@@ -89,6 +102,20 @@ specflow project-audit
 ```
 
 See the [CLI reference](docs/cli-reference.md) for the full command catalog.
+
+## Roadmap
+
+SpecFlow ships incrementally. Here's what's live and what's coming:
+
+| Status | Release | What's Included |
+|--------|---------|-----------------|
+| **Live** | v0.1.0 | Scaffolding (`init`), manual specification, zero-token validation engine, 10 slash commands |
+| **Next** | v0.2.0 | Full AI lifecycle: discovery conversations, traceability (fingerprints, impact analysis), execution orchestration, context-specific review |
+| **Planned** | v0.3.0 | Compliance-ready: LLM-assisted pack authoring from PDF/URL/text, standards gap analysis, baselines |
+| **Planned** | v1.0.0 | Team-ready: git-based RBAC, defect lifecycle, draft ID renumbering, CI integration, test records |
+| **Future** | v1.x | Intelligence: 3-tier deduplication, dead-code and similarity detection, prevention pattern learning |
+
+See the [implementation plan](docs/plan.md) for the full phase breakdown.
 
 ## License
 
