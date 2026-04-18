@@ -8,7 +8,7 @@ A walkthrough from cold install to a complete discover → plan → execute → 
 - [uv](https://docs.astral.sh/uv/) installed (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
 - SpecFlow CLI installed:
   ```bash
-  uv tool install git+https://github.com/anomalyco/specflow
+  uv tool install git+https://github.com/Longhuiberkeley/specflow
   ```
 
 ## Skills vs CLI

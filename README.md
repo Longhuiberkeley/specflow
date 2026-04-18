@@ -4,7 +4,7 @@ I built SpecFlow because I saw a gap opening up. AI coding assistants are fast e
 
 The beauty of process engineering is that it offsets individual talent and responsibility to a system. A good framework increases safety and reliability regardless of who is writing the code. This is why automotive (ASPICE), aerospace (DO-178C), and medical (IEC 62304) industries mandate structured verification -- not because they love paperwork, but because the system catches what individuals miss.
 
-I believe spec-driven AI development is going mainstream for this reason. The speed of AI coding demands the structure of compliance engineering. Not because you love process -- because you want to ship fast and sleep at night.
+I believe spec-driven AI development is going mainstream for this reason. The speed of AI coding demands the structure of compliance engineering. 
 
 SpecFlow is my attempt at an easy-to-use agentic framework with a small set of `/skills` that make it easy to start and easy to scale. Inspired by compliance-as-code, I want to enable **vibe-compliance**: the same way vibe-coding lets you build by intent, vibe-compliance lets you verify by intent. Vibe-ASPICE, vibe-SOC2, vibe-ISO26262, vibe-DO-178C -- the framework handles the ceremony so you can focus on the decisions.
 
@@ -57,13 +57,13 @@ Skills compose CLI commands under the hood. Use skills for day-to-day work; use 
 
 ```bash
 # Install from GitHub (requires uv)
-uv tool install git+https://github.com/anomalyco/specflow
+uv tool install git+https://github.com/Longhuiberkeley/specflow
 
 # Or run without installing
-uvx --from git+https://github.com/anomalyco/specflow specflow init
+uvx --from git+https://github.com/Longhuiberkeley/specflow specflow init
 
 # Pin to a specific release
-uv tool install git+https://github.com/anomalyco/specflow@v0.1.0
+uv tool install git+https://github.com/Longhuiberkeley/specflow@v0.1.0
 ```
 
 Supports 14 AI coding platforms: Claude Code, Cursor, Windsurf, Cline, Gemini CLI, OpenCode, GitHub Copilot, Roo Code, QwenCoder, Kiro, KiloCoder, Codex, Trae, and Junie.
