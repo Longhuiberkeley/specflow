@@ -1,6 +1,8 @@
 # SpecFlow CLI Reference
 
-Reference for all `uv run specflow` CLI commands. These are the deterministic backend that Tier 1 slash commands compose under the hood. Most users interact with SpecFlow via `/specflow-*` slash commands — this reference is for power users, CI pipelines, and automation.
+> **This is the CLI reference.** For the conversational skill interface (`/specflow-*`), see [commands.md](commands.md).
+
+Reference for all `specflow` CLI commands. These are the deterministic backend that slash commands compose under the hood. Most users interact with SpecFlow via `/specflow-*` skills in their AI assistant -- this reference is for power users, CI pipelines, and automation.
 
 For the slash command surface, see [commands.md](commands.md). For the lifecycle overview, see [lifecycle.md](lifecycle.md).
 

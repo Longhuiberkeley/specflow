@@ -2,7 +2,7 @@
 id: STORY-033
 title: "Build the 9 Tier 1 conversational skills \u2014 init, audit, ship + modifications"
 type: story
-status: draft
+status: implemented
 priority: high
 tags:
 - UX
@@ -15,6 +15,7 @@ links:
 created: '2026-04-17'
 fingerprint: sha256:e150f32f8b00
 version: 1
+modified: '2026-04-18'
 ---
 
 # Build the 9 Tier 1 conversational skills — init, audit, ship + modifications

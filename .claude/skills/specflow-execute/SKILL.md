@@ -19,7 +19,7 @@ Orchestrate the implementation of planned stories and update tracking artifacts.
 ### Step 2: Wave Planning
 
 1. Run `uv run specflow go --dry-run` to compute the execution wave plan.
-2. Review the wave groupings — stories in the same wave can run in parallel.
+2. Review the wave groupings -- stories in the same wave can run in parallel.
 3. If the wave plan looks wrong, check story dependencies (`derives_from`, shared `specified_by`).
 4. Read `references/wave-computation.md` for algorithm details.
 
@@ -30,7 +30,7 @@ For each story (or wave of stories):
 1. Run `uv run specflow go` to execute all waves, or implement manually:
    a. **Load context:** Read the story, its linked REQ, ARCH, and DDD artifacts.
    b. **Implement the code** per the detailed design in DDD artifacts.
-   c. **Follow the acceptance criteria** — implement each criterion from the story.
+   c. **Follow the acceptance criteria** -- implement each criterion from the story.
 
 ### Step 4: Status Updates
 
@@ -45,11 +45,11 @@ If the linked DDD/ARCH artifacts should reflect implementation:
 uv run specflow update DDD-001 --status implemented
 ```
 
-**Execution state is machine-managed.** `specflow go` writes per-artifact locks to `.specflow/locks/*.json` while waves run and tracks progress in `.specflow/execution-state.yaml`. Do not edit these by hand — the CLI releases locks on completion and uses `execution-state.yaml` to resume interrupted runs.
+**Execution state is machine-managed.** `specflow go` writes per-artifact locks to `.specflow/locks/*.json` while waves run and tracks progress in `.specflow/execution-state.yaml`. Do not edit these by hand -- the CLI releases locks on completion and uses `execution-state.yaml` to resume interrupted runs.
 
 ### Step 5: Test Creation
 
-For each implemented spec artifact, create its V-model verification test — **all three levels**, not just unit tests:
+For each implemented spec artifact, create its V-model verification test -- **all three levels**, not just unit tests:
 
 | Spec type | Test type | Link role |
 |-----------|-----------|-----------|
@@ -80,9 +80,9 @@ Before running full validation, present a structured summary so the user can cat
 - Any deviation from the linked ARCH/DDD and why
 
 ### Assumptions That Need Validation
-- External dependencies assumed available in test (stubs, fixtures, network) — risk if wrong: tests pass locally but fail in CI
-- Performance/latency assumptions baked into code — risk if wrong: NFRs silently violated
-- Any STORY that was implemented without a linked DDD — risk if wrong: future changes lack a specification anchor
+- External dependencies assumed available in test (stubs, fixtures, network) -- risk if wrong: tests pass locally but fail in CI
+- Performance/latency assumptions baked into code -- risk if wrong: NFRs silently violated
+- Any STORY that was implemented without a linked DDD -- risk if wrong: future changes lack a specification anchor
 
 ### Please Review
 - For each STORY: does every acceptance criterion map to at least one of UT / IT / QT?
@@ -101,11 +101,25 @@ uv run specflow artifact-lint
 
 Report results and fix any issues.
 
-**Exit message:** Report the count of stories marked `implemented` and tests created (UT/IT/QT). Recommend the next skill — `/specflow-artifact-review`.
+**Exit message:** Report the count of stories marked `implemented` and tests created (UT/IT/QT). Recommend the next skill -- `/specflow-artifact-review`.
+
+### Step 7: Phase Closure (Optional)
+
+1. After all stories are implemented and validated, offer phase closure: "All planned stories are implemented. Would you like to close this phase and extract prevention patterns?" (Recommended: Not yet, if more work remains, or Yes if the sprint/wave is complete).
+2. If the user declines ("not yet", "skip"), do not force closure.
+3. If accepted, run `uv run specflow done`. Options:
+   - `--no-patterns` -- skip prevention-pattern extraction.
+   - `--auto` -- accept defaults without interactive prompts.
+4. Engage in a conversational review:
+   - Summarize the accomplishments (count of stories, tests).
+   - Review any extracted prevention patterns with the user to ensure they are actionable.
+   - Recommend archiving or cleaning up any temporary context files from the implementation phase.
+
+**Final Exit message:** If the phase was closed, recommend the next logical skill: `/specflow-ship`.
 
 ## Rules
 
-- Always update `status` and `modified` timestamp via `specflow update` — never edit artifact files directly.
+- Always update `status` and `modified` timestamp via `specflow update` -- never edit artifact files directly.
 - Link tests to what they verify using `verified_by` role.
 - Run `uv run specflow artifact-lint` after status changes.
 - When unsure about valid status transitions, read `references/status-lifecycle.md`.
@@ -113,6 +127,6 @@ Report results and fix any issues.
 
 ## References
 
-- `references/status-lifecycle.md` — Valid status transitions for all artifact types.
-- `references/test-pairing.md` — V-model verification test pairing rules.
-- `references/wave-computation.md` — Wave computation algorithm and context isolation.
+- `references/status-lifecycle.md` -- Valid status transitions for all artifact types.
+- `references/test-pairing.md` -- V-model verification test pairing rules.
+- `references/wave-computation.md` -- Wave computation algorithm and context isolation.

@@ -1,6 +1,8 @@
 # SpecFlow Command Reference
 
-Interface specs for each Tier 1 slash command. For a lifecycle overview, see [lifecycle.md](lifecycle.md). For raw CLI commands, see the [CLI Reference](cli-reference.md).
+> **This is the skill reference.** For raw CLI commands, see the [CLI Reference](cli-reference.md).
+
+Interface specs for each `/specflow-*` slash command. For a lifecycle overview, see [lifecycle.md](lifecycle.md).
 
 ---
 

@@ -1,0 +1,141 @@
+# SpecFlow Platform Registry
+#
+# Each platform entry defines:
+#   name:           Display name shown to users
+#   preferred:      Whether shown as a recommended option on install
+#   skills_dir:     Where to copy SpecFlow skill directories
+#   detection:      Directory/file markers used to auto-detect this platform
+#   legacy_dirs:    (optional) Old directories to clean up on reinstall
+#
+# Instruction file injection (AGENTS.md, CLAUDE.md, .cursor/rules/, etc.)
+# is handled by the /specflow-init skill, not the CLI. The skill reads
+# the agent-context.md template and writes it to the appropriate location
+# for the detected platform.
+
+platforms:
+
+  claude-code:
+    name: "Claude Code"
+    preferred: true
+    skills_dir: .claude/skills
+    detection:
+      - .claude/
+    legacy_dirs:
+      - .claude/commands
+
+  cursor:
+    name: "Cursor"
+    preferred: true
+    skills_dir: .cursor/skills
+    detection:
+      - .cursor/
+    legacy_dirs:
+      - .cursor/commands
+
+  windsurf:
+    name: "Windsurf"
+    preferred: false
+    skills_dir: .windsurf/skills
+    detection:
+      - .windsurf/
+    legacy_dirs:
+      - .windsurf/workflows
+
+  cline:
+    name: "Cline"
+    preferred: false
+    skills_dir: .cline/skills
+    detection:
+      - .cline/
+    legacy_dirs:
+      - .clinerules/workflows
+
+  gemini:
+    name: "Gemini CLI"
+    preferred: false
+    skills_dir: .gemini/skills
+    detection:
+      - .gemini/
+    legacy_dirs:
+      - .gemini/commands
+
+  opencode:
+    name: "OpenCode"
+    preferred: false
+    skills_dir: .opencode/skills
+    detection:
+      - .opencode/
+    legacy_dirs:
+      - .opencode/agents
+      - .opencode/commands
+
+  github-copilot:
+    name: "GitHub Copilot"
+    preferred: false
+    skills_dir: .github/skills
+    detection:
+      - .github/copilot-instructions.md
+    legacy_dirs:
+      - .github/agents
+      - .github/prompts
+
+  roo:
+    name: "Roo Code"
+    preferred: false
+    skills_dir: .roo/skills
+    detection:
+      - .roo/
+    legacy_dirs:
+      - .roo/commands
+
+  qwen:
+    name: "QwenCoder"
+    preferred: false
+    skills_dir: .qwen/skills
+    detection:
+      - .qwen/
+    legacy_dirs:
+      - .qwen/commands
+
+  kiro:
+    name: "Kiro"
+    preferred: false
+    skills_dir: .kiro/skills
+    detection:
+      - .kiro/
+    legacy_dirs:
+      - .kiro/steering
+
+  kilocode:
+    name: "KiloCoder"
+    preferred: false
+    skills_dir: .kilocode/skills
+    detection:
+      - .kilocode/
+    legacy_dirs:
+      - .kilocode/workflows
+
+  codex:
+    name: "Codex"
+    preferred: false
+    skills_dir: .agents/skills
+    detection:
+      - .codex/
+    legacy_dirs:
+      - .codex/prompts
+
+  trae:
+    name: "Trae"
+    preferred: false
+    skills_dir: .trae/skills
+    detection:
+      - .trae/
+    legacy_dirs:
+      - .trae/rules
+
+  junie:
+    name: "Junie"
+    preferred: false
+    skills_dir: .agents/skills
+    detection:
+      - .junie/

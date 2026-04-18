@@ -4,8 +4,21 @@ A walkthrough from cold install to a complete discover → plan → execute → 
 
 ## Prerequisites
 
-- An AI coding assistant that supports slash commands (Claude Code, Cursor, OpenCode, Gemini CLI, etc.)
+- An AI coding assistant that supports slash commands (Claude Code, Cursor, Cline, Windsurf, Gemini CLI, etc.)
 - [uv](https://docs.astral.sh/uv/) installed (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
+- SpecFlow CLI installed:
+  ```bash
+  uv tool install git+https://github.com/anomalyco/specflow
+  ```
+
+## Skills vs CLI
+
+SpecFlow has two interfaces:
+
+- **Skills** (`/specflow-*`) -- guided conversations in your AI assistant. Use these for day-to-day work.
+- **CLI** (`specflow <cmd>`) -- deterministic terminal commands. Use these for CI, automation, or when you prefer the terminal.
+
+Skills call CLI commands under the hood. You can always use the CLI directly.
 
 ## 1. Initialize your project
 

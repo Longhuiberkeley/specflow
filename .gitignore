@@ -52,7 +52,9 @@ Thumbs.db
 
 # AI tool developer-local settings
 .claude/settings.local.json
-.qwen/settings.json.orig
+.qwen/
+.opencode/
+.gemini/settings.json
 
 # Project
 temp/

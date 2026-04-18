@@ -51,7 +51,7 @@ For bounded changes like "add dark mode" or "fix the login redirect":
 1. Generate a single REQ artifact with minimal metadata.
 2. Generate a single STORY artifact linked to the REQ via `implements`.
 3. Auto-approve both (set `status: approved`).
-4. Skip to Step 4 (Artifact Creation).
+4. Skip to Step 5 (Artifact Creation).
 
 ### Step 2F: Full Discovery — Phase 1: Context-Free Questions
 
@@ -133,10 +133,37 @@ uv run specflow artifact-lint
 
 Report results to user.
 
+### Step 5.5: Human-Review Summary
+
+Before transitioning phases, present a structured summary so the user can validate the discovery outcome:
+
+```
+## Summary for Human Review
+
+### Key Decisions Made
+- Path taken: lean vs. full discovery — and why
+- Scope boundaries: what was explicitly declared IN / OUT of scope
+- Accepted constraints: hard constraints the user confirmed (tech, timeline, compliance)
+
+### Assumptions That Need Validation
+- Stakeholders / primary users identified — risk if wrong: requirements target the wrong audience
+- Success criteria interpretation — risk if wrong: acceptance criteria miss the real goal
+- Any domain-checklist answer taken as a default — risk if wrong: downstream ARCH/DDD is built on a bad premise
+
+### Please Review
+- For each REQ: do the acceptance criteria cover happy path + at least one error/edge case?
+- Any cross-cutting concern you skipped (auth, observability, scalability) that should be a REQ?
+- Any requirement that feels like HOW (implementation) rather than WHAT (behavior)?
+```
+
+Wait for user acknowledgement before proceeding to phase transition.
+
 ### Step 6: Phase Transition
 
 If this was the first discovery and the project was in `idle` state, update state:
 - Edit `.specflow/state.yaml`: set `current: specifying`, add history entry.
+
+**Exit message:** Report the REQ (and STORY, for lean path) IDs created, and recommend the next skill — `/specflow-plan` for the full path, `/specflow-execute` for the lean path.
 
 ## Rules
 

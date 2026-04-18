@@ -24,6 +24,15 @@ The primary interface is `/specflow-*` slash commands in your AI assistant.
 | `/specflow-ship` | Release: baseline + change records + quick audit |
 | `/specflow-pack-author` | Author a standards compliance pack |
 
+### Skills vs CLI
+
+| Interface | When to Use | Example |
+|-----------|-------------|---------|
+| **Skills** (`/specflow-*`) | Interactive work in your AI assistant | `/specflow-discover` |
+| **CLI** (`specflow <cmd>`) | CI pipelines, automation, terminal | `specflow artifact-lint` |
+
+Skills compose CLI commands internally. You can always use the CLI directly when you prefer the terminal or need automation.
+
 ### Lifecycle Flow
 
 ```
@@ -31,6 +40,19 @@ init → discover → plan → execute → artifact-review → ship
                                     ├── audit (periodic health check)
                                     └── change-impact-review (per-commit/PR)
 ```
+
+### Artifact Status Lifecycle
+
+When working with artifacts, **always update their status** as work progresses:
+
+| Trigger | Action | Command |
+|---------|--------|---------|
+| Creating a new artifact | Set `status: draft` | `specflow create --type <type> --status draft` |
+| User approves the artifact | Update to `status: approved` | `specflow update <ID> --status approved` |
+| Code implementing the artifact is written | Update to `status: implemented` | `specflow update <ID> --status implemented` |
+| Tests pass and review is complete | Update to `status: verified` | `specflow update <ID> --status verified` |
+
+When implementing stories via `/specflow-execute`, also update linked ARCH and DDD artifacts to `implemented` once the code that realizes them is written. Do not wait for the story to be fully complete -- update spec status as the corresponding code lands.
 
 ### Working Principles
 
@@ -47,3 +69,5 @@ init → discover → plan → execute → artifact-review → ship
 - Status flow: `draft` → `approved` → `implemented` → `verified`
 - Stories link to specs via `links:` in YAML frontmatter
 - `.specflow/` internals are managed by CLI commands — never edit manually
+- Use `specflow update <ID>` for all status transitions and frontmatter changes
+- Run `specflow artifact-lint` after creating or updating artifacts

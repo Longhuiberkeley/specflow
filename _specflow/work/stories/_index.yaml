@@ -332,7 +332,7 @@ artifacts:
   STORY-033:
     id: STORY-033
     title: "Build the 9 Tier 1 conversational skills \u2014 init, audit, ship + modifications"
-    status: draft
+    status: implemented
     tags:
     - UX
     - skills
@@ -343,7 +343,7 @@ artifacts:
     id: STORY-034
     title: "Documentation overhaul \u2014 rewrite lifecycle, commands, and README\
       \ for 9-command surface"
-    status: draft
+    status: implemented
     tags:
     - UX
     - documentation
@@ -353,7 +353,7 @@ artifacts:
   STORY-035:
     id: STORY-035
     title: "Project convention checklists \u2014 scaffold and enforce project structure"
-    status: draft
+    status: implemented
     tags:
     - UX
     - conventions

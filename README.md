@@ -1,24 +1,43 @@
 # SpecFlow
 
-SpecFlow is a spec-driven development framework that unifies requirement capture, ASPICE-grade traceability, and context-efficient execution — all through conversational slash commands in your AI coding assistant. No database, no cloud, no proprietary runtime. All state lives as Markdown + YAML in your repository.
+I built SpecFlow because I saw a gap opening up. AI coding assistants are fast enough now that traditional agile rituals -- standups, sprint planning, backlog grooming -- are becoming the bottleneck, not the code. But V-model and waterfall, while rigorous, were designed for a world where humans wrote every line. We need compliance-grade rigor at AI speed.
+
+The beauty of process engineering is that it offsets individual talent and responsibility to a system. A good framework increases safety and reliability regardless of who is writing the code. This is why automotive (ASPICE), aerospace (DO-178C), and medical (IEC 62304) industries mandate structured verification -- not because they love paperwork, but because the system catches what individuals miss.
+
+I believe spec-driven AI development is going mainstream for this reason. The speed of AI coding demands the structure of compliance engineering. Not because you love process -- because you want to ship fast and sleep at night.
+
+SpecFlow is my attempt at an easy-to-use agentic framework with a small set of `/skills` that make it easy to start and easy to scale. Inspired by compliance-as-code, I want to enable **vibe-compliance**: the same way vibe-coding lets you build by intent, vibe-compliance lets you verify by intent. Vibe-ASPICE, vibe-SOC2, vibe-ISO26262, vibe-DO-178C -- the framework handles the ceremony so you can focus on the decisions.
+
+**9 slash commands. No database. No cloud. Your repo IS the compliance artifact.**
 
 ## Quick Start
 
-Open your AI coding assistant (Claude Code, Cursor, OpenCode, Gemini CLI) and run:
+Open your AI coding assistant and run:
 
 ```
 /specflow-init
 ```
 
-This scaffolds the project structure, installs slash command skills, and optionally sets up CI workflows. Then:
+Then:
 
 ```
 /specflow-discover → /specflow-plan → /specflow-execute → /specflow-ship
 ```
 
-That's it. Each slash command is a guided conversation — the AI assistant handles the ceremony, you make the decisions.
+Each slash command is a guided conversation -- the AI assistant handles the ceremony, you make the decisions.
 
 Read the **[getting-started guide](docs/getting-started.md)** for a full walkthrough.
+
+## Skills vs CLI
+
+SpecFlow has two interfaces that work together:
+
+| Interface | When | Example |
+|-----------|------|---------|
+| **Skills** (`/specflow-*`) | Interactive work in your AI assistant | `/specflow-discover` |
+| **CLI** (`specflow <cmd>`) | CI pipelines, automation, terminal | `specflow artifact-lint` |
+
+Skills compose CLI commands under the hood. Use skills for day-to-day work; use the CLI for automation and CI.
 
 ## The 9 Slash Commands
 
@@ -34,34 +53,43 @@ Read the **[getting-started guide](docs/getting-started.md)** for a full walkthr
 | `/specflow-ship` | Release: baseline + change records + audit |
 | `/specflow-pack-author` | Author a standards compliance pack |
 
+## Install
+
+```bash
+# Install from GitHub (requires uv)
+uv tool install git+https://github.com/anomalyco/specflow
+
+# Or run without installing
+uvx --from git+https://github.com/anomalyco/specflow specflow init
+
+# Pin to a specific release
+uv tool install git+https://github.com/anomalyco/specflow@v0.1.0
+```
+
+Supports 14 AI coding platforms: Claude Code, Cursor, Windsurf, Cline, Gemini CLI, OpenCode, GitHub Copilot, Roo Code, QwenCoder, Kiro, KiloCoder, Codex, Trae, and Junie.
+
 ## Learn More
 
-- [Getting started](docs/getting-started.md) — tutorial walkthrough
-- [Lifecycle overview](docs/lifecycle.md) — flowchart + tiered command table
-- [Command reference](docs/commands.md) — per-skill interface spec
-- [CLI reference](docs/cli-reference.md) — raw CLI commands for power users and CI
-- [Architecture](docs/architecture.md) — technical design
-- [Design decisions](docs/decisions.md) — resolved trade-offs
+- [Getting started](docs/getting-started.md) -- tutorial walkthrough
+- [Lifecycle overview](docs/lifecycle.md) -- flowchart and command tiers
+- [Command reference](docs/commands.md) -- per-skill interface spec
+- [CLI reference](docs/cli-reference.md) -- raw CLI commands for power users and CI
+- [Architecture](docs/architecture.md) -- technical design
+- [Design decisions](docs/decisions.md) -- resolved trade-offs
 
 ## For Power Users
 
-Under the hood, each slash command composes deterministic CLI commands (`uv run specflow ...`). You can invoke these directly for CI pipelines, automation, or when you prefer the terminal:
+You can invoke CLI commands directly for CI pipelines or when you prefer the terminal:
 
 ```bash
-# Install SpecFlow (requires uv)
-uv tool install specflow
-
-# Or run without installing
-uvx specflow --help
-
-# Scaffold a project
-uv run specflow init
-
-# Check project status
-uv run specflow status
-
-# Run deterministic validation
-uv run specflow artifact-lint
+specflow init --platform claude-code
+specflow status
+specflow artifact-lint
+specflow project-audit
 ```
 
-See the [CLI reference](docs/cli-reference.md) for the full command catalog organized by workflow phase.
+See the [CLI reference](docs/cli-reference.md) for the full command catalog.
+
+## License
+
+MIT

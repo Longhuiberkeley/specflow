@@ -154,10 +154,10 @@ Present a summary to the user:
 
 ### To install this pack:
 - **For this project:** Copy `standards/*.yaml` → `.specflow/standards/` and `schemas/*.yaml` → `.specflow/schema/`
-- **For reuse across projects:** Copy the entire `.specflow/packs/{name}/` directory into `src/specflow/packs/` of your SpecFlow installation, then run `specflow init --preset {name}`
+- **For reuse across projects:** Copy the entire `.specflow/packs/{name}/` directory into `src/specflow/packs/` of your SpecFlow installation.
 ```
 
-Wait for user acknowledgement.
+**Exit message:** Recommend the next step to the user: "Run `/specflow-init` to install this pack into a project using `--preset {name}`."
 
 ## Rules
 
