@@ -24,7 +24,18 @@ For each source, extract:
 - **Standard title** — full title
 - **Clauses** — list of `{id, title, description}` tuples from the document
 
-If the source is large, extract clauses progressively — ask the user which sections or parts they want to include, rather than trying to parse the entire document at once.
+### Large Document Strategy
+
+For documents over ~30 pages or multi-part standards (e.g., ISO 26262 Parts 1-12):
+
+1. **Table of contents pass first.** Read the PDF and extract just the section structure (section numbers + titles). Present this as a menu to the user: "Which sections do you want included?"
+2. **Scoped extraction.** Only extract clauses from the user-selected sections. This avoids context window exhaustion on large PDFs.
+3. **One pack per standard, not per PDF.** If the source is a multi-part standard, suggest creating one pack per part or a combined pack with clauses from selected parts. Ask the user which approach they prefer.
+4. **Chunk if needed.** If a single section is still too large for one context window, extract in chunks — pages 1-20, then 21-40, etc. — and merge the clause lists before presenting to the user.
+5. **Preserve hierarchy.** Maintain the original clause numbering (e.g., `ISO26262-3.7`, `ISO26262-4.6.2`) so traceability maps back to the source document.
+6. **Summarize, don't copy.** Clause descriptions should be one to two sentences capturing the normative requirement, not verbatim copies of long explanatory text. The goal is traceability, not reproduction.
+
+For small documents (under ~30 pages), extract all clauses directly without chunking.
 
 ### Step 2: Confirm Pack Metadata
 
