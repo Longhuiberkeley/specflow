@@ -170,8 +170,6 @@ for path, content in files.items():
     print(f"Would write {path}:\n{content}")
 ```
 
-## Deferred: unified `/specflow-adapter` skill
+## Unified `/specflow-adapter` skill
 
-A future Tier 1 conversational skill (`/specflow-adapter`) will wrap all
-adapter operations behind a single interactive prompt. Tracked as a follow-up
-to STORY-026.
+The `/specflow-adapter` slash command wraps all adapter operations behind a single interactive prompt — CI setup, exchange configuration, standards ingestion, and team RBAC management. It reads and writes `.specflow/adapters.yaml` and the `team` section of `.specflow/config.yaml` on the user's behalf.

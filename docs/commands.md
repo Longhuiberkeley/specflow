@@ -92,7 +92,7 @@ Interface specs for each `/specflow-*` slash command. For a lifecycle overview, 
 
 **Writes:**
 - Source code per story specifications
-- `_specflow/specs/tests/unit/UT-*.md`, `integration/IT-*.md`, `qualification/QT-*.md`
+- `_specflow/specs/unit-tests/UT-*.md`, `integration-tests/IT-*.md`, `qualification-tests/QT-*.md`
 - Updated STORY/DDD status (`implemented`)
 
 ---
@@ -196,3 +196,28 @@ Interface specs for each `/specflow-*` slash command. For a lifecycle overview, 
 - `.specflow/packs/{name}/` with all pack files
 
 **Key rule:** Never fabricate clauses not in the source. Preserve original clause IDs.
+
+---
+
+## /specflow-adapter
+
+**One-line:** Manage CI workflows, artifact exchange, standards ingestion, and team RBAC through guided configuration.
+
+**Composes:** `specflow ci generate`, `specflow hook install`, `specflow import`, `specflow export`, config.yaml edits
+
+**Flow:**
+1. Ask what the user wants to configure: CI, exchange, standards, team roles, or status overview
+2. **CI Setup:** Choose provider, select operations, generate workflow file and pre-commit hook
+3. **Exchange Setup:** Import from or export to external tools via exchange adapters (e.g., ReqIF)
+4. **Standards Setup:** Configure standards ingestion adapters, point to `/specflow-pack-author` for pack creation
+5. **Team Setup:** Configure RBAC roles, transition policies, independence rules, and generate CODEOWNERS
+6. **Status:** Show current adapter and team configuration
+
+**Writes:**
+- `.specflow/adapters.yaml` (CI, exchange, standards config)
+- `.specflow/config.yaml` (team roles and policies)
+- `.github/workflows/specflow.yml` (CI workflow)
+- `.git/hooks/pre-commit` (pre-commit hook)
+- `CODEOWNERS` (role-based code ownership)
+
+**Key rules:** Never overwrite existing CI workflows without confirmation. Explain that pre-commit hooks are advisory — real enforcement requires platform branch protection. RBAC is only active when role lists are non-empty.

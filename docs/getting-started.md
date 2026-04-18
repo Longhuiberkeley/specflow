@@ -35,16 +35,18 @@ What gets created:
 ```
 _specflow/
 ├── specs/
-│   ├── requirements/     # REQ artifacts
-│   ├── architecture/     # ARCH artifacts
-│   ├── detailed-design/  # DDD artifacts
-│   └── tests/            # UT, IT, QT artifacts
+│   ├── requirements/         # REQ artifacts
+│   ├── architecture/         # ARCH artifacts
+│   ├── detailed-design/      # DDD artifacts
+│   ├── unit-tests/           # UT artifacts
+│   ├── integration-tests/    # IT artifacts
+│   ├── qualification-tests/  # QT artifacts
 └── work/
-    ├── stories/          # STORY artifacts
-    ├── spikes/           # SPIKE artifacts
-    └── decisions/        # DEC artifacts
-.specflow/                # Framework internals (don't edit manually)
-.claude/skills/           # 9 slash command skill files
+    ├── stories/              # STORY artifacts
+    ├── spikes/               # SPIKE artifacts
+    └── decisions/            # DEC artifacts
+.specflow/                    # Framework internals (don't edit manually)
+.claude/skills/               # 10 slash command skill files
 ```
 
 ## 2. Discover requirements

@@ -64,6 +64,7 @@ The primary interface is `/specflow-*` slash commands in your AI assistant.
 | `/specflow-audit` | Full-project periodic health check |
 | `/specflow-ship` | Release: baseline + change records + quick audit |
 | `/specflow-pack-author` | Author a standards compliance pack |
+| `/specflow-adapter` | Manage CI, exchange, standards ingestion, team RBAC |
 
 ### Skills vs CLI
 
@@ -79,7 +80,8 @@ Skills compose CLI commands internally. You can always use the CLI directly when
 ```
 init → discover → plan → execute → artifact-review → ship
                                     ├── audit (periodic health check)
-                                    └── change-impact-review (per-commit/PR)
+                                    ├── change-impact-review (per-commit/PR)
+                                    └── adapter (CI, exchange, team setup)
 ```
 
 ### Artifact Status Lifecycle

@@ -124,10 +124,16 @@ project/
 ├── AGENTS.md                     # Universal instructions (appended by init)
 └── .claude/                      # Platform adapter (or .opencode/, .gemini/)
     └── skills/
+        ├── specflow-init/
         ├── specflow-discover/
         ├── specflow-plan/
         ├── specflow-execute/
-        └── specflow-verify/
+        ├── specflow-artifact-review/
+        ├── specflow-change-impact-review/
+        ├── specflow-audit/
+        ├── specflow-ship/
+        ├── specflow-pack-author/
+        └── specflow-adapter/
 ```
 
 ### Framework vs. project instance
@@ -285,15 +291,20 @@ Per-artifact (in frontmatter `checklists_applied`) and global audit log (`.specf
 
 ### Conversational commands (agent-driven)
 
-These are the **primary user interface** — skill file invocations via `/specflow-*` commands in the AI coding tool. The agent follows structured SKILL.md workflows, calls Python CLI commands for validation, and conducts conversations with the user. Each command maps to a skill directory (e.g., `specflow new` invokes `.claude/skills/specflow-discover/`). See D-17.
+These are the **primary user interface** — skill file invocations via `/specflow-*` commands in the AI coding tool. The agent follows structured SKILL.md workflows, calls Python CLI commands for validation, and conducts conversations with the user. See D-17.
 
 | Command | Skill directory | What it does |
 |---------|----------------|-------------|
-| `specflow new` | `specflow-discover/` | Discovery conversation (3-phase progressive disclosure with readiness assessment). Generates REQ artifacts. Adapts ceremony to ambiguity — bounded changes get lean artifacts automatically. |
-| `specflow plan` | `specflow-plan/` | Architecture and story breakdown discussion. Proposes architecture, design, stories. Populates `specs/` and `work/`. |
-| `specflow go` | `specflow-execute/` | Orchestrates parallel subagent execution per story wave. Reports progress, handles locks, auto-commits per task. |
-| `specflow check` | `specflow-verify/` | Context-specific review. Assembles criteria from artifact type + domain tags + shared + learned checklists. Runs automated then LLM-judged checks. |
-| `specflow done` | (none — inline) | Phase closure. Reviews completed work, extracts prevention patterns into `.specflow/checklists/learned/`, archives phase. |
+| `/specflow-init` | `specflow-init/` | Bootstrap project: scaffolds directories, installs skills, optional CI and standards packs. |
+| `/specflow-discover` | `specflow-discover/` | Discovery conversation (3-phase progressive disclosure with readiness assessment). Generates REQ artifacts. Adapts ceremony to ambiguity — bounded changes get lean artifacts automatically. |
+| `/specflow-plan` | `specflow-plan/` | Architecture and story breakdown discussion. Proposes architecture, design, stories. Populates `specs/` and `work/`. |
+| `/specflow-execute` | `specflow-execute/` | Orchestrates parallel subagent execution per story wave. Reports progress, handles locks, auto-commits per task. |
+| `/specflow-artifact-review` | `specflow-artifact-review/` | Context-specific review. Assembles criteria from artifact type + domain tags + shared + learned checklists. Runs automated then LLM-judged checks. |
+| `/specflow-change-impact-review` | `specflow-change-impact-review/` | Blast-radius review of recent commits/PRs via unreviewed change records. Idempotent. |
+| `/specflow-audit` | `specflow-audit/` | Full-project periodic health check. Deterministic core with optional adversarial wings. |
+| `/specflow-ship` | `specflow-ship/` | Release workflow: immutable baseline, change records, quick audit. |
+| `/specflow-pack-author` | `specflow-pack-author/` | LLM-assisted authoring of standards compliance packs from PDF, URL, or pasted text. |
+| `/specflow-adapter` | `specflow-adapter/` | Manage CI workflows, import/export, standards ingestion, and team RBAC. |
 
 ### Programmatic commands (Python CLI, zero tokens)
 
@@ -375,7 +386,7 @@ resolved: false
 
 ## Duplicate Detection
 
-Invoked via `specflow check --dedup` and as a search-before-create step inside `specflow create`. A three-tier pipeline escalates only as needed:
+Invoked via `specflow checklist-run --dedup` and as a search-before-create step inside `specflow create`. A three-tier pipeline escalates only as needed:
 
 1. **Tag Jaccard** (Python, zero tokens) — filters artifact pairs by set similarity of `tags`.
 2. **TF-IDF cosine** (Python, zero tokens, stdlib only) — filters survivors by keyword similarity on title + normative body.

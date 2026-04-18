@@ -1,6 +1,6 @@
 # SpecFlow Lifecycle
 
-The user journey from cold clone to shipped feature, driven by 9 Tier 1 slash commands.
+The user journey from cold clone to shipped feature, driven by 10 Tier 1 slash commands.
 
 ## Lifecycle Flowchart
 
