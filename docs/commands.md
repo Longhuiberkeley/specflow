@@ -22,7 +22,7 @@ Interface specs for each `/specflow-*` slash command. For a lifecycle overview, 
 **Writes:**
 - `.specflow/` internals (config, schemas, checklists, adapters)
 - `_specflow/` artifact directories (specs/, work/)
-- `.claude/skills/` (or `.opencode/`, `.gemini/`) — 9 skill directories
+- `.claude/skills/` (or `.opencode/`, `.gemini/`) — 10 skill directories
 - SpecFlow section appended to `AGENTS.md` (or `CLAUDE.md`)
 - `.github/workflows/specflow.yml` (if CI requested)
 
@@ -189,7 +189,7 @@ Interface specs for each `/specflow-*` slash command. For a lifecycle overview, 
 2. Confirm pack metadata with user; edit as needed
 3. Optionally scaffold new artifact type schemas
 4. Generate pack directory: `pack.yaml`, `standards/*.yaml`, optional `schemas/*.yaml`, `README.md`
-5. Validate with `scripts/validate-pack.sh`
+5. Validate with `.claude/skills/specflow-pack-author/scripts/validate-pack.sh`
 6. Present summary; recommend `/specflow-init --preset {name}` to install
 
 **Writes:**

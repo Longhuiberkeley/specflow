@@ -89,6 +89,8 @@ Supports 14 AI coding platforms: Claude Code, Cursor, Windsurf, Cline, Gemini CL
 - [Architecture](docs/architecture.md) -- technical design
 - [Design decisions](docs/decisions.md) -- resolved trade-offs
 - [Team setup](docs/team-setup.md) -- RBAC and role-based access control
+- [Authoring a pack](docs/authoring-a-pack.md) -- creating compliance packs
+- [Authoring an adapter](docs/authoring-an-adapter.md) -- writing custom adapters
 
 ## For Power Users
 

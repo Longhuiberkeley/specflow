@@ -35,11 +35,11 @@ The user journey from cold clone to shipped feature, driven by 10 Tier 1 slash c
                 /specflow-artifact-review
                 (deterministic lint + checklist + LLM review)
                                 │
-         ┌──────────────────────┼──────────────────────┐
-         ▼                      ▼                      ▼
-  iterate again      /specflow-change-        /specflow-audit
-                     impact-review             (periodic; full-project
-                     (per-commit/PR;            health check; produces
+         ┌──────────────────────┼──────────────────────┬──────────────────────┐
+         ▼                      ▼                      ▼                      ▼
+  iterate again      /specflow-change-        /specflow-audit        /specflow-adapter
+                     impact-review             (periodic; full-project  (configure CI, roles,
+                     (per-commit/PR;            health check; produces   adapters at any time)
                       blast-radius              AUD + CHL artifacts)
                       analysis)                         │
                                 │                        │
