@@ -58,41 +58,41 @@ artifacts:
   REQ-006:
     id: REQ-006
     title: Pack-Author Extraction Quality
-    status: approved
+    status: implemented
     tags:
     - quality
     - packs
     - skills
-    fingerprint: ''
+    fingerprint: sha256:e90cea5f6ff8
     children: []
   REQ-007:
     id: REQ-007
     title: Traceability Depth Reporting
-    status: approved
+    status: implemented
     tags:
     - traceability
     - reporting
     - cli
-    fingerprint: ''
+    fingerprint: sha256:60d395d3afe9
     children: []
   REQ-008:
     id: REQ-008
     title: Provider-Agnostic CI Gate
-    status: approved
+    status: implemented
     tags:
     - rbac
     - ci
     - adapters
-    fingerprint: ''
+    fingerprint: sha256:315c1da1c9b1
     children: []
   REQ-009:
     id: REQ-009
     title: Test Suite Foundation
-    status: approved
+    status: implemented
     tags:
     - testing
     - quality
     - foundation
-    fingerprint: ''
+    fingerprint: sha256:b322cfa86109
     children: []
 next_id: 10

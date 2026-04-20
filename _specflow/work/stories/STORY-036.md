@@ -2,7 +2,7 @@
 id: STORY-036
 title: Improve pack-author extraction protocol with verification layer
 type: story
-status: approved
+status: implemented
 priority: high
 tags:
 - skills
@@ -13,7 +13,8 @@ links:
 - target: REQ-006
   role: implements
 created: '2026-04-20'
-modified: '2026-04-20'
+modified: '2026-04-21'
+fingerprint: sha256:6a7a4f1483c8
 ---
 
 # Improve pack-author extraction protocol with verification layer

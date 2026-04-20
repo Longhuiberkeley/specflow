@@ -2,7 +2,7 @@
 id: STORY-038
 title: Add provider-agnostic CI gate command and GitHub Actions template
 type: story
-status: approved
+status: implemented
 priority: high
 tags:
 - rbac
@@ -13,7 +13,8 @@ links:
 - target: REQ-008
   role: implements
 created: '2026-04-20'
-modified: '2026-04-20'
+modified: '2026-04-21'
+fingerprint: sha256:b2c8458a85a7
 ---
 
 # Add provider-agnostic CI gate command and GitHub Actions template

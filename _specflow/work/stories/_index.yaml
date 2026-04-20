@@ -363,22 +363,22 @@ artifacts:
   STORY-036:
     id: STORY-036
     title: Improve pack-author extraction protocol with verification layer
-    status: approved
+    status: implemented
     tags:
     - skills
     - packs
     - quality
-    fingerprint: ''
+    fingerprint: sha256:6a7a4f1483c8
     children: []
   STORY-037:
     id: STORY-037
     title: Add trace command and chain-report lint check
-    status: approved
+    status: implemented
     tags:
     - traceability
     - cli
     - reporting
-    fingerprint: ''
+    fingerprint: sha256:ddc227e4eb50
     children: []
   STORY-038:
     id: STORY-038

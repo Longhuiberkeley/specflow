@@ -2,12 +2,12 @@ artifacts:
   DDD-001:
     id: DDD-001
     title: Impact Analysis Engine
-    status: draft
+    status: implemented
     tags:
     - traceability
     - impact
     - core
-    fingerprint: ''
+    fingerprint: sha256:1ed62292d238
     children: []
   DDD-002:
     id: DDD-002
