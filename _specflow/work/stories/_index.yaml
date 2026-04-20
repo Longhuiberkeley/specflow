@@ -360,4 +360,65 @@ artifacts:
     - testing
     - quality
     title: Create pytest test suite for core lib modules
-next_id: 40
+  STORY-040:
+    id: STORY-040
+    title: Remove deprecated CLI aliases and fix requirement schema
+    status: approved
+    tags:
+    - cleanup
+    - deprecation
+    - schema
+    fingerprint: sha256:7d1b2b0e1803
+    children: []
+  STORY-041:
+    id: STORY-041
+    title: Add EARS patterns and quality guidance to normative-language reference
+    status: approved
+    tags:
+    - quality
+    - ears
+    - discover
+    fingerprint: sha256:b01977325827
+    children: []
+  STORY-042:
+    id: STORY-042
+    title: Add requirements quality lint check to artifact-lint
+    status: approved
+    tags:
+    - quality
+    - lint
+    - ears
+    fingerprint: sha256:6d67631c7493
+    children: []
+  STORY-043:
+    id: STORY-043
+    title: Add coverage metrics to specflow status command
+    status: approved
+    tags:
+    - compliance
+    - reporting
+    - status
+    fingerprint: sha256:002a2e347806
+    children: []
+  STORY-044:
+    id: STORY-044
+    title: 'Fix ReqIF round-trip quality: stable UUIDs, schema fix, tests, ARCH/DDD
+      export'
+    status: approved
+    tags:
+    - reqif
+    - interop
+    - quality
+    fingerprint: sha256:c859e8bc2c22
+    children: []
+  STORY-045:
+    id: STORY-045
+    title: Add specflow generate-tests command and update execute skill
+    status: approved
+    tags:
+    - testing
+    - vmodel
+    - scaffolding
+    fingerprint: sha256:1222f23d9b83
+    children: []
+next_id: 46

@@ -89,54 +89,54 @@ artifacts:
   REQ-010:
     id: REQ-010
     title: EARS Quality in Prompts and Lint Safety Net
-    status: draft
+    status: approved
     tags:
     - quality
     - ears
     - requirements
     - lint
-    fingerprint: sha256:e45a632ba734
+    fingerprint: sha256:eb2d81f1d6a1
     children: []
   REQ-011:
     id: REQ-011
     title: Compliance Score Dashboard
-    status: draft
+    status: approved
     tags:
-    - compliance
-    - reporting
-    - status
-    fingerprint: sha256:6f2dba73f780
+    - reqif
+    - interop
+    - quality
+    fingerprint: sha256:db2520879e72
     children: []
   REQ-012:
     id: REQ-012
     title: Compliance Score Dashboard
-    status: draft
+    status: approved
     tags:
     - compliance
     - reporting
     - status
-    fingerprint: sha256:6f2dba73f780
+    fingerprint: sha256:366da1ce85ef
     children: []
   REQ-013:
     id: REQ-013
     title: V-Model Test Scaffolding and Execute Enhancement
-    status: draft
+    status: approved
     tags:
     - testing
     - vmodel
     - scaffolding
     - cli
-    fingerprint: sha256:55dffd1b32b2
+    fingerprint: sha256:dac4d8d13ab8
     children: []
   REQ-014:
     id: REQ-014
     title: Deprecation Cleanup and Schema Fixes
-    status: draft
+    status: approved
     tags:
     - cleanup
     - deprecation
     - schema
-    fingerprint: sha256:cdd6646f4c03
+    fingerprint: sha256:6f6e3908348c
     children: []
   REQ-015:
     id: REQ-015
