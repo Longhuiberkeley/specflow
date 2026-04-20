@@ -1,20 +1,18 @@
 artifacts:
   DEC-001:
+    fingerprint: ''
     id: DEC-001
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
     title: 'Change Record: Another dummy commit'
-    status: draft
-    tags:
-    - change-record
-    - auto-generated
-    fingerprint: ''
-    children: []
   DEC-002:
+    fingerprint: ''
     id: DEC-002
-    title: 'Change Record: Third dummy commit'
     status: draft
     tags:
     - change-record
     - auto-generated
-    fingerprint: ''
-    children: []
+    title: 'Change Record: Third dummy commit'
 next_id: 3

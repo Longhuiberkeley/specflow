@@ -1,40 +1,37 @@
 artifacts:
   REQ-001:
+    fingerprint: sha256:c71b25095984
     id: REQ-001
-    title: CLI Interface
     status: approved
     tags:
     - functional
     - cli
     - core
     - mvp
-    fingerprint: sha256:c71b25095984
-    children: []
+    title: CLI Interface
   REQ-002:
+    fingerprint: sha256:4ba4d17ec1bb
     id: REQ-002
-    title: Artifact Structure
     status: approved
     tags:
     - functional
     - core
     - format
     - mvp
-    fingerprint: sha256:4ba4d17ec1bb
-    children: []
+    title: Artifact Structure
   REQ-003:
+    fingerprint: sha256:005378fce8f7
     id: REQ-003
-    title: Trace & Suspect Propagation
     status: approved
     tags:
     - functional
     - traceability
     - impact
     - core
-    fingerprint: sha256:005378fce8f7
-    children: []
+    title: Trace & Suspect Propagation
   REQ-004:
+    fingerprint: sha256:6a83f01fd52a
     id: REQ-004
-    title: AI Execution Boundaries
     status: approved
     tags:
     - functional
@@ -42,57 +39,123 @@ artifacts:
     - skills
     - token-optimization
     - core
-    fingerprint: sha256:6a83f01fd52a
-    children: []
+    title: AI Execution Boundaries
   REQ-005:
+    fingerprint: sha256:a1ae6910e33d
     id: REQ-005
-    title: Cross-Platform & Compliance
     status: approved
     tags:
     - functional
     - cross-platform
     - compliance
     - baselines
-    fingerprint: sha256:a1ae6910e33d
-    children: []
+    title: Cross-Platform & Compliance
   REQ-006:
+    fingerprint: sha256:e90cea5f6ff8
     id: REQ-006
-    title: Pack-Author Extraction Quality
     status: implemented
     tags:
     - quality
     - packs
     - skills
-    fingerprint: sha256:e90cea5f6ff8
-    children: []
+    title: Pack-Author Extraction Quality
   REQ-007:
+    fingerprint: sha256:60d395d3afe9
     id: REQ-007
-    title: Traceability Depth Reporting
     status: implemented
     tags:
     - traceability
     - reporting
     - cli
-    fingerprint: sha256:60d395d3afe9
-    children: []
+    title: Traceability Depth Reporting
   REQ-008:
+    fingerprint: sha256:315c1da1c9b1
     id: REQ-008
-    title: Provider-Agnostic CI Gate
     status: implemented
     tags:
     - rbac
     - ci
     - adapters
-    fingerprint: sha256:315c1da1c9b1
-    children: []
+    title: Provider-Agnostic CI Gate
   REQ-009:
+    fingerprint: sha256:b322cfa86109
     id: REQ-009
-    title: Test Suite Foundation
     status: implemented
     tags:
     - testing
     - quality
     - foundation
-    fingerprint: sha256:b322cfa86109
+    title: Test Suite Foundation
+  REQ-010:
+    id: REQ-010
+    title: EARS Quality in Prompts and Lint Safety Net
+    status: draft
+    tags:
+    - quality
+    - ears
+    - requirements
+    - lint
+    fingerprint: sha256:e45a632ba734
     children: []
-next_id: 10
+  REQ-011:
+    id: REQ-011
+    title: Compliance Score Dashboard
+    status: draft
+    tags:
+    - compliance
+    - reporting
+    - status
+    fingerprint: sha256:6f2dba73f780
+    children: []
+  REQ-012:
+    id: REQ-012
+    title: Compliance Score Dashboard
+    status: draft
+    tags:
+    - compliance
+    - reporting
+    - status
+    fingerprint: sha256:6f2dba73f780
+    children: []
+  REQ-013:
+    id: REQ-013
+    title: V-Model Test Scaffolding and Execute Enhancement
+    status: draft
+    tags:
+    - testing
+    - vmodel
+    - scaffolding
+    - cli
+    fingerprint: sha256:55dffd1b32b2
+    children: []
+  REQ-014:
+    id: REQ-014
+    title: Deprecation Cleanup and Schema Fixes
+    status: draft
+    tags:
+    - cleanup
+    - deprecation
+    - schema
+    fingerprint: sha256:cdd6646f4c03
+    children: []
+  REQ-015:
+    id: REQ-015
+    title: Compliance Evidence Reports
+    status: draft
+    tags:
+    - compliance
+    - reports
+    - shipping
+    fingerprint: sha256:316009b98282
+    children: []
+  REQ-016:
+    id: REQ-016
+    title: Standards Gap Analysis v2
+    status: draft
+    tags:
+    - standards
+    - compliance
+    - analysis
+    fingerprint: sha256:b31e8a1c2782
+    children: []
+next_id: 17

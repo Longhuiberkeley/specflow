@@ -1,33 +1,30 @@
 artifacts:
   ARCH-001:
+    fingerprint: sha256:28d09baae8eb
     id: ARCH-001
-    title: CLI Core
     status: draft
     tags:
     - cli
     - python
     - core
-    fingerprint: sha256:28d09baae8eb
-    children: []
+    title: CLI Core
   ARCH-002:
+    fingerprint: sha256:e7baed037004
     id: ARCH-002
-    title: Framework Machinery
     status: draft
     tags:
     - framework
     - internals
     - core
-    fingerprint: sha256:e7baed037004
-    children: []
+    title: Framework Machinery
   ARCH-003:
+    fingerprint: sha256:14b81a2fe72b
     id: ARCH-003
-    title: Skill & Platform System
     status: draft
     tags:
     - skills
     - platform
     - ai
     - progressive-disclosure
-    fingerprint: sha256:14b81a2fe72b
-    children: []
+    title: Skill & Platform System
 next_id: 4
