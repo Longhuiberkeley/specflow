@@ -55,4 +55,44 @@ artifacts:
     - baselines
     fingerprint: sha256:a1ae6910e33d
     children: []
-next_id: 6
+  REQ-006:
+    id: REQ-006
+    title: Pack-Author Extraction Quality
+    status: approved
+    tags:
+    - quality
+    - packs
+    - skills
+    fingerprint: ''
+    children: []
+  REQ-007:
+    id: REQ-007
+    title: Traceability Depth Reporting
+    status: approved
+    tags:
+    - traceability
+    - reporting
+    - cli
+    fingerprint: ''
+    children: []
+  REQ-008:
+    id: REQ-008
+    title: Provider-Agnostic CI Gate
+    status: approved
+    tags:
+    - rbac
+    - ci
+    - adapters
+    fingerprint: ''
+    children: []
+  REQ-009:
+    id: REQ-009
+    title: Test Suite Foundation
+    status: approved
+    tags:
+    - testing
+    - quality
+    - foundation
+    fingerprint: ''
+    children: []
+next_id: 10

@@ -322,7 +322,7 @@ artifacts:
     id: STORY-032
     title: "Delete over-exposed skill directories \u2014 collapse 22 skills to 8 Tier\
       \ 1"
-    status: approved
+    status: implemented
     tags:
     - UX
     - skills
@@ -360,4 +360,43 @@ artifacts:
     - checklists
     fingerprint: sha256:5d458c39e8b8
     children: []
-next_id: 36
+  STORY-036:
+    id: STORY-036
+    title: Improve pack-author extraction protocol with verification layer
+    status: approved
+    tags:
+    - skills
+    - packs
+    - quality
+    fingerprint: ''
+    children: []
+  STORY-037:
+    id: STORY-037
+    title: Add trace command and chain-report lint check
+    status: approved
+    tags:
+    - traceability
+    - cli
+    - reporting
+    fingerprint: ''
+    children: []
+  STORY-038:
+    id: STORY-038
+    title: Add provider-agnostic CI gate command and GitHub Actions template
+    status: approved
+    tags:
+    - rbac
+    - ci
+    - adapters
+    fingerprint: ''
+    children: []
+  STORY-039:
+    id: STORY-039
+    title: Create pytest test suite for core lib modules
+    status: approved
+    tags:
+    - testing
+    - quality
+    fingerprint: ''
+    children: []
+next_id: 40
