@@ -2,7 +2,7 @@
 id: STORY-041
 title: Add EARS patterns and quality guidance to normative-language reference
 type: story
-status: approved
+status: implemented
 priority: high
 tags:
 - quality
@@ -15,6 +15,8 @@ links:
 - target: ARCH-002
   role: guided_by
 created: '2026-04-21'
+modified: '2026-04-21'
+fingerprint: sha256:4a61a5012692
 ---
 
 # Add EARS patterns and quality guidance to normative-language reference

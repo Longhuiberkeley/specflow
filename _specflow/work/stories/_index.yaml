@@ -373,12 +373,12 @@ artifacts:
   STORY-041:
     id: STORY-041
     title: Add EARS patterns and quality guidance to normative-language reference
-    status: approved
+    status: implemented
     tags:
     - quality
     - ears
     - discover
-    fingerprint: sha256:b01977325827
+    fingerprint: sha256:4a61a5012692
     children: []
   STORY-042:
     id: STORY-042

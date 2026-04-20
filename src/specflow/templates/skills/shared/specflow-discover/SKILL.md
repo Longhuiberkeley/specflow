@@ -113,9 +113,19 @@ uv run specflow create \
   --body "<markdown with acceptance criteria>"
 ```
 
+**Quality check before writing each REQ body:**
+
+Read `references/normative-language.md` for the full guide. Apply these checks:
+
+1. **EARS pattern match**: Does the requirement follow one of the 5 EARS patterns (Ubiquitous, Event-Driven, Unwanted Behaviour, State-Driven, Optional Feature)? If not, rewrite it.
+2. **No ambiguity words**: Check against the ambiguity word list. Replace "fast" with a measurable threshold, "user-friendly" with a testable criterion, etc.
+3. **Single obligation**: Only one "shall" per requirement. Split compound requirements.
+4. **Active voice**: "The system **shall**..." not "Data **shall** be..."
+5. **Quantified thresholds**: Every performance or quality claim has a number attached.
+
 **Body format for each REQ:**
 ```markdown
-<One-line summary using normative language>
+<One-line summary using EARS pattern with normative language>
 
 ## Acceptance Criteria
 
@@ -181,6 +191,6 @@ If this was the first discovery and the project was in `idle` state, update stat
 
 - `references/readiness-assessment.md` — Full readiness dimensions and evaluation guidance.
 - `references/level-boundaries.md` — REQ vs ARCH vs DDD boundary rules with examples.
-- `references/normative-language.md` — Proper requirement phrasing (SHALL/SHOULD/MAY).
+- `references/normative-language.md` — Proper requirement phrasing: RFC 2119 keywords, EARS sentence patterns, ambiguity word list, compound shall detection, passive voice avoidance.
 - `references/domain-checklists/<type>.md` — Per-domain question sets for Phase 2.
 - `references/cross-cutting.md` — Cross-cutting concern checklists for Phase 3.
