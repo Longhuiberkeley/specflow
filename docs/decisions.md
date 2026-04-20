@@ -119,9 +119,9 @@ Each decision documents the context, options considered, the resolution, and rat
 
 **Context:** Enterprises using DOORS or Polarion need interchange via the ReqIF standard.
 
-**Decision:** Punt to P6. The artifact format is designed to be ReqIF-compatible in principle (typed links, status lifecycle, hierarchical decomposition all map to ReqIF concepts). Actual XML conversion implemented as shell scripts when needed.
+**Decision:** Implemented in P7 (STORY-018). Full ReqIF 1.2 import and export via `specflow import --adapter reqif` and `specflow export --adapter reqif`. Uses Python's `xml.etree.ElementTree` with no external dependencies. Round-trip preservation of unmapped attributes via `reqif_metadata` frontmatter field. Export covers requirements only; architecture, design, and test export deferred. Bidirectional sync (third verb) deferred.
 
-**Rationale:** ReqIF is a complex XML schema with limited demand in early phases. The mechanical transformation can be built when there's demand without architectural changes.
+**Rationale:** ReqIF interchange is essential for supply-chain collaboration with DOORS/Polarion users. The Python implementation replaces the originally planned shell-script approach for maintainability and testability.
 
 ---
 

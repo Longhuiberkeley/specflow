@@ -105,17 +105,63 @@ specflow project-audit
 
 See the [CLI reference](docs/cli-reference.md) for the full command catalog.
 
+## SpecFlow vs. Traditional ALM Tools
+
+SpecFlow is **not** a replacement for IBM DOORS, Siemens Polarion, or Jama Connect. Those tools serve a different audience — systems engineers working in dedicated web UIs with supply-chain-scale interchange workflows. SpecFlow serves **developers and AI assistants** who want compliance-grade rigor without leaving their repo.
+
+Where SpecFlow fits:
+
+| | Traditional ALM (DOORS, Polarion) | SpecFlow |
+|---|---|---|
+| **Home** | Web server / desktop client | Your git repository |
+| **Interface** | Click-through web forms | `/specflow-*` slash commands + CLI |
+| **CI** | External integration, often manual | Native — `artifact-lint` in CI, zero tokens |
+| **AI** | Limited or none | 14 AI coding platforms, skill-first design |
+| **Setup** | Server provisioning, licenses | `uv run specflow init` — one command |
+| **Audience** | Systems engineers, compliance officers | Developers, AI assistants, small teams |
+
+SpecFlow complements traditional ALM through **ReqIF import/export** (already built) — teams can exchange requirements with DOORS/Polarion users while keeping their own workflow in the repo.
+
 ## Roadmap
 
-SpecFlow ships incrementally. Here's what's live and what's coming:
+SpecFlow ships incrementally. Here's what's live, what's next, and the longer-term direction:
 
-| Status | Release | What's Included |
-|--------|---------|-----------------|
-| **Live** | v0.1.0 | Scaffolding (`init`), manual specification, zero-token validation engine, 10 slash commands |
-| **Next** | v0.2.0 | Full AI lifecycle: discovery conversations, traceability (fingerprints, impact analysis), execution orchestration, context-specific review |
-| **Planned** | v0.3.0 | Compliance-ready: LLM-assisted pack authoring from PDF/URL/text, standards gap analysis, baselines |
-| **Planned** | v1.0.0 | Team-ready: git-based RBAC, defect lifecycle, draft ID renumbering, CI integration, test records |
-| **Future** | v1.x | Intelligence: 3-tier deduplication, dead-code and similarity detection, prevention pattern learning |
+### Shipped (v0.1.0)
+
+- 10 slash commands across 14 AI coding platforms
+- Zero-token validation engine (schema, links, status, fingerprints, acceptance, conflicts, coverage, chain depth)
+- Git-based RBAC with pre-commit hooks and CI gate
+- Immutable baselines with diff comparison
+- ReqIF 1.2 import/export for supply-chain interchange
+- Standards pack architecture with gap analysis
+- Defect lifecycle, draft ID renumbering, change impact analysis
+- 3-tier deduplication, dead-code and similarity detection
+- V-model traceability: REQ → ARCH → DDD → UT/IT/QT
+
+### Next (v0.2.0)
+
+- **Requirements quality scoring** — INCOSE/EARS-based checks for ambiguity, passive voice, missing measurability, and compound requirements (zero-token, deterministic)
+- **Enhanced trace command** — visual chain depth reporting and coverage dashboards
+- **Improved pack authoring** — verification layer for extracted clause accuracy
+
+### Planned (v0.3.0)
+
+- **Compliance preset packs** — pre-built industry packs for ISO 26262, IEC 62304, DO-178C, SOX (schema structure only; users provide licensed standard text)
+- **Compliance evidence reports** — generate DHF/Technical File style output from `/specflow-ship`
+- **Standards gap analysis** — deeper coverage scoring with actionable remediation
+
+### Planned (v1.0.0)
+
+- **Review workflow artifacts** — structured `REVIEW-*` type with reviewer voting, threaded findings, and audit-grade approval evidence
+- **Local visualization server** — `specflow serve` launches a dashboard at `localhost:5566` with interactive traceability graphs, coverage metrics, and baseline comparisons
+- **AI-assisted test generation** — generate UT/IT/QT stubs from REQ bodies using your AI assistant
+
+### Future (v1.x)
+
+- **Product variant management** — tag-based product line engineering for multi-trim / multi-variant projects
+- **FMEA / risk analysis** — hazard, safety-goal, and risk-control artifact types via industry packs
+- **Bidirectional Jira/Azure DevOps sync** — for teams bridging agile boards and compliance specs
+- **REST API** — programmatic access for custom toolchain integration
 
 See the [implementation plan](docs/plan.md) for the full phase breakdown.
 
