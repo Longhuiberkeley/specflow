@@ -17,6 +17,14 @@ Run the automated audit pipeline silently. This covers horizontal, vertical, and
 uv run specflow project-audit
 ```
 
+After the project audit, run the chain depth survey to show traceability coverage distribution:
+
+```
+uv run specflow artifact-lint --type chain-report
+```
+
+Include the chain depth distribution in the audit summary (Step 4). This is informational data about how deep traceability chains run across the project — not a pass/fail indicator.
+
 ### Step 2: Adversarial Wings (Optional)
 
 After the core audit completes, offer to run deeper, AI-driven adversarial reviews:
@@ -25,8 +33,9 @@ After the core audit completes, offer to run deeper, AI-driven adversarial revie
 
 If accepted:
 1. Formulate up to 16 lenses (e.g., edge-case logic, security posture, performance, coupling).
-2. Create 2 parallel subagents (if your environment supports it) to evaluate these lenses against the V-model specifications.
-3. Consolidate the findings from the adversarial wings.
+2. For any artifact flagged during Step 1, run `uv run specflow trace <ARTIFACT_ID>` to understand its full upstream/downstream dependency context before evaluating lenses.
+3. Create 2 parallel subagents (if your environment supports it) to evaluate these lenses against the V-model specifications.
+4. Consolidate the findings from the adversarial wings.
 
 ### Step 3: Artifact Creation
 

@@ -33,6 +33,14 @@ Present the status summary to the user. Note any:
 - Missing verification pairs
 - Suspect flags
 
+If reviewing a specific artifact, also show its traceability chain:
+
+```
+uv run specflow trace <ARTIFACT_ID>
+```
+
+This displays upstream (standards, parents) and downstream (implementation, tests) links as a tree, giving full context for the review.
+
 ### Step 3: Run Context-Specific Checklists (DO THIS BEFORE LENSES)
 
 This step is **mandatory before Step 4**. Checklists are the curated coverage the project has already invested in; running lenses first would duplicate that work and waste tokens.

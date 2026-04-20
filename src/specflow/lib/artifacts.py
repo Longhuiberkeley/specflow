@@ -351,6 +351,100 @@ def find_missing_v_pairs(artifacts: list[Artifact]) -> list[tuple[Artifact, str]
     return missing
 
 
+def trace_chain(
+    artifact_id: str,
+    id_index: dict[str, Artifact],
+    direction: str = "both",
+) -> dict[str, Any]:
+    """Trace the traceability chain for an artifact.
+
+    Args:
+        artifact_id: The artifact ID to trace from.
+        id_index: Mapping of artifact IDs to Artifact objects.
+        direction: "upstream" (standards/sources), "downstream"
+                   (implementation/tests), or "both".
+
+    Returns:
+        Dict with 'upstream' and 'downstream' keys, each containing
+        a list of chain nodes. Each node is {id, type, title, status, role}.
+    """
+    upstream: list[dict[str, str]] = []
+    downstream: list[dict[str, str]] = []
+
+    UPSTREAM_ROLES = {"derives_from", "complies_with"}
+
+    if direction in ("upstream", "both"):
+        visited: set[str] = set()
+        queue = [artifact_id]
+        while queue:
+            current_id = queue.pop(0)
+            if current_id in visited:
+                continue
+            visited.add(current_id)
+            current = id_index.get(current_id)
+            if not current:
+                continue
+            for link in current.links:
+                if link.role in UPSTREAM_ROLES and link.target not in visited:
+                    target = id_index.get(link.target)
+                    upstream.append({
+                        "id": link.target,
+                        "type": target.type if target else "standard",
+                        "title": target.title if target else link.target,
+                        "status": target.status if target else "",
+                        "role": link.role,
+                    })
+                    queue.append(link.target)
+
+    if direction in ("downstream", "both"):
+        visited = set()
+        for art_id, art in id_index.items():
+            if art_id == artifact_id:
+                continue
+            for link in art.links:
+                if link.target == artifact_id and art_id not in visited:
+                    visited.add(art_id)
+                    downstream.append({
+                        "id": art_id,
+                        "type": art.type,
+                        "title": art.title,
+                        "status": art.status,
+                        "role": link.role,
+                    })
+
+    return {"upstream": upstream, "downstream": downstream}
+
+
+def compute_chain_depth(
+    artifact_id: str,
+    id_index: dict[str, Artifact],
+) -> list[str]:
+    """Compute the traceability chain path from a spec artifact to its deepest verification test.
+
+    Returns a list of IDs representing the chain path, or [artifact_id] if no downstream links.
+    """
+    visited: set[str] = set()
+    deepest: list[str] = [artifact_id]
+
+    def _walk(current_id: str, path: list[str]) -> None:
+        nonlocal deepest
+        if current_id in visited:
+            return
+        visited.add(current_id)
+        for art_id, art in id_index.items():
+            if art_id in visited:
+                continue
+            for link in art.links:
+                if link.target == current_id:
+                    new_path = path + [art_id]
+                    if len(new_path) > len(deepest):
+                        deepest = new_path
+                    _walk(art_id, new_path)
+
+    _walk(artifact_id, [artifact_id])
+    return deepest
+
+
 def _read_index(index_path: Path) -> dict[str, Any]:
     if not index_path.exists():
         return {"artifacts": {}, "next_id": 1}

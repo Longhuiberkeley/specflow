@@ -53,6 +53,7 @@ Route to the appropriate section below based on the user's choice.
    - `change-impact` (blast-radius review on PRs)
    - `project-audit` (full audit on push to main)
    - `release-gate` (gate check on tag pushes)
+   - `ci-gate` (server-side RBAC enforcement on PRs — recommended when team roles are configured)
 4. Write config to `.specflow/adapters.yaml`
 5. Generate workflow: `specflow ci generate`
 6. Install pre-commit hook: `specflow hook install`
@@ -63,6 +64,8 @@ Route to the appropriate section below based on the user's choice.
 **CI provider switching:** Change the `ci.provider` field in `.specflow/adapters.yaml`, then run `specflow ci generate` again. The new provider's workflow replaces the old one.
 
 **Composes:** `specflow ci generate`, `specflow hook install`
+
+**CI Gate (RBAC):** The `ci-gate` operation runs `specflow ci-gate --base <base-ref> --head <head-ref>` as a PR check. It detects independence violations (implementer cannot verify own work) and role violations (unauthorized status transitions). When team roles are configured in `.specflow/config.yaml`, strongly recommend including this operation. The command is provider-agnostic — it uses only `git diff` between two refs. Each CI adapter template passes the correct ref variables for its platform.
 
 ---
 

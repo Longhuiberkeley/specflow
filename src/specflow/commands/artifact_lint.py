@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
+import re
+import subprocess
 from pathlib import Path
 
+import yaml
+
 from specflow.lib import artifacts as art_lib
+from specflow.lib import draft_ids as draft_lib
 from specflow.lib import standards as standards_lib
 from specflow.lib import lint as lint_lib
 
@@ -15,7 +20,7 @@ YELLOW = "\033[1;33m"
 CYAN = "\033[0;36m"
 NC = "\033[0m"  # No Color
 
-CHECK_NAMES = ["schema", "links", "status", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size"]
+CHECK_NAMES = ["schema", "links", "status", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report"]
 
 
 def _run_check(
@@ -47,6 +52,8 @@ def _run_check(
         return _check_coverage(artifacts)
     elif check_name == "story-size":
         return _check_story_size(artifacts)
+    elif check_name == "chain-report":
+        return _check_chain_report(artifacts)
 
     return {"status_icon": "?", "detail": f"Unknown check: {check_name}",
             "blocking_count": 0, "warning_count": 0}
@@ -195,13 +202,12 @@ def _check_ids(
             seen[art.id] = art.path.name
 
     # Format (draft IDs are always accepted; renumbered by `specflow renumber-drafts`)
-    from specflow.lib import draft_ids as _draft
     for art in artifacts:
         schema = schemas.get(art.type)
         if schema:
             id_fmt = schema.get("id_format")
             if id_fmt and not art_lib.validate_id_format(art.id, id_fmt):
-                if _draft.is_draft_id(art.id):
+                if draft_lib.is_draft_id(art.id):
                     continue
                 blocking += 1
                 details.append(f"  ✗ [{art.id}] invalid format (expected: {id_fmt})")
@@ -294,22 +300,20 @@ def _check_conflicts(
     groups them by system element (extracted from title keywords and tags),
     and flags pairs specifying contradictory ranges on the same metric.
     """
-    import re as _re
-
     blocking = 0
     warnings = 0
     details: list[str] = []
 
     reqs = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "REQ"]
 
-    _NUM_PATTERN = _re.compile(
+    _NUM_PATTERN = re.compile(
         r"(?P<metric>[\w\s]{3,40}?)"
         r"\s*(?P<op><|<=|>=|>|==|=|!=|at\s+least|at\s+most|under|over|below|above)"
         r"\s*(?P<value>\d+\.?\d*)\s*(?P<unit>%|ms|s|sec|seconds?|min|minutes?|mb|gb|kb|bytes?|rpm|rps)?",
-        _re.IGNORECASE,
+        re.IGNORECASE,
     )
 
-    _HEADING_PATTERN = _re.compile(r"^##\s+(.+)$", _re.MULTILINE)
+    _HEADING_PATTERN = re.compile(r"^##\s+(.+)$", re.MULTILINE)
 
     constraints_by_req: dict[str, list[dict]] = {}
     for art in reqs:
@@ -484,8 +488,6 @@ def _check_story_size(
 
     Flags stories with >8 acceptance criteria or >5 distinct subsystem references.
     """
-    import re as _re
-
     blocking = 0
     warnings = 0
     details: list[str] = []
@@ -493,26 +495,26 @@ def _check_story_size(
     stories = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "STORY"]
 
     for art in stories:
-        ac_section = _re.search(
+        ac_section = re.search(
             r"##\s*Acceptance\s+Criteria\s*\n(.*)",
             art.body,
-            _re.IGNORECASE | _re.DOTALL,
+            re.IGNORECASE | re.DOTALL,
         )
         if ac_section:
             ac_text = ac_section.group(1)
-            next_header = _re.search(r"^##\s", ac_text, _re.MULTILINE)
+            next_header = re.search(r"^##\s", ac_text, re.MULTILINE)
             if next_header:
                 ac_text = ac_text[:next_header.start()]
-            ac_items = _re.findall(r"^\d+\.\s+", ac_text, _re.MULTILINE)
+            ac_items = re.findall(r"^\d+\.\s+", ac_text, re.MULTILINE)
             ac_count = len(ac_items)
             if ac_count > 8:
                 warnings += 1
                 details.append(f"  ⚠ [{art.id}] has {ac_count} acceptance criteria (max 8 recommended)")
 
         subsystem_refs = set(
-            _re.findall(r"\bsrc/[\w./-]+", art.body)
-            + _re.findall(r"\blib/[\w./-]+", art.body)
-            + _re.findall(r"commands/[\w./-]+", art.body)
+            re.findall(r"\bsrc/[\w./-]+", art.body)
+            + re.findall(r"\blib/[\w./-]+", art.body)
+            + re.findall(r"commands/[\w./-]+", art.body)
         )
         if len(subsystem_refs) > 5:
             warnings += 1
@@ -526,6 +528,69 @@ def _check_story_size(
         "detail": detail_msg,
         "blocking_count": blocking,
         "warning_count": warnings,
+    }
+
+
+def _check_chain_report(
+    artifacts: list[art_lib.Artifact],
+) -> dict[str, str | int]:
+    """Produce an informational chain-depth survey across all approved spec artifacts.
+
+    This is NOT a pass/fail check. It reports chain depth distribution
+    so users can assess whether their traceability coverage is appropriate
+    for their standard. Always returns 0 blocking / 0 warnings.
+    """
+    id_index = art_lib.build_id_index(artifacts)
+
+    spec_types = {"requirement", "architecture", "detailed-design"}
+    for atype in list(art_lib.TYPE_TO_DIR.keys()):
+        prefix = art_lib.TYPE_TO_PREFIX.get(atype, "")
+        if prefix and prefix not in ("REQ", "ARCH", "DDD", "UT", "IT", "QT", "STORY", "SPIKE", "DEC", "DEF"):
+            spec_types.add(atype)
+
+    approved_specs = [
+        a for a in artifacts
+        if a.type in spec_types and a.status in ("approved", "implemented", "verified")
+    ]
+
+    depth_counts: dict[int, int] = {}
+    partial_chains: list[str] = []
+
+    for spec in approved_specs:
+        path = art_lib.compute_chain_depth(spec.id, id_index)
+        depth = len(path)
+        depth_counts[depth] = depth_counts.get(depth, 0) + 1
+
+        has_verification = False
+        for link_target in path[1:]:
+            target_art = id_index.get(link_target)
+            if target_art and target_art.type in ("unit-test", "integration-test", "qualification-test"):
+                has_verification = True
+                break
+
+        if not has_verification and depth > 1:
+            partial_chains.append(
+                f"  ℹ {spec.id}: chain depth {depth}, no verification test ({' -> '.join(path)})"
+            )
+
+    details: list[str] = []
+    if depth_counts:
+        details.append("  Chain depth distribution:")
+        for d in sorted(depth_counts.keys()):
+            label = "link" if d == 1 else "links"
+            details.append(f"    depth {d} ({d} {label}): {depth_counts[d]} chain(s)")
+    else:
+        details.append("  No approved spec artifacts found")
+
+    if partial_chains:
+        details.append("  Partial chains (informational):")
+        details.extend(partial_chains)
+
+    return {
+        "status_icon": CYAN + "ℹ" + NC,
+        "detail": "\n".join(details),
+        "blocking_count": 0,
+        "warning_count": 0,
     }
 
 
@@ -635,8 +700,6 @@ def _run_gate_check(root: Path, gate_name: str) -> int:
 
     Returns exit code: 0 = all automated items pass, 1 = blocking failure.
     """
-    import yaml
-
     gate_dir = root / ".specflow" / "checklists" / "phase-gates"
     gate_file = gate_dir / f"{gate_name}.yaml"
 
@@ -677,7 +740,6 @@ def _run_gate_check(root: Path, gate_name: str) -> int:
             print(f"  {YELLOW}○{NC} [{item_id}] {check_desc} (no script)")
             continue
 
-        import subprocess
         try:
             result = subprocess.run(
                 ["bash", "-c", script],
@@ -711,8 +773,6 @@ def _run_gate_check(root: Path, gate_name: str) -> int:
 
 def _auto_fix(root: Path) -> None:
     """Auto-fix what's possible: rebuild _index.yaml, recompute fingerprints."""
-    import yaml
-
     specflow_dir = root / "_specflow"
     if not specflow_dir.exists():
         return

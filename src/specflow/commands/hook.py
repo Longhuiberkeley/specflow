@@ -9,7 +9,10 @@ from __future__ import annotations
 
 import os
 import stat
+import subprocess
 from pathlib import Path
+
+import yaml
 
 from specflow.lib import rbac as rbac_lib
 from specflow.lib.adapters import load_adapters_config, get_adapter
@@ -106,3 +109,101 @@ def run(root: Path, args: dict) -> int:
         return _pre_commit(root)
     print(f"{RED}✗ unknown hook subcommand: {sub}{NC}")
     return 1
+
+
+def run_ci_gate(root: Path, args: dict) -> int:
+    """Run RBAC checks against a git diff between two refs (CI server-side gate).
+
+    Uses only git operations -- provider-agnostic.
+    """
+    root = root.resolve()
+    base_ref = args.get("base", "")
+    head_ref = args.get("head", "")
+
+    if not base_ref or not head_ref:
+        print(f"{RED}✗ --base and --head refs are required{NC}")
+        return 1
+
+    diff_result = subprocess.run(
+        ["git", "diff", "--name-only", f"{base_ref}...{head_ref}"],
+        capture_output=True, text=True, cwd=str(root), check=False,
+    )
+    if diff_result.returncode != 0:
+        print(f"{RED}✗ git diff failed: {diff_result.stderr.strip()}{NC}")
+        return 1
+
+    changed_files = [
+        line.strip() for line in diff_result.stdout.splitlines()
+        if line.strip().startswith("_specflow/") and line.strip().endswith(".md")
+        and not line.strip().rsplit("/", 1)[-1].startswith("_")
+    ]
+
+    if not changed_files:
+        print(f"{GREEN}✓ No artifact status changes in this diff{NC}")
+        return 0
+
+    log_result = subprocess.run(
+        ["git", "log", "--format=%ae", f"{base_ref}..{head_ref}"],
+        capture_output=True, text=True, cwd=str(root), check=False,
+    )
+    authors = [line.strip().lower() for line in log_result.stdout.splitlines() if line.strip()]
+    author_email = authors[-1] if authors else ""
+
+    failures: list[str] = []
+
+    for filepath in changed_files:
+        old_fm = _parse_ref_frontmatter(root, base_ref, filepath)
+        new_fm = _parse_ref_frontmatter(root, head_ref, filepath)
+
+        old_status = (old_fm or {}).get("status", "")
+        new_status = (new_fm or {}).get("status", "")
+
+        if not new_status or new_status == old_status:
+            continue
+
+        artifact_id = Path(filepath).stem
+
+        ok, reason = rbac_lib.authorize_status_transition(
+            root, artifact_id, new_status, author_email
+        )
+        if not ok:
+            failures.append(reason)
+            continue
+
+        ok, reason = rbac_lib.check_independence(
+            root, filepath, new_status, author_email
+        )
+        if not ok:
+            failures.append(reason)
+
+    if failures:
+        print(f"{RED}✗ specflow ci-gate: RBAC check failed{NC}")
+        for f in failures:
+            print(f"  {RED}•{NC} {f}")
+        return 1
+
+    print(f"{GREEN}✓ All artifact status transitions pass RBAC checks{NC}")
+    return 0
+
+
+def _parse_ref_frontmatter(root: Path, ref: str, filepath: str) -> dict | None:
+    """Parse YAML frontmatter from a git ref for a specific file."""
+    result = subprocess.run(
+        ["git", "show", f"{ref}:{filepath}"],
+        capture_output=True, text=True, cwd=str(root), check=False,
+    )
+    if result.returncode != 0:
+        return None
+    text = result.stdout
+    if not text.startswith("---"):
+        return None
+    end = text.find("---", 3)
+    if end == -1:
+        return None
+    try:
+        fm = yaml.safe_load(text[3:end])
+    except Exception:
+        return None
+    if not isinstance(fm, dict):
+        return None
+    return fm

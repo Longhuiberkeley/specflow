@@ -177,6 +177,18 @@ def cmd_ci(args: argparse.Namespace) -> int:
     return ci_cmd.run(root, vars(args))
 
 
+def cmd_trace(args: argparse.Namespace) -> int:
+    from specflow.commands import trace as trace_cmd
+    root = _find_project_root()
+    return trace_cmd.run(root, vars(args))
+
+
+def cmd_ci_gate(args: argparse.Namespace) -> int:
+    from specflow.commands import hook as hook_cmd
+    root = _find_project_root()
+    return hook_cmd.run_ci_gate(root, vars(args))
+
+
 # ── Hidden alias handlers (print deprecation then delegate) ───────
 
 def _alias_validate(args: argparse.Namespace) -> int:
@@ -281,7 +293,7 @@ def _add_done_parser(subparsers):
 
 def _add_artifact_lint_parser(subparsers):
     p = subparsers.add_parser("artifact-lint", help="Run deterministic validation checks on artifacts")
-    p.add_argument("--type", choices=["schema", "links", "status", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "gate"], help="Run only a specific check")
+    p.add_argument("--type", choices=["schema", "links", "status", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "gate"], help="Run only a specific check")
     p.add_argument("--fix", action="store_true", help="Auto-fix (rebuild indexes, recompute fingerprints)")
     p.add_argument("--gate", help="Phase-gate checklist name")
     p.add_argument("--method", choices=["programmatic", "llm"], default="programmatic", help="Validation method")
@@ -411,6 +423,17 @@ def _add_ci_parser(subparsers):
     sub.add_parser("generate", help="Generate CI workflow files from adapters.yaml")
 
 
+def _add_trace_parser(subparsers):
+    p = subparsers.add_parser("trace", help="Display traceability chain for an artifact")
+    p.add_argument("artifact_id", help="Artifact ID to trace")
+
+
+def _add_ci_gate_parser(subparsers):
+    p = subparsers.add_parser("ci-gate", help="Run RBAC checks on a PR diff (server-side)")
+    p.add_argument("--base", required=True, help="Base git ref (e.g., main)")
+    p.add_argument("--head", required=True, help="Head git ref (e.g., feature-branch)")
+
+
 # ── Workflow-phase grouping for --help ────────────────────────────
 # argparse doesn't support subparser groups natively. Render groups via epilog
 # so `specflow --help` actually shows the phase headers, not just the source.
@@ -419,10 +442,10 @@ commands by workflow phase:
   Discover:   init, status
   Plan:       create, update
   Execute:    go, done
-  Review:     artifact-lint, checklist-run, artifact-review, project-audit
+  Review:     artifact-lint, checklist-run, artifact-review, project-audit, trace
   Release:    baseline, document-changes
   CI:         hook, renumber-drafts, import, export, detect, change-impact,
-              fingerprint-refresh, ci
+              fingerprint-refresh, ci, ci-gate
   Recovery:   unlock, locks, rebuild-index, split, merge
 """
 
@@ -476,6 +499,8 @@ def main(argv: list[str] | None = None) -> int:
     _add_change_impact_parser(subparsers)
     _add_fingerprint_refresh_parser(subparsers)
     _add_ci_parser(subparsers)
+    _add_trace_parser(subparsers)
+    _add_ci_gate_parser(subparsers)
 
     # ── Recovery ────────────────────────────────────────────────
     _add_unlock_parser(subparsers)
@@ -528,6 +553,8 @@ def main(argv: list[str] | None = None) -> int:
         "split": cmd_split,
         "merge": cmd_merge,
         "ci": cmd_ci,
+        "trace": cmd_trace,
+        "ci-gate": cmd_ci_gate,
         # Hidden aliases
         "validate": _alias_validate,
         "check": _alias_check,
@@ -564,7 +591,7 @@ def _add_hidden_alias_parser(subparsers, old_name: str, new_name: str, add_arg_f
 
 def _add_artifact_lint_args(p):
     """Add artifact-lint arguments to parser p."""
-    p.add_argument("--type", choices=["schema", "links", "status", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "gate"], help="Run only a specific check")
+    p.add_argument("--type", choices=["schema", "links", "status", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "gate"], help="Run only a specific check")
     p.add_argument("--fix", action="store_true", help="Auto-fix (rebuild indexes, recompute fingerprints)")
     p.add_argument("--gate", help="Phase-gate checklist name")
     p.add_argument("--method", choices=["programmatic", "llm"], default="programmatic", help="Validation method")

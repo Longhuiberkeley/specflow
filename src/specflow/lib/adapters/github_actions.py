@@ -146,6 +146,27 @@ _RELEASE_GATE = """\
         run: uv run specflow project-audit && echo "Release gate passed"
 """
 
+_CI_GATE = """\
+  specflow-ci-gate:
+    name: CI gate (RBAC)
+    runs-on: ubuntu-latest
+    needs: specflow-pass-1
+    if: ${{ github.event_name == 'pull_request' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install uv
+        run: pip install uv
+      - name: Install SpecFlow
+        run: uv sync
+      - name: RBAC gate check
+        run: uv run specflow ci-gate --base ${{ github.base_ref }} --head ${{ github.head_ref }}
+"""
+
 _HEADER = """\
 name: SpecFlow
 
@@ -162,6 +183,7 @@ _OP_JOBS: dict[str, str] = {
     "change-impact": _CHANGE_IMPACT,
     "project-audit": _PROJECT_AUDIT,
     "release-gate": _RELEASE_GATE,
+    "ci-gate": _CI_GATE,
 }
 
 
