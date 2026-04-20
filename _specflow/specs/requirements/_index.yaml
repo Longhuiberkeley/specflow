@@ -89,7 +89,7 @@ artifacts:
   REQ-010:
     id: REQ-010
     title: EARS Quality in Prompts and Lint Safety Net
-    status: approved
+    status: implemented
     tags:
     - quality
     - ears

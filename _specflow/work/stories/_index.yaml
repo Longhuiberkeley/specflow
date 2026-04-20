@@ -383,12 +383,12 @@ artifacts:
   STORY-042:
     id: STORY-042
     title: Add requirements quality lint check to artifact-lint
-    status: approved
+    status: implemented
     tags:
     - quality
     - lint
     - ears
-    fingerprint: sha256:6d67631c7493
+    fingerprint: sha256:7753ffed1db4
     children: []
   STORY-043:
     id: STORY-043

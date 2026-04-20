@@ -2,7 +2,7 @@
 id: STORY-042
 title: Add requirements quality lint check to artifact-lint
 type: story
-status: approved
+status: implemented
 priority: high
 tags:
 - quality
@@ -15,6 +15,8 @@ links:
 - target: ARCH-001
   role: guided_by
 created: '2026-04-21'
+modified: '2026-04-21'
+fingerprint: sha256:7753ffed1db4
 ---
 
 # Add requirements quality lint check to artifact-lint

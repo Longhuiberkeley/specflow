@@ -20,7 +20,7 @@ YELLOW = "\033[1;33m"
 CYAN = "\033[0;36m"
 NC = "\033[0m"  # No Color
 
-CHECK_NAMES = ["schema", "links", "status", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report"]
+CHECK_NAMES = ["schema", "links", "status", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality"]
 
 
 def _run_check(
@@ -54,6 +54,8 @@ def _run_check(
         return _check_story_size(artifacts)
     elif check_name == "chain-report":
         return _check_chain_report(artifacts)
+    elif check_name == "quality":
+        return _check_quality(artifacts)
 
     return {"status_icon": "?", "detail": f"Unknown check: {check_name}",
             "blocking_count": 0, "warning_count": 0}
@@ -591,6 +593,89 @@ def _check_chain_report(
         "detail": "\n".join(details),
         "blocking_count": 0,
         "warning_count": 0,
+    }
+
+
+_AMBIGUITY_WORDS = re.compile(
+    r"\b(fast|slow|quickly|efficiently|responsive|performant|real-time"
+    r"|user-friendly|robust|flexible|scalable|maintainable|reliable|stable|safe"
+    r"|approximately|roughly|several|etc\.?"
+    r"|should be able to|it would be nice if|ideally|preferably"
+    r"|properly|correctly|appropriately|as expected|as needed|if possible"
+    r"|easy|simple|straightforward|intuitive|seamless|effortless"
+    r"|frequently|often|rarely|sometimes|occasionally|regularly"
+    r"|reasonable|adequate|sufficient|appropriate)\b",
+    re.IGNORECASE,
+)
+
+_PASSIVE_VOICE = re.compile(
+    r"\*\*(?:shall|should|may)\*\*\s+be\s+"
+    r"(?:validated|processed|handled|managed|stored|sent|notified|logged"
+    r"|updated|created|deleted|returned|displayed|generated|executed"
+    r"|performed|checked|verified|approved|rejected|enabled|disabled)",
+    re.IGNORECASE,
+)
+
+_COMPOUND_SHALL = re.compile(
+    r"[^.]*\*{0,2}shall\*{0,2}[^.]*\*{0,2}shall\*{0,2}[^.]*",
+    re.IGNORECASE,
+)
+
+_MISSING_THRESHOLD = re.compile(
+    r"\b(?:respond|responds|response|latency|perform|complete|finish|process)"
+    r"\s+(?:quickly|fast|rapidly|in a timely manner|efficiently|promptly)\b",
+    re.IGNORECASE,
+)
+
+
+def _check_quality(
+    artifacts: list[art_lib.Artifact],
+) -> dict[str, str | int]:
+    """Check REQ bodies for quality issues using zero-token regex analysis.
+
+    Detects: ambiguity words, passive voice, compound shall, missing thresholds.
+    All findings are reported as warnings (non-blocking).
+    """
+    warnings = 0
+    details: list[str] = []
+
+    reqs = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "REQ"]
+
+    for art in reqs:
+        findings: list[str] = []
+
+        for m in _AMBIGUITY_WORDS.finditer(art.body):
+            word = m.group(1)
+            findings.append(f"ambiguity word '{word}'")
+
+        for m in _PASSIVE_VOICE.finditer(art.body):
+            phrase = m.group(0)
+            findings.append(f"passive voice '{phrase}'")
+
+        for m in _COMPOUND_SHALL.finditer(art.body):
+            snippet = m.group(0).strip()[:60]
+            findings.append(f"compound shall in '{snippet}...'")
+
+        for m in _MISSING_THRESHOLD.finditer(art.body):
+            phrase = m.group(0)
+            findings.append(f"missing threshold in '{phrase}'")
+
+        if findings:
+            warnings += len(findings)
+            sample = findings[:3]
+            suffix = f" (+{len(findings) - 3} more)" if len(findings) > 3 else ""
+            details.append(
+                f"  \u26a0 [{art.id}] {'; '.join(sample)}{suffix}"
+            )
+
+    icon = GREEN + "\u2713" + NC if warnings == 0 else YELLOW + "\u26a0" + NC
+    detail_msg = "\n".join(details) if details else f"All {len(reqs)} requirement(s) pass quality checks"
+
+    return {
+        "status_icon": icon,
+        "detail": detail_msg,
+        "blocking_count": 0,
+        "warning_count": warnings,
     }
 
 
