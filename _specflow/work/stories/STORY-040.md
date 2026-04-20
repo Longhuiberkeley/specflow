@@ -2,7 +2,7 @@
 id: STORY-040
 title: Remove deprecated CLI aliases and fix requirement schema
 type: story
-status: approved
+status: implemented
 priority: high
 tags:
 - cleanup
@@ -15,6 +15,8 @@ links:
 - target: ARCH-001
   role: guided_by
 created: '2026-04-21'
+modified: '2026-04-21'
+fingerprint: sha256:d87a2091f072
 ---
 
 # Remove deprecated CLI aliases and fix requirement schema

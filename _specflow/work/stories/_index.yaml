@@ -363,12 +363,12 @@ artifacts:
   STORY-040:
     id: STORY-040
     title: Remove deprecated CLI aliases and fix requirement schema
-    status: approved
+    status: implemented
     tags:
     - cleanup
     - deprecation
     - schema
-    fingerprint: sha256:7d1b2b0e1803
+    fingerprint: sha256:d87a2091f072
     children: []
   STORY-041:
     id: STORY-041

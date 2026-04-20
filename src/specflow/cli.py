@@ -5,14 +5,6 @@ import sys
 from pathlib import Path
 
 
-# Deprecation warning printed to stderr for old-name aliases
-_DEPRECATION_FMT = "⚠ WARNING: 'specflow {old}' is deprecated and will be removed in the next release. Use 'specflow {new}' instead.\n"
-
-
-def _warn_deprecated(old: str, new: str) -> None:
-    """Print a deprecation warning to stderr."""
-    print(_DEPRECATION_FMT.format(old=old, new=new), file=sys.stderr)
-
 
 def _find_project_root() -> Path:
     """Find the project root (current working directory)."""
@@ -187,48 +179,6 @@ def cmd_ci_gate(args: argparse.Namespace) -> int:
     from specflow.commands import hook as hook_cmd
     root = _find_project_root()
     return hook_cmd.run_ci_gate(root, vars(args))
-
-
-# ── Hidden alias handlers (print deprecation then delegate) ───────
-
-def _alias_validate(args: argparse.Namespace) -> int:
-    _warn_deprecated("validate", "artifact-lint")
-    return cmd_artifact_lint(args)
-
-
-def _alias_check(args: argparse.Namespace) -> int:
-    _warn_deprecated("check", "checklist-run")
-    return cmd_checklist_run(args)
-
-
-def _alias_impact(args: argparse.Namespace) -> int:
-    _warn_deprecated("impact", "change-impact")
-    return cmd_change_impact(args)
-
-
-def _alias_tweak(args: argparse.Namespace) -> int:
-    _warn_deprecated("tweak", "fingerprint-refresh")
-    return cmd_fingerprint_refresh(args)
-
-
-def _alias_sequence(args: argparse.Namespace) -> int:
-    _warn_deprecated("sequence", "renumber-drafts")
-    return cmd_renumber_drafts(args)
-
-
-def _alias_verify(args: argparse.Namespace) -> int:
-    _warn_deprecated("verify", "artifact-review")
-    return cmd_artifact_review(args)
-
-
-def _alias_audit(args: argparse.Namespace) -> int:
-    _warn_deprecated("audit", "project-audit")
-    return cmd_project_audit(args)
-
-
-def _alias_compliance(args: argparse.Namespace) -> int:
-    _warn_deprecated("compliance", "project-audit")
-    return cmd_project_audit(args)
 
 
 # ── Parser builders ───────────────────────────────────────────────
@@ -452,6 +402,24 @@ commands by workflow phase:
 
 # ── Main ──────────────────────────────────────────────────────────
 
+def _add_artifact_review_args(p):
+    p.add_argument("artifact_id", nargs="?", help="Artifact ID to review (omit with --all)")
+    p.add_argument("--all", action="store_true", help="Review all artifacts")
+    p.add_argument("--depth", choices=["quick", "normal", "deep"], default="quick",
+                   help="Review depth (quick=lint+checklist; normal=add LLM judgement; deep=add thinking techniques)")
+    p.add_argument("--techniques", help="Comma-separated list of thinking techniques to run (for --depth deep)")
+    p.add_argument("--gate", help="Phase-gate checklist")
+    p.add_argument("--proactive", action="store_true", help="Include proactive challenge items")
+
+
+def _add_project_audit_args(p):
+    p.add_argument("--standard", help="Standard name (auto-detect first installed if omitted)")
+    p.add_argument("--baseline", help="Baseline name for drift comparison (auto-detect latest if omitted)")
+    p.add_argument("--quick", action="store_true", help="Skip cross-cutting analysis (horizontal + vertical only)")
+    p.add_argument("--sample-pct", dest="sample_pct", type=int, default=100,
+                   help="Sample percentage for STORYs (default: 100)")
+
+
 def cmd_standards(args: argparse.Namespace) -> int:
     if args.standards_subcommand == "gaps":
         return cmd_standards_gaps(args)
@@ -509,16 +477,6 @@ def main(argv: list[str] | None = None) -> int:
     _add_split_parser(subparsers)
     _add_merge_parser(subparsers)
 
-    # ── Hidden aliases (old names → deprecation warning) ────────
-    _add_hidden_alias_parser(subparsers, "validate", "artifact-lint", _add_artifact_lint_args)
-    _add_hidden_alias_parser(subparsers, "check", "checklist-run", _add_checklist_run_args)
-    _add_hidden_alias_parser(subparsers, "impact", "change-impact", _add_change_impact_args)
-    _add_hidden_alias_parser(subparsers, "tweak", "fingerprint-refresh", _add_fingerprint_refresh_args)
-    _add_hidden_alias_parser(subparsers, "sequence", "renumber-drafts", _add_renumber_drafts_args)
-    _add_hidden_alias_parser(subparsers, "verify", "artifact-review", _add_artifact_review_args)
-    _add_hidden_alias_parser(subparsers, "audit", "project-audit", _add_project_audit_args)
-    _add_hidden_alias_parser(subparsers, "compliance", "project-audit", _add_project_audit_args)
-
     args = parser.parse_args(argv)
 
     if args.command is None:
@@ -555,15 +513,6 @@ def main(argv: list[str] | None = None) -> int:
         "ci": cmd_ci,
         "trace": cmd_trace,
         "ci-gate": cmd_ci_gate,
-        # Hidden aliases
-        "validate": _alias_validate,
-        "check": _alias_check,
-        "impact": _alias_impact,
-        "tweak": _alias_tweak,
-        "sequence": _alias_sequence,
-        "verify": _alias_verify,
-        "audit": _alias_audit,
-        "compliance": _alias_compliance,
     }
 
     handler = commands.get(args.command)
@@ -573,73 +522,6 @@ def main(argv: list[str] | None = None) -> int:
     parser.print_help()
     return 1
 
-
-def _add_hidden_alias_parser(subparsers, old_name: str, new_name: str, add_arg_fn) -> None:
-    """Add a hidden subparser that mirrors the new command's arguments.
-
-    add_arg_fn is a callable that takes a parser and adds arguments to it.
-    """
-    old_parser = subparsers.add_parser(old_name, help=argparse.SUPPRESS)
-    add_arg_fn(old_parser)
-    old_parser.set_defaults(func=None)  # handler set in main()
-    # argparse <3.12 renders help=SUPPRESS as literal "==SUPPRESS==" for
-    # subparsers; strip the pseudo-action so the alias stays hidden in --help.
-    subparsers._choices_actions = [
-        a for a in subparsers._choices_actions if a.dest != old_name
-    ]
-
-
-def _add_artifact_lint_args(p):
-    """Add artifact-lint arguments to parser p."""
-    p.add_argument("--type", choices=["schema", "links", "status", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "gate"], help="Run only a specific check")
-    p.add_argument("--fix", action="store_true", help="Auto-fix (rebuild indexes, recompute fingerprints)")
-    p.add_argument("--gate", help="Phase-gate checklist name")
-    p.add_argument("--method", choices=["programmatic", "llm"], default="programmatic", help="Validation method")
-
-
-def _add_checklist_run_args(p):
-    """Add checklist-run arguments to parser p."""
-    p.add_argument("artifact_id", nargs="?", help="Artifact ID to check")
-    p.add_argument("--all", action="store_true", help="Check all artifacts")
-    p.add_argument("--gate", help="Phase-gate checklist")
-    p.add_argument("--proactive", action="store_true", help="Include proactive challenge items")
-    p.add_argument("--dedup", action="store_true", help="Run duplicate-detection pipeline")
-
-
-def _add_change_impact_args(p):
-    """Add change-impact arguments to parser p."""
-    p.add_argument("artifact_id", nargs="?", help="Filter by source artifact ID")
-    p.add_argument("--resolve", help="Resolve suspect flag on artifact ID")
-
-
-def _add_fingerprint_refresh_args(p):
-    """Add fingerprint-refresh arguments to parser p."""
-    p.add_argument("filepath", help="Path to the artifact file")
-
-
-def _add_renumber_drafts_args(p):
-    """Add renumber-drafts arguments to parser p."""
-    p.add_argument("--dry-run", action="store_true", dest="dry_run", help="Print renumber plan without writing")
-
-
-def _add_artifact_review_args(p):
-    """Add artifact-review arguments to parser p."""
-    p.add_argument("artifact_id", nargs="?", help="Artifact ID to review (omit with --all)")
-    p.add_argument("--all", action="store_true", help="Review all artifacts")
-    p.add_argument("--depth", choices=["quick", "normal", "deep"], default="quick",
-                   help="Review depth (quick=lint+checklist; normal=add LLM judgement; deep=add thinking techniques)")
-    p.add_argument("--techniques", help="Comma-separated list of thinking techniques to run (for --depth deep)")
-    p.add_argument("--gate", help="Phase-gate checklist")
-    p.add_argument("--proactive", action="store_true", help="Include proactive challenge items")
-
-
-def _add_project_audit_args(p):
-    """Add project-audit arguments to parser p."""
-    p.add_argument("--standard", help="Standard name (auto-detect first installed if omitted)")
-    p.add_argument("--baseline", help="Baseline name for drift comparison (auto-detect latest if omitted)")
-    p.add_argument("--quick", action="store_true", help="Skip cross-cutting analysis (horizontal + vertical only)")
-    p.add_argument("--sample-pct", dest="sample_pct", type=int, default=100,
-                   help="Sample percentage for STORYs (default: 100)")
 
 
 if __name__ == "__main__":

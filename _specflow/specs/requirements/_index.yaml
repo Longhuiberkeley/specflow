@@ -131,7 +131,7 @@ artifacts:
   REQ-014:
     id: REQ-014
     title: Deprecation Cleanup and Schema Fixes
-    status: approved
+    status: implemented
     tags:
     - cleanup
     - deprecation
