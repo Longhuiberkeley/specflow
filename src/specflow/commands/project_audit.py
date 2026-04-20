@@ -591,7 +591,7 @@ def run(root: Path, args: dict[str, Any]) -> int:
             tags=["project-audit", "auto-generated"],
             links=aud_links,
             body=aud_body,
-            review_status="open",
+            review_status="unreviewed",
         )
         if aud_result.get("ok"):
             scope_info.append(f"AUD artifact: {aud_result['id']}")
