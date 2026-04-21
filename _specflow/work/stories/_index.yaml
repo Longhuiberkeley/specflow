@@ -393,32 +393,32 @@ artifacts:
   STORY-043:
     id: STORY-043
     title: Add coverage metrics to specflow status command
-    status: approved
+    status: implemented
     tags:
     - compliance
     - reporting
     - status
-    fingerprint: sha256:002a2e347806
+    fingerprint: sha256:8f982267b23d
     children: []
   STORY-044:
     id: STORY-044
     title: 'Fix ReqIF round-trip quality: stable UUIDs, schema fix, tests, ARCH/DDD
       export'
-    status: approved
+    status: implemented
     tags:
     - reqif
     - interop
     - quality
-    fingerprint: sha256:c859e8bc2c22
+    fingerprint: sha256:1951bbd87bce
     children: []
   STORY-045:
     id: STORY-045
     title: Add specflow generate-tests command and update execute skill
-    status: approved
+    status: implemented
     tags:
     - testing
     - vmodel
     - scaffolding
-    fingerprint: sha256:1222f23d9b83
+    fingerprint: sha256:d0d41ed8b5f6
     children: []
 next_id: 46

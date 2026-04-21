@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -71,6 +72,76 @@ def _count_link_health(root: Path) -> dict[str, int]:
     missing_pairs = len(art_lib.find_missing_v_pairs(artifacts))
 
     return {"broken": broken, "orphans": orphans, "missing_pairs": missing_pairs}
+
+
+def _compute_coverage(artifacts: list[art_lib.Artifact]) -> dict[str, Any]:
+    """Compute coverage metrics from artifact data."""
+    id_index = art_lib.build_id_index(artifacts)
+
+    reqs = [a for a in artifacts if a.type == "requirement"]
+    req_with_stories = 0
+    for req in reqs:
+        for other in artifacts:
+            for link in other.links:
+                if link.target == req.id and link.role == "implements":
+                    req_with_stories += 1
+                    break
+            else:
+                continue
+            break
+    req_total = len(reqs)
+    req_pct = (req_with_stories / req_total * 100) if req_total > 0 else None
+
+    stories = [a for a in artifacts if a.type == "story"]
+    story_with_test = 0
+    for story in stories:
+        linked_specs: list[str] = []
+        for link in story.links:
+            if link.role == "implements":
+                linked_specs.append(link.target)
+        for spec_id in linked_specs:
+            spec = id_index.get(spec_id)
+            if spec and spec.type in art_lib.V_MODEL_PAIRS:
+                for other in artifacts:
+                    for olink in other.links:
+                        if olink.target == spec_id and olink.role == "verified_by":
+                            story_with_test += 1
+                            break
+                    else:
+                        continue
+                    break
+    story_total = len(stories)
+    story_pct = (story_with_test / story_total * 100) if story_total > 0 else None
+
+    spec_types = list(art_lib.V_MODEL_PAIRS.keys())
+    total_spec = 0
+    verified_spec = 0
+    for a in artifacts:
+        if a.type in spec_types:
+            total_spec += 1
+            has_v = False
+            for other in artifacts:
+                for link in other.links:
+                    if link.target == a.id and link.role == "verified_by":
+                        has_v = True
+                        break
+                if has_v:
+                    break
+            if has_v:
+                verified_spec += 1
+    chain_pct = (verified_spec / total_spec * 100) if total_spec > 0 else None
+
+    return {
+        "req_total": req_total,
+        "req_covered": req_with_stories,
+        "req_pct": req_pct,
+        "story_total": story_total,
+        "story_tested": story_with_test,
+        "story_pct": story_pct,
+        "chain_total": total_spec,
+        "chain_verified": verified_spec,
+        "chain_pct": chain_pct,
+    }
 
 
 def _count_issues(root: Path) -> int:
@@ -152,6 +223,10 @@ def run(root: Path, args: dict) -> int:
     # Issues
     issues = _count_issues(root)
 
+    # Coverage metrics
+    all_artifacts = art_lib.discover_artifacts(root)
+    coverage = _compute_coverage(all_artifacts)
+
     # Print dashboard
     print(f"\n{CYAN}SpecFlow Status{NC}")
     print(f"{CYAN}{'─' * 50}{NC}")
@@ -186,6 +261,17 @@ def run(root: Path, args: dict) -> int:
 
     # Link health
     print(f"\n  Links:   {health['broken']} broken | {health['orphans']} orphans | {health['missing_pairs']} missing verification pairs")
+
+    # Coverage
+    cov_parts = []
+    if coverage["req_pct"] is not None:
+        cov_parts.append(f"REQ {coverage['req_pct']:.0f}% ({coverage['req_covered']}/{coverage['req_total']})")
+    if coverage["story_pct"] is not None:
+        cov_parts.append(f"STORY test {coverage['story_pct']:.0f}% ({coverage['story_tested']}/{coverage['story_total']})")
+    if coverage["chain_pct"] is not None:
+        cov_parts.append(f"Chain {coverage['chain_pct']:.0f}% ({coverage['chain_verified']}/{coverage['chain_total']})")
+    if cov_parts:
+        print(f"\n  Coverage: {' | '.join(cov_parts)}")
 
     # Issues
     if issues > 0:

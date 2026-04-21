@@ -100,7 +100,7 @@ artifacts:
   REQ-011:
     id: REQ-011
     title: Compliance Score Dashboard
-    status: approved
+    status: implemented
     tags:
     - reqif
     - interop
@@ -110,7 +110,7 @@ artifacts:
   REQ-012:
     id: REQ-012
     title: Compliance Score Dashboard
-    status: approved
+    status: implemented
     tags:
     - compliance
     - reporting
@@ -120,7 +120,7 @@ artifacts:
   REQ-013:
     id: REQ-013
     title: V-Model Test Scaffolding and Execute Enhancement
-    status: approved
+    status: implemented
     tags:
     - testing
     - vmodel

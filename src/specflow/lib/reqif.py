@@ -18,8 +18,8 @@ round-trips do not lose information.
 from __future__ import annotations
 
 import datetime as _dt
+import hashlib
 import html
-import uuid
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
@@ -188,30 +188,33 @@ def _read_attr_value(attr_val_el: ET.Element, tag: str, ns: dict[str, str]) -> A
 
 
 def export_reqif(root: Path, output_path: Path) -> dict[str, Any]:
-    """Walk _specflow/specs/requirements/*.md and emit a ReqIF 1.2 XML file.
+    """Walk _specflow/specs/ and emit a ReqIF 1.2 XML file.
+
+    Exports REQ, ARCH, and DDD artifacts.
 
     Returns {ok, written: int, path}.
     """
-    requirements = [
-        a for a in art_lib.discover_artifacts(root, "requirement")
-    ]
-    if not requirements:
-        return {"ok": False, "error": "no requirements found under _specflow/specs/requirements/"}
+    req_types = ["requirement", "architecture", "detailed-design"]
+    artifacts: list[art_lib.Artifact] = []
+    for rt in req_types:
+        artifacts.extend(art_lib.discover_artifacts(root, rt))
+    if not artifacts:
+        return {"ok": False, "error": "no requirements, architecture, or detailed-design artifacts found"}
 
     req_if = ET.Element("REQ-IF", {"xmlns": REQIF_NS})
     header = ET.SubElement(req_if, "THE-HEADER")
-    hdr = ET.SubElement(header, "REQ-IF-HEADER", {"IDENTIFIER": _new_id("hdr")})
+    hdr = ET.SubElement(header, "REQ-IF-HEADER", {"IDENTIFIER": _new_id("hdr", "header")})
     ET.SubElement(hdr, "CREATION-TIME").text = _dt.datetime.now(_dt.timezone.utc).isoformat()
     ET.SubElement(hdr, "REQ-IF-TOOL-ID").text = "SpecFlow"
     ET.SubElement(hdr, "REQ-IF-VERSION").text = "1.2"
     ET.SubElement(hdr, "SOURCE-TOOL-ID").text = "SpecFlow"
-    ET.SubElement(hdr, "TITLE").text = "SpecFlow Requirements Export"
+    ET.SubElement(hdr, "TITLE").text = "SpecFlow Export"
 
     core = ET.SubElement(req_if, "CORE-CONTENT")
     content = ET.SubElement(core, "REQ-IF-CONTENT")
 
     datatypes = ET.SubElement(content, "DATATYPES")
-    dt_string_id = _new_id("dt-string")
+    dt_string_id = _new_id("dt-string", "string-datatype")
     ET.SubElement(
         datatypes,
         "DATATYPE-DEFINITION-STRING",
@@ -219,16 +222,16 @@ def export_reqif(root: Path, output_path: Path) -> dict[str, Any]:
     )
 
     spec_types = ET.SubElement(content, "SPEC-TYPES")
-    spec_object_type_id = _new_id("sot")
+    spec_object_type_id = _new_id("sot", "spec-object-type")
     sot = ET.SubElement(
         spec_types,
         "SPEC-OBJECT-TYPE",
-        {"IDENTIFIER": spec_object_type_id, "LONG-NAME": "SpecFlow Requirement"},
+        {"IDENTIFIER": spec_object_type_id, "LONG-NAME": "SpecFlow Artifact"},
     )
     sot_attrs = ET.SubElement(sot, "SPEC-ATTRIBUTES")
     attr_def_ids: dict[str, str] = {}
-    for long_name in _CORE_ATTRS.keys():
-        attr_id = _new_id("adef")
+    for long_name in list(_CORE_ATTRS.keys()) + ["SpecFlow.Type"]:
+        attr_id = _new_id("adef", f"attr-{long_name}")
         attr_def_ids[long_name] = attr_id
         attr_def = ET.SubElement(
             sot_attrs,
@@ -238,7 +241,7 @@ def export_reqif(root: Path, output_path: Path) -> dict[str, Any]:
         dt_ref = ET.SubElement(attr_def, "TYPE")
         ET.SubElement(dt_ref, "DATATYPE-DEFINITION-STRING-REF").text = dt_string_id
 
-    specification_type_id = _new_id("spt")
+    specification_type_id = _new_id("spt", "spec-type")
     spt = ET.SubElement(
         spec_types,
         "SPECIFICATION-TYPE",
@@ -250,7 +253,7 @@ def export_reqif(root: Path, output_path: Path) -> dict[str, Any]:
     specification = ET.SubElement(
         specs_el,
         "SPECIFICATION",
-        {"IDENTIFIER": _new_id("spec"), "LONG-NAME": "SpecFlow Requirements"},
+        {"IDENTIFIER": _new_id("spec", "root-spec"), "LONG-NAME": "SpecFlow Export"},
     )
     ET.SubElement(
         ET.SubElement(specification, "TYPE"),
@@ -259,12 +262,12 @@ def export_reqif(root: Path, output_path: Path) -> dict[str, Any]:
     children_el = ET.SubElement(specification, "CHILDREN")
 
     written = 0
-    for req in requirements:
-        identifier = req.id
+    for art in artifacts:
+        identifier = art.id
         so = ET.SubElement(
             spec_objects_el,
             "SPEC-OBJECT",
-            {"IDENTIFIER": identifier, "LONG-NAME": req.title or identifier},
+            {"IDENTIFIER": identifier, "LONG-NAME": art.title or identifier},
         )
         ET.SubElement(
             ET.SubElement(so, "TYPE"),
@@ -273,12 +276,13 @@ def export_reqif(root: Path, output_path: Path) -> dict[str, Any]:
         values = ET.SubElement(so, "VALUES")
 
         mapping = {
-            "ReqIF.Name": req.title,
-            "ReqIF.Text": req.body,
-            "ReqIF.Description": req.frontmatter.get("rationale", "") or "",
-            "SpecFlow.Status": req.status,
-            "SpecFlow.Priority": req.frontmatter.get("priority", "") or "",
-            "SpecFlow.Tags": ",".join(req.tags),
+            "ReqIF.Name": art.title,
+            "ReqIF.Text": art.body,
+            "ReqIF.Description": art.frontmatter.get("rationale", "") or "",
+            "SpecFlow.Status": art.status,
+            "SpecFlow.Priority": art.frontmatter.get("priority", "") or "",
+            "SpecFlow.Tags": ",".join(art.tags),
+            "SpecFlow.Type": art.type,
         }
         for long_name, value in mapping.items():
             attr = ET.SubElement(
@@ -288,12 +292,11 @@ def export_reqif(root: Path, output_path: Path) -> dict[str, Any]:
             )
             defn = ET.SubElement(attr, "DEFINITION")
             ET.SubElement(defn, "ATTRIBUTE-DEFINITION-STRING", {
-                "IDENTIFIER": attr_def_ids[long_name],
+                "IDENTIFIER": attr_def_ids.get(long_name, _new_id("adef", f"attr-{long_name}")),
                 "LONG-NAME": long_name,
             })
 
-        # Round-trip preserved attributes
-        preserved = req.frontmatter.get("reqif_metadata") or {}
+        preserved = art.frontmatter.get("reqif_metadata") or {}
         if isinstance(preserved, dict):
             for k, v in preserved.items():
                 if k in ("identifier",):
@@ -305,14 +308,14 @@ def export_reqif(root: Path, output_path: Path) -> dict[str, Any]:
                 )
                 defn = ET.SubElement(attr, "DEFINITION")
                 ET.SubElement(defn, "ATTRIBUTE-DEFINITION-STRING", {
-                    "IDENTIFIER": _new_id("adef-extra"),
+                    "IDENTIFIER": _new_id("adef-extra", f"extra-{art.id}-{k}"),
                     "LONG-NAME": k,
                 })
 
         hier = ET.SubElement(
             children_el,
             "SPEC-HIERARCHY",
-            {"IDENTIFIER": _new_id("sh")},
+            {"IDENTIFIER": _new_id("sh", f"hier-{art.id}")},
         )
         obj_ref = ET.SubElement(hier, "OBJECT")
         ET.SubElement(obj_ref, "SPEC-OBJECT-REF").text = identifier
@@ -325,5 +328,10 @@ def export_reqif(root: Path, output_path: Path) -> dict[str, Any]:
     return {"ok": True, "written": written, "path": str(output_path)}
 
 
-def _new_id(prefix: str) -> str:
+def _new_id(prefix: str, seed: str = "") -> str:
+    """Generate a deterministic ID from prefix + seed, or random if no seed."""
+    if seed:
+        digest = hashlib.sha256(f"{prefix}:{seed}".encode("utf-8")).hexdigest()[:10]
+        return f"_{prefix}-{digest}"
+    import uuid
     return f"_{prefix}-{uuid.uuid4().hex[:10]}"

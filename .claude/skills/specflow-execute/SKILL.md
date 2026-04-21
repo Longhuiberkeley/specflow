@@ -57,6 +57,21 @@ For each implemented spec artifact, create its V-model verification test -- **al
 | ARCH | IT (integration test) | `verified_by` |
 | DDD | UT (unit test) | `verified_by` |
 
+Use `specflow generate-tests` to create stubs deterministically:
+
+```
+# Generate test stubs for all implemented specs missing verification
+uv run specflow generate-tests
+
+# Generate for a specific artifact
+uv run specflow generate-tests --from DDD-001
+
+# Preview what would be created
+uv run specflow generate-tests --dry-run
+```
+
+Alternatively, create manually:
+
 ```
 uv run specflow create \
   --type unit-test \

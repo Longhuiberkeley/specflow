@@ -181,6 +181,12 @@ def cmd_ci_gate(args: argparse.Namespace) -> int:
     return hook_cmd.run_ci_gate(root, vars(args))
 
 
+def cmd_generate_tests(args: argparse.Namespace) -> int:
+    from specflow.commands import generate_tests as cmd
+    root = _find_project_root()
+    return cmd.run(root, vars(args))
+
+
 # ── Parser builders ───────────────────────────────────────────────
 
 def _add_init_parser(subparsers):
@@ -384,6 +390,12 @@ def _add_ci_gate_parser(subparsers):
     p.add_argument("--head", required=True, help="Head git ref (e.g., feature-branch)")
 
 
+def _add_generate_tests_parser(subparsers):
+    p = subparsers.add_parser("generate-tests", help="Generate V-model test stubs from implemented specs")
+    p.add_argument("--from", dest="from", help="Generate test stub for a specific artifact ID")
+    p.add_argument("--dry-run", action="store_true", dest="dry_run", help="Show what would be created without writing files")
+
+
 # ── Workflow-phase grouping for --help ────────────────────────────
 # argparse doesn't support subparser groups natively. Render groups via epilog
 # so `specflow --help` actually shows the phase headers, not just the source.
@@ -391,7 +403,7 @@ _HELP_EPILOG = """\
 commands by workflow phase:
   Discover:   init, status
   Plan:       create, update
-  Execute:    go, done
+  Execute:    go, done, generate-tests
   Review:     artifact-lint, checklist-run, artifact-review, project-audit, trace
   Release:    baseline, document-changes
   CI:         hook, renumber-drafts, import, export, detect, change-impact,
@@ -447,6 +459,7 @@ def main(argv: list[str] | None = None) -> int:
     # ── Execute ─────────────────────────────────────────────────
     _add_go_parser(subparsers)
     _add_done_parser(subparsers)
+    _add_generate_tests_parser(subparsers)
 
     # ── Review ──────────────────────────────────────────────────
     _add_artifact_lint_parser(subparsers)
@@ -513,6 +526,7 @@ def main(argv: list[str] | None = None) -> int:
         "ci": cmd_ci,
         "trace": cmd_trace,
         "ci-gate": cmd_ci_gate,
+        "generate-tests": cmd_generate_tests,
     }
 
     handler = commands.get(args.command)

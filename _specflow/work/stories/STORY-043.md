@@ -2,7 +2,7 @@
 id: STORY-043
 title: Add coverage metrics to specflow status command
 type: story
-status: approved
+status: implemented
 priority: medium
 tags:
 - compliance
@@ -15,6 +15,8 @@ links:
 - target: ARCH-001
   role: guided_by
 created: '2026-04-21'
+modified: '2026-04-21'
+fingerprint: sha256:8f982267b23d
 ---
 
 # Add coverage metrics to specflow status command

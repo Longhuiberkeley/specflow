@@ -2,7 +2,7 @@
 id: STORY-045
 title: Add specflow generate-tests command and update execute skill
 type: story
-status: approved
+status: implemented
 priority: high
 tags:
 - testing
@@ -17,6 +17,8 @@ links:
 - target: ARCH-002
   role: guided_by
 created: '2026-04-21'
+modified: '2026-04-21'
+fingerprint: sha256:d0d41ed8b5f6
 ---
 
 # Add specflow generate-tests command and update execute skill
