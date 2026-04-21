@@ -2,7 +2,7 @@
 id: ARCH-002
 title: Framework Machinery
 type: architecture
-status: draft
+status: implemented
 priority: high
 rationale: 'The .specflow/ directory contains all framework internals: configuration,
   state, schemas, impact tracking, and baselines'
@@ -11,7 +11,7 @@ tags:
 - internals
 - core
 suspect: false
-fingerprint: sha256:e7baed037004
+fingerprint: sha256:4c258ae314a4
 links:
 - target: REQ-002
   role: derives_from
@@ -25,7 +25,7 @@ checklists_applied:
   timestamp: '2026-04-11T13:45:49Z'
 - checklist: check-ARCH-002
   timestamp: '2026-04-14T17:03:22Z'
-modified: '2026-04-14'
+modified: '2026-04-21'
 ---
 
 # Framework Machinery
@@ -48,10 +48,20 @@ The `.specflow/` directory contains all framework-internal files and state manag
 │   ├── story.yaml
 │   ├── spike.yaml
 │   ├── decision.yaml
-│   └── defect.yaml
+│   ├── defect.yaml
+│   ├── audit.yaml
+│   └── challenge.yaml
 ├── impact-log/           # Change detection events (artifact-first naming)
-├── checklist-log/        # Checklist execution audit log (timestamp-first naming)
+├── checklist-log/        # Checklist execution audit log
 ├── baselines/            # Immutable project state snapshots
+│   └── v0.2.0.yaml       # Baseline: name, git_ref, artifact statuses+fingerprints
+├── audits/               # Project audit reports and cache
+│   ├── .cache/           # Fingerprint-based audit finding cache
+│   └── <TIMESTAMP>/      # Per-audit report directory
+│       ├── report.md
+│       ├── subagent-horizontal.md
+│       ├── subagent-vertical.md
+│       └── subagent-cross-cutting.md
 ├── locks/                # Filesystem locks for parallel operations
 └── standards/            # Imported compliance standards
 ```
@@ -62,15 +72,15 @@ Project-level configuration:
 
 ```yaml
 project:
-  name: "<project name>"
-  created: "<YYYY-MM-DD>"
+  name: "specflow"
+  created: "2026-04-10"
 
 impact_analysis:
-  auto_flag: true          # Automatically flag suspects on fingerprint change
-  auto_resolve: false      # Never auto-resolve; requires human review
-  remind_after: 7d         # Warn about stale unresolved flags
+  auto_flag: true
+  auto_resolve: false
+  remind_after: 7d
 
-artifact_types:            # Registered artifact types
+artifact_types:
   - requirement
   - architecture
   - detailed-design
@@ -81,8 +91,10 @@ artifact_types:            # Registered artifact types
   - spike
   - decision
   - defect
+  - audit
+  - challenge
 
-active_packs: []           # Industry packs (e.g., [iso26262])
+active_packs: []
 ```
 
 ## `state.yaml`
@@ -90,75 +102,61 @@ active_packs: []           # Industry packs (e.g., [iso26262])
 Workflow state machine:
 
 ```yaml
-current: idle              # Current phase: idle | discovering | specifying | planning | executing | verifying | complete
-history:                   # Phase transition history
+current: complete
+history:
   - phase: discovering
-    entered: 2026-03-15
-    exited: 2026-03-16
+    entered: 2026-04-10
+    exited: 2026-04-11
   - phase: specifying
-    entered: 2026-03-16
-created: 2026-03-15        # Project creation date
+    entered: 2026-04-11
+    exited: 2026-04-14
+  - phase: planning
+    entered: 2026-04-14
+    exited: 2026-04-15
+  - phase: executing
+    entered: 2026-04-15
+    exited: 2026-04-21
+created: 2026-04-10
 ```
-
-State transitions follow the phase-gate system — a transition checklist must pass before the phase advances.
 
 ## Schema Directory (`schema/`)
 
-Contains YAML schema files defining each artifact type:
-
-### Schema Structure
 Each schema file defines:
-- `type`: Artifact type name (e.g., `requirement`)
+- `type`: Artifact type name
 - `prefix`: ID prefix (e.g., `REQ`)
 - `id_format`: Regex pattern for valid IDs
-- `required_fields`: List of mandatory frontmatter fields
-- `optional_fields`: List of additional allowed frontmatter fields
-- `allowed_status`: Map of status values with allowed predecessor statuses
-- `allowed_link_roles`: List of valid link roles for this artifact type
-- `directory`: Target directory for artifacts of this type
+- `required_fields`: Mandatory frontmatter fields
+- `optional_fields`: Additional allowed fields (e.g., `reqif_metadata`, `review_status`)
+- `allowed_status`: Map of status values with allowed predecessors
+- `allowed_link_roles`: Valid link roles for this type
+- `directory`: Target directory
 
-### Schema File Locations
-- **Distribution**: Stored in `src/specflow/templates/schemas/` in the package
-- **Runtime**: Copied to `.specflow/schema/` during `specflow init`
-- **Validation**: Loaded by `lib/schema_validator.py` to validate artifacts
+Schema extensibility: industry packs add new schema files at init time.
 
 ## Impact-Log Directory (`impact-log/`)
 
-Records every fingerprint change event as individual YAML files:
-- **Naming**: `<ARTIFACT-ID>_<ISO-timestamp>.yaml` (artifact-first for fast querying)
+Records every fingerprint change event:
+- **Naming**: `<ARTIFACT-ID>_<ISO-timestamp>.yaml`
 - **Content**: Changed artifact, change type, old/new fingerprints, flagged suspects, resolved status
-- **Append-only**: Events are never deleted, only marked resolved
-
-## Checklist-Log Directory (`checklist-log/`)
-
-Records every checklist execution:
-- **Naming**: `<ISO-timestamp>_<CHECKLIST-ID>.yaml` (timestamp-first for chronological ordering)
-- **Content**: Checklist ID, items checked, pass/fail results, timestamp
+- **Append-only**: Events never deleted, only marked resolved
 
 ## Baselines Directory (`baselines/`)
 
 Immutable project state snapshots:
-- **Naming**: `<version-name>.yaml` (e.g., `v1.0.yaml`, `release-candidate.yaml`)
-- **Content**: Artifact name → status + fingerprint mapping, test summary
-- **Immutability**: Once created, baseline files are never modified
+- **Naming**: `<version-name>.yaml`
+- **Content**: Artifact name → status + fingerprint mapping, git_ref
+- **Immutability**: Baseline files never modified after creation
+- **Diff**: `specflow baseline diff v0.1.0 v0.2.0` reports added/removed/modified
 
-## Locks Directory (`locks/`)
+## Audits Directory (`audits/`)
 
-Filesystem locks preventing concurrent artifact modification:
-- **Naming**: `<ARTIFACT-ID>.lock`
-- **Content**: PID of the process holding the lock
-- **Protocol**: Check for lock file → create with current PID → do work → remove lock file
-
-## Standards Directory (`standards/`)
-
-Imported compliance standards:
-- Populated by industry packs or manual import
-- YAML files defining standard clauses with IDs and descriptions
-- Referenced by artifacts via `complies_with` link role
+Project audit artifacts and caching:
+- **`.cache/`**: Fingerprint-based finding cache to skip redundant analysis
+- **`<TIMESTAMP>/`**: Per-audit output with report.md and subagent detail files
 
 ## Design Principles
 
-1. **Hidden directory**: The `.specflow/` prefix keeps internals out of the way of normal file browsing
-2. **Human-readable**: All internal files are YAML — inspectable and editable by humans if needed
-3. **No cloud dependencies**: Everything is local filesystem operations
-4. **Additive-only**: New fields added to configs/states over time; existing fields never removed (lazy migration)
+1. **Hidden directory**: `.specflow/` keeps internals out of normal browsing
+2. **Human-readable**: All files are YAML — inspectable and editable
+3. **No cloud dependencies**: Everything is local filesystem
+4. **Additive-only**: New fields added over time; existing fields never removed
