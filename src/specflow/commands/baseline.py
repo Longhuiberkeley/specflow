@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from specflow.lib import baselines as baselines_lib
+from specflow.lib import evidence as evidence_lib
 
 
 _SEPARATOR = "─" * 58
@@ -24,6 +25,15 @@ def _run_create(root: Path, args: dict[str, Any]) -> int:
     git_ref = result.get("git_ref") or "(no git ref)"
     print(f"\033[0;32m✓ Baseline '{name}' created ({result['path']})\033[0m")
     print(f"  Artifacts: {result['artifact_count']} | Git ref: {git_ref}")
+
+    if args.get("evidence"):
+        ev_result = evidence_lib.generate_evidence_report(root, name)
+        if ev_result["ok"]:
+            print(f"\033[0;32m✓ Evidence report generated ({ev_result['path']})\033[0m")
+        else:
+            print(f"\033[0;31m✗ Evidence report failed: {ev_result['error']}\033[0m")
+            return 1
+
     return 0
 
 

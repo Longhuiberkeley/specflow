@@ -270,6 +270,7 @@ def _add_baseline_parser(subparsers):
     sub = p.add_subparsers(dest="baseline_subcommand")
     create_p = sub.add_parser("create", help="Create a new immutable baseline snapshot")
     create_p.add_argument("baseline_name", help="Baseline name")
+    create_p.add_argument("--evidence", action="store_true", help="Generate compliance evidence report")
     diff_p = sub.add_parser("diff", help="Compare two baselines")
     diff_p.add_argument("baseline_a", help="First baseline name")
     diff_p.add_argument("baseline_b", help="Second baseline name")
