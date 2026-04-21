@@ -53,6 +53,63 @@ def _get_package_templates() -> Path:
     return Path(__file__).parent.parent / "templates"
 
 
+def _install_optional_types(root: Path, type_names: list[str]) -> int:
+    """Install optional artifact type schemas from templates/schemas/optional/.
+
+    Returns 0 on success, 1 on error.
+    """
+    optional_dir = _get_package_templates() / "schemas" / "optional"
+    schema_dst = root / ".specflow" / "schema"
+    schema_dst.mkdir(parents=True, exist_ok=True)
+
+    installed = []
+    for type_name in type_names:
+        type_name = type_name.strip()
+        if not type_name:
+            continue
+        src = optional_dir / f"{type_name}.yaml"
+        if not src.exists():
+            print(f"  x Optional type '{type_name}' not found (available: hazard, risk, control)")
+            return 1
+
+        data = yaml.safe_load(src.read_text(encoding="utf-8"))
+        if not isinstance(data, dict):
+            print(f"  x Invalid schema for '{type_name}'")
+            return 1
+
+        dst = schema_dst / f"{type_name}.yaml"
+        if dst.exists():
+            print(f"  = Type '{type_name}' already installed — skipping")
+            continue
+
+        shutil.copy2(str(src), str(dst))
+
+        directory = data.get("directory", "")
+        if directory:
+            rel = directory
+            if rel.startswith("_specflow/"):
+                rel = rel[len("_specflow/"):]
+            rel = rel.rstrip("/")
+            spec_dir = root / "_specflow" / rel
+            spec_dir.mkdir(parents=True, exist_ok=True)
+            index = spec_dir / "_index.yaml"
+            if not index.exists():
+                index.write_text(yaml.dump({"artifacts": {}, "next_id": 1}, default_flow_style=False))
+
+        installed.append(type_name)
+        print(f"  + Optional type '{type_name}' installed (schema + directory)")
+
+    if installed:
+        config = config_lib.read_config(root)
+        registered_types = config.setdefault("artifact_types", [])
+        for t in installed:
+            if t not in registered_types:
+                registered_types.append(t)
+        config_lib.write_config(root, config)
+
+    return 0
+
+
 def _install_skills(root: Path, platform_code: str) -> None:
     template_dir = _get_package_templates()
     skills_src = template_dir / "skills" / "shared"
@@ -127,6 +184,14 @@ def run(root: Path, args: dict) -> int:
         print(f"  Applying preset pack '{preset}'...")
         if _apply_preset(root, preset) != 0:
             return 1
+
+    with_types = args.get("with_types", "")
+    if with_types:
+        type_names = [t.strip() for t in with_types.split(",") if t.strip()]
+        if type_names:
+            print(f"  Installing optional artifact types: {', '.join(type_names)}...")
+            if _install_optional_types(root, type_names) != 0:
+                return 1
 
     print(f"  Installing skills for {platform_name}...")
     _install_skills(root, platform_code)

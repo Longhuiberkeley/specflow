@@ -193,6 +193,7 @@ def _add_init_parser(subparsers):
     p = subparsers.add_parser("init", help="Scaffold a SpecFlow project")
     p.add_argument("--platform", help="AI platform code (e.g., claude-code, cursor, windsurf)")
     p.add_argument("--preset", help="Industry pack preset (e.g., iso26262-demo)")
+    p.add_argument("--with-types", dest="with_types", help="Comma-separated optional artifact types to enable (e.g., hazard,risk,control)")
     p.add_argument("--no-ci", action="store_true", dest="no_ci", help="Skip CI workflow installation")
 
 
