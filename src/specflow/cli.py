@@ -222,6 +222,7 @@ def _add_standards_parser(subparsers):
     sub = p.add_subparsers(dest="standards_subcommand")
     gaps_p = sub.add_parser("gaps", help="List uncovered standard clauses")
     gaps_p.add_argument("--standard", help="Standard name (auto-detect if omitted)")
+    gaps_p.add_argument("--json", action="store_true", dest="json", help="Output as JSON")
 
 
 def _add_update_parser(subparsers):

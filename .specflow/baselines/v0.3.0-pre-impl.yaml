@@ -1,0 +1,1028 @@
+name: v0.3.0-pre-impl
+created_at: '2026-04-21T17:49:38Z'
+git_ref: ed35d78bc00c93e18934e161b3ccb30b8d2aafec
+artifacts:
+  REQ-001:
+    status: approved
+    fingerprint: sha256:c84eb2dd9906
+    title: CLI Interface
+    type: requirement
+  REQ-002:
+    status: approved
+    fingerprint: sha256:4ba4d17ec1bb
+    title: Artifact Structure
+    type: requirement
+  REQ-003:
+    status: approved
+    fingerprint: sha256:005378fce8f7
+    title: Trace & Suspect Propagation
+    type: requirement
+  REQ-004:
+    status: approved
+    fingerprint: sha256:6a83f01fd52a
+    title: AI Execution Boundaries
+    type: requirement
+  REQ-005:
+    status: approved
+    fingerprint: sha256:a1ae6910e33d
+    title: Cross-Platform & Compliance
+    type: requirement
+  REQ-006:
+    status: implemented
+    fingerprint: sha256:e90cea5f6ff8
+    title: Pack-Author Extraction Quality
+    type: requirement
+  REQ-007:
+    status: implemented
+    fingerprint: sha256:60d395d3afe9
+    title: Traceability Depth Reporting
+    type: requirement
+  REQ-008:
+    status: implemented
+    fingerprint: sha256:315c1da1c9b1
+    title: Provider-Agnostic CI Gate
+    type: requirement
+  REQ-009:
+    status: implemented
+    fingerprint: sha256:b322cfa86109
+    title: Test Suite Foundation
+    type: requirement
+  REQ-010:
+    status: implemented
+    fingerprint: sha256:eb2d81f1d6a1
+    title: EARS Quality in Prompts and Lint Safety Net
+    type: requirement
+  REQ-011:
+    status: implemented
+    fingerprint: sha256:db2520879e72
+    title: ReqIF Round-Trip Quality
+    type: requirement
+  REQ-012:
+    status: implemented
+    fingerprint: sha256:366da1ce85ef
+    title: Compliance Score Dashboard
+    type: requirement
+  REQ-013:
+    status: implemented
+    fingerprint: sha256:dac4d8d13ab8
+    title: V-Model Test Scaffolding and Execute Enhancement
+    type: requirement
+  REQ-014:
+    status: implemented
+    fingerprint: sha256:6f6e3908348c
+    title: Deprecation Cleanup and Schema Fixes
+    type: requirement
+  REQ-015:
+    status: approved
+    fingerprint: sha256:d50438e9f68c
+    title: Compliance Evidence Reports
+    type: requirement
+  REQ-016:
+    status: approved
+    fingerprint: sha256:3cb45db0cc09
+    title: Standards Gap Analysis v2
+    type: requirement
+  REQ-017:
+    status: approved
+    fingerprint: sha256:placeholder
+    title: Flexible Artifact Type Extensions
+    type: requirement
+  ARCH-001:
+    status: implemented
+    fingerprint: sha256:9796f65acf40
+    title: CLI Core
+    type: architecture
+  ARCH-002:
+    status: implemented
+    fingerprint: sha256:4c258ae314a4
+    title: Framework Machinery
+    type: architecture
+  ARCH-003:
+    status: implemented
+    fingerprint: sha256:ee902ce1a49a
+    title: Skill & Platform System
+    type: architecture
+  ARCH-004:
+    status: implemented
+    fingerprint: sha256:4d98716c065a
+    title: Compliance & Exchange Subsystem
+    type: architecture
+  ARCH-005:
+    status: implemented
+    fingerprint: sha256:fa273ee409ec
+    title: Audit & Review Engine
+    type: architecture
+  ARCH-006:
+    status: implemented
+    fingerprint: sha256:placeholder
+    title: Pack-Author Pipeline
+    type: architecture
+  DDD-001:
+    status: implemented
+    fingerprint: sha256:1ed62292d238
+    title: Impact Analysis Engine
+    type: detailed-design
+  DDD-002:
+    status: implemented
+    fingerprint: sha256:c729c8aa66ef
+    title: Execution Orchestrator
+    type: detailed-design
+  DDD-003:
+    status: implemented
+    fingerprint: sha256:f59f8b56f0aa
+    title: Review & Lint Pipeline
+    type: detailed-design
+  DDD-004:
+    status: implemented
+    fingerprint: sha256:06612dc30a52
+    title: ReqIF & Standards
+    type: detailed-design
+  DDD-005:
+    status: implemented
+    fingerprint: sha256:09dc789e1839
+    title: Audit Engine
+    type: detailed-design
+  DDD-006:
+    status: implemented
+    fingerprint: sha256:placeholder
+    title: Pack Extraction Protocol
+    type: detailed-design
+  UT-001:
+    status: implemented
+    fingerprint: sha256:8d2dc05d2165
+    title: Artifact Library Unit Tests
+    type: unit-test
+  UT-002:
+    status: implemented
+    fingerprint: sha256:c354009ca33b
+    title: RBAC Engine Unit Tests
+    type: unit-test
+  UT-003:
+    status: implemented
+    fingerprint: sha256:06399e9f0a6e
+    title: Baseline Management Unit Tests
+    type: unit-test
+  UT-004:
+    status: implemented
+    fingerprint: sha256:0b12d6bfed31
+    title: Standards Loading Unit Tests
+    type: unit-test
+  IT-001:
+    status: implemented
+    fingerprint: sha256:60a09bb21d81
+    title: Command Integration Test Suite
+    type: integration-test
+  QT-001:
+    status: implemented
+    fingerprint: sha256:b19df1c1eec2
+    title: CLI Command Integration
+    type: qualification-test
+  QT-002:
+    status: implemented
+    fingerprint: sha256:539792f23420
+    title: ReqIF Round-Trip Quality
+    type: qualification-test
+  QT-003:
+    status: implemented
+    fingerprint: sha256:085b249b9324
+    title: Coverage Metrics Accuracy
+    type: qualification-test
+  STORY-001:
+    status: implemented
+    fingerprint: sha256:7e927cb96b50
+    title: Detect fingerprint changes and propagate suspect flags for downstream artifacts
+    type: story
+  STORY-002:
+    status: implemented
+    fingerprint: sha256:e6c357dd6dd6
+    title: Report and resolve suspect flags via specflow impact command
+    type: story
+  STORY-003:
+    status: implemented
+    fingerprint: sha256:ffd852f3fbc2
+    title: Implement typo cascade defense with 3-tier classification
+    type: story
+  STORY-004:
+    status: implemented
+    fingerprint: sha256:8b507fe4c303
+    title: Implement split and merge operations for artifact refactoring
+    type: story
+  STORY-005:
+    status: implemented
+    fingerprint: sha256:c26bcff9ced0
+    title: Implement filesystem locks for concurrent artifact modification
+    type: story
+  STORY-006:
+    status: implemented
+    fingerprint: sha256:915847809d40
+    title: Group stories into dependency-free waves for parallel execution
+    type: story
+  STORY-007:
+    status: implemented
+    fingerprint: sha256:7a3c7d9dac0b
+    title: Orchestrate parallel subagent execution with isolated context per story
+    type: story
+  STORY-008:
+    status: implemented
+    fingerprint: sha256:bde4ab3a1b2e
+    title: Assemble context-specific review criteria for specflow check
+    type: story
+  STORY-009:
+    status: implemented
+    fingerprint: sha256:4a4c20106519
+    title: Implement proactive challenge engine for edge case discovery
+    type: story
+  STORY-010:
+    status: implemented
+    fingerprint: sha256:fbbc5a2ad9c7
+    title: Extract prevention patterns into learned checklists via specflow done
+    type: story
+  STORY-011:
+    status: implemented
+    fingerprint: sha256:fe09bc983eda
+    title: Create and compare immutable baselines for project state snapshots
+    type: story
+  STORY-012:
+    status: implemented
+    fingerprint: sha256:61abebf22c95
+    title: Implement standards pack architecture and compliance gap analysis
+    type: story
+  STORY-013:
+    status: implemented
+    fingerprint: sha256:ca1d162d382f
+    title: Generate retroactive change records from git history and impact-log
+    type: story
+  STORY-014:
+    status: implemented
+    fingerprint: sha256:91ea8b11001c
+    title: Enforce role-based access control via git hooks and CODEOWNERS
+    type: story
+  STORY-015:
+    status: implemented
+    fingerprint: sha256:c4a2d22865de
+    title: Implement draft IDs on branches with CI renumbering on merge
+    type: story
+  STORY-016:
+    status: implemented
+    fingerprint: sha256:bcd75bb30bed
+    title: Implement defect lifecycle tracking with V-model linkage
+    type: story
+  STORY-017:
+    status: implemented
+    fingerprint: sha256:802ee56ce791
+    title: Implement CI integration job with two-pass validation
+    type: story
+  STORY-018:
+    status: implemented
+    fingerprint: sha256:2cfa543fa94c
+    title: Implement ReqIF import and export for DOORS/Polarion interchange
+    type: story
+  STORY-019:
+    status: implemented
+    fingerprint: sha256:74a95266e364
+    title: Implement tiered duplicate detection pipeline for artifacts
+    type: story
+  STORY-020:
+    status: implemented
+    fingerprint: sha256:77229e571f6c
+    title: Implement dead code and code similarity detection for project hygiene
+    type: story
+  STORY-021:
+    status: implemented
+    fingerprint: ''
+    title: Audit and rewrite the four existing SKILL.md prompts
+    type: story
+  STORY-022:
+    status: implemented
+    fingerprint: ''
+    title: Ship command rename and thin-skill wrappers for all Tier 2/3 CLI commands
+    type: story
+  STORY-023:
+    status: implemented
+    fingerprint: ''
+    title: Archive docs/phases and restructure docs/ directory
+    type: story
+  STORY-024:
+    status: implemented
+    fingerprint: sha256:b95df92dbbbb
+    title: Ship /specflow-artifact-review with tiered depth and thinking techniques
+    type: story
+  STORY-025:
+    status: implemented
+    fingerprint: ''
+    title: Ship the change-audit pipeline with review_status field
+    type: story
+  STORY-026:
+    status: implemented
+    fingerprint: ''
+    title: Build the unified adapter framework
+    type: story
+  STORY-027:
+    status: implemented
+    fingerprint: ''
+    title: Expose recovery primitives as CLI commands and clean up dead code
+    type: story
+  STORY-028:
+    status: implemented
+    fingerprint: ''
+    title: "Compliance rework \u2014 BYOC with /specflow-pack-author"
+    type: story
+  STORY-029:
+    status: implemented
+    fingerprint: ''
+    title: Add deterministic analytical passes to the V-model
+    type: story
+  STORY-030:
+    status: implemented
+    fingerprint: ''
+    title: Ship /specflow-project-audit with conversational scope and chunked fan-out
+    type: story
+  STORY-031:
+    status: implemented
+    fingerprint: ''
+    title: "Install UX \u2014 one-line install path and getting-started tutorial"
+    type: story
+  STORY-032:
+    status: implemented
+    fingerprint: sha256:84a65b667115
+    title: "Delete over-exposed skill directories \u2014 collapse 22 skills to 8 Tier\
+      \ 1"
+    type: story
+  STORY-033:
+    status: implemented
+    fingerprint: sha256:e150f32f8b00
+    title: "Build the 9 Tier 1 conversational skills \u2014 init, audit, ship + modifications"
+    type: story
+  STORY-034:
+    status: implemented
+    fingerprint: sha256:55db9741b5bd
+    title: "Documentation overhaul \u2014 rewrite lifecycle, commands, and README\
+      \ for 9-command surface"
+    type: story
+  STORY-035:
+    status: implemented
+    fingerprint: sha256:5d458c39e8b8
+    title: "Project convention checklists \u2014 scaffold and enforce project structure"
+    type: story
+  STORY-036:
+    status: implemented
+    fingerprint: sha256:6a7a4f1483c8
+    title: Improve pack-author extraction protocol with verification layer
+    type: story
+  STORY-037:
+    status: implemented
+    fingerprint: sha256:ddc227e4eb50
+    title: Add trace command and chain-report lint check
+    type: story
+  STORY-038:
+    status: implemented
+    fingerprint: sha256:b2c8458a85a7
+    title: Add provider-agnostic CI gate command and GitHub Actions template
+    type: story
+  STORY-039:
+    status: implemented
+    fingerprint: sha256:a3189db97535
+    title: Create pytest test suite for core lib modules
+    type: story
+  STORY-040:
+    status: implemented
+    fingerprint: sha256:d87a2091f072
+    title: Remove deprecated CLI aliases and fix requirement schema
+    type: story
+  STORY-041:
+    status: implemented
+    fingerprint: sha256:4a61a5012692
+    title: Add EARS patterns and quality guidance to normative-language reference
+    type: story
+  STORY-042:
+    status: implemented
+    fingerprint: sha256:7753ffed1db4
+    title: Add requirements quality lint check to artifact-lint
+    type: story
+  STORY-043:
+    status: implemented
+    fingerprint: sha256:8f982267b23d
+    title: Add coverage metrics to specflow status command
+    type: story
+  STORY-044:
+    status: implemented
+    fingerprint: sha256:1951bbd87bce
+    title: 'Fix ReqIF round-trip quality: stable UUIDs, schema fix, tests, ARCH/DDD
+      export'
+    type: story
+  STORY-045:
+    status: implemented
+    fingerprint: sha256:d0d41ed8b5f6
+    title: Add specflow generate-tests command and update execute skill
+    type: story
+  STORY-046:
+    status: draft
+    fingerprint: ''
+    title: Add compliance evidence report to specflow ship
+    type: story
+  STORY-047:
+    status: draft
+    fingerprint: ''
+    title: Enhance standards gap analysis with scoring, remediation, and JSON output
+    type: story
+  STORY-048:
+    status: draft
+    fingerprint: ''
+    title: Add optional artifact type schemas and init integration
+    type: story
+  DEC-001:
+    status: draft
+    fingerprint: ''
+    title: 'Change Record: Another dummy commit'
+    type: decision
+  DEC-002:
+    status: draft
+    fingerprint: ''
+    title: 'Change Record: Third dummy commit'
+    type: decision
+  DEC-003:
+    status: draft
+    fingerprint: ''
+    title: "Change Record: feat: implement STORY-043, STORY-044, STORY-045 \u2014\
+      \ coverage metrics, ReqIF round-trip, generate-tests"
+    type: decision
+  DEC-004:
+    status: draft
+    fingerprint: ''
+    title: 'Change Record: feat: add requirements quality lint check to artifact-lint
+      (STORY-042)'
+    type: decision
+  DEC-005:
+    status: draft
+    fingerprint: ''
+    title: 'Change Record: feat: add EARS patterns, ambiguity list, quality guidance
+      to normative-language.md (STORY-041)'
+    type: decision
+  DEC-006:
+    status: draft
+    fingerprint: ''
+    title: 'Change Record: feat: remove 8 deprecated CLI aliases, add reqif_metadata
+      to requirement schema (STORY-040)'
+    type: decision
+  DEC-007:
+    status: draft
+    fingerprint: ''
+    title: 'Change Record: specs: add v0.2.0 stories (STORY-040 through STORY-045)'
+    type: decision
+  DEC-008:
+    status: draft
+    fingerprint: ''
+    title: 'Change Record: specs: add v0.2.0 and v0.3.0 REQ artifacts'
+    type: decision
+  DEC-009:
+    status: draft
+    fingerprint: ''
+    title: 'Change Record: fix: correct AUD review_status from ''open'' to ''unreviewed'''
+    type: decision
+  DEC-010:
+    status: draft
+    fingerprint: ''
+    title: 'Change Record: specs: update STORY-036 to 039 and linked specs to implemented'
+    type: decision
+  DEC-011:
+    status: draft
+    fingerprint: ''
+    title: 'Change Record: specs: add REQ-006 through REQ-009, STORY-036 through STORY-039'
+    type: decision
+  DEC-012:
+    status: draft
+    fingerprint: ''
+    title: 'Change Record: feat: platform registry, skill sync, README rewrite, and
+      public-readiness overhaul (STORY-033/034/035)'
+    type: decision
+  DEC-013:
+    status: draft
+    fingerprint: ''
+    title: 'Change Record: fix(STORY-032): update status to implemented and move deleted
+      shell wrappers to archive'
+    type: decision
+  DEC-014:
+    status: draft
+    fingerprint: ''
+    title: 'Change Record: chore(audit): auto-generated system gap challenges and
+      audit artifacts'
+    type: decision
+  DEC-015:
+    status: draft
+    fingerprint: ''
+    title: 'Change Record: docs(stories): add M4 UX and skill overhaul stories (STORY-032
+      to STORY-035)'
+    type: decision
+  DEC-016:
+    status: draft
+    fingerprint: ''
+    title: "Change Record: feat(stories): update STORY-032/033/034 \u2014 template\
+      \ unification + prompt quality + agents-section rewrite"
+    type: decision
+  DEC-017:
+    status: draft
+    fingerprint: ''
+    title: 'Change Record: fix: post-review remediation for STORY-029/030/031'
+    type: decision
+  DEC-018:
+    status: draft
+    fingerprint: ''
+    title: 'Change Record: fix(STORY-025): remediate 5 review gaps in change-audit
+      pipeline'
+    type: decision
+  DEC-019:
+    status: draft
+    fingerprint: ''
+    title: 'Change Record: Dummy commit for testing document-changes'
+    type: decision
+  DEC-020:
+    status: draft
+    fingerprint: ''
+    title: 'Change Record: fix(checklists): upsert checklist entries instead of appending'
+    type: decision
+  DEC-021:
+    status: draft
+    fingerprint: ''
+    title: 'Change Record: feat: ship artifact-review depth (STORY-024) and unified
+      adapter framework (STORY-026)'
+    type: decision
+  DEC-022:
+    status: draft
+    fingerprint: ''
+    title: "Change Record: feat(STORY-028): BYOC rework \u2014 /specflow-pack-author\
+      \ skill + iso26262-demo relabel"
+    type: decision
+  DEC-023:
+    status: draft
+    fingerprint: ''
+    title: 'Change Record: feat(stories): complete STORY-021 skill rewrites + STORY-022
+      command rename'
+    type: decision
+  DEC-024:
+    status: draft
+    fingerprint: ''
+    title: 'Change Record: fix(stories): amend STORY-021 and STORY-024 from review
+      feedback'
+    type: decision
+  DEC-025:
+    status: draft
+    fingerprint: ''
+    title: "Change Record: feat(stories): add STORY-021\u2013031 from post-P8 retrospective"
+    type: decision
+  DEC-026:
+    status: draft
+    fingerprint: ''
+    title: "Change Record: feat(P8): intelligence & scaling \u2014 tiered dedup +\
+      \ project-hygiene detect commands"
+    type: decision
+  DEC-027:
+    status: draft
+    fingerprint: ''
+    title: "Change Record: feat(P7): team & enterprise \u2014 RBAC, draft IDs, CI,\
+      \ ReqIF, defect hook"
+    type: decision
+  DEC-028:
+    status: draft
+    fingerprint: ''
+    title: 'Change Record: feat(P6): implement compliance, baselines, standards packs,
+      and change records'
+    type: decision
+  DEC-029:
+    status: draft
+    fingerprint: ''
+    title: 'Change Record: feat(P4/P5): implement traceability and execution engine
+      with review fixes'
+    type: decision
+  DEC-030:
+    status: draft
+    fingerprint: ''
+    title: 'Change Record: feat(P3): complete self-planning gate and generate P4-P8
+      stories'
+    type: decision
+  DEC-031:
+    status: draft
+    fingerprint: ''
+    title: 'Change Record: feat: complete P2 verification with remediation (D-16,
+      D-17)'
+    type: decision
+  DEC-032:
+    status: draft
+    fingerprint: ''
+    title: 'Change Record: feat: complete P1 self-specification with review fixes'
+    type: decision
+  AUD-001:
+    status: open
+    fingerprint: sha256:598d4c928e12
+    title: Project Audit 20260415T174143Z
+    type: audit
+  AUD-002:
+    status: open
+    fingerprint: sha256:9d45dd4c8507
+    title: Project Audit 20260415T174156Z
+    type: audit
+  AUD-003:
+    status: open
+    fingerprint: ''
+    title: Project Audit 20260415T174306Z
+    type: audit
+  AUD-004:
+    status: open
+    fingerprint: ''
+    title: Project Audit 20260416T034444Z
+    type: audit
+  AUD-005:
+    status: open
+    fingerprint: ''
+    title: Project Audit 20260416T034453Z
+    type: audit
+  AUD-006:
+    status: open
+    fingerprint: ''
+    title: Project Audit 20260416T034528Z
+    type: audit
+  AUD-007:
+    status: open
+    fingerprint: ''
+    title: Project Audit 20260416T034551Z
+    type: audit
+  AUD-008:
+    status: open
+    fingerprint: ''
+    title: Project Audit 20260416T034604Z
+    type: audit
+  AUD-009:
+    status: open
+    fingerprint: ''
+    title: Project Audit 20260416T091959Z
+    type: audit
+  AUD-010:
+    status: open
+    fingerprint: ''
+    title: Project Audit 20260421T105914Z
+    type: audit
+  AUD-011:
+    status: open
+    fingerprint: ''
+    title: Project Audit 20260421T144754Z
+    type: audit
+  AUD-012:
+    status: open
+    fingerprint: ''
+    title: Project Audit 20260421T144813Z
+    type: audit
+  AUD-013:
+    status: open
+    fingerprint: ''
+    title: Project Audit 20260421T144827Z
+    type: audit
+  AUD-014:
+    status: open
+    fingerprint: ''
+    title: Project Audit 20260421T144838Z
+    type: audit
+  AUD-015:
+    status: open
+    fingerprint: ''
+    title: Project Audit 20260421T145022Z
+    type: audit
+  AUD-016:
+    status: open
+    fingerprint: ''
+    title: Project Audit 20260421T145051Z
+    type: audit
+  AUD-017:
+    status: open
+    fingerprint: ''
+    title: Project Audit 20260421T145109Z
+    type: audit
+  AUD-018:
+    status: open
+    fingerprint: ''
+    title: Project Audit 20260421T145217Z
+    type: audit
+  AUD-019:
+    status: open
+    fingerprint: ''
+    title: Project Audit 20260421T150042Z
+    type: audit
+  AUD-020:
+    status: open
+    fingerprint: ''
+    title: Project Audit 20260421T162012Z
+    type: audit
+  AUD-021:
+    status: open
+    fingerprint: ''
+    title: Project Audit 20260421T162033Z
+    type: audit
+  CHL-001:
+    status: stale
+    fingerprint: sha256:2af47150b370
+    title: Error executing devils_advocate
+    type: challenge
+  CHL-002:
+    status: open
+    fingerprint: sha256:6051b60b3a10
+    title: 'REQ-001: no ARCH refinement in V-model thread'
+    type: challenge
+  CHL-003:
+    status: open
+    fingerprint: sha256:dd0e04f9e5a1
+    title: 'STORY-002 (implements REQ-001): no test verification'
+    type: challenge
+  CHL-004:
+    status: open
+    fingerprint: sha256:4a0b724f18b3
+    title: 'STORY-007 (implements REQ-001): no test verification'
+    type: challenge
+  CHL-005:
+    status: open
+    fingerprint: sha256:9aa506eec93b
+    title: 'STORY-008 (implements REQ-001): no test verification'
+    type: challenge
+  CHL-006:
+    status: open
+    fingerprint: sha256:338190c4657b
+    title: 'STORY-010 (implements REQ-001): no test verification'
+    type: challenge
+  CHL-007:
+    status: open
+    fingerprint: sha256:77b9ae8783d0
+    title: 'REQ-002: no ARCH refinement in V-model thread'
+    type: challenge
+  CHL-008:
+    status: open
+    fingerprint: sha256:ee154853373a
+    title: 'STORY-015 (implements REQ-002): no test verification'
+    type: challenge
+  CHL-009:
+    status: open
+    fingerprint: sha256:b1e7d3b55e12
+    title: 'STORY-016 (implements REQ-002): no test verification'
+    type: challenge
+  CHL-010:
+    status: open
+    fingerprint: sha256:d7b24991d978
+    title: 'REQ-003: no ARCH refinement in V-model thread'
+    type: challenge
+  CHL-011:
+    status: open
+    fingerprint: sha256:7e968b4c4053
+    title: 'STORY-001 (implements REQ-003): no test verification'
+    type: challenge
+  CHL-012:
+    status: open
+    fingerprint: sha256:49c399518533
+    title: 'STORY-002 (implements REQ-003): no test verification'
+    type: challenge
+  CHL-013:
+    status: open
+    fingerprint: sha256:f8f3ded7e5fb
+    title: 'STORY-003 (implements REQ-003): no test verification'
+    type: challenge
+  CHL-014:
+    status: open
+    fingerprint: sha256:67269d8bca34
+    title: 'STORY-004 (implements REQ-003): no test verification'
+    type: challenge
+  CHL-015:
+    status: open
+    fingerprint: sha256:ef8715326f03
+    title: 'STORY-005 (implements REQ-003): no test verification'
+    type: challenge
+  CHL-016:
+    status: open
+    fingerprint: sha256:7c4f313bb87b
+    title: 'REQ-004: no ARCH refinement in V-model thread'
+    type: challenge
+  CHL-017:
+    status: open
+    fingerprint: sha256:e5d79ee91d9a
+    title: 'STORY-006 (implements REQ-004): no test verification'
+    type: challenge
+  CHL-018:
+    status: open
+    fingerprint: sha256:3113831d9cd6
+    title: 'STORY-007 (implements REQ-004): no test verification'
+    type: challenge
+  CHL-019:
+    status: open
+    fingerprint: sha256:d1c514dd0f2f
+    title: 'STORY-008 (implements REQ-004): no test verification'
+    type: challenge
+  CHL-020:
+    status: open
+    fingerprint: sha256:67203d2566ec
+    title: 'STORY-009 (implements REQ-004): no test verification'
+    type: challenge
+  CHL-021:
+    status: open
+    fingerprint: sha256:45f1a7f996fe
+    title: 'STORY-010 (implements REQ-004): no test verification'
+    type: challenge
+  CHL-022:
+    status: open
+    fingerprint: sha256:fc4b8a64c027
+    title: 'STORY-017 (implements REQ-004): no test verification'
+    type: challenge
+  CHL-023:
+    status: open
+    fingerprint: sha256:8cc35a0d5ddf
+    title: 'STORY-019 (implements REQ-004): no test verification'
+    type: challenge
+  CHL-024:
+    status: open
+    fingerprint: sha256:458e569870fe
+    title: 'STORY-020 (implements REQ-004): no test verification'
+    type: challenge
+  CHL-025:
+    status: open
+    fingerprint: sha256:52c60547ff58
+    title: 'REQ-005: no ARCH refinement in V-model thread'
+    type: challenge
+  CHL-026:
+    status: open
+    fingerprint: sha256:ab3aa3dae08f
+    title: 'STORY-011 (implements REQ-005): no test verification'
+    type: challenge
+  CHL-027:
+    status: open
+    fingerprint: sha256:96af5d7f8157
+    title: 'STORY-012 (implements REQ-005): no test verification'
+    type: challenge
+  CHL-028:
+    status: open
+    fingerprint: sha256:d9d76e5969af
+    title: 'STORY-013 (implements REQ-005): no test verification'
+    type: challenge
+  CHL-029:
+    status: open
+    fingerprint: sha256:74ec2564ea89
+    title: 'STORY-014 (implements REQ-005): no test verification'
+    type: challenge
+  CHL-030:
+    status: open
+    fingerprint: sha256:58409b50b607
+    title: 'STORY-018 (implements REQ-005): no test verification'
+    type: challenge
+  CHL-031:
+    status: open
+    fingerprint: sha256:40c253f91dad
+    title: "72 coverage gap(s):   \u26A0 [STORY-002] no UT linked via 'verified_by'\
+      \ (covers REQ REQ-001);   \u26A0 [STORY-"
+    type: challenge
+  CHL-032:
+    status: open
+    fingerprint: sha256:816cc3e9e653
+    title: 5/5 REQs have no non_functional_category
+    type: challenge
+  CHL-033:
+    status: open
+    fingerprint: sha256:8e28b6f3224b
+    title: 1 schema issue(s)
+    type: challenge
+  CHL-128:
+    status: open
+    fingerprint: sha256:0a1708424c44
+    title: 2 schema issue(s)
+    type: challenge
+  CHL-160:
+    status: open
+    fingerprint: sha256:2688ffa86b35
+    title: 3 schema issue(s)
+    type: challenge
+  CHL-222:
+    status: open
+    fingerprint: sha256:8583665a162b
+    title: 'REQ-006: no ARCH refinement in V-model thread'
+    type: challenge
+  CHL-223:
+    status: open
+    fingerprint: sha256:692147dde547
+    title: 'STORY-036 (implements REQ-006): no test verification'
+    type: challenge
+  CHL-224:
+    status: open
+    fingerprint: sha256:10603f8f7ffd
+    title: 'REQ-007: no ARCH refinement in V-model thread'
+    type: challenge
+  CHL-225:
+    status: open
+    fingerprint: sha256:a426f49f9a71
+    title: 'STORY-037 (implements REQ-007): no test verification'
+    type: challenge
+  CHL-226:
+    status: open
+    fingerprint: sha256:cf6726ef83ea
+    title: 'REQ-008: no ARCH refinement in V-model thread'
+    type: challenge
+  CHL-227:
+    status: open
+    fingerprint: sha256:eec26666a7a2
+    title: 'STORY-038 (implements REQ-008): no test verification'
+    type: challenge
+  CHL-228:
+    status: open
+    fingerprint: sha256:fd9eaf815198
+    title: 'REQ-009: no ARCH refinement in V-model thread'
+    type: challenge
+  CHL-229:
+    status: open
+    fingerprint: sha256:ddb72c48248b
+    title: 'STORY-039 (implements REQ-009): no test verification'
+    type: challenge
+  CHL-230:
+    status: open
+    fingerprint: sha256:70ef2dfcfe3a
+    title: 'REQ-010: no ARCH refinement in V-model thread'
+    type: challenge
+  CHL-231:
+    status: open
+    fingerprint: sha256:48f184922242
+    title: 'STORY-041 (implements REQ-010): no test verification'
+    type: challenge
+  CHL-232:
+    status: open
+    fingerprint: sha256:1237c38fae28
+    title: 'STORY-042 (implements REQ-010): no test verification'
+    type: challenge
+  CHL-233:
+    status: open
+    fingerprint: sha256:7d24ec465924
+    title: 'REQ-011: no ARCH refinement in V-model thread'
+    type: challenge
+  CHL-234:
+    status: open
+    fingerprint: sha256:8f7971d9e29a
+    title: 'STORY-044 (implements REQ-011): no test verification'
+    type: challenge
+  CHL-235:
+    status: open
+    fingerprint: sha256:b36f10affa3e
+    title: 'REQ-012: no ARCH refinement in V-model thread'
+    type: challenge
+  CHL-236:
+    status: open
+    fingerprint: sha256:4af0233f0e27
+    title: 'STORY-043 (implements REQ-012): no test verification'
+    type: challenge
+  CHL-237:
+    status: open
+    fingerprint: sha256:0302d7ba9adb
+    title: 'REQ-013: no ARCH refinement in V-model thread'
+    type: challenge
+  CHL-238:
+    status: open
+    fingerprint: sha256:754434b428b6
+    title: 'STORY-045 (implements REQ-013): no test verification'
+    type: challenge
+  CHL-239:
+    status: open
+    fingerprint: sha256:8c2ef93ed428
+    title: 'REQ-014: no ARCH refinement in V-model thread'
+    type: challenge
+  CHL-240:
+    status: open
+    fingerprint: sha256:8b6add47f251
+    title: 'STORY-040 (implements REQ-014): no test verification'
+    type: challenge
+  CHL-285:
+    status: open
+    fingerprint: sha256:911ea1f51c01
+    title: 'REQ-015: no ARCH refinement in V-model thread'
+    type: challenge
+  CHL-286:
+    status: open
+    fingerprint: sha256:a5964ec66a59
+    title: 'REQ-015: no STORY implements this requirement'
+    type: challenge
+  CHL-287:
+    status: open
+    fingerprint: sha256:8c6b2904236d
+    title: 'REQ-016: no ARCH refinement in V-model thread'
+    type: challenge
+  CHL-288:
+    status: open
+    fingerprint: sha256:1b9554249b9d
+    title: 'REQ-016: no STORY implements this requirement'
+    type: challenge
+  CHL-289:
+    status: open
+    fingerprint: sha256:1410342bd10b
+    title: 'STORY-046 (implements REQ-015): no test verification'
+    type: challenge
+  CHL-290:
+    status: open
+    fingerprint: sha256:2ebd09cfb72e
+    title: 'STORY-047 (implements REQ-016): no test verification'
+    type: challenge
+  CHL-291:
+    status: open
+    fingerprint: sha256:75a7327eedf1
+    title: 'REQ-017: no ARCH refinement in V-model thread'
+    type: challenge
+  CHL-292:
+    status: open
+    fingerprint: sha256:d0548251d6dc
+    title: 'STORY-048 (implements REQ-017): no test verification'
+    type: challenge

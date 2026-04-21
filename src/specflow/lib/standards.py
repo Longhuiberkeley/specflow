@@ -15,6 +15,33 @@ import yaml
 
 from specflow.lib import artifacts as art_lib
 
+_SEVERITY_ORDER = {"high": 0, "medium": 1, "low": 2}
+
+REMEDIATION_MAP: dict[str, str] = {
+    "safety": "Consider creating a requirement with tags: [hazard, safety]",
+    "security": "Consider creating a requirement with tags: [security, threat-model]",
+    "functional": "Consider creating a requirement or detailed-design",
+    "process": "Consider creating a decision or story",
+}
+
+
+def suggest_remediation(clause: dict[str, Any]) -> str:
+    category = clause.get("category", "functional")
+    severity = clause.get("severity", "medium")
+    base = REMEDIATION_MAP.get(category, REMEDIATION_MAP["functional"])
+    if severity == "high":
+        base += " (high severity — prioritize)"
+    return base
+
+
+def _sort_uncovered(uncovered: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def _key(entry: dict[str, Any]) -> tuple:
+        sev = entry.get("severity", "medium")
+        pri = entry.get("priority", 999)
+        return (_SEVERITY_ORDER.get(sev, 1), pri)
+
+    return sorted(uncovered, key=_key)
+
 
 def _standards_dir(root: Path) -> Path:
     return root / ".specflow" / "standards"
@@ -124,15 +151,24 @@ def check_compliance(
             continue
         clause_title = clause.get("title", "")
         artifact_ids = targets_map.get(clause_id, [])
-        entry = {
+        entry: dict[str, Any] = {
             "clause_id": clause_id,
             "clause_title": clause_title,
+            "severity": clause.get("severity", "medium"),
+            "category": clause.get("category", "functional"),
+            "priority": clause.get("priority", 999),
         }
         if artifact_ids:
             entry["artifacts"] = sorted(artifact_ids)
             covered.append(entry)
         else:
+            entry["remediation"] = suggest_remediation(clause)
             uncovered.append(entry)
+
+    uncovered = _sort_uncovered(uncovered)
+
+    total = len(covered) + len(uncovered)
+    score = round(len(covered) / max(total, 1) * 100, 1)
 
     return {
         "ok": True,
@@ -142,4 +178,5 @@ def check_compliance(
         "total_clauses": len(clauses),
         "covered": covered,
         "uncovered": uncovered,
+        "score": score,
     }
