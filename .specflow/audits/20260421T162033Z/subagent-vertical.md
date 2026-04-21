@@ -1,0 +1,51 @@
+# Vertical Analysis Details
+
+- [warn] REQ-001: no ARCH refinement in V-model thread
+- [warn] STORY-002 (implements REQ-001): no test verification
+- [warn] STORY-007 (implements REQ-001): no test verification
+- [warn] STORY-008 (implements REQ-001): no test verification
+- [warn] STORY-010 (implements REQ-001): no test verification
+- [warn] REQ-002: no ARCH refinement in V-model thread
+- [warn] STORY-015 (implements REQ-002): no test verification
+- [warn] STORY-016 (implements REQ-002): no test verification
+- [warn] REQ-003: no ARCH refinement in V-model thread
+- [warn] STORY-001 (implements REQ-003): no test verification
+- [warn] STORY-002 (implements REQ-003): no test verification
+- [warn] STORY-003 (implements REQ-003): no test verification
+- [warn] STORY-004 (implements REQ-003): no test verification
+- [warn] STORY-005 (implements REQ-003): no test verification
+- [warn] REQ-004: no ARCH refinement in V-model thread
+- [warn] STORY-006 (implements REQ-004): no test verification
+- [warn] STORY-007 (implements REQ-004): no test verification
+- [warn] STORY-008 (implements REQ-004): no test verification
+- [warn] STORY-009 (implements REQ-004): no test verification
+- [warn] STORY-010 (implements REQ-004): no test verification
+- [warn] STORY-017 (implements REQ-004): no test verification
+- [warn] STORY-019 (implements REQ-004): no test verification
+- [warn] STORY-020 (implements REQ-004): no test verification
+- [warn] REQ-005: no ARCH refinement in V-model thread
+- [warn] STORY-011 (implements REQ-005): no test verification
+- [warn] STORY-012 (implements REQ-005): no test verification
+- [warn] STORY-013 (implements REQ-005): no test verification
+- [warn] STORY-014 (implements REQ-005): no test verification
+- [warn] STORY-018 (implements REQ-005): no test verification
+- [warn] REQ-006: no ARCH refinement in V-model thread
+- [warn] STORY-036 (implements REQ-006): no test verification
+- [warn] REQ-007: no ARCH refinement in V-model thread
+- [warn] STORY-037 (implements REQ-007): no test verification
+- [warn] REQ-008: no ARCH refinement in V-model thread
+- [warn] REQ-009: no ARCH refinement in V-model thread
+- [warn] REQ-010: no ARCH refinement in V-model thread
+- [warn] STORY-041 (implements REQ-010): no test verification
+- [warn] STORY-042 (implements REQ-010): no test verification
+- [warn] REQ-011: no ARCH refinement in V-model thread
+- [warn] REQ-012: no ARCH refinement in V-model thread
+- [warn] REQ-013: no ARCH refinement in V-model thread
+- [warn] STORY-045 (implements REQ-013): no test verification
+- [warn] REQ-014: no ARCH refinement in V-model thread
+- [warn] REQ-015: no ARCH refinement in V-model thread
+- [warn] STORY-046 (implements REQ-015): no test verification
+- [warn] REQ-016: no ARCH refinement in V-model thread
+- [warn] STORY-047 (implements REQ-016): no test verification
+- [warn] REQ-017: no ARCH refinement in V-model thread
+- [warn] STORY-048 (implements REQ-017): no test verification

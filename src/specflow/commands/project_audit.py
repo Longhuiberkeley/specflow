@@ -407,23 +407,19 @@ def _collect_all_findings(
 
 
 def _create_chl_artifacts(root: Path, findings: list[dict[str, str]], target_id: str) -> int:
-    # Load existing challenges to avoid duplicates across audit runs
     existing_challenges = art_lib.discover_artifacts(root, artifact_type="challenge")
-    seen_keys: set[str] = set()
+    seen_titles: set[str] = set()
     for chl in existing_challenges:
-        # Deduplicate by title + target link
-        link_targets = {lnk.target for lnk in chl.links}
-        seen_keys.add(f"{chl.title}:{','.join(sorted(link_targets))}")
+        seen_titles.add(chl.title)
 
     count = 0
     for f in findings:
         if f["severity"] == "info":
             continue
         title = f["message"][:100]
-        dedup_key = f"{title}:{target_id}"
-        if dedup_key in seen_keys:
+        if title in seen_titles:
             continue
-        seen_keys.add(dedup_key)
+        seen_titles.add(title)
         try:
             result = art_lib.create_artifact(
                 root,

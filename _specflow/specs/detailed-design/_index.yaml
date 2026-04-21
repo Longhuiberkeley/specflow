@@ -39,4 +39,15 @@ artifacts:
     status: implemented
     tags: []
     title: Audit Engine
-next_id: 6
+  DDD-006:
+    id: DDD-006
+    title: Pack Extraction Protocol
+    status: implemented
+    tags:
+    - packs
+    - extraction
+    - quality
+    - skills
+    fingerprint: sha256:e3b0c44298fc
+    children: []
+next_id: 7

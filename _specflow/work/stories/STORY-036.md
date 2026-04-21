@@ -12,6 +12,8 @@ suspect: false
 links:
 - target: REQ-006
   role: implements
+- target: ARCH-006
+  role: guided_by
 created: '2026-04-20'
 modified: '2026-04-21'
 fingerprint: sha256:6a7a4f1483c8

@@ -14,6 +14,8 @@ links:
   role: implements
 - target: ARCH-001
   role: guided_by
+- target: IT-001
+  role: verified_by
 created: '2026-04-21'
 modified: '2026-04-21'
 fingerprint: sha256:d87a2091f072

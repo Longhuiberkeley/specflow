@@ -39,4 +39,15 @@ artifacts:
     status: implemented
     tags: []
     title: Audit & Review Engine
-next_id: 6
+  ARCH-006:
+    id: ARCH-006
+    title: Pack-Author Pipeline
+    status: implemented
+    tags:
+    - packs
+    - skills
+    - standards
+    - quality
+    fingerprint: sha256:e3b0c44298fc
+    children: []
+next_id: 7

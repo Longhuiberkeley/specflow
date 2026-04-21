@@ -12,6 +12,8 @@ suspect: false
 links:
 - target: REQ-008
   role: implements
+- target: ARCH-001
+  role: guided_by
 - target: UT-002
   role: verified_by
 created: '2026-04-20'

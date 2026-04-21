@@ -415,4 +415,34 @@ artifacts:
     - vmodel
     - scaffolding
     title: Add specflow generate-tests command and update execute skill
-next_id: 46
+  STORY-046:
+    fingerprint: ''
+    id: STORY-046
+    status: draft
+    tags:
+    - compliance
+    - reports
+    - shipping
+    - evidence
+    title: Add compliance evidence report to specflow ship
+  STORY-047:
+    fingerprint: ''
+    id: STORY-047
+    status: draft
+    tags:
+    - standards
+    - compliance
+    - gap-analysis
+    - json
+    title: Enhance standards gap analysis with scoring, remediation, and JSON output
+  STORY-048:
+    fingerprint: ''
+    id: STORY-048
+    status: draft
+    tags:
+    - artifact-types
+    - init
+    - packs
+    - flexibility
+    title: Add optional artifact type schemas and init integration
+next_id: 49

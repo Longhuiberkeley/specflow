@@ -1,1447 +1,437 @@
 artifacts:
   CHL-001:
-    fingerprint: sha256:2af47150b370
     id: CHL-001
+    title: Error executing devils_advocate
     status: stale
     tags: []
-    title: Error executing devils_advocate
+    fingerprint: sha256:2af47150b370
+    children: []
   CHL-002:
-    fingerprint: sha256:6051b60b3a10
     id: CHL-002
+    title: 'REQ-001: no ARCH refinement in V-model thread'
     status: open
     tags: []
-    title: 'REQ-001: no ARCH refinement in V-model thread'
+    fingerprint: sha256:6051b60b3a10
+    children: []
   CHL-003:
-    fingerprint: sha256:dd0e04f9e5a1
     id: CHL-003
+    title: 'STORY-002 (implements REQ-001): no test verification'
     status: open
     tags: []
-    title: 'STORY-002 (implements REQ-001): no test verification'
+    fingerprint: sha256:dd0e04f9e5a1
+    children: []
   CHL-004:
-    fingerprint: sha256:4a0b724f18b3
     id: CHL-004
+    title: 'STORY-007 (implements REQ-001): no test verification'
     status: open
     tags: []
-    title: 'STORY-007 (implements REQ-001): no test verification'
+    fingerprint: sha256:4a0b724f18b3
+    children: []
   CHL-005:
-    fingerprint: sha256:9aa506eec93b
     id: CHL-005
+    title: 'STORY-008 (implements REQ-001): no test verification'
     status: open
     tags: []
-    title: 'STORY-008 (implements REQ-001): no test verification'
+    fingerprint: sha256:9aa506eec93b
+    children: []
   CHL-006:
-    fingerprint: sha256:338190c4657b
     id: CHL-006
+    title: 'STORY-010 (implements REQ-001): no test verification'
     status: open
     tags: []
-    title: 'STORY-010 (implements REQ-001): no test verification'
+    fingerprint: sha256:338190c4657b
+    children: []
   CHL-007:
-    fingerprint: sha256:77b9ae8783d0
     id: CHL-007
+    title: 'REQ-002: no ARCH refinement in V-model thread'
     status: open
     tags: []
-    title: 'REQ-002: no ARCH refinement in V-model thread'
+    fingerprint: sha256:77b9ae8783d0
+    children: []
   CHL-008:
-    fingerprint: sha256:ee154853373a
     id: CHL-008
+    title: 'STORY-015 (implements REQ-002): no test verification'
     status: open
     tags: []
-    title: 'STORY-015 (implements REQ-002): no test verification'
+    fingerprint: sha256:ee154853373a
+    children: []
   CHL-009:
-    fingerprint: sha256:b1e7d3b55e12
     id: CHL-009
+    title: 'STORY-016 (implements REQ-002): no test verification'
     status: open
     tags: []
-    title: 'STORY-016 (implements REQ-002): no test verification'
+    fingerprint: sha256:b1e7d3b55e12
+    children: []
   CHL-010:
-    fingerprint: sha256:d7b24991d978
     id: CHL-010
+    title: 'REQ-003: no ARCH refinement in V-model thread'
     status: open
     tags: []
-    title: 'REQ-003: no ARCH refinement in V-model thread'
+    fingerprint: sha256:d7b24991d978
+    children: []
   CHL-011:
-    fingerprint: sha256:7e968b4c4053
     id: CHL-011
+    title: 'STORY-001 (implements REQ-003): no test verification'
     status: open
     tags: []
-    title: 'STORY-001 (implements REQ-003): no test verification'
+    fingerprint: sha256:7e968b4c4053
+    children: []
   CHL-012:
-    fingerprint: sha256:49c399518533
     id: CHL-012
+    title: 'STORY-002 (implements REQ-003): no test verification'
     status: open
     tags: []
-    title: 'STORY-002 (implements REQ-003): no test verification'
+    fingerprint: sha256:49c399518533
+    children: []
   CHL-013:
-    fingerprint: sha256:f8f3ded7e5fb
     id: CHL-013
+    title: 'STORY-003 (implements REQ-003): no test verification'
     status: open
     tags: []
-    title: 'STORY-003 (implements REQ-003): no test verification'
+    fingerprint: sha256:f8f3ded7e5fb
+    children: []
   CHL-014:
-    fingerprint: sha256:67269d8bca34
     id: CHL-014
+    title: 'STORY-004 (implements REQ-003): no test verification'
     status: open
     tags: []
-    title: 'STORY-004 (implements REQ-003): no test verification'
+    fingerprint: sha256:67269d8bca34
+    children: []
   CHL-015:
-    fingerprint: sha256:ef8715326f03
     id: CHL-015
+    title: 'STORY-005 (implements REQ-003): no test verification'
     status: open
     tags: []
-    title: 'STORY-005 (implements REQ-003): no test verification'
+    fingerprint: sha256:ef8715326f03
+    children: []
   CHL-016:
-    fingerprint: sha256:7c4f313bb87b
     id: CHL-016
+    title: 'REQ-004: no ARCH refinement in V-model thread'
     status: open
     tags: []
-    title: 'REQ-004: no ARCH refinement in V-model thread'
+    fingerprint: sha256:7c4f313bb87b
+    children: []
   CHL-017:
-    fingerprint: sha256:e5d79ee91d9a
     id: CHL-017
+    title: 'STORY-006 (implements REQ-004): no test verification'
     status: open
     tags: []
-    title: 'STORY-006 (implements REQ-004): no test verification'
+    fingerprint: sha256:e5d79ee91d9a
+    children: []
   CHL-018:
-    fingerprint: sha256:3113831d9cd6
     id: CHL-018
+    title: 'STORY-007 (implements REQ-004): no test verification'
     status: open
     tags: []
-    title: 'STORY-007 (implements REQ-004): no test verification'
+    fingerprint: sha256:3113831d9cd6
+    children: []
   CHL-019:
-    fingerprint: sha256:d1c514dd0f2f
     id: CHL-019
+    title: 'STORY-008 (implements REQ-004): no test verification'
     status: open
     tags: []
-    title: 'STORY-008 (implements REQ-004): no test verification'
+    fingerprint: sha256:d1c514dd0f2f
+    children: []
   CHL-020:
-    fingerprint: sha256:67203d2566ec
     id: CHL-020
+    title: 'STORY-009 (implements REQ-004): no test verification'
     status: open
     tags: []
-    title: 'STORY-009 (implements REQ-004): no test verification'
+    fingerprint: sha256:67203d2566ec
+    children: []
   CHL-021:
-    fingerprint: sha256:45f1a7f996fe
     id: CHL-021
+    title: 'STORY-010 (implements REQ-004): no test verification'
     status: open
     tags: []
-    title: 'STORY-010 (implements REQ-004): no test verification'
+    fingerprint: sha256:45f1a7f996fe
+    children: []
   CHL-022:
-    fingerprint: sha256:fc4b8a64c027
     id: CHL-022
+    title: 'STORY-017 (implements REQ-004): no test verification'
     status: open
     tags: []
-    title: 'STORY-017 (implements REQ-004): no test verification'
+    fingerprint: sha256:fc4b8a64c027
+    children: []
   CHL-023:
-    fingerprint: sha256:8cc35a0d5ddf
     id: CHL-023
+    title: 'STORY-019 (implements REQ-004): no test verification'
     status: open
     tags: []
-    title: 'STORY-019 (implements REQ-004): no test verification'
+    fingerprint: sha256:8cc35a0d5ddf
+    children: []
   CHL-024:
-    fingerprint: sha256:458e569870fe
     id: CHL-024
+    title: 'STORY-020 (implements REQ-004): no test verification'
     status: open
     tags: []
-    title: 'STORY-020 (implements REQ-004): no test verification'
+    fingerprint: sha256:458e569870fe
+    children: []
   CHL-025:
-    fingerprint: sha256:52c60547ff58
     id: CHL-025
+    title: 'REQ-005: no ARCH refinement in V-model thread'
     status: open
     tags: []
-    title: 'REQ-005: no ARCH refinement in V-model thread'
+    fingerprint: sha256:52c60547ff58
+    children: []
   CHL-026:
-    fingerprint: sha256:ab3aa3dae08f
     id: CHL-026
+    title: 'STORY-011 (implements REQ-005): no test verification'
     status: open
     tags: []
-    title: 'STORY-011 (implements REQ-005): no test verification'
+    fingerprint: sha256:ab3aa3dae08f
+    children: []
   CHL-027:
-    fingerprint: sha256:96af5d7f8157
     id: CHL-027
+    title: 'STORY-012 (implements REQ-005): no test verification'
     status: open
     tags: []
-    title: 'STORY-012 (implements REQ-005): no test verification'
+    fingerprint: sha256:96af5d7f8157
+    children: []
   CHL-028:
-    fingerprint: sha256:d9d76e5969af
     id: CHL-028
+    title: 'STORY-013 (implements REQ-005): no test verification'
     status: open
     tags: []
-    title: 'STORY-013 (implements REQ-005): no test verification'
+    fingerprint: sha256:d9d76e5969af
+    children: []
   CHL-029:
-    fingerprint: sha256:74ec2564ea89
     id: CHL-029
+    title: 'STORY-014 (implements REQ-005): no test verification'
     status: open
     tags: []
-    title: 'STORY-014 (implements REQ-005): no test verification'
+    fingerprint: sha256:74ec2564ea89
+    children: []
   CHL-030:
-    fingerprint: sha256:58409b50b607
     id: CHL-030
+    title: 'STORY-018 (implements REQ-005): no test verification'
     status: open
     tags: []
-    title: 'STORY-018 (implements REQ-005): no test verification'
+    fingerprint: sha256:58409b50b607
+    children: []
   CHL-031:
-    fingerprint: sha256:40c253f91dad
     id: CHL-031
-    status: open
-    tags: []
     title: "72 coverage gap(s):   \u26A0 [STORY-002] no UT linked via 'verified_by'\
       \ (covers REQ REQ-001);   \u26A0 [STORY-"
+    status: open
+    tags: []
+    fingerprint: sha256:40c253f91dad
+    children: []
   CHL-032:
-    fingerprint: sha256:816cc3e9e653
     id: CHL-032
+    title: 5/5 REQs have no non_functional_category
     status: open
     tags: []
-    title: 5/5 REQs have no non_functional_category
+    fingerprint: sha256:816cc3e9e653
+    children: []
   CHL-033:
-    fingerprint: sha256:8e28b6f3224b
     id: CHL-033
-    status: open
-    tags: []
     title: 1 schema issue(s)
-  CHL-034:
-    fingerprint: sha256:6051b60b3a10
-    id: CHL-034
     status: open
     tags: []
-    title: 'REQ-001: no ARCH refinement in V-model thread'
-  CHL-035:
-    fingerprint: sha256:dd0e04f9e5a1
-    id: CHL-035
-    status: open
-    tags: []
-    title: 'STORY-002 (implements REQ-001): no test verification'
-  CHL-036:
-    fingerprint: sha256:4a0b724f18b3
-    id: CHL-036
-    status: open
-    tags: []
-    title: 'STORY-007 (implements REQ-001): no test verification'
-  CHL-037:
-    fingerprint: sha256:9aa506eec93b
-    id: CHL-037
-    status: open
-    tags: []
-    title: 'STORY-008 (implements REQ-001): no test verification'
-  CHL-038:
-    fingerprint: sha256:338190c4657b
-    id: CHL-038
-    status: open
-    tags: []
-    title: 'STORY-010 (implements REQ-001): no test verification'
-  CHL-039:
-    fingerprint: sha256:77b9ae8783d0
-    id: CHL-039
-    status: open
-    tags: []
-    title: 'REQ-002: no ARCH refinement in V-model thread'
-  CHL-040:
-    fingerprint: sha256:ee154853373a
-    id: CHL-040
-    status: open
-    tags: []
-    title: 'STORY-015 (implements REQ-002): no test verification'
-  CHL-041:
-    fingerprint: sha256:b1e7d3b55e12
-    id: CHL-041
-    status: open
-    tags: []
-    title: 'STORY-016 (implements REQ-002): no test verification'
-  CHL-042:
-    fingerprint: sha256:d7b24991d978
-    id: CHL-042
-    status: open
-    tags: []
-    title: 'REQ-003: no ARCH refinement in V-model thread'
-  CHL-043:
-    fingerprint: sha256:7e968b4c4053
-    id: CHL-043
-    status: open
-    tags: []
-    title: 'STORY-001 (implements REQ-003): no test verification'
-  CHL-044:
-    fingerprint: sha256:49c399518533
-    id: CHL-044
-    status: open
-    tags: []
-    title: 'STORY-002 (implements REQ-003): no test verification'
-  CHL-045:
-    fingerprint: sha256:f8f3ded7e5fb
-    id: CHL-045
-    status: open
-    tags: []
-    title: 'STORY-003 (implements REQ-003): no test verification'
-  CHL-046:
-    fingerprint: sha256:67269d8bca34
-    id: CHL-046
-    status: open
-    tags: []
-    title: 'STORY-004 (implements REQ-003): no test verification'
-  CHL-047:
-    fingerprint: sha256:ef8715326f03
-    id: CHL-047
-    status: open
-    tags: []
-    title: 'STORY-005 (implements REQ-003): no test verification'
-  CHL-048:
-    fingerprint: sha256:7c4f313bb87b
-    id: CHL-048
-    status: open
-    tags: []
-    title: 'REQ-004: no ARCH refinement in V-model thread'
-  CHL-049:
-    fingerprint: sha256:e5d79ee91d9a
-    id: CHL-049
-    status: open
-    tags: []
-    title: 'STORY-006 (implements REQ-004): no test verification'
-  CHL-050:
-    fingerprint: sha256:3113831d9cd6
-    id: CHL-050
-    status: open
-    tags: []
-    title: 'STORY-007 (implements REQ-004): no test verification'
-  CHL-051:
-    fingerprint: sha256:d1c514dd0f2f
-    id: CHL-051
-    status: open
-    tags: []
-    title: 'STORY-008 (implements REQ-004): no test verification'
-  CHL-052:
-    fingerprint: sha256:67203d2566ec
-    id: CHL-052
-    status: open
-    tags: []
-    title: 'STORY-009 (implements REQ-004): no test verification'
-  CHL-053:
-    fingerprint: sha256:45f1a7f996fe
-    id: CHL-053
-    status: open
-    tags: []
-    title: 'STORY-010 (implements REQ-004): no test verification'
-  CHL-054:
-    fingerprint: sha256:fc4b8a64c027
-    id: CHL-054
-    status: open
-    tags: []
-    title: 'STORY-017 (implements REQ-004): no test verification'
-  CHL-055:
-    fingerprint: sha256:8cc35a0d5ddf
-    id: CHL-055
-    status: open
-    tags: []
-    title: 'STORY-019 (implements REQ-004): no test verification'
-  CHL-056:
-    fingerprint: sha256:458e569870fe
-    id: CHL-056
-    status: open
-    tags: []
-    title: 'STORY-020 (implements REQ-004): no test verification'
-  CHL-057:
-    fingerprint: sha256:52c60547ff58
-    id: CHL-057
-    status: open
-    tags: []
-    title: 'REQ-005: no ARCH refinement in V-model thread'
-  CHL-058:
-    fingerprint: sha256:ab3aa3dae08f
-    id: CHL-058
-    status: open
-    tags: []
-    title: 'STORY-011 (implements REQ-005): no test verification'
-  CHL-059:
-    fingerprint: sha256:96af5d7f8157
-    id: CHL-059
-    status: open
-    tags: []
-    title: 'STORY-012 (implements REQ-005): no test verification'
-  CHL-060:
-    fingerprint: sha256:d9d76e5969af
-    id: CHL-060
-    status: open
-    tags: []
-    title: 'STORY-013 (implements REQ-005): no test verification'
-  CHL-061:
-    fingerprint: sha256:74ec2564ea89
-    id: CHL-061
-    status: open
-    tags: []
-    title: 'STORY-014 (implements REQ-005): no test verification'
-  CHL-062:
-    fingerprint: sha256:58409b50b607
-    id: CHL-062
-    status: open
-    tags: []
-    title: 'STORY-018 (implements REQ-005): no test verification'
-  CHL-063:
-    fingerprint: sha256:40c253f91dad
-    id: CHL-063
-    status: open
-    tags: []
-    title: "72 coverage gap(s):   \u26A0 [STORY-002] no UT linked via 'verified_by'\
-      \ (covers REQ REQ-001);   \u26A0 [STORY-"
-  CHL-064:
-    fingerprint: sha256:816cc3e9e653
-    id: CHL-064
-    status: open
-    tags: []
-    title: 5/5 REQs have no non_functional_category
-  CHL-065:
-    fingerprint: sha256:6051b60b3a10
-    id: CHL-065
-    status: open
-    tags: []
-    title: 'REQ-001: no ARCH refinement in V-model thread'
-  CHL-066:
-    fingerprint: sha256:dd0e04f9e5a1
-    id: CHL-066
-    status: open
-    tags: []
-    title: 'STORY-002 (implements REQ-001): no test verification'
-  CHL-067:
-    fingerprint: sha256:4a0b724f18b3
-    id: CHL-067
-    status: open
-    tags: []
-    title: 'STORY-007 (implements REQ-001): no test verification'
-  CHL-068:
-    fingerprint: sha256:9aa506eec93b
-    id: CHL-068
-    status: open
-    tags: []
-    title: 'STORY-008 (implements REQ-001): no test verification'
-  CHL-069:
-    fingerprint: sha256:338190c4657b
-    id: CHL-069
-    status: open
-    tags: []
-    title: 'STORY-010 (implements REQ-001): no test verification'
-  CHL-070:
-    fingerprint: sha256:77b9ae8783d0
-    id: CHL-070
-    status: open
-    tags: []
-    title: 'REQ-002: no ARCH refinement in V-model thread'
-  CHL-071:
-    fingerprint: sha256:ee154853373a
-    id: CHL-071
-    status: open
-    tags: []
-    title: 'STORY-015 (implements REQ-002): no test verification'
-  CHL-072:
-    fingerprint: sha256:b1e7d3b55e12
-    id: CHL-072
-    status: open
-    tags: []
-    title: 'STORY-016 (implements REQ-002): no test verification'
-  CHL-073:
-    fingerprint: sha256:d7b24991d978
-    id: CHL-073
-    status: open
-    tags: []
-    title: 'REQ-003: no ARCH refinement in V-model thread'
-  CHL-074:
-    fingerprint: sha256:7e968b4c4053
-    id: CHL-074
-    status: open
-    tags: []
-    title: 'STORY-001 (implements REQ-003): no test verification'
-  CHL-075:
-    fingerprint: sha256:49c399518533
-    id: CHL-075
-    status: open
-    tags: []
-    title: 'STORY-002 (implements REQ-003): no test verification'
-  CHL-076:
-    fingerprint: sha256:f8f3ded7e5fb
-    id: CHL-076
-    status: open
-    tags: []
-    title: 'STORY-003 (implements REQ-003): no test verification'
-  CHL-077:
-    fingerprint: sha256:67269d8bca34
-    id: CHL-077
-    status: open
-    tags: []
-    title: 'STORY-004 (implements REQ-003): no test verification'
-  CHL-078:
-    fingerprint: sha256:ef8715326f03
-    id: CHL-078
-    status: open
-    tags: []
-    title: 'STORY-005 (implements REQ-003): no test verification'
-  CHL-079:
-    fingerprint: sha256:7c4f313bb87b
-    id: CHL-079
-    status: open
-    tags: []
-    title: 'REQ-004: no ARCH refinement in V-model thread'
-  CHL-080:
-    fingerprint: sha256:e5d79ee91d9a
-    id: CHL-080
-    status: open
-    tags: []
-    title: 'STORY-006 (implements REQ-004): no test verification'
-  CHL-081:
-    fingerprint: sha256:3113831d9cd6
-    id: CHL-081
-    status: open
-    tags: []
-    title: 'STORY-007 (implements REQ-004): no test verification'
-  CHL-082:
-    fingerprint: sha256:d1c514dd0f2f
-    id: CHL-082
-    status: open
-    tags: []
-    title: 'STORY-008 (implements REQ-004): no test verification'
-  CHL-083:
-    fingerprint: sha256:67203d2566ec
-    id: CHL-083
-    status: open
-    tags: []
-    title: 'STORY-009 (implements REQ-004): no test verification'
-  CHL-084:
-    fingerprint: sha256:45f1a7f996fe
-    id: CHL-084
-    status: open
-    tags: []
-    title: 'STORY-010 (implements REQ-004): no test verification'
-  CHL-085:
-    fingerprint: sha256:fc4b8a64c027
-    id: CHL-085
-    status: open
-    tags: []
-    title: 'STORY-017 (implements REQ-004): no test verification'
-  CHL-086:
-    fingerprint: sha256:8cc35a0d5ddf
-    id: CHL-086
-    status: open
-    tags: []
-    title: 'STORY-019 (implements REQ-004): no test verification'
-  CHL-087:
-    fingerprint: sha256:458e569870fe
-    id: CHL-087
-    status: open
-    tags: []
-    title: 'STORY-020 (implements REQ-004): no test verification'
-  CHL-088:
-    fingerprint: sha256:52c60547ff58
-    id: CHL-088
-    status: open
-    tags: []
-    title: 'REQ-005: no ARCH refinement in V-model thread'
-  CHL-089:
-    fingerprint: sha256:ab3aa3dae08f
-    id: CHL-089
-    status: open
-    tags: []
-    title: 'STORY-011 (implements REQ-005): no test verification'
-  CHL-090:
-    fingerprint: sha256:96af5d7f8157
-    id: CHL-090
-    status: open
-    tags: []
-    title: 'STORY-012 (implements REQ-005): no test verification'
-  CHL-091:
-    fingerprint: sha256:d9d76e5969af
-    id: CHL-091
-    status: open
-    tags: []
-    title: 'STORY-013 (implements REQ-005): no test verification'
-  CHL-092:
-    fingerprint: sha256:74ec2564ea89
-    id: CHL-092
-    status: open
-    tags: []
-    title: 'STORY-014 (implements REQ-005): no test verification'
-  CHL-093:
-    fingerprint: sha256:58409b50b607
-    id: CHL-093
-    status: open
-    tags: []
-    title: 'STORY-018 (implements REQ-005): no test verification'
-  CHL-094:
-    fingerprint: sha256:40c253f91dad
-    id: CHL-094
-    status: open
-    tags: []
-    title: "72 coverage gap(s):   \u26A0 [STORY-002] no UT linked via 'verified_by'\
-      \ (covers REQ REQ-001);   \u26A0 [STORY-"
-  CHL-095:
-    fingerprint: sha256:816cc3e9e653
-    id: CHL-095
-    status: open
-    tags: []
-    title: 5/5 REQs have no non_functional_category
-  CHL-096:
     fingerprint: sha256:8e28b6f3224b
-    id: CHL-096
-    status: open
-    tags: []
-    title: 1 schema issue(s)
-  CHL-097:
-    fingerprint: sha256:6051b60b3a10
-    id: CHL-097
-    status: open
-    tags: []
-    title: 'REQ-001: no ARCH refinement in V-model thread'
-  CHL-098:
-    fingerprint: sha256:dd0e04f9e5a1
-    id: CHL-098
-    status: open
-    tags: []
-    title: 'STORY-002 (implements REQ-001): no test verification'
-  CHL-099:
-    fingerprint: sha256:4a0b724f18b3
-    id: CHL-099
-    status: open
-    tags: []
-    title: 'STORY-007 (implements REQ-001): no test verification'
-  CHL-100:
-    fingerprint: sha256:9aa506eec93b
-    id: CHL-100
-    status: open
-    tags: []
-    title: 'STORY-008 (implements REQ-001): no test verification'
-  CHL-101:
-    fingerprint: sha256:338190c4657b
-    id: CHL-101
-    status: open
-    tags: []
-    title: 'STORY-010 (implements REQ-001): no test verification'
-  CHL-102:
-    fingerprint: sha256:77b9ae8783d0
-    id: CHL-102
-    status: open
-    tags: []
-    title: 'REQ-002: no ARCH refinement in V-model thread'
-  CHL-103:
-    fingerprint: sha256:ee154853373a
-    id: CHL-103
-    status: open
-    tags: []
-    title: 'STORY-015 (implements REQ-002): no test verification'
-  CHL-104:
-    fingerprint: sha256:b1e7d3b55e12
-    id: CHL-104
-    status: open
-    tags: []
-    title: 'STORY-016 (implements REQ-002): no test verification'
-  CHL-105:
-    fingerprint: sha256:d7b24991d978
-    id: CHL-105
-    status: open
-    tags: []
-    title: 'REQ-003: no ARCH refinement in V-model thread'
-  CHL-106:
-    fingerprint: sha256:7e968b4c4053
-    id: CHL-106
-    status: open
-    tags: []
-    title: 'STORY-001 (implements REQ-003): no test verification'
-  CHL-107:
-    fingerprint: sha256:49c399518533
-    id: CHL-107
-    status: open
-    tags: []
-    title: 'STORY-002 (implements REQ-003): no test verification'
-  CHL-108:
-    fingerprint: sha256:f8f3ded7e5fb
-    id: CHL-108
-    status: open
-    tags: []
-    title: 'STORY-003 (implements REQ-003): no test verification'
-  CHL-109:
-    fingerprint: sha256:67269d8bca34
-    id: CHL-109
-    status: open
-    tags: []
-    title: 'STORY-004 (implements REQ-003): no test verification'
-  CHL-110:
-    fingerprint: sha256:ef8715326f03
-    id: CHL-110
-    status: open
-    tags: []
-    title: 'STORY-005 (implements REQ-003): no test verification'
-  CHL-111:
-    fingerprint: sha256:7c4f313bb87b
-    id: CHL-111
-    status: open
-    tags: []
-    title: 'REQ-004: no ARCH refinement in V-model thread'
-  CHL-112:
-    fingerprint: sha256:e5d79ee91d9a
-    id: CHL-112
-    status: open
-    tags: []
-    title: 'STORY-006 (implements REQ-004): no test verification'
-  CHL-113:
-    fingerprint: sha256:3113831d9cd6
-    id: CHL-113
-    status: open
-    tags: []
-    title: 'STORY-007 (implements REQ-004): no test verification'
-  CHL-114:
-    fingerprint: sha256:d1c514dd0f2f
-    id: CHL-114
-    status: open
-    tags: []
-    title: 'STORY-008 (implements REQ-004): no test verification'
-  CHL-115:
-    fingerprint: sha256:67203d2566ec
-    id: CHL-115
-    status: open
-    tags: []
-    title: 'STORY-009 (implements REQ-004): no test verification'
-  CHL-116:
-    fingerprint: sha256:45f1a7f996fe
-    id: CHL-116
-    status: open
-    tags: []
-    title: 'STORY-010 (implements REQ-004): no test verification'
-  CHL-117:
-    fingerprint: sha256:fc4b8a64c027
-    id: CHL-117
-    status: open
-    tags: []
-    title: 'STORY-017 (implements REQ-004): no test verification'
-  CHL-118:
-    fingerprint: sha256:8cc35a0d5ddf
-    id: CHL-118
-    status: open
-    tags: []
-    title: 'STORY-019 (implements REQ-004): no test verification'
-  CHL-119:
-    fingerprint: sha256:458e569870fe
-    id: CHL-119
-    status: open
-    tags: []
-    title: 'STORY-020 (implements REQ-004): no test verification'
-  CHL-120:
-    fingerprint: sha256:52c60547ff58
-    id: CHL-120
-    status: open
-    tags: []
-    title: 'REQ-005: no ARCH refinement in V-model thread'
-  CHL-121:
-    fingerprint: sha256:ab3aa3dae08f
-    id: CHL-121
-    status: open
-    tags: []
-    title: 'STORY-011 (implements REQ-005): no test verification'
-  CHL-122:
-    fingerprint: sha256:96af5d7f8157
-    id: CHL-122
-    status: open
-    tags: []
-    title: 'STORY-012 (implements REQ-005): no test verification'
-  CHL-123:
-    fingerprint: sha256:d9d76e5969af
-    id: CHL-123
-    status: open
-    tags: []
-    title: 'STORY-013 (implements REQ-005): no test verification'
-  CHL-124:
-    fingerprint: sha256:74ec2564ea89
-    id: CHL-124
-    status: open
-    tags: []
-    title: 'STORY-014 (implements REQ-005): no test verification'
-  CHL-125:
-    fingerprint: sha256:58409b50b607
-    id: CHL-125
-    status: open
-    tags: []
-    title: 'STORY-018 (implements REQ-005): no test verification'
-  CHL-126:
-    fingerprint: sha256:40c253f91dad
-    id: CHL-126
-    status: open
-    tags: []
-    title: "72 coverage gap(s):   \u26A0 [STORY-002] no UT linked via 'verified_by'\
-      \ (covers REQ REQ-001);   \u26A0 [STORY-"
-  CHL-127:
-    fingerprint: sha256:816cc3e9e653
-    id: CHL-127
-    status: open
-    tags: []
-    title: 5/5 REQs have no non_functional_category
+    children: []
   CHL-128:
-    fingerprint: sha256:0a1708424c44
     id: CHL-128
-    status: open
-    tags: []
     title: 2 schema issue(s)
-  CHL-129:
-    fingerprint: sha256:6051b60b3a10
-    id: CHL-129
     status: open
     tags: []
-    title: 'REQ-001: no ARCH refinement in V-model thread'
-  CHL-130:
-    fingerprint: sha256:dd0e04f9e5a1
-    id: CHL-130
-    status: open
-    tags: []
-    title: 'STORY-002 (implements REQ-001): no test verification'
-  CHL-131:
-    fingerprint: sha256:4a0b724f18b3
-    id: CHL-131
-    status: open
-    tags: []
-    title: 'STORY-007 (implements REQ-001): no test verification'
-  CHL-132:
-    fingerprint: sha256:9aa506eec93b
-    id: CHL-132
-    status: open
-    tags: []
-    title: 'STORY-008 (implements REQ-001): no test verification'
-  CHL-133:
-    fingerprint: sha256:338190c4657b
-    id: CHL-133
-    status: open
-    tags: []
-    title: 'STORY-010 (implements REQ-001): no test verification'
-  CHL-134:
-    fingerprint: sha256:77b9ae8783d0
-    id: CHL-134
-    status: open
-    tags: []
-    title: 'REQ-002: no ARCH refinement in V-model thread'
-  CHL-135:
-    fingerprint: sha256:ee154853373a
-    id: CHL-135
-    status: open
-    tags: []
-    title: 'STORY-015 (implements REQ-002): no test verification'
-  CHL-136:
-    fingerprint: sha256:b1e7d3b55e12
-    id: CHL-136
-    status: open
-    tags: []
-    title: 'STORY-016 (implements REQ-002): no test verification'
-  CHL-137:
-    fingerprint: sha256:d7b24991d978
-    id: CHL-137
-    status: open
-    tags: []
-    title: 'REQ-003: no ARCH refinement in V-model thread'
-  CHL-138:
-    fingerprint: sha256:7e968b4c4053
-    id: CHL-138
-    status: open
-    tags: []
-    title: 'STORY-001 (implements REQ-003): no test verification'
-  CHL-139:
-    fingerprint: sha256:49c399518533
-    id: CHL-139
-    status: open
-    tags: []
-    title: 'STORY-002 (implements REQ-003): no test verification'
-  CHL-140:
-    fingerprint: sha256:f8f3ded7e5fb
-    id: CHL-140
-    status: open
-    tags: []
-    title: 'STORY-003 (implements REQ-003): no test verification'
-  CHL-141:
-    fingerprint: sha256:67269d8bca34
-    id: CHL-141
-    status: open
-    tags: []
-    title: 'STORY-004 (implements REQ-003): no test verification'
-  CHL-142:
-    fingerprint: sha256:ef8715326f03
-    id: CHL-142
-    status: open
-    tags: []
-    title: 'STORY-005 (implements REQ-003): no test verification'
-  CHL-143:
-    fingerprint: sha256:7c4f313bb87b
-    id: CHL-143
-    status: open
-    tags: []
-    title: 'REQ-004: no ARCH refinement in V-model thread'
-  CHL-144:
-    fingerprint: sha256:e5d79ee91d9a
-    id: CHL-144
-    status: open
-    tags: []
-    title: 'STORY-006 (implements REQ-004): no test verification'
-  CHL-145:
-    fingerprint: sha256:3113831d9cd6
-    id: CHL-145
-    status: open
-    tags: []
-    title: 'STORY-007 (implements REQ-004): no test verification'
-  CHL-146:
-    fingerprint: sha256:d1c514dd0f2f
-    id: CHL-146
-    status: open
-    tags: []
-    title: 'STORY-008 (implements REQ-004): no test verification'
-  CHL-147:
-    fingerprint: sha256:67203d2566ec
-    id: CHL-147
-    status: open
-    tags: []
-    title: 'STORY-009 (implements REQ-004): no test verification'
-  CHL-148:
-    fingerprint: sha256:45f1a7f996fe
-    id: CHL-148
-    status: open
-    tags: []
-    title: 'STORY-010 (implements REQ-004): no test verification'
-  CHL-149:
-    fingerprint: sha256:fc4b8a64c027
-    id: CHL-149
-    status: open
-    tags: []
-    title: 'STORY-017 (implements REQ-004): no test verification'
-  CHL-150:
-    fingerprint: sha256:8cc35a0d5ddf
-    id: CHL-150
-    status: open
-    tags: []
-    title: 'STORY-019 (implements REQ-004): no test verification'
-  CHL-151:
-    fingerprint: sha256:458e569870fe
-    id: CHL-151
-    status: open
-    tags: []
-    title: 'STORY-020 (implements REQ-004): no test verification'
-  CHL-152:
-    fingerprint: sha256:52c60547ff58
-    id: CHL-152
-    status: open
-    tags: []
-    title: 'REQ-005: no ARCH refinement in V-model thread'
-  CHL-153:
-    fingerprint: sha256:ab3aa3dae08f
-    id: CHL-153
-    status: open
-    tags: []
-    title: 'STORY-011 (implements REQ-005): no test verification'
-  CHL-154:
-    fingerprint: sha256:96af5d7f8157
-    id: CHL-154
-    status: open
-    tags: []
-    title: 'STORY-012 (implements REQ-005): no test verification'
-  CHL-155:
-    fingerprint: sha256:d9d76e5969af
-    id: CHL-155
-    status: open
-    tags: []
-    title: 'STORY-013 (implements REQ-005): no test verification'
-  CHL-156:
-    fingerprint: sha256:74ec2564ea89
-    id: CHL-156
-    status: open
-    tags: []
-    title: 'STORY-014 (implements REQ-005): no test verification'
-  CHL-157:
-    fingerprint: sha256:58409b50b607
-    id: CHL-157
-    status: open
-    tags: []
-    title: 'STORY-018 (implements REQ-005): no test verification'
-  CHL-158:
-    fingerprint: sha256:40c253f91dad
-    id: CHL-158
-    status: open
-    tags: []
-    title: "72 coverage gap(s):   \u26A0 [STORY-002] no UT linked via 'verified_by'\
-      \ (covers REQ REQ-001);   \u26A0 [STORY-"
-  CHL-159:
-    fingerprint: sha256:816cc3e9e653
-    id: CHL-159
-    status: open
-    tags: []
-    title: 5/5 REQs have no non_functional_category
+    fingerprint: sha256:0a1708424c44
+    children: []
   CHL-160:
-    fingerprint: sha256:2688ffa86b35
     id: CHL-160
-    status: open
-    tags: []
     title: 3 schema issue(s)
-  CHL-161:
-    fingerprint: sha256:6051b60b3a10
-    id: CHL-161
     status: open
     tags: []
-    title: 'REQ-001: no ARCH refinement in V-model thread'
-  CHL-162:
-    fingerprint: sha256:dd0e04f9e5a1
-    id: CHL-162
-    status: open
-    tags: []
-    title: 'STORY-002 (implements REQ-001): no test verification'
-  CHL-163:
-    fingerprint: sha256:4a0b724f18b3
-    id: CHL-163
-    status: open
-    tags: []
-    title: 'STORY-007 (implements REQ-001): no test verification'
-  CHL-164:
-    fingerprint: sha256:9aa506eec93b
-    id: CHL-164
-    status: open
-    tags: []
-    title: 'STORY-008 (implements REQ-001): no test verification'
-  CHL-165:
-    fingerprint: sha256:338190c4657b
-    id: CHL-165
-    status: open
-    tags: []
-    title: 'STORY-010 (implements REQ-001): no test verification'
-  CHL-166:
-    fingerprint: sha256:77b9ae8783d0
-    id: CHL-166
-    status: open
-    tags: []
-    title: 'REQ-002: no ARCH refinement in V-model thread'
-  CHL-167:
-    fingerprint: sha256:ee154853373a
-    id: CHL-167
-    status: open
-    tags: []
-    title: 'STORY-015 (implements REQ-002): no test verification'
-  CHL-168:
-    fingerprint: sha256:b1e7d3b55e12
-    id: CHL-168
-    status: open
-    tags: []
-    title: 'STORY-016 (implements REQ-002): no test verification'
-  CHL-169:
-    fingerprint: sha256:d7b24991d978
-    id: CHL-169
-    status: open
-    tags: []
-    title: 'REQ-003: no ARCH refinement in V-model thread'
-  CHL-170:
-    fingerprint: sha256:7e968b4c4053
-    id: CHL-170
-    status: open
-    tags: []
-    title: 'STORY-001 (implements REQ-003): no test verification'
-  CHL-171:
-    fingerprint: sha256:49c399518533
-    id: CHL-171
-    status: open
-    tags: []
-    title: 'STORY-002 (implements REQ-003): no test verification'
-  CHL-172:
-    fingerprint: sha256:f8f3ded7e5fb
-    id: CHL-172
-    status: open
-    tags: []
-    title: 'STORY-003 (implements REQ-003): no test verification'
-  CHL-173:
-    fingerprint: sha256:67269d8bca34
-    id: CHL-173
-    status: open
-    tags: []
-    title: 'STORY-004 (implements REQ-003): no test verification'
-  CHL-174:
-    fingerprint: sha256:ef8715326f03
-    id: CHL-174
-    status: open
-    tags: []
-    title: 'STORY-005 (implements REQ-003): no test verification'
-  CHL-175:
-    fingerprint: sha256:7c4f313bb87b
-    id: CHL-175
-    status: open
-    tags: []
-    title: 'REQ-004: no ARCH refinement in V-model thread'
-  CHL-176:
-    fingerprint: sha256:e5d79ee91d9a
-    id: CHL-176
-    status: open
-    tags: []
-    title: 'STORY-006 (implements REQ-004): no test verification'
-  CHL-177:
-    fingerprint: sha256:6051b60b3a10
-    id: CHL-177
-    status: open
-    tags: []
-    title: 'REQ-001: no ARCH refinement in V-model thread'
-  CHL-178:
-    fingerprint: sha256:dd0e04f9e5a1
-    id: CHL-178
-    status: open
-    tags: []
-    title: 'STORY-002 (implements REQ-001): no test verification'
-  CHL-179:
-    fingerprint: sha256:4a0b724f18b3
-    id: CHL-179
-    status: open
-    tags: []
-    title: 'STORY-007 (implements REQ-001): no test verification'
-  CHL-180:
-    fingerprint: sha256:9aa506eec93b
-    id: CHL-180
-    status: open
-    tags: []
-    title: 'STORY-008 (implements REQ-001): no test verification'
-  CHL-181:
-    fingerprint: sha256:338190c4657b
-    id: CHL-181
-    status: open
-    tags: []
-    title: 'STORY-010 (implements REQ-001): no test verification'
-  CHL-182:
-    fingerprint: sha256:77b9ae8783d0
-    id: CHL-182
-    status: open
-    tags: []
-    title: 'REQ-002: no ARCH refinement in V-model thread'
-  CHL-183:
-    fingerprint: sha256:ee154853373a
-    id: CHL-183
-    status: open
-    tags: []
-    title: 'STORY-015 (implements REQ-002): no test verification'
-  CHL-184:
-    fingerprint: sha256:b1e7d3b55e12
-    id: CHL-184
-    status: open
-    tags: []
-    title: 'STORY-016 (implements REQ-002): no test verification'
-  CHL-185:
-    fingerprint: sha256:d7b24991d978
-    id: CHL-185
-    status: open
-    tags: []
-    title: 'REQ-003: no ARCH refinement in V-model thread'
-  CHL-186:
-    fingerprint: sha256:7e968b4c4053
-    id: CHL-186
-    status: open
-    tags: []
-    title: 'STORY-001 (implements REQ-003): no test verification'
-  CHL-187:
-    fingerprint: sha256:49c399518533
-    id: CHL-187
-    status: open
-    tags: []
-    title: 'STORY-002 (implements REQ-003): no test verification'
-  CHL-188:
-    fingerprint: sha256:f8f3ded7e5fb
-    id: CHL-188
-    status: open
-    tags: []
-    title: 'STORY-003 (implements REQ-003): no test verification'
-  CHL-189:
-    fingerprint: sha256:67269d8bca34
-    id: CHL-189
-    status: open
-    tags: []
-    title: 'STORY-004 (implements REQ-003): no test verification'
-  CHL-190:
-    fingerprint: sha256:ef8715326f03
-    id: CHL-190
-    status: open
-    tags: []
-    title: 'STORY-005 (implements REQ-003): no test verification'
-  CHL-191:
-    fingerprint: sha256:7c4f313bb87b
-    id: CHL-191
-    status: open
-    tags: []
-    title: 'REQ-004: no ARCH refinement in V-model thread'
-  CHL-192:
-    fingerprint: sha256:e5d79ee91d9a
-    id: CHL-192
-    status: open
-    tags: []
-    title: 'STORY-006 (implements REQ-004): no test verification'
-  CHL-193:
-    fingerprint: sha256:6051b60b3a10
-    id: CHL-193
-    status: open
-    tags: []
-    title: 'REQ-001: no ARCH refinement in V-model thread'
-  CHL-194:
-    fingerprint: sha256:dd0e04f9e5a1
-    id: CHL-194
-    status: open
-    tags: []
-    title: 'STORY-002 (implements REQ-001): no test verification'
-  CHL-195:
-    fingerprint: sha256:4a0b724f18b3
-    id: CHL-195
-    status: open
-    tags: []
-    title: 'STORY-007 (implements REQ-001): no test verification'
-  CHL-196:
-    fingerprint: sha256:9aa506eec93b
-    id: CHL-196
-    status: open
-    tags: []
-    title: 'STORY-008 (implements REQ-001): no test verification'
-  CHL-197:
-    fingerprint: sha256:338190c4657b
-    id: CHL-197
-    status: open
-    tags: []
-    title: 'STORY-010 (implements REQ-001): no test verification'
-  CHL-198:
-    fingerprint: sha256:77b9ae8783d0
-    id: CHL-198
-    status: open
-    tags: []
-    title: 'REQ-002: no ARCH refinement in V-model thread'
-  CHL-199:
-    fingerprint: sha256:ee154853373a
-    id: CHL-199
-    status: open
-    tags: []
-    title: 'STORY-015 (implements REQ-002): no test verification'
-  CHL-200:
-    fingerprint: sha256:b1e7d3b55e12
-    id: CHL-200
-    status: open
-    tags: []
-    title: 'STORY-016 (implements REQ-002): no test verification'
-  CHL-201:
-    fingerprint: sha256:d7b24991d978
-    id: CHL-201
-    status: open
-    tags: []
-    title: 'REQ-003: no ARCH refinement in V-model thread'
-  CHL-202:
-    fingerprint: sha256:7e968b4c4053
-    id: CHL-202
-    status: open
-    tags: []
-    title: 'STORY-001 (implements REQ-003): no test verification'
-  CHL-203:
-    fingerprint: sha256:49c399518533
-    id: CHL-203
-    status: open
-    tags: []
-    title: 'STORY-002 (implements REQ-003): no test verification'
-  CHL-204:
-    fingerprint: sha256:f8f3ded7e5fb
-    id: CHL-204
-    status: open
-    tags: []
-    title: 'STORY-003 (implements REQ-003): no test verification'
-  CHL-205:
-    fingerprint: sha256:67269d8bca34
-    id: CHL-205
-    status: open
-    tags: []
-    title: 'STORY-004 (implements REQ-003): no test verification'
-  CHL-206:
-    fingerprint: sha256:ef8715326f03
-    id: CHL-206
-    status: open
-    tags: []
-    title: 'STORY-005 (implements REQ-003): no test verification'
-  CHL-207:
-    fingerprint: sha256:7c4f313bb87b
-    id: CHL-207
-    status: open
-    tags: []
-    title: 'REQ-004: no ARCH refinement in V-model thread'
-  CHL-208:
-    fingerprint: sha256:e5d79ee91d9a
-    id: CHL-208
-    status: open
-    tags: []
-    title: 'STORY-006 (implements REQ-004): no test verification'
-  CHL-209:
-    fingerprint: sha256:3113831d9cd6
-    id: CHL-209
-    status: open
-    tags: []
-    title: 'STORY-007 (implements REQ-004): no test verification'
-  CHL-210:
-    fingerprint: sha256:d1c514dd0f2f
-    id: CHL-210
-    status: open
-    tags: []
-    title: 'STORY-008 (implements REQ-004): no test verification'
-  CHL-211:
-    fingerprint: sha256:67203d2566ec
-    id: CHL-211
-    status: open
-    tags: []
-    title: 'STORY-009 (implements REQ-004): no test verification'
-  CHL-212:
-    fingerprint: sha256:45f1a7f996fe
-    id: CHL-212
-    status: open
-    tags: []
-    title: 'STORY-010 (implements REQ-004): no test verification'
-  CHL-213:
-    fingerprint: sha256:fc4b8a64c027
-    id: CHL-213
-    status: open
-    tags: []
-    title: 'STORY-017 (implements REQ-004): no test verification'
-  CHL-214:
-    fingerprint: sha256:8cc35a0d5ddf
-    id: CHL-214
-    status: open
-    tags: []
-    title: 'STORY-019 (implements REQ-004): no test verification'
-  CHL-215:
-    fingerprint: sha256:458e569870fe
-    id: CHL-215
-    status: open
-    tags: []
-    title: 'STORY-020 (implements REQ-004): no test verification'
-  CHL-216:
-    fingerprint: sha256:52c60547ff58
-    id: CHL-216
-    status: open
-    tags: []
-    title: 'REQ-005: no ARCH refinement in V-model thread'
-  CHL-217:
-    fingerprint: sha256:ab3aa3dae08f
-    id: CHL-217
-    status: open
-    tags: []
-    title: 'STORY-011 (implements REQ-005): no test verification'
-  CHL-218:
-    fingerprint: sha256:96af5d7f8157
-    id: CHL-218
-    status: open
-    tags: []
-    title: 'STORY-012 (implements REQ-005): no test verification'
-  CHL-219:
-    fingerprint: sha256:d9d76e5969af
-    id: CHL-219
-    status: open
-    tags: []
-    title: 'STORY-013 (implements REQ-005): no test verification'
-  CHL-220:
-    fingerprint: sha256:74ec2564ea89
-    id: CHL-220
-    status: open
-    tags: []
-    title: 'STORY-014 (implements REQ-005): no test verification'
-  CHL-221:
-    fingerprint: sha256:58409b50b607
-    id: CHL-221
-    status: open
-    tags: []
-    title: 'STORY-018 (implements REQ-005): no test verification'
+    fingerprint: sha256:2688ffa86b35
+    children: []
   CHL-222:
-    fingerprint: sha256:8583665a162b
     id: CHL-222
-    status: open
-    tags: []
     title: 'REQ-006: no ARCH refinement in V-model thread'
+    status: open
+    tags: []
+    fingerprint: sha256:8583665a162b
+    children: []
   CHL-223:
-    fingerprint: sha256:692147dde547
     id: CHL-223
-    status: open
-    tags: []
     title: 'STORY-036 (implements REQ-006): no test verification'
+    status: open
+    tags: []
+    fingerprint: sha256:692147dde547
+    children: []
   CHL-224:
-    fingerprint: sha256:10603f8f7ffd
     id: CHL-224
-    status: open
-    tags: []
     title: 'REQ-007: no ARCH refinement in V-model thread'
+    status: open
+    tags: []
+    fingerprint: sha256:10603f8f7ffd
+    children: []
   CHL-225:
-    fingerprint: sha256:a426f49f9a71
     id: CHL-225
-    status: open
-    tags: []
     title: 'STORY-037 (implements REQ-007): no test verification'
+    status: open
+    tags: []
+    fingerprint: sha256:a426f49f9a71
+    children: []
   CHL-226:
-    fingerprint: sha256:cf6726ef83ea
     id: CHL-226
-    status: open
-    tags: []
     title: 'REQ-008: no ARCH refinement in V-model thread'
+    status: open
+    tags: []
+    fingerprint: sha256:cf6726ef83ea
+    children: []
   CHL-227:
-    fingerprint: sha256:eec26666a7a2
     id: CHL-227
-    status: open
-    tags: []
     title: 'STORY-038 (implements REQ-008): no test verification'
+    status: open
+    tags: []
+    fingerprint: sha256:eec26666a7a2
+    children: []
   CHL-228:
-    fingerprint: sha256:fd9eaf815198
     id: CHL-228
-    status: open
-    tags: []
     title: 'REQ-009: no ARCH refinement in V-model thread'
+    status: open
+    tags: []
+    fingerprint: sha256:fd9eaf815198
+    children: []
   CHL-229:
-    fingerprint: sha256:ddb72c48248b
     id: CHL-229
-    status: open
-    tags: []
     title: 'STORY-039 (implements REQ-009): no test verification'
+    status: open
+    tags: []
+    fingerprint: sha256:ddb72c48248b
+    children: []
   CHL-230:
-    fingerprint: sha256:70ef2dfcfe3a
     id: CHL-230
-    status: open
-    tags: []
     title: 'REQ-010: no ARCH refinement in V-model thread'
+    status: open
+    tags: []
+    fingerprint: sha256:70ef2dfcfe3a
+    children: []
   CHL-231:
-    fingerprint: sha256:48f184922242
     id: CHL-231
-    status: open
-    tags: []
     title: 'STORY-041 (implements REQ-010): no test verification'
+    status: open
+    tags: []
+    fingerprint: sha256:48f184922242
+    children: []
   CHL-232:
-    fingerprint: sha256:1237c38fae28
     id: CHL-232
-    status: open
-    tags: []
     title: 'STORY-042 (implements REQ-010): no test verification'
+    status: open
+    tags: []
+    fingerprint: sha256:1237c38fae28
+    children: []
   CHL-233:
-    fingerprint: sha256:7d24ec465924
     id: CHL-233
-    status: open
-    tags: []
     title: 'REQ-011: no ARCH refinement in V-model thread'
+    status: open
+    tags: []
+    fingerprint: sha256:7d24ec465924
+    children: []
   CHL-234:
-    fingerprint: sha256:8f7971d9e29a
     id: CHL-234
-    status: open
-    tags: []
     title: 'STORY-044 (implements REQ-011): no test verification'
+    status: open
+    tags: []
+    fingerprint: sha256:8f7971d9e29a
+    children: []
   CHL-235:
-    fingerprint: sha256:b36f10affa3e
     id: CHL-235
-    status: open
-    tags: []
     title: 'REQ-012: no ARCH refinement in V-model thread'
+    status: open
+    tags: []
+    fingerprint: sha256:b36f10affa3e
+    children: []
   CHL-236:
-    fingerprint: sha256:4af0233f0e27
     id: CHL-236
-    status: open
-    tags: []
     title: 'STORY-043 (implements REQ-012): no test verification'
+    status: open
+    tags: []
+    fingerprint: sha256:4af0233f0e27
+    children: []
   CHL-237:
-    fingerprint: sha256:0302d7ba9adb
     id: CHL-237
-    status: open
-    tags: []
     title: 'REQ-013: no ARCH refinement in V-model thread'
+    status: open
+    tags: []
+    fingerprint: sha256:0302d7ba9adb
+    children: []
   CHL-238:
-    fingerprint: sha256:754434b428b6
     id: CHL-238
-    status: open
-    tags: []
     title: 'STORY-045 (implements REQ-013): no test verification'
+    status: open
+    tags: []
+    fingerprint: sha256:754434b428b6
+    children: []
   CHL-239:
-    fingerprint: sha256:8c2ef93ed428
     id: CHL-239
-    status: open
-    tags: []
     title: 'REQ-014: no ARCH refinement in V-model thread'
-  CHL-240:
-    fingerprint: sha256:8b6add47f251
-    id: CHL-240
     status: open
     tags: []
+    fingerprint: sha256:8c2ef93ed428
+    children: []
+  CHL-240:
+    id: CHL-240
     title: 'STORY-040 (implements REQ-014): no test verification'
-next_id: 241
+    status: open
+    tags: []
+    fingerprint: sha256:8b6add47f251
+    children: []
+  CHL-285:
+    id: CHL-285
+    title: 'REQ-015: no ARCH refinement in V-model thread'
+    status: open
+    tags: []
+    fingerprint: sha256:911ea1f51c01
+    children: []
+  CHL-286:
+    id: CHL-286
+    title: 'REQ-015: no STORY implements this requirement'
+    status: open
+    tags: []
+    fingerprint: sha256:a5964ec66a59
+    children: []
+  CHL-287:
+    id: CHL-287
+    title: 'REQ-016: no ARCH refinement in V-model thread'
+    status: open
+    tags: []
+    fingerprint: sha256:8c6b2904236d
+    children: []
+  CHL-288:
+    id: CHL-288
+    title: 'REQ-016: no STORY implements this requirement'
+    status: open
+    tags: []
+    fingerprint: sha256:1b9554249b9d
+    children: []
+  CHL-289:
+    id: CHL-289
+    title: 'STORY-046 (implements REQ-015): no test verification'
+    status: open
+    tags: []
+    fingerprint: sha256:1410342bd10b
+    children: []
+  CHL-290:
+    id: CHL-290
+    title: 'STORY-047 (implements REQ-016): no test verification'
+    status: open
+    tags: []
+    fingerprint: sha256:2ebd09cfb72e
+    children: []
+  CHL-291:
+    id: CHL-291
+    title: 'REQ-017: no ARCH refinement in V-model thread'
+    status: open
+    tags: []
+    fingerprint: sha256:75a7327eedf1
+    children: []
+  CHL-292:
+    id: CHL-292
+    title: 'STORY-048 (implements REQ-017): no test verification'
+    status: open
+    tags: []
+    fingerprint: sha256:d0548251d6dc
+    children: []
+next_id: 293

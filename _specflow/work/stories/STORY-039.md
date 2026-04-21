@@ -11,6 +11,8 @@ suspect: false
 links:
 - target: REQ-009
   role: implements
+- target: ARCH-001
+  role: guided_by
 - target: UT-001
   role: verified_by
 - target: UT-003
