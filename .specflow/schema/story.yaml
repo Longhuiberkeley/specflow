@@ -8,5 +8,5 @@ allowed_status:
   approved: [draft]
   implemented: [approved]
   verified: [implemented]
-allowed_link_roles: [implements, guided_by, specified_by, derives_from, depends_on]
+allowed_link_roles: [implements, guided_by, specified_by, derives_from, depends_on, verified_by]
 directory: _specflow/work/stories/
