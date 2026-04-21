@@ -416,9 +416,9 @@ artifacts:
     - scaffolding
     title: Add specflow generate-tests command and update execute skill
   STORY-046:
-    fingerprint: ''
+    fingerprint: sha256:307c26741722
     id: STORY-046
-    status: draft
+    status: implemented
     tags:
     - compliance
     - reports
@@ -426,9 +426,9 @@ artifacts:
     - evidence
     title: Add compliance evidence report to specflow ship
   STORY-047:
-    fingerprint: ''
+    fingerprint: sha256:745606762bf5
     id: STORY-047
-    status: draft
+    status: implemented
     tags:
     - standards
     - compliance
@@ -436,9 +436,9 @@ artifacts:
     - json
     title: Enhance standards gap analysis with scoring, remediation, and JSON output
   STORY-048:
-    fingerprint: ''
+    fingerprint: sha256:7e7ac8a5b7d1
     id: STORY-048
-    status: draft
+    status: implemented
     tags:
     - artifact-types
     - init

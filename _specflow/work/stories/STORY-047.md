@@ -2,7 +2,7 @@
 id: STORY-047
 title: Enhance standards gap analysis with scoring, remediation, and JSON output
 type: story
-status: draft
+status: implemented
 priority: medium
 tags:
 - standards
@@ -16,6 +16,8 @@ links:
 - target: ARCH-004
   role: guided_by
 created: '2026-04-22'
+modified: '2026-04-22'
+fingerprint: sha256:745606762bf5
 ---
 
 # Enhance standards gap analysis with scoring, remediation, and JSON output

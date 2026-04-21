@@ -2,7 +2,7 @@
 id: STORY-048
 title: Add optional artifact type schemas and init integration
 type: story
-status: draft
+status: implemented
 priority: medium
 tags:
 - artifact-types
@@ -18,6 +18,8 @@ links:
 - target: ARCH-006
   role: guided_by
 created: '2026-04-22'
+modified: '2026-04-22'
+fingerprint: sha256:7e7ac8a5b7d1
 ---
 
 # Add optional artifact type schemas and init integration

@@ -19,7 +19,8 @@ links:
   role: derives_from
 created: '2026-04-21'
 modified: '2026-04-21'
-fingerprint: sha256:placeholder
+fingerprint: sha256:38704e647951
+version: 1
 ---
 
 # Pack-Author Pipeline
