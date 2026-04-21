@@ -215,7 +215,7 @@ def collect_llm_items(root: Path) -> list[dict[str, Any]]:
     return found
 
 
-_SYSTEM_PROMPT = (
+SYSTEM_PROMPT = (
     "You are a reviewer for a SpecFlow spec-driven-development repository. "
     "For each numbered check below, decide PASS, FAIL, or UNCLEAR. "
     "Respond with a single JSON array, one object per check: "
@@ -262,7 +262,7 @@ def _format_artifact_prompt(artifact: art_lib.Artifact, items: list[dict[str, An
     return "\n".join(lines)
 
 
-def _parse_batch_response(text: str, items: list[dict[str, Any]]) -> list[dict[str, str]]:
+def parse_batch_response(text: str, items: list[dict[str, Any]]) -> list[dict[str, str]]:
     """Parse a JSON array response from the model.
 
     Returns a list of {check_id, verdict, reason} dicts aligned to the input
@@ -432,7 +432,7 @@ def run_pass_two(root: Path, max_artifacts: int = 20) -> dict[str, Any]:
             continue
 
         prompt = _format_artifact_prompt(art, applicable)
-        response = call_llm(cfg, _SYSTEM_PROMPT, prompt)
+        response = call_llm(cfg, SYSTEM_PROMPT, prompt)
 
         if not response.get("ok"):
             err = response.get("error", "inconclusive")
@@ -441,7 +441,7 @@ def run_pass_two(root: Path, max_artifacts: int = 20) -> dict[str, Any]:
                 for item in applicable
             ]
         else:
-            per_check = _parse_batch_response(response.get("content") or "", applicable)
+            per_check = parse_batch_response(response.get("content") or "", applicable)
 
         _write_audit_log(root, art.id, per_check, cfg.model)
 

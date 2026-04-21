@@ -9,12 +9,7 @@ from pathlib import Path
 from specflow.lib import artifacts as art_lib
 from specflow.lib import standards as std_lib
 from specflow.lib.dedup import find_similar_to
-
-RED = "\033[0;31m"
-GREEN = "\033[0;32m"
-YELLOW = "\033[0;33m"
-CYAN = "\033[0;36m"
-NC = "\033[0m"
+from specflow.lib.display import RED, GREEN, YELLOW_DIM, CYAN, NC
 
 
 def _parse_links(links_json: str) -> list[dict[str, str]]:
@@ -91,12 +86,12 @@ def run(root: Path, args: dict) -> int:
         )
         blocking = [c for c in similar if c.confidence in ("medium", "high")]
         if blocking:
-            print(f"{YELLOW}⚠ Possible duplicate(s) of the artifact you're creating:{NC}")
+            print(f"{YELLOW_DIM}⚠ Possible duplicate(s) of the artifact you're creating:{NC}")
             for c in blocking[:5]:
                 print(f"  [{c.confidence}] {c.pair[1]}  "
                       f"tag={c.tag_jaccard:.2f}  tfidf={c.tfidf_cosine:.2f}")
             if args.get("force", False):
-                print(f"{YELLOW}  --force supplied, proceeding anyway{NC}")
+                print(f"{YELLOW_DIM}  --force supplied, proceeding anyway{NC}")
             elif not sys.stdin.isatty():
                 print(f"{RED}✗ Non-interactive mode. Re-run with --force to create anyway, "
                       f"or --skip-dedup-check to bypass the check entirely.{NC}")

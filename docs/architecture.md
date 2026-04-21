@@ -314,11 +314,11 @@ All programmatic commands are `specflow <subcommand>` subcommands of the Python 
 |---------|-------------|
 | `specflow init` | Auto-detects platform, generates correct file structure |
 | `specflow status` | Reads state, prints dashboard: current phase, flag counts, checklist warnings, suggested next action |
-| `specflow validate` | Runs all validation scripts: schema, links, status, IDs, fingerprints, checklists |
-| `specflow impact` | Reads fingerprints, prints flagged artifacts, change history, recommended review order |
-| `specflow tweak` | Recompute fingerprint for minor edit without triggering suspect cascade |
-| `specflow document-changes` | Synthesizes CR/DEC artifact from git diffs + impact-log entries |
-| `specflow compliance` | Gap analysis against imported standard clauses |
+| `specflow artifact-lint` | Runs all validation checks: schema, links, status, IDs, fingerprints, acceptance, conflicts, coverage, quality |
+| `specflow change-impact` | Reads fingerprints, prints flagged artifacts, change history, recommended review order |
+| `specflow fingerprint-refresh` | Recompute fingerprint for minor edit without triggering suspect cascade |
+| `specflow document-changes` | Synthesizes DEC artifact from git diffs + impact-log entries |
+| `specflow standards gaps` | Gap analysis against imported standard clauses |
 | `specflow baseline create` | Snapshot current state into immutable baseline YAML |
 | `specflow baseline diff` | Compare two baselines |
 | `specflow detect dead-code` | AST-based informational scan for declared-but-unreferenced functions/classes (exit 0 regardless of findings) |
@@ -330,7 +330,7 @@ All programmatic commands are `specflow <subcommand>` subcommands of the Python 
 idle -> discovering -> specifying -> planning -> executing -> verifying -> complete
 ```
 
-State persists in `.specflow/state.yaml` with history. `specflow rollback --to <phase>` navigates without deleting artifacts.
+State persists in `.specflow/state.yaml` with history. Phase transitions are driven by workflow commands (`specflow go`, `specflow done`).
 
 ## Cross-Platform Strategy
 

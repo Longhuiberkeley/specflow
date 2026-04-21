@@ -93,4 +93,4 @@ jobs:
       - name: Change-impact review
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-        run: uv run specflow change-impact --all || true
+        run: uv run specflow change-impact || true

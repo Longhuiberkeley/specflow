@@ -16,11 +16,7 @@ import yaml
 
 from specflow.lib import rbac as rbac_lib
 from specflow.lib.adapters import load_adapters_config, get_adapter
-
-RED = "\033[0;31m"
-GREEN = "\033[0;32m"
-YELLOW = "\033[1;33m"
-NC = "\033[0m"
+from specflow.lib.display import RED, GREEN, YELLOW, NC
 
 
 def _hook_template(root: Path) -> str:

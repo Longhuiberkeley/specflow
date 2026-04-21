@@ -4,11 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from specflow.lib import impact as impact_lib
-
-
-RED = "\033[0;31m"
-GREEN = "\033[0;32m"
-NC = "\033[0m"
+from specflow.lib.display import RED, GREEN, NC
 
 
 def run(root: Path, args: dict[str, Any]) -> int:

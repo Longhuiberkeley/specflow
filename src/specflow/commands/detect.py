@@ -19,11 +19,9 @@ from specflow.lib.analysis import (
     find_similar_functions,
 )
 
-YELLOW = "\033[0;33m"
-GREEN = "\033[0;32m"
-CYAN = "\033[0;36m"
+from specflow.lib.display import YELLOW_DIM, GREEN, CYAN, NC
+
 BOLD = "\033[1m"
-NC = "\033[0m"
 
 
 def _rel(root: Path, path: Path) -> str:
@@ -42,7 +40,7 @@ def _run_dead_code(root: Path, args: dict[str, Any]) -> int:
         print(f"  {GREEN}✓{NC} No dead code detected")
         return 0
 
-    print(f"  {YELLOW}{len(symbols)} unreferenced top-level symbol(s):{NC}")
+    print(f"  {YELLOW_DIM}{len(symbols)} unreferenced top-level symbol(s):{NC}")
     for s in symbols:
         print(f"    {_rel(root, s.file)}:{s.line}  [{s.kind}] {s.name}")
     print(f"  {CYAN}Informational only — review manually before removing.{NC}")
@@ -68,7 +66,7 @@ def _run_similarity(root: Path, args: dict[str, Any]) -> int:
         print(f"  {GREEN}✓{NC} No near-duplicate functions found")
         return 0
 
-    print(f"  {YELLOW}{len(pairs)} similar function pair(s):{NC}")
+    print(f"  {YELLOW_DIM}{len(pairs)} similar function pair(s):{NC}")
     for p in pairs:
         pct = p.similarity * 100
         print(

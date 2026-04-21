@@ -26,13 +26,9 @@ from specflow.commands import artifact_lint
 from specflow.lib import artifacts as art_lib
 from specflow.lib import baselines as baseline_lib
 from specflow.lib import standards as standards_lib
+from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC
 
-RED = "\033[0;31m"
-GREEN = "\033[0;32m"
-YELLOW = "\033[1;33m"
-CYAN = "\033[0;36m"
 BOLD = "\033[1m"
-NC = "\033[0m"
 
 _SEP = "─" * 58
 
@@ -220,7 +216,7 @@ def _cross_cutting_analysis(
 ) -> dict[str, list[dict[str, str]]]:
     results: dict[str, list[dict[str, str]]] = {}
 
-    lint_result = artifact_lint._check_coverage(artifacts)
+    lint_result = artifact_lint.check_coverage(artifacts)
     coverage_findings: list[dict[str, str]] = []
     if lint_result["warning_count"] > 0:
         coverage_findings.append({
@@ -296,7 +292,7 @@ def _cross_cutting_analysis(
         results["nfr-coverage"] = nfr_findings
 
     schema_dir = root / ".specflow" / "schema"
-    schema_result = artifact_lint._check_schema(artifacts, schema_dir)
+    schema_result = artifact_lint.check_schema(artifacts, schema_dir)
     consistency_findings: list[dict[str, str]] = []
     if schema_result["blocking_count"] > 0:
         consistency_findings.append({"severity": "error", "message": f"{schema_result['blocking_count']} schema issue(s)"})

@@ -18,12 +18,7 @@ import yaml
 
 from specflow.lib import artifacts as art_lib
 from specflow.lib import draft_ids as draft_lib
-
-RED = "\033[0;31m"
-GREEN = "\033[0;32m"
-YELLOW = "\033[1;33m"
-CYAN = "\033[0;36m"
-NC = "\033[0m"
+from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC
 
 
 def _plan_id_map(

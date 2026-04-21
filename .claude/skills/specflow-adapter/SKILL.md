@@ -46,7 +46,7 @@ Route to the appropriate section below based on the user's choice.
 1. Read current config: `.specflow/adapters.yaml` → `ci` section
 2. Ask which CI provider:
    - `github-actions` (default, built-in)
-   - Other registered adapters (check `ADAPTER_REGISTRY` via `specflow ci generate --list`)
+   - Other registered adapters (check `ADAPTER_REGISTRY` in `src/specflow/lib/adapters/`)
    - Custom adapter (point to `docs/authoring-an-adapter.md`)
 3. Ask which operations to include:
    - `artifact-lint` (always recommended — zero-token validation)

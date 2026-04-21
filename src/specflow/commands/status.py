@@ -9,13 +9,7 @@ import yaml
 
 from specflow.lib import artifacts as art_lib
 from specflow.lib import config as config_lib
-
-# Color codes
-RED = "\033[0;31m"
-GREEN = "\033[0;32m"
-YELLOW = "\033[1;33m"
-CYAN = "\033[0;36m"
-NC = "\033[0m"  # No Color
+from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC
 
 # Display labels for artifact types
 TYPE_LABELS = {
@@ -155,32 +149,32 @@ def _suggest_action(root: Path, phase: str, artifact_counts: dict[str, int]) -> 
     total = sum(artifact_counts.values())
 
     if total == 0:
-        return "Start with 'specflow-new' to capture your first requirement"
+        return "Use /specflow-discover to capture your first requirement"
 
     req_count = artifact_counts.get("REQ", 0)
     arch_count = artifact_counts.get("ARCH", 0)
     story_count = artifact_counts.get("STORY", 0)
 
     if phase == "idle":
-        return "Run 'specflow-new' to begin discovery"
+        return "Use /specflow-discover to begin discovery"
     elif phase == "discovering":
-        return "Continue capturing requirements with 'specflow discover'"
+        return "Continue capturing requirements with /specflow-discover"
     elif phase == "specifying":
         if req_count > 0 and arch_count == 0:
-            return "Run 'specflow plan' to create architecture and stories"
+            return "Use /specflow-plan to create architecture and stories"
         else:
             return "Review and approve requirements before planning"
     elif phase == "planning":
         if story_count == 0:
-            return "Run 'specflow plan' to decompose requirements into stories"
+            return "Use /specflow-plan to decompose requirements into stories"
         else:
-            return "Review architecture and stories, then run 'specflow go'"
+            return "Review architecture and stories, then use /specflow-execute"
     elif phase == "executing":
-        return "Run 'specflow go' to execute story waves"
+        return "Use /specflow-execute to implement story waves"
     elif phase == "verifying":
-        return "Run 'specflow checklist-run' to review artifacts"
+        return "Use /specflow-artifact-review to review artifacts"
     elif phase == "complete":
-        return "Run 'specflow done' to close the phase"
+        return "Use /specflow-ship to close the phase"
 
     return "Run 'specflow artifact-lint' to check artifact integrity"
 

@@ -12,12 +12,10 @@ from specflow.lib import artifacts as art_lib
 from specflow.lib import checklists
 from specflow.lib import ci
 from specflow.lib.analysis import find_dead_code, find_similar_functions
+from specflow.lib.display import YELLOW_DIM, CYAN, NC
 from specflow.lib.techniques import run_subagents, TechniqueFinding
 
-YELLOW = "\033[0;33m"
-CYAN = "\033[0;36m"
 BOLD = "\033[1m"
-NC = "\033[0m"
 
 
 def _bootstrap_challenge_schema(root: Path) -> None:
@@ -85,15 +83,13 @@ def _run_llm_checklist(
             continue
         
         prompt = _format_prompt(art, llm_items)
-        result = ci.call_llm(cfg, ci._SYSTEM_PROMPT, prompt)
+        result = ci.call_llm(cfg, ci.SYSTEM_PROMPT, prompt)
         if not result.get("ok"):
-            print(f"  {YELLOW}⚠ LLM call failed for {art.id}: {result.get('error')}{NC}")
+            print(f"  {YELLOW_DIM}⚠ LLM call failed for {art.id}: {result.get('error')}{NC}")
             continue
             
-        # Convert items to dicts for parse_batch_response which doesn't actually use the items except for length/alignment logic inside some parsers but ci._parse_batch_response signature is `def _parse_batch_response(text: str, items: list[dict[str, Any]]) -> list[dict[str, str]]`
-        # Wait, ci._parse_batch_response doesn't actually use `items` other than sometimes for mapping if we check ci.py. Let's pass a list of dicts.
         dict_items = [{"id": i.id, "check": i.check, "severity": i.severity, "llm_prompt": i.llm_prompt} for i in llm_items]
-        parsed = ci._parse_batch_response(result.get("content", ""), dict_items)
+        parsed = ci.parse_batch_response(result.get("content", ""), dict_items)
         for p, item in zip(parsed, llm_items):
             if p.get("verdict") == "FAIL":
                 findings.append(TechniqueFinding(
@@ -133,7 +129,7 @@ def _create_chl_artifacts(root: Path, target_id: str, findings: list[TechniqueFi
                 body=""
             )
             if not art.get("ok"):
-                print(f"  {YELLOW}⚠ Failed to create CHL: {art.get('error', 'Unknown error')}{NC}")
+                print(f"  {YELLOW_DIM}⚠ Failed to create CHL: {art.get('error', 'Unknown error')}{NC}")
                 continue
 
             art_lib.update_artifact(
@@ -145,7 +141,7 @@ def _create_chl_artifacts(root: Path, target_id: str, findings: list[TechniqueFi
             count += 1
             print(f"  Created {art['id']} [{f.severity}] from {f.technique}")
         except Exception as e:
-            print(f"  {YELLOW}⚠ Failed to create CHL: {e}{NC}")
+            print(f"  {YELLOW_DIM}⚠ Failed to create CHL: {e}{NC}")
     return count
 
 
@@ -200,7 +196,7 @@ def run(root: Path, args: dict[str, Any]) -> int:
         
     cfg = ci.load_llm_config(root)
     if not cfg.api_key:
-        print(f"{YELLOW}⚠ Cannot run LLM depth: missing {ci.DEFAULT_KEY_ENV} in environment.{NC}")
+        print(f"{YELLOW_DIM}⚠ Cannot run LLM depth: missing {ci.DEFAULT_KEY_ENV} in environment.{NC}")
         return 2 if (lint_rc == 1 or check_rc == 1) else 0
 
     print(f"\n{CYAN}SpecFlow Artifact Review — Depth: {depth}{NC}")

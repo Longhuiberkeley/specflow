@@ -5,12 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from specflow.lib import standards as std_lib
-
-RED = "\033[0;31m"
-GREEN = "\033[0;32m"
-YELLOW = "\033[0;33m"
-CYAN = "\033[0;36m"
-NC = "\033[0m"
+from specflow.lib.display import RED, GREEN, YELLOW_DIM, CYAN, NC
 
 
 def run(root: Path, args: dict) -> int:
@@ -38,7 +33,7 @@ def run(root: Path, args: dict) -> int:
             if isinstance(clause, dict) and clause.get("id"):
                 clause_desc[clause["id"]] = clause.get("description", "")
 
-    print(f"{YELLOW}⚠ Found {len(uncovered)} uncovered clause(s) in standard '{standard}':{NC}\n")
+    print(f"{YELLOW_DIM}⚠ Found {len(uncovered)} uncovered clause(s) in standard '{standard}':{NC}\n")
 
     for clause in uncovered:
         clause_id = clause.get("clause_id", "")

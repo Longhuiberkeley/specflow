@@ -15,17 +15,19 @@ SpecFlow is a cross-CLI spec-driven development framework that combines proactiv
 
 ## Phase Overview (Bootstrapped Sequence)
 
-| Phase | Name | Delivers | Depends on | Est. Release |
-|-------|------|----------|------------|-------------|
-| P0 | Foundation | Python CLI (`uv`), `specflow init`, directory scaffolding, config, schemas | — | v0.1.0 |
-| P1 | Self-Specification | Manual authoring of SpecFlow's specs using its own format (Dogfooding) | P0 | v0.1.0 |
-| P2 | Verification | Zero-token validation scripts, `specflow status`, phase-gate checklists | P0, P1 | v0.1.0 |
-| P3 | Core Workflow | AI-driven discovery conversation, planning, artifact CRUD, `_index.yaml` | P0, P1, P2 | v0.2.0 |
-| P4 | Traceability | Impact analysis, suspect flags, fingerprints, cross-artifact consistency | P2, P3 | v0.2.0 |
-| P5 | Execution & Review | `specflow go` orchestration, `specflow check` context-specific review | P3, P4 | v0.2.0 |
-| P6 | Compliance & Standards| LLM-assisted pack authoring (`/specflow-pack-author`), manual YAML path (`docs/authoring-a-pack.md`), gap analysis, baselines, retroactive CRs | P4 | v0.3.0 |
-| P7 | Team & Enterprise | RBAC via git, draft IDs + CI renumbering, defect lifecycle, test records | P5, P6 | v1.0.0 |
-| P8 | Intelligence & Scaling| 3-tier dedup (tag Jaccard, TF-IDF, LLM), dead-code and similarity detection | P7 | v1.x |
+| Phase | Name | Delivers | Status | Shipped In |
+|-------|------|----------|--------|------------|
+| P0 | Foundation | Python CLI (`uv`), `specflow init`, directory scaffolding, config, schemas | Done | v0.2.0 |
+| P1 | Self-Specification | Manual authoring of SpecFlow's specs using its own format (Dogfooding) | Done | v0.2.0 |
+| P2 | Verification | Zero-token validation scripts, `specflow status`, phase-gate checklists | Done | v0.2.0 |
+| P3 | Core Workflow | AI-driven discovery conversation, planning, artifact CRUD, `_index.yaml` | Done | v0.2.0 |
+| P4 | Traceability | Impact analysis, suspect flags, fingerprints, cross-artifact consistency | Done | v0.2.0 |
+| P5 | Execution & Review | `specflow go` orchestration, adversarial review, artifact-review | Done | v0.2.0 |
+| P6 | Compliance & Standards| LLM-assisted pack authoring (`/specflow-pack-author`), manual YAML path (`docs/authoring-a-pack.md`), gap analysis, baselines, retroactive CRs | Done | v0.2.0 |
+| P7 | Team & Enterprise | RBAC via git, draft IDs + CI renumbering, defect lifecycle, test records | Done | v0.2.0 |
+| P8 | Intelligence & Scaling| 3-tier dedup (tag Jaccard, TF-IDF, LLM), dead-code and similarity detection | Done | v0.2.0 |
+
+> **Note:** All phases P0–P8 shipped together in v0.2.0. The original plan called for phased releases (v0.1.0 through v1.x), but development was continuous. The first tagged release is v0.2.0.
 
 ## Dependency Graph
 
@@ -49,13 +51,12 @@ Within phases, work flows:
 
 ## Release Strategy
 
-| Release | Includes | Milestone |
-|---------|----------|-----------|
-| v0.1.0 | P0 + P1 + P2 | Scaffolding, manual specification, and zero-token validation engine |
-| v0.2.0 | P3 + P4 + P5 | Full AI lifecycle with discovery, traceability, execution, and review |
-| v0.3.0 | P6 | Compliance-ready: Industry standards and gap analysis |
-| v1.0.0 | P7 | Team-ready: RBAC, defect tracking, CI integration |
-| v1.x | P8 | Dedup pipeline and project-hygiene detect commands |
+| Release | Status | Milestone |
+|---------|--------|-----------|
+| v0.2.0 | **Shipped** | All phases P0–P8: full AI lifecycle, traceability, execution, review, compliance, RBAC, dedup |
+| v0.3.0 | Planned | Compliance preset packs, evidence reports, deeper gap analysis |
+| v1.0.0 | Planned | Review workflow artifacts, visualization server, enhanced test generation |
+| v1.x | Future | Product variants, FMEA/risk, bidirectional Jira/ADO sync, REST API |
 
 Each release is a tagged Python package version managed by `uv`. Phases within a release can ship incrementally as minor bumps (v0.1.1, v0.1.2, etc.).
 

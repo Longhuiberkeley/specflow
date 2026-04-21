@@ -65,17 +65,22 @@ Skills compose CLI commands under the hood. Use skills for day-to-day work; use 
 | `/specflow-pack-author` | Author a standards compliance pack |
 | `/specflow-adapter` | Manage CI, exchange, standards ingestion, team RBAC |
 
+## Prerequisites
+
+- **[uv](https://docs.astral.sh/uv/)** — Python package manager. Install with `curl -LsSf https://astral.sh/uv/install.sh | sh`
+- An AI coding assistant (Claude Code, Cursor, Gemini CLI, etc.)
+
 ## Install
 
 ```bash
-# Install from GitHub (requires uv)
+# Install from GitHub
 uv tool install git+https://github.com/Longhuiberkeley/specflow
 
 # Or run without installing
 uvx --from git+https://github.com/Longhuiberkeley/specflow specflow init
 
 # Pin to a specific release
-uv tool install git+https://github.com/Longhuiberkeley/specflow@v0.1.0
+uv tool install git+https://github.com/Longhuiberkeley/specflow@v0.2.0
 ```
 
 Supports 14 AI coding platforms: Claude Code, Cursor, Windsurf, Cline, Gemini CLI, OpenCode, GitHub Copilot, Roo Code, QwenCoder, Kiro, KiloCoder, Codex, Trae, and Junie.
@@ -122,48 +127,24 @@ Where SpecFlow fits:
 
 SpecFlow complements traditional ALM through **ReqIF import/export** (already built) — teams can exchange requirements with DOORS/Polarion users while keeping their own workflow in the repo.
 
+## Directory Layout
+
+After running `/specflow-init`, two directories appear in your repo:
+
+| Directory | Purpose | Edit? |
+|-----------|---------|-------|
+| `_specflow/` | Your specs and work items — requirements, architecture, stories, decisions, defects | Yes — this is your workspace |
+| `.specflow/` | Framework internals — config, schemas, baselines, impact logs, checklists | No — managed by CLI commands |
+
+Everything is plain Markdown + YAML frontmatter. Your repo IS the database. See [architecture](docs/architecture.md) for the full directory tree.
+
 ## Roadmap
 
-SpecFlow ships incrementally. Here's what's live, what's next, and the longer-term direction:
+**v0.2.0 is the current release** — 10 slash commands, zero-token validation engine, V-model traceability, ReqIF import/export, RBAC, baselines, dedup, and 14 platform support.
 
-### Shipped (v0.1.0)
+Next up: compliance preset packs, evidence reports, and deeper gap analysis (v0.3.0).
 
-- 10 slash commands across 14 AI coding platforms
-- Zero-token validation engine (schema, links, status, fingerprints, acceptance, conflicts, coverage, chain depth)
-- Git-based RBAC with pre-commit hooks and CI gate
-- Immutable baselines with diff comparison
-- ReqIF 1.2 import/export for supply-chain interchange
-- Standards pack architecture with gap analysis
-- Defect lifecycle, draft ID renumbering, change impact analysis
-- 3-tier deduplication, dead-code and similarity detection
-- V-model traceability: REQ → ARCH → DDD → UT/IT/QT
-
-### Next (v0.2.0)
-
-- **Requirements quality scoring** — INCOSE/EARS-based checks for ambiguity, passive voice, missing measurability, and compound requirements (zero-token, deterministic)
-- **Enhanced trace command** — visual chain depth reporting and coverage dashboards
-- **Improved pack authoring** — verification layer for extracted clause accuracy
-
-### Planned (v0.3.0)
-
-- **Compliance preset packs** — pre-built industry packs for ISO 26262, IEC 62304, DO-178C, SOX (schema structure only; users provide licensed standard text)
-- **Compliance evidence reports** — generate DHF/Technical File style output from `/specflow-ship`
-- **Standards gap analysis** — deeper coverage scoring with actionable remediation
-
-### Planned (v1.0.0)
-
-- **Review workflow artifacts** — structured `REVIEW-*` type with reviewer voting, threaded findings, and audit-grade approval evidence
-- **Local visualization server** — `specflow serve` launches a dashboard at `localhost:5566` with interactive traceability graphs, coverage metrics, and baseline comparisons
-- **AI-assisted test generation** — generate UT/IT/QT stubs from REQ bodies using your AI assistant
-
-### Future (v1.x)
-
-- **Product variant management** — tag-based product line engineering for multi-trim / multi-variant projects
-- **FMEA / risk analysis** — hazard, safety-goal, and risk-control artifact types via industry packs
-- **Bidirectional Jira/Azure DevOps sync** — for teams bridging agile boards and compliance specs
-- **REST API** — programmatic access for custom toolchain integration
-
-See the [implementation plan](docs/plan.md) for the full phase breakdown.
+See [ROADMAP.md](ROADMAP.md) for the full plan and [CHANGELOG.md](CHANGELOG.md) for what shipped in each version.
 
 ## License
 

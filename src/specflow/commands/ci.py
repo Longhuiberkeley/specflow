@@ -9,10 +9,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from specflow.lib.adapters import load_adapters_config, get_adapter
-
-RED = "\033[0;31m"
-GREEN = "\033[0;32m"
-NC = "\033[0m"
+from specflow.lib.display import RED, GREEN, NC
 
 
 def _generate(root: Path) -> int:

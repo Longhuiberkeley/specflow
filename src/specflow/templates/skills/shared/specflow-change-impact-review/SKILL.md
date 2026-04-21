@@ -41,9 +41,8 @@ For each DEC and its impact cone:
 If issues are discovered during the review of a DEC's impact cone:
 1. Create a Challenge (CHL) artifact for each distinct issue.
    ```bash
-   uv run specflow create challenge --title "<Summary of issue>"
+   uv run specflow create --type challenge --title "<Summary of issue>"
    ```
-   *(Note: The CLI might just be `specflow create chl` or you can manually create the file following the schema.)*
 2. Set the `severity` of the CHL (e.g., `warning`, `error`).
 3. Link the CHL to the DEC using the role `challenges`.
 

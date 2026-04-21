@@ -15,14 +15,13 @@ For the slash command surface, see [commands.md](commands.md). For the lifecycle
 Scaffold a SpecFlow project in the current directory.
 
 ```bash
-specflow init [--preset PRESET] [--with-ci] [--no-ci]
+specflow init [--preset PRESET] [--no-ci]
 ```
 
 | Flag | Purpose |
 |------|---------|
 | `--preset` | Industry pack preset (e.g., `iso26262-demo`) |
-| `--with-ci` | Install CI workflow (default on) |
-| `--no-ci` | Skip CI workflow installation |
+| `--no-ci` | Skip CI workflow installation (CI workflow is installed by default) |
 
 ### `specflow status`
 

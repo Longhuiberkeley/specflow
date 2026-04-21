@@ -6,11 +6,7 @@ from pathlib import Path
 
 from specflow.lib import artifacts as art_lib
 from specflow.lib import defects as defects_lib
-
-RED = "\033[0;31m"
-GREEN = "\033[0;32m"
-YELLOW = "\033[1;33m"
-NC = "\033[0m"
+from specflow.lib.display import RED, GREEN, YELLOW, NC
 
 
 def run(root: Path, args: dict) -> int:

@@ -4,11 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from specflow.lib import locks as locks_lib
-
-
-GREEN = "\033[0;32m"
-YELLOW = "\033[1;33m"
-NC = "\033[0m"
+from specflow.lib.display import GREEN, YELLOW, NC
 
 
 def run(root: Path, args: dict[str, Any]) -> int:

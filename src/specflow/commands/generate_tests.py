@@ -6,11 +6,7 @@ import sys
 from pathlib import Path
 
 from specflow.lib import artifacts as art_lib
-
-GREEN = "\033[0;32m"
-YELLOW = "\033[0;33m"
-CYAN = "\033[0;36m"
-NC = "\033[0m"
+from specflow.lib.display import GREEN, YELLOW_DIM, CYAN, NC
 
 TYPE_LABELS = {
     "requirement": "QT",
@@ -110,19 +106,19 @@ def run(root: Path, args: dict) -> int:
     id_index = art_lib.build_id_index(artifacts)
 
     if not artifacts:
-        print(f"{YELLOW}No artifacts found. Run 'specflow init' first.{NC}")
+        print(f"{YELLOW_DIM}No artifacts found. Run 'specflow init' first.{NC}")
         return 0
 
     if from_id:
         art = id_index.get(from_id)
         if not art:
-            print(f"{YELLOW}Artifact '{from_id}' not found.{NC}")
+            print(f"{YELLOW_DIM}Artifact '{from_id}' not found.{NC}")
             return 1
         if art.type not in art_lib.V_MODEL_PAIRS:
-            print(f"{YELLOW}Artifact type '{art.type}' does not have a V-model test pair.{NC}")
+            print(f"{YELLOW_DIM}Artifact type '{art.type}' does not have a V-model test pair.{NC}")
             return 1
         if art.status not in ("implemented", "verified"):
-            print(f"{YELLOW}Artifact '{from_id}' is not implemented (status: {art.status}). "
+            print(f"{YELLOW_DIM}Artifact '{from_id}' is not implemented (status: {art.status}). "
                   f"Only implemented or verified specs can generate test stubs.{NC}")
             return 1
 
@@ -136,7 +132,7 @@ def run(root: Path, args: dict) -> int:
                 break
 
         if has_verification:
-            print(f"{YELLOW}Artifact '{from_id}' already has a verification test. No duplicate created.{NC}")
+            print(f"{YELLOW_DIM}Artifact '{from_id}' already has a verification test. No duplicate created.{NC}")
             return 0
 
         test_type = TEST_TYPE_NAMES[art.type]
@@ -180,7 +176,7 @@ def run(root: Path, args: dict) -> int:
             print(f"{GREEN}✓ Created {result['id']} ({test_type}) verifying {spec_art.id}{NC}")
             created += 1
         else:
-            print(f"{YELLOW}✗ Failed for {spec_art.id}: {result['error']}{NC}")
+            print(f"{YELLOW_DIM}✗ Failed for {spec_art.id}: {result['error']}{NC}")
             skipped += 1
 
     print(f"\n{CYAN}Generated {created} test stub(s), {skipped} skipped.{NC}")

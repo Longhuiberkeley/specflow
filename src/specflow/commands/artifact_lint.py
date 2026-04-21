@@ -12,13 +12,7 @@ from specflow.lib import artifacts as art_lib
 from specflow.lib import draft_ids as draft_lib
 from specflow.lib import standards as standards_lib
 from specflow.lib import lint as lint_lib
-
-# ANSI color codes
-RED = "\033[0;31m"
-GREEN = "\033[0;32m"
-YELLOW = "\033[1;33m"
-CYAN = "\033[0;36m"
-NC = "\033[0m"  # No Color
+from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC
 
 CHECK_NAMES = ["schema", "links", "status", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality"]
 
@@ -35,7 +29,7 @@ def _run_check(
     schema_dir = root / ".specflow" / "schema"
 
     if check_name == "schema":
-        return _check_schema(artifacts, schema_dir)
+        return check_schema(artifacts, schema_dir)
     elif check_name == "links":
         return _check_links(artifacts, root)
     elif check_name == "status":
@@ -49,7 +43,7 @@ def _run_check(
     elif check_name == "conflicts":
         return _check_conflicts(artifacts)
     elif check_name == "coverage":
-        return _check_coverage(artifacts)
+        return check_coverage(artifacts)
     elif check_name == "story-size":
         return _check_story_size(artifacts)
     elif check_name == "chain-report":
@@ -61,7 +55,7 @@ def _run_check(
             "blocking_count": 0, "warning_count": 0}
 
 
-def _check_schema(
+def check_schema(
     artifacts: list[art_lib.Artifact],
     schema_dir: Path,
 ) -> dict[str, str | int]:
@@ -411,7 +405,7 @@ def _check_conflicts(
     }
 
 
-def _check_coverage(
+def check_coverage(
     artifacts: list[art_lib.Artifact],
 ) -> dict[str, str | int]:
     """Check REQ→STORY→test coverage completeness at all V-model levels.
