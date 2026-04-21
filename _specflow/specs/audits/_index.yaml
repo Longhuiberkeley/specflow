@@ -72,12 +72,11 @@ artifacts:
     - auto-generated
     title: Project Audit 20260416T091959Z
   AUD-010:
+    fingerprint: ''
     id: AUD-010
-    title: Project Audit 20260421T105914Z
     status: open
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:9373099ced9b
-    children: []
+    title: Project Audit 20260421T105914Z
 next_id: 11

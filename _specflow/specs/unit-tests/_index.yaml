@@ -1,2 +1,26 @@
-artifacts: {}
-next_id: 1
+artifacts:
+  UT-001:
+    fingerprint: ''
+    id: UT-001
+    status: implemented
+    tags: []
+    title: Artifact Library Unit Tests
+  UT-002:
+    fingerprint: ''
+    id: UT-002
+    status: implemented
+    tags: []
+    title: RBAC Engine Unit Tests
+  UT-003:
+    fingerprint: ''
+    id: UT-003
+    status: implemented
+    tags: []
+    title: Baseline Management Unit Tests
+  UT-004:
+    fingerprint: ''
+    id: UT-004
+    status: implemented
+    tags: []
+    title: Standards Loading Unit Tests
+next_id: 5

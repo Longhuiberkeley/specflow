@@ -1,2 +1,20 @@
-artifacts: {}
-next_id: 1
+artifacts:
+  QT-001:
+    fingerprint: ''
+    id: QT-001
+    status: implemented
+    tags: []
+    title: CLI Command Integration
+  QT-002:
+    fingerprint: ''
+    id: QT-002
+    status: implemented
+    tags: []
+    title: ReqIF Round-Trip Quality
+  QT-003:
+    fingerprint: ''
+    id: QT-003
+    status: implemented
+    tags: []
+    title: Coverage Metrics Accuracy
+next_id: 4

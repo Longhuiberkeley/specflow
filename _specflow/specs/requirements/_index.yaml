@@ -1,6 +1,6 @@
 artifacts:
   REQ-001:
-    fingerprint: sha256:c71b25095984
+    fingerprint: sha256:c84eb2dd9906
     id: REQ-001
     status: approved
     tags:
@@ -87,75 +87,78 @@ artifacts:
     - foundation
     title: Test Suite Foundation
   REQ-010:
+    fingerprint: sha256:eb2d81f1d6a1
     id: REQ-010
-    title: EARS Quality in Prompts and Lint Safety Net
     status: implemented
     tags:
     - quality
     - ears
     - requirements
     - lint
-    fingerprint: sha256:eb2d81f1d6a1
-    children: []
+    title: EARS Quality in Prompts and Lint Safety Net
   REQ-011:
+    fingerprint: sha256:db2520879e72
     id: REQ-011
-    title: Compliance Score Dashboard
     status: implemented
     tags:
     - reqif
     - interop
     - quality
-    fingerprint: sha256:db2520879e72
-    children: []
+    title: ReqIF Round-Trip Quality
   REQ-012:
+    fingerprint: sha256:366da1ce85ef
     id: REQ-012
-    title: Compliance Score Dashboard
     status: implemented
     tags:
     - compliance
     - reporting
     - status
-    fingerprint: sha256:366da1ce85ef
-    children: []
+    title: Compliance Score Dashboard
   REQ-013:
+    fingerprint: sha256:dac4d8d13ab8
     id: REQ-013
-    title: V-Model Test Scaffolding and Execute Enhancement
     status: implemented
     tags:
     - testing
     - vmodel
     - scaffolding
     - cli
-    fingerprint: sha256:dac4d8d13ab8
-    children: []
+    title: V-Model Test Scaffolding and Execute Enhancement
   REQ-014:
+    fingerprint: sha256:6f6e3908348c
     id: REQ-014
-    title: Deprecation Cleanup and Schema Fixes
     status: implemented
     tags:
     - cleanup
     - deprecation
     - schema
-    fingerprint: sha256:6f6e3908348c
-    children: []
+    title: Deprecation Cleanup and Schema Fixes
   REQ-015:
+    fingerprint: sha256:d50438e9f68c
     id: REQ-015
-    title: Compliance Evidence Reports
-    status: draft
+    status: approved
     tags:
     - compliance
     - reports
     - shipping
-    fingerprint: sha256:316009b98282
-    children: []
+    title: Compliance Evidence Reports
   REQ-016:
+    fingerprint: sha256:3cb45db0cc09
     id: REQ-016
-    title: Standards Gap Analysis v2
-    status: draft
+    status: approved
     tags:
     - standards
     - compliance
     - analysis
-    fingerprint: sha256:b31e8a1c2782
-    children: []
-next_id: 17
+    title: Standards Gap Analysis v2
+  REQ-017:
+    fingerprint: ''
+    id: REQ-017
+    status: draft
+    tags:
+    - compliance
+    - packs
+    - standards
+    - v0.3.0
+    title: Compliance Preset Packs
+next_id: 18

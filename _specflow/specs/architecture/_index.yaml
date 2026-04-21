@@ -1,30 +1,42 @@
 artifacts:
   ARCH-001:
-    fingerprint: sha256:28d09baae8eb
+    fingerprint: sha256:9796f65acf40
     id: ARCH-001
-    status: draft
+    status: implemented
     tags:
     - cli
     - python
     - core
     title: CLI Core
   ARCH-002:
-    fingerprint: sha256:e7baed037004
+    fingerprint: sha256:4c258ae314a4
     id: ARCH-002
-    status: draft
+    status: implemented
     tags:
     - framework
     - internals
     - core
     title: Framework Machinery
   ARCH-003:
-    fingerprint: sha256:14b81a2fe72b
+    fingerprint: sha256:ee902ce1a49a
     id: ARCH-003
-    status: draft
+    status: implemented
     tags:
     - skills
     - platform
     - ai
     - progressive-disclosure
     title: Skill & Platform System
-next_id: 4
+  ARCH-004:
+    fingerprint: sha256:4d98716c065a
+    id: ARCH-004
+    status: implemented
+    tags: []
+    title: Compliance & Exchange Subsystem
+  ARCH-005:
+    fingerprint: sha256:fa273ee409ec
+    id: ARCH-005
+    status: implemented
+    tags: []
+    title: Audit & Review Engine
+next_id: 6

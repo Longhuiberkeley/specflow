@@ -11,6 +11,16 @@ suspect: false
 links:
 - target: REQ-009
   role: implements
+- target: UT-001
+  role: verified_by
+- target: UT-003
+  role: verified_by
+- target: UT-004
+  role: verified_by
+- target: IT-001
+  role: verified_by
+- target: QT-001
+  role: verified_by
 created: '2026-04-20'
 modified: '2026-04-21'
 fingerprint: sha256:a3189db97535

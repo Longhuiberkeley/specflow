@@ -1,2 +1,8 @@
-artifacts: {}
-next_id: 1
+artifacts:
+  IT-001:
+    fingerprint: ''
+    id: IT-001
+    status: implemented
+    tags: []
+    title: Command Integration Test Suite
+next_id: 2

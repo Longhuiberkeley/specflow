@@ -9,21 +9,34 @@ artifacts:
     - core
     title: Impact Analysis Engine
   DDD-002:
-    fingerprint: ''
+    fingerprint: sha256:c729c8aa66ef
     id: DDD-002
-    status: draft
+    status: implemented
     tags:
     - execution
     - orchestration
     - parallel
     title: Execution Orchestrator
   DDD-003:
-    fingerprint: ''
+    fingerprint: sha256:f59f8b56f0aa
     id: DDD-003
-    status: draft
+    status: implemented
     tags:
     - checklists
     - review
-    - assembly
-    title: Checklist Assembly Pipeline
-next_id: 4
+    - lint
+    - quality
+    title: Review & Lint Pipeline
+  DDD-004:
+    fingerprint: sha256:7f85778e49b9
+    id: DDD-004
+    status: implemented
+    tags: []
+    title: ReqIF & Standards
+  DDD-005:
+    fingerprint: sha256:09dc789e1839
+    id: DDD-005
+    status: implemented
+    tags: []
+    title: Audit Engine
+next_id: 6

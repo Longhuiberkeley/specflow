@@ -361,64 +361,58 @@ artifacts:
     - quality
     title: Create pytest test suite for core lib modules
   STORY-040:
+    fingerprint: sha256:d87a2091f072
     id: STORY-040
-    title: Remove deprecated CLI aliases and fix requirement schema
     status: implemented
     tags:
     - cleanup
     - deprecation
     - schema
-    fingerprint: sha256:d87a2091f072
-    children: []
+    title: Remove deprecated CLI aliases and fix requirement schema
   STORY-041:
+    fingerprint: sha256:4a61a5012692
     id: STORY-041
-    title: Add EARS patterns and quality guidance to normative-language reference
     status: implemented
     tags:
     - quality
     - ears
     - discover
-    fingerprint: sha256:4a61a5012692
-    children: []
+    title: Add EARS patterns and quality guidance to normative-language reference
   STORY-042:
+    fingerprint: sha256:7753ffed1db4
     id: STORY-042
-    title: Add requirements quality lint check to artifact-lint
     status: implemented
     tags:
     - quality
     - lint
     - ears
-    fingerprint: sha256:7753ffed1db4
-    children: []
+    title: Add requirements quality lint check to artifact-lint
   STORY-043:
+    fingerprint: sha256:8f982267b23d
     id: STORY-043
-    title: Add coverage metrics to specflow status command
     status: implemented
     tags:
     - compliance
     - reporting
     - status
-    fingerprint: sha256:8f982267b23d
-    children: []
+    title: Add coverage metrics to specflow status command
   STORY-044:
+    fingerprint: sha256:1951bbd87bce
     id: STORY-044
-    title: 'Fix ReqIF round-trip quality: stable UUIDs, schema fix, tests, ARCH/DDD
-      export'
     status: implemented
     tags:
     - reqif
     - interop
     - quality
-    fingerprint: sha256:1951bbd87bce
-    children: []
+    title: 'Fix ReqIF round-trip quality: stable UUIDs, schema fix, tests, ARCH/DDD
+      export'
   STORY-045:
+    fingerprint: sha256:d0d41ed8b5f6
     id: STORY-045
-    title: Add specflow generate-tests command and update execute skill
     status: implemented
     tags:
     - testing
     - vmodel
     - scaffolding
-    fingerprint: sha256:d0d41ed8b5f6
-    children: []
+    title: Add specflow generate-tests command and update execute skill
 next_id: 46
