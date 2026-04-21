@@ -15,4 +15,294 @@ artifacts:
     - change-record
     - auto-generated
     title: 'Change Record: Third dummy commit'
-next_id: 3
+  DEC-003:
+    id: DEC-003
+    title: "Change Record: feat: implement STORY-043, STORY-044, STORY-045 \u2014\
+      \ coverage metrics, ReqIF round-trip, generate-tests"
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:093f728ecfb4
+    children: []
+  DEC-004:
+    id: DEC-004
+    title: 'Change Record: feat: add requirements quality lint check to artifact-lint
+      (STORY-042)'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:bbf88fd8b809
+    children: []
+  DEC-005:
+    id: DEC-005
+    title: 'Change Record: feat: add EARS patterns, ambiguity list, quality guidance
+      to normative-language.md (STORY-041)'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:787513e9cf6a
+    children: []
+  DEC-006:
+    id: DEC-006
+    title: 'Change Record: feat: remove 8 deprecated CLI aliases, add reqif_metadata
+      to requirement schema (STORY-040)'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:f5d1154c7e1d
+    children: []
+  DEC-007:
+    id: DEC-007
+    title: 'Change Record: specs: add v0.2.0 stories (STORY-040 through STORY-045)'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:9e77557821d0
+    children: []
+  DEC-008:
+    id: DEC-008
+    title: 'Change Record: specs: add v0.2.0 and v0.3.0 REQ artifacts'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:cf339f418f13
+    children: []
+  DEC-009:
+    id: DEC-009
+    title: 'Change Record: fix: correct AUD review_status from ''open'' to ''unreviewed'''
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:4ebb1afda180
+    children: []
+  DEC-010:
+    id: DEC-010
+    title: 'Change Record: specs: update STORY-036 to 039 and linked specs to implemented'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:fdf789e32bbf
+    children: []
+  DEC-011:
+    id: DEC-011
+    title: 'Change Record: specs: add REQ-006 through REQ-009, STORY-036 through STORY-039'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:3c6cba12a616
+    children: []
+  DEC-012:
+    id: DEC-012
+    title: 'Change Record: feat: platform registry, skill sync, README rewrite, and
+      public-readiness overhaul (STORY-033/034/035)'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:06c71ac0b317
+    children: []
+  DEC-013:
+    id: DEC-013
+    title: 'Change Record: fix(STORY-032): update status to implemented and move deleted
+      shell wrappers to archive'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:707b1e97af1f
+    children: []
+  DEC-014:
+    id: DEC-014
+    title: 'Change Record: chore(audit): auto-generated system gap challenges and
+      audit artifacts'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:bada82ec3946
+    children: []
+  DEC-015:
+    id: DEC-015
+    title: 'Change Record: docs(stories): add M4 UX and skill overhaul stories (STORY-032
+      to STORY-035)'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:4b62fd8de0ae
+    children: []
+  DEC-016:
+    id: DEC-016
+    title: "Change Record: feat(stories): update STORY-032/033/034 \u2014 template\
+      \ unification + prompt quality + agents-section rewrite"
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:613a6972b1e8
+    children: []
+  DEC-017:
+    id: DEC-017
+    title: 'Change Record: fix: post-review remediation for STORY-029/030/031'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:5c0f28a9db8d
+    children: []
+  DEC-018:
+    id: DEC-018
+    title: 'Change Record: fix(STORY-025): remediate 5 review gaps in change-audit
+      pipeline'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:1017a4f423ad
+    children: []
+  DEC-019:
+    id: DEC-019
+    title: 'Change Record: Dummy commit for testing document-changes'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:1d38717587fd
+    children: []
+  DEC-020:
+    id: DEC-020
+    title: 'Change Record: fix(checklists): upsert checklist entries instead of appending'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:b7f4725af86e
+    children: []
+  DEC-021:
+    id: DEC-021
+    title: 'Change Record: feat: ship artifact-review depth (STORY-024) and unified
+      adapter framework (STORY-026)'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:3a85aacdb462
+    children: []
+  DEC-022:
+    id: DEC-022
+    title: "Change Record: feat(STORY-028): BYOC rework \u2014 /specflow-pack-author\
+      \ skill + iso26262-demo relabel"
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:22ca98359e6f
+    children: []
+  DEC-023:
+    id: DEC-023
+    title: 'Change Record: feat(stories): complete STORY-021 skill rewrites + STORY-022
+      command rename'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:1c0c3d4927b4
+    children: []
+  DEC-024:
+    id: DEC-024
+    title: 'Change Record: fix(stories): amend STORY-021 and STORY-024 from review
+      feedback'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:b1338cb866cd
+    children: []
+  DEC-025:
+    id: DEC-025
+    title: "Change Record: feat(stories): add STORY-021\u2013031 from post-P8 retrospective"
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:3319996d129c
+    children: []
+  DEC-026:
+    id: DEC-026
+    title: "Change Record: feat(P8): intelligence & scaling \u2014 tiered dedup +\
+      \ project-hygiene detect commands"
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:f3f912f9960d
+    children: []
+  DEC-027:
+    id: DEC-027
+    title: "Change Record: feat(P7): team & enterprise \u2014 RBAC, draft IDs, CI,\
+      \ ReqIF, defect hook"
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:9a5fa3055d4a
+    children: []
+  DEC-028:
+    id: DEC-028
+    title: 'Change Record: feat(P6): implement compliance, baselines, standards packs,
+      and change records'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:084bbae1c68d
+    children: []
+  DEC-029:
+    id: DEC-029
+    title: 'Change Record: feat(P4/P5): implement traceability and execution engine
+      with review fixes'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:8343cacdcba5
+    children: []
+  DEC-030:
+    id: DEC-030
+    title: 'Change Record: feat(P3): complete self-planning gate and generate P4-P8
+      stories'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:dba772f58275
+    children: []
+  DEC-031:
+    id: DEC-031
+    title: 'Change Record: feat: complete P2 verification with remediation (D-16,
+      D-17)'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:a38e9ba9b7fa
+    children: []
+  DEC-032:
+    id: DEC-032
+    title: 'Change Record: feat: complete P1 self-specification with review fixes'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:effd728ef039
+    children: []
+next_id: 33
