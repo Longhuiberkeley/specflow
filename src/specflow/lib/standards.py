@@ -175,7 +175,7 @@ def check_compliance(
         "standard": standard_name,
         "title": standard.get("title", ""),
         "version": standard.get("version", ""),
-        "total_clauses": len(clauses),
+        "total_clauses": total,
         "covered": covered,
         "uncovered": uncovered,
         "score": score,

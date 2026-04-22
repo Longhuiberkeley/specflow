@@ -44,7 +44,7 @@ def generate_evidence_report(root: Path, baseline_name: str) -> dict[str, Any]:
     sections.extend(_baseline_section(root, baseline_name))
     sections.extend(_standards_section(root))
 
-    report_path = baseline_lib._baseline_dir(root) / f"{baseline_name}-evidence.md"
+    report_path = baseline_lib.baseline_dir(root) / f"{baseline_name}-evidence.md"
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text("\n".join(sections) + "\n", encoding="utf-8")
 

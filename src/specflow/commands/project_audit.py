@@ -153,14 +153,14 @@ def _vertical_analysis(artifacts: list[art_lib.Artifact]) -> list[dict[str, str]
 
         for other in artifacts:
             for link in other.links:
-                if link.target == req.id and link.role == "refined_by":
+                if link.target == req.id and link.role in ("refined_by", "derives_from"):
                     if art_lib.get_prefix_from_id(other.id) == "ARCH":
                         thread_arts.append(other.id)
                         thread_links[other.id] = req.id
 
         for other in artifacts:
             for link in other.links:
-                if link.target in thread_arts and link.role == "refined_by":
+                if link.target in thread_arts and link.role in ("refined_by", "derives_from"):
                     if art_lib.get_prefix_from_id(other.id) == "DDD":
                         thread_arts.append(other.id)
                         thread_links[other.id] = link.target

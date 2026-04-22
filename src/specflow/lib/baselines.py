@@ -20,12 +20,12 @@ from specflow.lib import git_utils
 _BASELINE_NAME_RE = re.compile(r"^[\w.\-]+$")
 
 
-def _baseline_dir(root: Path) -> Path:
+def baseline_dir(root: Path) -> Path:
     return root / ".specflow" / "baselines"
 
 
 def _baseline_path(root: Path, name: str) -> Path:
-    return _baseline_dir(root) / f"{name}.yaml"
+    return baseline_dir(root) / f"{name}.yaml"
 
 
 def _validate_name(name: str) -> str | None:
@@ -122,7 +122,7 @@ def load_baseline(root: Path, name: str) -> dict[str, Any] | None:
 
 def list_baselines(root: Path) -> list[str]:
     """Return sorted list of existing baseline names."""
-    d = _baseline_dir(root)
+    d = baseline_dir(root)
     if not d.exists():
         return []
     return sorted(p.stem for p in d.glob("*.yaml"))
