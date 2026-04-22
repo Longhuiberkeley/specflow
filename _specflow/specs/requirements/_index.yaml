@@ -1,37 +1,40 @@
 artifacts:
   REQ-001:
-    fingerprint: sha256:c84eb2dd9906
     id: REQ-001
+    title: CLI Interface
     status: approved
     tags:
     - functional
     - cli
     - core
     - mvp
-    title: CLI Interface
+    fingerprint: sha256:c84eb2dd9906
+    children: []
   REQ-002:
-    fingerprint: sha256:4ba4d17ec1bb
     id: REQ-002
+    title: Artifact Structure
     status: approved
     tags:
     - functional
     - core
     - format
     - mvp
-    title: Artifact Structure
+    fingerprint: sha256:4ba4d17ec1bb
+    children: []
   REQ-003:
-    fingerprint: sha256:005378fce8f7
     id: REQ-003
+    title: Trace & Suspect Propagation
     status: approved
     tags:
     - functional
     - traceability
     - impact
     - core
-    title: Trace & Suspect Propagation
+    fingerprint: sha256:005378fce8f7
+    children: []
   REQ-004:
-    fingerprint: sha256:6a83f01fd52a
     id: REQ-004
+    title: AI Execution Boundaries
     status: approved
     tags:
     - functional
@@ -39,126 +42,140 @@ artifacts:
     - skills
     - token-optimization
     - core
-    title: AI Execution Boundaries
+    fingerprint: sha256:6a83f01fd52a
+    children: []
   REQ-005:
-    fingerprint: sha256:a1ae6910e33d
     id: REQ-005
+    title: Cross-Platform & Compliance
     status: approved
     tags:
     - functional
     - cross-platform
     - compliance
     - baselines
-    title: Cross-Platform & Compliance
+    fingerprint: sha256:a1ae6910e33d
+    children: []
   REQ-006:
-    fingerprint: sha256:e90cea5f6ff8
     id: REQ-006
+    title: Pack-Author Extraction Quality
     status: implemented
     tags:
     - quality
     - packs
     - skills
-    title: Pack-Author Extraction Quality
+    fingerprint: sha256:e90cea5f6ff8
+    children: []
   REQ-007:
-    fingerprint: sha256:60d395d3afe9
     id: REQ-007
+    title: Traceability Depth Reporting
     status: implemented
     tags:
     - traceability
     - reporting
     - cli
-    title: Traceability Depth Reporting
+    fingerprint: sha256:60d395d3afe9
+    children: []
   REQ-008:
-    fingerprint: sha256:315c1da1c9b1
     id: REQ-008
+    title: Provider-Agnostic CI Gate
     status: implemented
     tags:
     - rbac
     - ci
     - adapters
-    title: Provider-Agnostic CI Gate
+    fingerprint: sha256:315c1da1c9b1
+    children: []
   REQ-009:
-    fingerprint: sha256:b322cfa86109
     id: REQ-009
+    title: Test Suite Foundation
     status: implemented
     tags:
     - testing
     - quality
     - foundation
-    title: Test Suite Foundation
+    fingerprint: sha256:b322cfa86109
+    children: []
   REQ-010:
-    fingerprint: sha256:eb2d81f1d6a1
     id: REQ-010
+    title: EARS Quality in Prompts and Lint Safety Net
     status: implemented
     tags:
     - quality
     - ears
     - requirements
     - lint
-    title: EARS Quality in Prompts and Lint Safety Net
+    fingerprint: sha256:eb2d81f1d6a1
+    children: []
   REQ-011:
-    fingerprint: sha256:db2520879e72
     id: REQ-011
+    title: ReqIF Round-Trip Quality
     status: implemented
     tags:
     - reqif
     - interop
     - quality
-    title: ReqIF Round-Trip Quality
+    fingerprint: sha256:db2520879e72
+    children: []
   REQ-012:
-    fingerprint: sha256:366da1ce85ef
     id: REQ-012
+    title: Compliance Score Dashboard
     status: implemented
     tags:
     - compliance
     - reporting
     - status
-    title: Compliance Score Dashboard
+    fingerprint: sha256:366da1ce85ef
+    children: []
   REQ-013:
-    fingerprint: sha256:dac4d8d13ab8
     id: REQ-013
+    title: V-Model Test Scaffolding and Execute Enhancement
     status: implemented
     tags:
     - testing
     - vmodel
     - scaffolding
     - cli
-    title: V-Model Test Scaffolding and Execute Enhancement
+    fingerprint: sha256:dac4d8d13ab8
+    children: []
   REQ-014:
-    fingerprint: sha256:6f6e3908348c
     id: REQ-014
+    title: Deprecation Cleanup and Schema Fixes
     status: implemented
     tags:
     - cleanup
     - deprecation
     - schema
-    title: Deprecation Cleanup and Schema Fixes
+    fingerprint: sha256:6f6e3908348c
+    children: []
   REQ-015:
-    fingerprint: sha256:d50438e9f68c
     id: REQ-015
-    status: approved
+    title: Compliance Evidence Reports
+    status: implemented
     tags:
     - compliance
     - reports
     - shipping
-    title: Compliance Evidence Reports
+    fingerprint: sha256:d50438e9f68c
+    children: []
   REQ-016:
-    fingerprint: sha256:3cb45db0cc09
     id: REQ-016
-    status: approved
+    title: Standards Gap Analysis v2
+    status: implemented
     tags:
     - standards
     - compliance
     - analysis
-    title: Standards Gap Analysis v2
+    fingerprint: sha256:3cb45db0cc09
+    children: []
   REQ-017:
-    fingerprint: ''
     id: REQ-017
-    status: draft
+    title: Flexible Artifact Type Extensions
+    status: implemented
     tags:
     - compliance
     - packs
-    - standards
+    - artifact-types
     - v0.3.0
-    title: Compliance Preset Packs
+    fingerprint: sha256:0f39f64d4a73
+    children: []
 next_id: 18

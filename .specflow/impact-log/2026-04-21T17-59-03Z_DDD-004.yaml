@@ -4,5 +4,7 @@ fingerprint_old: sha256:06612dc30a52
 fingerprint_new: sha256:f158f9eb1eef
 update_type: minor
 flagged_suspects: []
-resolved: false
+resolved: true
 timestamp: '2026-04-21T17:59:03Z'
+resolved_by: v0.3.0-release-prep
+resolved_at: '2026-04-22T01:32:43Z'

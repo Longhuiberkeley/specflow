@@ -1,44 +1,49 @@
 artifacts:
   DDD-001:
-    fingerprint: sha256:1ed62292d238
     id: DDD-001
+    title: Impact Analysis Engine
     status: implemented
     tags:
     - traceability
     - impact
     - core
-    title: Impact Analysis Engine
+    fingerprint: sha256:1ed62292d238
+    children: []
   DDD-002:
-    fingerprint: sha256:c729c8aa66ef
     id: DDD-002
+    title: Execution Orchestrator
     status: implemented
     tags:
     - execution
     - orchestration
     - parallel
-    title: Execution Orchestrator
+    fingerprint: sha256:c729c8aa66ef
+    children: []
   DDD-003:
-    fingerprint: sha256:f59f8b56f0aa
     id: DDD-003
+    title: Review & Lint Pipeline
     status: implemented
     tags:
     - checklists
     - review
     - lint
     - quality
-    title: Review & Lint Pipeline
+    fingerprint: sha256:f59f8b56f0aa
+    children: []
   DDD-004:
-    fingerprint: sha256:7f85778e49b9
     id: DDD-004
-    status: implemented
-    tags: []
     title: ReqIF & Standards
-  DDD-005:
-    fingerprint: sha256:09dc789e1839
-    id: DDD-005
     status: implemented
     tags: []
+    fingerprint: sha256:f158f9eb1eef
+    children: []
+  DDD-005:
+    id: DDD-005
     title: Audit Engine
+    status: implemented
+    tags: []
+    fingerprint: sha256:09dc789e1839
+    children: []
   DDD-006:
     id: DDD-006
     title: Pack Extraction Protocol
@@ -48,6 +53,6 @@ artifacts:
     - extraction
     - quality
     - skills
-    fingerprint: sha256:e3b0c44298fc
+    fingerprint: sha256:d770dabc85eb
     children: []
 next_id: 7

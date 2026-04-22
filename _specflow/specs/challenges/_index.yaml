@@ -388,7 +388,7 @@ artifacts:
   CHL-286:
     id: CHL-286
     title: 'REQ-015: no STORY implements this requirement'
-    status: open
+    status: stale
     tags: []
     fingerprint: sha256:a5964ec66a59
     children: []
@@ -402,7 +402,7 @@ artifacts:
   CHL-288:
     id: CHL-288
     title: 'REQ-016: no STORY implements this requirement'
-    status: open
+    status: stale
     tags: []
     fingerprint: sha256:1b9554249b9d
     children: []

@@ -1,20 +1,23 @@
 artifacts:
   QT-001:
-    fingerprint: ''
     id: QT-001
-    status: implemented
-    tags: []
     title: CLI Command Integration
+    status: implemented
+    tags: []
+    fingerprint: sha256:b19df1c1eec2
+    children: []
   QT-002:
-    fingerprint: ''
     id: QT-002
-    status: implemented
-    tags: []
     title: ReqIF Round-Trip Quality
-  QT-003:
-    fingerprint: ''
-    id: QT-003
     status: implemented
     tags: []
+    fingerprint: sha256:539792f23420
+    children: []
+  QT-003:
+    id: QT-003
     title: Coverage Metrics Accuracy
+    status: implemented
+    tags: []
+    fingerprint: sha256:085b249b9324
+    children: []
 next_id: 4

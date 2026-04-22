@@ -1,26 +1,30 @@
 artifacts:
   UT-001:
-    fingerprint: ''
     id: UT-001
-    status: implemented
-    tags: []
     title: Artifact Library Unit Tests
+    status: implemented
+    tags: []
+    fingerprint: sha256:8d2dc05d2165
+    children: []
   UT-002:
-    fingerprint: ''
     id: UT-002
-    status: implemented
-    tags: []
     title: RBAC Engine Unit Tests
+    status: implemented
+    tags: []
+    fingerprint: sha256:c354009ca33b
+    children: []
   UT-003:
-    fingerprint: ''
     id: UT-003
-    status: implemented
-    tags: []
     title: Baseline Management Unit Tests
-  UT-004:
-    fingerprint: ''
-    id: UT-004
     status: implemented
     tags: []
+    fingerprint: sha256:06399e9f0a6e
+    children: []
+  UT-004:
+    id: UT-004
     title: Standards Loading Unit Tests
+    status: implemented
+    tags: []
+    fingerprint: sha256:0b12d6bfed31
+    children: []
 next_id: 5
