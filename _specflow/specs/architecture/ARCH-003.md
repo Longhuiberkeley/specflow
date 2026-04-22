@@ -25,8 +25,8 @@ checklists_applied:
 - checklist: check-ARCH-003
   timestamp: '2026-04-14T17:03:22Z'
 modified: '2026-04-21'
+version: 1
 ---
-
 
 # Skill & Platform System
 

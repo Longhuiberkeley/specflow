@@ -23,6 +23,7 @@ links:
 created: '2026-04-21'
 modified: '2026-04-22'
 fingerprint: sha256:7753ffed1db4
+version: 1
 ---
 
 # Add requirements quality lint check to artifact-lint

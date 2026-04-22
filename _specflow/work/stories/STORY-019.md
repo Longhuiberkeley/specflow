@@ -28,6 +28,7 @@ checklists_applied:
   timestamp: '2026-04-14T17:03:23Z'
 modified: '2026-04-22'
 fingerprint: sha256:74a95266e364
+version: 1
 ---
 
 # Implement tiered duplicate detection pipeline for artifacts

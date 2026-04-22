@@ -29,6 +29,7 @@ checklists_applied:
   timestamp: '2026-04-14T17:03:23Z'
 modified: '2026-04-22'
 fingerprint: sha256:2cfa543fa94c
+version: 1
 ---
 
 # Implement ReqIF import and export for DOORS/Polarion interchange

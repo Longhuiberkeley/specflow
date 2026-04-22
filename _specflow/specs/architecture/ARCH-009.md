@@ -18,7 +18,7 @@ links:
   role: derives_from
 created: '2026-04-22'
 fingerprint: sha256:76c8786760f1
-version: 1
+version: 2
 ---
 
 # Provider-Agnostic CI Gate

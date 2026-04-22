@@ -30,6 +30,7 @@ checklists_applied:
   timestamp: '2026-04-11T13:45:49Z'
 - checklist: check-STORY-004
   timestamp: '2026-04-14T17:03:22Z'
+version: 1
 ---
 
 # Implement split and merge operations for artifact refactoring

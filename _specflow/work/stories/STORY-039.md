@@ -26,6 +26,7 @@ links:
 created: '2026-04-20'
 modified: '2026-04-22'
 fingerprint: sha256:a3189db97535
+version: 1
 ---
 
 # Create pytest test suite for core lib modules

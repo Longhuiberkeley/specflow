@@ -23,6 +23,7 @@ links:
 created: '2026-04-21'
 modified: '2026-04-22'
 fingerprint: sha256:8f982267b23d
+version: 1
 ---
 
 # Add coverage metrics to specflow status command

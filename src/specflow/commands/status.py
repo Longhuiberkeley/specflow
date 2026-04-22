@@ -88,24 +88,22 @@ def _compute_coverage(artifacts: list[art_lib.Artifact]) -> dict[str, Any]:
 
     stories = [a for a in artifacts if a.type == "story"]
     story_with_test = 0
+    total_tests = 0
     for story in stories:
-        linked_specs: list[str] = []
+        tests_for_story = 0
         for link in story.links:
-            if link.role == "implements":
-                linked_specs.append(link.target)
-        for spec_id in linked_specs:
-            spec = id_index.get(spec_id)
-            if spec and spec.type in art_lib.V_MODEL_PAIRS:
-                for other in artifacts:
-                    for olink in other.links:
-                        if olink.target == spec_id and olink.role == "verified_by":
-                            story_with_test += 1
-                            break
-                    else:
-                        continue
-                    break
+            if link.role == "verified_by":
+                tests_for_story += 1
+        for other in artifacts:
+            for olink in other.links:
+                if olink.target == story.id and olink.role == "verified_by":
+                    tests_for_story += 1
+        if tests_for_story > 0:
+            story_with_test += 1
+            total_tests += tests_for_story
     story_total = len(stories)
     story_pct = (story_with_test / story_total * 100) if story_total > 0 else None
+    avg_tests = (total_tests / story_total) if story_total > 0 else 0.0
 
     spec_types = list(art_lib.V_MODEL_PAIRS.keys())
     total_spec = 0
@@ -132,6 +130,7 @@ def _compute_coverage(artifacts: list[art_lib.Artifact]) -> dict[str, Any]:
         "story_total": story_total,
         "story_tested": story_with_test,
         "story_pct": story_pct,
+        "story_avg_tests": avg_tests,
         "chain_total": total_spec,
         "chain_verified": verified_spec,
         "chain_pct": chain_pct,
@@ -261,7 +260,7 @@ def run(root: Path, args: dict) -> int:
     if coverage["req_pct"] is not None:
         cov_parts.append(f"REQ {coverage['req_pct']:.0f}% ({coverage['req_covered']}/{coverage['req_total']})")
     if coverage["story_pct"] is not None:
-        cov_parts.append(f"STORY test {coverage['story_pct']:.0f}% ({coverage['story_tested']}/{coverage['story_total']})")
+        cov_parts.append(f"STORY test {coverage['story_pct']:.0f}% ({coverage['story_tested']}/{coverage['story_total']}) | {coverage['story_avg_tests']:.1f} tests/story avg")
     if coverage["chain_pct"] is not None:
         cov_parts.append(f"Chain {coverage['chain_pct']:.0f}% ({coverage['chain_verified']}/{coverage['chain_total']})")
     if cov_parts:

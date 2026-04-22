@@ -12,15 +12,21 @@ suspect: false
 links:
 - target: STORY-032
   role: depends_on
-- target: UT-009
+- target: REQ-019
+  role: implements
+- target: ARCH-011
+  role: guided_by
+- target: DDD-008
+  role: specified_by
+- target: QT-020
   role: verified_by
-- target: IT-007
+- target: IT-013
   role: verified_by
-- target: QT-017
+- target: UT-014
   role: verified_by
 created: '2026-04-17'
 fingerprint: sha256:e150f32f8b00
-version: 1
+version: 2
 modified: '2026-04-22'
 ---
 

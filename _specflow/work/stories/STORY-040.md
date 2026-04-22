@@ -23,6 +23,7 @@ links:
 created: '2026-04-21'
 modified: '2026-04-22'
 fingerprint: sha256:d87a2091f072
+version: 1
 ---
 
 # Remove deprecated CLI aliases and fix requirement schema

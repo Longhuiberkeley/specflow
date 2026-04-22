@@ -111,13 +111,6 @@ artifacts:
     tags: []
     fingerprint: ''
     children: []
-  QT-017:
-    id: QT-017
-    title: Wave 2 Skills and Infrastructure Qualification
-    status: implemented
-    tags: []
-    fingerprint: ''
-    children: []
   QT-018:
     id: QT-018
     title: Test Suite Foundation Qualification
@@ -125,4 +118,32 @@ artifacts:
     tags: []
     fingerprint: ''
     children: []
-next_id: 19
+  QT-019:
+    id: QT-019
+    title: Unified CLI Framework & Install UX Qualification
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  QT-020:
+    id: QT-020
+    title: AI Skill Ecosystem Restructuring Qualification
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  QT-021:
+    id: QT-021
+    title: Continuous Auditing & BYOC Compliance Qualification
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  QT-022:
+    id: QT-022
+    title: Convention Enforcement & Docs Architecture Qualification
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+next_id: 23

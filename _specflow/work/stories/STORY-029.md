@@ -15,17 +15,24 @@ links:
   role: depends_on
 - target: STORY-024
   role: depends_on
-- target: UT-009
+- target: REQ-020
+  role: implements
+- target: ARCH-012
+  role: guided_by
+- target: DDD-009
+  role: specified_by
+- target: QT-021
   role: verified_by
-- target: IT-007
+- target: IT-014
   role: verified_by
-- target: QT-017
+- target: UT-015
   role: verified_by
 checklists_applied:
 - checklist: check-STORY-029
   timestamp: '2026-04-14T17:03:23Z'
 modified: '2026-04-22'
 fingerprint: sha256:e2e291118dad
+version: 1
 ---
 
 # Add deterministic analytical passes to the V-model

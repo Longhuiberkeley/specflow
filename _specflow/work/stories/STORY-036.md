@@ -23,6 +23,7 @@ links:
 created: '2026-04-20'
 modified: '2026-04-22'
 fingerprint: sha256:6a7a4f1483c8
+version: 1
 ---
 
 # Improve pack-author extraction protocol with verification layer

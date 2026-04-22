@@ -32,6 +32,7 @@ checklists_applied:
   timestamp: '2026-04-11T13:45:49Z'
 - checklist: check-STORY-008
   timestamp: '2026-04-14T17:03:22Z'
+version: 1
 ---
 
 # Assemble context-specific review criteria for specflow check

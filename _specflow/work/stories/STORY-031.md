@@ -17,17 +17,24 @@ links:
   role: depends_on
 - target: STORY-026
   role: depends_on
-- target: UT-009
+- target: REQ-018
+  role: implements
+- target: ARCH-010
+  role: guided_by
+- target: DDD-007
+  role: specified_by
+- target: QT-019
   role: verified_by
-- target: IT-007
+- target: IT-012
   role: verified_by
-- target: QT-017
+- target: UT-013
   role: verified_by
 checklists_applied:
 - checklist: check-STORY-031
   timestamp: '2026-04-14T17:03:23Z'
 modified: '2026-04-22'
 fingerprint: sha256:9a3927cd99b2
+version: 1
 ---
 
 # Install UX — one-line install path and getting-started tutorial

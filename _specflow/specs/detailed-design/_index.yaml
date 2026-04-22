@@ -55,4 +55,32 @@ artifacts:
     - skills
     fingerprint: sha256:d770dabc85eb
     children: []
-next_id: 7
+  DDD-007:
+    id: DDD-007
+    title: Recovery Primitives Implementation
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  DDD-008:
+    id: DDD-008
+    title: Skill Prompt Optimization
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  DDD-009:
+    id: DDD-009
+    title: Deterministic Analytics Engine
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  DDD-010:
+    id: DDD-010
+    title: Convention Evaluation Logic
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+next_id: 11

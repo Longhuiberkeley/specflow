@@ -26,6 +26,7 @@ links:
 created: '2026-04-22'
 modified: '2026-04-22'
 fingerprint: sha256:307c26741722
+version: 1
 ---
 
 # Add compliance evidence report to specflow ship

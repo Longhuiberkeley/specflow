@@ -28,6 +28,7 @@ checklists_applied:
   timestamp: '2026-04-11T13:45:49Z'
 - checklist: check-STORY-005
   timestamp: '2026-04-14T17:03:22Z'
+version: 1
 ---
 
 # Implement filesystem locks for concurrent artifact modification

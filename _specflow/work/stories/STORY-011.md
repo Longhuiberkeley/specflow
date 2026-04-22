@@ -28,6 +28,7 @@ checklists_applied:
   timestamp: '2026-04-14T17:03:23Z'
 modified: '2026-04-22'
 fingerprint: sha256:fe09bc983eda
+version: 1
 ---
 
 # Create and compare immutable baselines for project state snapshots

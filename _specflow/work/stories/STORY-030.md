@@ -18,17 +18,24 @@ links:
   role: depends_on
 - target: STORY-029
   role: depends_on
-- target: UT-009
+- target: REQ-020
+  role: implements
+- target: ARCH-012
+  role: guided_by
+- target: DDD-009
+  role: specified_by
+- target: QT-021
   role: verified_by
-- target: IT-007
+- target: IT-014
   role: verified_by
-- target: QT-017
+- target: UT-015
   role: verified_by
 checklists_applied:
 - checklist: check-STORY-030
   timestamp: '2026-04-14T17:03:23Z'
 modified: '2026-04-22'
 fingerprint: sha256:8d8779ab40c0
+version: 1
 ---
 
 # Ship /specflow-project-audit with seamless core + wings

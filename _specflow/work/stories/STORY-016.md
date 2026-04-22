@@ -29,6 +29,7 @@ checklists_applied:
   timestamp: '2026-04-14T17:03:23Z'
 modified: '2026-04-22'
 fingerprint: sha256:bcd75bb30bed
+version: 1
 ---
 
 # Implement defect lifecycle tracking with V-model linkage

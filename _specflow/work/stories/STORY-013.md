@@ -28,6 +28,7 @@ checklists_applied:
   timestamp: '2026-04-14T17:03:23Z'
 modified: '2026-04-22'
 fingerprint: sha256:ca1d162d382f
+version: 1
 ---
 
 # Generate retroactive change records from git history and impact-log

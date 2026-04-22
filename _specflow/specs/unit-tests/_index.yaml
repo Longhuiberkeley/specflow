@@ -55,13 +55,6 @@ artifacts:
     tags: []
     fingerprint: ''
     children: []
-  UT-009:
-    id: UT-009
-    title: Wave 2 Skills and Infrastructure Unit Tests
-    status: implemented
-    tags: []
-    fingerprint: ''
-    children: []
   UT-010:
     id: UT-010
     title: ReqIF and Standards Unit Tests
@@ -83,4 +76,32 @@ artifacts:
     tags: []
     fingerprint: ''
     children: []
-next_id: 13
+  UT-013:
+    id: UT-013
+    title: Recovery Primitives Implementation Unit Tests
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  UT-014:
+    id: UT-014
+    title: Skill Prompt Optimization Unit Tests
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  UT-015:
+    id: UT-015
+    title: Deterministic Analytics Engine Unit Tests
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  UT-016:
+    id: UT-016
+    title: Convention Evaluation Logic Unit Tests
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+next_id: 17

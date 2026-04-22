@@ -28,6 +28,7 @@ checklists_applied:
   timestamp: '2026-04-14T17:03:23Z'
 modified: '2026-04-22'
 fingerprint: sha256:77229e571f6c
+version: 1
 ---
 
 # Implement dead code and code similarity detection for project hygiene

@@ -29,6 +29,7 @@ checklists_applied:
   timestamp: '2026-04-14T17:03:23Z'
 modified: '2026-04-22'
 fingerprint: sha256:91ea8b11001c
+version: 1
 ---
 
 # Enforce role-based access control via git hooks and CODEOWNERS

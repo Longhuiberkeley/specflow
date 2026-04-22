@@ -23,6 +23,7 @@ links:
 created: '2026-04-21'
 modified: '2026-04-22'
 fingerprint: sha256:1951bbd87bce
+version: 1
 ---
 
 # Fix ReqIF round-trip quality: stable UUIDs, schema fix, tests, ARCH/DDD export

@@ -26,6 +26,7 @@ links:
 created: '2026-04-22'
 modified: '2026-04-22'
 fingerprint: sha256:7e7ac8a5b7d1
+version: 1
 ---
 
 # Add optional artifact type schemas and init integration

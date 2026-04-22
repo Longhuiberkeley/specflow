@@ -178,4 +178,32 @@ artifacts:
     - v0.3.0
     fingerprint: sha256:079139fa65c6
     children: []
-next_id: 18
+  REQ-018:
+    id: REQ-018
+    title: Unified CLI Framework & Install UX
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  REQ-019:
+    id: REQ-019
+    title: AI Skill Ecosystem Restructuring
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  REQ-020:
+    id: REQ-020
+    title: Continuous Auditing & BYOC Compliance
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  REQ-021:
+    id: REQ-021
+    title: Convention Enforcement & Docs Architecture
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+next_id: 22

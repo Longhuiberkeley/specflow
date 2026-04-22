@@ -10,11 +10,17 @@ tags:
 - M2-extensible
 suspect: false
 links:
-- target: UT-009
+- target: REQ-018
+  role: implements
+- target: ARCH-010
+  role: guided_by
+- target: DDD-007
+  role: specified_by
+- target: QT-019
   role: verified_by
-- target: IT-007
+- target: IT-012
   role: verified_by
-- target: QT-017
+- target: UT-013
   role: verified_by
 created: '2026-04-14'
 checklists_applied:
@@ -22,6 +28,7 @@ checklists_applied:
   timestamp: '2026-04-14T17:03:23Z'
 modified: '2026-04-22'
 fingerprint: sha256:283b8b4cca4f
+version: 1
 ---
 
 # Expose recovery primitives as CLI commands and clean up dead code

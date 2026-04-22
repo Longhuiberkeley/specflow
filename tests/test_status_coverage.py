@@ -59,11 +59,12 @@ class TestStoryTestCoverage:
         arts = [
             _make_art("REQ-001", "requirement"),
             _make_art("STORY-001", "story", links=[art_lib.Link(target="REQ-001", role="implements")]),
-            _make_art("QT-001", "qualification-test", links=[art_lib.Link(target="REQ-001", role="verified_by")]),
+            _make_art("QT-001", "qualification-test", links=[art_lib.Link(target="REQ-001", role="verified_by"), art_lib.Link(target="STORY-001", role="verified_by")]),
         ]
         result = _compute_coverage(arts)
         assert result["story_total"] == 1
         assert result["story_tested"] == 1
+        assert result["story_avg_tests"] == 1.0
         assert result["story_pct"] == 100.0
 
     def test_story_without_verified_spec(self):

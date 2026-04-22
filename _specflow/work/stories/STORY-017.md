@@ -29,6 +29,7 @@ checklists_applied:
   timestamp: '2026-04-14T17:03:23Z'
 modified: '2026-04-22'
 fingerprint: sha256:802ee56ce791
+version: 1
 ---
 
 # Implement CI integration job with two-pass validation

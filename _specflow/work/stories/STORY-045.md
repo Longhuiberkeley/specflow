@@ -25,6 +25,7 @@ links:
 created: '2026-04-21'
 modified: '2026-04-22'
 fingerprint: sha256:d0d41ed8b5f6
+version: 1
 ---
 
 # Add specflow generate-tests command and update execute skill

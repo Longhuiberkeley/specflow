@@ -34,20 +34,6 @@ artifacts:
     tags: []
     fingerprint: ''
     children: []
-  IT-006:
-    id: IT-006
-    title: Traceability Chain Integration Tests
-    status: implemented
-    tags: []
-    fingerprint: ''
-    children: []
-  IT-007:
-    id: IT-007
-    title: Wave 2 Skills and Infrastructure Integration Tests
-    status: implemented
-    tags: []
-    fingerprint: ''
-    children: []
   IT-008:
     id: IT-008
     title: Audit and Review Engine Integration Tests
@@ -76,4 +62,32 @@ artifacts:
     tags: []
     fingerprint: ''
     children: []
-next_id: 12
+  IT-012:
+    id: IT-012
+    title: Command Wrappers & Adapter Framework Integration
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  IT-013:
+    id: IT-013
+    title: Tier 1 Conversational Routing Integration
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  IT-014:
+    id: IT-014
+    title: Change-Audit & Pack-Author Pipelines Integration
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  IT-015:
+    id: IT-015
+    title: Structure Checklists & Doc Lifecycle Integration
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+next_id: 16

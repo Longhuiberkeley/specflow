@@ -29,6 +29,7 @@ checklists_applied:
   timestamp: '2026-04-14T17:03:23Z'
 modified: '2026-04-22'
 fingerprint: sha256:c4a2d22865de
+version: 1
 ---
 
 # Implement draft IDs on branches with CI renumbering on merge

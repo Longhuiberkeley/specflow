@@ -18,7 +18,7 @@ links:
   role: derives_from
 created: '2026-04-22'
 fingerprint: sha256:683906d8a098
-version: 1
+version: 2
 ---
 
 # Traceability Chain Engine

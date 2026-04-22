@@ -20,7 +20,7 @@ links:
 created: '2026-04-21'
 modified: '2026-04-21'
 fingerprint: sha256:38704e647951
-version: 1
+version: 2
 ---
 
 # Pack-Author Pipeline

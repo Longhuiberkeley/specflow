@@ -23,6 +23,7 @@ links:
 created: '2026-04-21'
 modified: '2026-04-22'
 fingerprint: sha256:4a61a5012692
+version: 1
 ---
 
 # Add EARS patterns and quality guidance to normative-language reference

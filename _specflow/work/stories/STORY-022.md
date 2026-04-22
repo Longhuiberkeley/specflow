@@ -11,11 +11,17 @@ tags:
 - M1-clarity
 suspect: false
 links:
-- target: UT-009
+- target: REQ-018
+  role: implements
+- target: ARCH-010
+  role: guided_by
+- target: DDD-007
+  role: specified_by
+- target: QT-019
   role: verified_by
-- target: IT-007
+- target: IT-012
   role: verified_by
-- target: QT-017
+- target: UT-013
   role: verified_by
 created: '2026-04-14'
 checklists_applied:
@@ -23,6 +29,7 @@ checklists_applied:
   timestamp: '2026-04-14T17:03:23Z'
 modified: '2026-04-22'
 fingerprint: sha256:ea3bae1e6e1b
+version: 1
 ---
 
 # Ship command rename and thin-skill wrappers for all Tier 2/3 CLI commands

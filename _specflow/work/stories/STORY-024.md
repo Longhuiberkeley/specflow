@@ -10,11 +10,17 @@ tags:
 - M1-clarity
 suspect: false
 links:
-- target: UT-009
+- target: REQ-019
+  role: implements
+- target: ARCH-011
+  role: guided_by
+- target: DDD-008
+  role: specified_by
+- target: QT-020
   role: verified_by
-- target: IT-007
+- target: IT-013
   role: verified_by
-- target: QT-017
+- target: UT-014
   role: verified_by
 created: '2026-04-14'
 checklists_applied:
@@ -22,6 +28,7 @@ checklists_applied:
   timestamp: '2026-04-14T17:03:23Z'
 modified: '2026-04-22'
 fingerprint: sha256:b95df92dbbbb
+version: 1
 ---
 
 # Ship /specflow-artifact-review with tiered depth and thinking techniques

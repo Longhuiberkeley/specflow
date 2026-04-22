@@ -86,4 +86,32 @@ artifacts:
     - adapters
     fingerprint: sha256:76c8786760f1
     children: []
-next_id: 10
+  ARCH-010:
+    id: ARCH-010
+    title: Command Wrappers & Adapter Framework
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  ARCH-011:
+    id: ARCH-011
+    title: Tier 1 Conversational Routing
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  ARCH-012:
+    id: ARCH-012
+    title: Change-Audit & Pack-Author Pipelines
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  ARCH-013:
+    id: ARCH-013
+    title: Structure Checklists & Doc Lifecycle
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+next_id: 14

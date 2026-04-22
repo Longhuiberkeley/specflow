@@ -16,13 +16,16 @@ links:
   role: specified_by
 - target: UT-001
   role: verified_by
-- target: IT-006
-  role: verified_by
 - target: QT-009
+  role: verified_by
+- target: ARCH-007
+  role: guided_by
+- target: IT-009
   role: verified_by
 created: '2026-04-20'
 modified: '2026-04-22'
 fingerprint: sha256:ddc227e4eb50
+version: 1
 ---
 
 # Add trace command and chain-report lint check

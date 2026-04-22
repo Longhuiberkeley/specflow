@@ -9,11 +9,17 @@ tags:
 - M1-clarity
 suspect: false
 links:
-- target: UT-009
+- target: REQ-021
+  role: implements
+- target: ARCH-013
+  role: guided_by
+- target: DDD-010
+  role: specified_by
+- target: QT-022
   role: verified_by
-- target: IT-007
+- target: IT-015
   role: verified_by
-- target: QT-017
+- target: UT-016
   role: verified_by
 created: '2026-04-14'
 checklists_applied:
@@ -21,6 +27,7 @@ checklists_applied:
   timestamp: '2026-04-14T17:03:23Z'
 modified: '2026-04-22'
 fingerprint: sha256:1f899b823f47
+version: 1
 ---
 
 # Archive docs/phases and restructure docs/ directory
