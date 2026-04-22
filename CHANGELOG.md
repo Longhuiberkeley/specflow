@@ -4,6 +4,20 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.0] - 2026-04-22
+
+### Added
+
+- **Compliance evidence reports** (`specflow baseline create --evidence`) — generates a Markdown report alongside the baseline with traceability matrix, test results summary, baseline diff, and per-standard coverage scores (REQ-015, STORY-046)
+- **Enhanced standards gap analysis** (`specflow standards gaps`) — coverage scoring (0–100%), severity-sorted gap list with priority tiebreak, rule-based remediation suggestions per category, summary dashboard, and `--json` flag for machine-readable output (REQ-016, STORY-047)
+- **Optional artifact type schemas** (`specflow init --with-types hazard,risk,control`) — installable hazard, risk, and control artifact types with domain-specific fields, V-model lifecycle, and full create/trace/lint integration (REQ-017, STORY-048)
+
+### Fixed
+
+- `check_compliance()` now reports `total_clauses` consistent with the score denominator (previously diverged when malformed clauses were skipped)
+- Project audit correctly detects ARCH and DDD refinements linked via `derives_from` (previously only matched `refined_by`, producing 10+ false-positive "no ARCH refinement" warnings)
+- Public `baseline_dir()` API replaces private `_baseline_dir()` for cross-module use by evidence report generator
+
 ## [0.2.0] - 2025-04-21
 
 ### Added
@@ -81,4 +95,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Unified skill templates across all platforms
 - Rewrote documentation for public-readiness
 
+[0.3.0]: https://github.com/Longhuiberkeley/specflow/releases/tag/v0.3.0
 [0.2.0]: https://github.com/Longhuiberkeley/specflow/releases/tag/v0.2.0
