@@ -2,7 +2,7 @@ artifacts:
   REQ-001:
     id: REQ-001
     title: CLI Interface
-    status: approved
+    status: implemented
     tags:
     - functional
     - cli
@@ -13,7 +13,7 @@ artifacts:
   REQ-002:
     id: REQ-002
     title: Artifact Structure
-    status: approved
+    status: implemented
     tags:
     - functional
     - core
@@ -24,7 +24,7 @@ artifacts:
   REQ-003:
     id: REQ-003
     title: Trace & Suspect Propagation
-    status: approved
+    status: implemented
     tags:
     - functional
     - traceability
@@ -35,7 +35,7 @@ artifacts:
   REQ-004:
     id: REQ-004
     title: AI Execution Boundaries
-    status: approved
+    status: implemented
     tags:
     - functional
     - ai
@@ -47,7 +47,7 @@ artifacts:
   REQ-005:
     id: REQ-005
     title: Cross-Platform & Compliance
-    status: approved
+    status: implemented
     tags:
     - functional
     - cross-platform

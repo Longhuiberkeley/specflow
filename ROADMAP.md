@@ -4,7 +4,7 @@ SpecFlow ships incrementally. This document tracks what shipped in each release,
 
 For the implementation plan (phase breakdown, dependency graph), see [docs/plan.md](docs/plan.md).
 
-## v0.2.0 (Current)
+## v0.2.0
 
 **First tagged release.** Full AI lifecycle with discovery, traceability, execution, review, and compliance.
 
@@ -58,11 +58,11 @@ For the implementation plan (phase breakdown, dependency graph), see [docs/plan.
 - Deterministic shell wrappers for CI/CD integration
 - Artifact quality lint with regex-based checks
 
-## v0.3.0 (Planned)
+## v0.3.0 (Current)
 
-- **Compliance preset packs** — pre-built industry pack schemas for ISO 26262, IEC 62304, DO-178C, SOX (users provide licensed standard text)
-- **Compliance evidence reports** — generate DHF/Technical File style output from `/specflow-ship`
-- **Deeper standards gap analysis** — coverage scoring with actionable remediation
+- **Compliance evidence reports** — `specflow baseline create --evidence` generates a Markdown report alongside the baseline with traceability matrix, test results summary, baseline diff, and per-standard coverage scores
+- **Enhanced standards gap analysis** — `specflow standards gaps` now includes coverage scoring (0–100%), severity-sorted gap list with priority tiebreak, rule-based remediation suggestions per category, summary dashboard, and `--json` flag for machine-readable output
+- **Optional artifact type schemas** — `specflow init --with-types hazard,risk,control` installs domain-specific artifact types (hazard, risk, control) with full create/trace/lint integration and V-model lifecycle
 
 ## v1.0.0 (Planned)
 

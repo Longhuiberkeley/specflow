@@ -80,7 +80,7 @@ uv tool install git+https://github.com/Longhuiberkeley/specflow
 uvx --from git+https://github.com/Longhuiberkeley/specflow specflow init
 
 # Pin to a specific release
-uv tool install git+https://github.com/Longhuiberkeley/specflow@v0.2.0
+uv tool install git+https://github.com/Longhuiberkeley/specflow@v0.3.0
 ```
 
 Supports 14 AI coding platforms: Claude Code, Cursor, Windsurf, Cline, Gemini CLI, OpenCode, GitHub Copilot, Roo Code, QwenCoder, Kiro, KiloCoder, Codex, Trae, and Junie.
@@ -140,9 +140,9 @@ Everything is plain Markdown + YAML frontmatter. Your repo IS the database. See 
 
 ## Roadmap
 
-**v0.2.0 is the current release** — 10 slash commands, zero-token validation engine, V-model traceability, ReqIF import/export, RBAC, baselines, dedup, and 14 platform support.
+**v0.3.0 is the current release** — everything in v0.2.0 plus compliance evidence reports (`--evidence`), enhanced standards gap analysis with scoring and remediation, and optional artifact type schemas (hazard, risk, control).
 
-Next up: compliance preset packs, evidence reports, and deeper gap analysis (v0.3.0).
+Next up: review workflow artifacts, local visualization server, and enhanced AI-assisted test generation (v1.0.0).
 
 See [ROADMAP.md](ROADMAP.md) for the full plan and [CHANGELOG.md](CHANGELOG.md) for what shipped in each version.
 
