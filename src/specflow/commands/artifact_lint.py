@@ -635,22 +635,25 @@ def _check_quality(
 
     reqs = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "REQ"]
 
+    _STRIP_CODE = re.compile(r"`[^`]+`")
+
     for art in reqs:
         findings: list[str] = []
+        body = _STRIP_CODE.sub("", art.body)
 
-        for m in _AMBIGUITY_WORDS.finditer(art.body):
+        for m in _AMBIGUITY_WORDS.finditer(body):
             word = m.group(1)
             findings.append(f"ambiguity word '{word}'")
 
-        for m in _PASSIVE_VOICE.finditer(art.body):
+        for m in _PASSIVE_VOICE.finditer(body):
             phrase = m.group(0)
             findings.append(f"passive voice '{phrase}'")
 
-        for m in _COMPOUND_SHALL.finditer(art.body):
+        for m in _COMPOUND_SHALL.finditer(body):
             snippet = m.group(0).strip()[:60]
             findings.append(f"compound shall in '{snippet}...'")
 
-        for m in _MISSING_THRESHOLD.finditer(art.body):
+        for m in _MISSING_THRESHOLD.finditer(body):
             phrase = m.group(0)
             findings.append(f"missing threshold in '{phrase}'")
 

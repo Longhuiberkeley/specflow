@@ -8,7 +8,7 @@ artifacts:
     - cli
     - core
     - mvp
-    fingerprint: sha256:c84eb2dd9906
+    fingerprint: sha256:f900d4c4d133
     children: []
   REQ-002:
     id: REQ-002
@@ -19,7 +19,7 @@ artifacts:
     - core
     - format
     - mvp
-    fingerprint: sha256:4ba4d17ec1bb
+    fingerprint: sha256:d8326bb048bf
     children: []
   REQ-003:
     id: REQ-003
@@ -30,7 +30,7 @@ artifacts:
     - traceability
     - impact
     - core
-    fingerprint: sha256:005378fce8f7
+    fingerprint: sha256:b5aa25c44a5e
     children: []
   REQ-004:
     id: REQ-004
@@ -42,7 +42,7 @@ artifacts:
     - skills
     - token-optimization
     - core
-    fingerprint: sha256:6a83f01fd52a
+    fingerprint: sha256:7dba50c26b8b
     children: []
   REQ-005:
     id: REQ-005
@@ -53,7 +53,7 @@ artifacts:
     - cross-platform
     - compliance
     - baselines
-    fingerprint: sha256:a1ae6910e33d
+    fingerprint: sha256:6f99e7a3c664
     children: []
   REQ-006:
     id: REQ-006
@@ -93,7 +93,7 @@ artifacts:
     - testing
     - quality
     - foundation
-    fingerprint: sha256:b322cfa86109
+    fingerprint: sha256:f31fd2c5f5bf
     children: []
   REQ-010:
     id: REQ-010
@@ -104,7 +104,7 @@ artifacts:
     - ears
     - requirements
     - lint
-    fingerprint: sha256:eb2d81f1d6a1
+    fingerprint: sha256:871c5c92e289
     children: []
   REQ-011:
     id: REQ-011
@@ -114,7 +114,7 @@ artifacts:
     - reqif
     - interop
     - quality
-    fingerprint: sha256:db2520879e72
+    fingerprint: sha256:8d9cee00fff1
     children: []
   REQ-012:
     id: REQ-012
@@ -135,7 +135,7 @@ artifacts:
     - vmodel
     - scaffolding
     - cli
-    fingerprint: sha256:dac4d8d13ab8
+    fingerprint: sha256:4c1318cb16bb
     children: []
   REQ-014:
     id: REQ-014
@@ -169,13 +169,13 @@ artifacts:
     children: []
   REQ-017:
     id: REQ-017
-    title: Flexible Artifact Type Extensions
+    title: Configurable Artifact Type Extensions
     status: implemented
     tags:
     - compliance
     - packs
     - artifact-types
     - v0.3.0
-    fingerprint: sha256:0f39f64d4a73
+    fingerprint: sha256:079139fa65c6
     children: []
 next_id: 18

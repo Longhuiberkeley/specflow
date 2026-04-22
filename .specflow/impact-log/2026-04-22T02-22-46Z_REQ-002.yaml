@@ -1,0 +1,8 @@
+changed: REQ-002
+change_type: content_modified
+fingerprint_old: sha256:4ba4d17ec1bb
+fingerprint_new: sha256:2d4bd2df7749
+update_type: minor
+flagged_suspects: []
+resolved: false
+timestamp: '2026-04-22T02:22:46Z'
