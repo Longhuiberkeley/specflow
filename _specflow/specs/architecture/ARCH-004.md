@@ -13,9 +13,14 @@ links:
   role: derives_from
 - target: REQ-015
   role: derives_from
+- target: REQ-016
+  role: derives_from
+- target: REQ-017
+  role: derives_from
 created: '2026-04-21'
 modified: '2026-04-21'
-fingerprint: sha256:4d98716c065a
+fingerprint: sha256:9358bc85b477
+version: 1
 ---
 
 # Compliance & Exchange Subsystem
@@ -61,11 +66,21 @@ standards/
     └── ...
 ```
 
-**Gap Analysis** (`specflow standards-gaps`):
+**Gap Analysis v2** (`specflow standards gaps`):
 1. Load installed standards from `.specflow/standards/`
 2. Map existing artifacts to clauses via `complies_with` links
-3. Report uncovered clauses with severity scoring
-4. Display per-standard coverage percentage
+3. Compute coverage score per standard: `(covered_clauses / total_clauses) * 100`
+4. Sort uncovered clauses by severity (high/medium/low) with priority tiebreak
+5. Generate rule-based remediation suggestions per category (missing_architecture, missing_implementation, missing_verification)
+6. Display summary dashboard with per-standard scores, gap counts, and top remediation actions
+7. Support `--json` flag for machine-readable output
+
+**Optional Artifact Type Schemas** (`specflow init --with-types`):
+1. Detect optional schemas in `src/specflow/schemas/optional/` (hazard, risk, control)
+2. Copy selected schemas into `.specflow/schema/` at init time
+3. Create corresponding directories in `_specflow/specs/`
+4. Register selected types in `.specflow/config.yaml`
+5. New types integrate with `create`, `trace`, and `artifact-lint` via the shared `TYPE_TO_PREFIX` mapping
 
 **Pack Authoring** (`/specflow-pack-author` skill):
 1. Extract table of contents from source document (PDF/URL/text)

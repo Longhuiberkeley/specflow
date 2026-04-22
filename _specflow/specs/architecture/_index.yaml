@@ -35,7 +35,7 @@ artifacts:
     title: Compliance & Exchange Subsystem
     status: implemented
     tags: []
-    fingerprint: sha256:4d98716c065a
+    fingerprint: sha256:9358bc85b477
     children: []
   ARCH-005:
     id: ARCH-005
@@ -55,4 +55,35 @@ artifacts:
     - quality
     fingerprint: sha256:38704e647951
     children: []
-next_id: 7
+  ARCH-007:
+    id: ARCH-007
+    title: Traceability Chain Engine
+    status: implemented
+    tags:
+    - traceability
+    - reporting
+    - cli
+    fingerprint: sha256:683906d8a098
+    children: []
+  ARCH-008:
+    id: ARCH-008
+    title: V-Model Test Scaffolding Engine
+    status: implemented
+    tags:
+    - testing
+    - vmodel
+    - scaffolding
+    - cli
+    fingerprint: sha256:beaa1348562b
+    children: []
+  ARCH-009:
+    id: ARCH-009
+    title: Provider-Agnostic CI Gate
+    status: implemented
+    tags:
+    - rbac
+    - ci
+    - adapters
+    fingerprint: sha256:76c8786760f1
+    children: []
+next_id: 10
