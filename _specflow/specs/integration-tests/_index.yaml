@@ -6,4 +6,74 @@ artifacts:
     tags: []
     fingerprint: sha256:60a09bb21d81
     children: []
-next_id: 2
+  IT-002:
+    id: IT-002
+    title: Framework Machinery Integration Tests
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  IT-003:
+    id: IT-003
+    title: Skill and Platform Integration Tests
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  IT-004:
+    id: IT-004
+    title: Compliance and Exchange Integration Tests
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  IT-005:
+    id: IT-005
+    title: Pack-Author Pipeline Integration Tests
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  IT-006:
+    id: IT-006
+    title: Traceability Chain Integration Tests
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  IT-007:
+    id: IT-007
+    title: Wave 2 Skills and Infrastructure Integration Tests
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  IT-008:
+    id: IT-008
+    title: Audit and Review Engine Integration Tests
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  IT-009:
+    id: IT-009
+    title: Traceability Chain Engine Integration Tests
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  IT-010:
+    id: IT-010
+    title: Provider-Agnostic CI Gate Integration Tests
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  IT-011:
+    id: IT-011
+    title: V-Model Test Scaffolding Engine Integration Tests
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+next_id: 12

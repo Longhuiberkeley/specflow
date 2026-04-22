@@ -2,7 +2,7 @@
 id: STORY-015
 title: Implement draft IDs on branches with CI renumbering on merge
 type: story
-status: implemented
+status: verified
 priority: medium
 tags:
 - team
@@ -15,13 +15,19 @@ links:
   role: implements
 - target: ARCH-001
   role: guided_by
+- target: UT-007
+  role: verified_by
+- target: IT-001
+  role: verified_by
+- target: QT-004
+  role: verified_by
 created: '2026-04-11'
 checklists_applied:
 - checklist: check-STORY-015
   timestamp: '2026-04-11T13:45:49Z'
 - checklist: check-STORY-015
   timestamp: '2026-04-14T17:03:23Z'
-modified: '2026-04-14'
+modified: '2026-04-22'
 fingerprint: sha256:c4a2d22865de
 ---
 

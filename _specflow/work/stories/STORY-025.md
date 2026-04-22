@@ -2,17 +2,26 @@
 id: STORY-025
 title: Ship the change-audit pipeline with review_status field
 type: story
-status: implemented
+status: verified
 priority: high
 tags:
 - pipeline
 - audit
 - M1-clarity
 suspect: false
+links:
+- target: UT-009
+  role: verified_by
+- target: IT-007
+  role: verified_by
+- target: QT-017
+  role: verified_by
 created: '2026-04-14'
 checklists_applied:
 - checklist: check-STORY-025
   timestamp: '2026-04-14T17:03:23Z'
+modified: '2026-04-22'
+fingerprint: sha256:e3f167eab875
 ---
 
 # Ship the change-audit pipeline with review_status field

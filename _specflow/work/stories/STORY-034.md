@@ -3,7 +3,7 @@ id: STORY-034
 title: "Documentation overhaul \u2014 rewrite lifecycle, commands, and README for\
   \ 9-command surface"
 type: story
-status: implemented
+status: verified
 priority: high
 tags:
 - UX
@@ -13,10 +13,16 @@ suspect: false
 links:
 - target: STORY-033
   role: depends_on
+- target: UT-009
+  role: verified_by
+- target: IT-007
+  role: verified_by
+- target: QT-017
+  role: verified_by
 created: '2026-04-17'
 fingerprint: sha256:55db9741b5bd
 version: 1
-modified: '2026-04-18'
+modified: '2026-04-22'
 ---
 
 # Documentation overhaul — rewrite lifecycle, commands, and README for 9-command surface

@@ -2,7 +2,7 @@
 id: STORY-037
 title: Add trace command and chain-report lint check
 type: story
-status: implemented
+status: verified
 priority: high
 tags:
 - traceability
@@ -14,8 +14,14 @@ links:
   role: implements
 - target: DDD-001
   role: specified_by
+- target: UT-001
+  role: verified_by
+- target: IT-006
+  role: verified_by
+- target: QT-009
+  role: verified_by
 created: '2026-04-20'
-modified: '2026-04-21'
+modified: '2026-04-22'
 fingerprint: sha256:ddc227e4eb50
 ---
 

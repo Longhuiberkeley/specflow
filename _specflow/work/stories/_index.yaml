@@ -2,7 +2,7 @@ artifacts:
   STORY-001:
     id: STORY-001
     title: Detect fingerprint changes and propagate suspect flags for downstream artifacts
-    status: implemented
+    status: verified
     tags:
     - traceability
     - impact
@@ -12,7 +12,7 @@ artifacts:
   STORY-002:
     id: STORY-002
     title: Report and resolve suspect flags via specflow impact command
-    status: implemented
+    status: verified
     tags:
     - traceability
     - impact
@@ -23,7 +23,7 @@ artifacts:
   STORY-003:
     id: STORY-003
     title: Implement typo cascade defense with 3-tier classification
-    status: implemented
+    status: verified
     tags:
     - traceability
     - typo-defense
@@ -33,7 +33,7 @@ artifacts:
   STORY-004:
     id: STORY-004
     title: Implement split and merge operations for artifact refactoring
-    status: implemented
+    status: verified
     tags:
     - traceability
     - refactoring
@@ -43,7 +43,7 @@ artifacts:
   STORY-005:
     id: STORY-005
     title: Implement filesystem locks for concurrent artifact modification
-    status: implemented
+    status: verified
     tags:
     - concurrency
     - locks
@@ -53,7 +53,7 @@ artifacts:
   STORY-006:
     id: STORY-006
     title: Group stories into dependency-free waves for parallel execution
-    status: implemented
+    status: verified
     tags:
     - execution
     - orchestration
@@ -63,7 +63,7 @@ artifacts:
   STORY-007:
     id: STORY-007
     title: Orchestrate parallel subagent execution with isolated context per story
-    status: implemented
+    status: verified
     tags:
     - execution
     - orchestration
@@ -74,7 +74,7 @@ artifacts:
   STORY-008:
     id: STORY-008
     title: Assemble context-specific review criteria for specflow check
-    status: implemented
+    status: verified
     tags:
     - review
     - checklists
@@ -84,7 +84,7 @@ artifacts:
   STORY-009:
     id: STORY-009
     title: Implement proactive challenge engine for edge case discovery
-    status: implemented
+    status: verified
     tags:
     - challenge
     - proactive
@@ -95,7 +95,7 @@ artifacts:
   STORY-010:
     id: STORY-010
     title: Extract prevention patterns into learned checklists via specflow done
-    status: implemented
+    status: verified
     tags:
     - challenge
     - reactive
@@ -106,7 +106,7 @@ artifacts:
   STORY-011:
     id: STORY-011
     title: Create and compare immutable baselines for project state snapshots
-    status: implemented
+    status: verified
     tags:
     - compliance
     - baselines
@@ -116,7 +116,7 @@ artifacts:
   STORY-012:
     id: STORY-012
     title: Implement standards pack architecture and compliance gap analysis
-    status: implemented
+    status: verified
     tags:
     - compliance
     - standards
@@ -127,7 +127,7 @@ artifacts:
   STORY-013:
     id: STORY-013
     title: Generate retroactive change records from git history and impact-log
-    status: implemented
+    status: verified
     tags:
     - compliance
     - change-records
@@ -137,7 +137,7 @@ artifacts:
   STORY-014:
     id: STORY-014
     title: Enforce role-based access control via git hooks and CODEOWNERS
-    status: implemented
+    status: verified
     tags:
     - team
     - rbac
@@ -148,7 +148,7 @@ artifacts:
   STORY-015:
     id: STORY-015
     title: Implement draft IDs on branches with CI renumbering on merge
-    status: implemented
+    status: verified
     tags:
     - team
     - ids
@@ -159,7 +159,7 @@ artifacts:
   STORY-016:
     id: STORY-016
     title: Implement defect lifecycle tracking with V-model linkage
-    status: implemented
+    status: verified
     tags:
     - team
     - defects
@@ -170,7 +170,7 @@ artifacts:
   STORY-017:
     id: STORY-017
     title: Implement CI integration job with two-pass validation
-    status: implemented
+    status: verified
     tags:
     - team
     - ci
@@ -181,7 +181,7 @@ artifacts:
   STORY-018:
     id: STORY-018
     title: Implement ReqIF import and export for DOORS/Polarion interchange
-    status: implemented
+    status: verified
     tags:
     - team
     - reqif
@@ -192,7 +192,7 @@ artifacts:
   STORY-019:
     id: STORY-019
     title: Implement tiered duplicate detection pipeline for artifacts
-    status: implemented
+    status: verified
     tags:
     - intelligence
     - dedup
@@ -202,7 +202,7 @@ artifacts:
   STORY-020:
     id: STORY-020
     title: Implement dead code and code similarity detection for project hygiene
-    status: implemented
+    status: verified
     tags:
     - intelligence
     - analysis
@@ -212,37 +212,37 @@ artifacts:
   STORY-021:
     id: STORY-021
     title: Audit and rewrite the four existing SKILL.md prompts
-    status: implemented
+    status: verified
     tags:
     - quality
     - skills
     - M1-clarity
-    fingerprint: ''
+    fingerprint: sha256:6b583fbf7782
     children: []
   STORY-022:
     id: STORY-022
     title: Ship command rename and thin-skill wrappers for all Tier 2/3 CLI commands
-    status: implemented
+    status: verified
     tags:
     - rename
     - CLI
     - skills
     - M1-clarity
-    fingerprint: ''
+    fingerprint: sha256:ea3bae1e6e1b
     children: []
   STORY-023:
     id: STORY-023
     title: Archive docs/phases and restructure docs/ directory
-    status: implemented
+    status: verified
     tags:
     - documentation
     - M1-clarity
-    fingerprint: ''
+    fingerprint: sha256:1f899b823f47
     children: []
   STORY-024:
     id: STORY-024
     title: Ship /specflow-artifact-review with tiered depth and thinking techniques
-    status: implemented
+    status: verified
     tags:
     - review
     - quality
@@ -252,77 +252,77 @@ artifacts:
   STORY-025:
     id: STORY-025
     title: Ship the change-audit pipeline with review_status field
-    status: implemented
+    status: verified
     tags:
     - pipeline
     - audit
     - M1-clarity
-    fingerprint: ''
+    fingerprint: sha256:e3f167eab875
     children: []
   STORY-026:
     id: STORY-026
     title: Build the unified adapter framework
-    status: implemented
+    status: verified
     tags:
     - architecture
     - adapters
     - M2-extensible
-    fingerprint: ''
+    fingerprint: sha256:992a519742d4
     children: []
   STORY-027:
     id: STORY-027
     title: Expose recovery primitives as CLI commands and clean up dead code
-    status: implemented
+    status: verified
     tags:
     - cleanup
     - CLI
     - M2-extensible
-    fingerprint: ''
+    fingerprint: sha256:283b8b4cca4f
     children: []
   STORY-028:
     id: STORY-028
     title: "Compliance rework \u2014 BYOC with /specflow-pack-author"
-    status: implemented
+    status: verified
     tags:
     - compliance
     - BYOC
     - M2-extensible
-    fingerprint: ''
+    fingerprint: sha256:2b3cc0030f5c
     children: []
   STORY-029:
     id: STORY-029
     title: Add deterministic analytical passes to the V-model
-    status: implemented
+    status: verified
     tags:
     - analysis
     - V-model
     - M3-depth
-    fingerprint: ''
+    fingerprint: sha256:e2e291118dad
     children: []
   STORY-030:
     id: STORY-030
     title: Ship /specflow-project-audit with conversational scope and chunked fan-out
-    status: implemented
+    status: verified
     tags:
     - audit
     - M3-depth
-    fingerprint: ''
+    fingerprint: sha256:8d8779ab40c0
     children: []
   STORY-031:
     id: STORY-031
     title: "Install UX \u2014 one-line install path and getting-started tutorial"
-    status: implemented
+    status: verified
     tags:
     - UX
     - documentation
     - M3-depth
-    fingerprint: ''
+    fingerprint: sha256:9a3927cd99b2
     children: []
   STORY-032:
     id: STORY-032
     title: "Delete over-exposed skill directories \u2014 collapse 22 skills to 8 Tier\
       \ 1"
-    status: implemented
+    status: verified
     tags:
     - UX
     - skills
@@ -332,7 +332,7 @@ artifacts:
   STORY-033:
     id: STORY-033
     title: "Build the 9 Tier 1 conversational skills \u2014 init, audit, ship + modifications"
-    status: implemented
+    status: verified
     tags:
     - UX
     - skills
@@ -343,7 +343,7 @@ artifacts:
     id: STORY-034
     title: "Documentation overhaul \u2014 rewrite lifecycle, commands, and README\
       \ for 9-command surface"
-    status: implemented
+    status: verified
     tags:
     - UX
     - documentation
@@ -353,7 +353,7 @@ artifacts:
   STORY-035:
     id: STORY-035
     title: "Project convention checklists \u2014 scaffold and enforce project structure"
-    status: implemented
+    status: verified
     tags:
     - UX
     - conventions
@@ -363,7 +363,7 @@ artifacts:
   STORY-036:
     id: STORY-036
     title: Improve pack-author extraction protocol with verification layer
-    status: implemented
+    status: verified
     tags:
     - skills
     - packs
@@ -373,7 +373,7 @@ artifacts:
   STORY-037:
     id: STORY-037
     title: Add trace command and chain-report lint check
-    status: implemented
+    status: verified
     tags:
     - traceability
     - cli
@@ -383,7 +383,7 @@ artifacts:
   STORY-038:
     id: STORY-038
     title: Add provider-agnostic CI gate command and GitHub Actions template
-    status: implemented
+    status: verified
     tags:
     - rbac
     - ci
@@ -393,7 +393,7 @@ artifacts:
   STORY-039:
     id: STORY-039
     title: Create pytest test suite for core lib modules
-    status: implemented
+    status: verified
     tags:
     - testing
     - quality
@@ -402,7 +402,7 @@ artifacts:
   STORY-040:
     id: STORY-040
     title: Remove deprecated CLI aliases and fix requirement schema
-    status: implemented
+    status: verified
     tags:
     - cleanup
     - deprecation
@@ -412,7 +412,7 @@ artifacts:
   STORY-041:
     id: STORY-041
     title: Add EARS patterns and quality guidance to normative-language reference
-    status: implemented
+    status: verified
     tags:
     - quality
     - ears
@@ -422,7 +422,7 @@ artifacts:
   STORY-042:
     id: STORY-042
     title: Add requirements quality lint check to artifact-lint
-    status: implemented
+    status: verified
     tags:
     - quality
     - lint
@@ -432,7 +432,7 @@ artifacts:
   STORY-043:
     id: STORY-043
     title: Add coverage metrics to specflow status command
-    status: implemented
+    status: verified
     tags:
     - compliance
     - reporting
@@ -443,7 +443,7 @@ artifacts:
     id: STORY-044
     title: 'Fix ReqIF round-trip quality: stable UUIDs, schema fix, tests, ARCH/DDD
       export'
-    status: implemented
+    status: verified
     tags:
     - reqif
     - interop
@@ -453,7 +453,7 @@ artifacts:
   STORY-045:
     id: STORY-045
     title: Add specflow generate-tests command and update execute skill
-    status: implemented
+    status: verified
     tags:
     - testing
     - vmodel
@@ -463,7 +463,7 @@ artifacts:
   STORY-046:
     id: STORY-046
     title: Add compliance evidence report to specflow ship
-    status: implemented
+    status: verified
     tags:
     - compliance
     - reports
@@ -474,7 +474,7 @@ artifacts:
   STORY-047:
     id: STORY-047
     title: Enhance standards gap analysis with scoring, remediation, and JSON output
-    status: implemented
+    status: verified
     tags:
     - standards
     - compliance
@@ -485,7 +485,7 @@ artifacts:
   STORY-048:
     id: STORY-048
     title: Add optional artifact type schemas and init integration
-    status: implemented
+    status: verified
     tags:
     - artifact-types
     - init

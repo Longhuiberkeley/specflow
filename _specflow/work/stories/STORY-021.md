@@ -2,17 +2,26 @@
 id: STORY-021
 title: Audit and rewrite the four existing SKILL.md prompts
 type: story
-status: implemented
+status: verified
 priority: high
 tags:
 - quality
 - skills
 - M1-clarity
 suspect: false
+links:
+- target: UT-009
+  role: verified_by
+- target: IT-007
+  role: verified_by
+- target: QT-017
+  role: verified_by
 created: '2026-04-14'
 checklists_applied:
 - checklist: check-STORY-021
   timestamp: '2026-04-14T17:03:23Z'
+modified: '2026-04-22'
+fingerprint: sha256:6b583fbf7782
 ---
 
 # Audit and rewrite the four existing SKILL.md prompts

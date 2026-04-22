@@ -27,4 +27,60 @@ artifacts:
     tags: []
     fingerprint: sha256:0b12d6bfed31
     children: []
-next_id: 5
+  UT-005:
+    id: UT-005
+    title: Execution Orchestrator Unit Tests
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  UT-006:
+    id: UT-006
+    title: Review and Lint Pipeline Unit Tests
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  UT-007:
+    id: UT-007
+    title: CLI Core Unit Tests
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  UT-008:
+    id: UT-008
+    title: Pack-Author Pipeline Unit Tests
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  UT-009:
+    id: UT-009
+    title: Wave 2 Skills and Infrastructure Unit Tests
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  UT-010:
+    id: UT-010
+    title: ReqIF and Standards Unit Tests
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  UT-011:
+    id: UT-011
+    title: Audit Engine Unit Tests
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  UT-012:
+    id: UT-012
+    title: Pack Extraction Protocol Unit Tests
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+next_id: 13

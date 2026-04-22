@@ -2,17 +2,26 @@
 id: STORY-026
 title: Build the unified adapter framework
 type: story
-status: implemented
+status: verified
 priority: high
 tags:
 - architecture
 - adapters
 - M2-extensible
 suspect: false
+links:
+- target: UT-009
+  role: verified_by
+- target: IT-007
+  role: verified_by
+- target: QT-017
+  role: verified_by
 created: '2026-04-14'
 checklists_applied:
 - checklist: check-STORY-026
   timestamp: '2026-04-14T17:03:23Z'
+modified: '2026-04-22'
+fingerprint: sha256:992a519742d4
 ---
 
 # Build the unified adapter framework

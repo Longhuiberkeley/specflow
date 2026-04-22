@@ -2,7 +2,7 @@
 id: STORY-005
 title: Implement filesystem locks for concurrent artifact modification
 type: story
-status: implemented
+status: verified
 priority: medium
 tags:
 - concurrency
@@ -14,8 +14,14 @@ links:
   role: implements
 - target: ARCH-002
   role: guided_by
+- target: UT-003
+  role: verified_by
+- target: IT-002
+  role: verified_by
+- target: QT-005
+  role: verified_by
 created: '2026-04-11'
-modified: '2026-04-14'
+modified: '2026-04-22'
 fingerprint: sha256:c26bcff9ced0
 checklists_applied:
 - checklist: check-STORY-005

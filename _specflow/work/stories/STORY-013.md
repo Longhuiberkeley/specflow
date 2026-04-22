@@ -2,7 +2,7 @@
 id: STORY-013
 title: Generate retroactive change records from git history and impact-log
 type: story
-status: implemented
+status: verified
 priority: medium
 tags:
 - compliance
@@ -14,13 +14,19 @@ links:
   role: implements
 - target: ARCH-002
   role: guided_by
+- target: UT-003
+  role: verified_by
+- target: IT-002
+  role: verified_by
+- target: QT-007
+  role: verified_by
 created: '2026-04-11'
 checklists_applied:
 - checklist: check-STORY-013
   timestamp: '2026-04-11T13:45:49Z'
 - checklist: check-STORY-013
   timestamp: '2026-04-14T17:03:23Z'
-modified: '2026-04-14'
+modified: '2026-04-22'
 fingerprint: sha256:ca1d162d382f
 ---
 

@@ -2,7 +2,7 @@
 id: STORY-043
 title: Add coverage metrics to specflow status command
 type: story
-status: implemented
+status: verified
 priority: medium
 tags:
 - compliance
@@ -16,8 +16,12 @@ links:
   role: guided_by
 - target: QT-003
   role: verified_by
+- target: UT-007
+  role: verified_by
+- target: IT-001
+  role: verified_by
 created: '2026-04-21'
-modified: '2026-04-21'
+modified: '2026-04-22'
 fingerprint: sha256:8f982267b23d
 ---
 

@@ -2,7 +2,7 @@
 id: STORY-031
 title: "Install UX \u2014 one-line install path and getting-started tutorial"
 type: story
-status: implemented
+status: verified
 priority: high
 tags:
 - UX
@@ -17,9 +17,17 @@ links:
   role: depends_on
 - target: STORY-026
   role: depends_on
+- target: UT-009
+  role: verified_by
+- target: IT-007
+  role: verified_by
+- target: QT-017
+  role: verified_by
 checklists_applied:
 - checklist: check-STORY-031
   timestamp: '2026-04-14T17:03:23Z'
+modified: '2026-04-22'
+fingerprint: sha256:9a3927cd99b2
 ---
 
 # Install UX — one-line install path and getting-started tutorial

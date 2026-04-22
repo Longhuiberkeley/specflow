@@ -2,7 +2,7 @@
 id: STORY-008
 title: Assemble context-specific review criteria for specflow check
 type: story
-status: implemented
+status: verified
 priority: high
 tags:
 - review
@@ -18,8 +18,14 @@ links:
   role: guided_by
 - target: DDD-003
   role: specified_by
+- target: UT-006
+  role: verified_by
+- target: IT-001
+  role: verified_by
+- target: QT-006
+  role: verified_by
 created: '2026-04-11'
-modified: '2026-04-14'
+modified: '2026-04-22'
 fingerprint: sha256:bde4ab3a1b2e
 checklists_applied:
 - checklist: check-STORY-008

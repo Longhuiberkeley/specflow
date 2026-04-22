@@ -2,7 +2,7 @@
 id: STORY-022
 title: Ship command rename and thin-skill wrappers for all Tier 2/3 CLI commands
 type: story
-status: implemented
+status: verified
 priority: high
 tags:
 - rename
@@ -10,10 +10,19 @@ tags:
 - skills
 - M1-clarity
 suspect: false
+links:
+- target: UT-009
+  role: verified_by
+- target: IT-007
+  role: verified_by
+- target: QT-017
+  role: verified_by
 created: '2026-04-14'
 checklists_applied:
 - checklist: check-STORY-022
   timestamp: '2026-04-14T17:03:23Z'
+modified: '2026-04-22'
+fingerprint: sha256:ea3bae1e6e1b
 ---
 
 # Ship command rename and thin-skill wrappers for all Tier 2/3 CLI commands

@@ -2,7 +2,7 @@
 id: STORY-039
 title: Create pytest test suite for core lib modules
 type: story
-status: implemented
+status: verified
 priority: medium
 tags:
 - testing
@@ -24,7 +24,7 @@ links:
 - target: QT-001
   role: verified_by
 created: '2026-04-20'
-modified: '2026-04-21'
+modified: '2026-04-22'
 fingerprint: sha256:a3189db97535
 ---
 

@@ -2,7 +2,7 @@
 id: STORY-035
 title: "Project convention checklists \u2014 scaffold and enforce project structure"
 type: story
-status: implemented
+status: verified
 priority: medium
 tags:
 - UX
@@ -12,10 +12,16 @@ suspect: false
 links:
 - target: STORY-033
   role: depends_on
+- target: UT-009
+  role: verified_by
+- target: IT-007
+  role: verified_by
+- target: QT-017
+  role: verified_by
 created: '2026-04-17'
 fingerprint: sha256:5d458c39e8b8
 version: 1
-modified: '2026-04-18'
+modified: '2026-04-22'
 ---
 
 # Project convention checklists — scaffold and enforce project structure

@@ -3,7 +3,7 @@ id: STORY-032
 title: "Delete over-exposed skill directories \u2014 collapse 22 skills to 8 Tier\
   \ 1"
 type: story
-status: implemented
+status: verified
 priority: high
 tags:
 - UX
@@ -13,9 +13,16 @@ suspect: false
 links:
 - target: STORY-022
   role: depends_on
+- target: UT-009
+  role: verified_by
+- target: IT-007
+  role: verified_by
+- target: QT-017
+  role: verified_by
 created: '2026-04-17'
 fingerprint: sha256:84a65b667115
 version: 1
+modified: '2026-04-22'
 ---
 
 # Delete over-exposed skill directories — collapse 22 skills to 9 Tier 1

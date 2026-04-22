@@ -2,7 +2,7 @@
 id: STORY-010
 title: Extract prevention patterns into learned checklists via specflow done
 type: story
-status: implemented
+status: verified
 priority: medium
 tags:
 - challenge
@@ -19,8 +19,14 @@ links:
   role: guided_by
 - target: DDD-003
   role: specified_by
+- target: UT-006
+  role: verified_by
+- target: IT-001
+  role: verified_by
+- target: QT-006
+  role: verified_by
 created: '2026-04-11'
-modified: '2026-04-14'
+modified: '2026-04-22'
 fingerprint: sha256:fbbc5a2ad9c7
 checklists_applied:
 - checklist: check-STORY-010

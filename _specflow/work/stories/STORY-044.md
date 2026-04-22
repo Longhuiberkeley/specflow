@@ -2,7 +2,7 @@
 id: STORY-044
 title: 'Fix ReqIF round-trip quality: stable UUIDs, schema fix, tests, ARCH/DDD export'
 type: story
-status: implemented
+status: verified
 priority: medium
 tags:
 - reqif
@@ -16,8 +16,12 @@ links:
   role: guided_by
 - target: QT-002
   role: verified_by
+- target: UT-007
+  role: verified_by
+- target: IT-001
+  role: verified_by
 created: '2026-04-21'
-modified: '2026-04-21'
+modified: '2026-04-22'
 fingerprint: sha256:1951bbd87bce
 ---
 

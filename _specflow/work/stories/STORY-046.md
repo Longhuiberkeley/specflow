@@ -2,7 +2,7 @@
 id: STORY-046
 title: Add compliance evidence report to specflow ship
 type: story
-status: implemented
+status: verified
 priority: medium
 tags:
 - compliance
@@ -17,6 +17,12 @@ links:
   role: guided_by
 - target: ARCH-005
   role: guided_by
+- target: UT-004
+  role: verified_by
+- target: IT-004
+  role: verified_by
+- target: QT-014
+  role: verified_by
 created: '2026-04-22'
 modified: '2026-04-22'
 fingerprint: sha256:307c26741722

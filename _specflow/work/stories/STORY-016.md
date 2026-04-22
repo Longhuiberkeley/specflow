@@ -2,7 +2,7 @@
 id: STORY-016
 title: Implement defect lifecycle tracking with V-model linkage
 type: story
-status: implemented
+status: verified
 priority: medium
 tags:
 - team
@@ -15,13 +15,19 @@ links:
   role: implements
 - target: ARCH-002
   role: guided_by
+- target: UT-003
+  role: verified_by
+- target: IT-002
+  role: verified_by
+- target: QT-004
+  role: verified_by
 created: '2026-04-11'
 checklists_applied:
 - checklist: check-STORY-016
   timestamp: '2026-04-11T13:45:49Z'
 - checklist: check-STORY-016
   timestamp: '2026-04-14T17:03:23Z'
-modified: '2026-04-14'
+modified: '2026-04-22'
 fingerprint: sha256:bcd75bb30bed
 ---
 

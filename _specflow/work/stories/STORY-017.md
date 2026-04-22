@@ -2,7 +2,7 @@
 id: STORY-017
 title: Implement CI integration job with two-pass validation
 type: story
-status: implemented
+status: verified
 priority: medium
 tags:
 - team
@@ -15,13 +15,19 @@ links:
   role: implements
 - target: ARCH-001
   role: guided_by
+- target: UT-007
+  role: verified_by
+- target: IT-001
+  role: verified_by
+- target: QT-006
+  role: verified_by
 created: '2026-04-11'
 checklists_applied:
 - checklist: check-STORY-017
   timestamp: '2026-04-11T13:45:49Z'
 - checklist: check-STORY-017
   timestamp: '2026-04-14T17:03:23Z'
-modified: '2026-04-14'
+modified: '2026-04-22'
 fingerprint: sha256:802ee56ce791
 ---
 

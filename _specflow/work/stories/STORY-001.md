@@ -2,7 +2,7 @@
 id: STORY-001
 title: Detect fingerprint changes and propagate suspect flags for downstream artifacts
 type: story
-status: implemented
+status: verified
 priority: high
 tags:
 - traceability
@@ -16,8 +16,14 @@ links:
   role: guided_by
 - target: DDD-001
   role: specified_by
+- target: UT-001
+  role: verified_by
+- target: IT-002
+  role: verified_by
+- target: QT-005
+  role: verified_by
 created: '2026-04-11'
-modified: '2026-04-14'
+modified: '2026-04-22'
 fingerprint: sha256:7e927cb96b50
 checklists_applied:
 - checklist: check-STORY-001

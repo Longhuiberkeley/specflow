@@ -2,18 +2,25 @@
 id: STORY-024
 title: Ship /specflow-artifact-review with tiered depth and thinking techniques
 type: story
-status: implemented
+status: verified
 priority: high
 tags:
 - review
 - quality
 - M1-clarity
 suspect: false
+links:
+- target: UT-009
+  role: verified_by
+- target: IT-007
+  role: verified_by
+- target: QT-017
+  role: verified_by
 created: '2026-04-14'
 checklists_applied:
 - checklist: check-STORY-024
   timestamp: '2026-04-14T17:03:23Z'
-modified: '2026-04-15'
+modified: '2026-04-22'
 fingerprint: sha256:b95df92dbbbb
 ---
 

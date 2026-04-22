@@ -2,7 +2,7 @@
 id: STORY-040
 title: Remove deprecated CLI aliases and fix requirement schema
 type: story
-status: implemented
+status: verified
 priority: high
 tags:
 - cleanup
@@ -16,8 +16,12 @@ links:
   role: guided_by
 - target: IT-001
   role: verified_by
+- target: UT-007
+  role: verified_by
+- target: QT-013
+  role: verified_by
 created: '2026-04-21'
-modified: '2026-04-21'
+modified: '2026-04-22'
 fingerprint: sha256:d87a2091f072
 ---
 

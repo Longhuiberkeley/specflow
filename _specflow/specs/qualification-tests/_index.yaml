@@ -20,4 +20,109 @@ artifacts:
     tags: []
     fingerprint: sha256:085b249b9324
     children: []
-next_id: 4
+  QT-004:
+    id: QT-004
+    title: Artifact Structure Qualification
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  QT-005:
+    id: QT-005
+    title: Trace and Suspect Propagation Qualification
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  QT-006:
+    id: QT-006
+    title: AI Execution Boundaries Qualification
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  QT-007:
+    id: QT-007
+    title: Cross-Platform and Compliance Qualification
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  QT-008:
+    id: QT-008
+    title: Pack-Author Extraction Quality Qualification
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  QT-009:
+    id: QT-009
+    title: Traceability Depth Reporting Qualification
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  QT-010:
+    id: QT-010
+    title: Provider-Agnostic CI Gate Qualification
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  QT-011:
+    id: QT-011
+    title: EARS Quality in Prompts and Lint Qualification
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  QT-012:
+    id: QT-012
+    title: V-Model Test Scaffolding Qualification
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  QT-013:
+    id: QT-013
+    title: Deprecation Cleanup Qualification
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  QT-014:
+    id: QT-014
+    title: Compliance Evidence Reports Qualification
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  QT-015:
+    id: QT-015
+    title: Standards Gap Analysis v2 Qualification
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  QT-016:
+    id: QT-016
+    title: Configurable Artifact Type Extensions Qualification
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  QT-017:
+    id: QT-017
+    title: Wave 2 Skills and Infrastructure Qualification
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+  QT-018:
+    id: QT-018
+    title: Test Suite Foundation Qualification
+    status: implemented
+    tags: []
+    fingerprint: ''
+    children: []
+next_id: 19

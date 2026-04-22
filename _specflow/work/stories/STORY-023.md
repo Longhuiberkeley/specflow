@@ -2,16 +2,25 @@
 id: STORY-023
 title: Archive docs/phases and restructure docs/ directory
 type: story
-status: implemented
+status: verified
 priority: medium
 tags:
 - documentation
 - M1-clarity
 suspect: false
+links:
+- target: UT-009
+  role: verified_by
+- target: IT-007
+  role: verified_by
+- target: QT-017
+  role: verified_by
 created: '2026-04-14'
 checklists_applied:
 - checklist: check-STORY-023
   timestamp: '2026-04-14T17:03:23Z'
+modified: '2026-04-22'
+fingerprint: sha256:1f899b823f47
 ---
 
 # Archive docs/phases and restructure docs/ directory

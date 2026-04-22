@@ -2,17 +2,26 @@
 id: STORY-028
 title: "Compliance rework \u2014 BYOC with /specflow-pack-author"
 type: story
-status: implemented
+status: verified
 priority: medium
 tags:
 - compliance
 - BYOC
 - M2-extensible
 suspect: false
+links:
+- target: UT-009
+  role: verified_by
+- target: IT-007
+  role: verified_by
+- target: QT-017
+  role: verified_by
 created: '2026-04-14'
 checklists_applied:
 - checklist: check-STORY-028
   timestamp: '2026-04-14T17:03:23Z'
+modified: '2026-04-22'
+fingerprint: sha256:2b3cc0030f5c
 ---
 
 # Compliance rework — BYOC with /specflow-pack-author
