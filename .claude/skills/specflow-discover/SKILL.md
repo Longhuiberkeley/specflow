@@ -3,6 +3,19 @@ name: specflow-discover
 description: Use when the user wants to discover, capture, or author new requirements. Triggers a progressive disclosure conversation to extract specifications and create REQ artifacts.
 ---
 
+## Freeform Input Handling
+
+This skill accepts freeform user input alongside the command. Interpret the user's message to determine scope and depth:
+
+- **No additional context** → run the standard workflow (deterministic core only)
+- **A question or concern** → run the deterministic core, then address the question directly using the results
+- **A request for depth** ("go deep", "be thorough", "all lenses") → run deterministic core + full LLM analysis
+- **A specific focus** ("focus on REQ-003", "check compliance only") → narrow scope to the request, still run deterministic core first
+
+Always run the deterministic core regardless of input. It costs zero tokens and provides the foundation for any analysis.
+
+---
+
 # SpecFlow Discover
 
 Conduct a structured discovery conversation to capture requirements as REQ artifacts.
@@ -100,7 +113,24 @@ After each answer, update your readiness assessment silently.
 2. Ask: "Does this capture everything? Anything missing or incorrect?"
 3. Iterate until user approves.
 
-### Step 5: Artifact Creation
+### Step 5: Challenge Requirements
+
+Before finalizing artifacts, apply discovery-stage thinking techniques from `references/thinking-techniques.md`:
+
+| Technique | When to apply | What it catches |
+|-----------|--------------|-----------------|
+| Devil's advocate | Every new REQ | Unnecessary requirements, feature creep |
+| Assumption surfacing | REQs with implicit constraints | Hidden risks, brittle assumptions |
+| Five-whys | REQs with thin rationale | Shallow justifications |
+| Regulator | Projects with installed standards | Compliance blind spots |
+
+For each REQ, briefly challenge it: "Before I write this — is this actually needed? What are we assuming? Why does this matter?"
+
+Present concerns as a quick summary. Let the user confirm, revise, or drop requirements before proceeding.
+
+If the user requested specific techniques or said "go deep", expand the selection accordingly.
+
+### Step 6: Artifact Creation
 
 For each approved requirement, create a REQ artifact:
 
@@ -143,7 +173,7 @@ uv run specflow artifact-lint
 
 Report results to user.
 
-### Step 5.5: Human-Review Summary
+### Step 6.5: Human-Review Summary
 
 Before transitioning phases, present a structured summary so the user can validate the discovery outcome:
 
@@ -168,7 +198,7 @@ Before transitioning phases, present a structured summary so the user can valida
 
 Wait for user acknowledgement before proceeding to phase transition.
 
-### Step 6: Phase Transition
+### Step 7: Phase Transition
 
 If this was the first discovery and the project was in `idle` state, update state:
 - Edit `.specflow/state.yaml`: set `current: specifying`, add history entry.
@@ -194,3 +224,4 @@ If this was the first discovery and the project was in `idle` state, update stat
 - `references/normative-language.md` — Proper requirement phrasing: RFC 2119 keywords, EARS sentence patterns, ambiguity word list, compound shall detection, passive voice avoidance.
 - `references/domain-checklists/<type>.md` — Per-domain question sets for Phase 2.
 - `references/cross-cutting.md` — Cross-cutting concern checklists for Phase 3.
+- `references/thinking-techniques.md` — Discovery-stage adversarial thinking techniques.

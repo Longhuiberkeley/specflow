@@ -3,6 +3,19 @@ name: specflow-execute
 description: Use when stories are planned and the user wants to implement them. Orchestrates implementation, updates artifact statuses, and creates test artifacts.
 ---
 
+## Freeform Input Handling
+
+This skill accepts freeform user input alongside the command. Interpret the user's message to determine scope and depth:
+
+- **No additional context** → run the standard workflow (deterministic core only)
+- **A question or concern** → run the deterministic core, then address the question directly using the results
+- **A request for depth** ("go deep", "be thorough", "all lenses") → run deterministic core + full LLM analysis
+- **A specific focus** ("focus on REQ-003", "check compliance only") → narrow scope to the request, still run deterministic core first
+
+Always run the deterministic core regardless of input. It costs zero tokens and provides the foundation for any analysis.
+
+---
+
 # SpecFlow Execute
 
 Orchestrate the implementation of planned stories and update tracking artifacts.
@@ -31,6 +44,7 @@ For each story (or wave of stories):
    a. **Load context:** Read the story, its linked REQ, ARCH, and DDD artifacts.
    b. **Implement the code** per the detailed design in DDD artifacts.
    c. **Follow the acceptance criteria** -- implement each criterion from the story.
+   d. **Quick thinking check** (from `references/thinking-techniques.md`): before writing each function, ask "what's the most unexpected input?" and "does this share state with another STORY in this wave?"
 
 ### Step 4: Status Updates
 
@@ -145,3 +159,4 @@ Report results and fix any issues.
 - `references/status-lifecycle.md` -- Valid status transitions for all artifact types.
 - `references/test-pairing.md` -- V-model verification test pairing rules.
 - `references/wave-computation.md` -- Wave computation algorithm and context isolation.
+- `references/thinking-techniques.md` -- Quick execution-stage thinking checks.

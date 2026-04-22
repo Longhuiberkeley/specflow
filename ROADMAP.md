@@ -58,33 +58,42 @@ For the implementation plan (phase breakdown, dependency graph), see [docs/plan.
 - Deterministic shell wrappers for CI/CD integration
 - Artifact quality lint with regex-based checks
 
-## v0.3.2 (Current)
+## v1.0.0 (Current)
 
-- **Prompt alignment** — updated Tier 1 slash commands (`init`, `ship`, `audit`) to leverage new `0.3.x` features (`--with-types`, `--evidence`, `standards gaps`)
-- **Artifact validation fixes** — resolved schema and traceability gaps in the SpecFlow self-specification
+Focus: **polish, stability, and adoptability.** Ship what we have with confidence.
 
-## v0.3.1
-
-- **Unified CLI Framework & Install UX** — streamlined installation path and tutorial, unified adapter framework, and command renaming
-- **Skill Ecosystem Restructuring** — collapsed 22 skills to 8 Tier 1 conversational skills, rewrote skill prompts and documentation
-- **Continuous Auditing** — added conversational scope and chunked fan-out for project audits
-- **Convention Enforcement** — added project convention checklists to scaffold and enforce project structure
-
-## v0.3.0
-
-- **Compliance evidence reports** — `specflow baseline create --evidence` generates a Markdown report alongside the baseline with traceability matrix, test results summary, baseline diff, and per-standard coverage scores
-- **Enhanced standards gap analysis** — `specflow standards gaps` now includes coverage scoring (0–100%), severity-sorted gap list with priority tiebreak, rule-based remediation suggestions per category, summary dashboard, and `--json` flag for machine-readable output
-- **Optional artifact type schemas** — `specflow init --with-types hazard,risk,control` installs domain-specific artifact types (hazard, risk, control) with full create/trace/lint integration and V-model lifecycle
-
-## v1.0.0 (Planned)
-
-- **Review workflow artifacts** — structured `REVIEW-*` type with reviewer voting, threaded findings, and audit-grade approval evidence
-- **Local visualization server** — `specflow serve` launches a dashboard at `localhost:5566` with interactive traceability graphs, coverage metrics, and baseline comparisons
-- **Enhanced AI-assisted test generation** — richer UT/IT/QT stubs from REQ bodies with acceptance criteria extraction
+- **Shared thinking techniques** — adversarial lenses extracted to a shared reference catalog, woven into discover and plan skills so requirements and architecture are challenged at creation time, not just at review time
+- **Freeform skill input** — all skills accept natural language context (e.g., `/specflow-audit I'm worried about REQ coverage`) for scoped, directed workflows
+- **Compliance summary in status** — `specflow status` shows per-pack compliance scores when standards are installed
+- **Polished onboarding** — README rewrite with clearer visual hierarchy and disambiguation from similarly-named projects
+- **Release process** — structured CHANGELOG, git tagging, and GitHub Release workflow documented in AGENTS.md
+- **Test coverage boost** — expanded coverage on critical CLI paths (create, update, status, lint, audit)
+- **Error message polish** — actionable CLI error messages across all commands
 
 ## v1.x (Future)
+
+These may ship someday, but are not committed:
 
 - **Product variant management** — tag-based product line engineering for multi-trim / multi-variant projects
 - **FMEA / risk analysis** — hazard, safety-goal, and risk-control artifact types via industry packs
 - **Bidirectional Jira/Azure DevOps sync** — for teams bridging agile boards and compliance specs
 - **REST API** — programmatic access for custom toolchain integration
+- **Static HTML export** — `specflow export --html` for zero-dependency dashboard generation
+- **Review workflow artifacts** — structured `REVIEW-*` type with reviewer voting and threaded findings
+- **Thinking technique records** — `thinking_techniques` field on artifacts tracking which lenses were applied
+- **Multi-pack aggregated compliance** — unified compliance view across all installed standards
+- **Compliance evidence quality** — validate that a `complies_with` link is backed by substantive content, not just link existence
+
+## Out of Scope
+
+These are explicitly **not** on the roadmap. We acknowledge the limits:
+
+| Area | What we won't do | Why |
+|------|-----------------|-----|
+| Shipped compliance packs | No real ISO 26262, ASPICE, or other copyrighted standard packs | Copyright risk; "Bring-Your-Own-Standard" is the model |
+| Web dashboard / server | No `specflow serve` or hosted visualization | Contradicts zero-dependency, filesystem-native philosophy |
+| External integrations (Jira, Azure DevOps) | No bidirectional sync with agile boards | Complex, enterprise-specific, premature until core is solid |
+| Database backend | No SQLite, PostgreSQL, or any database | The filesystem IS the database |
+| Real-time collaboration | No concurrent editing, live updates | Git is the collaboration layer |
+| Multi-project management | SpecFlow manages one project per repo | Cross-repo coordination is a different product |
+| LLM-dependent core | All core validation remains zero-token deterministic | LLM is opt-in at the skill layer, never required for core operations |

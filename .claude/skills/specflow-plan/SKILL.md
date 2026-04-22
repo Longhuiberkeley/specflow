@@ -3,6 +3,19 @@ name: specflow-plan
 description: Use when requirements are approved and the user wants to break them down into architecture, design, and stories. Triggers architecture discussion and artifact population.
 ---
 
+## Freeform Input Handling
+
+This skill accepts freeform user input alongside the command. Interpret the user's message to determine scope and depth:
+
+- **No additional context** → run the standard workflow (deterministic core only)
+- **A question or concern** → run the deterministic core, then address the question directly using the results
+- **A request for depth** ("go deep", "be thorough", "all lenses") → run deterministic core + full LLM analysis
+- **A specific focus** ("focus on REQ-003", "check compliance only") → narrow scope to the request, still run deterministic core first
+
+Always run the deterministic core regardless of input. It costs zero tokens and provides the foundation for any analysis.
+
+---
+
 # SpecFlow Plan
 
 Break down approved requirements into architecture, detailed design, and user stories.
@@ -57,6 +70,38 @@ uv run specflow create \
 Not every ARCH component needs a DDD. Create DDD artifacts only for components that need algorithmic detail — complex logic, state machines, data transformations, or protocol handling.
 
 For each DDD:
+1. Specify function signatures with input/output types
+2. Define data structures and their relationships
+3. Describe error handling at system boundaries
+4. Note preconditions and invariants
+
+```
+uv run specflow create \
+  --type detailed-design \
+  --title "<design name>" \
+  --links "[{\"target\": \"ARCH-001\", \"role\": \"refined_by\"}]" \
+  --body "<detailed design with function signatures, data structures, error handling>"
+```
+
+### Step 4.5: Stress-Test Architecture
+
+Before finalizing ARCHs and DDDs, apply planning-stage thinking techniques from `references/thinking-techniques.md`:
+
+| Technique | When to apply | What it catches |
+|-----------|--------------|-----------------|
+| Premortem | Every ARCH | Sound designs that fail in practice |
+| Dependency shock | ARCHs with external deps | Hidden coupling, missing fallbacks |
+| Composition | When ARCHs share state or resources | Emergent conflicts between features |
+| Stress-scale (×100) | When NFRs mention performance | Hard and soft scaling limits |
+| Worst-case user | DDDs for user-facing or API features | Missing validation, security gaps |
+
+For each ARCH, briefly: "6 months from now this failed — what went wrong? Any dependencies that could vanish? What breaks at 100× scale?"
+
+Present concerns and let the user revise before creating artifacts.
+
+If the user requested specific techniques or said "go deep", expand the selection accordingly.
+
+### Step 5: Story Breakdown (SPIDR)
 1. Specify function signatures with input/output types
 2. Define data structures and their relationships
 3. Describe error handling at system boundaries
@@ -164,3 +209,4 @@ Update `.specflow/state.yaml`: set `current: planning`, add history entry.
 - `references/story-writing.md` — Story template and acceptance criteria patterns.
 - `references/link-roles.md` — Complete link role vocabulary with usage examples.
 - `references/level-boundaries.md` — REQ vs ARCH vs DDD boundary rules with examples.
+- `references/thinking-techniques.md` — Planning-stage adversarial thinking techniques.

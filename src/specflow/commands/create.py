@@ -57,7 +57,8 @@ def run(root: Path, args: dict) -> int:
     if from_standard:
         clause = _lookup_standard_clause(root, from_standard)
         if not clause:
-            print(f"{RED}✗ Standard clause '{from_standard}' not found in installed standards{NC}")
+            print(f"{RED}✗ Standard clause '{from_standard}' not found. "
+                  f"Check installed packs in .specflow/standards/.{NC}")
             return 1
         artifact_type = "requirement"
         title = clause.get("title", f"Compliance with {from_standard}")
@@ -65,10 +66,12 @@ def run(root: Path, args: dict) -> int:
         links.append({"target": from_standard, "role": "complies_with"})
 
     if not artifact_type:
-        print(f"{RED}✗ --type is required{NC}")
+        print(f"{RED}✗ Missing required argument: --type. "
+              f"Usage: specflow create --type <type> --title <title>{NC}")
         return 1
     if not title:
-        print(f"{RED}✗ --title is required{NC}")
+        print(f"{RED}✗ Missing required argument: --title. "
+              f"Usage: specflow create --type <type> --title <title>{NC}")
         return 1
 
     tags = [t.strip() for t in tags_str.split(",") if t.strip()] if tags_str else None
@@ -86,15 +89,15 @@ def run(root: Path, args: dict) -> int:
         )
         blocking = [c for c in similar if c.confidence in ("medium", "high")]
         if blocking:
-            print(f"{YELLOW_DIM}⚠ Possible duplicate(s) of the artifact you're creating:{NC}")
+            print(f"{YELLOW}⚠ Possible duplicate(s) of the artifact you're creating.{NC}")
             for c in blocking[:5]:
                 print(f"  [{c.confidence}] {c.pair[1]}  "
                       f"tag={c.tag_jaccard:.2f}  tfidf={c.tfidf_cosine:.2f}")
             if args.get("force", False):
                 print(f"{YELLOW_DIM}  --force supplied, proceeding anyway{NC}")
             elif not sys.stdin.isatty():
-                print(f"{RED}✗ Non-interactive mode. Re-run with --force to create anyway, "
-                      f"or --skip-dedup-check to bypass the check entirely.{NC}")
+                print(f"{RED}✗ Non-interactive mode cannot prompt for duplicates. "
+                      f"Re-run with --force to create anyway.{NC}")
                 return 1
             else:
                 try:
@@ -102,7 +105,7 @@ def run(root: Path, args: dict) -> int:
                 except EOFError:
                     reply = ""
                 if reply not in ("y", "yes"):
-                    print(f"{CYAN}Cancelled.{NC}")
+                    print(f"{YELLOW_DIM}Cancelled.{NC}")
                     return 1
 
     result = art_lib.create_artifact(

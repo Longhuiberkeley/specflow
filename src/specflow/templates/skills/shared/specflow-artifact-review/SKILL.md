@@ -3,6 +3,19 @@ name: specflow-artifact-review
 description: Use when the user wants to review, validate, or verify any SpecFlow artifacts. Triggers context-specific checks using automated scripts and checklist review.
 ---
 
+## Freeform Input Handling
+
+This skill accepts freeform user input alongside the command. Interpret the user's message to determine scope and depth:
+
+- **No additional context** → run the standard workflow (deterministic core only)
+- **A question or concern** → run the deterministic core, then address the question directly using the results
+- **A request for depth** ("go deep", "be thorough", "all lenses") → run deterministic core + full LLM analysis
+- **A specific focus** ("focus on REQ-003", "check compliance only") → narrow scope to the request, still run deterministic core first
+
+Always run the deterministic core regardless of input. It costs zero tokens and provides the foundation for any analysis.
+
+---
+
 # SpecFlow Artifact Review
 
 Review artifacts by composing deterministic lint → context-specific checklists → LLM judgment → optional adversarial lenses. Lens-based thinking techniques always come **after** checklists, never before.

@@ -116,3 +116,36 @@ When implementing stories via `/specflow-execute`, also update linked ARCH and D
 - Run `specflow artifact-lint` after creating or updating artifacts
 
 <!-- End SpecFlow section -->
+
+## Release Process
+
+Follow these steps when releasing a new version:
+
+1. **Update `CHANGELOG.md`** — add a version entry with date and highlights (grouped by category: features, fixes, docs)
+2. **Update `pyproject.toml`** — bump the `version` field
+3. **Update `ROADMAP.md`** — move shipped items from "Planned" to the released section
+4. **Run the test suite:** `pytest tests/`
+5. **Run self-audit:** `uv run specflow artifact-lint` and `uv run specflow project-audit`
+6. **Commit:** `git commit -m "chore: release v1.x.x"`
+7. **Tag:** `git tag -a v1.x.x -m "v1.x.x"`
+8. **Push:** `git push --follow-tags`
+9. **Create a GitHub Release** from the tag with the CHANGELOG excerpt as the body
+10. **Publish to PyPI** (if applicable): `uv build && uv publish`
+
+### CHANGELOG Format
+
+```markdown
+## v1.x.x (YYYY-MM-DD)
+
+### Highlights
+- One-line summary of the biggest change
+
+### Features
+- Description of new feature (#PR)
+
+### Fixes
+- Description of bug fix (#PR)
+
+### Documentation
+- Description of doc update
+```

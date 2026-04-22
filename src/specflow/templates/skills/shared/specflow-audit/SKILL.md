@@ -3,6 +3,19 @@ name: specflow-audit
 description: Use when the user wants a full-project health review. Runs a zero-question deterministic core with optional adversarial wings. Creates AUD and CHL artifacts.
 ---
 
+## Freeform Input Handling
+
+This skill accepts freeform user input alongside the command. Interpret the user's message to determine scope and depth:
+
+- **No additional context** → run the standard workflow (deterministic core only)
+- **A question or concern** → run the deterministic core, then address the question directly using the results
+- **A request for depth** ("go deep", "be thorough", "all lenses") → run deterministic core + full LLM analysis
+- **A specific focus** ("focus on REQ-003", "check compliance only") → narrow scope to the request, still run deterministic core first
+
+Always run the deterministic core regardless of input. It costs zero tokens and provides the foundation for any analysis.
+
+---
+
 # SpecFlow Audit
 
 Full-project health review.
@@ -23,7 +36,13 @@ After the project audit, run the chain depth survey to show traceability coverag
 uv run specflow artifact-lint --type chain-report
 ```
 
-Include the chain depth distribution in the audit summary (Step 4). This is informational data about how deep traceability chains run across the project — not a pass/fail indicator.
+Then, run the standards gap analysis to check compliance health against installed packs:
+
+```
+uv run specflow standards gaps
+```
+
+Include the chain depth distribution and the standards compliance score in the audit summary (Step 4). The chain depth is informational data about how deep traceability chains run across the project — not a pass/fail indicator. The standards compliance score should be highlighted if it is below 100%.
 
 ### Step 2: Adversarial Wings (Optional)
 

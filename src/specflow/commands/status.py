@@ -9,6 +9,7 @@ import yaml
 
 from specflow.lib import artifacts as art_lib
 from specflow.lib import config as config_lib
+from specflow.lib import standards as standards_lib
 from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC
 
 # Display labels for artifact types
@@ -195,8 +196,8 @@ def run(root: Path, args: dict) -> int:
     state = config_lib.read_state(root)
 
     if not config or not state:
-        print("SpecFlow is not initialized in this project.")
-        print("Run 'uv run specflow init' to scaffold the project.")
+        print(f"{RED}✗ SpecFlow is not initialized in this project. "
+              f"Run 'uv run specflow init' to scaffold the project.{NC}")
         return 1
 
     project_name = config.get("project", {}).get("name", "unknown")
@@ -266,7 +267,19 @@ def run(root: Path, args: dict) -> int:
     if cov_parts:
         print(f"\n  Coverage: {' | '.join(cov_parts)}")
 
-    # Issues
+    installed_standards = standards_lib.list_installed_standards(root)
+    if installed_standards:
+        std_parts = []
+        for std_name in installed_standards:
+            result = standards_lib.check_compliance(root, std_name)
+            if result.get("ok"):
+                score = result.get("score", 0.0)
+                total = result.get("total_clauses", 0)
+                covered = total - len(result.get("uncovered", []))
+                std_parts.append(f"{std_name} {score:.0f}% ({covered}/{total})")
+        if std_parts:
+            print(f"  Standards: {' | '.join(std_parts)}")
+
     if issues > 0:
         print(f"\n  {YELLOW}⚠ Issues: {issues} artifact(s) flagged as suspect{NC}")
 

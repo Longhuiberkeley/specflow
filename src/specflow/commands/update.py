@@ -14,7 +14,8 @@ def run(root: Path, args: dict) -> int:
 
     artifact_id = args.get("artifact_id", "")
     if not artifact_id:
-        print(f"{RED}✗ Artifact ID is required (positional argument){NC}")
+        print(f"{RED}✗ Missing required argument: <artifact_id>. "
+              f"Usage: specflow update <artifact-id> --status <status>{NC}")
         return 1
 
     updates = {}
@@ -40,7 +41,8 @@ def run(root: Path, args: dict) -> int:
         updates["title"] = title
 
     if not updates:
-        print(f"{RED}✗ No fields to update. Use --status, --title, --priority, --rationale, or --tags.{NC}")
+        print(f"{RED}✗ No fields to update. Provide at least one of: "
+              f"--status, --title, --priority, --rationale, or --tags.{NC}")
         return 1
 
     result = art_lib.update_artifact(root=root, artifact_id=artifact_id, **updates)

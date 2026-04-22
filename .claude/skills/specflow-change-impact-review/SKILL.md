@@ -3,6 +3,19 @@ name: specflow-change-impact-review
 description: Use when the user wants to run the change-audit pipeline to autonomously review impact cones of recent changes and log findings.
 ---
 
+## Freeform Input Handling
+
+This skill accepts freeform user input alongside the command. Interpret the user's message to determine scope and depth:
+
+- **No additional context** → run the standard workflow (deterministic core only)
+- **A question or concern** → run the deterministic core, then address the question directly using the results
+- **A request for depth** ("go deep", "be thorough", "all lenses") → run deterministic core + full LLM analysis
+- **A specific focus** ("focus on REQ-003", "check compliance only") → narrow scope to the request, still run deterministic core first
+
+Always run the deterministic core regardless of input. It costs zero tokens and provides the foundation for any analysis.
+
+---
+
 # SpecFlow Change Impact Review
 
 This skill implements the change-audit pipeline. It finds all unreviewed Change Records (DEC artifacts), computes their blast radius, reviews impacted artifacts against architectural constraints, files findings as Challenges (CHL artifacts), and updates the DEC status.

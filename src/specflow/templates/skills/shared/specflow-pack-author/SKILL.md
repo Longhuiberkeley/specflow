@@ -3,6 +3,19 @@ name: specflow-pack-author
 description: Use when the user wants to author a new standards compliance pack — from a PDF file, URL, or pasted text. Generates a complete pack directory with pack.yaml, standards clauses, and optional schemas.
 ---
 
+## Freeform Input Handling
+
+This skill accepts freeform user input alongside the command. Interpret the user's message to determine scope and depth:
+
+- **No additional context** → run the standard workflow (deterministic core only)
+- **A question or concern** → run the deterministic core, then address the question directly using the results
+- **A request for depth** ("go deep", "be thorough", "all lenses") → run deterministic core + full LLM analysis
+- **A specific focus** ("focus on REQ-003", "check compliance only") → narrow scope to the request, still run deterministic core first
+
+Always run the deterministic core regardless of input. It costs zero tokens and provides the foundation for any analysis.
+
+---
+
 # SpecFlow Pack Author
 
 Guide the user through LLM-assisted creation of a standards compliance pack. The pack can later be installed into a SpecFlow project via `specflow init --preset` or manual copy.

@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from specflow.lib import artifacts as art_lib
-from specflow.lib.display import GREEN, CYAN, NC
+from specflow.lib.display import RED, GREEN, CYAN, NC
 
 BOLD = "\033[1m"
 DIM = "\033[2m"
@@ -31,7 +31,8 @@ def _print_tree(nodes: list[dict[str, str]], label: str, indent: str = "  ") -> 
 def run(root: Path, args: dict) -> int:
     artifact_id = args.get("artifact_id", "")
     if not artifact_id:
-        print("Usage: specflow trace <artifact-id>")
+        print(f"{RED}✗ Missing required argument: <artifact-id>. "
+              f"Usage: specflow trace <artifact-id>{NC}")
         return 1
 
     artifacts = art_lib.discover_artifacts(root)
@@ -39,7 +40,8 @@ def run(root: Path, args: dict) -> int:
 
     artifact = id_index.get(artifact_id)
     if not artifact:
-        print(f"Artifact '{artifact_id}' not found")
+        print(f"{RED}✗ Artifact '{artifact_id}' not found. "
+              f"Run 'specflow status' to see all artifacts.{NC}")
         return 1
 
     chain = art_lib.trace_chain(artifact_id, id_index, direction="both")

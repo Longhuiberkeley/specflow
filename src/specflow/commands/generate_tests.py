@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 from specflow.lib import artifacts as art_lib
-from specflow.lib.display import GREEN, YELLOW_DIM, CYAN, NC
+from specflow.lib.display import RED, GREEN, YELLOW, YELLOW_DIM, CYAN, NC
 
 TYPE_LABELS = {
     "requirement": "QT",
@@ -106,20 +106,24 @@ def run(root: Path, args: dict) -> int:
     id_index = art_lib.build_id_index(artifacts)
 
     if not artifacts:
-        print(f"{YELLOW_DIM}No artifacts found. Run 'specflow init' first.{NC}")
+        print(f"{YELLOW}⚠ No artifacts found. Run 'uv run specflow init' to initialize "
+              f"the project, then create spec artifacts.{NC}")
         return 0
 
     if from_id:
         art = id_index.get(from_id)
         if not art:
-            print(f"{YELLOW_DIM}Artifact '{from_id}' not found.{NC}")
+            print(f"{RED}✗ Artifact '{from_id}' not found. "
+                  f"Run 'specflow status' to see all artifacts.{NC}")
             return 1
         if art.type not in art_lib.V_MODEL_PAIRS:
-            print(f"{YELLOW_DIM}Artifact type '{art.type}' does not have a V-model test pair.{NC}")
+            print(f"{YELLOW}⚠ Artifact type '{art.type}' has no V-model test pair. "
+                  f"Expected one of: requirement, architecture, detailed-design.{NC}")
             return 1
         if art.status not in ("implemented", "verified"):
-            print(f"{YELLOW_DIM}Artifact '{from_id}' is not implemented (status: {art.status}). "
-                  f"Only implemented or verified specs can generate test stubs.{NC}")
+            print(f"{YELLOW}⚠ Artifact '{from_id}' has status '{art.status}', "
+                  f"but test stubs require 'implemented' or 'verified'. "
+                  f"Run 'specflow update {from_id} --status implemented' first.{NC}")
             return 1
 
         has_verification = False
@@ -132,7 +136,8 @@ def run(root: Path, args: dict) -> int:
                 break
 
         if has_verification:
-            print(f"{YELLOW_DIM}Artifact '{from_id}' already has a verification test. No duplicate created.{NC}")
+            print(f"{YELLOW_DIM}Artifact '{from_id}' already has a verification test. "
+                  f"Use --dry-run to inspect or skip this artifact.{NC}")
             return 0
 
         test_type = TEST_TYPE_NAMES[art.type]
@@ -176,7 +181,8 @@ def run(root: Path, args: dict) -> int:
             print(f"{GREEN}✓ Created {result['id']} ({test_type}) verifying {spec_art.id}{NC}")
             created += 1
         else:
-            print(f"{YELLOW_DIM}✗ Failed for {spec_art.id}: {result['error']}{NC}")
+            print(f"{RED}✗ Failed to create test for {spec_art.id}: "
+                  f"{result['error']}. Check artifact data and try again.{NC}")
             skipped += 1
 
     print(f"\n{CYAN}Generated {created} test stub(s), {skipped} skipped.{NC}")

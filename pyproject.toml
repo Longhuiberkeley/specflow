@@ -1,7 +1,7 @@
 [project]
 name = "specflow"
-version = "0.3.2"
-description = "Spec-driven development framework for ASPICE-compliant verification"
+version = "1.0.0"
+description = "Spec-driven development for AI-speed teams — compliance-grade traceability in your git repo"
 readme = "README.md"
 license = "MIT"
 authors = [

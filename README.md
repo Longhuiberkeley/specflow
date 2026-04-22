@@ -1,105 +1,116 @@
 # SpecFlow
 
-I built SpecFlow because I saw a gap opening up. AI coding assistants are fast enough now that traditional agile rituals -- standups, sprint planning, backlog grooming -- are becoming the bottleneck, not the code. But V-model and waterfall, while rigorous, were designed for a world where humans wrote every line. We need compliance-grade rigor at AI speed.
+**Compliance-grade spec tracking, without the portal.**
+Your git repo is the ALM. Your AI assistant is the UI.
 
-The beauty of process engineering is that it offsets individual talent and responsibility to a system. A good framework increases safety and reliability regardless of who is writing the code. This is why automotive (ASPICE), aerospace (DO-178C), and medical (IEC 62304) industries mandate structured verification -- not because they love paperwork, but because the system catches what individuals miss.
+Traditional ALM asks you to leave your editor, log into a website, and click through forms. SpecFlow doesn't. Every requirement, architecture doc, test, and audit record lives in Markdown in your repo — diffable, reviewable, CI-validated, yours.
 
-I believe spec-driven AI development is going mainstream for this reason. The speed of AI coding demands the structure of compliance engineering. 
+## Why this exists
 
-SpecFlow is my attempt at an easy-to-use agentic framework with a small set of `/skills` that make it easy to start and easy to scale. Inspired by compliance-as-code, I want to enable **vibe-compliance**: the same way vibe-coding lets you build by intent, vibe-compliance lets you verify by intent. Vibe-ASPICE, vibe-SOC2, vibe-ISO26262, vibe-DO-178C -- the framework handles the ceremony so you can focus on the decisions.
+Old-school ALM tools were built for a world where humans typed every line. They made sense when writing code was slow and ceremony was cheap. AI coding assistants flipped that: the code comes out fast, and the ritual is the bottleneck.
 
-**10 slash commands. No database. No cloud. Your repo IS the compliance artifact.**
+SpecFlow keeps the rigor (V-model traceability, impact analysis, audit baselines, standards packs) and drops the parts that slow teams down (servers, licenses, portals, click-through workflows). It runs wherever your AI assistant runs — Claude Code, Cursor, Cline, and 11 others.
 
-## Why SpecFlow?
+## Feel it in 30 seconds
 
-**Zero-database, zero-cloud, zero-lock-in.** Your repository IS the compliance artifact. Every spec, traceability link, and audit record lives in Markdown + YAML — version-controlled, diffable, and auditable by humans and CI alike.
-
-- **Seamless onboarding.** One command (`/specflow-init`) scaffolds everything. No servers to provision, no accounts to create, no web UI to learn. Your AI assistant already knows what to do.
-- **Scale-adaptive ceremony.** Fixing a typo? SpecFlow stays out of your way. Building a safety-critical subsystem? Full V-model traceability activates automatically. No toggles, no modes — the framework reads the room.
-- **Compliance as code, not paperwork.** Traceability matrices, linkage rules, and phase-gate checklists run as deterministic Python in CI — zero LLM tokens, zero guesswork. Compliance evidence is generated from your git history on demand.
-- **Bring-your-own-standard.** Feed SpecFlow a PDF, URL, or pasted text from ISO 26262, DO-178C, SOC 2, or your internal policy. It extracts clauses into executable compliance schemas. No proprietary extension packs.
-- **14 AI coding platforms.** Works with Claude Code, Cursor, Windsurf, Cline, Gemini CLI, OpenCode, GitHub Copilot, Roo Code, and more — today. The skill layer is portable by design.
-- **Built for AI speed.** Token budgets, progressive disclosure, subagent isolation, and zero-token programmatic validation mean your AI assistant spends tokens on decisions, not bookkeeping.
-
-## Quick Start
-
-Open your AI coding assistant and run:
-
-```
-/specflow-init
+```bash
+$ uv tool install git+https://github.com/Longhuiberkeley/specflow
 ```
 
-Then:
+Then, inside your AI assistant:
 
 ```
-/specflow-discover → /specflow-plan → /specflow-execute → /specflow-ship
+> /specflow-init
+   Detects platform, scaffolds _specflow/ and .specflow/, offers CI wiring.
+
+> /specflow-discover  "Add SSO to our customer portal"
+   Guided conversation. Surfaces hidden assumptions. Writes REQ-001..003
+   as Markdown in _specflow/specs/.
+
+> /specflow-plan
+   Proposes architecture, decomposes into stories, creates ARCH/DDD/STORY
+   artifacts with V-model links in place.
+
+> specflow status
+   SpecFlow Status
+   ──────────────────────────────────────────────────
+     Phase:     planning
+     Project:   my-portal
+     Specs:     3 REQ | 2 ARCH | 4 DDD | 0 UT | 0 IT | 0 QT
+     Work:      7 STORY | 0 SPIKE | 0 DEC | 0 DEF
+     Coverage:  REQ 100% (3/3) | Chain 80% (4/5)
+     → Run /specflow-execute to start implementing
 ```
 
-Each slash command is a guided conversation -- the AI assistant handles the ceremony, you make the decisions.
+The whole workflow is a conversation, not a portal. Everything you see above is a file you can `git diff`.
 
-Read the **[getting-started guide](docs/getting-started.md)** for a full walkthrough.
+## Quick start
 
-## Skills vs CLI
+**Prerequisites:** [uv](https://docs.astral.sh/uv/) + any supported AI coding assistant.
 
-SpecFlow has two interfaces that work together:
+```bash
+uv tool install git+https://github.com/Longhuiberkeley/specflow
+```
 
-| Interface | When | Example |
-|-----------|------|---------|
-| **Skills** (`/specflow-*`) | Interactive work in your AI assistant | `/specflow-discover` |
-| **CLI** (`specflow <cmd>`) | CI pipelines, automation, terminal | `specflow artifact-lint` |
+Open your assistant, point it at your repo, and run `/specflow-init`. That's it. Full walkthrough in the [getting-started guide](docs/getting-started.md).
 
-Skills compose CLI commands under the hood. Use skills for day-to-day work; use the CLI for automation and CI.
+## What you get
 
-## The 10 Slash Commands
+| Feature | How |
+|---------|-----|
+| **Zero-token CI validation** | Schema, links, status, fingerprints, coverage — deterministic Python, no LLM required |
+| **V-model traceability** | REQ → ARCH → DDD → UT/IT/QT, fully linked and linted |
+| **Bring-your-own-standard** | Drop a PDF, URL, or pasted text. SpecFlow extracts clauses into compliance schemas |
+| **Immutable baselines** | Snapshot, diff, and generate audit evidence between releases |
+| **Runs in 14 AI assistants** | Claude Code, Cursor, Windsurf, Cline, Gemini CLI, OpenCode, Copilot, Roo, QwenCoder, Kiro, KiloCoder, Codex, Trae, Junie |
+| **1 runtime dependency** | Just `pyyaml`. Everything else is stdlib. |
 
-| Command | Purpose |
+## The 10 slash commands
+
+| Command | What it does |
 |---------|---------|
-| `/specflow-init` | Bootstrap project, install skills, optional CI |
+| `/specflow-init` | Bootstrap the project, install skills, wire CI |
 | `/specflow-discover` | Capture requirements through conversation |
 | `/specflow-plan` | Break REQs into architecture + stories |
 | `/specflow-execute` | Implement stories with test generation |
-| `/specflow-artifact-review` | Quality review of specific artifacts |
+| `/specflow-artifact-review` | Deep review of a specific artifact |
 | `/specflow-change-impact-review` | Blast-radius review of recent changes |
-| `/specflow-audit` | Full-project periodic health check |
+| `/specflow-audit` | Periodic full-project health check |
 | `/specflow-ship` | Release: baseline + change records + audit |
 | `/specflow-pack-author` | Author a standards compliance pack |
-| `/specflow-adapter` | Manage CI, exchange, standards ingestion, team RBAC |
+| `/specflow-adapter` | CI, exchange (ReqIF), standards, team RBAC |
 
-## Prerequisites
+All 10 skills accept freeform context. `/specflow-audit I'm worried about REQ coverage` scopes the audit to your concern.
 
-- **[uv](https://docs.astral.sh/uv/)** — Python package manager. Install with `curl -LsSf https://astral.sh/uv/install.sh | sh`
-- An AI coding assistant (Claude Code, Cursor, Gemini CLI, etc.)
+## Philosophy
 
-## Install
+- **Your git repo is the database.** No SQLite, no PostgreSQL, no server. The filesystem is authoritative.
+- **Zero tokens for CI.** All validation is deterministic Python. LLMs are opt-in at the skill layer, never required for gatekeeping.
+- **Bring your own standard.** We don't ship copyrighted packs. Feed SpecFlow your own ISO 26262 / ASPICE / policy PDF and it extracts clauses.
+- **Skills over clicks.** The user-facing interface is `/specflow-*` commands in your assistant. The CLI underneath is for CI, scripts, and power users.
 
-```bash
-# Install from GitHub
-uv tool install git+https://github.com/Longhuiberkeley/specflow
+> `#vibe-compliance` — if vibe-coding lets you build by intent, vibe-compliance lets you verify by intent. SpecFlow handles the ceremony so you can focus on the decisions.
 
-# Or run without installing
-uvx --from git+https://github.com/Longhuiberkeley/specflow specflow init
+## ALM, but make it friendly
 
-# Pin to a specific release
-uv tool install git+https://github.com/Longhuiberkeley/specflow@v0.3.2
-```
+DOORS and Polarion exist because compliance is real. They solved a real problem — requirements management at scale for regulated industries — and they're still the right answer for some teams. What they ask in return is a server, a license, a login, and a click-through workflow for every edit.
 
-Supports 14 AI coding platforms: Claude Code, Cursor, Windsurf, Cline, Gemini CLI, OpenCode, GitHub Copilot, Roo Code, QwenCoder, Kiro, KiloCoder, Codex, Trae, and Junie.
+SpecFlow is for teams that want the rigor without the portal tax.
 
-## Learn More
+| | Traditional ALM | SpecFlow |
+|---|---|---|
+| **Home** | Web server / desktop client | Your git repository |
+| **Interface** | Browser forms | `/specflow-*` in your AI assistant |
+| **CI** | External integration | Native — `artifact-lint` runs in your existing pipeline |
+| **AI** | Bolted on, if at all | 14 assistants, skill-first design |
+| **Setup** | Servers, licenses, admins | `uv tool install` — one command |
+| **Lock-in** | Proprietary database | Markdown + YAML + git |
 
-- [Getting started](docs/getting-started.md) -- tutorial walkthrough
-- [Lifecycle overview](docs/lifecycle.md) -- flowchart and command tiers
-- [Command reference](docs/commands.md) -- per-skill interface spec
-- [CLI reference](docs/cli-reference.md) -- raw CLI commands for power users and CI
-- [Architecture](docs/architecture.md) -- technical design
-- [Design decisions](docs/decisions.md) -- resolved trade-offs
-- [Team setup](docs/team-setup.md) -- RBAC and role-based access control
-- [Authoring a pack](docs/authoring-a-pack.md) -- creating compliance packs
-- [Authoring an adapter](docs/authoring-an-adapter.md) -- writing custom adapters
+Already on DOORS or Polarion? SpecFlow speaks **ReqIF 1.2** both ways for supply-chain interchange.
 
-## For Power Users
+## Skills vs. CLI
 
-You can invoke CLI commands directly for CI pipelines or when you prefer the terminal:
+Most users only see the slash commands. The raw CLI sits underneath for CI and automation.
 
 ```bash
 specflow init --platform claude-code
@@ -108,43 +119,53 @@ specflow artifact-lint
 specflow project-audit
 ```
 
-See the [CLI reference](docs/cli-reference.md) for the full command catalog.
+Full reference: [CLI reference](docs/cli-reference.md). 30 subcommands.
 
-## SpecFlow vs. Traditional ALM Tools
+## Directory layout
 
-SpecFlow is **not** a replacement for IBM DOORS, Siemens Polarion, or Jama Connect. Those tools serve a different audience — systems engineers working in dedicated web UIs with supply-chain-scale interchange workflows. SpecFlow serves **developers and AI assistants** who want compliance-grade rigor without leaving their repo.
-
-Where SpecFlow fits:
-
-| | Traditional ALM (DOORS, Polarion) | SpecFlow |
-|---|---|---|
-| **Home** | Web server / desktop client | Your git repository |
-| **Interface** | Click-through web forms | `/specflow-*` slash commands + CLI |
-| **CI** | External integration, often manual | Native — `artifact-lint` in CI, zero tokens |
-| **AI** | Limited or none | 14 AI coding platforms, skill-first design |
-| **Setup** | Server provisioning, licenses | `uv run specflow init` — one command |
-| **Audience** | Systems engineers, compliance officers | Developers, AI assistants, small teams |
-
-SpecFlow complements traditional ALM through **ReqIF import/export** (already built) — teams can exchange requirements with DOORS/Polarion users while keeping their own workflow in the repo.
-
-## Directory Layout
-
-After running `/specflow-init`, two directories appear in your repo:
+After `/specflow-init`, two directories appear:
 
 | Directory | Purpose | Edit? |
 |-----------|---------|-------|
-| `_specflow/` | Your specs and work items — requirements, architecture, stories, decisions, defects | Yes — this is your workspace |
-| `.specflow/` | Framework internals — config, schemas, baselines, impact logs, checklists | No — managed by CLI commands |
+| `_specflow/` | Your specs and work items | Yes — your workspace |
+| `.specflow/` | Framework internals (config, schemas, baselines) | No — managed by CLI |
 
-Everything is plain Markdown + YAML frontmatter. Your repo IS the database. See [architecture](docs/architecture.md) for the full directory tree.
+Everything is Markdown with YAML frontmatter. Your repo is the database.
+
+## Install
+
+```bash
+# Latest
+uv tool install git+https://github.com/Longhuiberkeley/specflow
+
+# Run without installing
+uvx --from git+https://github.com/Longhuiberkeley/specflow specflow init
+
+# Pin to a release
+uv tool install git+https://github.com/Longhuiberkeley/specflow@v1.0.0
+```
+
+## Docs
+
+- [Getting started](docs/getting-started.md) — tutorial walkthrough
+- [Lifecycle overview](docs/lifecycle.md) — flowchart and command tiers
+- [Command reference](docs/commands.md) — per-skill interface spec
+- [CLI reference](docs/cli-reference.md) — raw CLI for CI
+- [Architecture](docs/architecture.md) — technical design
+- [Design decisions](docs/decisions.md) — resolved trade-offs
+- [Team setup](docs/team-setup.md) — RBAC and role-based access
+- [Authoring a pack](docs/authoring-a-pack.md) — creating compliance packs
 
 ## Roadmap
 
-**v0.3.0 is the current release** — everything in v0.2.0 plus compliance evidence reports (`--evidence`), enhanced standards gap analysis with scoring and remediation, and optional artifact type schemas (hazard, risk, control).
+[ROADMAP.md](ROADMAP.md) for the full plan. [CHANGELOG.md](CHANGELOG.md) for release history.
 
-Next up: review workflow artifacts, local visualization server, and enhanced AI-assisted test generation (v1.0.0).
+## Not to be confused with
 
-See [ROADMAP.md](ROADMAP.md) for the full plan and [CHANGELOG.md](CHANGELOG.md) for what shipped in each version.
+SpecFlow here is a Python-based spec-driven development framework for filesystem-native specification tracking. It is **not** affiliated with:
+
+- **SpecFlow for .NET** ([specflow.org](https://specflow.org)) — a BDD framework for .NET by Tricentis. If you're looking for .NET BDD testing, you want them.
+- **SpecStoryAI** ([github.com/specstoryai/specflow](https://github.com/specstoryai/specflow)) — an AI-powered development tool.
 
 ## License
 

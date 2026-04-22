@@ -4,41 +4,45 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [0.3.2] - 2026-04-22
+## [1.0.0] - 2026-04-22
 
-### Fixed
+### Highlights
 
-- Updated Tier 1 slash command prompts (`/specflow-init`, `/specflow-ship`, `/specflow-audit`) to properly invoke 0.3.0 and 0.3.1 CLI features (`--with-types`, `--evidence`, `standards gaps`).
-- Resolved schema and traceability gaps in the SpecFlow self-specification artifacts to ensure clean project audits.
-- Version discrepancies between the baseline engine (`0.3.1`) and documentation.
+- First stable release. Everything since v0.2.0 plus polish, stability, and adoptability improvements.
 
-## [0.3.1] - 2026-04-22
+### Features
 
-### Added
+- **Unified CLI framework** — streamlined installation path, unified adapter framework, and command renaming
+- **Skill ecosystem restructuring** — collapsed 22 skills into 10 core Tier 1 conversational skills
+- **Shared thinking techniques** — adversarial lenses extracted into stage-specific reference catalogs for discover, plan, and execute skills, enabling "build it right the first time" rather than post-review fixes
+- **Freeform skill input** — all 10 skills accept natural language context (e.g., `/specflow-audit I'm worried about REQ coverage`) for scoped, directed workflows
+- **Compliance evidence reports** (`specflow baseline create --evidence`) — generates a Markdown report with traceability matrix, test results summary, baseline diff, and per-standard coverage scores
+- **Enhanced standards gap analysis** (`specflow standards gaps`) — coverage scoring (0–100%), severity-sorted gap list, rule-based remediation suggestions, `--json` flag
+- **Optional artifact type schemas** (`specflow init --with-types hazard,risk,control`) — installable hazard, risk, and control artifact types
+- **Compliance summary in status** — `specflow status` shows per-pack compliance scores when standards are installed
+- **Continuous auditing** — project audits support conversational scope and chunked fan-out
+- **Convention enforcement** — project convention checklists scaffold and enforce project structure
 
-- **Unified CLI Framework & Install UX** — streamlined installation path, getting-started tutorial, unified adapter framework, and command renaming (STORY-031, STORY-026, STORY-022)
-- **Skill Ecosystem Restructuring** — collapsed 22 disparate skills into 8 core Tier 1 conversational skills (STORY-032, STORY-033), significantly improving prompt quality and reducing UI surface area
-- **Continuous Auditing** — project audits now support conversational scope and chunked fan-out (STORY-030)
-- **Convention Enforcement** — new project convention checklists to automatically scaffold and enforce project structure and stylistic hygiene during V-model operations (STORY-035)
+### Documentation
+
+- **README rewrite** — clearer visual hierarchy, concise feature table, disambiguation section for similarly-named projects
+- **AGENTS.md release process** — documented CHANGELOG, git tagging, and GitHub Release workflow
+- **ROADMAP updated** — v1.0.0 reflects polish focus; deferred items and out-of-scope limits documented explicitly
 
 ### Changed
 
-- Documentation completely overhauled to focus on the new 9-command skill surface (STORY-034)
-- Skill instruction templates rewritten and unified across platforms (STORY-021)
-
-## [0.3.0] - 2026-04-22
-
-### Added
-
-- **Compliance evidence reports** (`specflow baseline create --evidence`) — generates a Markdown report alongside the baseline with traceability matrix, test results summary, baseline diff, and per-standard coverage scores (REQ-015, STORY-046)
-- **Enhanced standards gap analysis** (`specflow standards gaps`) — coverage scoring (0–100%), severity-sorted gap list with priority tiebreak, rule-based remediation suggestions per category, summary dashboard, and `--json` flag for machine-readable output (REQ-016, STORY-047)
-- **Optional artifact type schemas** (`specflow init --with-types hazard,risk,control`) — installable hazard, risk, and control artifact types with domain-specific fields, V-model lifecycle, and full create/trace/lint integration (REQ-017, STORY-048)
+- Thinking techniques (adversarial lenses) are now woven into `/specflow-discover` and `/specflow-plan` as creation-time challenges, not limited to `/specflow-artifact-review`
+- `/specflow-discover` Step 5 now challenges requirements before finalizing artifacts
+- `/specflow-plan` Step 4.5 now stress-tests architecture before creating artifacts
+- `/specflow-execute` now includes quick thinking checks during implementation
+- Skill instruction templates rewritten and unified across all 14 AI platforms
+- Documentation completely overhauled to focus on the 10-command skill surface
 
 ### Fixed
 
-- `check_compliance()` now reports `total_clauses` consistent with the score denominator (previously diverged when malformed clauses were skipped)
-- Project audit correctly detects ARCH and DDD refinements linked via `derives_from` (previously only matched `refined_by`, producing 10+ false-positive "no ARCH refinement" warnings)
-- Public `baseline_dir()` API replaces private `_baseline_dir()` for cross-module use by evidence report generator
+- `check_compliance()` now reports `total_clauses` consistent with the score denominator
+- Project audit correctly detects ARCH and DDD refinements linked via `derives_from`
+- Resolved schema and traceability gaps in self-specification artifacts
 
 ## [0.2.0] - 2025-04-21
 
@@ -117,5 +121,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Unified skill templates across all platforms
 - Rewrote documentation for public-readiness
 
-[0.3.0]: https://github.com/Longhuiberkeley/specflow/releases/tag/v0.3.0
+[1.0.0]: https://github.com/Longhuiberkeley/specflow/releases/tag/v1.0.0
 [0.2.0]: https://github.com/Longhuiberkeley/specflow/releases/tag/v0.2.0

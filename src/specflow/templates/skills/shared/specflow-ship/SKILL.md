@@ -3,6 +3,19 @@ name: specflow-ship
 description: Use when the user wants to release a version. Produces a baseline, generates change records, runs a quick audit, and presents a release summary.
 ---
 
+## Freeform Input Handling
+
+This skill accepts freeform user input alongside the command. Interpret the user's message to determine scope and depth:
+
+- **No additional context** → run the standard workflow (deterministic core only)
+- **A question or concern** → run the deterministic core, then address the question directly using the results
+- **A request for depth** ("go deep", "be thorough", "all lenses") → run deterministic core + full LLM analysis
+- **A specific focus** ("focus on REQ-003", "check compliance only") → narrow scope to the request, still run deterministic core first
+
+Always run the deterministic core regardless of input. It costs zero tokens and provides the foundation for any analysis.
+
+---
+
 # SpecFlow Ship
 
 Release workflow: baseline, change records, and audit.
@@ -12,9 +25,9 @@ Release workflow: baseline, change records, and audit.
 ### Step 1: Baseline Creation
 
 1. Ask the user for the release tag/version: "What tag should we use for this release baseline? (e.g., v1.2.0)"
-2. Create an immutable baseline snapshot:
+2. Create an immutable baseline snapshot with compliance evidence:
 ```
-uv run specflow baseline create <tag>
+uv run specflow baseline create <tag> --evidence
 ```
 
 ### Step 2: Document Changes (DEC Trail)
