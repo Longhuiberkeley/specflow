@@ -462,4 +462,25 @@ artifacts:
     tags: []
     fingerprint: sha256:d95032fac250
     children: []
-next_id: 297
+  CHL-297:
+    id: CHL-297
+    title: 'REQ-009: ARCH exists but no DDD refinement'
+    status: open
+    tags: []
+    fingerprint: sha256:3478f77ea5ff
+    children: []
+  CHL-298:
+    id: CHL-298
+    title: 'REQ-014: ARCH exists but no DDD refinement'
+    status: open
+    tags: []
+    fingerprint: sha256:4c698a2c762b
+    children: []
+  CHL-299:
+    id: CHL-299
+    title: 21/21 REQs have no non_functional_category
+    status: open
+    tags: []
+    fingerprint: sha256:07dbf797cbc0
+    children: []
+next_id: 300

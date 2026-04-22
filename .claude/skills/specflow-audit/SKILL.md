@@ -23,7 +23,13 @@ After the project audit, run the chain depth survey to show traceability coverag
 uv run specflow artifact-lint --type chain-report
 ```
 
-Include the chain depth distribution in the audit summary (Step 4). This is informational data about how deep traceability chains run across the project — not a pass/fail indicator.
+Then, run the standards gap analysis to check compliance health against installed packs:
+
+```
+uv run specflow standards gaps
+```
+
+Include the chain depth distribution and the standards compliance score in the audit summary (Step 4). The chain depth is informational data about how deep traceability chains run across the project — not a pass/fail indicator. The standards compliance score should be highlighted if it is below 100%.
 
 ### Step 2: Adversarial Wings (Optional)
 

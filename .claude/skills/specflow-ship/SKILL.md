@@ -12,9 +12,9 @@ Release workflow: baseline, change records, and audit.
 ### Step 1: Baseline Creation
 
 1. Ask the user for the release tag/version: "What tag should we use for this release baseline? (e.g., v1.2.0)"
-2. Create an immutable baseline snapshot:
+2. Create an immutable baseline snapshot with compliance evidence:
 ```
-uv run specflow baseline create <tag>
+uv run specflow baseline create <tag> --evidence
 ```
 
 ### Step 2: Document Changes (DEC Trail)

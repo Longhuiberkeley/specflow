@@ -90,4 +90,18 @@ artifacts:
     tags: []
     fingerprint: ''
     children: []
-next_id: 16
+  IT-016:
+    id: IT-016
+    title: 'Integration Test for ARCH-014: Test Engine'
+    status: draft
+    tags: []
+    fingerprint: sha256:672e96ce63a3
+    children: []
+  IT-017:
+    id: IT-017
+    title: 'Integration Test for ARCH-015: Deprecation Cleanup'
+    status: draft
+    tags: []
+    fingerprint: sha256:233e2d29d665
+    children: []
+next_id: 18

@@ -104,4 +104,46 @@ artifacts:
     tags: []
     fingerprint: ''
     children: []
-next_id: 17
+  UT-017:
+    id: UT-017
+    title: 'Unit Test for DDD-011: CLI Core Detailed Design'
+    status: draft
+    tags: []
+    fingerprint: sha256:0d02a9326af1
+    children: []
+  UT-018:
+    id: UT-018
+    title: 'Unit Test for DDD-012: Traceability Chain Detailed Design'
+    status: draft
+    tags: []
+    fingerprint: sha256:2bafb00f327c
+    children: []
+  UT-019:
+    id: UT-019
+    title: 'Unit Test for DDD-013: Provider-Agnostic CI Gate Detailed Design'
+    status: draft
+    tags: []
+    fingerprint: sha256:2de29ac67d7e
+    children: []
+  UT-020:
+    id: UT-020
+    title: 'Unit Test for DDD-014: V-Model Test Scaffolding Detailed Design'
+    status: draft
+    tags: []
+    fingerprint: sha256:da1704e2b670
+    children: []
+  UT-021:
+    id: UT-021
+    title: 'Unit Test for DDD-015: Test Engine DDD'
+    status: draft
+    tags: []
+    fingerprint: sha256:e9a74311f9d3
+    children: []
+  UT-022:
+    id: UT-022
+    title: 'Unit Test for DDD-016: Deprecation Cleanup DDD'
+    status: draft
+    tags: []
+    fingerprint: sha256:e1f9644576a8
+    children: []
+next_id: 23

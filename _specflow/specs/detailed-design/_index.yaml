@@ -83,4 +83,46 @@ artifacts:
     tags: []
     fingerprint: ''
     children: []
-next_id: 11
+  DDD-011:
+    id: DDD-011
+    title: CLI Core Detailed Design
+    status: implemented
+    tags: []
+    fingerprint: sha256:757c4b544f68
+    children: []
+  DDD-012:
+    id: DDD-012
+    title: Traceability Chain Detailed Design
+    status: implemented
+    tags: []
+    fingerprint: sha256:57387c3ad45f
+    children: []
+  DDD-013:
+    id: DDD-013
+    title: Provider-Agnostic CI Gate Detailed Design
+    status: implemented
+    tags: []
+    fingerprint: sha256:99aa67edb57e
+    children: []
+  DDD-014:
+    id: DDD-014
+    title: V-Model Test Scaffolding Detailed Design
+    status: implemented
+    tags: []
+    fingerprint: sha256:12d5c0f97d8b
+    children: []
+  DDD-015:
+    id: DDD-015
+    title: Test Engine DDD
+    status: implemented
+    tags: []
+    fingerprint: sha256:3e34d9f79ca6
+    children: []
+  DDD-016:
+    id: DDD-016
+    title: Deprecation Cleanup DDD
+    status: implemented
+    tags: []
+    fingerprint: sha256:c1a456fd9e83
+    children: []
+next_id: 17

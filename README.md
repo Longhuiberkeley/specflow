@@ -80,7 +80,7 @@ uv tool install git+https://github.com/Longhuiberkeley/specflow
 uvx --from git+https://github.com/Longhuiberkeley/specflow specflow init
 
 # Pin to a specific release
-uv tool install git+https://github.com/Longhuiberkeley/specflow@v0.3.0
+uv tool install git+https://github.com/Longhuiberkeley/specflow@v0.3.2
 ```
 
 Supports 14 AI coding platforms: Claude Code, Cursor, Windsurf, Cline, Gemini CLI, OpenCode, GitHub Copilot, Roo Code, QwenCoder, Kiro, KiloCoder, Codex, Trae, and Junie.

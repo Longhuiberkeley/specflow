@@ -4,6 +4,28 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.2] - 2026-04-22
+
+### Fixed
+
+- Updated Tier 1 slash command prompts (`/specflow-init`, `/specflow-ship`, `/specflow-audit`) to properly invoke 0.3.0 and 0.3.1 CLI features (`--with-types`, `--evidence`, `standards gaps`).
+- Resolved schema and traceability gaps in the SpecFlow self-specification artifacts to ensure clean project audits.
+- Version discrepancies between the baseline engine (`0.3.1`) and documentation.
+
+## [0.3.1] - 2026-04-22
+
+### Added
+
+- **Unified CLI Framework & Install UX** — streamlined installation path, getting-started tutorial, unified adapter framework, and command renaming (STORY-031, STORY-026, STORY-022)
+- **Skill Ecosystem Restructuring** — collapsed 22 disparate skills into 8 core Tier 1 conversational skills (STORY-032, STORY-033), significantly improving prompt quality and reducing UI surface area
+- **Continuous Auditing** — project audits now support conversational scope and chunked fan-out (STORY-030)
+- **Convention Enforcement** — new project convention checklists to automatically scaffold and enforce project structure and stylistic hygiene during V-model operations (STORY-035)
+
+### Changed
+
+- Documentation completely overhauled to focus on the new 9-command skill surface (STORY-034)
+- Skill instruction templates rewritten and unified across platforms (STORY-021)
+
 ## [0.3.0] - 2026-04-22
 
 ### Added

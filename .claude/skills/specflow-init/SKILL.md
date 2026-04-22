@@ -52,6 +52,7 @@ Ask the user:
 
 - "What type of project is this?" -- bounded options: Web App, CLI Tool, Library, Firmware/Embedded, Data Pipeline, Other
 - "Do you want to apply an industry standards preset?" -- bounded options: `iso26262-demo`, `default`, or None (Recommended)
+- "Do you want to install optional artifact types (hazard, risk, control)?" -- bounded options: Yes, No (Recommended)
 - "Which CI provider do you use?" -- bounded options: GitHub Actions (Recommended), GitLab CI, None
 - "Do you have any specific compliance standard packs you want to install?" -- free text, or None (Recommended)
 
@@ -64,6 +65,7 @@ uv run specflow init --platform <platform_code>
 Append flags as needed:
 
 - `--preset <preset>` if a preset was chosen
+- `--with-types hazard,risk,control` if optional artifact types were chosen
 - `--no-ci` if no CI provider was requested
 
 This scaffolds `.specflow/`, `_specflow/`, config files, schemas, checklists, and installs skill directories for the target platform.

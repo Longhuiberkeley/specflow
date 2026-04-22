@@ -58,7 +58,19 @@ For the implementation plan (phase breakdown, dependency graph), see [docs/plan.
 - Deterministic shell wrappers for CI/CD integration
 - Artifact quality lint with regex-based checks
 
-## v0.3.0 (Current)
+## v0.3.2 (Current)
+
+- **Prompt alignment** — updated Tier 1 slash commands (`init`, `ship`, `audit`) to leverage new `0.3.x` features (`--with-types`, `--evidence`, `standards gaps`)
+- **Artifact validation fixes** — resolved schema and traceability gaps in the SpecFlow self-specification
+
+## v0.3.1
+
+- **Unified CLI Framework & Install UX** — streamlined installation path and tutorial, unified adapter framework, and command renaming
+- **Skill Ecosystem Restructuring** — collapsed 22 skills to 8 Tier 1 conversational skills, rewrote skill prompts and documentation
+- **Continuous Auditing** — added conversational scope and chunked fan-out for project audits
+- **Convention Enforcement** — added project convention checklists to scaffold and enforce project structure
+
+## v0.3.0
 
 - **Compliance evidence reports** — `specflow baseline create --evidence` generates a Markdown report alongside the baseline with traceability matrix, test results summary, baseline diff, and per-standard coverage scores
 - **Enhanced standards gap analysis** — `specflow standards gaps` now includes coverage scoring (0–100%), severity-sorted gap list with priority tiebreak, rule-based remediation suggestions per category, summary dashboard, and `--json` flag for machine-readable output
