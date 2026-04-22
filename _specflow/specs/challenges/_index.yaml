@@ -434,4 +434,32 @@ artifacts:
     tags: []
     fingerprint: sha256:d0548251d6dc
     children: []
-next_id: 293
+  CHL-293:
+    id: CHL-293
+    title: 'REQ-001: ARCH exists but no DDD refinement'
+    status: open
+    tags: []
+    fingerprint: sha256:2ddfc1fca2e6
+    children: []
+  CHL-294:
+    id: CHL-294
+    title: 'REQ-007: ARCH exists but no DDD refinement'
+    status: open
+    tags: []
+    fingerprint: sha256:44abf15d01ac
+    children: []
+  CHL-295:
+    id: CHL-295
+    title: 'REQ-008: ARCH exists but no DDD refinement'
+    status: open
+    tags: []
+    fingerprint: sha256:c1ee1426eb70
+    children: []
+  CHL-296:
+    id: CHL-296
+    title: 'REQ-013: ARCH exists but no DDD refinement'
+    status: open
+    tags: []
+    fingerprint: sha256:d95032fac250
+    children: []
+next_id: 297

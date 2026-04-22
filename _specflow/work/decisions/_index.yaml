@@ -307,4 +307,104 @@ artifacts:
     - auto-generated
     fingerprint: ''
     children: []
-next_id: 33
+  DEC-033:
+    id: DEC-033
+    title: 'Change Record: fix(coverage): update story coverage calculation and resolve
+      v-model gaps'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:78b7c0956fcf
+    children: []
+  DEC-034:
+    id: DEC-034
+    title: "Change Record: feat(specs): wire V-model verification chain \u2014 UT/IT/QT\
+      \ specs for 48 stories, promote all to verified"
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:f05a55dbc462
+    children: []
+  DEC-035:
+    id: DEC-035
+    title: 'Change Record: feat(specs): add ARCH-007/008/009, update ARCH-004, close
+      refinement gaps for REQ-007/008/013/016/017'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:337f999f9571
+    children: []
+  DEC-036:
+    id: DEC-036
+    title: "Change Record: fix(specs): resolve quality nits \u2014 ambiguity, passive\
+      \ voice, compound shall; lint skips code spans"
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:c9bda9c82666
+    children: []
+  DEC-037:
+    id: DEC-037
+    title: 'Change Record: docs: update README/ROADMAP to v0.3.0, promote REQ-001..005
+      to implemented'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:0bf81b41fe0c
+    children: []
+  DEC-038:
+    id: DEC-038
+    title: 'Change Record: chore(specs): promote REQ-015/016/017, stale CHL-286/288,
+      resolve impact-log, rebuild indexes'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:f0837b813cb8
+    children: []
+  DEC-039:
+    id: DEC-039
+    title: 'Change Record: chore(specs): update STORY-046/047/048 to implemented,
+      refresh fingerprints'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:6c99c6b152bf
+    children: []
+  DEC-040:
+    id: DEC-040
+    title: "Change Record: feat(specs): v0.3.0 spec-sync \u2014 CHL dedup fix, ARCH-006/DDD-006,\
+      \ STORY-046/047/048, REQ-017 rescope"
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:8f0b7838c5af
+    children: []
+  DEC-041:
+    id: DEC-041
+    title: 'Change Record: feat(specs): add v0.3.0 architecture, design, requirements,
+      and test artifacts'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:7f4ba4fa482d
+    children: []
+  DEC-042:
+    id: DEC-042
+    title: 'Change Record: docs(specs): sync ARCH-001/002/003 and DDD-002/003 with
+      v0.2.0 codebase'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:53cd2c3d812d
+    children: []
+next_id: 43
