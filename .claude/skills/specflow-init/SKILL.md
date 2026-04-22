@@ -167,7 +167,7 @@ Summarize what was done:
 
 Then recommend:
 
-> "Your project is ready. Run `/specflow-discover` to start capturing requirements."
+> "Your project is ready. Run `/specflow-discover` to start capturing requirements, or `/specflow-adapter` if you want to configure CI or exchange integrations first."
 
 ## Rules
 

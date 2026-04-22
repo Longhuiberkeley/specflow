@@ -23,6 +23,32 @@ The primary interface is `/specflow-*` slash commands in your AI assistant.
 | `/specflow-audit` | Full-project periodic health check |
 | `/specflow-ship` | Release: baseline + change records + quick audit |
 | `/specflow-pack-author` | Author a standards compliance pack |
+| `/specflow-adapter` | Manage CI, exchange, standards ingestion, team RBAC |
+
+### The V-Model
+
+SpecFlow tracks specs on two axes — specification depth (left side) and verification evidence (right side):
+
+```
+REQ (what the system must do)
+ └→ ARCH (component structure and interfaces)
+     └→ DDD (detailed design for complex components)
+         ├→ UT (unit tests — verify DDD)
+         ├→ IT (integration tests — verify ARCH)
+         └→ QT (qualification tests — verify REQ)
+```
+
+Work artifacts (STORY, SPIKE, DEC, DEF) live in `_specflow/work/` and link to specs for traceability.
+
+### When to Invoke SpecFlow
+
+**Use SpecFlow when:** adding a feature, fixing a bug that needs traceability, changing requirements, running compliance/audit checks, or the user explicitly asks.
+
+**Skip SpecFlow for:** typo fixes, cosmetic changes, refactors with no spec impact, one-off scripts, quick config tweaks.
+
+**CLI-only commands** (no dedicated skill — invoke via Bash when needed):
+- `specflow status` — project state overview
+- `specflow trace <ID>` — V-model trace chain for an artifact
 
 ### Skills vs CLI
 
@@ -54,12 +80,19 @@ When working with artifacts, **always update their status** as work progresses:
 
 When implementing stories via `/specflow-execute`, also update linked ARCH and DDD artifacts to `implemented` once the code that realizes them is written. Do not wait for the story to be fully complete -- update spec status as the corresponding code lands.
 
+### Going Deeper
+
+For detailed guides, read these docs in the SpecFlow installation:
+- `docs/getting-started.md` — full walkthrough from init to ship
+- `docs/lifecycle.md` — workflow flowchart and command tiers
+- `docs/commands.md` — per-skill interface specification
+
 ### Working Principles
 
 - **Trace before implement.** Every code change traces to a STORY or REQ. No orphan work.
 - **Evidence over claims.** "Verified" means an artifact proves it — run the checks, don't assume.
 - **State assumptions explicitly.** If uncertain, ask rather than silently picking an interpretation.
-- **Fail early.** Run `specflow artifact-lint` after changes, not at release time.
+- **Fail early.** The pre-commit hook runs `specflow artifact-lint` automatically. Run it manually only when editing artifacts outside a skill workflow.
 - **Surgical changes.** Touch only what the request requires. Match existing conventions.
 - **Label defaults.** When offering choices, mark the suggested option with "(Recommended)".
 - **Escape hatches.** If the user says "move on" or "skip", proceed with what you have.

@@ -76,7 +76,6 @@ These may ship someday, but are not committed:
 
 - **Product variant management** — tag-based product line engineering for multi-trim / multi-variant projects
 - **FMEA / risk analysis** — hazard, safety-goal, and risk-control artifact types via industry packs
-- **Bidirectional Jira/Azure DevOps sync** — for teams bridging agile boards and compliance specs
 - **REST API** — programmatic access for custom toolchain integration
 - **Static HTML export** — `specflow export --html` for zero-dependency dashboard generation
 - **Review workflow artifacts** — structured `REVIEW-*` type with reviewer voting and threaded findings

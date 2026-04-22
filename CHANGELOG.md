@@ -4,6 +4,19 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.1] - 2026-04-23
+
+### Fixed
+
+- AGENTS.md template now lists all 10 skills (was missing `/specflow-adapter`)
+- AGENTS.md template now includes V-model explanation, invocation routing rules, CLI-only command references, and doc pointers for deeper context
+- ROADMAP no longer lists Jira/Azure DevOps sync in both v1.x and Out of Scope
+- `docs/plan.md` release table updated to reflect shipped versions
+
+### Changed
+
+- `/specflow-init` completion message now suggests `/specflow-adapter` for CI-first teams
+
 ## [1.0.0] - 2026-04-22
 
 ### Highlights

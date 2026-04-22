@@ -54,11 +54,9 @@ Within phases, work flows:
 | Release | Status | Milestone |
 |---------|--------|-----------|
 | v0.2.0 | **Shipped** | All phases P0–P8: full AI lifecycle, traceability, execution, review, compliance, RBAC, dedup |
-| v0.3.0 | Planned | Compliance preset packs, evidence reports, deeper gap analysis |
-| v1.0.0 | Planned | Review workflow artifacts, visualization server, enhanced test generation |
-| v1.x | Future | Product variants, FMEA/risk, bidirectional Jira/ADO sync, REST API |
+| v1.0.0 | **Shipped** | Polish: skill restructuring, shared thinking techniques, freeform input, compliance evidence, adoptability |
 
-Each release is a tagged Python package version managed by `uv`. Phases within a release can ship incrementally as minor bumps (v0.1.1, v0.1.2, etc.).
+For the forward-looking roadmap, see [ROADMAP.md](../ROADMAP.md).
 
 ## Supporting Documents
 
