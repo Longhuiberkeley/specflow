@@ -14,15 +14,18 @@ SpecFlow keeps the rigor (V-model traceability, impact analysis, audit baselines
 ## Feel it in 30 seconds
 
 ```bash
+# 1. Install the CLI (one time, system level)
 $ uv tool install git+https://github.com/Longhuiberkeley/specflow
+
+# 2. Bootstrap your project (creates dirs + installs skills into your repo)
+$ cd your-project
+$ specflow init
+   Detects platform, scaffolds _specflow/ and .specflow/, installs skills.
 ```
 
 Then, inside your AI assistant:
 
 ```
-> /specflow-init
-   Detects platform, scaffolds _specflow/ and .specflow/, offers CI wiring.
-
 > /specflow-discover  "Add SSO to our customer portal"
    Guided conversation. Surfaces hidden assumptions. Writes REQ-001..003
    as Markdown in _specflow/specs/.
@@ -48,11 +51,30 @@ The whole workflow is a conversation, not a portal. Everything you see above is 
 
 **Prerequisites:** [uv](https://docs.astral.sh/uv/) + any supported AI coding assistant.
 
+**Step 1 — Install the CLI** (one time):
+
 ```bash
 uv tool install git+https://github.com/Longhuiberkeley/specflow
 ```
 
-Open your assistant, point it at your repo, and run `/specflow-init`. That's it. Full walkthrough in the [getting-started guide](docs/getting-started.md).
+**Step 2 — Bootstrap your project** (per repo):
+
+```bash
+cd your-project
+specflow init
+```
+
+This scaffolds the directory structure and copies skill files (e.g. `.claude/skills/`) into your repo so your AI assistant can recognize `/specflow-*` commands.
+
+**Step 3 — Open your AI assistant** and use the skills:
+
+```
+> /specflow-discover "Add SSO to our customer portal"
+> /specflow-plan
+> /specflow-execute
+```
+
+Full walkthrough in the [getting-started guide](docs/getting-started.md).
 
 ## What you get
 
@@ -103,7 +125,7 @@ SpecFlow is for teams that want the rigor without the portal tax.
 | **Interface** | Browser forms | `/specflow-*` in your AI assistant |
 | **CI** | External integration | Native — `artifact-lint` runs in your existing pipeline |
 | **AI** | Bolted on, if at all | 14 assistants, skill-first design |
-| **Setup** | Servers, licenses, admins | `uv tool install` — one command |
+| **Setup** | Servers, licenses, admins | `uv tool install` + `specflow init` — two commands |
 | **Lock-in** | Proprietary database | Markdown + YAML + git |
 
 Already on DOORS or Polarion? SpecFlow speaks **ReqIF 1.2** both ways for supply-chain interchange.
@@ -123,7 +145,7 @@ Full reference: [CLI reference](docs/cli-reference.md). 30 subcommands.
 
 ## Directory layout
 
-After `/specflow-init`, two directories appear:
+After `specflow init`, two directories appear:
 
 | Directory | Purpose | Edit? |
 |-----------|---------|-------|
@@ -134,16 +156,29 @@ Everything is Markdown with YAML frontmatter. Your repo is the database.
 
 ## Install
 
+### Step 1: Install the CLI
+
 ```bash
 # Latest
 uv tool install git+https://github.com/Longhuiberkeley/specflow
 
-# Run without installing
-uvx --from git+https://github.com/Longhuiberkeley/specflow specflow init
-
 # Pin to a release
 uv tool install git+https://github.com/Longhuiberkeley/specflow@v1.0.0
+
+# Run without installing (ephemeral)
+uvx --from git+https://github.com/Longhuiberkeley/specflow specflow init
 ```
+
+This makes the `specflow` command available system-wide.
+
+### Step 2: Bootstrap each project
+
+```bash
+cd your-project
+specflow init
+```
+
+This creates `_specflow/` and `.specflow/` in your repo, and copies skill files into the appropriate directory for your AI assistant (e.g. `.claude/skills/` for Claude Code, `.cursor/skills/` for Cursor). After this step, `/specflow-*` slash commands are available in your assistant.
 
 ## Docs
 
