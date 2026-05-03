@@ -55,6 +55,8 @@ Within phases, work flows:
 |---------|--------|-----------|
 | v0.2.0 | **Shipped** | All phases P0–P8: full AI lifecycle, traceability, execution, review, compliance, RBAC, dedup |
 | v1.0.0 | **Shipped** | Polish: skill restructuring, shared thinking techniques, freeform input, compliance evidence, adoptability |
+| v1.0.1 | **Shipped** | AGENTS.md template fixes, init completion message, roadmap cleanup |
+| v1.1.0 | **Shipped** | Domain BP synthesis, learning feedback loop, patterns command, per-item scoping |
 
 For the forward-looking roadmap, see [ROADMAP.md](../ROADMAP.md).
 

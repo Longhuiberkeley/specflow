@@ -37,7 +37,19 @@ Break down approved requirements into architecture, detailed design, and user st
    - Cross-cutting concerns (auth, logging, error handling)
    - External system integrations
    - Non-functional constraints (performance, scale, compliance)
-3. Summarize your understanding back to the user: "Here's what I see as the system scope. Correct?"
+ 3. Summarize your understanding back to the user: "Here's what I see as the system scope. Correct?"
+
+### Step 2.5: Generate Planning Best Practices
+
+Before starting architecture work, generate phase-level best practices for the planning phases. These are domain-specific and complement any installed standards packs:
+
+```
+uv run specflow handbook generate plan-arc
+uv run specflow handbook generate plan-ddd
+uv run specflow handbook generate plan-story
+```
+
+Read the generated BPs with `uv run specflow handbook show plan-arc` and reference them during Steps 3–5. The BPs provide domain-specific guidance on what good architecture, detailed design, and story decomposition look like for this project's domain. If no API key is configured, this step is skipped gracefully.
 
 ### Step 3: Architecture Proposal
 
@@ -100,20 +112,6 @@ For each ARCH, briefly: "6 months from now this failed — what went wrong? Any 
 Present concerns and let the user revise before creating artifacts.
 
 If the user requested specific techniques or said "go deep", expand the selection accordingly.
-
-### Step 5: Story Breakdown (SPIDR)
-1. Specify function signatures with input/output types
-2. Define data structures and their relationships
-3. Describe error handling at system boundaries
-4. Note preconditions and invariants
-
-```
-uv run specflow create \
-  --type detailed-design \
-  --title "<design name>" \
-  --links "[{\"target\": \"ARCH-001\", \"role\": \"refined_by\"}]" \
-  --body "<detailed design with function signatures, data structures, error handling>"
-```
 
 ### Step 5: Story Breakdown (SPIDR)
 

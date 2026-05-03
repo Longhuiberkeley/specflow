@@ -58,7 +58,7 @@ For the implementation plan (phase breakdown, dependency graph), see [docs/plan.
 - Deterministic shell wrappers for CI/CD integration
 - Artifact quality lint with regex-based checks
 
-## v1.0.0 (Current)
+## v1.0.0
 
 Focus: **polish, stability, and adoptability.** Ship what we have with confidence.
 
@@ -69,6 +69,27 @@ Focus: **polish, stability, and adoptability.** Ship what we have with confidenc
 - **Release process** — structured CHANGELOG, git tagging, and GitHub Release workflow documented in AGENTS.md
 - **Test coverage boost** — expanded coverage on critical CLI paths (create, update, status, lint, audit)
 - **Error message polish** — actionable CLI error messages across all commands
+
+## v1.0.1
+
+- AGENTS.md template fix (missing `/specflow-adapter`, V-model docs, CLI-only references)
+- `/specflow-init` completion message suggests `/specflow-adapter` for CI-first teams
+- ROADMAP cleanup (duplicate Jira sync entry)
+
+## v1.1.0 (Current)
+
+Focus: **domain intelligence and learning feedback.**
+
+- **Domain best-practice synthesis** — project-level and phase-level BP generation via LLM, cached as human-editable YAML
+- **Knowledge accumulation lifecycle** — learned prevention patterns (PREV-*.yaml) extracted from artifact reviews with blocking/warning findings
+- **Per-item checklist scoping** — `applies_to.types` on individual checklist items overrides top-level filter
+- **Configurable learning** — `learnable_techniques` and `max_patterns_per_session` in config.yaml
+- **`specflow patterns`** — inspect learned prevention patterns (`list`, `show`)
+- **`specflow handbook`** — manage domain BP cache (`generate`, `show`, `path`, `list`)
+- **`--fast` flag** on `artifact-review` — skip BP synthesis for CI, use cached only
+- **Auto-backup** — `--overwrite` backs up previous BP file before regenerating
+- **`specflow done` auto-extraction** — `--auto` is now the default, extracts patterns from implemented stories
+- **Expanded learnable techniques** — adversarial findings (devil's advocate, premortem, etc.) now feed into learning by default
 
 ## v1.x (Future)
 

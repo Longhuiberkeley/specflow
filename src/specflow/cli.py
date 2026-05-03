@@ -195,6 +195,8 @@ def _add_init_parser(subparsers):
     p.add_argument("--preset", help="Industry pack preset (e.g., iso26262-demo)")
     p.add_argument("--with-types", dest="with_types", help="Comma-separated optional artifact types to enable (e.g., hazard,risk,control)")
     p.add_argument("--no-ci", action="store_true", dest="no_ci", help="Skip CI workflow installation")
+    p.add_argument("--domain", help="Project domain (e.g., embedded, api-service, web-app)")
+    p.add_argument("--domain-tags", dest="domain_tags", help="Comma-separated domain tags (e.g., real-time,safety-critical)")
 
 
 def _add_status_parser(subparsers):
@@ -226,6 +228,43 @@ def _add_standards_parser(subparsers):
     gaps_p.add_argument("--json", action="store_true", dest="json", help="Output as JSON")
 
 
+def _add_domain_parser(subparsers):
+    p = subparsers.add_parser("domain", help="Get or set the project's domain (drives domain-aware checklists and review synthesis)")
+    sub = p.add_subparsers(dest="domain_subcommand")
+    set_p = sub.add_parser("set", help="Set the project domain")
+    set_p.add_argument("name", help="Domain identifier (e.g., embedded, api-service, web-app, healthcare, fintech)")
+    set_p.add_argument("--tag", action="append", default=[], dest="tags",
+                       help="Domain tag (repeatable, e.g., --tag real-time --tag phi)")
+    sub.add_parser("show", help="Show the current project domain")
+
+
+def _add_handbook_parser(subparsers):
+    p = subparsers.add_parser("handbook", help="Manage the domain best-practice cache")
+    sub = p.add_subparsers(dest="handbook_subcommand")
+    for name, helptext in (
+        ("generate", "Synthesize best practices for (domain, project|phase) via LLM"),
+        ("show", "Print cached best practices"),
+        ("path", "Print the cache file path"),
+        ("list", "List all cached best-practice files"),
+    ):
+        if name == "list":
+            sub.add_parser(name, help=helptext)
+            continue
+        sp = sub.add_parser(name, help=helptext)
+        sp.add_argument("phase", help="'project' or a phase name (e.g., plan-arc, plan-ddd, verify-unit)")
+        sp.add_argument("--domain", help="Override domain (defaults to value from `specflow domain show`)")
+        if name == "generate":
+            sp.add_argument("--overwrite", action="store_true", help="Regenerate even if cache exists")
+
+
+def _add_patterns_parser(subparsers):
+    p = subparsers.add_parser("patterns", help="Inspect learned prevention patterns")
+    sub = p.add_subparsers(dest="patterns_subcommand")
+    sub.add_parser("list", help="List all learned patterns")
+    show_p = sub.add_parser("show", help="Show a specific pattern's full YAML")
+    show_p.add_argument("pattern_id", help="Pattern ID (e.g., PREV-001)")
+
+
 def _add_update_parser(subparsers):
     p = subparsers.add_parser("update", help="Update an artifact's frontmatter")
     p.add_argument("artifact_id", help="Artifact ID to update")
@@ -245,8 +284,9 @@ def _add_go_parser(subparsers):
 
 def _add_done_parser(subparsers):
     p = subparsers.add_parser("done", help="Close current phase and extract prevention patterns")
-    p.add_argument("--auto", action="store_true", help="Skip interactive pattern extraction")
-    p.add_argument("--no-patterns", action="store_true", dest="no_patterns", help="Skip pattern extraction")
+    p.add_argument("--auto", action="store_true", default=True, help="Auto-extract prevention patterns (default)")
+    p.add_argument("--no-auto", action="store_false", dest="auto", help="Show pattern summary without extracting")
+    p.add_argument("--no-patterns", action="store_true", dest="no_patterns", help="Skip pattern extraction entirely")
 
 
 def _add_artifact_lint_parser(subparsers):
@@ -404,7 +444,7 @@ def _add_generate_tests_parser(subparsers):
 # so `specflow --help` actually shows the phase headers, not just the source.
 _HELP_EPILOG = """\
 commands by workflow phase:
-  Discover:   init, status
+  Discover:   init, status, domain, handbook, patterns
   Plan:       create, update
   Execute:    go, done, generate-tests
   Review:     artifact-lint, checklist-run, artifact-review, project-audit, trace
@@ -425,6 +465,7 @@ def _add_artifact_review_args(p):
     p.add_argument("--techniques", help="Comma-separated list of thinking techniques to run (for --depth deep)")
     p.add_argument("--gate", help="Phase-gate checklist")
     p.add_argument("--proactive", action="store_true", help="Include proactive challenge items")
+    p.add_argument("--fast", action="store_true", help="Skip best-practice synthesis (use cached BPs only, no LLM calls for BP generation)")
 
 
 def _add_project_audit_args(p):
@@ -438,6 +479,44 @@ def _add_project_audit_args(p):
 def cmd_standards(args: argparse.Namespace) -> int:
     if args.standards_subcommand == "gaps":
         return cmd_standards_gaps(args)
+    return 1
+
+
+def cmd_handbook(args: argparse.Namespace) -> int:
+    from specflow.commands import handbook as handbook_cmd
+    root = _find_project_root()
+    return handbook_cmd.run(root, vars(args))
+
+
+def cmd_patterns(args: argparse.Namespace) -> int:
+    from specflow.commands import patterns as patterns_cmd
+    root = _find_project_root()
+    return patterns_cmd.run(root, vars(args))
+
+
+def cmd_domain(args: argparse.Namespace) -> int:
+    from specflow.lib.config import get_domain, set_domain
+    root = _find_project_root()
+    sub = getattr(args, "domain_subcommand", None)
+    if sub == "set":
+        name = (args.name or "").strip()
+        if not name:
+            print("error: domain name is required", file=sys.stderr)
+            return 1
+        tags = list(getattr(args, "tags", None) or [])
+        set_domain(root, name, tags)
+        print(f"✓ domain set to '{name}'" + (f" with tags {tags}" if tags else ""))
+        return 0
+    if sub == "show":
+        domain, tags = get_domain(root)
+        if not domain:
+            print("(no domain set — run `specflow domain set <name>` to enable domain-aware checklists)")
+            return 0
+        print(f"domain: {domain}")
+        if tags:
+            print(f"tags:   {', '.join(tags)}")
+        return 0
+    print("error: subcommand required (set | show)", file=sys.stderr)
     return 1
 
 def main(argv: list[str] | None = None) -> int:
@@ -454,6 +533,9 @@ def main(argv: list[str] | None = None) -> int:
     _add_init_parser(subparsers)
     _add_status_parser(subparsers)
     _add_standards_parser(subparsers)
+    _add_domain_parser(subparsers)
+    _add_handbook_parser(subparsers)
+    _add_patterns_parser(subparsers)
 
     # ── Plan ────────────────────────────────────────────────────
     _add_create_parser(subparsers)
@@ -504,6 +586,9 @@ def main(argv: list[str] | None = None) -> int:
         "init": cmd_init,
         "status": cmd_status,
         "standards": cmd_standards,
+        "domain": cmd_domain,
+        "handbook": cmd_handbook,
+        "patterns": cmd_patterns,
         "artifact-lint": cmd_artifact_lint,
         "create": cmd_create,
         "update": cmd_update,

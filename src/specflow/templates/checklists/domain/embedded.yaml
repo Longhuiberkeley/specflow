@@ -1,0 +1,51 @@
+id: CKL-DOMAIN-EMBEDDED
+name: "Embedded / firmware domain checks"
+applies_to:
+  types: [requirement, architecture, detailed-design, story]
+version: 2
+
+items:
+  - id: CKL-DOM-EMB-01
+    check: "Safety standard linkage is explicit when applicable"
+    automated: true
+    script: "uv run specflow artifact-lint --type links"
+    severity: blocking
+    llm_prompt: "If the system targets ISO 26262 / IEC 62304 / IEC 61508 / DO-178C, confirm any safety-relevant artifact carries a `complies_with` link or tag identifying the relevant clause / ASIL / SIL / DAL. Flag bare assertions of compliance."
+
+  - id: CKL-DOM-EMB-02
+    check: "Real-time class is specified (hard / firm / soft) with a worst-case latency budget"
+    automated: false
+    llm_prompt: "If this artifact involves time-critical paths (interrupts, control loops, deadlines), confirm the real-time class is named and the worst-case latency budget is quantified. Flag if not."
+    severity: blocking
+    applies_to:
+      types: [requirement, architecture]
+
+  - id: CKL-DOM-EMB-03
+    check: "Memory footprint is bounded (RAM/Flash budget) with allocation strategy"
+    automated: false
+    llm_prompt: "Confirm the artifact specifies its RAM/Flash budget and an allocation strategy (static-only, arena, pool, or heap). For safety-critical paths, dynamic allocation should be justified or disallowed. Flag if absent."
+    severity: warning
+
+  - id: CKL-DOM-EMB-04
+    check: "Failure modes for peripheral / external dependency loss are defined"
+    automated: false
+    llm_prompt: "For each peripheral or external interface (sensor, bus, comms link), confirm the failure mode is defined (fail-safe default, redundant channel, degraded mode, or limp-home). Flag any silent fallback."
+    severity: blocking
+
+  - id: CKL-DOM-EMB-05
+    check: "Watchdog / liveness strategy is specified for any task that owns control"
+    automated: false
+    llm_prompt: "If this artifact introduces a long-running task or owns a control loop, confirm a watchdog or liveness signal is specified (timeout, heartbeat, recovery action). Flag tasks that can hang silently."
+    severity: warning
+
+  - id: CKL-DOM-EMB-06
+    check: "Verification approach matches the criticality of the path"
+    automated: false
+    llm_prompt: "Confirm the verification approach (unit + integration + HIL, coverage target, static analysis) matches the criticality named in the artifact. Statement-coverage on an ASIL-D path should be flagged."
+    severity: warning
+
+  - id: CKL-DOM-EMB-07
+    check: "Update / rollback strategy is named for in-field firmware"
+    automated: false
+    llm_prompt: "If the artifact affects deployed device code, confirm the update path (in-field update, A/B partition, delta) and rollback strategy are referenced. Flag if updates are implicitly assumed safe."
+    severity: warning

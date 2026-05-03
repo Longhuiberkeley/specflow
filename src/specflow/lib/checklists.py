@@ -23,6 +23,7 @@ class ChecklistItem:
     severity: str = "warning"  # blocking | warning | info
     mode: str = "standard"  # proactive | reactive | standard
     applies_at: list[str] = field(default_factory=lambda: ["review"])
+    applies_types: list[str] | None = None
     llm_prompt: str | None = None
     script: str | None = None
     source_checklist: str = ""
@@ -67,6 +68,12 @@ def parse_checklist_file(path: Path) -> list[ChecklistItem]:
     for item_data in data.get("items", []):
         if not isinstance(item_data, dict):
             continue
+        item_applies_to = item_data.get("applies_to")
+        item_types = None
+        if isinstance(item_applies_to, dict):
+            t = item_applies_to.get("types")
+            if isinstance(t, list) and t:
+                item_types = t
         items.append(ChecklistItem(
             id=item_data.get("id", ""),
             check=item_data.get("check", ""),
@@ -74,6 +81,7 @@ def parse_checklist_file(path: Path) -> list[ChecklistItem]:
             severity=item_data.get("severity", "warning"),
             mode=item_data.get("mode", "standard"),
             applies_at=item_data.get("applies_at", ["review"]),
+            applies_types=item_types,
             llm_prompt=item_data.get("llm_prompt"),
             script=item_data.get("script"),
             source_checklist=str(path),
@@ -162,6 +170,48 @@ def _load_gate_checklist(root: Path, phase_transition: str) -> list[ChecklistIte
     if path.exists():
         return parse_checklist_file(path)
     return []
+
+
+def _load_domain_checklist(root: Path, domain: str, artifact_type: str) -> list[ChecklistItem]:
+    """Load domain-specific checklist items if a domain is set in config.yaml.
+
+    Looks for .specflow/checklists/domain/{domain}.yaml. Items are filtered by
+    per-item `applies_to.types` if present, falling back to the top-level
+    `applies_to.types`. Items without any type filter apply to all artifact
+    types.
+    """
+    if not domain:
+        return []
+
+    path = root / ".specflow" / "checklists" / "domain" / f"{domain}.yaml"
+    if not path.exists():
+        return []
+
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+    if not isinstance(data, dict):
+        return []
+
+    top_applies_to = data.get("applies_to") or {}
+    top_type_filter = top_applies_to.get("types") if isinstance(top_applies_to, dict) else None
+    # Top-level type filter gates the entire checklist
+    if top_type_filter and artifact_type not in top_type_filter:
+        return []
+
+    all_items = parse_checklist_file(path)
+    filtered: list[ChecklistItem] = []
+    for item in all_items:
+        # Per-item type filter overrides top-level for this item
+        item_types = item.applies_types
+        if item_types is None:
+            item_types = top_type_filter
+        if item_types and artifact_type not in item_types:
+            continue
+        filtered.append(item)
+
+    return filtered
 
 
 def _load_learned_patterns(root: Path, artifact: Artifact) -> list[ChecklistItem]:
@@ -264,6 +314,14 @@ def assemble_checklist(
     if learned_items:
         all_items.extend(learned_items)
         sources.append("learned/PREV-*")
+
+    # 6. Domain checklist (project-level domain set via `specflow domain set`)
+    from specflow.lib.config import get_domain
+    domain, _ = get_domain(root)
+    domain_items = _load_domain_checklist(root, domain, artifact.type)
+    if domain_items:
+        all_items.extend(domain_items)
+        sources.append(f"domain/{domain}")
 
     # Deduplicate and sort
     all_items = _deduplicate_items(all_items)

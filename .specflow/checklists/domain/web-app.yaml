@@ -1,0 +1,48 @@
+id: CKL-DOMAIN-WEB-APP
+name: "Web application domain checks"
+applies_to:
+  types: [requirement, architecture, detailed-design, story]
+version: 1
+
+items:
+  - id: CKL-DOM-WEB-01
+    check: "Rendering strategy is explicitly chosen (SSR / CSR / SSG / hybrid)"
+    automated: false
+    llm_prompt: "Confirm the architecture specifies which rendering strategy applies to each route or page and why. Flag routes where the strategy is implicit or contradicts stated performance goals."
+    severity: blocking
+
+  - id: CKL-DOM-WEB-02
+    check: "Accessibility requirements are stated with target standard"
+    automated: false
+    llm_prompt: "Confirm the artifact names the target accessibility standard (WCAG 2.1 AA, Section 508, etc.) and identifies which pages or flows must comply. Flag bare 'accessible' claims without a standard reference."
+    severity: warning
+
+  - id: CKL-DOM-WEB-03
+    check: "Session management approach is specified"
+    automated: false
+    llm_prompt: "Confirm the artifact states the session strategy (cookie-based, JWT, OAuth) and addresses token refresh, expiration, and revocation. Flag implicit session assumptions."
+    severity: blocking
+
+  - id: CKL-DOM-WEB-04
+    check: "Data freshness requirements are quantified per view"
+    automated: false
+    llm_prompt: "For any view displaying live or frequently-updating data, confirm the acceptable staleness is stated (real-time <1s, near-real-time <30s, eventual <5min). Flag views where freshness is unspecified but implied."
+    severity: warning
+
+  - id: CKL-DOM-WEB-05
+    check: "Frontend state management approach is named"
+    automated: false
+    llm_prompt: "Confirm the architecture identifies the state management approach (local state, context, store, cache) for server data vs. UI state. Flag architectures with no stated state strategy."
+    severity: info
+
+  - id: CKL-DOM-WEB-06
+    check: "Responsive / mobile breakpoints are defined"
+    automated: false
+    llm_prompt: "If the application must work on mobile, confirm the artifact specifies which breakpoints or device classes are supported and which are out of scope."
+    severity: info
+
+  - id: CKL-DOM-WEB-07
+    check: "SEO and meta-tag strategy for public-facing pages"
+    automated: false
+    llm_prompt: "For public-facing pages, confirm meta tags, Open Graph, and canonical URLs are addressed. Flag if SEO is important but no strategy is mentioned."
+    severity: info

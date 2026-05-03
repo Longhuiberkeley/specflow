@@ -1,0 +1,48 @@
+id: CKL-DOMAIN-MOBILE
+name: "Mobile application domain checks"
+applies_to:
+  types: [requirement, architecture, detailed-design, story]
+version: 1
+
+items:
+  - id: CKL-DOM-MOB-01
+    check: "Target platforms and minimum OS versions are specified"
+    automated: false
+    llm_prompt: "Confirm the artifact states which platforms (iOS, Android, both) and minimum OS versions are targeted. Flag if target platforms are assumed but not stated."
+    severity: blocking
+
+  - id: CKL-DOM-MOB-02
+    check: "Offline capability and sync strategy are defined"
+    automated: false
+    llm_prompt: "Confirm the artifact specifies whether offline is required (full offline, read-only, or online-only). If offline is needed, confirm the sync / conflict-resolution strategy is referenced. Flag implicit offline assumptions."
+    severity: blocking
+
+  - id: CKL-DOM-MOB-03
+    check: "Push notification strategy covers criticality and volume"
+    automated: false
+    llm_prompt: "If the app uses push notifications, confirm the artifact distinguishes transactional vs. marketing, states delivery expectations, and addresses platform-specific permission handling."
+    severity: warning
+
+  - id: CKL-DOM-MOB-04
+    check: "Startup time budget is stated"
+    automated: false
+    llm_prompt: "Confirm the artifact specifies a cold-start and warm-start time budget (e.g., <2s cold). Flag if performance is a concern but no budget is stated."
+    severity: warning
+
+  - id: CKL-DOM-MOB-05
+    check: "Battery-impacting features have lifecycle management"
+    automated: false
+    llm_prompt: "For features involving GPS, BLE, background processing, or continuous networking, confirm the artifact specifies when they activate/deactivate and the battery impact mitigation strategy."
+    severity: warning
+
+  - id: CKL-DOM-MOB-06
+    check: "App store review and distribution constraints are addressed"
+    automated: false
+    llm_prompt: "If the artifact involves payments, user-generated content, health data, or features that may trigger app store rejection, confirm the review constraint is called out."
+    severity: info
+
+  - id: CKL-DOM-MOB-07
+    check: "Authentication method is platform-appropriate"
+    automated: false
+    llm_prompt: "Confirm the auth approach is specified (biometric, OAuth, magic link) and that the credential storage mechanism is platform-native (Keychain / Keystore). Flag custom credential storage."
+    severity: blocking

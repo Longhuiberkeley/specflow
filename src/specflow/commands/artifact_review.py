@@ -11,6 +11,7 @@ from specflow.commands import artifact_lint, checklist_run
 from specflow.lib import artifacts as art_lib
 from specflow.lib import checklists
 from specflow.lib import ci
+from specflow.lib import learning as learn_lib
 from specflow.lib.analysis import find_dead_code, find_similar_functions
 from specflow.lib.display import YELLOW_DIM, CYAN, NC
 from specflow.lib.techniques import run_subagents, TechniqueFinding
@@ -53,8 +54,35 @@ def _run_hygiene_silently(root: Path) -> list[TechniqueFinding]:
     return findings
 
 
-def _format_prompt(artifact: art_lib.Artifact, items: list[checklists.ChecklistItem]) -> str:
-    lines = [
+def _format_prompt(
+    artifact: art_lib.Artifact,
+    items: list[checklists.ChecklistItem],
+    root: Path | None = None,
+    fast: bool = False,
+) -> str:
+    lines: list[str] = []
+
+    if root is not None:
+        from specflow.lib import best_practices as bp_lib
+        from specflow.lib import ci as ci_mod
+        from specflow.lib.config import get_domain
+
+        domain, domain_tags = get_domain(root)
+        phase = ci_mod._ARTIFACT_TYPE_TO_PHASE.get(artifact.type, "review")
+        clause_ids = [
+            link.target for link in artifact.links
+            if link.role == "complies_with" and link.target
+        ]
+        prefix = bp_lib.compose_review_prefix(
+            root, domain, domain_tags, phase, clause_ids,
+            artifact_type=artifact.type,
+            skip_synthesis=fast,
+        )
+        if prefix:
+            lines.append(prefix.rstrip())
+            lines.append("")
+
+    lines.extend([
         f"Artifact ID: {artifact.id}",
         f"Artifact type: {artifact.type}",
         f"Title: {artifact.title}",
@@ -64,7 +92,7 @@ def _format_prompt(artifact: art_lib.Artifact, items: list[checklists.ChecklistI
         "---END---",
         "",
         "Checks to judge:",
-    ]
+    ])
     for idx, item in enumerate(items, 1):
         lines.append(f"{idx}. [{item.id}] {item.check} (severity: {item.severity})")
         if item.llm_prompt:
@@ -73,7 +101,8 @@ def _format_prompt(artifact: art_lib.Artifact, items: list[checklists.ChecklistI
 
 
 def _run_llm_checklist(
-    root: Path, target_artifacts: list[art_lib.Artifact], cfg: ci.LLMConfig
+    root: Path, target_artifacts: list[art_lib.Artifact], cfg: ci.LLMConfig,
+    fast: bool = False,
 ) -> list[TechniqueFinding]:
     findings = []
     for art in target_artifacts:
@@ -82,7 +111,7 @@ def _run_llm_checklist(
         if not llm_items:
             continue
         
-        prompt = _format_prompt(art, llm_items)
+        prompt = _format_prompt(art, llm_items, root=root, fast=fast)
         result = ci.call_llm(cfg, ci.SYSTEM_PROMPT, prompt)
         if not result.get("ok"):
             print(f"  {YELLOW_DIM}⚠ LLM call failed for {art.id}: {result.get('error')}{NC}")
@@ -145,6 +174,37 @@ def _create_chl_artifacts(root: Path, target_id: str, findings: list[TechniqueFi
     return count
 
 
+def _create_learned_patterns(
+    root: Path, targets: list[art_lib.Artifact], findings: list[TechniqueFinding]
+) -> int:
+    count = 0
+    art_map = {a.id: a for a in targets}
+    learnable_techs = learn_lib._learnable_techniques(root)
+    for f in findings:
+        if f.severity not in learn_lib._LEARNABLE_SEVERITIES:
+            continue
+        if not f.technique or f.technique not in learnable_techs:
+            continue
+        if count >= learn_lib._max_patterns_per_session(root):
+            break
+        if not f.target_id or f.target_id not in art_map:
+            continue
+        try:
+            path = learn_lib.create_pattern_from_finding(
+                root,
+                art_map[f.target_id],
+                check_text=f.title,
+                reason=f.rationale,
+                severity=f.severity,
+            )
+            if path:
+                count += 1
+                print(f"  Created prevention pattern {path.name} from {f.technique}")
+        except Exception as e:
+            print(f"  {YELLOW_DIM}⚠ Failed to create pattern: {e}{NC}")
+    return count
+
+
 def _prompt_for_techniques(target_arts: list[art_lib.Artifact]) -> list[str]:
     techniques = ["devils_advocate", "premortem", "assumption_surfacing", "red_blue_team"]
     est_tokens = len(target_arts) * 3000 * len(techniques)
@@ -201,9 +261,13 @@ def run(root: Path, args: dict[str, Any]) -> int:
 
     print(f"\n{CYAN}SpecFlow Artifact Review — Depth: {depth}{NC}")
     
+    fast = args.get("fast", False)
+    if fast:
+        print("(--fast: skipping BP synthesis, using cached best practices only)")
+    
     # 4. Normal depth: LLM checklist
     print("Running LLM checklist judgment...")
-    findings = _run_llm_checklist(root, targets, cfg)
+    findings = _run_llm_checklist(root, targets, cfg, fast=fast)
     
     # 5. Deep depth: Techniques
     if depth == "deep":
@@ -235,6 +299,12 @@ def run(root: Path, args: dict[str, Any]) -> int:
             
         # For findings without a target_id (hygiene), we just skip CHL creation for now
         # since their severity is 'info'.
+
+    # 8. Create learned patterns from significant findings
+    learnable = [f for f in findings if f.severity in learn_lib._LEARNABLE_SEVERITIES]
+    if learnable:
+        print("\nCreating prevention patterns from findings...")
+        _create_learned_patterns(root, targets, findings)
         
     if created > 0 or lint_rc == 1 or check_rc == 1:
         return 2

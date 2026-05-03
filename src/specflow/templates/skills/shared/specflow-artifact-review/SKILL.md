@@ -189,6 +189,7 @@ Use `--no-patterns` to skip pattern extraction, or `--auto` to skip prompts. Thi
 - Never skip automated checks, even if the user asks for "just a quick review."
 - Never silently mutate a target artifact's status. The user confirms each change.
 - Review is never generic — it is assembled from artifact type + domain + shared + learned sources, then optionally probed with lenses.
+- **Learned pattern feedback loop:** Findings with severity `blocking` or `warning` automatically create prevention patterns in `.specflow/checklists/learned/` (up to 3 per session). These patterns are included in all future artifact reviews via `_load_learned_patterns()`, catching recurring issues deterministically. You may edit or remove patterns that are too narrow.
 
 ## References
 

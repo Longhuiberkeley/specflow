@@ -233,4 +233,13 @@ artifacts:
     - auto-generated
     fingerprint: sha256:5ee7279376d2
     children: []
-next_id: 27
+  AUD-027:
+    id: AUD-027
+    title: Project Audit 20260503T095751Z
+    status: open
+    tags:
+    - project-audit
+    - auto-generated
+    fingerprint: sha256:7f2db1d01732
+    children: []
+next_id: 28

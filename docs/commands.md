@@ -178,6 +178,25 @@ Interface specs for each `/specflow-*` slash command. For a lifecycle overview, 
 
 ---
 
+## /specflow-handbook
+
+**One-line:** Manage and generate the project's living best-practice guide — a domain-aware process booklet synthesized via LLM.
+
+**Composes:** `specflow handbook generate`, `specflow handbook show`
+
+**Flow:**
+1. **Project-level BPs** — synthesize once per domain via `specflow handbook generate project`. Generates domain-wide guidance (e.g., "for embedded: hazard analysis drives every requirement").
+2. **Phase-level BPs** — auto-synthesized on first encounter during artifact review. One per (domain, phase) pair (e.g., `plan-arc` for embedded: "task architecture reflects real-time criticality tiers").
+3. Cached as human-editable YAML in `.specflow/cache/best-practices/`. Edit to override LLM output.
+
+**Writes:**
+- `.specflow/cache/best-practices/{domain}-project.yaml`
+- `.specflow/cache/best-practices/{domain}-phase-{phase}.yaml`
+
+**Key property:** Auto-synthesized on demand; never overwrites without `--overwrite`. Missing API key? Fails gracefully — hand-author the cache file.
+
+---
+
 ## /specflow-pack-author
 
 **One-line:** LLM-assisted authoring of a standards compliance pack from PDF, URL, or pasted text.

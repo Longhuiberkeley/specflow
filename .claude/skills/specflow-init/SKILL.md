@@ -63,7 +63,7 @@ If **no** marker is found, ask:
 
 Ask the user:
 
-- "What type of project is this?" -- bounded options: Web App, CLI Tool, Library, Firmware/Embedded, Data Pipeline, Other
+- "What type of project is this?" -- bounded options: Web App, CLI Tool, Library, Firmware/Embedded, Data Pipeline, Mobile, Other
 - "Do you want to apply an industry standards preset?" -- bounded options: `iso26262-demo`, `default`, or None (Recommended)
 - "Do you want to install optional artifact types (hazard, risk, control)?" -- bounded options: Yes, No (Recommended)
 - "Which CI provider do you use?" -- bounded options: GitHub Actions (Recommended), GitLab CI, None
@@ -77,11 +77,13 @@ uv run specflow init --platform <platform_code>
 
 Append flags as needed:
 
+- `--domain <project-type>` if a project type was chosen (e.g., `--domain embedded`, `--domain api-service`, `--domain web-app`)
+- `--domain-tags <comma-separated>` for domain qualifiers (e.g., `--domain-tags real-time,safety-critical`)
 - `--preset <preset>` if a preset was chosen
 - `--with-types hazard,risk,control` if optional artifact types were chosen
 - `--no-ci` if no CI provider was requested
 
-This scaffolds `.specflow/`, `_specflow/`, config files, schemas, checklists, and installs skill directories for the target platform.
+This scaffolds `.specflow/`, `_specflow/`, config files, schemas, checklists, and installs skill directories for the target platform. When `--domain` is provided, it also persists the domain classification and attempts to generate project-level best practices (the "process booklet").
 
 ### 4. Inject SpecFlow instructions into the platform's instruction file
 
@@ -160,6 +162,8 @@ Summarize what was done:
 
 - Directories created (`.specflow/`, `_specflow/`, platform skills directory)
 - Configuration files written (`config.yaml`, `state.yaml`, `adapters.yaml`)
+- Domain classification persisted (if `--domain` was provided)
+- Project best practices generated (if domain was set and API key available)
 - Instruction file updated (target file path)
 - Pre-commit hook installed
 - CI workflow generated (if applicable)

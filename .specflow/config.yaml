@@ -1,6 +1,8 @@
 project:
   name: specflow
   created: '2026-04-10'
+  domain: ''
+  domain_tags: []
 impact_analysis:
   auto_flag: true
   auto_resolve: false

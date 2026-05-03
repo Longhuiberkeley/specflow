@@ -1,0 +1,48 @@
+id: CKL-DOMAIN-LIBRARY
+name: "Library / SDK domain checks"
+applies_to:
+  types: [requirement, architecture, detailed-design, story]
+version: 1
+
+items:
+  - id: CKL-DOM-LIB-01
+    check: "Public API surface is bounded and documented"
+    automated: false
+    llm_prompt: "Confirm the artifact defines the public API surface (classes, functions, types) and marks internal APIs as private/hidden. Flag libraries where every symbol is public by default."
+    severity: blocking
+
+  - id: CKL-DOM-LIB-02
+    check: "Breaking change and versioning policy is stated"
+    automated: false
+    llm_prompt: "Confirm the artifact references a versioning policy (semver, calendar) and states how breaking changes are handled (deprecation window, migration guide). Flag libraries with no stated policy."
+    severity: blocking
+
+  - id: CKL-DOM-LIB-03
+    check: "Error handling follows language idioms"
+    automated: false
+    llm_prompt: "Confirm the artifact specifies the error handling approach (exceptions, result types, error callbacks) and that it matches the target language's idioms. Flag libraries that mix error strategies."
+    severity: warning
+
+  - id: CKL-DOM-LIB-04
+    check: "Thread safety / concurrency model is documented"
+    automated: false
+    llm_prompt: "If instances may be shared across threads, confirm the artifact states whether the library is thread-safe, requires external synchronization, or uses immutable design. Flag libraries with unspecified concurrency behavior."
+    severity: warning
+
+  - id: CKL-DOM-LIB-05
+    check: "Resource cleanup / disposal pattern is defined"
+    automated: false
+    llm_prompt: "If the library holds resources (connections, file handles, memory), confirm a cleanup/disposal pattern is documented (context manager, close(), disposable). Flag resource-holding libraries with no cleanup API."
+    severity: warning
+
+  - id: CKL-DOM-LIB-06
+    check: "Initialization cost and lazy-loading strategy are stated"
+    automated: false
+    llm_prompt: "Confirm the artifact addresses startup cost (synchronous init, async init, lazy). Flag libraries with expensive constructors and no documented initialization strategy."
+    severity: info
+
+  - id: CKL-DOM-LIB-07
+    check: "Consumer type (internal / open-source / enterprise) is named"
+    automated: false
+    llm_prompt: "Confirm the artifact identifies the target consumer. Internal teams accept more churn; open-source needs stable APIs and migration guides; enterprise needs long-term support commitments. Flag if consumer type is unclear."
+    severity: info

@@ -14,7 +14,7 @@ items:
   - id: CKL-GATE-004-02
     check: "All ARCH artifacts pass schema validation"
     automated: true
-    script: "scripts/validate-schema.sh"
+    script: "uv run specflow artifact-lint --type schema"
     severity: blocking
 
   - id: CKL-GATE-004-03
@@ -26,7 +26,7 @@ items:
   - id: CKL-GATE-004-04
     check: "No broken links in architecture or stories"
     automated: true
-    script: "scripts/validate-links.sh"
+    script: "uv run specflow artifact-lint --type links"
     severity: blocking
 
   - id: CKL-GATE-004-05
@@ -39,4 +39,16 @@ items:
     check: "Architecture defines component interfaces"
     automated: false
     llm_prompt: "Review each ARCH artifact. Confirm every component defines its public interface, failure modes, and dependencies."
+    severity: warning
+
+  - id: CKL-GATE-004-07
+    check: "Each STORY has a defined test strategy"
+    automated: false
+    llm_prompt: "For each STORY, confirm the body or its linked DDD artifact specifies how the story will be verified (which acceptance criteria map to UT / IT / QT). Flag any STORY where the test approach is implicit or absent."
+    severity: warning
+
+  - id: CKL-GATE-004-08
+    check: "Story dependencies and upstream specs are approved"
+    automated: false
+    llm_prompt: "For each STORY, walk its links (specified_by, derives_from, depends_on). Confirm every referenced upstream artifact has status `approved` (or `implemented`). Flag any STORY whose readiness depends on a draft artifact."
     severity: warning

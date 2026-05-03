@@ -22,12 +22,37 @@ Orchestrate the implementation of planned stories and update tracking artifacts.
 
 ## Workflow
 
-### Step 1: Pre-Execution Check
+### Step 1: Implementation-Readiness Gate (mandatory)
 
-1. Read all STORY artifacts from `_specflow/work/stories/`.
-2. Verify stories have `status: approved`. If not, tell the user which need approval.
-3. Check for blocking `suspect: true` flags on linked artifacts. If upstream specs are suspect, warn the user before proceeding.
-4. Run `uv run specflow status` silently to get the current state overview.
+The planning-to-executing phase gate IS the readiness check. Run it unconditionally before any implementation work — never skip it, never treat it as advisory.
+
+1. **Run the deterministic gate:**
+   ```
+   uv run specflow artifact-lint --type gate --gate planning-to-executing
+   ```
+   - Exit 1 → at least one automated blocking item failed (missing ARCH, broken links, etc.). **Stop. Do not proceed.** Report the failures verbatim and ask the user to address them. Re-run the gate after fixes.
+   - Exit 0 → automated checks pass; LLM-judged items show as `○` (skipped by the deterministic runner).
+
+2. **Evaluate the LLM-judged items yourself.** Read `.specflow/checklists/phase-gates/planning-to-executing.yaml`. For every item with `automated: false`, scope artifact reads narrowly:
+   - Use `_index.yaml` files in `_specflow/work/stories/` and `_specflow/specs/architecture/` to enumerate IDs, statuses, and link metadata without opening every artifact body.
+   - Open full artifact bodies only for the subset that needs LLM judgement (e.g., the STORYs in the current wave, ARCHs referenced by those STORYs). At 100+ stories, sample by wave or by suspect/recently-modified flags rather than reading every file.
+   - Then answer the `llm_prompt` against the scoped subset and report findings as:
+     - `blocking` severity items → these MUST be addressed before proceeding.
+     - `warning` severity items → present them and ask the user whether to proceed anyway. Do not proceed silently.
+
+3. **Identify the in-scope STORY set.** Use `uv run specflow go --dry-run` to compute the next wave; that's the read-set for this run. Avoid reading STORYs outside the upcoming wave unless an LLM-judged item explicitly requires cross-story analysis.
+
+4. **Check `suspect: true` flags** on linked artifacts in the in-scope set. If upstream specs are suspect, surface this to the user before proceeding.
+
+5. Run `uv run specflow status` silently for the state overview.
+
+ **Why this is mandatory:** the gate verifies the task is sufficiently specified to start coding (ARCH exists, links resolve, AC are clear, interfaces defined, test strategy specified, dependencies approved). Skipping it lets implementation start against draft specs and produces rework.
+
+6. **Load execution-phase best practices** as context for implementation:
+   ```
+   uv run specflow handbook generate execute-impl
+   ```
+   Read the output with `uv run specflow handbook show execute-impl`. The generated BPs provide domain-specific guidance on what good implementation and testing look like for this project's domain. They also appear automatically in artifact review prompts. If no API key is configured, this step is skipped gracefully.
 
 ### Step 2: Wave Planning
 

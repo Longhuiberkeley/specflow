@@ -81,7 +81,9 @@ After each answer, update your readiness assessment silently.
 
 ### Step 3F: Full Discovery — Phase 2: Domain Deep-Dive
 
-1. Classify the project type from Phase 1 answers. Categories:
+1. Check if a domain is already set in `.specflow/config.yaml` (field `project.domain`). If it is set, skip Step 2 (classification) and Step 4 (handbook generation) — the init skill already handled them. Proceed directly to Step 5 (domain-specific questions) using the existing domain.
+
+2. If no domain is set, classify the project type from Phase 1 answers. Categories:
    - `web-app` — Browser-based application
    - `cli-tool` — Command-line interface
    - `api-service` — Backend service / REST or gRPC API
@@ -90,13 +92,25 @@ After each answer, update your readiness assessment silently.
    - `embedded` — Firmware / hardware-adjacent
    - `mobile` — iOS / Android application
 
-2. Read `references/domain-checklists/<project-type>.md` for the domain-specific question set.
+3. Read `references/domain-checklists/<project-type>.md` for the domain-specific question set.
 
-3. Present questions from the domain checklist. These should offer **bounded choices with opinionated defaults**:
+4. **Persist the classification** so downstream skills can use it:
+   ```
+   uv run specflow domain set <project-type> [--tag <relevant-tag>]
+   ```
+   Add tags that further qualify the project (e.g., `--tag real-time --tag safety-critical` for embedded; `--tag phi --tag hipaa` for healthcare; `--tag pii` for fintech). These drive domain-aware checklist items at plan / review time.
+
+5. **Generate project-level best practices** based on the classified domain:
+   ```
+   uv run specflow handbook generate project
+   ```
+   This produces a project-specific set of domain best practices (the "process booklet") that guides all downstream plan, execute, and review skills. The generated BPs are cached and human-editable. If no API key is configured, this step is skipped gracefully.
+
+6. Present questions from the domain checklist. These should offer **bounded choices with opinionated defaults**:
    - "For your use case (small team, read-heavy), SQLite is simplest, PostgreSQL handles growth best — which fits?"
    - Not: "What database do you want?"
 
-4. Continue until domain checklist is exhausted or user signals readiness to proceed.
+7. Continue until domain checklist is exhausted or user signals readiness to proceed.
 
 ### Step 3F: Full Discovery — Phase 3: Cross-Cutting Concerns
 

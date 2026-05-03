@@ -8,31 +8,31 @@ items:
   - id: CKL-GATE-006-01
     check: "All spec artifacts have status: verified"
     automated: true
-    script: "scripts/validate-status.sh"
+    script: "uv run specflow artifact-lint --type status"
     severity: blocking
 
   - id: CKL-GATE-006-02
     check: "All fingerprints are current"
     automated: true
-    script: "scripts/validate-fingerprints.sh"
+    script: "uv run specflow artifact-lint --type fingerprints"
     severity: blocking
 
   - id: CKL-GATE-006-03
     check: "No broken links in any artifact"
     automated: true
-    script: "scripts/validate-links.sh"
+    script: "uv run specflow artifact-lint --type links"
     severity: blocking
 
   - id: CKL-GATE-006-04
     check: "All IDs are unique and well-formed"
     automated: true
-    script: "scripts/validate-ids.sh"
+    script: "uv run specflow artifact-lint --type ids"
     severity: blocking
 
   - id: CKL-GATE-006-05
     check: "Full validation passes"
     automated: true
-    script: "scripts/validate.sh"
+    script: "uv run specflow artifact-lint"
     severity: blocking
 
   - id: CKL-GATE-006-06

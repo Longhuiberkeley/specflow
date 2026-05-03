@@ -4,6 +4,40 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.0] - 2026-05-03
+
+### Highlights
+
+- **Domain intelligence and learning feedback** — SpecFlow now generates domain-specific best practices via LLM, learns prevention patterns from review findings, and gives users visibility into accumulated knowledge.
+
+### Features
+
+- **Domain best-practice synthesis** — `specflow handbook generate` creates project-level and phase-level BP guides via LLM, cached as human-editable YAML in `.specflow/cache/best-practices/`
+- **Knowledge accumulation lifecycle** — blocking/warning findings from artifact reviews are automatically converted into `PREV-*.yaml` prevention patterns in `.specflow/checklists/learned/`
+- **`specflow patterns` command** — inspect learned prevention patterns (`list`, `show`)
+- **Per-item checklist scoping** — `applies_to.types` on individual checklist items overrides top-level filter
+- **Configurable learning** — `learnable_techniques` and `max_patterns_per_session` in `config.yaml`
+- **Expanded learnable techniques** — adversarial findings (devil's advocate, premortem, assumption surfacing, red/blue team) now feed into learning by default
+- **`--fast` flag on `artifact-review`** — skip BP synthesis for CI, use cached best practices only
+- **Auto-backup on `--overwrite`** — previous BP files are backed up before regeneration
+- **`specflow done` auto-extraction** — `--auto` is now the default, extracts prevention patterns from implemented stories
+- **Dual few-shot examples** — phase BP prompts include both embedded and API-service examples for quality anchoring
+
+### Fixes
+
+- `_learnable_techniques` is now configurable (was hardcoded to `checklist-run` only)
+- `specflow done` no longer shows a dead-end "requires interactive prompts" message
+- Stale version in `src/specflow/__init__.py` (was `0.1.0`, now tracks release)
+- Phase prompt few-shot now shows two domain examples instead of one
+
+### Documentation
+
+- Added `specflow patterns` and `specflow handbook` to CLI reference
+- Added `--fast` flag and `--no-auto` flag documentation
+- Updated install pin in README to `v1.1.0`
+- Updated ROADMAP with v1.1.0 section and v1.0.1 entries
+- Updated `docs/plan.md` release table
+
 ## [1.0.1] - 2026-04-23
 
 ### Fixed

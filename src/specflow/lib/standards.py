@@ -25,6 +25,56 @@ REMEDIATION_MAP: dict[str, str] = {
 }
 
 
+# ASPICE-style process-area mapping.
+# SpecFlow phase / artifact-type → process area. Used by the handbook synthesizer
+# so the LLM gets the right "shape" of guidance regardless of whether the
+# project installs an ASPICE pack.
+PHASE_TO_PROCESS_AREA: dict[str, str] = {
+    # Discover-time phases
+    "discover": "SYS.1 / SWE.1 — system & software requirements elicitation",
+    "discover-req": "SWE.1 — software requirements analysis",
+    # Plan-time phases
+    "plan": "SWE.2 — software architectural design",
+    "plan-arc": "SWE.2 — software architectural design",
+    "plan-ddd": "SWE.3 — software detailed design",
+    "plan-story": "SWE.2/SWE.3 — story decomposition (architecture + detailed design)",
+    # Execute-time phases
+    "execute": "SWE.4 — software construction (unit implementation)",
+    "execute-impl": "SWE.4 — software construction",
+    # Verify-time phases
+    "verify-unit": "SWE.5 — software unit verification",
+    "verify-integration": "SWE.6 — software integration & integration test",
+    "verify-qual": "SWE.7 — software qualification test",
+    # Cross-cutting
+    "review": "SUP.4 — joint review (artifact-level)",
+}
+
+
+def process_area_for(phase: str) -> str:
+    """Return the ASPICE-style process-area label for a SpecFlow phase.
+
+    Falls back to SUP.4 (joint review) for unknown phases — the synthesis is
+    still useful at the review level even without a phase-specific mapping.
+    """
+    if not phase:
+        return PHASE_TO_PROCESS_AREA["review"]
+    return PHASE_TO_PROCESS_AREA.get(phase, PHASE_TO_PROCESS_AREA["review"])
+
+
+def get_clause_by_id(root: Path, clause_id: str) -> dict[str, Any] | None:
+    """Look up a clause across all installed standards. Returns None if not found."""
+    if not clause_id:
+        return None
+    for standard in load_standards(root):
+        clauses = standard.get("clauses", []) or []
+        for clause in clauses:
+            if isinstance(clause, dict) and clause.get("id") == clause_id:
+                enriched = dict(clause)
+                enriched["_standard"] = standard.get("title") or standard.get("id") or ""
+                return enriched
+    return None
+
+
 def suggest_remediation(clause: dict[str, Any]) -> str:
     category = clause.get("category", "functional")
     severity = clause.get("severity", "medium")

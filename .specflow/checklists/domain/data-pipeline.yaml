@@ -1,0 +1,48 @@
+id: CKL-DOMAIN-DATA-PIPELINE
+name: "Data pipeline domain checks"
+applies_to:
+  types: [requirement, architecture, detailed-design, story]
+version: 1
+
+items:
+  - id: CKL-DOM-DATA-01
+    check: "Pipeline pattern is specified (batch / streaming / lambda)"
+    automated: false
+    llm_prompt: "Confirm the artifact states the pipeline pattern and justifies the choice based on latency requirements. Batch for scheduled, streaming for continuous, lambda for both. Flag unspecified or contradictory patterns."
+    severity: blocking
+
+  - id: CKL-DOM-DATA-02
+    check: "Exactly-once vs at-least-once semantics are stated"
+    automated: false
+    llm_prompt: "Confirm the artifact specifies the processing guarantee. At-least-once with idempotent sinks is simpler; exactly-once requires transactional sinks. Flag if the guarantee is unstated for state-changing pipelines."
+    severity: blocking
+
+  - id: CKL-DOM-DATA-03
+    check: "Schema evolution and drift handling strategy exists"
+    automated: false
+    llm_prompt: "Confirm the artifact addresses how schema changes are handled (fixed schema, schema-on-read, migration strategy). Flag pipelines with no stated schema strategy."
+    severity: warning
+
+  - id: CKL-DOM-DATA-04
+    check: "Failure recovery and checkpoint strategy is defined"
+    automated: false
+    llm_prompt: "Confirm the artifact states what happens on failure (restart from beginning, resume from checkpoint, reprocess from timestamp). Flag pipelines with no stated recovery strategy."
+    severity: warning
+
+  - id: CKL-DOM-DATA-05
+    check: "Data quality checks are specified with failure policy"
+    automated: false
+    llm_prompt: "Confirm the artifact defines validation checks (schema, null, range, referential integrity) and what happens on bad data (fail pipeline, quarantine, alert). Flag pipelines with no quality gates."
+    severity: warning
+
+  - id: CKL-DOM-DATA-06
+    check: "Backfill / reprocess support is addressed"
+    automated: false
+    llm_prompt: "If the pipeline processes historical data, confirm it supports parameterized date ranges for reruns. Flag pipelines that can only process 'now'."
+    severity: info
+
+  - id: CKL-DOM-DATA-07
+    check: "Monitoring covers lag, throughput, and error rate"
+    automated: false
+    llm_prompt: "Confirm the artifact specifies monitoring for pipeline lag (how far behind real-time), throughput, and error rate with alerting thresholds. Flag pipelines with no stated observability."
+    severity: warning

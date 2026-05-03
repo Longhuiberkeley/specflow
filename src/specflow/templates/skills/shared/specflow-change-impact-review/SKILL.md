@@ -49,6 +49,18 @@ For each DEC and its impact cone:
    - Unhandled edge cases introduced by the change.
    - Missing updates to related tests or documentation.
 
+5. **Auto-select adversarial lenses based on cone signals.** Pure pattern-matching misses risks that need an explicit frame. Inspect the tags and types in the impact cone and pick 2-3 lenses from `specflow-artifact-review/references/adversarial-lenses.md` to apply to the impacted artifacts. Selection rules:
+
+   | Signal in cone | Lenses to add |
+   |---|---|
+   | Tags include `safety`, `hazard`, `compliance`, or any `complies_with: [...]` link | **Regulator** + **Premortem** |
+   | Public API / interface changes (ARCH or DDD with `interface` tag, or contract artifacts) | **Worst-case user** + **Composition** |
+   | Scale-sensitive change (tags `performance`, `latency`, `throughput`, or DEC mentions traffic/load) | **Stress-scale ×100** + **Cost-scaling** |
+   | Long-lived assumption baked in (DEC pins a vendor, protocol version, schema format) | **Temporal drift** + **Dependency shock** |
+   | None of the above | **Premortem** + **Composition** (default minimum) |
+
+   Apply the selected lenses to the cone artifacts only — never the full project. Each lens is one focused question; spend a few sentences per lens, not a deep audit. The output is one or more findings per lens, which feed Step 4.
+
 ### Step 4: Filing Findings
 
 If issues are discovered during the review of a DEC's impact cone:

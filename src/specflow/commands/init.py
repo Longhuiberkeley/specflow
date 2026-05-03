@@ -169,6 +169,21 @@ def run(root: Path, args: dict) -> int:
     config_lib.write_state(root, state)
     print("  + state.yaml written")
 
+    domain = args.get("domain")
+    domain_tags_str = args.get("domain_tags", "")
+    if domain:
+        domain_tags = [t.strip() for t in domain_tags_str.split(",") if t.strip()] if domain_tags_str else []
+        config_lib.set_domain(root, domain, domain_tags)
+        print(f"  + Domain set: {domain}" + (f" (tags: {', '.join(domain_tags)})" if domain_tags else ""))
+
+        try:
+            from specflow.lib import best_practices as bp_lib
+            result = bp_lib.ensure_project_bps(root, domain, domain_tags)
+            if result.get("ok") and result.get("path"):
+                print(f"  + Project best practices generated: {result['path']}")
+        except Exception:
+            pass
+
     print("  + Schema files copied")
 
     print("  Copying checklist templates...")

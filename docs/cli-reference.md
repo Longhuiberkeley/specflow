@@ -99,7 +99,79 @@ specflow go [--dry-run] [--wave WAVE] [--timeout TIMEOUT]
 Close the current phase and extract prevention patterns.
 
 ```bash
-specflow done [--auto] [--no-patterns]
+specflow done [--auto] [--no-auto] [--no-patterns]
+```
+
+| Flag | Purpose |
+|------|---------|
+| `--auto` | Auto-extract prevention patterns from implemented stories (default) |
+| `--no-auto` | Show pattern summary without extracting |
+| `--no-patterns` | Skip pattern extraction entirely |
+
+---
+
+## Domain and Best Practices
+
+### `specflow domain`
+
+Get or set the project's domain (drives domain-aware checklists and review synthesis).
+
+```bash
+specflow domain set NAME [--tag TAG]...
+specflow domain show
+```
+
+| Flag | Purpose |
+|------|---------|
+| `--tag` | Domain qualifier (repeatable, e.g., `--tag real-time --tag safety-critical`) |
+
+### `specflow handbook`
+
+Manage the domain best-practice cache — the project's living process booklet.
+
+```bash
+specflow handbook generate [project|PHASE] [--domain DOMAIN] [--overwrite]
+specflow handbook show [project|PHASE] [--domain DOMAIN]
+specflow handbook path [project|PHASE] [--domain DOMAIN]
+specflow handbook list
+```
+
+| Subcommand | Purpose |
+|------------|---------|
+| `generate` | Synthesize BPs via LLM and cache (one-time per domain+phase) |
+| `show` | Print cached BPs as YAML |
+| `path` | Print cache file path |
+| `list` | List all cached BP files |
+
+Two-level cache:
+- **Project-level:** one file per domain, generated after `specflow domain set`
+- **Phase-level:** one file per (domain, phase), auto-synthesized on first artifact review
+
+Files are intentionally human-editable. Use `--overwrite` to regenerate from LLM.
+
+### `specflow patterns`
+
+Inspect learned prevention patterns — rules extracted from artifact reviews with blocking/warning findings.
+
+```bash
+specflow patterns list
+specflow patterns show PATTERN_ID
+```
+
+| Subcommand | Purpose |
+|------------|---------|
+| `list` | List all learned patterns with ID, severity, source, and check preview |
+| `show` | Print a specific pattern's full YAML (e.g., `specflow patterns show PREV-001`) |
+
+Patterns accumulate automatically during `artifact-review`. Configure learning via `config.yaml`:
+
+```yaml
+learning:
+  max_patterns_per_session: 3          # max patterns created per review
+  learnable_techniques:                 # which technique findings feed into learning
+    - checklist-run
+    - devils_advocate
+    - premortem
 ```
 
 ---
@@ -140,8 +212,17 @@ specflow checklist-run [ARTIFACT_ID] [--all] [--gate GATE] [--proactive] [--dedu
 Compose lint, checklist review, and LLM judgment.
 
 ```bash
-specflow artifact-review [ARTIFACT_ID] [--all] [--depth {quick,normal,deep}] [--techniques TECHNIQUES] [--gate GATE]
+specflow artifact-review [ARTIFACT_ID] [--all] [--depth {quick,normal,deep}] [--techniques TECHNIQUES] [--gate GATE] [--fast]
 ```
+
+| Flag | Purpose |
+|------|---------|
+| `--all` | Review all artifacts |
+| `--depth` | `quick` (lint+checklist), `normal` (add LLM judgment), `deep` (add thinking techniques) |
+| `--techniques` | Comma-separated techniques for `--depth deep` |
+| `--gate` | Phase-gate checklist |
+| `--proactive` | Include proactive challenge items |
+| `--fast` | Skip BP synthesis (use cached best practices only, no LLM calls for BP generation) |
 
 ### `specflow project-audit`
 

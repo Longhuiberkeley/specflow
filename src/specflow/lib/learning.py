@@ -9,7 +9,7 @@ from typing import Any
 import yaml
 
 from specflow.lib.artifacts import Artifact, discover_artifacts
-from specflow.lib.config import read_state, write_state
+from specflow.lib.config import read_config, read_state, write_state
 
 
 def extract_prevention_pattern(
@@ -40,6 +40,67 @@ def extract_prevention_pattern(
             }
         ],
     }
+
+
+_LEARNABLE_SEVERITIES = {"blocking", "warning"}
+_DEFAULT_LEARNABLE_TECHNIQUES = {
+    "checklist-run",
+    "devils_advocate",
+    "premortem",
+    "assumption_surfacing",
+    "red_blue_team",
+}
+
+
+def _learnable_techniques(root: Path) -> set[str]:
+    cfg = read_config(root)
+    if not isinstance(cfg, dict):
+        return _DEFAULT_LEARNABLE_TECHNIQUES
+    learning_cfg = cfg.get("learning", {})
+    if not isinstance(learning_cfg, dict):
+        return _DEFAULT_LEARNABLE_TECHNIQUES
+    custom = learning_cfg.get("learnable_techniques")
+    if isinstance(custom, list) and custom:
+        return set(custom)
+    return _DEFAULT_LEARNABLE_TECHNIQUES
+
+
+def _max_patterns_per_session(root: Path) -> int:
+    """Return max patterns to create per review session (configurable)."""
+    cfg = read_config(root)
+    if not isinstance(cfg, dict):
+        return 3
+    learning_cfg = cfg.get("learning", {})
+    if not isinstance(learning_cfg, dict):
+        return 3
+    max_val = learning_cfg.get("max_patterns_per_session")
+    if isinstance(max_val, int) and max_val > 0:
+        return max_val
+    return 3
+
+
+def create_pattern_from_finding(
+    root: Path,
+    artifact: Artifact,
+    check_text: str,
+    reason: str,
+    severity: str,
+) -> Path | None:
+    """Create a PREV-*.yaml from a review finding.
+
+    Only creates patterns for severity in (blocking, warning).
+    Returns the Path of the created file, or None if skipped.
+    """
+    if severity not in _LEARNABLE_SEVERITIES:
+        return None
+
+    pattern = extract_prevention_pattern(
+        story=artifact,
+        pattern_description=f"Prevent recurrence: {check_text}",
+        check_text=f"Verify that {reason}",
+    )
+    pattern["items"][0]["severity"] = severity
+    return persist_prevention_pattern(root, pattern)
 
 
 def _next_prev_number(root: Path) -> int:

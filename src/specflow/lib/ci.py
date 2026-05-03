@@ -183,7 +183,7 @@ def collect_llm_items(root: Path) -> list[dict[str, Any]]:
     if not checklists_root.exists():
         return []
     found: list[dict[str, Any]] = []
-    for category in ("review", "in-process", "shared", "learned"):
+    for category in ("review", "in-process", "shared", "learned", "domain"):
         cat_dir = checklists_root / category
         if not cat_dir.exists():
             continue
@@ -201,6 +201,16 @@ def collect_llm_items(root: Path) -> list[dict[str, Any]]:
                     continue
                 if item.get("automated"):
                     continue
+                # Per-item type filter overrides top-level
+                item_applies_to = item.get("applies_to")
+                if isinstance(item_applies_to, dict):
+                    t = item_applies_to.get("types")
+                    if isinstance(t, list) and t:
+                        item_applies_types = list(t)
+                    else:
+                        item_applies_types = applies_types
+                else:
+                    item_applies_types = applies_types
                 found.append(
                     {
                         "source": str(yaml_file.relative_to(root)),
@@ -208,7 +218,7 @@ def collect_llm_items(root: Path) -> list[dict[str, Any]]:
                         "check": item.get("check", ""),
                         "severity": item.get("severity", "info"),
                         "llm_prompt": item.get("llm_prompt", ""),
-                        "applies_types": applies_types,
+                        "applies_types": item_applies_types,
                         "tags": tags,
                     }
                 )
@@ -242,8 +252,50 @@ def _applicable_items(art: art_lib.Artifact, items: list[dict[str, Any]]) -> lis
     return applicable
 
 
-def _format_artifact_prompt(artifact: art_lib.Artifact, items: list[dict[str, Any]]) -> str:
-    lines = [
+_ARTIFACT_TYPE_TO_PHASE: dict[str, str] = {
+    "requirement": "discover-req",
+    "architecture": "plan-arc",
+    "detailed-design": "plan-ddd",
+    "story": "plan-story",
+    "unit-test": "verify-unit",
+    "integration-test": "verify-integration",
+    "qualification-test": "verify-qual",
+    "decision": "review",
+    "defect": "review",
+    "spike": "discover-req",
+}
+
+
+def _format_artifact_prompt(
+    artifact: art_lib.Artifact,
+    items: list[dict[str, Any]],
+    root: Path | None = None,
+) -> str:
+    lines: list[str] = []
+
+    # Domain best-practice context (project-level + phase-level) and
+    # authoritative clause text from installed standards packs. Auto-synthesizes
+    # phase BPs on first encounter. Falls back to checklist-only when neither
+    # source is available.
+    if root is not None:
+        from specflow.lib import best_practices as bp_lib
+        from specflow.lib.config import get_domain
+
+        domain, domain_tags = get_domain(root)
+        phase = _ARTIFACT_TYPE_TO_PHASE.get(artifact.type, "review")
+        clause_ids = [
+            link.target for link in artifact.links
+            if link.role == "complies_with" and link.target
+        ]
+        prefix = bp_lib.compose_review_prefix(
+            root, domain, domain_tags, phase, clause_ids,
+            artifact_type=artifact.type,
+        )
+        if prefix:
+            lines.append(prefix.rstrip())
+            lines.append("")
+
+    lines.extend([
         f"Artifact ID: {artifact.id}",
         f"Artifact type: {artifact.type}",
         f"Title: {artifact.title}",
@@ -253,7 +305,7 @@ def _format_artifact_prompt(artifact: art_lib.Artifact, items: list[dict[str, An
         "---END---",
         "",
         "Checks to judge:",
-    ]
+    ])
     for idx, item in enumerate(items, 1):
         lines.append(f"{idx}. [{item.get('id', '')}] {item.get('check', '')} (severity: {item.get('severity', 'info')})")
         prompt_hint = item.get("llm_prompt") or ""
@@ -431,7 +483,7 @@ def run_pass_two(root: Path, max_artifacts: int = 20) -> dict[str, Any]:
         if not applicable:
             continue
 
-        prompt = _format_artifact_prompt(art, applicable)
+        prompt = _format_artifact_prompt(art, applicable, root=root)
         response = call_llm(cfg, SYSTEM_PROMPT, prompt)
 
         if not response.get("ok"):

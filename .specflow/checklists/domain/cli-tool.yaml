@@ -1,0 +1,48 @@
+id: CKL-DOMAIN-CLI-TOOL
+name: "CLI tool domain checks"
+applies_to:
+  types: [requirement, architecture, detailed-design, story]
+version: 1
+
+items:
+  - id: CKL-DOM-CLI-01
+    check: "Interface style is specified (subcommand / positional args / interactive)"
+    automated: false
+    llm_prompt: "Confirm the artifact states the CLI interface style and that it matches the tool's complexity. Subcommand-based scales for multi-feature tools; positional args for simple ones. Flag mismatched choices."
+    severity: blocking
+
+  - id: CKL-DOM-CLI-02
+    check: "Exit code semantics are defined"
+    automated: false
+    llm_prompt: "Confirm the artifact defines exit code semantics (0=success, 1=general error, 2=misuse, etc.). Flag tools that exit 0 on partial failure or have no stated exit code policy."
+    severity: warning
+
+  - id: CKL-DOM-CLI-03
+    check: "Output format options include machine-readable mode"
+    automated: false
+    llm_prompt: "Confirm the artifact specifies whether JSON/YAML output is supported for scripting (`--format json`). Flag tools expected to be piped that only produce human-readable output."
+    severity: warning
+
+  - id: CKL-DOM-CLI-04
+    check: "Distribution method and target platforms are named"
+    automated: false
+    llm_prompt: "Confirm the artifact states how users install the tool (package manager, single binary, container) and which platforms are supported. Flag if distribution is assumed but not stated."
+    severity: blocking
+
+  - id: CKL-DOM-CLI-05
+    check: "Configuration source priority is defined"
+    automated: false
+    llm_prompt: "If the tool supports multiple config sources (flags, env vars, config file), confirm the priority order is stated. Flag tools with overlapping config sources but no precedence rule."
+    severity: warning
+
+  - id: CKL-DOM-CLI-06
+    check: "Non-interactive / CI mode is supported"
+    automated: false
+    llm_prompt: "Confirm the tool can run without interactive prompts for CI/CD pipelines. Flag tools that require user input with no `--yes` or `--non-interactive` flag."
+    severity: info
+
+  - id: CKL-DOM-CLI-07
+    check: "Respects NO_COLOR and pipe detection"
+    automated: false
+    llm_prompt: "Confirm the tool disables colored output when NO_COLOR is set or when stdout is piped. Flag tools that hard-code ANSI codes."
+    severity: info

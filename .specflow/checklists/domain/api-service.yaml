@@ -1,0 +1,48 @@
+id: CKL-DOMAIN-API-SERVICE
+name: "API service domain checks"
+applies_to:
+  types: [requirement, architecture, detailed-design, story]
+version: 2
+
+items:
+  - id: CKL-DOM-API-01
+    check: "Public-interface contract is specified (request shape, response shape, error model)"
+    automated: false
+    llm_prompt: "For any artifact defining or modifying a public endpoint, confirm the request schema, response schema, and error model are specified. Flag interfaces described only in prose."
+    severity: blocking
+
+  - id: CKL-DOM-API-02
+    check: "Authentication, authorization, and rate-limit posture are explicit"
+    automated: false
+    llm_prompt: "Confirm authn (who calls), authz (what they can do), and rate-limit / quota posture are stated. Flag endpoints where any of the three is implicit or inherited without reference."
+    severity: blocking
+
+  - id: CKL-DOM-API-03
+    check: "Idempotency and retry semantics are defined for state-changing endpoints"
+    automated: false
+    llm_prompt: "For any non-GET endpoint, confirm idempotency expectations and retry semantics are stated (idempotency key, at-most-once / at-least-once). Flag silent assumption that retries are safe."
+    severity: warning
+
+  - id: CKL-DOM-API-04
+    check: "Versioning and breaking-change policy are referenced"
+    automated: false
+    llm_prompt: "Confirm the artifact references the versioning scheme (URL / header / content type) and the project's breaking-change policy. Flag changes that mutate an existing contract without a version bump or deprecation window."
+    severity: warning
+
+  - id: CKL-DOM-API-05
+    check: "Observability covers entry, outcome, and latency"
+    automated: false
+    llm_prompt: "Confirm the artifact specifies (or relies on documented infra for) request entry log, outcome / error counter, and latency metric. Flag endpoints that ship without any of the three."
+    severity: warning
+
+  - id: CKL-DOM-API-06
+    check: "Backward-compat for clients in the wild"
+    automated: false
+    llm_prompt: "Identify whether existing clients can keep working through this change. Flag any change that silently changes response shape, error codes, or default values."
+    severity: blocking
+
+  - id: CKL-DOM-API-07
+    check: "Failure-mode behavior under downstream dependency loss"
+    automated: false
+    llm_prompt: "Confirm the artifact specifies what happens when each downstream dependency (DB, cache, third-party API) fails or times out. Flag any dependency without a stated failure mode."
+    severity: warning
