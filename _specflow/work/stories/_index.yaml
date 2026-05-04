@@ -493,4 +493,146 @@ artifacts:
     - flexibility
     fingerprint: sha256:7e7ac8a5b7d1
     children: []
-next_id: 49
+  STORY-049:
+    id: STORY-049
+    title: Add ARCH and DDD body quality lint checks
+    status: implemented
+    tags:
+    - lint
+    - quality
+    fingerprint: sha256:1fb053d274f4
+    children: []
+  STORY-050:
+    id: STORY-050
+    title: Add REQ-to-ARCH coverage and story minimum AC checks
+    status: implemented
+    tags:
+    - lint
+    - coverage
+    fingerprint: sha256:67dac14c2536
+    children: []
+  STORY-051:
+    id: STORY-051
+    title: Add output_files field to artifact schemas and lint
+    status: implemented
+    tags:
+    - traceability
+    - schema
+    fingerprint: sha256:d11543fd4127
+    children: []
+  STORY-052:
+    id: STORY-052
+    title: Add --output-files flag to specflow update command
+    status: implemented
+    tags:
+    - cli
+    - traceability
+    fingerprint: sha256:57148d878b2c
+    children: []
+  STORY-053:
+    id: STORY-053
+    title: Implement config merge and version stamp for init upgrade
+    status: implemented
+    tags:
+    - init
+    - upgrade
+    - config
+    fingerprint: sha256:3138c854d574
+    children: []
+  STORY-054:
+    id: STORY-054
+    title: Add --force flag to specflow init for clean re-initialization
+    status: implemented
+    tags:
+    - init
+    - upgrade
+    - cli
+    fingerprint: sha256:9a614e46dc55
+    children: []
+  STORY-055:
+    id: STORY-055
+    title: Build output file reverse index and flag suspect artifacts
+    status: draft
+    tags:
+    - impact
+    - traceability
+    fingerprint: sha256:32c6bc676831
+    children: []
+  STORY-056:
+    id: STORY-056
+    title: Add SPIDR dimension coverage lint check
+    status: draft
+    tags:
+    - lint
+    - spidr
+    - plan
+    fingerprint: sha256:aba5caf4b0f2
+    children: []
+  STORY-057:
+    id: STORY-057
+    title: Add story dependency cycle detection to artifact-lint
+    status: draft
+    tags:
+    - lint
+    - waves
+    - plan
+    fingerprint: sha256:8aad2cc719b9
+    children: []
+  STORY-058:
+    id: STORY-058
+    title: Create DDD selection decision tree reference document
+    status: draft
+    tags:
+    - plan
+    - reference
+    - docs
+    fingerprint: sha256:341581529b3e
+    children: []
+  STORY-059:
+    id: STORY-059
+    title: Bundle generic best-practice fallback for handbook generation
+    status: draft
+    tags:
+    - handbook
+    - best-practices
+    fingerprint: sha256:b1954428c121
+    children: []
+  STORY-060:
+    id: STORY-060
+    title: Persist discovery challenge results as decision artifacts
+    status: draft
+    tags:
+    - discover
+    - decisions
+    fingerprint: sha256:b6065ab2f984
+    children: []
+  STORY-061:
+    id: STORY-061
+    title: Add inter-REQ dependency prompting to discover skill
+    status: draft
+    tags:
+    - discover
+    - dependencies
+    fingerprint: sha256:c846615b0f47
+    children: []
+  STORY-062:
+    id: STORY-062
+    title: Pass domain classification from discover to plan skill
+    status: draft
+    tags:
+    - plan
+    - discover
+    - domain
+    fingerprint: sha256:67129591580b
+    children: []
+  STORY-063:
+    id: STORY-063
+    title: Improve discover-to-plan handoff with explicit approval instructions
+    status: draft
+    tags:
+    - discover
+    - plan
+    - handoff
+    fingerprint: sha256:c50ac903f13e
+    children: []
+next_id: 64

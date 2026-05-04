@@ -4,6 +4,31 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.2.0] - 2026-05-05
+
+### Highlights
+
+- **Init upgrade safety** — re-running `specflow init` on an existing project now preserves config and state via merge mode; `--force` enables clean re-init with timestamped backup
+- **Specification body quality enforcement** — `artifact-lint` now validates ARCH and DDD artifacts for substantive content (word counts, structural headers), REQ-to-ARCH coverage, and minimum acceptance criteria
+- **Output file traceability** — new `output_files` field on ARCH/DDD/STORY schemas with filesystem existence verification and glob pattern support
+
+### Features
+
+- **`specflow init` merge mode** — re-initialization preserves existing config.yaml, state.yaml, and schemas; merges new defaults with user values; reports version deltas
+- **`specflow init --force`** — clean re-init with timestamped backup of config, state, and schemas to `.specflow/cache/backups/`
+- **Config version stamping** — `config.yaml` now includes a `version` field tracking the SpecFlow release that wrote it
+- **`spec-body` lint check** — validates ARCH artifacts for 50+ words and structural headers; DDD artifacts for 100+ words and design headers
+- **`output-files` lint check** — verifies that paths declared in `output_files` frontmatter exist on the filesystem; skips glob patterns
+- **Extended coverage check** — `coverage` check now also verifies approved REQs have at least one ARCH linking via `derives_from`
+- **Story minimum AC check** — `story-size` check warns when stories have fewer than 2 acceptance criteria
+- **`output_files` field** — optional field on architecture, detailed-design, and story schemas for bidirectional file traceability
+- **`specflow update --output-files`** — set, replace, or remove `output_files` on any artifact (empty string removes the field)
+
+### Fixes
+
+- `specflow init --force` now correctly overwrites schemas with fresh copies (previously incremental copy left stale schemas in place)
+- `specflow update` error message now mentions `--output-files` as an available flag
+
 ## [1.1.0] - 2026-05-03
 
 ### Highlights
@@ -168,5 +193,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Unified skill templates across all platforms
 - Rewrote documentation for public-readiness
 
+[1.2.0]: https://github.com/Longhuiberkeley/specflow/releases/tag/v1.2.0
+[1.1.0]: https://github.com/Longhuiberkeley/specflow/releases/tag/v1.1.0
 [1.0.0]: https://github.com/Longhuiberkeley/specflow/releases/tag/v1.0.0
 [0.2.0]: https://github.com/Longhuiberkeley/specflow/releases/tag/v0.2.0

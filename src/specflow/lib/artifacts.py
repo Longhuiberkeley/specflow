@@ -655,7 +655,9 @@ def update_artifact(
     from datetime import date
 
     for key, value in updates.items():
-        if value is not None:
+        if key == "output_files" and value is None:
+            fm.pop("output_files", None)
+        elif value is not None:
             fm[key] = value
     fm["modified"] = date.today().isoformat()
 

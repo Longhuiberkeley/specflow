@@ -14,7 +14,7 @@ from specflow.lib import standards as standards_lib
 from specflow.lib import lint as lint_lib
 from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC
 
-CHECK_NAMES = ["schema", "links", "status", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality"]
+CHECK_NAMES = ["schema", "links", "status", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files"]
 
 
 def _run_check(
@@ -50,6 +50,10 @@ def _run_check(
         return _check_chain_report(artifacts)
     elif check_name == "quality":
         return _check_quality(artifacts)
+    elif check_name == "spec-body":
+        return _check_spec_body(artifacts)
+    elif check_name == "output-files":
+        return _check_output_files(artifacts, root)
 
     return {"status_icon": "?", "detail": f"Unknown check: {check_name}",
             "blocking_count": 0, "warning_count": 0}
@@ -408,9 +412,10 @@ def _check_conflicts(
 def check_coverage(
     artifacts: list[art_lib.Artifact],
 ) -> dict[str, str | int]:
-    """Check REQ→STORY→test coverage completeness at all V-model levels.
+    """Check REQ→ARCH→STORY→test coverage completeness at all V-model levels.
 
     For each approved REQ, verifies:
+      - At least one ARCH links to it via 'derives_from'
       - At least one STORY links to it via 'implements'
     For each approved STORY, verifies:
       - At least one test at each required V-model level links via 'verified_by'
@@ -423,12 +428,19 @@ def check_coverage(
 
     reqs = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "REQ" and a.status in ("approved", "implemented", "verified")]
     stories = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "STORY"]
+    archs = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "ARCH"]
     tests_by_type: dict[str, list[art_lib.Artifact]] = {
         "unit-test": [], "integration-test": [], "qualification-test": [],
     }
     for a in artifacts:
         if a.type in tests_by_type:
             tests_by_type[a.type].append(a)
+
+    req_to_archs: dict[str, list[art_lib.Artifact]] = {}
+    for arch in archs:
+        for link in arch.links:
+            if link.role == "derives_from" and art_lib.get_prefix_from_id(link.target) == "REQ":
+                req_to_archs.setdefault(link.target, []).append(arch)
 
     req_to_stories: dict[str, list[art_lib.Artifact]] = {}
     for story in stories:
@@ -437,6 +449,11 @@ def check_coverage(
                 req_to_stories.setdefault(link.target, []).append(story)
 
     for req in reqs:
+        linked_archs = req_to_archs.get(req.id, [])
+        if not linked_archs:
+            warnings += 1
+            details.append(f"  ⚠ [{req.id}] no ARCH derives_from this approved requirement")
+
         linked_stories = req_to_stories.get(req.id, [])
         if not linked_stories:
             warnings += 1
@@ -506,6 +523,12 @@ def _check_story_size(
             if ac_count > 8:
                 warnings += 1
                 details.append(f"  ⚠ [{art.id}] has {ac_count} acceptance criteria (max 8 recommended)")
+            if ac_count < 2:
+                warnings += 1
+                details.append(f"  ⚠ [{art.id}] has {ac_count} acceptance criteria (minimum 2 recommended)")
+        else:
+            warnings += 1
+            details.append(f"  ⚠ [{art.id}] has no Acceptance Criteria section")
 
         subsystem_refs = set(
             re.findall(r"\bsrc/[\w./-]+", art.body)
@@ -667,6 +690,108 @@ def _check_quality(
 
     icon = GREEN + "\u2713" + NC if warnings == 0 else YELLOW + "\u26a0" + NC
     detail_msg = "\n".join(details) if details else f"All {len(reqs)} requirement(s) pass quality checks"
+
+    return {
+        "status_icon": icon,
+        "detail": detail_msg,
+        "blocking_count": 0,
+        "warning_count": warnings,
+    }
+
+
+_ARCH_SECTIONS = re.compile(
+    r"^##\s+.*(Interface|Component|Responsibility|Data\s+Flow|Structure|Package|Module|Dependencies)",
+    re.I | re.M,
+)
+
+_DDD_SECTIONS = re.compile(
+    r"^##\s+.*(Function|Data\s+Structure|Algorithm|Error\s+Handling|Invariant|Precondition|Signature|Implementation)",
+    re.I | re.M,
+)
+
+_ARCH_MIN_WORDS = 50
+_DDD_MIN_WORDS = 100
+
+
+def _check_spec_body(
+    artifacts: list[art_lib.Artifact],
+) -> dict[str, str | int]:
+    """Check ARCH and DDD artifacts for substantive body content.
+
+    Warns on:
+      - ARCH without structural headers (Interface, Component, etc.)
+      - ARCH body under 50 words
+      - DDD without design headers (Function, Algorithm, etc.)
+      - DDD body under 100 words
+    """
+    warnings = 0
+    details: list[str] = []
+
+    for art in artifacts:
+        prefix = art_lib.get_prefix_from_id(art.id)
+        body = art.body.strip()
+        word_count = len(body.split())
+
+        if prefix == "ARCH":
+            if word_count < _ARCH_MIN_WORDS:
+                warnings += 1
+                details.append(f"  ⚠ [{art.id}] body has {word_count} words (minimum {_ARCH_MIN_WORDS} for architecture)")
+            if not _ARCH_SECTIONS.search(body):
+                warnings += 1
+                details.append(f"  ⚠ [{art.id}] missing structural headers (expected: Interface, Component, Responsibility, Data Flow, Structure, Package, Module, or Dependencies)")
+
+        elif prefix == "DDD":
+            if word_count < _DDD_MIN_WORDS:
+                warnings += 1
+                details.append(f"  ⚠ [{art.id}] body has {word_count} words (minimum {_DDD_MIN_WORDS} for detailed design)")
+            if not _DDD_SECTIONS.search(body):
+                warnings += 1
+                details.append(f"  ⚠ [{art.id}] missing design headers (expected: Function, Data Structure, Algorithm, Error Handling, Invariant, Precondition, Signature, or Implementation)")
+
+    icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
+    detail_msg = "\n".join(details) if details else "All spec artifacts have substantive content"
+
+    return {
+        "status_icon": icon,
+        "detail": detail_msg,
+        "blocking_count": 0,
+        "warning_count": warnings,
+    }
+
+
+_GLOB_CHARS = set("*?[")
+
+
+def _check_output_files(
+    artifacts: list[art_lib.Artifact],
+    root: Path,
+) -> dict[str, str | int]:
+    """Verify that declared output_files exist on the filesystem.
+
+    Glob patterns (containing *, ?, [) are skipped.
+    Paths are resolved relative to project root.
+    """
+    warnings = 0
+    details: list[str] = []
+
+    for art in artifacts:
+        output_files = art.frontmatter.get("output_files")
+        if not output_files or not isinstance(output_files, list):
+            continue
+
+        for file_path in output_files:
+            if not isinstance(file_path, str):
+                continue
+            if any(c in file_path for c in _GLOB_CHARS):
+                continue
+
+            resolved = (root / file_path).resolve()
+            if not resolved.exists():
+                warnings += 1
+                details.append(f"  ⚠ [{art.id}] output file not found: {file_path}")
+
+    icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
+    detail_msg = "\n".join(details) if details else "All declared output files exist"
 
     return {
         "status_icon": icon,

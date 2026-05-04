@@ -76,7 +76,18 @@ Focus: **polish, stability, and adoptability.** Ship what we have with confidenc
 - `/specflow-init` completion message suggests `/specflow-adapter` for CI-first teams
 - ROADMAP cleanup (duplicate Jira sync entry)
 
-## v1.1.0 (Current)
+## v1.2.0 (Current)
+
+Focus: **init upgrade safety, spec body quality enforcement, and output file traceability.**
+
+- **Init upgrade safety** — re-running `specflow init` on an existing project preserves config and state via merge mode; `--force` enables clean re-init with timestamped backup
+- **Config version stamping** — `config.yaml` now includes a `version` field tracking the SpecFlow release
+- **Specification body quality enforcement** — `artifact-lint` validates ARCH/DDD artifacts for substantive content (word counts, structural headers), REQ-to-ARCH coverage, and minimum acceptance criteria per story
+- **Output file traceability** — `output_files` field on ARCH/DDD/STORY schemas with filesystem existence verification and glob pattern support
+- **`specflow update --output-files`** — CLI flag to set, replace, or remove output file paths on artifacts
+- **Extended lint checks** — `spec-body` check for ARCH/DDD body quality; `output-files` check for path existence; extended `coverage` for REQ→ARCH links
+
+## v1.1.0
 
 Focus: **domain intelligence and learning feedback.**
 

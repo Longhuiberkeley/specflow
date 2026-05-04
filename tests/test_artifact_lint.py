@@ -305,6 +305,10 @@ class TestCheckCoverage:
         arts = [
             _make_art("REQ-001", "requirement", status="approved"),
             _make_art(
+                "ARCH-001", "architecture", status="draft",
+                links=[art_lib.Link(target="REQ-001", role="derives_from")],
+            ),
+            _make_art(
                 "STORY-001", "story", status="approved",
                 links=[art_lib.Link(target="REQ-001", role="implements")],
             ),

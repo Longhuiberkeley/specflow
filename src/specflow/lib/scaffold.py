@@ -50,19 +50,27 @@ def create_spec_dirs(root: Path) -> None:
             index.write_text(yaml.dump(_INDEX_STUB, default_flow_style=False))
 
 
-def create_internal_dirs(root: Path, template_dir: Path) -> None:
-    """Create .specflow/ internal directories and copy schemas."""
+def create_internal_dirs(root: Path, template_dir: Path, *, overwrite_schemas: bool = False) -> None:
+    """Create .specflow/ internal directories and copy schemas.
+
+    Args:
+        root: Project root path.
+        template_dir: Package templates directory.
+        overwrite_schemas: If True, overwrite existing schemas with fresh copies
+            from the package. Used by ``--force`` re-init.
+    """
     specflow = root / ".specflow"
     for d in INTERNAL_DIRS:
         (specflow / d).mkdir(parents=True, exist_ok=True)
 
-    # Copy schema files
     schema_dst = specflow / "schema"
     schema_src = template_dir / "schemas"
     if schema_src.exists():
-        if schema_dst.exists():
-            shutil.rmtree(str(schema_dst))
-        shutil.copytree(str(schema_src), str(schema_dst))
+        schema_dst.mkdir(parents=True, exist_ok=True)
+        for schema_file in schema_src.glob("*.yaml"):
+            dst_file = schema_dst / schema_file.name
+            if overwrite_schemas or not dst_file.exists():
+                shutil.copy2(str(schema_file), str(dst_file))
 
 
 def copy_adapters_config(root: Path, template_dir: Path) -> None:

@@ -2,6 +2,7 @@
 
 import shutil
 import stat
+from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
@@ -154,20 +155,62 @@ def run(root: Path, args: dict) -> int:
     print(f"  + Platform: {platform_name}")
 
     project_name = root.name
+    force = args.get("force", False)
+    specflow_dir = root / ".specflow"
+    is_reinit = specflow_dir.exists()
 
-    print("  Creating .specflow/ internals...")
-    scaffold_lib.create_internal_dirs(root, _get_package_templates())
+    if is_reinit and force:
+        backup_dir = specflow_dir / "cache" / "backups" / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        try:
+            backup_dir.mkdir(parents=True, exist_ok=True)
+            backed_up = config_lib.backup_specflow_internals(root, backup_dir)
+            if backed_up:
+                print(f"  + Backed up to {backup_dir.relative_to(root)}: {', '.join(backed_up)}")
+        except Exception as e:
+            print(f"  x Backup failed: {e}. Aborting --force re-init.")
+            return 1
 
-    print("  Creating _specflow/ artifacts directory...")
-    scaffold_lib.create_spec_dirs(root)
+        print("  + --force: clean re-initialization")
+        is_reinit = False
+        _force_overwrite_schemas = True
+    else:
+        _force_overwrite_schemas = False
 
-    config = config_lib.default_config(project_name)
-    config_lib.write_config(root, config)
-    print(f"  + config.yaml written (project: {project_name})")
+    if is_reinit:
+        print("  Re-initializing existing SpecFlow project (merge mode)...")
 
-    state = config_lib.default_state()
-    config_lib.write_state(root, state)
-    print("  + state.yaml written")
+        existing_config = config_lib.read_config(root)
+
+        scaffold_lib.create_internal_dirs(root, _get_package_templates())
+        scaffold_lib.create_spec_dirs(root)
+
+        defaults = config_lib.default_config(project_name)
+        merged = config_lib.merge_config(existing_config, defaults)
+        config_lib.write_config(root, merged)
+
+        delta = config_lib.detect_version_delta(root)
+        if delta["current_version"] and delta["current_version"] != delta["framework_version"]:
+            print(f"  + Version updated: {delta['current_version']} → {delta['framework_version']}")
+        if delta["new_fields"]:
+            print(f"  + New config fields added: {', '.join(delta['new_fields'])}")
+        print(f"  + config.yaml merged (version {delta['framework_version']})")
+
+        scaffold_lib.copy_checklists(root, _get_package_templates())
+        scaffold_lib.copy_adapters_config(root, _get_package_templates())
+    else:
+        print("  Creating .specflow/ internals...")
+        scaffold_lib.create_internal_dirs(root, _get_package_templates(), overwrite_schemas=_force_overwrite_schemas)
+
+        print("  Creating _specflow/ artifacts directory...")
+        scaffold_lib.create_spec_dirs(root)
+
+        config = config_lib.default_config(project_name)
+        config_lib.write_config(root, config)
+        print(f"  + config.yaml written (project: {project_name}, version: {config['version']})")
+
+        state = config_lib.default_state()
+        config_lib.write_state(root, state)
+        print("  + state.yaml written")
 
     domain = args.get("domain")
     domain_tags_str = args.get("domain_tags", "")

@@ -1,9 +1,12 @@
 """Configuration reading and writing for SpecFlow."""
 
+import copy
 from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
+
+import specflow
 
 
 CONFIG_FILENAME = "config.yaml"
@@ -14,6 +17,7 @@ def default_config(project_name: str = "") -> dict:
     """Return a default config dict with timestamps."""
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     return {
+        "version": specflow.__version__,
         "project": {"name": project_name, "created": now, "domain": "", "domain_tags": []},
         "impact_analysis": {
             "auto_flag": True,
@@ -115,5 +119,78 @@ def set_domain(root: Path, domain: str, tags: list[str] | None = None) -> None:
     project["domain_tags"] = list(tags or [])
     cfg["project"] = project
     write_config(root, cfg)
+
+
+def merge_config(existing: dict, defaults: dict) -> dict:
+    """Deep merge existing user config with new framework defaults.
+
+    User values always win. New default keys are added. Lists are merged
+    and deduplicated. The framework version is always stamped.
+    """
+    merged = copy.deepcopy(defaults)
+
+    def _deep_merge(base: dict, overlay: dict) -> dict:
+        for key, value in overlay.items():
+            if key in base and isinstance(base[key], dict) and isinstance(value, dict):
+                _deep_merge(base[key], value)
+            elif key in base and isinstance(base[key], list) and isinstance(value, list):
+                combined = base[key] + [v for v in value if v not in base[key]]
+                base[key] = combined
+            else:
+                base[key] = value
+        return base
+
+    _deep_merge(merged, existing)
+    merged["version"] = specflow.__version__
+    return merged
+
+
+def detect_version_delta(root: Path) -> dict:
+    """Detect config version and compare against framework version.
+
+    Returns dict with: current_version, framework_version, is_upgrade, new_fields.
+    """
+    cfg = read_config(root)
+    current_version = cfg.get("version")
+    framework_version = specflow.__version__
+
+    defaults = default_config()
+    default_keys = set(defaults.keys())
+    existing_keys = set(cfg.keys())
+    new_fields = sorted(default_keys - existing_keys - {"version"})
+
+    return {
+        "current_version": current_version,
+        "framework_version": framework_version,
+        "is_upgrade": current_version is not None and current_version != framework_version,
+        "new_fields": new_fields,
+    }
+
+
+def backup_specflow_internals(root: Path, backup_dir: Path) -> list[str]:
+    """Backup .specflow/ internals (config, state, schemas) to backup_dir.
+
+    Returns list of backed-up file paths relative to root.
+    """
+    import shutil
+
+    backed_up: list[str] = []
+    specflow = root / ".specflow"
+
+    for name in ("config.yaml", "state.yaml"):
+        src = specflow / name
+        if src.exists():
+            shutil.copy2(str(src), str(backup_dir / name))
+            backed_up.append(f".specflow/{name}")
+
+    schema_src = specflow / "schema"
+    schema_dst = backup_dir / "schema"
+    if schema_src.exists():
+        if schema_dst.exists():
+            shutil.rmtree(str(schema_dst))
+        shutil.copytree(str(schema_src), str(schema_dst))
+        backed_up.append(".specflow/schema/")
+
+    return backed_up
 
 

@@ -206,4 +206,66 @@ artifacts:
     tags: []
     fingerprint: ''
     children: []
-next_id: 22
+  REQ-022:
+    id: REQ-022
+    title: Init Upgrade Safety
+    status: approved
+    tags:
+    - init
+    - upgrade
+    - config
+    fingerprint: sha256:35fa1932c235
+    children: []
+  REQ-023:
+    id: REQ-023
+    title: Specification Body Quality Enforcement
+    status: approved
+    tags:
+    - lint
+    - quality
+    - architecture
+    - design
+    fingerprint: sha256:f79686a4868b
+    children: []
+  REQ-024:
+    id: REQ-024
+    title: Output File Traceability
+    status: approved
+    tags:
+    - traceability
+    - output-files
+    fingerprint: sha256:ad89de5deef9
+    children: []
+  REQ-025:
+    id: REQ-025
+    title: Reverse Impact Analysis
+    status: draft
+    tags:
+    - traceability
+    - impact
+    - git
+    fingerprint: sha256:ea2daf4f801c
+    children: []
+  REQ-026:
+    id: REQ-026
+    title: Decomposition Completeness Guidance
+    status: draft
+    tags:
+    - plan
+    - decomposition
+    - spidr
+    - handbook
+    fingerprint: sha256:a3a653f27c13
+    children: []
+  REQ-027:
+    id: REQ-027
+    title: Discovery-to-Plan Skill Continuity
+    status: draft
+    tags:
+    - discover
+    - plan
+    - continuity
+    - domain
+    fingerprint: sha256:b57757b852fa
+    children: []
+next_id: 28

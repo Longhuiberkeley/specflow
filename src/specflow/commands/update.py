@@ -40,9 +40,18 @@ def run(root: Path, args: dict) -> int:
     if title:
         updates["title"] = title
 
-    if not updates:
+    output_files_str = args.get("output_files")
+    if output_files_str is not None:
+        if output_files_str.strip() == "":
+            updates["output_files"] = None
+        else:
+            updates["output_files"] = [f.strip() for f in output_files_str.split(",") if f.strip()]
+
+    has_output_files_update = output_files_str is not None
+
+    if not updates and not has_output_files_update:
         print(f"{RED}✗ No fields to update. Provide at least one of: "
-              f"--status, --title, --priority, --rationale, or --tags.{NC}")
+              f"--status, --title, --priority, --rationale, --tags, or --output-files.{NC}")
         return 1
 
     result = art_lib.update_artifact(root=root, artifact_id=artifact_id, **updates)

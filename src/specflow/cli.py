@@ -197,6 +197,7 @@ def _add_init_parser(subparsers):
     p.add_argument("--no-ci", action="store_true", dest="no_ci", help="Skip CI workflow installation")
     p.add_argument("--domain", help="Project domain (e.g., embedded, api-service, web-app)")
     p.add_argument("--domain-tags", dest="domain_tags", help="Comma-separated domain tags (e.g., real-time,safety-critical)")
+    p.add_argument("--force", action="store_true", help="Force clean re-initialization (backs up existing config/state/schemas)")
 
 
 def _add_status_parser(subparsers):
@@ -273,6 +274,7 @@ def _add_update_parser(subparsers):
     p.add_argument("--priority", help="New priority")
     p.add_argument("--rationale", help="New rationale")
     p.add_argument("--tags", help="Comma-separated tags (replaces existing)")
+    p.add_argument("--output-files", dest="output_files", help="Comma-separated output file paths (replaces existing; empty string removes)")
 
 
 def _add_go_parser(subparsers):
@@ -291,7 +293,7 @@ def _add_done_parser(subparsers):
 
 def _add_artifact_lint_parser(subparsers):
     p = subparsers.add_parser("artifact-lint", help="Run deterministic validation checks on artifacts")
-    p.add_argument("--type", choices=["schema", "links", "status", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "gate"], help="Run only a specific check")
+    p.add_argument("--type", choices=["schema", "links", "status", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "gate"], help="Run only a specific check")
     p.add_argument("--fix", action="store_true", help="Auto-fix (rebuild indexes, recompute fingerprints)")
     p.add_argument("--gate", help="Phase-gate checklist name")
     p.add_argument("--method", choices=["programmatic", "llm"], default="programmatic", help="Validation method")

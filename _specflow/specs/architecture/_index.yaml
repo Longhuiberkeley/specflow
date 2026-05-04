@@ -128,4 +128,46 @@ artifacts:
     tags: []
     fingerprint: sha256:c1c760b44641
     children: []
-next_id: 16
+  ARCH-016:
+    id: ARCH-016
+    title: Init Upgrade Engine
+    status: implemented
+    tags: []
+    fingerprint: sha256:829c96b2d7ea
+    children: []
+  ARCH-017:
+    id: ARCH-017
+    title: Spec Quality Gate
+    status: implemented
+    tags: []
+    fingerprint: sha256:88f0010c1fb2
+    children: []
+  ARCH-018:
+    id: ARCH-018
+    title: File Traceability Layer
+    status: implemented
+    tags: []
+    fingerprint: sha256:34da9eef4d92
+    children: []
+  ARCH-019:
+    id: ARCH-019
+    title: Reverse Impact Engine
+    status: draft
+    tags: []
+    fingerprint: sha256:b4246d59f980
+    children: []
+  ARCH-020:
+    id: ARCH-020
+    title: Decomposition Guidance System
+    status: draft
+    tags: []
+    fingerprint: sha256:2dc7e5d21140
+    children: []
+  ARCH-021:
+    id: ARCH-021
+    title: Skill Continuity Layer
+    status: draft
+    tags: []
+    fingerprint: sha256:5782b31d02e6
+    children: []
+next_id: 22
