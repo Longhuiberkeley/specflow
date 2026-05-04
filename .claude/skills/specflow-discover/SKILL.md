@@ -121,11 +121,13 @@ After each answer, update your readiness assessment silently.
    - API service → include auth, rate limiting, API versioning
 3. Cover applicable items from: error handling, security, observability, scalability, deployment.
 
-### Step 4: Requirements Summary & Approval
+### Step 4: Requirements Summary & Inter-REQ Dependencies
 
 1. Present a numbered summary of all discovered requirements to the user.
 2. Ask: "Does this capture everything? Anything missing or incorrect?"
 3. Iterate until user approves.
+4. **Inter-REQ dependency prompting**: Ask: "Do any of these requirements depend on others being implemented first? For example, 'user authentication' might need to be done before 'password reset'."
+5. For each dependency the user identifies, record it: `uv run specflow update <dependent-REQ> --links "[{\"target\": \"<prerequisite-REQ>\", \"role\": \"derives_from\"}]"`. These dependency links influence story wave ordering during planning.
 
 ### Step 5: Challenge Requirements
 
@@ -141,6 +143,23 @@ Before finalizing artifacts, apply discovery-stage thinking techniques from `ref
 For each REQ, briefly challenge it: "Before I write this — is this actually needed? What are we assuming? Why does this matter?"
 
 Present concerns as a quick summary. Let the user confirm, revise, or drop requirements before proceeding.
+
+**Persist significant challenge results as decision artifacts** so they survive across sessions and are available to the plan skill:
+
+- **Dropped requirement**: Create a DEC artifact with title "Dropped: \<summary\>", status `approved`, body explaining the rationale for dropping.
+  ```
+  uv run specflow create --type decision --title "Dropped: <summary>" --status approved --body "<rationale>"
+  ```
+- **Assumption surfaced**: Create a DEC artifact with title "Assumption: \<text\>", status `draft`, body containing the assumption, what happens if wrong, and what validates it.
+  ```
+  uv run specflow create --type decision --title "Assumption: <text>" --status draft --body "<assumption, consequence if wrong, validation>"
+  ```
+- **Risk identified**: Create a DEC artifact with title "Risk: \<text\>", status `draft`, body containing the risk, likelihood, impact, and mitigation.
+  ```
+  uv run specflow create --type decision --title "Risk: <text>" --status draft --body "<risk, likelihood, impact, mitigation>"
+  ```
+
+Only create DEC artifacts for significant findings. If no challenges produce actionable results, skip DEC creation to avoid noise.
 
 If the user requested specific techniques or said "go deep", expand the selection accordingly.
 
@@ -217,7 +236,26 @@ Wait for user acknowledgement before proceeding to phase transition.
 If this was the first discovery and the project was in `idle` state, update state:
 - Edit `.specflow/state.yaml`: set `current: specifying`, add history entry.
 
-**Exit message:** Report the REQ (and STORY, for lean path) IDs created, and recommend the next skill — `/specflow-plan` for the full path, `/specflow-execute` for the lean path.
+**Exit message (full path):** List created REQ IDs and provide explicit next steps:
+
+```
+Created: REQ-<id-1>, REQ-<id-2>, ...
+
+**Next steps:**
+1. Review the requirements above.
+2. Approve them: `specflow update REQ-<id> --status approved` (repeat for each)
+3. Run `/specflow-plan` to decompose into architecture and stories.
+
+Requirements are currently in **draft** status and must be approved before planning.
+```
+
+**Exit message (lean path):** REQs and STORYs were auto-approved during lean discovery:
+
+```
+Created: REQ-<id> (approved), STORY-<id> (approved)
+
+Requirements are already approved. Run `/specflow-execute` to implement.
+```
 
 ## Rules
 

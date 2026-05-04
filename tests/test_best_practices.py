@@ -142,8 +142,8 @@ class TestSynthesizeAndCache:
         result = bp_lib.synthesize_and_cache(
             tmp_path, "embedded", [], "phase", "plan-arc", overwrite=True,
         )
-        assert not result["ok"]
-        assert "missing" in result["error"]
+        assert result["ok"]
+        assert result.get("fallback") is True
 
     def test_calls_llm_and_caches(self, tmp_path: Path):
         _write_config(tmp_path, domain="embedded")
@@ -321,7 +321,7 @@ class TestComposeReviewPrefix:
     def test_graceful_fallback_no_api_key(self, tmp_path: Path):
         _write_config(tmp_path, domain="embedded")
         result = bp_lib.compose_review_prefix(tmp_path, "embedded", [], "plan-arc", [])
-        assert result == ""
+        assert "Phase-level best practices" in result
 
     def test_includes_staleness_note(self, tmp_path: Path):
         _write_config(tmp_path, domain="embedded")

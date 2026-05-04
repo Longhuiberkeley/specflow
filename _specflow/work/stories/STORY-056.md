@@ -2,7 +2,7 @@
 id: STORY-056
 title: Add SPIDR dimension coverage lint check
 type: story
-status: draft
+status: implemented
 priority: low
 tags:
 - lint
@@ -17,6 +17,8 @@ links:
 - target: DDD-020
   role: specified_by
 created: '2026-05-04'
+modified: '2026-05-05'
+fingerprint: sha256:aa12a11098e3
 ---
 
 # Add SPIDR dimension coverage lint check

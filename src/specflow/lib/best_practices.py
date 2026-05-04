@@ -406,6 +406,16 @@ def synthesize_and_cache(
 
     cfg = ci_lib.load_llm_config(root)
     if not cfg.api_key:
+        fallback = copy_generic_fallback(root, domain, level, key)
+        if fallback is not None:
+            return {
+                "ok": True,
+                "path": str(fallback),
+                "data": read_cached(root, domain, level, key),
+                "error": None,
+                "cached": False,
+                "fallback": True,
+            }
         return {
             "ok": False,
             "path": None,
@@ -498,6 +508,31 @@ def _strip_yaml_fences(text: str) -> str:
     elif stripped.startswith("```") and stripped.endswith("```"):
         stripped = stripped[3:].rstrip("`").strip()
     return stripped
+
+
+def copy_generic_fallback(root: Path, domain: str, level: str, key: str) -> Path | None:
+    """Copy a bundled generic BP template as fallback when no API key is available.
+
+    Returns the cache path if a template was copied, None if no template exists.
+    Skips if the cache file already exists (preserves user edits).
+    """
+    if level != "phase":
+        return None
+
+    target = cache_path(root, domain, level, key)
+    if target.exists():
+        return target
+
+    template_name = f"generic-phase-{key}.yaml"
+    template_dir = Path(__file__).resolve().parent.parent / "templates" / "best-practices"
+    template_file = template_dir / template_name
+
+    if not template_file.exists():
+        return None
+
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(template_file, target)
+    return target
 
 
 def ensure_project_bps(root: Path, domain: str, domain_tags: list[str]) -> dict[str, Any]:

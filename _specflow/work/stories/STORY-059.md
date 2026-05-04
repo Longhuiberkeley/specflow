@@ -2,7 +2,7 @@
 id: STORY-059
 title: Bundle generic best-practice fallback for handbook generation
 type: story
-status: draft
+status: implemented
 priority: low
 tags:
 - handbook
@@ -16,6 +16,8 @@ links:
 - target: DDD-020
   role: specified_by
 created: '2026-05-04'
+modified: '2026-05-05'
+fingerprint: sha256:3e99768cf37d
 ---
 
 # Bundle generic best-practice fallback for handbook generation

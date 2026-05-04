@@ -76,17 +76,6 @@ Focus: **polish, stability, and adoptability.** Ship what we have with confidenc
 - `/specflow-init` completion message suggests `/specflow-adapter` for CI-first teams
 - ROADMAP cleanup (duplicate Jira sync entry)
 
-## v1.2.0 (Current)
-
-Focus: **init upgrade safety, spec body quality enforcement, and output file traceability.**
-
-- **Init upgrade safety** — re-running `specflow init` on an existing project preserves config and state via merge mode; `--force` enables clean re-init with timestamped backup
-- **Config version stamping** — `config.yaml` now includes a `version` field tracking the SpecFlow release
-- **Specification body quality enforcement** — `artifact-lint` validates ARCH/DDD artifacts for substantive content (word counts, structural headers), REQ-to-ARCH coverage, and minimum acceptance criteria per story
-- **Output file traceability** — `output_files` field on ARCH/DDD/STORY schemas with filesystem existence verification and glob pattern support
-- **`specflow update --output-files`** — CLI flag to set, replace, or remove output file paths on artifacts
-- **Extended lint checks** — `spec-body` check for ARCH/DDD body quality; `output-files` check for path existence; extended `coverage` for REQ→ARCH links
-
 ## v1.1.0
 
 Focus: **domain intelligence and learning feedback.**
@@ -101,6 +90,24 @@ Focus: **domain intelligence and learning feedback.**
 - **Auto-backup** — `--overwrite` backs up previous BP file before regenerating
 - **`specflow done` auto-extraction** — `--auto` is now the default, extracts patterns from implemented stories
 - **Expanded learnable techniques** — adversarial findings (devil's advocate, premortem, etc.) now feed into learning by default
+
+## v1.2.0
+
+Focus: **init upgrade safety, spec body quality enforcement, and output file traceability.**
+
+## v1.3.0
+
+Focus: **reverse impact analysis, decomposition completeness guidance, and discovery-to-plan skill continuity.**
+
+- **Reverse impact analysis** — source code changes map back to spec artifacts via `output_files`, closing the bidirectional traceability loop
+- **SPIDR dimension coverage** — `artifact-lint` reports when decomposition dimensions have no stories
+- **Story dependency cycle detection** — `artifact-lint` detects circular dependencies between stories during planning
+- **DDD selection decision tree** — reference document with 6-question checklist for DDD artifact necessity
+- **Generic best-practice fallback** — bundled generic BP templates for offline handbook generation (no API key required)
+- **Discovery challenge persistence** — thinking technique results persisted as DEC artifacts for plan skill consumption
+- **Inter-REQ dependency prompting** — discover skill captures requirement dependencies as `derives_from` links
+- **Domain context pass-through** — plan skill reads domain classification from config and decisions from discovery
+- **Improved discover-to-plan handoff** — explicit approval instructions and next-step commands in exit message
 
 ## v1.x (Future)
 

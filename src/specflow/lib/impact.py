@@ -1,7 +1,8 @@
-"""Impact analysis engine: fingerprint change detection, suspect propagation, and impact logging."""
+"""Impact analysis engine: fingerprint change detection, suspect propagation, reverse impact, and impact logging."""
 
 from __future__ import annotations
 
+import fnmatch
 import os
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -473,3 +474,115 @@ def merge_artifact(
     event_path = create_impact_event(root, event)
 
     return {"ok": True, "rewritten": rewritten, "event_path": str(event_path)}
+
+
+@dataclass
+class FileArtifactMatch:
+    file_path: str
+    artifact_id: str
+    match_type: str  # "literal" | "glob"
+    pattern: str
+
+
+def is_glob_pattern(path: str) -> bool:
+    return any(c in path for c in "*?[")
+
+
+def build_output_file_index(root: Path) -> dict[str, list[tuple[str, str, str]]]:
+    """Build a reverse index mapping file paths to artifact IDs.
+
+    Returns dict: normalized_path -> [(artifact_id, match_type, pattern)]
+    """
+    all_artifacts = discover_artifacts(root)
+    index: dict[str, list[tuple[str, str, str]]] = {}
+
+    for art in all_artifacts:
+        output_files = art.frontmatter.get("output_files")
+        if not output_files or not isinstance(output_files, list):
+            continue
+
+        for file_path in output_files:
+            if not isinstance(file_path, str):
+                continue
+
+            if is_glob_pattern(file_path):
+                key = file_path
+                entry = (art.id, "glob", file_path)
+            else:
+                try:
+                    key = str(Path(file_path)).rstrip("/")
+                except Exception:
+                    continue
+                entry = (art.id, "literal", file_path)
+
+            index.setdefault(key, []).append(entry)
+
+    return index
+
+
+def reverse_impact(
+    root: Path,
+    changed_files: list[str],
+    index: dict[str, list[tuple[str, str, str]]] | None = None,
+) -> list[FileArtifactMatch]:
+    """Map changed source files to governing artifacts via output_files.
+
+    For each match, flags the artifact as suspect and propagates downstream.
+    """
+    if not changed_files:
+        return []
+
+    if index is None:
+        index = build_output_file_index(root)
+
+    matches: list[FileArtifactMatch] = []
+    seen: set[tuple[str, str]] = set()
+
+    literal_index: dict[str, list[tuple[str, str, str]]] = {}
+    glob_entries: list[tuple[str, str, str]] = []
+
+    for key, entries in index.items():
+        for entry in entries:
+            art_id, match_type, pattern = entry
+            if match_type == "glob":
+                glob_entries.append(entry)
+            else:
+                literal_index.setdefault(key, []).append(entry)
+
+    for changed_file in changed_files:
+        normalized = changed_file.rstrip("/")
+
+        if normalized in literal_index:
+            for art_id, match_type, pattern in literal_index[normalized]:
+                pair = (normalized, art_id)
+                if pair not in seen:
+                    seen.add(pair)
+                    matches.append(FileArtifactMatch(
+                        file_path=normalized,
+                        artifact_id=art_id,
+                        match_type="literal",
+                        pattern=pattern,
+                    ))
+
+        for art_id, match_type, pattern in glob_entries:
+            if fnmatch.fnmatch(normalized, pattern) or fnmatch.fnmatch(os.path.basename(normalized), os.path.basename(pattern)):
+                pair = (normalized, art_id)
+                if pair not in seen:
+                    seen.add(pair)
+                    matches.append(FileArtifactMatch(
+                        file_path=normalized,
+                        artifact_id=art_id,
+                        match_type="glob",
+                        pattern=pattern,
+                    ))
+
+    affected_ids = {m.artifact_id for m in matches}
+    for art_id in affected_ids:
+        art_path = resolve_link_target(root, art_id)
+        if art_path is not None:
+            _update_frontmatter_field(art_path, "suspect", True)
+            downstream = _find_downstream_artifacts(root, art_id)
+            for ds_art in downstream:
+                _update_frontmatter_field(ds_art.path, "suspect", True)
+
+    return matches

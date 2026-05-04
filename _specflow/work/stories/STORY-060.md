@@ -2,7 +2,7 @@
 id: STORY-060
 title: Persist discovery challenge results as decision artifacts
 type: story
-status: draft
+status: implemented
 priority: low
 tags:
 - discover
@@ -16,6 +16,8 @@ links:
 - target: DDD-021
   role: specified_by
 created: '2026-05-04'
+modified: '2026-05-05'
+fingerprint: sha256:37c22118b06c
 ---
 
 # Persist discovery challenge results as decision artifacts

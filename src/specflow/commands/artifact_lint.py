@@ -14,7 +14,7 @@ from specflow.lib import standards as standards_lib
 from specflow.lib import lint as lint_lib
 from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC
 
-CHECK_NAMES = ["schema", "links", "status", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files"]
+CHECK_NAMES = ["schema", "links", "status", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles"]
 
 
 def _run_check(
@@ -54,6 +54,10 @@ def _run_check(
         return _check_spec_body(artifacts)
     elif check_name == "output-files":
         return _check_output_files(artifacts, root)
+    elif check_name == "spidr-coverage":
+        return _check_spidr_coverage(artifacts)
+    elif check_name == "wave-cycles":
+        return _check_wave_cycles(artifacts, root)
 
     return {"status_icon": "?", "detail": f"Unknown check: {check_name}",
             "blocking_count": 0, "warning_count": 0}
@@ -792,6 +796,108 @@ def _check_output_files(
 
     icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
     detail_msg = "\n".join(details) if details else "All declared output files exist"
+
+    return {
+        "status_icon": icon,
+        "detail": detail_msg,
+        "blocking_count": 0,
+        "warning_count": warnings,
+    }
+
+
+SPIDR_DIMENSIONS = {"spidr-spike", "spidr-path", "spidr-interface", "spidr-data", "spidr-rules"}
+
+
+def _check_spidr_coverage(
+    artifacts: list[art_lib.Artifact],
+) -> dict[str, str | int]:
+    """Report when SPIDR dimensions have no stories, ensuring decomposition coverage."""
+    warnings = 0
+    details: list[str] = []
+
+    stories = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "STORY"]
+
+    if not stories:
+        return {
+            "status_icon": CYAN + "ℹ" + NC,
+            "detail": "No stories found — SPIDR coverage check skipped",
+            "blocking_count": 0,
+            "warning_count": 0,
+        }
+
+    all_tags: set[str] = set()
+    for s in stories:
+        all_tags.update(t.lower() for t in s.tags)
+
+    has_any_spidr = any(any(t.startswith("spidr-") for t in s.tags) for s in stories)
+
+    for dim in sorted(SPIDR_DIMENSIONS):
+        found = any(dim in t for t in all_tags)
+        if not found:
+            warnings += 1
+            details.append(f"  ⚠ no stories found for SPIDR dimension '{dim}'. Stories may be incomplete.")
+
+    if not has_any_spidr and stories:
+        details.append("  ℹ no SPIDR dimension tags found on any story. Consider tagging stories during plan Step 5.")
+
+    icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
+    detail_msg = "\n".join(details) if details else f"All {len(SPIDR_DIMENSIONS)} SPIDR dimensions covered"
+
+    return {
+        "status_icon": icon,
+        "detail": detail_msg,
+        "blocking_count": 0,
+        "warning_count": warnings,
+    }
+
+
+def _check_wave_cycles(
+    artifacts: list[art_lib.Artifact],
+    root: Path,
+) -> dict[str, str | int]:
+    """Detect circular dependencies between stories via wave computation."""
+    from specflow.lib.waves import compute_waves
+
+    warnings = 0
+    details: list[str] = []
+
+    stories = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "STORY"]
+
+    if not stories:
+        return {
+            "status_icon": CYAN + "ℹ" + NC,
+            "detail": "No stories found — wave cycle check skipped",
+            "blocking_count": 0,
+            "warning_count": 0,
+        }
+
+    result = compute_waves(stories)
+
+    if not result.get("ok"):
+        cycle = result.get("cycle", [])
+        cycle_str = " -> ".join(cycle) if cycle else "unknown"
+        warnings += 1
+        details.append(f"  ⚠ circular dependency detected: {cycle_str}")
+
+    if result.get("ok") and result.get("waves"):
+        waves = result["waves"]
+        details.append(f"  ℹ {len(stories)} stories in {len(waves)} wave(s)")
+        for i, wave in enumerate(waves):
+            details.append(f"    wave {i + 1}: {', '.join(wave)}")
+
+    dep_counts: dict[str, int] = {}
+    for s in stories:
+        count = sum(1 for link in s.links if link.role in ("derives_from", "depends_on") and art_lib.get_prefix_from_id(link.target) == "STORY")
+        if count > 0:
+            dep_counts[s.id] = count
+
+    for sid, count in sorted(dep_counts.items(), key=lambda x: -x[1]):
+        if count >= 4:
+            warnings += 1
+            details.append(f"  ⚠ {sid} has {count} dependencies, consider restructuring")
+
+    icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
+    detail_msg = "\n".join(details) if details else f"All {len(stories)} stories have valid dependency ordering"
 
     return {
         "status_icon": icon,

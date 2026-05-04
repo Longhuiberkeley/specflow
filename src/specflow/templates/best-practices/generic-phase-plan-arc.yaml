@@ -1,0 +1,85 @@
+domain: generic
+level: phase
+phase: plan-arc
+process_area: Software Architecture Design
+generated: bundled
+best_practices:
+  - id: BP-PHASE-ARC-01
+    title: Define explicit component boundaries
+    description: |
+      Each architectural component must have a clear responsibility boundary
+      that is documented in its ARCH artifact. If two components share the
+      same nouns in their descriptions, their boundaries need sharpening.
+    evaluation: 'Can you describe each component''s responsibility in one sentence without using "and"?'
+    anti_pattern: |
+      An architecture describes a "data layer" that also handles validation,
+      transformation, caching, and retry logic — five distinct concerns in
+      one component with no isolation.
+    pitfalls:
+      - God objects that accumulate responsibilities over iterations
+      - Component names that describe technology rather than responsibility
+
+  - id: BP-PHASE-ARC-02
+    title: Specify error handling strategy at boundaries
+    description: |
+      Every external boundary (API, file system, network, database) must
+      define what happens when the boundary fails. This includes timeout,
+      retry, fallback, and error propagation strategy.
+    evaluation: 'Does each component specify what happens when every external dependency it relies on fails?'
+    anti_pattern: |
+      An architecture shows a service calling an external API with no timeout
+      configured, no retry policy, and no fallback path — when the API is
+      slow, the calling service blocks indefinitely.
+    pitfalls:
+      - Assuming external systems are always available
+      - Treating all errors as fatal with no graceful degradation
+
+  - id: BP-PHASE-ARC-03
+    title: Document external dependencies explicitly
+    description: |
+      All external systems, libraries, and services that a component depends
+      on must be listed in the architecture. This includes version constraints,
+      deployment dependencies, and failure characteristics.
+    evaluation: 'Does the architecture list every external dependency and its failure mode?'
+    anti_pattern: |
+      An architecture references "the database" and "the cache" without
+      specifying which database, which cache, what versions, or what happens
+      when either is unavailable.
+    pitfalls:
+      - Implicit dependencies through transitive library usage
+      - Undocumented assumptions about shared infrastructure
+
+  - id: BP-PHASE-ARC-04
+    title: Define interface contracts between components
+    description: |
+      Every interaction between components must specify the data shape,
+      direction, synchronicity, and error contract. Async interactions
+      must also define ordering and idempotency guarantees.
+    evaluation: 'Can two developers implement the components on either side of an interface independently?'
+    anti_pattern: |
+      Two components communicate via a shared dictionary with no documented
+      keys, no validation, and no agreement on what constitutes a valid
+      message.
+    pitfalls:
+      - Undocumented serialization formats
+      - Missing backward-compatibility strategy for evolving interfaces
+
+  - id: BP-PHASE-ARC-05
+    title: Separate configuration from code
+    description: |
+      Environment-specific values (endpoints, thresholds, feature flags)
+      must be externalized so the same artifact can deploy to any
+      environment without code changes.
+    evaluation: 'Can the system be deployed to a new environment by changing only configuration?'
+    anti_pattern: |
+      API URLs, database connection strings, and retry counts are hardcoded
+      in source files — deploying to staging requires a code change and
+      rebuild.
+    pitfalls:
+      - Configuration sprawl with no single source of truth
+      - Secrets mixed with non-secret configuration
+
+common_pitfalls:
+  - Architecture documents that describe what the system does but not how it fails
+  - Component diagrams with no data flow arrows
+  - Missing non-functional requirements traceability from REQ to ARCH

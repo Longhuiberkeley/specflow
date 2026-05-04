@@ -2,7 +2,7 @@
 id: STORY-055
 title: Build output file reverse index and flag suspect artifacts
 type: story
-status: draft
+status: implemented
 priority: medium
 tags:
 - impact
@@ -16,6 +16,8 @@ links:
 - target: DDD-019
   role: specified_by
 created: '2026-05-04'
+modified: '2026-05-05'
+fingerprint: sha256:67fc9661feda
 ---
 
 # Build output file reverse index and flag suspect artifacts

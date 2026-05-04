@@ -2,7 +2,7 @@
 id: STORY-063
 title: Improve discover-to-plan handoff with explicit approval instructions
 type: story
-status: draft
+status: implemented
 priority: low
 tags:
 - discover
@@ -17,6 +17,8 @@ links:
 - target: DDD-021
   role: specified_by
 created: '2026-05-04'
+modified: '2026-05-05'
+fingerprint: sha256:17df6a029a13
 ---
 
 # Improve discover-to-plan handoff with explicit approval instructions

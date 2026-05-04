@@ -2,7 +2,7 @@
 id: ARCH-019
 title: Reverse Impact Engine
 type: architecture
-status: draft
+status: implemented
 suspect: false
 links:
 - target: REQ-025
@@ -10,6 +10,8 @@ links:
 - target: ARCH-018
   role: derives_from
 created: '2026-05-04'
+modified: '2026-05-05'
+fingerprint: sha256:c8d3e4d5924b
 ---
 
 # Reverse Impact Engine

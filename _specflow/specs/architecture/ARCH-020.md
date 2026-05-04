@@ -2,12 +2,14 @@
 id: ARCH-020
 title: Decomposition Guidance System
 type: architecture
-status: draft
+status: implemented
 suspect: false
 links:
 - target: REQ-026
   role: derives_from
 created: '2026-05-04'
+modified: '2026-05-05'
+fingerprint: sha256:a1e55914cd09
 ---
 
 # Decomposition Guidance System

@@ -5,7 +5,8 @@ from pathlib import Path
 from typing import Any
 
 from specflow.lib.artifacts import discover_artifacts
-from specflow.lib.impact import load_impact_events, resolve_suspect
+from specflow.lib.impact import load_impact_events, resolve_suspect, build_output_file_index, reverse_impact
+from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC
 
 
 def _format_age(iso_timestamp: str) -> str:
@@ -23,6 +24,22 @@ def _format_age(iso_timestamp: str) -> str:
         return f"{minutes}m ago"
     except (ValueError, TypeError):
         return iso_timestamp
+
+
+def _detect_source_file_changes(root: Path) -> list[str]:
+    """Detect source file changes from the last git commit (non-_specflow files)."""
+    from specflow.lib import git_utils
+
+    if not git_utils.is_git_repo(root):
+        return []
+
+    try:
+        sha = git_utils.get_current_sha(root)
+        changed = git_utils.get_changed_files(root, sha)
+    except Exception:
+        return []
+
+    return [f for f in changed if not f.startswith("_specflow/")]
 
 
 def run(root: Path, args: dict[str, Any]) -> int:
@@ -88,5 +105,25 @@ def run(root: Path, args: dict[str, Any]) -> int:
 
     if suspects:
         print("To resolve: specflow change-impact --resolve <ARTIFACT_ID>")
+
+    # Source File Impact section
+    source_changes = _detect_source_file_changes(root)
+    if source_changes:
+        index = build_output_file_index(root)
+        source_matches = reverse_impact(root, source_changes, index)
+
+        if source_matches:
+            print(f"\n\033[1mSource File Impact\033[0m ({len(source_matches)} match(es))\n")
+            by_artifact: dict[str, list] = {}
+            for m in source_matches:
+                by_artifact.setdefault(m.artifact_id, []).append(m)
+
+            for art_id, file_matches in sorted(by_artifact.items()):
+                print(f"  Artifact: \033[1;33m{art_id}\033[0m")
+                for m in file_matches:
+                    match_label = f"({m.match_type}: {m.pattern})"
+                    print(f"    ← {m.file_path} {match_label}")
+                print()
+            print("To resolve: specflow change-impact --resolve <ARTIFACT_ID>")
 
     return 0

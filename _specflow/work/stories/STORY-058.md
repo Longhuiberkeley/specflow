@@ -2,7 +2,7 @@
 id: STORY-058
 title: Create DDD selection decision tree reference document
 type: story
-status: draft
+status: implemented
 priority: low
 tags:
 - plan
@@ -15,6 +15,8 @@ links:
 - target: ARCH-020
   role: guided_by
 created: '2026-05-04'
+modified: '2026-05-05'
+fingerprint: sha256:cffa9d8763d0
 ---
 
 # Create DDD selection decision tree reference document

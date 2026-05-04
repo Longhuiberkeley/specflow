@@ -552,87 +552,87 @@ artifacts:
   STORY-055:
     id: STORY-055
     title: Build output file reverse index and flag suspect artifacts
-    status: draft
+    status: implemented
     tags:
     - impact
     - traceability
-    fingerprint: sha256:32c6bc676831
+    fingerprint: sha256:67fc9661feda
     children: []
   STORY-056:
     id: STORY-056
     title: Add SPIDR dimension coverage lint check
-    status: draft
+    status: implemented
     tags:
     - lint
     - spidr
     - plan
-    fingerprint: sha256:aba5caf4b0f2
+    fingerprint: sha256:aa12a11098e3
     children: []
   STORY-057:
     id: STORY-057
     title: Add story dependency cycle detection to artifact-lint
-    status: draft
+    status: implemented
     tags:
     - lint
     - waves
     - plan
-    fingerprint: sha256:8aad2cc719b9
+    fingerprint: sha256:d21a286a3111
     children: []
   STORY-058:
     id: STORY-058
     title: Create DDD selection decision tree reference document
-    status: draft
+    status: implemented
     tags:
     - plan
     - reference
     - docs
-    fingerprint: sha256:341581529b3e
+    fingerprint: sha256:cffa9d8763d0
     children: []
   STORY-059:
     id: STORY-059
     title: Bundle generic best-practice fallback for handbook generation
-    status: draft
+    status: implemented
     tags:
     - handbook
     - best-practices
-    fingerprint: sha256:b1954428c121
+    fingerprint: sha256:3e99768cf37d
     children: []
   STORY-060:
     id: STORY-060
     title: Persist discovery challenge results as decision artifacts
-    status: draft
+    status: implemented
     tags:
     - discover
     - decisions
-    fingerprint: sha256:b6065ab2f984
+    fingerprint: sha256:37c22118b06c
     children: []
   STORY-061:
     id: STORY-061
     title: Add inter-REQ dependency prompting to discover skill
-    status: draft
+    status: implemented
     tags:
     - discover
     - dependencies
-    fingerprint: sha256:c846615b0f47
+    fingerprint: sha256:6bae276e1383
     children: []
   STORY-062:
     id: STORY-062
     title: Pass domain classification from discover to plan skill
-    status: draft
+    status: implemented
     tags:
     - plan
     - discover
     - domain
-    fingerprint: sha256:67129591580b
+    fingerprint: sha256:c84a20c5c078
     children: []
   STORY-063:
     id: STORY-063
     title: Improve discover-to-plan handoff with explicit approval instructions
-    status: draft
+    status: implemented
     tags:
     - discover
     - plan
     - handoff
-    fingerprint: sha256:c50ac903f13e
+    fingerprint: sha256:17df6a029a13
     children: []
 next_id: 64

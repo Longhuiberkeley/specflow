@@ -2,7 +2,7 @@
 id: STORY-062
 title: Pass domain classification from discover to plan skill
 type: story
-status: draft
+status: implemented
 priority: low
 tags:
 - plan
@@ -17,6 +17,8 @@ links:
 - target: DDD-021
   role: specified_by
 created: '2026-05-04'
+modified: '2026-05-05'
+fingerprint: sha256:c84a20c5c078
 ---
 
 # Pass domain classification from discover to plan skill

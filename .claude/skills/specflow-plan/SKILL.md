@@ -32,12 +32,17 @@ Break down approved requirements into architecture, detailed design, and user st
 ### Step 2: Read & Understand Requirements
 
 1. Read every approved REQ artifact in full — body and acceptance criteria, not just titles.
-2. Identify:
+2. **Read domain context** from `.specflow/config.yaml`:
+   - Read `project.domain` (set during discover via `specflow domain set`).
+   - Read `project.domain_tags` list.
+   - If domain is set: prefix the summary with "This is a \<domain\> project with focus on \<tags\>. Domain-specific decomposition considerations apply."
+3. **Load decision artifacts** created during discovery. Read any DEC artifacts from `_specflow/work/decisions/` that were produced by the discover skill's challenge step. These contain assumptions, risks, and dropped requirements that inform architectural choices.
+4. Identify:
    - Core domain concepts and entities
    - Cross-cutting concerns (auth, logging, error handling)
    - External system integrations
    - Non-functional constraints (performance, scale, compliance)
- 3. Summarize your understanding back to the user: "Here's what I see as the system scope. Correct?"
+5. Summarize your understanding back to the user: "Here's what I see as the system scope. Correct?"
 
 ### Step 2.5: Generate Planning Best Practices
 
@@ -79,7 +84,7 @@ uv run specflow create \
 
 ### Step 4: Detailed Design (Where Needed)
 
-Not every ARCH component needs a DDD. Create DDD artifacts only for components that need algorithmic detail — complex logic, state machines, data transformations, or protocol handling.
+Not every ARCH component needs a DDD. **Read `references/ddd-selection.md`** for the 6-question decision checklist to determine which ARCHs need DDD artifacts. Create DDD artifacts only for components that answer YES to at least one question — complex logic, state machines, data transformations, protocol handling, concurrent access, or error recovery.
 
 For each DDD:
 1. Specify function signatures with input/output types

@@ -142,22 +142,22 @@ artifacts:
   DDD-019:
     id: DDD-019
     title: Source File to Artifact Reverse Mapping Algorithm
-    status: draft
+    status: implemented
     tags: []
-    fingerprint: sha256:71d5c2c7538d
+    fingerprint: sha256:99d1f2b314ca
     children: []
   DDD-020:
     id: DDD-020
     title: SPIDR Coverage, Wave Validation, and Generic BP Fallback
-    status: draft
+    status: implemented
     tags: []
-    fingerprint: sha256:89af8c512bac
+    fingerprint: sha256:50bd2dc7372c
     children: []
   DDD-021:
     id: DDD-021
     title: Discovery Persistence and Plan Domain Handoff
-    status: draft
+    status: implemented
     tags: []
-    fingerprint: sha256:f8f015af2f51
+    fingerprint: sha256:24d92979d49c
     children: []
 next_id: 22

@@ -239,23 +239,23 @@ artifacts:
   REQ-025:
     id: REQ-025
     title: Reverse Impact Analysis
-    status: draft
+    status: approved
     tags:
     - traceability
     - impact
     - git
-    fingerprint: sha256:ea2daf4f801c
+    fingerprint: sha256:6b5b2cefd15a
     children: []
   REQ-026:
     id: REQ-026
     title: Decomposition Completeness Guidance
-    status: draft
+    status: approved
     tags:
     - plan
     - decomposition
     - spidr
     - handbook
-    fingerprint: sha256:a3a653f27c13
+    fingerprint: sha256:83dad8ff9bbc
     children: []
   REQ-027:
     id: REQ-027

@@ -152,22 +152,22 @@ artifacts:
   ARCH-019:
     id: ARCH-019
     title: Reverse Impact Engine
-    status: draft
+    status: implemented
     tags: []
-    fingerprint: sha256:b4246d59f980
+    fingerprint: sha256:c8d3e4d5924b
     children: []
   ARCH-020:
     id: ARCH-020
     title: Decomposition Guidance System
-    status: draft
+    status: implemented
     tags: []
-    fingerprint: sha256:2dc7e5d21140
+    fingerprint: sha256:a1e55914cd09
     children: []
   ARCH-021:
     id: ARCH-021
     title: Skill Continuity Layer
-    status: draft
+    status: implemented
     tags: []
-    fingerprint: sha256:5782b31d02e6
+    fingerprint: sha256:c11a474075c1
     children: []
 next_id: 22

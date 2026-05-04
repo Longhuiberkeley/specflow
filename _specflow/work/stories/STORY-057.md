@@ -2,7 +2,7 @@
 id: STORY-057
 title: Add story dependency cycle detection to artifact-lint
 type: story
-status: draft
+status: implemented
 priority: low
 tags:
 - lint
@@ -17,6 +17,8 @@ links:
 - target: DDD-020
   role: specified_by
 created: '2026-05-04'
+modified: '2026-05-05'
+fingerprint: sha256:d21a286a3111
 ---
 
 # Add story dependency cycle detection to artifact-lint

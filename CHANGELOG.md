@@ -4,6 +4,32 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.3.0] - 2026-05-05
+
+### Highlights
+
+- **Reverse impact analysis** — source code changes now map back to spec artifacts via `output_files`, closing the bidirectional traceability loop from code to specification
+- **Decomposition completeness guidance** — SPIDR dimension coverage and dependency cycle detection in `artifact-lint`, plus generic best-practice fallback for offline handbook generation
+
+### Features
+
+- **Reverse impact engine** — `build_output_file_index()` and `reverse_impact()` in `impact.py` map changed source files to governing artifacts via literal and glob pattern matching
+- **Source File Impact section** — `specflow change-impact` now includes a "Source File Impact" section listing source file changes and their associated spec artifacts
+- **SPIDR coverage lint check** — `spidr-coverage` check reports when SPIDR dimensions have no stories, ensuring decomposition coverage across all five sources
+- **Wave cycle detection lint check** — `wave-cycles` check detects circular dependencies between stories and flags stories with excessive dependencies (>=4)
+- **DDD selection decision tree** — new reference document `references/ddd-selection.md` with a 6-question decision checklist for determining which ARCH components need DDD artifacts
+- **Generic BP fallback** — bundled generic best-practice YAML templates for `plan-arc`, `plan-ddd`, and `plan-story` phases; `specflow handbook generate` now falls back to these when no LLM API key is configured instead of failing
+- **Discovery challenge persistence** — discover skill Step 5 now creates DEC artifacts for dropped requirements, surfaced assumptions, and identified risks
+- **Inter-REQ dependency prompting** — discover skill Step 4 explicitly asks about inter-REQ dependencies and records them as `derives_from` links
+- **Domain context pass-through** — plan skill Step 2 reads domain classification and decision artifacts from discovery
+- **Improved discover-to-plan handoff** — discover skill exit message explicitly lists draft REQ IDs needing approval with the exact command to run
+
+### Documentation
+
+- New reference: `.claude/skills/specflow-plan/references/ddd-selection.md`
+- Updated: `.claude/skills/specflow-discover/SKILL.md` Steps 4, 5, 7
+- Updated: `.claude/skills/specflow-plan/SKILL.md` Steps 2, 4
+
 ## [1.2.0] - 2026-05-05
 
 ### Highlights
@@ -193,6 +219,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Unified skill templates across all platforms
 - Rewrote documentation for public-readiness
 
+[1.3.0]: https://github.com/Longhuiberkeley/specflow/releases/tag/v1.3.0
 [1.2.0]: https://github.com/Longhuiberkeley/specflow/releases/tag/v1.2.0
 [1.1.0]: https://github.com/Longhuiberkeley/specflow/releases/tag/v1.1.0
 [1.0.0]: https://github.com/Longhuiberkeley/specflow/releases/tag/v1.0.0
