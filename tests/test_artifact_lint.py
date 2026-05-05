@@ -413,3 +413,110 @@ class TestLintRunIntegration:
     def test_unknown_check_type_fails(self, project_root: Path):
         rc = lint_cmd.run(project_root, {"type": "nonexistent"})
         assert rc == 1
+
+
+# ── _check_compliance_evidence ───────────────────────────────────────────────
+
+class TestCheckComplianceEvidence:
+    def _install_clause(self, project_root: Path) -> None:
+        standards_dir = project_root / ".specflow" / "standards"
+        standard = {
+            "title": "Test Standard",
+            "clauses": [
+                {
+                    "id": "ISO-001",
+                    "title": "Encryption at rest for sensitive data",
+                    "category": "security",
+                    "severity": "high",
+                },
+            ],
+        }
+        (standards_dir / "test-standard.yaml").write_text(
+            yaml.dump(standard), encoding="utf-8"
+        )
+
+    def test_no_complies_with_links_passes(self, project_root: Path):
+        _write_artifact(
+            project_root, "REQ-001", "requirement", "Plain REQ",
+            body="Short body without compliance claim.",
+        )
+        arts = art_lib.discover_artifacts(project_root)
+        result = lint_cmd._check_compliance_evidence(arts, project_root)
+        assert result["blocking_count"] == 0
+        assert result["warning_count"] == 0
+
+    def test_thin_body_warns(self, project_root: Path):
+        self._install_clause(project_root)
+        _write_artifact(
+            project_root, "REQ-001", "requirement", "Compliant REQ",
+            body="Too short.",
+            links=[{"target": "ISO-001", "role": "complies_with"}],
+        )
+        arts = art_lib.discover_artifacts(project_root)
+        result = lint_cmd._check_compliance_evidence(arts, project_root)
+        assert result["blocking_count"] == 0
+        assert result["warning_count"] >= 1
+        assert "only" in result["detail"] and "words" in result["detail"]
+
+    def test_missing_clause_keywords_warns(self, project_root: Path):
+        self._install_clause(project_root)
+        body = " ".join(["lorem ipsum dolor sit amet consectetur adipiscing elit"] * 10)
+        _write_artifact(
+            project_root, "REQ-001", "requirement", "Long but irrelevant REQ",
+            body=body,
+            links=[{"target": "ISO-001", "role": "complies_with"}],
+        )
+        arts = art_lib.discover_artifacts(project_root)
+        result = lint_cmd._check_compliance_evidence(arts, project_root)
+        assert result["warning_count"] >= 1
+        assert "does not reference any keyword" in result["detail"]
+
+    def test_substantive_artifact_passes(self, project_root: Path):
+        self._install_clause(project_root)
+        body = (
+            "This requirement specifies encryption at rest for all sensitive "
+            "fields stored in the data tier of our primary database. We use "
+            "AES-256 with managed keys, rotate them quarterly, and audit "
+            "access via the security review board. Compliance is verified "
+            "through automated key-management checks and a quarterly "
+            "penetration testing cadence covering the entire data plane "
+            "as well as the encryption envelope around backups."
+        )
+        _write_artifact(
+            project_root, "REQ-001", "requirement", "Encryption REQ",
+            body=body,
+            links=[{"target": "ISO-001", "role": "complies_with"}],
+        )
+        arts = art_lib.discover_artifacts(project_root)
+        result = lint_cmd._check_compliance_evidence(arts, project_root)
+        assert result["blocking_count"] == 0
+        assert result["warning_count"] == 0
+
+    def test_strict_mode_blocks(self, project_root: Path):
+        self._install_clause(project_root)
+        cfg_path = project_root / ".specflow" / "config.yaml"
+        cfg = yaml.safe_load(cfg_path.read_text())
+        cfg["lint"] = {"compliance_evidence_strict": True}
+        cfg_path.write_text(yaml.dump(cfg), encoding="utf-8")
+
+        _write_artifact(
+            project_root, "REQ-001", "requirement", "Compliant REQ",
+            body="Too short.",
+            links=[{"target": "ISO-001", "role": "complies_with"}],
+        )
+        arts = art_lib.discover_artifacts(project_root)
+        result = lint_cmd._check_compliance_evidence(arts, project_root)
+        assert result["blocking_count"] >= 1
+        assert result["warning_count"] == 0
+
+    def test_unresolved_clause_falls_back_to_word_count_only(self, project_root: Path):
+        body = " ".join(["substantive content"] * 30)
+        _write_artifact(
+            project_root, "REQ-001", "requirement", "REQ with unknown clause",
+            body=body,
+            links=[{"target": "UNKNOWN-999", "role": "complies_with"}],
+        )
+        arts = art_lib.discover_artifacts(project_root)
+        result = lint_cmd._check_compliance_evidence(arts, project_root)
+        assert result["blocking_count"] == 0
+        assert result["warning_count"] == 0

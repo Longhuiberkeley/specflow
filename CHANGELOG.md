@@ -4,6 +4,28 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.4.0] - 2026-05-05
+
+### Highlights
+
+- **Compliance evidence quality** — `complies_with` links now require substantive backing content. New `compliance-evidence` lint check warns when artifacts claim conformance but have a thin body or fail to reference clause keywords. Strict mode (`lint.compliance_evidence_strict: true` in config) escalates warnings to blocking errors.
+- **REVIEW artifact type** — `artifact-review` now emits a `REVIEW-NNN` artifact summarizing each review pass over a target artifact. Spawned CHL findings link back to the REVIEW via `refers_to`, and the REVIEW carries the finding summary, depth, reviewers, and consensus fields. CHLs remain the per-finding record; REVIEW captures the pass.
+
+### Features
+
+- New `_check_compliance_evidence()` lint check in `artifact_lint.py` with `_COMPLIANCE_MIN_WORDS=50` threshold; pulls clause keywords from `standards_lib.get_clause_by_id()` and verifies at least one keyword appears in the artifact body
+- New `templates/schemas/review.yaml` registering REVIEW type with statuses (open/closed), reviewer/consensus/findings/depth fields, and `review_of`/`refers_to` link roles
+- `review` registered in `TYPE_TO_DIR`/`PREFIX_TO_TYPE` (`artifacts.py`); `specs/reviews/` added to scaffold `SPEC_DIRS` so `specflow init` provisions it for new projects
+- `artifact-review` exposes `emit_review_pass(root, target, findings, depth)` as a public helper; legacy CHL-only path replaced with REVIEW + linked CHLs whenever there are actionable findings
+- `_bootstrap_review_schema()` ensures repos that pre-date v1.4.0 get the `review.yaml` schema and `_specflow/specs/reviews/` directory copied in on first run of `artifact-review`
+- `specflow status` now displays a `Reviews:` line counting REVIEW + AUD + CHL artifacts when any are present
+
+### Internal
+
+- 6 new unit tests in `test_artifact_lint.py` (TestCheckComplianceEvidence) covering thin-body warning, missing-keyword warning, substantive-content pass, strict-mode blocking, unresolved-clause fallback, and no-link short-circuit
+- 4 new tests in `test_review_artifact.py` covering REVIEW emission, CHL backlinks, status counting, and type registration
+- `CHECK_NAMES` and CLI `--type` choices both updated to include `compliance-evidence`
+
 ## [1.3.1] - 2026-05-05
 
 ### Highlights

@@ -20,6 +20,7 @@ TYPE_LABELS = {
     "specs/unit-tests": "UT",
     "specs/integration-tests": "IT",
     "specs/qualification-tests": "QT",
+    "specs/reviews": "REVIEW",
     "work/stories": "STORY",
     "work/spikes": "SPIKE",
     "work/decisions": "DEC",
@@ -235,6 +236,16 @@ def run(root: Path, args: dict) -> int:
         c = by_type.get(t, 0)
         spec_parts.append(f"{c} {t}")
     print(f"\n  Specs:   {' | '.join(spec_parts)}")
+
+    # Reviews + Audits + Challenges (review-trail counts)
+    review_types = ["REVIEW", "AUD", "CHL"]
+    review_parts = []
+    for t in review_types:
+        c = by_type.get(t, 0)
+        if c > 0:
+            review_parts.append(f"{c} {t}")
+    if review_parts:
+        print(f"  Reviews: {' | '.join(review_parts)}")
 
     # Work
     work_types = ["STORY", "SPIKE", "DEC", "DEF"]

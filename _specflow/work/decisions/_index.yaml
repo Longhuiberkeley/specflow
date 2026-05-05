@@ -407,4 +407,14 @@ artifacts:
     - auto-generated
     fingerprint: sha256:a7f95cf4eba2
     children: []
-next_id: 43
+  DEC-043:
+    id: DEC-043
+    title: "Change Record: chore: release v1.3.1 \u2014 close verification gap, promote\
+      \ DECs"
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:cbdcb722d290
+    children: []
+next_id: 44

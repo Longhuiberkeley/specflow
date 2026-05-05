@@ -14,6 +14,7 @@ SPEC_DIRS = [
     "specs/unit-tests",
     "specs/integration-tests",
     "specs/qualification-tests",
+    "specs/reviews",
     "work/stories",
     "work/spikes",
     "work/decisions",

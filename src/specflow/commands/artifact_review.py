@@ -141,12 +141,28 @@ def _get_target_artifacts(root: Path, args: dict[str, Any]) -> list[art_lib.Arti
     return targets
 
 
-def _create_chl_artifacts(root: Path, target_id: str, findings: list[TechniqueFinding]) -> int:
-    count = 0
+def _create_chl_artifacts(
+    root: Path,
+    target_id: str,
+    findings: list[TechniqueFinding],
+    review_id: str | None = None,
+) -> list[dict[str, str]]:
+    """Create CHL artifacts for non-info findings.
+
+    Returns a list of dicts: [{"id", "severity", "technique", "title"}, ...].
+    When ``review_id`` is provided, each CHL also gets a ``refers_to`` link
+    back to the REVIEW artifact so reviewers can navigate from finding to
+    review pass.
+    """
+    created: list[dict[str, str]] = []
     for f in findings:
         if f.severity == "info":
             continue  # We only create CHL for warn/error
-            
+
+        links = [{"target": target_id, "role": "challenges"}]
+        if review_id:
+            links.append({"target": review_id, "role": "refers_to"})
+
         try:
             art = art_lib.create_artifact(
                 root,
@@ -154,7 +170,7 @@ def _create_chl_artifacts(root: Path, target_id: str, findings: list[TechniqueFi
                 title=f.title[:100],
                 status="open",
                 rationale=f.rationale,
-                links=[{"target": target_id, "role": "challenges"}],
+                links=links,
                 body=""
             )
             if not art.get("ok"):
@@ -167,11 +183,96 @@ def _create_chl_artifacts(root: Path, target_id: str, findings: list[TechniqueFi
                 severity=f.severity,
                 technique=f.technique
             )
-            count += 1
+            created.append({
+                "id": art["id"],
+                "severity": f.severity,
+                "technique": f.technique,
+                "title": f.title[:100],
+            })
             print(f"  Created {art['id']} [{f.severity}] from {f.technique}")
         except Exception as e:
             print(f"  {YELLOW_DIM}⚠ Failed to create CHL: {e}{NC}")
-    return count
+    return created
+
+
+def _bootstrap_review_schema(root: Path) -> None:
+    """Ensure review.yaml is present in .specflow/schema/ for repos that
+    pre-date the REVIEW artifact type."""
+    schema_dir = root / ".specflow" / "schema"
+    if not schema_dir.exists():
+        return
+    dst = schema_dir / "review.yaml"
+    if dst.exists():
+        return
+    pkg_template = Path(__file__).parent.parent / "templates" / "schemas" / "review.yaml"
+    if pkg_template.exists():
+        shutil.copy(str(pkg_template), str(dst))
+        review_dir = root / "_specflow" / "specs" / "reviews"
+        review_dir.mkdir(parents=True, exist_ok=True)
+        index = review_dir / "_index.yaml"
+        if not index.exists():
+            index.write_text("artifacts: {}\nnext_id: 1\n", encoding="utf-8")
+
+
+def emit_review_pass(
+    root: Path,
+    target: art_lib.Artifact,
+    findings: list[TechniqueFinding],
+    depth: str,
+) -> dict[str, object]:
+    """Emit a single REVIEW artifact summarizing this review pass for one target.
+
+    Creates the REVIEW first (so spawned CHLs can link back via refers_to),
+    then creates CHLs, then updates the REVIEW with the finding summary.
+    Returns {"ok": bool, "review_id": str, "chl_ids": [...], "error": str?}.
+
+    REVIEW emission is skipped when there are no actionable findings — there
+    is nothing to summarize that the existing artifact-review CLI output
+    didn't already say.
+    """
+    actionable = [f for f in findings if f.severity != "info"]
+    if not actionable:
+        return {"ok": False, "review_id": "", "chl_ids": [], "error": "no actionable findings"}
+
+    summary = f"Review of {target.id}"
+    rationale = (
+        f"{depth.capitalize()} review pass over {target.id} "
+        f"({target.type}) yielded {len(actionable)} finding(s)."
+    )
+
+    review = art_lib.create_artifact(
+        root,
+        artifact_type="review",
+        title=summary[:100],
+        status="open",
+        rationale=rationale,
+        links=[{"target": target.id, "role": "review_of"}],
+        body="",
+        artifact_ref=target.id,
+        depth=depth,
+        reviewers=[],
+        consensus="pending",
+        findings=[],
+    )
+    if not review.get("ok"):
+        return {"ok": False, "review_id": "", "chl_ids": [],
+                "error": review.get("error", "review creation failed")}
+
+    review_id = review["id"]
+    chls = _create_chl_artifacts(root, target.id, actionable, review_id=review_id)
+
+    finding_summary = [
+        {"chl_ref": c["id"], "severity": c["severity"], "summary": c["title"]}
+        for c in chls
+    ]
+    art_lib.update_artifact(root, review_id, findings=finding_summary)
+    print(f"  Created {review_id} (review_of {target.id}, {len(chls)} CHL(s))")
+
+    return {
+        "ok": True,
+        "review_id": review_id,
+        "chl_ids": [c["id"] for c in chls],
+    }
 
 
 def _create_learned_patterns(
@@ -224,6 +325,7 @@ def _prompt_for_techniques(target_arts: list[art_lib.Artifact]) -> list[str]:
 
 def run(root: Path, args: dict[str, Any]) -> int:
     _bootstrap_challenge_schema(root)
+    _bootstrap_review_schema(root)
     depth = args.get("depth") or "quick"
 
     # 1. Silent detect pre-step
@@ -289,14 +391,18 @@ def run(root: Path, args: dict[str, Any]) -> int:
     # 6. Hygiene findings (these do not have target_id naturally, but we can assign to root or skip CHL)
     findings.extend(hygiene_findings)
     
-    # 7. Create CHL artifacts
+    # 7. Create REVIEW + CHL artifacts (one REVIEW per target, CHLs linked back)
     created = 0
     if any(f.severity != "info" for f in findings):
-        print("\nCreating CHL artifacts for findings...")
+        print("\nCreating REVIEW + CHL artifacts for findings...")
         for art in targets:
             art_findings = [f for f in findings if f.target_id == art.id]
-            created += _create_chl_artifacts(root, art.id, art_findings)
-            
+            if not any(f.severity != "info" for f in art_findings):
+                continue
+            outcome = emit_review_pass(root, art, art_findings, depth)
+            if outcome.get("ok"):
+                created += len(outcome.get("chl_ids", []))
+
         # For findings without a target_id (hygiene), we just skip CHL creation for now
         # since their severity is 'info'.
 

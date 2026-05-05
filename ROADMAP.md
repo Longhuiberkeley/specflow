@@ -95,6 +95,15 @@ Focus: **domain intelligence and learning feedback.**
 
 Focus: **init upgrade safety, spec body quality enforcement, and output file traceability.**
 
+## v1.4.0
+
+Focus: **compliance evidence quality and structured review artifacts.**
+
+- **Compliance evidence quality lint** — new `compliance-evidence` check in `artifact-lint`; warns when an artifact's `complies_with` link is not backed by a substantive body (≥50 words) or fails to reference any keyword from the clause. Strict mode escalates to blocking errors via `lint.compliance_evidence_strict` config.
+- **REVIEW artifact type** — new `REVIEW-NNN` schema with `reviewers`, `findings`, `consensus`, `depth`, `artifact_ref` fields; emitted by `/specflow-artifact-review` to summarize each review pass. Spawned CHLs link back via `refers_to`.
+- **Status now shows reviews** — `specflow status` adds a `Reviews:` line counting REVIEW + AUD + CHL artifacts.
+- **Auto-bootstrap on existing repos** — `artifact-review` copies `review.yaml` and creates `_specflow/specs/reviews/` on first invocation in repos that pre-date v1.4.0.
+
 ## v1.3.1
 
 Focus: **verification gap closure and decision housekeeping.**

@@ -14,7 +14,7 @@ from specflow.lib import standards as standards_lib
 from specflow.lib import lint as lint_lib
 from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC
 
-CHECK_NAMES = ["schema", "links", "status", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles"]
+CHECK_NAMES = ["schema", "links", "status", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence"]
 
 
 def _run_check(
@@ -58,6 +58,8 @@ def _run_check(
         return _check_spidr_coverage(artifacts)
     elif check_name == "wave-cycles":
         return _check_wave_cycles(artifacts, root)
+    elif check_name == "compliance-evidence":
+        return _check_compliance_evidence(artifacts, root)
 
     return {"status_icon": "?", "detail": f"Unknown check: {check_name}",
             "blocking_count": 0, "warning_count": 0}
@@ -903,6 +905,125 @@ def _check_wave_cycles(
         "status_icon": icon,
         "detail": detail_msg,
         "blocking_count": 0,
+        "warning_count": warnings,
+    }
+
+
+_COMPLIANCE_MIN_WORDS = 50
+_KEYWORD_STOPWORDS = {
+    "the", "a", "an", "and", "or", "but", "of", "in", "on", "at", "to", "for",
+    "with", "by", "from", "as", "is", "are", "was", "were", "be", "been",
+    "being", "have", "has", "had", "do", "does", "did", "will", "would",
+    "shall", "should", "may", "might", "can", "could", "must", "this", "that",
+    "these", "those", "it", "its", "such", "any", "all", "each", "every",
+    "no", "not", "than", "then", "so", "if", "when", "where", "which", "who",
+    "whom", "whose", "what", "how", "why",
+}
+
+
+def _extract_clause_keywords(clause: dict) -> set[str]:
+    """Pull substantive keyword tokens from a clause's title and category.
+
+    Lowercased, alphanumeric-only, ≥4 chars, stopwords excluded. The returned
+    set is used to verify a complies_with artifact's body actually addresses
+    the clause rather than just linking to it.
+    """
+    text = " ".join([
+        str(clause.get("title", "")),
+        str(clause.get("category", "")),
+    ])
+    tokens: set[str] = set()
+    for raw in re.findall(r"[A-Za-z][A-Za-z0-9]*", text):
+        token = raw.lower()
+        if len(token) < 4 or token in _KEYWORD_STOPWORDS:
+            continue
+        tokens.add(token)
+    return tokens
+
+
+def _check_compliance_evidence(
+    artifacts: list[art_lib.Artifact],
+    root: Path,
+) -> dict[str, str | int]:
+    """Validate that complies_with links are backed by substantive content.
+
+    Today the `links` check accepts any complies_with target that resolves to
+    an installed clause ID, so an empty REQ can claim ISO conformance. This
+    check raises warnings when:
+      - artifact body is below _COMPLIANCE_MIN_WORDS, OR
+      - body shares no substantive keyword with the clause title/category.
+
+    Strict mode (config: lint.compliance_evidence_strict=true) escalates these
+    to blocking errors; default is warning-only so existing repos don't break
+    on upgrade. Clauses that resolve via standards but have no extractable
+    keywords are word-count-only.
+    """
+    from specflow.lib import standards as standards_lib
+    from specflow.lib import config as config_lib
+
+    cfg = config_lib.read_config(root) or {}
+    strict = bool(cfg.get("lint", {}).get("compliance_evidence_strict", False))
+
+    blocking = 0
+    warnings = 0
+    details: list[str] = []
+
+    clause_cache: dict[str, dict | None] = {}
+
+    def _bump(msg: str) -> None:
+        nonlocal blocking, warnings
+        if strict:
+            blocking += 1
+            details.append(f"  ✗ {msg}")
+        else:
+            warnings += 1
+            details.append(f"  ⚠ {msg}")
+
+    for art in artifacts:
+        complies_links = [link for link in art.links if link.role == "complies_with" and link.target]
+        if not complies_links:
+            continue
+
+        body = art.body.strip()
+        word_count = len(body.split())
+        body_lower = body.lower()
+
+        if word_count < _COMPLIANCE_MIN_WORDS:
+            _bump(
+                f"[{art.id}] complies_with present but body has only {word_count} "
+                f"words (≥{_COMPLIANCE_MIN_WORDS} recommended for substantive evidence)"
+            )
+
+        for link in complies_links:
+            if link.target not in clause_cache:
+                clause_cache[link.target] = standards_lib.get_clause_by_id(root, link.target)
+            clause = clause_cache[link.target]
+            if not clause:
+                continue
+            keywords = _extract_clause_keywords(clause)
+            if not keywords:
+                continue
+            if not any(kw in body_lower for kw in keywords):
+                kw_sample = ", ".join(sorted(keywords)[:5])
+                _bump(
+                    f"[{art.id}] body does not reference any keyword from "
+                    f"clause '{link.target}' (expected one of: {kw_sample})"
+                )
+
+    if blocking == 0 and warnings == 0:
+        icon = GREEN + "✓" + NC
+        detail_msg = "All complies_with links are backed by substantive content"
+    elif blocking > 0:
+        icon = RED + "✗" + NC
+        detail_msg = "\n".join(details)
+    else:
+        icon = YELLOW + "⚠" + NC
+        detail_msg = "\n".join(details)
+
+    return {
+        "status_icon": icon,
+        "detail": detail_msg,
+        "blocking_count": blocking,
         "warning_count": warnings,
     }
 
