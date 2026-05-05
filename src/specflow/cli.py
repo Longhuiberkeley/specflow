@@ -373,6 +373,7 @@ def _add_change_impact_parser(subparsers):
     p = subparsers.add_parser("change-impact", help="Report and resolve suspect flags")
     p.add_argument("artifact_id", nargs="?", help="Filter by source artifact ID")
     p.add_argument("--resolve", help="Resolve suspect flag on artifact ID")
+    p.add_argument("--flag", action="store_true", help="Flag matched artifacts as suspect (source-file impact)")
 
 
 def _add_fingerprint_refresh_parser(subparsers):

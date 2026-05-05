@@ -25,10 +25,10 @@ import yaml
 from specflow.commands import artifact_lint
 from specflow.lib import artifacts as art_lib
 from specflow.lib import baselines as baseline_lib
+from specflow.lib import challenges as chl_lib
 from specflow.lib import standards as standards_lib
-from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC
-
-BOLD = "\033[1m"
+from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC, BOLD
+from specflow.lib.techniques import TechniqueFinding
 
 _SEP = "─" * 58
 
@@ -406,43 +406,6 @@ def _collect_all_findings(
     return all_f
 
 
-def _create_chl_artifacts(root: Path, findings: list[dict[str, str]], target_id: str) -> int:
-    existing_challenges = art_lib.discover_artifacts(root, artifact_type="challenge")
-    seen_titles: set[str] = set()
-    for chl in existing_challenges:
-        seen_titles.add(chl.title)
-
-    count = 0
-    for f in findings:
-        if f["severity"] == "info":
-            continue
-        title = f["message"][:100]
-        if title in seen_titles:
-            continue
-        seen_titles.add(title)
-        try:
-            result = art_lib.create_artifact(
-                root,
-                artifact_type="challenge",
-                title=title,
-                status="open",
-                rationale=f["message"],
-                links=[{"target": target_id, "role": "refers_to"}],
-                body="",
-            )
-            if not result.get("ok"):
-                continue
-            art_lib.update_artifact(
-                root,
-                result["id"],
-                severity=f["severity"],
-                technique="project-audit",
-            )
-            count += 1
-        except Exception:
-            pass
-    return count
-
 
 def run(root: Path, args: dict[str, Any]) -> int:
     root = root.resolve()
@@ -607,7 +570,21 @@ def run(root: Path, args: dict[str, Any]) -> int:
     if errors + warns > 0:
         warn_error_findings = [f for f in all_findings if f["severity"] in ("error", "warn")]
         target_id = aud_result.get("id", "project") if aud_result.get("ok") else "project"
-        chl_count = _create_chl_artifacts(root, warn_error_findings, target_id)
+        findings_typed = [
+            TechniqueFinding(
+                title=f["message"][:100],
+                rationale=f["message"],
+                severity=f["severity"],
+                technique="project-audit",
+            )
+            for f in warn_error_findings
+        ]
+        chl_results = chl_lib.create_chl_artifacts(
+            root, findings_typed, target_id,
+            link_role="refers_to", dedup=True,
+            technique_override="project-audit",
+        )
+        chl_count = len(chl_results)
 
     print()
     print(_SEP)

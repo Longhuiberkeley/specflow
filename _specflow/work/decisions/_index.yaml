@@ -417,4 +417,14 @@ artifacts:
     - auto-generated
     fingerprint: sha256:cbdcb722d290
     children: []
-next_id: 44
+  DEC-044:
+    id: DEC-044
+    title: "Change Record: feat: v1.4.0 \u2014 compliance evidence quality + REVIEW\
+      \ artifact type"
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:7264722098e3
+    children: []
+next_id: 45

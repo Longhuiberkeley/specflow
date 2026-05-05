@@ -10,13 +10,12 @@ from typing import Any
 from specflow.commands import artifact_lint, checklist_run
 from specflow.lib import artifacts as art_lib
 from specflow.lib import checklists
+from specflow.lib import challenges as chl_lib
 from specflow.lib import ci
 from specflow.lib import learning as learn_lib
 from specflow.lib.analysis import find_dead_code, find_similar_functions
-from specflow.lib.display import YELLOW_DIM, CYAN, NC
+from specflow.lib.display import YELLOW_DIM, CYAN, NC, BOLD
 from specflow.lib.techniques import run_subagents, TechniqueFinding
-
-BOLD = "\033[1m"
 
 
 def _bootstrap_challenge_schema(root: Path) -> None:
@@ -150,49 +149,16 @@ def _create_chl_artifacts(
     """Create CHL artifacts for non-info findings.
 
     Returns a list of dicts: [{"id", "severity", "technique", "title"}, ...].
-    When ``review_id`` is provided, each CHL also gets a ``refers_to`` link
-    back to the REVIEW artifact so reviewers can navigate from finding to
-    review pass.
+    Delegates to :func:`specflow.lib.challenges.create_chl_artifacts`.
     """
-    created: list[dict[str, str]] = []
-    for f in findings:
-        if f.severity == "info":
-            continue  # We only create CHL for warn/error
-
-        links = [{"target": target_id, "role": "challenges"}]
-        if review_id:
-            links.append({"target": review_id, "role": "refers_to"})
-
-        try:
-            art = art_lib.create_artifact(
-                root,
-                artifact_type="challenge",
-                title=f.title[:100],
-                status="open",
-                rationale=f.rationale,
-                links=links,
-                body=""
-            )
-            if not art.get("ok"):
-                print(f"  {YELLOW_DIM}⚠ Failed to create CHL: {art.get('error', 'Unknown error')}{NC}")
-                continue
-
-            art_lib.update_artifact(
-                root,
-                art["id"],
-                severity=f.severity,
-                technique=f.technique
-            )
-            created.append({
-                "id": art["id"],
-                "severity": f.severity,
-                "technique": f.technique,
-                "title": f.title[:100],
-            })
-            print(f"  Created {art['id']} [{f.severity}] from {f.technique}")
-        except Exception as e:
-            print(f"  {YELLOW_DIM}⚠ Failed to create CHL: {e}{NC}")
-    return created
+    return chl_lib.create_chl_artifacts(
+        root,
+        findings,
+        target_id,
+        link_role="challenges",
+        review_id=review_id,
+        dedup=False,
+    )
 
 
 def _bootstrap_review_schema(root: Path) -> None:

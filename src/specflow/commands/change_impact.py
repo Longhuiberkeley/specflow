@@ -5,8 +5,14 @@ from pathlib import Path
 from typing import Any
 
 from specflow.lib.artifacts import discover_artifacts
-from specflow.lib.impact import load_impact_events, resolve_suspect, build_output_file_index, reverse_impact
-from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC
+from specflow.lib.impact import (
+    load_impact_events,
+    resolve_suspect,
+    build_output_file_index,
+    query_reverse_impact,
+    flag_suspects_from_matches,
+)
+from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC, BOLD
 
 
 def _format_age(iso_timestamp: str) -> str:
@@ -46,22 +52,21 @@ def run(root: Path, args: dict[str, Any]) -> int:
     """Run the impact command."""
     resolve_id = args.get("resolve")
     filter_id = args.get("artifact_id")
+    do_flag = args.get("flag", False)
 
     if resolve_id:
         result = resolve_suspect(root, resolve_id, resolved_by="user")
         if result["ok"]:
-            print(f"\033[0;32m✓ Resolved suspect flag on {resolve_id}\033[0m")
+            print(f"{GREEN}✓ Resolved suspect flag on {resolve_id}{NC}")
             return 0
         else:
-            print(f"\033[0;31m✗ {result.get('error', result.get('message', 'Unknown error'))}\033[0m")
+            print(f"{RED}✗ {result.get('error', result.get('message', 'Unknown error'))}{NC}")
             return 1
 
-    # Load all events and artifacts
     events = load_impact_events(root)
     all_artifacts = discover_artifacts(root)
     suspects = [a for a in all_artifacts if a.suspect]
 
-    # Filter by source artifact if specified
     if filter_id:
         relevant_events = [e for e in events if e.changed == filter_id and not e.resolved]
         relevant_suspect_ids = set()
@@ -77,7 +82,6 @@ def run(root: Path, args: dict[str, Any]) -> int:
         print("No unresolved suspect flags")
         return 0
 
-    # Group suspects by source change
     source_groups: dict[str, list[dict[str, str]]] = {}
     for event in unresolved_events:
         source = event.changed
@@ -88,10 +92,10 @@ def run(root: Path, args: dict[str, Any]) -> int:
                 "timestamp": event.timestamp,
             })
 
-    print(f"\n\033[1mUnresolved Suspect Flags\033[0m ({len(suspects)} artifacts)\n")
+    print(f"\n{BOLD}Unresolved Suspect Flags{NC} ({len(suspects)} artifacts)\n")
 
     for source, flagged in sorted(source_groups.items()):
-        print(f"  Source: \033[1;33m{source}\033[0m (changed)")
+        print(f"  Source: {BOLD}{YELLOW}{source}{NC} (changed)")
         for f in flagged:
             art_id = f["artifact"]
             role = f["link_role"]
@@ -106,24 +110,32 @@ def run(root: Path, args: dict[str, Any]) -> int:
     if suspects:
         print("To resolve: specflow change-impact --resolve <ARTIFACT_ID>")
 
-    # Source File Impact section
     source_changes = _detect_source_file_changes(root)
     if source_changes:
         index = build_output_file_index(root)
-        source_matches = reverse_impact(root, source_changes, index)
+        source_matches = query_reverse_impact(root, source_changes, index)
 
         if source_matches:
-            print(f"\n\033[1mSource File Impact\033[0m ({len(source_matches)} match(es))\n")
+            if do_flag:
+                flagged_ids = flag_suspects_from_matches(root, source_matches)
+                print(f"\n{BOLD}Source File Impact{NC} ({len(source_matches)} match(es), {len(flagged_ids)} artifact(s) flagged)\n")
+            else:
+                print(f"\n{BOLD}Source File Impact{NC} ({len(source_matches)} match(es))\n")
+
             by_artifact: dict[str, list] = {}
             for m in source_matches:
                 by_artifact.setdefault(m.artifact_id, []).append(m)
 
             for art_id, file_matches in sorted(by_artifact.items()):
-                print(f"  Artifact: \033[1;33m{art_id}\033[0m")
+                print(f"  Artifact: {BOLD}{YELLOW}{art_id}{NC}")
                 for m in file_matches:
                     match_label = f"({m.match_type}: {m.pattern})"
                     print(f"    ← {m.file_path} {match_label}")
                 print()
-            print("To resolve: specflow change-impact --resolve <ARTIFACT_ID>")
+
+            if do_flag:
+                print("To resolve: specflow change-impact --resolve <ARTIFACT_ID>")
+            else:
+                print("To flag these artifacts: specflow change-impact --flag")
 
     return 0

@@ -95,6 +95,17 @@ Focus: **domain intelligence and learning feedback.**
 
 Focus: **init upgrade safety, spec body quality enforcement, and output file traceability.**
 
+## v1.4.1
+
+Focus: **quality fixes from v1.3.0/v1.4.0 review — read-only impact reporting, recursive propagation, glob correctness, and code convergence.**
+
+- **Read-only `change-impact`** — source-file impact section no longer silently flags artifacts; new `--flag` opt-in
+- **Recursive downstream propagation** — suspect flags propagate transitively (ARCH → DDD → UT), not just one level
+- **`**` recursive glob support** — `output_files` with `src/**/*.py` now correctly matches nested files
+- **Converged CHL creation** — shared `specflow/lib/challenges.py` replaces duplicated logic in audit and review
+- **Per-suspect resolution** — resolving one artifact no longer resolves the entire impact-log event
+- **Spec and ROADMAP cleanup** — DDD-005, DDD-019 updated; shipped items removed from Future section
+
 ## v1.4.0
 
 Focus: **compliance evidence quality and structured review artifacts.**
@@ -135,10 +146,8 @@ These may ship someday, but are not committed:
 - **FMEA / risk analysis** — hazard, safety-goal, and risk-control artifact types via industry packs
 - **REST API** — programmatic access for custom toolchain integration
 - **Static HTML export** — `specflow export --html` for zero-dependency dashboard generation
-- **Review workflow artifacts** — structured `REVIEW-*` type with reviewer voting and threaded findings
 - **Thinking technique records** — `thinking_techniques` field on artifacts tracking which lenses were applied
 - **Multi-pack aggregated compliance** — unified compliance view across all installed standards
-- **Compliance evidence quality** — validate that a `complies_with` link is backed by substantive content, not just link existence
 
 ## Out of Scope
 

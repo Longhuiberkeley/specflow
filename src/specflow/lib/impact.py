@@ -112,6 +112,21 @@ def _find_downstream_artifacts(root: Path, changed_id: str) -> list[Artifact]:
     return downstream
 
 
+def _find_all_downstream_recursive(root: Path, changed_id: str) -> list[Artifact]:
+    """Find all artifacts transitively downstream of *changed_id* via BFS."""
+    visited: set[str] = {changed_id}
+    queue = [changed_id]
+    result: list[Artifact] = []
+    while queue:
+        current = queue.pop(0)
+        for art in _find_downstream_artifacts(root, current):
+            if art.id not in visited:
+                visited.add(art.id)
+                result.append(art)
+                queue.append(art.id)
+    return result
+
+
 def _update_frontmatter_field(file_path: Path, field_name: str, value: Any) -> bool:
     """Update a single frontmatter field in an artifact file."""
     try:
@@ -331,14 +346,24 @@ def resolve_suspect(
                 if not isinstance(data, dict) or data.get("resolved", False):
                     continue
                 suspects = data.get("flagged_suspects", [])
-                if any(s.get("artifact") == artifact_id for s in suspects):
+                if not any(s.get("artifact") == artifact_id for s in suspects):
+                    continue
+                resolved_suspects = data.get("resolved_suspects", [])
+                if artifact_id not in resolved_suspects:
+                    resolved_suspects.append(artifact_id)
+                data["resolved_suspects"] = resolved_suspects
+                all_resolved = all(
+                    s.get("artifact") in resolved_suspects
+                    for s in suspects
+                )
+                if all_resolved:
                     data["resolved"] = True
                     data["resolved_by"] = resolved_by
                     data["resolved_at"] = now
-                    event_file.write_text(
-                        yaml.dump(data, default_flow_style=False, sort_keys=False),
-                        encoding="utf-8",
-                    )
+                event_file.write_text(
+                    yaml.dump(data, default_flow_style=False, sort_keys=False),
+                    encoding="utf-8",
+                )
             except Exception:
                 continue
 
@@ -520,14 +545,44 @@ def build_output_file_index(root: Path) -> dict[str, list[tuple[str, str, str]]]
     return index
 
 
-def reverse_impact(
+def _glob_match(file_path: str, pattern: str) -> bool:
+    """Match *file_path* against *pattern*, supporting ``**`` recursive globs.
+
+    Patterns containing ``**`` are handled by converting each segment to a
+    regex where ``**`` matches zero or more path segments.  Patterns without
+    ``**`` are delegated to :func:`fnmatch.fnmatch`.
+    """
+    if "**" not in pattern:
+        return fnmatch.fnmatch(file_path, pattern)
+
+    import re
+    parts = pattern.split("/")
+    regex_parts: list[str] = []
+    for i, part in enumerate(parts):
+        if part == "**":
+            if i == len(parts) - 1:
+                regex_parts.append("(?:.+/)?[^/]*")
+            else:
+                regex_parts.append("(?:.+/)?")
+        else:
+            segment = re.escape(part)
+            segment = segment.replace(r"\*", "[^/]*").replace(r"\?", "[^/]")
+            regex_parts.append(segment)
+    joined = "".join(regex_parts)
+    if not joined.startswith("(?:.+/)?"):
+        joined = joined.replace("(?:.+/)?", "/(?:.+/)?", 1)
+    regex = "^" + joined + "$"
+    return bool(re.match(regex, file_path))
+
+
+def query_reverse_impact(
     root: Path,
     changed_files: list[str],
     index: dict[str, list[tuple[str, str, str]]] | None = None,
 ) -> list[FileArtifactMatch]:
     """Map changed source files to governing artifacts via output_files.
 
-    For each match, flags the artifact as suspect and propagates downstream.
+    Pure query — does **not** modify any artifact files.
     """
     if not changed_files:
         return []
@@ -565,7 +620,7 @@ def reverse_impact(
                     ))
 
         for art_id, match_type, pattern in glob_entries:
-            if fnmatch.fnmatch(normalized, pattern) or fnmatch.fnmatch(os.path.basename(normalized), os.path.basename(pattern)):
+            if _glob_match(normalized, pattern):
                 pair = (normalized, art_id)
                 if pair not in seen:
                     seen.add(pair)
@@ -576,13 +631,40 @@ def reverse_impact(
                         pattern=pattern,
                     ))
 
+    return matches
+
+
+def flag_suspects_from_matches(
+    root: Path,
+    matches: list[FileArtifactMatch],
+) -> list[str]:
+    """Flag matched artifacts and all their transitive downstream as suspect.
+
+    Returns a list of all artifact IDs that were flagged (deduplicated).
+    """
+    flagged: list[str] = []
     affected_ids = {m.artifact_id for m in matches}
     for art_id in affected_ids:
         art_path = resolve_link_target(root, art_id)
         if art_path is not None:
             _update_frontmatter_field(art_path, "suspect", True)
-            downstream = _find_downstream_artifacts(root, art_id)
-            for ds_art in downstream:
+            flagged.append(art_id)
+            for ds_art in _find_all_downstream_recursive(root, art_id):
                 _update_frontmatter_field(ds_art.path, "suspect", True)
+                flagged.append(ds_art.id)
+    return list(dict.fromkeys(flagged))
 
+
+def reverse_impact(
+    root: Path,
+    changed_files: list[str],
+    index: dict[str, list[tuple[str, str, str]]] | None = None,
+) -> list[FileArtifactMatch]:
+    """Map changed source files to governing artifacts and flag them as suspect.
+
+    Convenience wrapper that queries matches then flags.  For read-only usage,
+    call :func:`query_reverse_impact` instead.
+    """
+    matches = query_reverse_impact(root, changed_files, index)
+    flag_suspects_from_matches(root, matches)
     return matches

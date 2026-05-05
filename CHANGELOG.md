@@ -4,6 +4,35 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.4.1] - 2026-05-06
+
+### Highlights
+
+- **Read-only `change-impact` by default** — `specflow change-impact` no longer silently flags artifacts as suspect when displaying source-file matches; use `--flag` to opt into suspect flagging.
+- **Recursive downstream propagation** — suspect flagging now propagates transitively through the full dependency chain (ARCH → DDD → UT), not just one level.
+- **`**` recursive glob support** — `output_files` patterns with `**` (e.g., `src/**/*.py`) now correctly match files in nested subdirectories.
+- **Converged CHL creation** — duplicated `_create_chl_artifacts` logic in `project_audit.py` and `artifact_review.py` replaced with a single shared module (`specflow/lib/challenges.py`).
+- **Per-suspect resolution** — `resolve_suspect` now tracks resolution per individual suspect within an event, rather than resolving the entire event when one artifact is resolved.
+
+### Fixes
+
+- `reverse_impact` split into `query_reverse_impact` (pure query, no file mutation) and `flag_suspects_from_matches` (mutation only); `reverse_impact` kept as backward-compatible wrapper
+- `_find_all_downstream_recursive` added for transitive suspect propagation via BFS
+- `_glob_match` replaces raw `fnmatch` calls, supporting `**` recursive glob patterns with proper regex conversion including trailing/standalone `**`
+- `resolve_suspect` tracks `resolved_suspects` list per impact-log event; event only resolves when all suspects are individually resolved
+- Stale pseudocode in DDD-005.md ("Challenge Deduplication") updated to reflect converged implementation
+- DDD-019.md updated to document `query_reverse_impact`, `flag_suspects_from_matches`, `_glob_match`, and `--flag` CLI option
+- ROADMAP.md "v1.x (Future)" section cleaned — removed "Review workflow artifacts" and "Compliance evidence quality" (both shipped in v1.4.0)
+- Raw ANSI escape sequences in `change_impact.py`, `project_audit.py`, and `artifact_review.py` replaced with `specflow.lib.display` constants
+
+### Internal
+
+- New `specflow/lib/challenges.py` — shared `create_chl_artifacts()` accepting `TechniqueFinding` objects with configurable `link_role`, `dedup`, `review_id`, and `technique_override`
+- `project_audit.py` converts its `list[dict]` findings to `TechniqueFinding` and calls shared module with `link_role="refers_to"`, `dedup=True`
+- `artifact_review.py` delegates to shared module with `link_role="challenges"`, `dedup=False`
+- `cli.py` adds `--flag` argument to `change-impact` subcommand
+- 30 new tests: 9 for glob matching (including trailing/standalone `**`), 3 for query/flag split, 2 for recursive propagation, 6 for shared challenges module, 7 for `get_clause_by_id`, 1 for zero-keyword clause edge case, 2 for trailing `**` fix
+
 ## [1.4.0] - 2026-05-05
 
 ### Highlights
@@ -254,6 +283,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Unified skill templates across all platforms
 - Rewrote documentation for public-readiness
 
+[1.4.1]: https://github.com/Longhuiberkeley/specflow/releases/tag/v1.4.1
+[1.4.0]: https://github.com/Longhuiberkeley/specflow/releases/tag/v1.4.0
 [1.3.0]: https://github.com/Longhuiberkeley/specflow/releases/tag/v1.3.0
 [1.2.0]: https://github.com/Longhuiberkeley/specflow/releases/tag/v1.2.0
 [1.1.0]: https://github.com/Longhuiberkeley/specflow/releases/tag/v1.1.0

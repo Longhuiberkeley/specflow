@@ -520,3 +520,25 @@ class TestCheckComplianceEvidence:
         result = lint_cmd._check_compliance_evidence(arts, project_root)
         assert result["blocking_count"] == 0
         assert result["warning_count"] == 0
+
+    def test_clause_with_short_title_produces_zero_keywords(self, project_root: Path):
+        standards_dir = project_root / ".specflow" / "standards"
+        standard = {
+            "title": "Test Standard",
+            "clauses": [
+                {"id": "SHORT-001", "title": "A B C", "category": "D"},
+            ],
+        }
+        (standards_dir / "test-standard.yaml").write_text(
+            yaml.dump(standard), encoding="utf-8"
+        )
+        body = " ".join(["meaningful requirement content about the system"] * 10)
+        _write_artifact(
+            project_root, "REQ-001", "requirement", "REQ with short-title clause",
+            body=body,
+            links=[{"target": "SHORT-001", "role": "complies_with"}],
+        )
+        arts = art_lib.discover_artifacts(project_root)
+        result = lint_cmd._check_compliance_evidence(arts, project_root)
+        assert result["blocking_count"] == 0
+        assert result["warning_count"] == 0
