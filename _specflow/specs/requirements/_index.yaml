@@ -183,33 +183,33 @@ artifacts:
     title: Unified CLI Framework & Install UX
     status: implemented
     tags: []
-    fingerprint: ''
+    fingerprint: sha256:b6d1a6353a6d
     children: []
   REQ-019:
     id: REQ-019
     title: AI Skill Ecosystem Restructuring
     status: implemented
     tags: []
-    fingerprint: ''
+    fingerprint: sha256:2ee62d518ddd
     children: []
   REQ-020:
     id: REQ-020
     title: Continuous Auditing & BYOC Compliance
     status: implemented
     tags: []
-    fingerprint: ''
+    fingerprint: sha256:e79531ed4d2b
     children: []
   REQ-021:
     id: REQ-021
     title: Convention Enforcement & Docs Architecture
     status: implemented
     tags: []
-    fingerprint: ''
+    fingerprint: sha256:2842da43fa7e
     children: []
   REQ-022:
     id: REQ-022
     title: Init Upgrade Safety
-    status: approved
+    status: implemented
     tags:
     - init
     - upgrade
@@ -219,7 +219,7 @@ artifacts:
   REQ-023:
     id: REQ-023
     title: Specification Body Quality Enforcement
-    status: approved
+    status: implemented
     tags:
     - lint
     - quality
@@ -230,7 +230,7 @@ artifacts:
   REQ-024:
     id: REQ-024
     title: Output File Traceability
-    status: approved
+    status: implemented
     tags:
     - traceability
     - output-files
@@ -239,7 +239,7 @@ artifacts:
   REQ-025:
     id: REQ-025
     title: Reverse Impact Analysis
-    status: approved
+    status: implemented
     tags:
     - traceability
     - impact
@@ -249,7 +249,7 @@ artifacts:
   REQ-026:
     id: REQ-026
     title: Decomposition Completeness Guidance
-    status: approved
+    status: implemented
     tags:
     - plan
     - decomposition
@@ -260,12 +260,12 @@ artifacts:
   REQ-027:
     id: REQ-027
     title: Discovery-to-Plan Skill Continuity
-    status: draft
+    status: implemented
     tags:
     - discover
     - plan
     - continuity
     - domain
-    fingerprint: sha256:b57757b852fa
+    fingerprint: sha256:070ded3802c3
     children: []
 next_id: 28

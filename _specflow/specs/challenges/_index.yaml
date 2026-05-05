@@ -483,4 +483,109 @@ artifacts:
     tags: []
     fingerprint: sha256:07dbf797cbc0
     children: []
-next_id: 300
+  CHL-300:
+    id: CHL-300
+    title: 'STORY-053 (implements REQ-022): no test verification'
+    status: open
+    tags: []
+    fingerprint: sha256:701e084206b9
+    children: []
+  CHL-301:
+    id: CHL-301
+    title: 'STORY-054 (implements REQ-022): no test verification'
+    status: open
+    tags: []
+    fingerprint: sha256:6f01f081e1e4
+    children: []
+  CHL-302:
+    id: CHL-302
+    title: 'STORY-049 (implements REQ-023): no test verification'
+    status: open
+    tags: []
+    fingerprint: sha256:ab2c9439b662
+    children: []
+  CHL-303:
+    id: CHL-303
+    title: 'STORY-050 (implements REQ-023): no test verification'
+    status: open
+    tags: []
+    fingerprint: sha256:4b08e384a7fb
+    children: []
+  CHL-304:
+    id: CHL-304
+    title: 'STORY-051 (implements REQ-024): no test verification'
+    status: open
+    tags: []
+    fingerprint: sha256:1daee19eabc1
+    children: []
+  CHL-305:
+    id: CHL-305
+    title: 'STORY-052 (implements REQ-024): no test verification'
+    status: open
+    tags: []
+    fingerprint: sha256:2f54c3324a44
+    children: []
+  CHL-306:
+    id: CHL-306
+    title: 'STORY-055 (implements REQ-025): no test verification'
+    status: open
+    tags: []
+    fingerprint: sha256:3cc5b90c9b26
+    children: []
+  CHL-307:
+    id: CHL-307
+    title: 'STORY-056 (implements REQ-026): no test verification'
+    status: open
+    tags: []
+    fingerprint: sha256:9eb4b605fe05
+    children: []
+  CHL-308:
+    id: CHL-308
+    title: 'STORY-057 (implements REQ-026): no test verification'
+    status: open
+    tags: []
+    fingerprint: sha256:d140e527879f
+    children: []
+  CHL-309:
+    id: CHL-309
+    title: 'STORY-058 (implements REQ-026): no test verification'
+    status: open
+    tags: []
+    fingerprint: sha256:9e3775b9afdc
+    children: []
+  CHL-310:
+    id: CHL-310
+    title: 'STORY-059 (implements REQ-026): no test verification'
+    status: open
+    tags: []
+    fingerprint: sha256:0cfa53bed5fb
+    children: []
+  CHL-311:
+    id: CHL-311
+    title: 'STORY-060 (implements REQ-027): no test verification'
+    status: open
+    tags: []
+    fingerprint: sha256:e64305661433
+    children: []
+  CHL-312:
+    id: CHL-312
+    title: 'STORY-061 (implements REQ-027): no test verification'
+    status: open
+    tags: []
+    fingerprint: sha256:07048d31292c
+    children: []
+  CHL-313:
+    id: CHL-313
+    title: 'STORY-062 (implements REQ-027): no test verification'
+    status: open
+    tags: []
+    fingerprint: sha256:d28ffd709231
+    children: []
+  CHL-314:
+    id: CHL-314
+    title: 'STORY-063 (implements REQ-027): no test verification'
+    status: open
+    tags: []
+    fingerprint: sha256:bec2684098ae
+    children: []
+next_id: 315

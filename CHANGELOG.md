@@ -4,6 +4,19 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.3.1] - 2026-05-05
+
+### Highlights
+
+- **Verification gap closed** — generated UT/IT/QT triplets for REQ-022..027 / ARCH-016..021 / DDD-017..021, lifting STORY test coverage from 76% to 100% (63/63) and chain coverage from 75% to 100% (69/69)
+- **Decision housekeeping** — promoted all 42 draft DEC artifacts to `approved`, eliminating the long-tail housekeeping flag from project-audit
+
+### Internal
+
+- 17 new test artifacts: QT-023..028, IT-018..023, UT-023..027 (linked to verifying REQs/ARCHs/DDDs and to all 15 stories STORY-049..063)
+- `specflow project-audit --quick` now reports 0 vertical findings on this repo's specs
+- Promoted REQ-022..027 from `approved` to `implemented` (prerequisite for test-stub generation)
+
 ## [1.3.0] - 2026-05-05
 
 ### Highlights

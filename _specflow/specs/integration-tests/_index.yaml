@@ -11,97 +11,139 @@ artifacts:
     title: Framework Machinery Integration Tests
     status: implemented
     tags: []
-    fingerprint: ''
+    fingerprint: sha256:6549770dd566
     children: []
   IT-003:
     id: IT-003
     title: Skill and Platform Integration Tests
     status: implemented
     tags: []
-    fingerprint: ''
+    fingerprint: sha256:22224e2eff62
     children: []
   IT-004:
     id: IT-004
     title: Compliance and Exchange Integration Tests
     status: implemented
     tags: []
-    fingerprint: ''
+    fingerprint: sha256:33e53c9e9618
     children: []
   IT-005:
     id: IT-005
     title: Pack-Author Pipeline Integration Tests
     status: implemented
     tags: []
-    fingerprint: ''
+    fingerprint: sha256:d4ae0561c090
     children: []
   IT-008:
     id: IT-008
     title: Audit and Review Engine Integration Tests
     status: implemented
     tags: []
-    fingerprint: ''
+    fingerprint: sha256:388ad76380bb
     children: []
   IT-009:
     id: IT-009
     title: Traceability Chain Engine Integration Tests
     status: implemented
     tags: []
-    fingerprint: ''
+    fingerprint: sha256:aa4d070796d6
     children: []
   IT-010:
     id: IT-010
     title: Provider-Agnostic CI Gate Integration Tests
     status: implemented
     tags: []
-    fingerprint: ''
+    fingerprint: sha256:c4751b7ef679
     children: []
   IT-011:
     id: IT-011
     title: V-Model Test Scaffolding Engine Integration Tests
     status: implemented
     tags: []
-    fingerprint: ''
+    fingerprint: sha256:9521fa62d618
     children: []
   IT-012:
     id: IT-012
     title: Command Wrappers & Adapter Framework Integration
     status: implemented
     tags: []
-    fingerprint: ''
+    fingerprint: sha256:7fef35c0d009
     children: []
   IT-013:
     id: IT-013
     title: Tier 1 Conversational Routing Integration
     status: implemented
     tags: []
-    fingerprint: ''
+    fingerprint: sha256:991a89f98198
     children: []
   IT-014:
     id: IT-014
     title: Change-Audit & Pack-Author Pipelines Integration
     status: implemented
     tags: []
-    fingerprint: ''
+    fingerprint: sha256:25ead5ea9eed
     children: []
   IT-015:
     id: IT-015
     title: Structure Checklists & Doc Lifecycle Integration
     status: implemented
     tags: []
-    fingerprint: ''
+    fingerprint: sha256:99da61ccaeb7
     children: []
   IT-016:
     id: IT-016
     title: 'Integration Test for ARCH-014: Test Engine'
     status: draft
     tags: []
-    fingerprint: sha256:672e96ce63a3
+    fingerprint: ''
     children: []
   IT-017:
     id: IT-017
     title: 'Integration Test for ARCH-015: Deprecation Cleanup'
     status: draft
     tags: []
-    fingerprint: sha256:233e2d29d665
+    fingerprint: ''
     children: []
-next_id: 18
+  IT-018:
+    id: IT-018
+    title: 'Integration Test for ARCH-016: Init Upgrade Engine'
+    status: draft
+    tags: []
+    fingerprint: ''
+    children: []
+  IT-019:
+    id: IT-019
+    title: 'Integration Test for ARCH-017: Spec Quality Gate'
+    status: draft
+    tags: []
+    fingerprint: ''
+    children: []
+  IT-020:
+    id: IT-020
+    title: 'Integration Test for ARCH-018: File Traceability Layer'
+    status: draft
+    tags: []
+    fingerprint: ''
+    children: []
+  IT-021:
+    id: IT-021
+    title: 'Integration Test for ARCH-019: Reverse Impact Engine'
+    status: draft
+    tags: []
+    fingerprint: ''
+    children: []
+  IT-022:
+    id: IT-022
+    title: 'Integration Test for ARCH-020: Decomposition Guidance System'
+    status: draft
+    tags: []
+    fingerprint: ''
+    children: []
+  IT-023:
+    id: IT-023
+    title: 'Integration Test for ARCH-021: Skill Continuity Layer'
+    status: draft
+    tags: []
+    fingerprint: ''
+    children: []
+next_id: 24

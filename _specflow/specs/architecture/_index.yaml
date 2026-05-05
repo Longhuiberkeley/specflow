@@ -91,28 +91,28 @@ artifacts:
     title: Command Wrappers & Adapter Framework
     status: implemented
     tags: []
-    fingerprint: ''
+    fingerprint: sha256:0455c507591d
     children: []
   ARCH-011:
     id: ARCH-011
     title: Tier 1 Conversational Routing
     status: implemented
     tags: []
-    fingerprint: ''
+    fingerprint: sha256:0d2a15807456
     children: []
   ARCH-012:
     id: ARCH-012
     title: Change-Audit & Pack-Author Pipelines
     status: implemented
     tags: []
-    fingerprint: ''
+    fingerprint: sha256:45b09e92e174
     children: []
   ARCH-013:
     id: ARCH-013
     title: Structure Checklists & Doc Lifecycle
     status: implemented
     tags: []
-    fingerprint: ''
+    fingerprint: sha256:7ae9158efda7
     children: []
   ARCH-014:
     id: ARCH-014

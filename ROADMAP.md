@@ -95,6 +95,15 @@ Focus: **domain intelligence and learning feedback.**
 
 Focus: **init upgrade safety, spec body quality enforcement, and output file traceability.**
 
+## v1.3.1
+
+Focus: **verification gap closure and decision housekeeping.**
+
+- **STORY-049..063 verified** — generated 17 UT/IT/QT artifacts (QT-023..028, IT-018..023, UT-023..027) closing the missing test pairs flagged by project-audit
+- **REQ/ARCH/DDD chain coverage at 100%** — chain coverage rose from 75% to 100% (69/69); STORY test coverage rose from 76% to 100% (63/63)
+- **All 42 DECs promoted** — long-tail draft decisions (DEC-001..042) advanced to `approved`
+- **REQ-022..027 promoted** from `approved` to `implemented` to enable test stub generation
+
 ## v1.3.0
 
 Focus: **reverse impact analysis, decomposition completeness guidance, and discovery-to-plan skill continuity.**

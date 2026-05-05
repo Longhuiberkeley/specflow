@@ -60,28 +60,28 @@ artifacts:
     title: Recovery Primitives Implementation
     status: implemented
     tags: []
-    fingerprint: ''
+    fingerprint: sha256:beef2019cdfa
     children: []
   DDD-008:
     id: DDD-008
     title: Skill Prompt Optimization
     status: implemented
     tags: []
-    fingerprint: ''
+    fingerprint: sha256:40a6cbfa032a
     children: []
   DDD-009:
     id: DDD-009
     title: Deterministic Analytics Engine
     status: implemented
     tags: []
-    fingerprint: ''
+    fingerprint: sha256:b3a415dd5bb4
     children: []
   DDD-010:
     id: DDD-010
     title: Convention Evaluation Logic
     status: implemented
     tags: []
-    fingerprint: ''
+    fingerprint: sha256:59532568cadc
     children: []
   DDD-011:
     id: DDD-011
