@@ -51,10 +51,15 @@ After the core audit completes, offer to run deeper, AI-driven adversarial revie
 - "The deterministic audit is complete. Would you like me to run the adversarial wings to review qualitative alignment? (Recommended: Yes, if preparing for a release/milestone)"
 
 If accepted:
-1. Formulate up to 16 lenses (e.g., edge-case logic, security posture, performance, coupling).
+1. Read `../specflow-references/references/adversarial-lenses.md` for the full 16-lens catalog. Select lenses relevant to the findings from Step 1 (e.g., if coverage gaps found → use `audit-vertical`; if dependency issues → use `dependency_shock`).
 2. For any artifact flagged during Step 1, run `uv run specflow trace <ARTIFACT_ID>` to understand its full upstream/downstream dependency context before evaluating lenses.
 3. Create 2 parallel subagents (if your environment supports it) to evaluate these lenses against the V-model specifications.
 4. Consolidate the findings from the adversarial wings.
+5. When creating CHL artifacts, use specific technique names (e.g., `premortem`, `stress_scale`, `dependency_shock`) rather than the generic `project-audit` label. The deterministic core findings use `audit-horizontal`, `audit-vertical`, and `audit-cross-cutting`.
+6. After running lenses on sampled artifacts, record which techniques were applied:
+   ```
+   uv run specflow update <ARTIFACT_ID> --thinking-techniques premortem,stress_scale
+   ```
 
 ### Step 3: Artifact Creation
 

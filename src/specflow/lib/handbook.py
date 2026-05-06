@@ -63,7 +63,10 @@ def compose_review_prefix(
     domain_tags: list[str],
     phase: str,
     complies_with_clause_ids: list[str],
+    *,
+    existing_techniques: list[str] | None = None,
 ) -> str:
     return _bp.compose_review_prefix(
         root, domain, domain_tags, phase, complies_with_clause_ids,
+        existing_techniques=existing_techniques,
     )

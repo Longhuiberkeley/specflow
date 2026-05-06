@@ -64,7 +64,8 @@ For bounded changes like "add dark mode" or "fix the login redirect":
 1. Generate a single REQ artifact with minimal metadata.
 2. Generate a single STORY artifact linked to the REQ via `implements`.
 3. Auto-approve both (set `status: approved`).
-4. Skip to Step 5 (Artifact Creation).
+4. Record the lean assessment on the REQ: `uv run specflow update <REQ-ID> --thinking-techniques lean_assessment`
+5. Skip to Step 5 (Artifact Creation).
 
 ### Step 2F: Full Discovery — Phase 1: Context-Free Questions
 
@@ -162,6 +163,18 @@ Present concerns as a quick summary. Let the user confirm, revise, or drop requi
 Only create DEC artifacts for significant findings. If no challenges produce actionable results, skip DEC creation to avoid noise.
 
 If the user requested specific techniques or said "go deep", expand the selection accordingly.
+
+After applying thinking techniques, record which techniques were applied to each artifact — even if they passed cleanly (no findings):
+
+```
+uv run specflow update <REQ-ID> --thinking-techniques <technique1,technique2>
+```
+
+For example, if devil's advocate and five-whys were applied to REQ-001:
+
+```
+uv run specflow update REQ-001 --thinking-techniques devils_advocate,five_whys
+```
 
 ### Step 6: Artifact Creation
 
@@ -276,4 +289,4 @@ Requirements are already approved. Run `/specflow-execute` to implement.
 - `references/normative-language.md` — Proper requirement phrasing: RFC 2119 keywords, EARS sentence patterns, ambiguity word list, compound shall detection, passive voice avoidance.
 - `references/domain-checklists/<type>.md` — Per-domain question sets for Phase 2.
 - `references/cross-cutting.md` — Cross-cutting concern checklists for Phase 3.
-- `references/thinking-techniques.md` — Discovery-stage adversarial thinking techniques.
+- `references/thinking-techniques.md` — Discovery-stage adversarial thinking techniques (points to shared catalog at `../specflow-references/references/adversarial-lenses.md`).

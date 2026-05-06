@@ -570,19 +570,23 @@ def run(root: Path, args: dict[str, Any]) -> int:
     if errors + warns > 0:
         warn_error_findings = [f for f in all_findings if f["severity"] in ("error", "warn")]
         target_id = aud_result.get("id", "project") if aud_result.get("ok") else "project"
+        axis_technique_map = {
+            "horizontal": "audit-horizontal",
+            "vertical": "audit-vertical",
+            "cross-cutting": "audit-cross-cutting",
+        }
         findings_typed = [
             TechniqueFinding(
                 title=f["message"][:100],
                 rationale=f["message"],
                 severity=f["severity"],
-                technique="project-audit",
+                technique=axis_technique_map.get(f.get("axis", ""), "project-audit"),
             )
             for f in warn_error_findings
         ]
         chl_results = chl_lib.create_chl_artifacts(
             root, findings_typed, target_id,
             link_role="refers_to", dedup=True,
-            technique_override="project-audit",
         )
         chl_count = len(chl_results)
 

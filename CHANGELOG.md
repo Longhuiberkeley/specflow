@@ -4,6 +4,60 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.5.0] - 2026-05-07
+
+### Highlights
+
+- **Unified 16-lens adversarial catalog** — all 16 thinking technique lenses are now available in every lifecycle phase (discover, plan, execute, review, audit) via a shared reference catalog at `.claude/skills/specflow-references/`.
+- **Thinking technique records on artifacts** — new `thinking_techniques` optional field on all 13 artifact types tracks which lenses were applied. New `--thinking-techniques` flag on `specflow update` appends techniques to any artifact.
+- **Technique-to-BP feedback loop** — best-practice staleness checks now include challenge (CHL) artifacts; BP synthesis prompts inject recent adversarial findings so regenerated BPs learn from what lenses actually caught.
+- **Audit technique granularity** — audit CHLs now carry per-axis technique names (`audit-horizontal`, `audit-vertical`, `audit-cross-cutting`) instead of the monolithic `project-audit`.
+- **Generic lens fallback** — the 12 lenses without dedicated Python modules now run as generic LLM prompts using the shared lens catalog, making all 16 lenses runnable from the CLI.
+
+### Features
+
+- Shared 16-lens adversarial catalog with per-phase default sets and trigger-for-expansion guidance (`.claude/skills/specflow-references/references/adversarial-lenses.md`)
+- `specflow update <ID> --thinking-techniques <comma-separated>` flag for recording techniques on artifacts (appends, deduplicates)
+- New `thinking-techniques` lint check: warns on approved REQ/ARCH/DDD artifacts with no `thinking_techniques` recorded
+- `_is_stale_against_evidence()` replaces `_is_stale_against_decisions()` — checks both DEC and CHL artifact mtimes against BP cache
+- `_recent_chl_summaries()` injected into phase-level BP synthesis prompts so LLM can incorporate "what keeps getting caught"
+- Per-skill `references/thinking-techniques.md` files replaced with pointers to shared catalog
+- Technique recording instructions added to discover, plan, execute, and audit SKILL.md files
+- `_DEFAULT_LEARNABLE_TECHNIQUES` expanded from 5 to 17 entries (all 16 lenses + checklist-run)
+- `LENS_CATALOG` dict in `techniques/__init__.py` provides system prompts for all 16 lenses
+- `ALL_LENS_NAMES` exported set for external validation of technique names
+
+- Dedicated technique modules (devil's advocate, premortem, red/blue team, assumption surfacing) import system prompts from `LENS_CATALOG` instead of duplicating inline strings
+- `_run_generic_lens()` fallback in `execute_technique()` runs catalog lenses without dedicated Python modules
+- `run_subagents()` concurrency capped at `min(techniques × artifacts, 8)` to prevent thread pool explosion
+- `_recent_chl_summaries()` rewritten: sorts by severity weight then recency, excludes accepted/stale/resolved CHLs, includes first 200 chars of rationale, defaults to 10 items
+- `compose_review_prefix()` accepts `existing_techniques` parameter to render "Previously applied thinking techniques" section in review prompts
+- `artifact_review.py` extracts `thinking_techniques` from target artifact and passes to `compose_review_prefix()`
+- `build_phase_synthesis_prompt()` accepts `learned_patterns` parameter for learned PREV-*.yaml injection
+- `_learned_patterns_text()` reads prevention patterns from `.specflow/checklists/learned/` and formats for BP synthesis
+- `synthesize_and_cache()` now calls `_learned_patterns_text()` and passes results to phase synthesis prompt
+- `update.py` validates technique names against `ALL_LENS_NAMES` (warns on unknown, still records)
+- `specflow-discover` lean path records `lean_assessment` sentinel on auto-approved REQs to avoid lint warnings
+- `specflow-change-impact-review` fixed wrong adversarial-lenses catalog path and added technique recording step
+- All 13 artifact schemas updated with `thinking_techniques` as optional field
+- `thinking_techniques` added to `known_meta` in lint validation whitelist
+
+### Fixes
+
+- Audit CHL artifacts now carry specific technique names (`audit-horizontal`, `audit-vertical`, `audit-cross-cutting`) instead of generic `project-audit`
+- Fixed `_learned_patterns_text()` reading wrong field names from PREV-*.yaml patterns — uses `name`/`discovered_from` instead of `title`/`trigger`
+- Added `lean_assessment` to `_SENTINEL_NAMES` in `update.py` to suppress spurious "Unknown technique" warning on lean-path REQs
+- `ci.py` and `handbook.py` now forward `existing_techniques` to `compose_review_prefix()`, preventing duplicate findings on review passes through those code paths
+
+### Tests
+
+- 14 new tests in `test_best_practices.py` covering `_learned_patterns_text`, `_recent_chl_summaries`, and `compose_review_prefix` with `existing_techniques`
+- 10 new tests in `test_artifact_lint.py` for thinking-techniques lint check (status filtering, type filtering, lean_assessment sentinel, implemented/verified statuses)
+- 1 new test in `test_technique_fallback.py` for `run_subagents` concurrency cap
+- 6 new tests in `test_challenges.py` for shared CHL creation module
+- 7 new tests in `test_standards_get_clause.py` for `get_clause_by_id`
+- 14 new tests in `test_reverse_impact.py` for glob matching, query/flag split, recursive propagation
+
 ## [1.4.1] - 2026-05-06
 
 ### Highlights
@@ -283,6 +337,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Unified skill templates across all platforms
 - Rewrote documentation for public-readiness
 
+[1.5.0]: https://github.com/Longhuiberkeley/specflow/releases/tag/v1.5.0
 [1.4.1]: https://github.com/Longhuiberkeley/specflow/releases/tag/v1.4.1
 [1.4.0]: https://github.com/Longhuiberkeley/specflow/releases/tag/v1.4.0
 [1.3.0]: https://github.com/Longhuiberkeley/specflow/releases/tag/v1.3.0

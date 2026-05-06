@@ -72,10 +72,12 @@ def _format_prompt(
             link.target for link in artifact.links
             if link.role == "complies_with" and link.target
         ]
+        existing_techniques = artifact.frontmatter.get("thinking_techniques") or None
         prefix = bp_lib.compose_review_prefix(
             root, domain, domain_tags, phase, clause_ids,
             artifact_type=artifact.type,
             skip_synthesis=fast,
+            existing_techniques=existing_techniques,
         )
         if prefix:
             lines.append(prefix.rstrip())
@@ -289,6 +291,22 @@ def _prompt_for_techniques(target_arts: list[art_lib.Artifact]) -> list[str]:
     return techniques
 
 
+def _record_techniques_on_artifacts(
+    root: Path,
+    targets: list[art_lib.Artifact],
+    techniques: list[str],
+) -> None:
+    for art in targets:
+        existing = art.frontmatter.get("thinking_techniques") or []
+        merged = list(dict.fromkeys(existing + techniques))
+        if merged != existing:
+            art_lib.update_artifact(
+                root,
+                art.id,
+                thinking_techniques=merged,
+            )
+
+
 def run(root: Path, args: dict[str, Any]) -> int:
     _bootstrap_challenge_schema(root)
     _bootstrap_review_schema(root)
@@ -348,11 +366,12 @@ def run(root: Path, args: dict[str, Any]) -> int:
         if techniques:
             print(f"Fanning out {len(techniques)} subagent(s)...")
             for art in targets:
-                # get deduplication context
                 assembled = checklists.assemble_checklist(root, art)
                 ctx = "\n".join([f"- {i.check}" for i in assembled.items])
                 tech_findings = run_subagents(techniques, [art], ctx, cfg)
                 findings.extend(tech_findings)
+                
+            _record_techniques_on_artifacts(root, targets, techniques)
                 
     # 6. Hygiene findings (these do not have target_id naturally, but we can assign to root or skip CHL)
     findings.extend(hygiene_findings)

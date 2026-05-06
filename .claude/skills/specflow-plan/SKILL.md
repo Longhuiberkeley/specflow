@@ -118,6 +118,13 @@ Present concerns and let the user revise before creating artifacts.
 
 If the user requested specific techniques or said "go deep", expand the selection accordingly.
 
+After applying thinking techniques, record which techniques were applied to each artifact — even if they passed cleanly:
+
+```
+uv run specflow update <ARCH-ID> --thinking-techniques <technique1,technique2>
+uv run specflow update <DDD-ID> --thinking-techniques <technique1,technique2>
+```
+
 ### Step 5: Story Breakdown (SPIDR)
 
 Read `references/spidr-decomposition.md` for the full SPIDR framework. Decompose requirements into stories using the five sources:
@@ -212,4 +219,4 @@ Update `.specflow/state.yaml`: set `current: planning`, add history entry.
 - `references/story-writing.md` — Story template and acceptance criteria patterns.
 - `references/link-roles.md` — Complete link role vocabulary with usage examples.
 - `references/level-boundaries.md` — REQ vs ARCH vs DDD boundary rules with examples.
-- `references/thinking-techniques.md` — Planning-stage adversarial thinking techniques.
+- `references/thinking-techniques.md` — Planning-stage adversarial thinking techniques (points to shared catalog at `../specflow-references/references/adversarial-lenses.md`).

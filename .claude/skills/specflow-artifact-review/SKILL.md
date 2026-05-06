@@ -109,7 +109,7 @@ uv run specflow checklist-run --proactive <ARTIFACT_ID>
 
 This surfaces proactive challenge items ("what could go wrong? what's missing?") alongside the assembled checklist.
 
-For the full 16-lens catalog (stress-scale, dependency shock, reversal, five-whys, outside view, worst-case user, regulator, temporal drift, composition, inversion, competitor, cost-scaling) and the lens-selection checklist UX, read `references/adversarial-lenses.md`.
+For the full 16-lens catalog (stress-scale, dependency shock, reversal, five-whys, outside view, worst-case user, regulator, temporal drift, composition, inversion, competitor, cost-scaling) and the lens-selection checklist UX, read `../specflow-references/references/adversarial-lenses.md`.
 
 **Rule:** never propose a lens whose finding would be a direct duplicate of a checklist item already run in Step 3. If a lens would only repeat the checklist, skip it.
 
@@ -196,4 +196,4 @@ Use `--no-patterns` to skip pattern extraction, or `--auto` to skip prompts. Thi
 - `references/checklist-assembly.md` — How checklists are assembled for review.
 - `references/severity-levels.md` — Severity level definitions and escalation rules.
 - `references/challenge-engine.md` — Proactive and reactive challenge modes.
-- `references/adversarial-lenses.md` — Full 16-lens catalog and lens-selection UX for adversarial review.
+- `../specflow-references/references/adversarial-lenses.md` — Full 16-lens catalog, per-phase defaults, and lens-selection UX.

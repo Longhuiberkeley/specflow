@@ -542,3 +542,55 @@ class TestCheckComplianceEvidence:
         result = lint_cmd._check_compliance_evidence(arts, project_root)
         assert result["blocking_count"] == 0
         assert result["warning_count"] == 0
+
+
+class TestCheckThinkingTechniques:
+    def test_warns_on_approved_req_without_techniques(self):
+        art = _make_art("REQ-001", "requirement", status="approved")
+        result = lint_cmd._check_thinking_techniques([art])
+        assert result["warning_count"] == 1
+        assert "REQ-001" in result["detail"]
+
+    def test_passes_on_approved_req_with_techniques(self):
+        art = _make_art("REQ-001", "requirement", status="approved",
+                        extra_fm={"thinking_techniques": ["premortem"]})
+        result = lint_cmd._check_thinking_techniques([art])
+        assert result["warning_count"] == 0
+
+    def test_skips_draft_artifacts(self):
+        art = _make_art("REQ-001", "requirement", status="draft")
+        result = lint_cmd._check_thinking_techniques([art])
+        assert result["warning_count"] == 0
+
+    def test_skips_non_spec_types(self):
+        art = _make_art("STORY-001", "story", status="approved")
+        result = lint_cmd._check_thinking_techniques([art])
+        assert result["warning_count"] == 0
+
+    def test_checks_arch_and_ddd(self):
+        arch = _make_art("ARCH-001", "architecture", status="approved")
+        ddd = _make_art("DDD-001", "detailed-design", status="implemented")
+        result = lint_cmd._check_thinking_techniques([arch, ddd])
+        assert result["warning_count"] == 2
+
+    def test_empty_techniques_list_warns(self):
+        art = _make_art("REQ-001", "requirement", status="approved",
+                        extra_fm={"thinking_techniques": []})
+        result = lint_cmd._check_thinking_techniques([art])
+        assert result["warning_count"] == 1
+
+    def test_verified_artifact_without_techniques_warns(self):
+        art = _make_art("REQ-001", "requirement", status="verified")
+        result = lint_cmd._check_thinking_techniques([art])
+        assert result["warning_count"] == 1
+
+    def test_implemented_artifact_without_techniques_warns(self):
+        art = _make_art("REQ-001", "requirement", status="implemented")
+        result = lint_cmd._check_thinking_techniques([art])
+        assert result["warning_count"] == 1
+
+    def test_lean_assessment_satisfies_lint(self):
+        art = _make_art("REQ-001", "requirement", status="approved",
+                        extra_fm={"thinking_techniques": ["lean_assessment"]})
+        result = lint_cmd._check_thinking_techniques([art])
+        assert result["warning_count"] == 0

@@ -14,7 +14,7 @@ from specflow.lib import standards as standards_lib
 from specflow.lib import lint as lint_lib
 from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC
 
-CHECK_NAMES = ["schema", "links", "status", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence"]
+CHECK_NAMES = ["schema", "links", "status", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "thinking-techniques"]
 
 
 def _run_check(
@@ -60,6 +60,8 @@ def _run_check(
         return _check_wave_cycles(artifacts, root)
     elif check_name == "compliance-evidence":
         return _check_compliance_evidence(artifacts, root)
+    elif check_name == "thinking-techniques":
+        return _check_thinking_techniques(artifacts)
 
     return {"status_icon": "?", "detail": f"Unknown check: {check_name}",
             "blocking_count": 0, "warning_count": 0}
@@ -1024,6 +1026,39 @@ def _check_compliance_evidence(
         "status_icon": icon,
         "detail": detail_msg,
         "blocking_count": blocking,
+        "warning_count": warnings,
+    }
+
+
+def _check_thinking_techniques(
+    artifacts: list[art_lib.Artifact],
+) -> dict[str, str | int]:
+    """Warn on approved REQ/ARCH/DDD artifacts that were never challenged."""
+    SPEC_TYPES = {"requirement", "architecture", "detailed-design"}
+    CHALLENGED_STATUSES = {"approved", "implemented", "verified"}
+    warnings = 0
+    details: list[str] = []
+
+    for art in artifacts:
+        if art.type not in SPEC_TYPES:
+            continue
+        if art.status not in CHALLENGED_STATUSES:
+            continue
+        techniques = art.frontmatter.get("thinking_techniques")
+        if not techniques:
+            warnings += 1
+            details.append(
+                f"  ⚠ {art.id} [{art.status}] has no thinking_techniques recorded "
+                f"(never challenged)"
+            )
+
+    icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
+    detail_msg = "\n".join(details) if details else "All spec artifacts challenged"
+
+    return {
+        "status_icon": icon,
+        "detail": detail_msg,
+        "blocking_count": 0,
         "warning_count": warnings,
     }
 

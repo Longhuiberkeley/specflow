@@ -49,6 +49,21 @@ _DEFAULT_LEARNABLE_TECHNIQUES = {
     "premortem",
     "assumption_surfacing",
     "red_blue_team",
+    "stress_scale",
+    "dependency_shock",
+    "reversal",
+    "five_whys",
+    "outside_view",
+    "worst_case_user",
+    "regulator",
+    "temporal_drift",
+    "composition",
+    "inversion",
+    "competitor_framing",
+    "cost_scaling",
+    "audit-horizontal",
+    "audit-vertical",
+    "audit-cross-cutting",
 }
 
 

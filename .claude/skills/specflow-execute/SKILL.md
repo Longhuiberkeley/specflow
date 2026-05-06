@@ -69,7 +69,7 @@ For each story (or wave of stories):
    a. **Load context:** Read the story, its linked REQ, ARCH, and DDD artifacts.
    b. **Implement the code** per the detailed design in DDD artifacts.
    c. **Follow the acceptance criteria** -- implement each criterion from the story.
-   d. **Quick thinking check** (from `references/thinking-techniques.md`): before writing each function, ask "what's the most unexpected input?" and "does this share state with another STORY in this wave?"
+   d. **Quick thinking check** (from `references/thinking-techniques.md`): before writing each function, ask "what's the most unexpected input?" and "does this share state with another STORY in this wave?" After applying techniques to a STORY, record them: `uv run specflow update <STORY-ID> --thinking-techniques worst_case_user,composition`.
 
 ### Step 4: Status Updates
 
@@ -184,4 +184,4 @@ Report results and fix any issues.
 - `references/status-lifecycle.md` -- Valid status transitions for all artifact types.
 - `references/test-pairing.md` -- V-model verification test pairing rules.
 - `references/wave-computation.md` -- Wave computation algorithm and context isolation.
-- `references/thinking-techniques.md` -- Quick execution-stage thinking checks.
+- `references/thinking-techniques.md` -- Quick execution-stage thinking checks (points to shared catalog at `../specflow-references/references/adversarial-lenses.md`).

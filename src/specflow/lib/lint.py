@@ -122,7 +122,7 @@ def validate_artifact_schema(
             known_meta = {"created", "modified", "version", "priority", "rationale",
                           "tags", "suspect", "fingerprint", "links", "upstream",
                           "checklists_applied", "edge_cases_identified", "execution_wave",
-                          "non_functional_category", "output_files"}
+                          "non_functional_category", "output_files", "thinking_techniques"}
             if key not in known_meta:
                 issues.append({
                     "severity": "info",

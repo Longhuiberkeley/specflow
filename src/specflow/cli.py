@@ -275,6 +275,7 @@ def _add_update_parser(subparsers):
     p.add_argument("--rationale", help="New rationale")
     p.add_argument("--tags", help="Comma-separated tags (replaces existing)")
     p.add_argument("--output-files", dest="output_files", help="Comma-separated output file paths (replaces existing; empty string removes)")
+    p.add_argument("--thinking-techniques", dest="thinking_techniques", help="Comma-separated technique names to append (e.g., premortem,devils_advocate)")
 
 
 def _add_go_parser(subparsers):

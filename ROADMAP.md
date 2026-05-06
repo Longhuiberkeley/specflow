@@ -138,6 +138,16 @@ Focus: **reverse impact analysis, decomposition completeness guidance, and disco
 - **Domain context pass-through** — plan skill reads domain classification from config and decisions from discovery
 - **Improved discover-to-plan handoff** — explicit approval instructions and next-step commands in exit message
 
+## v1.5.0
+
+Focus: **unified thinking technique tracking and technique-to-BP feedback loop.**
+
+- **Unified 16-lens adversarial catalog** — all 16 thinking techniques available in every lifecycle phase via shared reference at `.claude/skills/specflow-references/`; per-phase default sets and trigger-for-expansion guidance
+- **Thinking technique records on artifacts** — `thinking_techniques` optional field on all 13 artifact types; `specflow update <ID> --thinking-techniques` flag for recording; lint warns on unchallenged approved specs
+- **Generic lens fallback** — the 12 lenses without Python modules now run as generic LLM prompts, making all 16 lenses runnable from the CLI
+- **Technique-to-BP feedback loop** — BP staleness checks include CHL artifacts; synthesis prompts inject recent adversarial findings so BPs learn from what lenses caught
+- **Audit technique granularity** — audit CHLs carry per-axis names (`audit-horizontal`, `audit-vertical`, `audit-cross-cutting`) instead of monolithic `project-audit`
+
 ## v1.x (Future)
 
 These may ship someday, but are not committed:
@@ -146,7 +156,6 @@ These may ship someday, but are not committed:
 - **FMEA / risk analysis** — hazard, safety-goal, and risk-control artifact types via industry packs
 - **REST API** — programmatic access for custom toolchain integration
 - **Static HTML export** — `specflow export --html` for zero-dependency dashboard generation
-- **Thinking technique records** — `thinking_techniques` field on artifacts tracking which lenses were applied
 - **Multi-pack aggregated compliance** — unified compliance view across all installed standards
 
 ## Out of Scope

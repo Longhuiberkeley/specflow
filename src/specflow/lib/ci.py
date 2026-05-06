@@ -287,9 +287,11 @@ def _format_artifact_prompt(
             link.target for link in artifact.links
             if link.role == "complies_with" and link.target
         ]
+        existing_techniques = artifact.frontmatter.get("thinking_techniques") or None
         prefix = bp_lib.compose_review_prefix(
             root, domain, domain_tags, phase, clause_ids,
             artifact_type=artifact.type,
+            existing_techniques=existing_techniques,
         )
         if prefix:
             lines.append(prefix.rstrip())

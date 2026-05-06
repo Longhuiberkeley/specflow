@@ -8,6 +8,8 @@ from specflow.lib import artifacts as art_lib
 from specflow.lib import defects as defects_lib
 from specflow.lib.display import RED, GREEN, YELLOW, NC
 
+_SENTINEL_NAMES = {"lean_assessment"}
+
 
 def run(root: Path, args: dict) -> int:
     root = root.resolve()
@@ -49,9 +51,27 @@ def run(root: Path, args: dict) -> int:
 
     has_output_files_update = output_files_str is not None
 
+    thinking_techniques_str = args.get("thinking_techniques")
+    if thinking_techniques_str:
+        new_techniques = [t.strip() for t in thinking_techniques_str.split(",") if t.strip()]
+        if new_techniques:
+            from specflow.lib.techniques import ALL_LENS_NAMES
+            unknown = [t for t in new_techniques if t not in ALL_LENS_NAMES and t not in _SENTINEL_NAMES]
+            if unknown:
+                print(f"{YELLOW}⚠ Unknown technique name(s): {', '.join(unknown)}. "
+                      f"Known lenses: {', '.join(sorted(ALL_LENS_NAMES))}.{NC}")
+            existing_art = art_lib.resolve_link_target(root, artifact_id)
+            if existing_art:
+                parsed = art_lib.parse_artifact(existing_art)
+                existing_techniques = []
+                if parsed:
+                    existing_techniques = parsed.frontmatter.get("thinking_techniques") or []
+                merged = list(dict.fromkeys(existing_techniques + new_techniques))
+                updates["thinking_techniques"] = merged
+
     if not updates and not has_output_files_update:
         print(f"{RED}✗ No fields to update. Provide at least one of: "
-              f"--status, --title, --priority, --rationale, --tags, or --output-files.{NC}")
+              f"--status, --title, --priority, --rationale, --tags, --output-files, or --thinking-techniques.{NC}")
         return 1
 
     result = art_lib.update_artifact(root=root, artifact_id=artifact_id, **updates)

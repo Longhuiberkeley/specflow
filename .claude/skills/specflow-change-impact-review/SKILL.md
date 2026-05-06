@@ -49,7 +49,7 @@ For each DEC and its impact cone:
    - Unhandled edge cases introduced by the change.
    - Missing updates to related tests or documentation.
 
-5. **Auto-select adversarial lenses based on cone signals.** Pure pattern-matching misses risks that need an explicit frame. Inspect the tags and types in the impact cone and pick 2-3 lenses from `specflow-artifact-review/references/adversarial-lenses.md` to apply to the impacted artifacts. Selection rules:
+5. **Auto-select adversarial lenses based on cone signals.** Pure pattern-matching misses risks that need an explicit frame. Inspect the tags and types in the impact cone and pick 2-3 lenses from `../specflow-references/references/adversarial-lenses.md` to apply to the impacted artifacts. Selection rules:
 
    | Signal in cone | Lenses to add |
    |---|---|
@@ -77,7 +77,11 @@ After the review for a specific DEC is complete:
 1. Update the DEC's `review_status` in its YAML frontmatter.
    - If issues were found and CHL artifacts created, set `review_status: flagged`.
    - If the change is clean and no issues were found, set `review_status: reviewed`.
-2. Save the updated DEC artifact.
+2. Record which lenses were applied to each impacted artifact:
+   ```bash
+   uv run specflow update <ARTIFACT-ID> --thinking-techniques <lens1,lens2>
+   ```
+3. Save the updated DEC artifact.
 
 Repeat Steps 2-5 for all unreviewed DECs discovered in Step 1.
 

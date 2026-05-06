@@ -241,6 +241,8 @@ def build_phase_synthesis_prompt(
     installed_clauses: list[dict[str, Any]] | None = None,
     existing_domain_checks: str = "",
     decision_summaries: str = "",
+    chl_summaries: str = "",
+    learned_patterns: str = "",
 ) -> tuple[str, str]:
     process_area = standards_lib.process_area_for(phase)
     domain_label = domain or "generic"
@@ -288,6 +290,26 @@ def build_phase_synthesis_prompt(
             "migration planning' with `triggered_by_decision: DEC-XXX`."
         )
 
+    chl_block = ""
+    if chl_summaries:
+        chl_block = (
+            "\n\nThe following recent challenge findings were produced by adversarial "
+            "thinking techniques during review/audit:\n"
+            + chl_summaries
+            + "\n\nIncorporate awareness of these failure patterns into the best practices "
+            "where relevant. If a finding reveals a recurring blind spot, generate a "
+            "practice that directly addresses it with `triggered_by_finding: CHL-XXX`."
+        )
+
+    learned_block = ""
+    if learned_patterns:
+        learned_block = (
+            "\n\nThe following prevention patterns were learned from past findings:\n"
+            + learned_patterns
+            + "\n\nDo NOT duplicate these. Generate practices that go beyond what "
+            "the learned patterns already cover."
+        )
+
     system = (
         "You synthesize phase-level best-practice guides for software process "
         "areas — like the per-section guidance in an ASPICE handbook, but for "
@@ -301,7 +323,7 @@ def build_phase_synthesis_prompt(
         f"Project domain: {domain_label}{tags_clause}\n"
         f"SpecFlow phase: {phase}\n"
         f"ASPICE-equivalent process area: {process_area}\n"
-        f"{standards_block}{domain_checks_block}{decisions_block}\n\n"
+        f"{standards_block}{domain_checks_block}{decisions_block}{chl_block}{learned_block}\n\n"
         "Generate a YAML document with this exact structure:\n\n"
         "```yaml\n"
         "domain: <domain>\n"
@@ -434,11 +456,15 @@ def synthesize_and_cache(
         installed_clauses = _installed_clauses_for_phase(root, key)
         existing_checks = _existing_domain_checks_text(root, domain, artifact_type)
         decision_summaries = _recent_decision_summaries(root)
+        chl_summaries = _recent_chl_summaries(root)
+        learned_patterns = _learned_patterns_text(root)
         system, user = build_phase_synthesis_prompt(
             domain, domain_tags, key,
             installed_clauses=installed_clauses,
             existing_domain_checks=existing_checks,
             decision_summaries=decision_summaries,
+            chl_summaries=chl_summaries,
+            learned_patterns=learned_patterns,
         )
 
     result = ci_lib.call_llm(cfg, system, user)
@@ -561,7 +587,7 @@ def ensure_phase_bps(
     )
 
 
-def _is_stale_against_decisions(root: Path, bp_path: Path) -> bool:
+def _is_stale_against_evidence(root: Path, bp_path: Path) -> bool:
     from specflow.lib import artifacts as art_lib
 
     if not bp_path.exists():
@@ -578,7 +604,74 @@ def _is_stale_against_decisions(root: Path, bp_path: Path) -> bool:
                 return True
         except OSError:
             continue
+
+    challenges = art_lib.discover_artifacts(root, "challenge")
+    for chl in challenges:
+        try:
+            if chl.path.stat().st_mtime > bp_mtime:
+                return True
+        except OSError:
+            continue
+
     return False
+
+
+def _recent_chl_summaries(root: Path, max_items: int = 10) -> str:
+    from specflow.lib import artifacts as art_lib
+
+    challenges = art_lib.discover_artifacts(root, "challenge")
+    if not challenges:
+        return ""
+
+    _SEVERITY_WEIGHT = {"error": 3, "warn": 2, "warning": 2, "info": 1}
+    _EXCLUDED_STATUSES = {"accepted", "stale", "resolved"}
+
+    def _sort_key(a):
+        sev = _SEVERITY_WEIGHT.get(
+            (a.frontmatter.get("severity") or "").lower(), 0
+        )
+        try:
+            mtime = a.path.stat().st_mtime
+        except OSError:
+            mtime = 0
+        return (-sev, -mtime)
+
+    eligible = [
+        chl for chl in challenges
+        if (chl.frontmatter.get("status") or "open")
+           not in _EXCLUDED_STATUSES
+    ]
+    eligible.sort(key=_sort_key)
+
+    lines = []
+    for chl in eligible[:max_items]:
+        technique = chl.frontmatter.get("technique", "unknown")
+        severity = chl.frontmatter.get("severity", "")
+        title = chl.title or chl.id
+        rationale = (chl.body or "").strip()[:200]
+        line = f"  - [technique: {technique}, {severity}] {chl.id}: {title}"
+        if rationale:
+            line += f"\n    Rationale: {rationale}"
+        lines.append(line)
+    return "\n".join(lines) if lines else ""
+
+
+def _learned_patterns_text(root: Path) -> str:
+    from specflow.lib import learning as learning_lib
+
+    patterns = learning_lib.list_learned_patterns(root)
+    if not patterns:
+        return ""
+    lines = []
+    for p in patterns[:10]:
+        pid = p.get("id", "?")
+        name = p.get("name", "")
+        source = p.get("discovered_from", "")
+        line = f"  - {pid}: {name}"
+        if source:
+            line += f" (source: {source})"
+        lines.append(line)
+    return "\n".join(lines)
 
 
 def compose_review_prefix(
@@ -590,6 +683,7 @@ def compose_review_prefix(
     *,
     artifact_type: str | None = None,
     skip_synthesis: bool = False,
+    existing_techniques: list[str] | None = None,
 ) -> str:
     """Build the review-prompt prefix grounding the LLM in BPs + clauses.
 
@@ -654,7 +748,7 @@ def compose_review_prefix(
             phase_pitfalls = phase_data.get("common_pitfalls") or []
 
             bp_cache_path = cache_path(root, domain, "phase", phase)
-            stale = _is_stale_against_decisions(root, bp_cache_path)
+            stale = _is_stale_against_evidence(root, bp_cache_path)
 
             if phase_bps or phase_pitfalls:
                 phase_lines = [
@@ -664,7 +758,7 @@ def compose_review_prefix(
                 if stale:
                     phase_lines.append(
                         "\n**Note:** These phase-level BPs were generated before "
-                        "recent architectural decisions. They may be stale. Consider "
+                        "recent challenge findings or architectural decisions. They may be stale. Consider "
                         "re-generating with `specflow handbook generate "
                         f"{phase} --overwrite`."
                     )
@@ -695,6 +789,14 @@ def compose_review_prefix(
                     for p in phase_pitfalls[:5]:
                         phase_lines.append(f"- {p}")
                 sections.append("\n".join(phase_lines))
+
+    if existing_techniques:
+        tech_line = ", ".join(existing_techniques)
+        sections.append(
+            "## Previously applied thinking techniques\n\n"
+            f"This artifact has already been challenged by: {tech_line}\n"
+            "Focus your review on angles NOT already covered by these techniques."
+        )
 
     if not sections:
         return ""

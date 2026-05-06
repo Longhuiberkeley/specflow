@@ -13,6 +13,156 @@ from specflow.lib.artifacts import Artifact
 from specflow.lib.ci import LLMConfig, call_llm
 
 
+LENS_CATALOG: dict[str, str] = {
+    "devils_advocate": (
+        "You are a Devil's Advocate for a SpecFlow spec-driven-development repository. "
+        "Assume the artifact provided is fundamentally flawed, mistaken, misguided, or unnecessary. "
+        "Find evidence that contradicts its claims or shows it is solving the wrong problem. "
+        "Do NOT duplicate findings already covered in the provided CHECKLIST CONTEXT. "
+        "Output a JSON array: "
+        '[{"title": "<short finding title>", "rationale": "<explanation>", "severity": "warn|error"}]. '
+        "No prose outside JSON."
+    ),
+    "premortem": (
+        "You are conducting a Premortem for a SpecFlow spec-driven-development repository. "
+        "Fast-forward six months: the implementation of this artifact has catastrophically failed. "
+        "What caused it? Enumerate plausible failure modes and their precursors based on the design/requirements. "
+        "Do NOT duplicate findings already covered in the provided CHECKLIST CONTEXT. "
+        "Output a JSON array: "
+        '[{"title": "<short finding title>", "rationale": "<explanation>", "severity": "warn|error"}]. '
+        "No prose outside JSON."
+    ),
+    "red_blue_team": (
+        "You are conducting a Red Team / Blue Team exercise for a SpecFlow spec-driven-development repository. "
+        "Act as both the attacker (Red Team) finding exploits and the defender (Blue Team) evaluating defenses. "
+        "Focus on security-adjacent requirements and trust boundaries. "
+        "Do NOT duplicate findings already covered in the provided CHECKLIST CONTEXT. "
+        "Output a JSON array: "
+        '[{"title": "<short finding title>", "rationale": "<explanation>", "severity": "warn|error"}]. '
+        "No prose outside JSON."
+    ),
+    "assumption_surfacing": (
+        "You are an Assumption Surfacing reviewer for a SpecFlow spec-driven-development repository. "
+        "Enumerate implicit assumptions the artifact rests on. For each, attack it: what if it is false? "
+        "What if it changes mid-project? Highlight unstated requirements or hidden dependencies. "
+        "Do NOT duplicate findings already covered in the provided CHECKLIST CONTEXT. "
+        "Output a JSON array: "
+        '[{"title": "<short finding title>", "rationale": "<explanation>", "severity": "warn|error"}]. '
+        "No prose outside JSON."
+    ),
+    "stress_scale": (
+        "You are a Stress-Scale reviewer for a SpecFlow spec-driven-development repository. "
+        "What breaks at 100x the stated scale — data volume, users, request rate, cost? "
+        "Surface both hard limits (throughput, latency budgets) and soft limits (operational burden, on-call load). "
+        "Do NOT duplicate findings already covered in the provided CHECKLIST CONTEXT. "
+        "Output a JSON array: "
+        '[{"title": "<short finding title>", "rationale": "<explanation>", "severity": "warn|error"}]. '
+        "No prose outside JSON."
+    ),
+    "dependency_shock": (
+        "You are a Dependency Shock reviewer for a SpecFlow spec-driven-development repository. "
+        "For each external dependency (library, API, team, vendor): what if it disappears, changes terms, "
+        "degrades in performance, or gets deprecated? Identify hidden coupling and missing fallback plans. "
+        "Do NOT duplicate findings already covered in the provided CHECKLIST CONTEXT. "
+        "Output a JSON array: "
+        '[{"title": "<short finding title>", "rationale": "<explanation>", "severity": "warn|error"}]. '
+        "No prose outside JSON."
+    ),
+    "reversal": (
+        "You are a Reversal reviewer for a SpecFlow spec-driven-development repository. "
+        "What if we did the opposite of what the artifact proposes? Sometimes reveals that the 'obvious' "
+        "direction is a bias rather than a reasoned choice. Challenge the fundamental direction. "
+        "Do NOT duplicate findings already covered in the provided CHECKLIST CONTEXT. "
+        "Output a JSON array: "
+        '[{"title": "<short finding title>", "rationale": "<explanation>", "severity": "warn|error"}]. '
+        "No prose outside JSON."
+    ),
+    "five_whys": (
+        "You are a Five-Whys reviewer for a SpecFlow spec-driven-development repository. "
+        "Recursively ask 'why' of each requirement's rationale. Usually exposes either a deeper root cause "
+        "or a specious justification. Dig at least 3 levels deep on each claim. "
+        "Do NOT duplicate findings already covered in the provided CHECKLIST CONTEXT. "
+        "Output a JSON array: "
+        '[{"title": "<short finding title>", "rationale": "<explanation>", "severity": "warn|error"}]. '
+        "No prose outside JSON."
+    ),
+    "outside_view": (
+        "You are an Outside View (base-rate reasoning) reviewer for a SpecFlow spec-driven-development repository. "
+        "Ignore project-specific details. How often do projects of this class succeed? What's the reference-class "
+        "failure rate? Does this project's plan reflect that? Flag overoptimistic assumptions. "
+        "Do NOT duplicate findings already covered in the provided CHECKLIST CONTEXT. "
+        "Output a JSON array: "
+        '[{"title": "<short finding title>", "rationale": "<explanation>", "severity": "warn|error"}]. '
+        "No prose outside JSON."
+    ),
+    "worst_case_user": (
+        "You are a Worst-Case User reviewer for a SpecFlow spec-driven-development repository. "
+        "Who abuses this feature? Who misunderstands it? Who uses it in a way we didn't anticipate? "
+        "Especially valuable on public APIs and user-facing features. "
+        "Do NOT duplicate findings already covered in the provided CHECKLIST CONTEXT. "
+        "Output a JSON array: "
+        '[{"title": "<short finding title>", "rationale": "<explanation>", "severity": "warn|error"}]. '
+        "No prose outside JSON."
+    ),
+    "regulator": (
+        "You are a Regulator / Auditor reviewer for a SpecFlow spec-driven-development repository. "
+        "What would a compliance auditor flag? What questions would they ask for which we don't have "
+        "a documented answer? Focus on traceability, evidence, and compliance gaps. "
+        "Do NOT duplicate findings already covered in the provided CHECKLIST CONTEXT. "
+        "Output a JSON array: "
+        '[{"title": "<short finding title>", "rationale": "<explanation>", "severity": "warn|error"}]. '
+        "No prose outside JSON."
+    ),
+    "temporal_drift": (
+        "You are a Temporal Drift reviewer for a SpecFlow spec-driven-development repository. "
+        "Is what's true today going to be true in 2 years? 5 years? What temporal assumptions are we baking in? "
+        "Flag requirements and designs that assume static conditions in a changing environment. "
+        "Do NOT duplicate findings already covered in the provided CHECKLIST CONTEXT. "
+        "Output a JSON array: "
+        '[{"title": "<short finding title>", "rationale": "<explanation>", "severity": "warn|error"}]. '
+        "No prose outside JSON."
+    ),
+    "composition": (
+        "You are a Composition reviewer for a SpecFlow spec-driven-development repository. "
+        "What happens when multiple features interact? Race conditions, conflicting invariants, "
+        "emergent behaviors between independently-specified artifacts. Focus on cross-feature interactions. "
+        "Do NOT duplicate findings already covered in the provided CHECKLIST CONTEXT. "
+        "Output a JSON array: "
+        '[{"title": "<short finding title>", "rationale": "<explanation>", "severity": "warn|error"}]. '
+        "No prose outside JSON."
+    ),
+    "inversion": (
+        "You are an Inversion (Munger) reviewer for a SpecFlow spec-driven-development repository. "
+        "What would guarantee failure? Identify the failure patterns, then check whether the design avoids them. "
+        "Work backwards from guaranteed failure to identify missing safeguards. "
+        "Do NOT duplicate findings already covered in the provided CHECKLIST CONTEXT. "
+        "Output a JSON array: "
+        '[{"title": "<short finding title>", "rationale": "<explanation>", "severity": "warn|error"}]. '
+        "No prose outside JSON."
+    ),
+    "competitor_framing": (
+        "You are a Competitor Framing reviewer for a SpecFlow spec-driven-development repository. "
+        "How would a competitor solve this? What would they do differently? Often surfaces trade-offs "
+        "the current design doesn't even acknowledge. Challenge parochial thinking. "
+        "Do NOT duplicate findings already covered in the provided CHECKLIST CONTEXT. "
+        "Output a JSON array: "
+        '[{"title": "<short finding title>", "rationale": "<explanation>", "severity": "warn|error"}]. '
+        "No prose outside JSON."
+    ),
+    "cost_scaling": (
+        "You are a Cost-Scaling reviewer for a SpecFlow spec-driven-development repository. "
+        "At 10x usage, is cost linear? Sublinear? Superlinear? Where are the cost nonlinearities, "
+        "and are we aware of them? Flag unbounded cost trajectories. "
+        "Do NOT duplicate findings already covered in the provided CHECKLIST CONTEXT. "
+        "Output a JSON array: "
+        '[{"title": "<short finding title>", "rationale": "<explanation>", "severity": "warn|error"}]. '
+        "No prose outside JSON."
+    ),
+}
+
+ALL_LENS_NAMES: set[str] = set(LENS_CATALOG.keys())
+
+
 @dataclass
 class TechniqueFinding:
     title: str
@@ -52,24 +202,75 @@ def parse_json_response(text: str) -> list[dict[str, str]]:
     return findings
 
 
+def _run_generic_lens(
+    technique_name: str,
+    artifact: Artifact,
+    context: str,
+    cfg: LLMConfig,
+) -> list[dict[str, str]]:
+    """Run a lens using the generic prompt from LENS_CATALOG."""
+    system_prompt = LENS_CATALOG.get(technique_name, "")
+    if not system_prompt:
+        return []
+    user_prompt = f"""
+Artifact ID: {artifact.id}
+Title: {artifact.title}
+Body:
+{artifact.body}
+
+CHECKLIST CONTEXT (do not duplicate these findings):
+{context}
+"""
+    result = call_llm(cfg, system_prompt, user_prompt)
+    if not result.get("ok"):
+        raise Exception(result.get("error", "Unknown LLM error"))
+    return parse_json_response(result.get("content", ""))
+
+
 def execute_technique(
     technique_name: str,
     artifact: Artifact,
     context: str,
     cfg: LLMConfig,
 ) -> list[TechniqueFinding]:
-    """Execute a single thinking technique against an artifact."""
+    """Execute a single thinking technique against an artifact.
+
+    If a dedicated Python module exists at specflow.lib.techniques.<name>,
+    it is used directly. Otherwise, falls back to a generic LLM call using
+    the lens description from LENS_CATALOG.
+    """
     import importlib
     
     try:
         mod = importlib.import_module(f"specflow.lib.techniques.{technique_name}")
     except ImportError:
-        return [TechniqueFinding(
-            title=f"Failed to load technique {technique_name}",
-            rationale="Module not found.",
-            severity="error",
-            technique="framework"
-        )]
+        if technique_name not in LENS_CATALOG:
+            return [TechniqueFinding(
+                title=f"Unknown technique: {technique_name}",
+                rationale=f"No dedicated module or catalog entry for '{technique_name}'.",
+                severity="error",
+                technique="framework"
+            )]
+        try:
+            results = _run_generic_lens(technique_name, artifact, context, cfg)
+            findings = []
+            for r in results:
+                findings.append(TechniqueFinding(
+                    title=r.get("title", "Untitled finding"),
+                    rationale=r.get("rationale", ""),
+                    severity=r.get("severity", "info"),
+                    technique=technique_name,
+                    target_id=artifact.id,
+                ))
+            return findings
+        except Exception as e:
+            return [TechniqueFinding(
+                title=f"Error executing {technique_name}",
+                rationale=str(e),
+                severity="error",
+                technique="framework",
+                target_id=artifact.id,
+            )]
         
     try:
         results = mod.run(artifact, context, cfg)
@@ -102,7 +303,7 @@ def run_subagents(
     """Run all specified techniques against all target artifacts in parallel."""
     all_findings = []
     
-    with concurrent.futures.ThreadPoolExecutor(max_workers=len(techniques) * len(artifacts)) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(techniques) * len(artifacts), 8)) as executor:
         futures = []
         for tech in techniques:
             for art in artifacts:
