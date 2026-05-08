@@ -1,5 +1,14 @@
 # SpecFlow
 
+TLDR: I want to make a framework that can build production level codebase easier
+- You should know what you want to build more or less
+- I designed this to be somewhat token efficient
+- SpecFlow is basically a 1. python based ALM software, and 2. a set of agent skills that helps you do V-model like development methodology.
+  - the ALM part is where the agent can use a CLI tool to edit/ write the artifact tickets
+  - the agent will try to generate the best practices and use certain `thinking techniques` to guide you along the way 
+
+---
+
 **Compliance-grade spec tracking, without the portal.**
 Your git repo is the ALM. Your AI assistant is the UI.
 
