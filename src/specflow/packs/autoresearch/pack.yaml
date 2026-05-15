@@ -16,4 +16,5 @@ adds_directories:
   - specs/loops
   - specs/experiments
   - specs/findings
-adds_skills: []
+adds_skills:
+  - specflow-autoresearch

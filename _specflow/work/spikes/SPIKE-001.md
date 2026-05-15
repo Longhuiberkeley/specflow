@@ -2,7 +2,7 @@
 id: SPIKE-001
 title: "autoresearch_fork inventory \u2014 diff list before Wave 3"
 type: spike
-status: draft
+status: completed
 priority: high
 rationale: The fork contains ~1670 lines of battle-tested protocol. Adapting blindly
   risks losing crash-recovery and stuck-detection specifics. A scoped read-through

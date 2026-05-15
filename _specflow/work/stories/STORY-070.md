@@ -2,7 +2,7 @@
 id: STORY-070
 title: Author specflow-autoresearch SKILL.md with subcommands and setup gate
 type: story
-status: draft
+status: implemented
 priority: high
 tags:
 - autoresearch

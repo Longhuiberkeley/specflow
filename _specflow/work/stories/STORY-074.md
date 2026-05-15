@@ -2,7 +2,7 @@
 id: STORY-074
 title: Write competition-setup-protocol.md
 type: story
-status: draft
+status: implemented
 priority: medium
 tags:
 - autoresearch

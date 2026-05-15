@@ -2,7 +2,7 @@
 id: STORY-072
 title: Write explore-exploit-protocol.md
 type: story
-status: draft
+status: implemented
 priority: medium
 tags:
 - autoresearch

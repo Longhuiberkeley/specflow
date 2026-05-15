@@ -2,7 +2,7 @@
 id: STORY-071
 title: Adapt autonomous-loop-protocol.md from autoresearch_fork
 type: story
-status: draft
+status: implemented
 priority: high
 tags:
 - autoresearch

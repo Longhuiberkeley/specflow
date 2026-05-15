@@ -2,7 +2,7 @@
 id: STORY-073
 title: Write finding-generation-protocol.md
 type: story
-status: draft
+status: implemented
 priority: medium
 tags:
 - autoresearch
