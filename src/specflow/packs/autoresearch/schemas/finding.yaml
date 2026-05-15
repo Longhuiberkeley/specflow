@@ -9,5 +9,5 @@ allowed_status:
   confirmed: [draft]
   superseded: [confirmed]
   falsified: [confirmed]
-allowed_link_roles: [belongs_to, condenses, supersedes, informs, validated_by, derives_from]
+allowed_link_roles: [belongs_to, condenses, supersedes, validated_by, derives_from]
 directory: _specflow/specs/findings/

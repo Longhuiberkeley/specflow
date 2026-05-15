@@ -9,5 +9,5 @@ allowed_status:
   paused: [active]
   completed: [active]
   archived: [active, completed]
-allowed_link_roles: [derives_from, guided_by, validated_by]
+allowed_link_roles: [derives_from, guided_by]
 directory: _specflow/specs/competitions/

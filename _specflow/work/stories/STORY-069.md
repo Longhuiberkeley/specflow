@@ -2,7 +2,7 @@
 id: STORY-069
 title: Author 4 schema YAMLs for COMP / LOOP / EXPT / FIND
 type: story
-status: draft
+status: implemented
 priority: high
 tags:
 - autoresearch

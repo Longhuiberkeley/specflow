@@ -2,7 +2,7 @@
 id: STORY-068
 title: Create autoresearch pack directory and pack.yaml manifest
 type: story
-status: draft
+status: implemented
 priority: high
 tags:
 - autoresearch
