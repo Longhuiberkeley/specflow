@@ -1,0 +1,19 @@
+name: autoresearch
+version: "0.1.0"
+description: >
+  Autonomous research loop for SpecFlow. Adds competition-scoped
+  experimentation with knowledge condensation. Adapted from
+  https://github.com/Longhuiberkeley/autoresearch_fork which builds on
+  https://github.com/uditgoenka/autoresearch (itself based on
+  https://github.com/karpathy/autoresearch).
+adds_artifact_types:
+  - competition
+  - loop
+  - experiment
+  - finding
+adds_directories:
+  - specs/competitions
+  - specs/loops
+  - specs/experiments
+  - specs/findings
+adds_skills: []
