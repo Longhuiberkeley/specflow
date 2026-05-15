@@ -251,7 +251,7 @@ def run(root: Path, args: dict) -> int:
             c = by_type.get(t, 0)
             parts.append(f"{c} {t}")
         has_any = any(by_type.get(t, 0) > 0 for t in prefixes)
-        if has_any or cat_name in ("spec", "work"):
+        if has_any:
             label = CATEGORY_LABELS.get(cat_name, cat_name.title() + ":")
             print(f"  {label:<9} {' | '.join(parts)}")
 
