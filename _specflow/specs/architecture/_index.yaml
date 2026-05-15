@@ -170,4 +170,24 @@ artifacts:
     tags: []
     fingerprint: sha256:c11a474075c1
     children: []
-next_id: 22
+  ARCH-022:
+    id: ARCH-022
+    title: Pack-as-integration-boundary for autoresearch
+    status: draft
+    tags:
+    - autoresearch
+    - architecture
+    - pack
+    fingerprint: sha256:eb67a3e49d1c
+    children: []
+  ARCH-023:
+    id: ARCH-023
+    title: Four-tier research artifact hierarchy
+    status: draft
+    tags:
+    - autoresearch
+    - architecture
+    - hierarchy
+    fingerprint: sha256:218989dbebaa
+    children: []
+next_id: 24

@@ -160,4 +160,44 @@ artifacts:
     tags: []
     fingerprint: sha256:24d92979d49c
     children: []
-next_id: 22
+  DDD-022:
+    id: DDD-022
+    title: Schema definitions for COMP / LOOP / EXPT / FIND
+    status: draft
+    tags:
+    - autoresearch
+    - schemas
+    - ddd
+    fingerprint: sha256:6ad3f9c2710e
+    children: []
+  DDD-023:
+    id: DDD-023
+    title: "pack.yaml adds_skills field \u2014 semantics and install behavior"
+    status: draft
+    tags:
+    - autoresearch
+    - pack
+    - skills
+    fingerprint: sha256:9c3e5899dc1e
+    children: []
+  DDD-024:
+    id: DDD-024
+    title: Dynamic status dashboard via category field
+    status: draft
+    tags:
+    - autoresearch
+    - status
+    - dashboard
+    fingerprint: sha256:4c61ac9398f3
+    children: []
+  DDD-025:
+    id: DDD-025
+    title: "Autonomous loop protocol \u2014 8 phases"
+    status: draft
+    tags:
+    - autoresearch
+    - protocol
+    - loop
+    fingerprint: sha256:4ff1afd8c3e0
+    children: []
+next_id: 26

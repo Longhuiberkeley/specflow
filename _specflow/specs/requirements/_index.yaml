@@ -268,4 +268,74 @@ artifacts:
     - domain
     fingerprint: sha256:070ded3802c3
     children: []
-next_id: 28
+  REQ-028:
+    id: REQ-028
+    title: Autonomous experimentation loop on SpecFlow
+    status: draft
+    tags:
+    - autoresearch
+    - autonomous
+    - top-level
+    fingerprint: sha256:354bc6e04c4a
+    children: []
+  REQ-029:
+    id: REQ-029
+    title: Competition-scoped experiment tracking
+    status: draft
+    tags:
+    - autoresearch
+    - competition
+    - tracking
+    fingerprint: sha256:785750e6db1f
+    children: []
+  REQ-030:
+    id: REQ-030
+    title: Knowledge condensation across loops
+    status: draft
+    tags:
+    - autoresearch
+    - findings
+    - knowledge
+    fingerprint: sha256:2533020447de
+    children: []
+  REQ-031:
+    id: REQ-031
+    title: Explore / exploit / validate LOOP modes
+    status: draft
+    tags:
+    - autoresearch
+    - modes
+    - ideation
+    fingerprint: sha256:89755ebe9d3f
+    children: []
+  REQ-032:
+    id: REQ-032
+    title: Pack system supports skill installation
+    status: draft
+    tags:
+    - autoresearch
+    - pack-system
+    - skills
+    fingerprint: sha256:bae75f482113
+    children: []
+  REQ-033:
+    id: REQ-033
+    title: Dynamic status dashboard for new artifact categories
+    status: draft
+    tags:
+    - autoresearch
+    - status
+    - dashboard
+    fingerprint: sha256:791e8bc22869
+    children: []
+  REQ-034:
+    id: REQ-034
+    title: Traceability covers research chain
+    status: draft
+    tags:
+    - autoresearch
+    - trace
+    - traceability
+    fingerprint: sha256:f0894af0e8ca
+    children: []
+next_id: 35

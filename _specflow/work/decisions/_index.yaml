@@ -427,4 +427,65 @@ artifacts:
     - auto-generated
     fingerprint: sha256:7264722098e3
     children: []
-next_id: 45
+  DEC-045:
+    id: DEC-045
+    title: Autoresearch ships as an opt-in pack, not core
+    status: approved
+    tags:
+    - autoresearch
+    - architecture
+    - decision
+    fingerprint: sha256:e38b1fce8cf0
+    children: []
+  DEC-046:
+    id: DEC-046
+    title: COMP is the top-level scope, not project or strategy
+    status: approved
+    tags:
+    - autoresearch
+    - scope
+    - decision
+    fingerprint: sha256:6ce248b56246
+    children: []
+  DEC-047:
+    id: DEC-047
+    title: EXPT artifacts are write-once with terminal status
+    status: approved
+    tags:
+    - autoresearch
+    - experiment
+    - decision
+    fingerprint: sha256:5de697da9fa4
+    children: []
+  DEC-048:
+    id: DEC-048
+    title: FINDING updates are manual, agent-driven (no auto-aggregation in v1)
+    status: approved
+    tags:
+    - autoresearch
+    - findings
+    - decision
+    fingerprint: sha256:5bba90b2e78b
+    children: []
+  DEC-049:
+    id: DEC-049
+    title: "Inline execution only \u2014 fresh-mode orchestrator/worker deferred"
+    status: approved
+    tags:
+    - autoresearch
+    - execution
+    - decision
+    fingerprint: sha256:e86f0969a455
+    children: []
+  DEC-050:
+    id: DEC-050
+    title: Pack-bundled skills follow no-overwrite install policy
+    status: approved
+    tags:
+    - autoresearch
+    - pack
+    - skills
+    - decision
+    fingerprint: sha256:a582982a159c
+    children: []
+next_id: 51

@@ -635,4 +635,128 @@ artifacts:
     - handoff
     fingerprint: sha256:17df6a029a13
     children: []
-next_id: 64
+  STORY-064:
+    id: STORY-064
+    title: Extend apply_pack with skill installation step
+    status: draft
+    tags:
+    - autoresearch
+    - wave-1
+    - scaffold
+    - pack
+    fingerprint: sha256:8dc8c0437c95
+    children: []
+  STORY-065:
+    id: STORY-065
+    title: Add category field to existing schema YAMLs
+    status: draft
+    tags:
+    - autoresearch
+    - wave-1
+    - schemas
+    fingerprint: sha256:0ac61855c2ad
+    children: []
+  STORY-066:
+    id: STORY-066
+    title: Make specflow status dashboard dynamic via category
+    status: draft
+    tags:
+    - autoresearch
+    - wave-1
+    - status
+    fingerprint: sha256:9323e386d592
+    children: []
+  STORY-067:
+    id: STORY-067
+    title: Extend specflow trace to render research chain
+    status: draft
+    tags:
+    - autoresearch
+    - wave-1
+    - trace
+    fingerprint: sha256:1f220b2faad7
+    children: []
+  STORY-068:
+    id: STORY-068
+    title: Create autoresearch pack directory and pack.yaml manifest
+    status: draft
+    tags:
+    - autoresearch
+    - wave-2
+    - pack
+    fingerprint: sha256:52eef9e99f33
+    children: []
+  STORY-069:
+    id: STORY-069
+    title: Author 4 schema YAMLs for COMP / LOOP / EXPT / FIND
+    status: draft
+    tags:
+    - autoresearch
+    - wave-2
+    - schemas
+    fingerprint: sha256:4a85b11b2357
+    children: []
+  STORY-070:
+    id: STORY-070
+    title: Author specflow-autoresearch SKILL.md with subcommands and setup gate
+    status: draft
+    tags:
+    - autoresearch
+    - wave-3
+    - skill
+    fingerprint: sha256:724e36f4c7ef
+    children: []
+  STORY-071:
+    id: STORY-071
+    title: Adapt autonomous-loop-protocol.md from autoresearch_fork
+    status: draft
+    tags:
+    - autoresearch
+    - wave-3
+    - protocol
+    fingerprint: sha256:fc6b7477e0d3
+    children: []
+  STORY-072:
+    id: STORY-072
+    title: Write explore-exploit-protocol.md
+    status: draft
+    tags:
+    - autoresearch
+    - wave-3
+    - protocol
+    fingerprint: sha256:c1090c71c91c
+    children: []
+  STORY-073:
+    id: STORY-073
+    title: Write finding-generation-protocol.md
+    status: draft
+    tags:
+    - autoresearch
+    - wave-3
+    - protocol
+    - findings
+    fingerprint: sha256:9c514bedd118
+    children: []
+  STORY-074:
+    id: STORY-074
+    title: Write competition-setup-protocol.md
+    status: draft
+    tags:
+    - autoresearch
+    - wave-3
+    - protocol
+    - competition
+    fingerprint: sha256:7fcf5831597e
+    children: []
+  STORY-075:
+    id: STORY-075
+    title: Test autoresearch pack end-to-end and pilot with quant_trade_rnd
+    status: draft
+    tags:
+    - autoresearch
+    - wave-4
+    - test
+    - pilot
+    fingerprint: sha256:c65614aa26c4
+    children: []
+next_id: 76
