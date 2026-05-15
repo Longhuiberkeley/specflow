@@ -2,7 +2,7 @@
 id: STORY-065
 title: Add category field to existing schema YAMLs
 type: story
-status: draft
+status: implemented
 priority: medium
 tags:
 - autoresearch
@@ -15,6 +15,8 @@ links:
 - target: DDD-024
   role: specified_by
 created: '2026-05-15'
+modified: '2026-05-15'
+fingerprint: sha256:3811045800b3
 ---
 
 # Add category field to existing schema YAMLs

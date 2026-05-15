@@ -2,7 +2,7 @@
 id: STORY-067
 title: Extend specflow trace to render research chain
 type: story
-status: draft
+status: implemented
 priority: medium
 tags:
 - autoresearch
@@ -13,6 +13,8 @@ links:
 - target: REQ-034
   role: implements
 created: '2026-05-15'
+modified: '2026-05-15'
+fingerprint: sha256:00995fe102ba
 ---
 
 # Extend specflow trace to render research chain

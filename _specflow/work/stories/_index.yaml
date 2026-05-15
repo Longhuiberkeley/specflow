@@ -638,43 +638,43 @@ artifacts:
   STORY-064:
     id: STORY-064
     title: Extend apply_pack with skill installation step
-    status: draft
+    status: implemented
     tags:
     - autoresearch
     - wave-1
     - scaffold
     - pack
-    fingerprint: sha256:8dc8c0437c95
+    fingerprint: sha256:49a55a0c309a
     children: []
   STORY-065:
     id: STORY-065
     title: Add category field to existing schema YAMLs
-    status: draft
+    status: implemented
     tags:
     - autoresearch
     - wave-1
     - schemas
-    fingerprint: sha256:0ac61855c2ad
+    fingerprint: sha256:3811045800b3
     children: []
   STORY-066:
     id: STORY-066
     title: Make specflow status dashboard dynamic via category
-    status: draft
+    status: implemented
     tags:
     - autoresearch
     - wave-1
     - status
-    fingerprint: sha256:9323e386d592
+    fingerprint: sha256:e325091f42c4
     children: []
   STORY-067:
     id: STORY-067
     title: Extend specflow trace to render research chain
-    status: draft
+    status: implemented
     tags:
     - autoresearch
     - wave-1
     - trace
-    fingerprint: sha256:1f220b2faad7
+    fingerprint: sha256:00995fe102ba
     children: []
   STORY-068:
     id: STORY-068

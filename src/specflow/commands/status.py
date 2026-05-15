@@ -12,19 +12,11 @@ from specflow.lib import config as config_lib
 from specflow.lib import standards as standards_lib
 from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC
 
-# Display labels for artifact types
-TYPE_LABELS = {
-    "specs/requirements": "REQ",
-    "specs/architecture": "ARCH",
-    "specs/detailed-design": "DDD",
-    "specs/unit-tests": "UT",
-    "specs/integration-tests": "IT",
-    "specs/qualification-tests": "QT",
-    "specs/reviews": "REVIEW",
-    "work/stories": "STORY",
-    "work/spikes": "SPIKE",
-    "work/decisions": "DEC",
-    "work/defects": "DEF",
+CATEGORY_LABELS = {
+    "spec": "Specs:",
+    "work": "Work:",
+    "review": "Reviews:",
+    "research": "Research:",
 }
 
 
@@ -145,6 +137,26 @@ def _count_issues(root: Path) -> int:
     return sum(1 for a in artifacts if a.suspect)
 
 
+def _load_categories(root: Path) -> dict[str, list[str]]:
+    """Read all installed schemas and group prefixes by category."""
+    categories: dict[str, list[str]] = {"spec": [], "work": [], "review": [], "research": []}
+    schema_dir = root / ".specflow" / "schema"
+    if not schema_dir.exists():
+        return categories
+    for yaml_file in schema_dir.glob("*.yaml"):
+        try:
+            schema = yaml.safe_load(yaml_file.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        if not isinstance(schema, dict):
+            continue
+        prefix = schema.get("prefix")
+        cat = schema.get("category", "spec")
+        if cat in categories and prefix:
+            categories[cat].append(prefix)
+    return categories
+
+
 def _suggest_action(root: Path, phase: str, artifact_counts: dict[str, int]) -> str:
     """Suggest next action based on current phase and artifact state."""
     total = sum(artifact_counts.values())
@@ -229,31 +241,19 @@ def run(root: Path, args: dict) -> int:
     print(f"  Project:   {project_name}")
     print(f"  Created:   {created}")
 
-    # Specs
-    spec_types = ["REQ", "ARCH", "DDD", "UT", "IT", "QT"]
-    spec_parts = []
-    for t in spec_types:
-        c = by_type.get(t, 0)
-        spec_parts.append(f"{c} {t}")
-    print(f"\n  Specs:   {' | '.join(spec_parts)}")
-
-    # Reviews + Audits + Challenges (review-trail counts)
-    review_types = ["REVIEW", "AUD", "CHL"]
-    review_parts = []
-    for t in review_types:
-        c = by_type.get(t, 0)
-        if c > 0:
-            review_parts.append(f"{c} {t}")
-    if review_parts:
-        print(f"  Reviews: {' | '.join(review_parts)}")
-
-    # Work
-    work_types = ["STORY", "SPIKE", "DEC", "DEF"]
-    work_parts = []
-    for t in work_types:
-        c = by_type.get(t, 0)
-        work_parts.append(f"{c} {t}")
-    print(f"  Work:    {' | '.join(work_parts)}")
+    categories = _load_categories(root)
+    for cat_name in ["spec", "work", "review", "research"]:
+        prefixes = categories.get(cat_name, [])
+        if not prefixes:
+            continue
+        parts = []
+        for t in prefixes:
+            c = by_type.get(t, 0)
+            parts.append(f"{c} {t}")
+        has_any = any(by_type.get(t, 0) > 0 for t in prefixes)
+        if has_any or cat_name in ("spec", "work"):
+            label = CATEGORY_LABELS.get(cat_name, cat_name.title() + ":")
+            print(f"  {label:<9} {' | '.join(parts)}")
 
     # Status distribution
     status_parts = []

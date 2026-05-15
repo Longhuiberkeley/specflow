@@ -1,4 +1,5 @@
 type: requirement
+category: spec
 prefix: REQ
 id_format: "REQ-\\d{3}(\\.\\d{1,3})?$"
 required_fields: [id, title, type, status, created]

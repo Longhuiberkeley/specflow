@@ -2,7 +2,7 @@
 id: STORY-064
 title: Extend apply_pack with skill installation step
 type: story
-status: draft
+status: implemented
 priority: high
 tags:
 - autoresearch
@@ -18,6 +18,8 @@ links:
 - target: ARCH-022
   role: guided_by
 created: '2026-05-15'
+modified: '2026-05-15'
+fingerprint: sha256:49a55a0c309a
 ---
 
 # Extend apply_pack with skill installation step

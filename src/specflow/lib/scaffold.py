@@ -6,6 +6,8 @@ from typing import Any
 
 import yaml
 
+from specflow.lib import platform
+
 # Spec directories under _specflow/
 SPEC_DIRS = [
     "specs/requirements",
@@ -184,9 +186,31 @@ def apply_pack(root: Path, pack_name: str, packs_dir: Path) -> dict[str, Any]:
 
     types_added = list(manifest.get("adds_artifact_types", []) or [])
 
+    # 5. Install pack skills → platform skills dir (no overwrite)
+    skills_added: list[str] = []
+    declared_skills = manifest.get("adds_skills", []) or []
+    if declared_skills:
+        platform_code, _ = platform.detect_platform(root)
+        if platform_code is None:
+            print(f"  ⚠ Pack '{pack_name}' declares skills but no AI platform detected; install manually")
+        else:
+            skills_dir = platform.get_skills_dir(root, platform_code)
+            for skill_name in declared_skills:
+                src = pack_root / "skills" / skill_name
+                if not src.is_dir():
+                    return {
+                        "ok": False,
+                        "error": f"Pack declares skill '{skill_name}' but directory not found: {src}",
+                    }
+                dst = skills_dir / skill_name
+                if not dst.exists():
+                    shutil.copytree(str(src), str(dst))
+                    skills_added.append(skill_name)
+
     return {
         "ok": True,
         "pack": pack_name,
         "types_added": types_added,
         "standards_added": standards_added,
+        "skills_added": skills_added,
     }

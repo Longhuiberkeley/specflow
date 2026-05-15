@@ -2,7 +2,7 @@
 id: STORY-066
 title: Make specflow status dashboard dynamic via category
 type: story
-status: draft
+status: implemented
 priority: medium
 tags:
 - autoresearch
@@ -15,6 +15,8 @@ links:
 - target: DDD-024
   role: specified_by
 created: '2026-05-15'
+modified: '2026-05-15'
+fingerprint: sha256:e325091f42c4
 ---
 
 # Make specflow status dashboard dynamic via category
