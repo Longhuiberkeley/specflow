@@ -4,6 +4,8 @@ Detailed protocol for the SpecFlow autoresearch iteration loop. SKILL.md has the
 
 All loops are bounded by the LOOP artifact's `budget` field. There is no unbounded mode — the user sets a maximum iteration count when creating the LOOP.
 
+**Concurrency assumption.** One running LOOP per COMP at a time. Two LOOPs against the same COMP will race on Phase 4 git commits and produce non-reconstructable history. The setup gate (`SKILL.md` → Step 1) enforces this by detecting `status: running` LOOPs on the target COMP before creating a new one.
+
 ## Phase 0: Precondition Checks (before loop starts)
 
 **MUST complete ALL checks before entering the loop. Fail fast if any check fails.**
@@ -199,6 +201,8 @@ git revert --abort && git reset --hard HEAD~1
 
 Run the verify command from the COMP artifact's `verify_command` field. Capture output.
 
+**Anti-gaming note:** The verify command should output exactly one number to stdout. Rich diagnostics (equity curves, per-window stats) should be saved to a file the agent doesn't read during the loop — otherwise the agent will use the extra information to overfit. See "Leakage and Gaming" in `competition-setup-protocol.md` for structural patterns that prevent gaming (read-only eval data, robustness-adjusted primaries, etc.).
+
 **Timeout rule:** If verification exceeds 2x normal time, kill and treat as crash.
 
 **Extract metric:** Parse the verification output for the specific metric number.
@@ -386,6 +390,19 @@ specflow create --type experiment \
   --summary "Added BTC/ETH cross-asset rolling correlation features to the feature pipeline"
 ```
 
+If the verify command or guard produced additional metrics, include them:
+
+```bash
+specflow create --type experiment \
+  --status kept \
+  --title "Added cross-asset momentum features" \
+  --loop LOOP-001 \
+  --metric-value 1.83 \
+  --change-category features \
+  --summary "Added BTC/ETH cross-asset rolling correlation features to the feature pipeline" \
+  --auxiliary-metrics '{"max_drawdown": 0.12, "total_trades": 340, "win_rate": 0.54, "runtime_seconds": 12.4}'
+```
+
 Field mapping from iteration data:
 
 | Iteration Data | EXPT Field |
@@ -398,6 +415,28 @@ Field mapping from iteration data:
 | Strategy identifier | `strategy_used` (optional) |
 | Metric delta from previous best | `delta` (optional) |
 | Duration of verify | `duration_seconds` (optional) |
+| Additional diagnostic metrics | `auxiliary_metrics` (optional, YAML dict) |
+
+### Logging Auxiliary Metrics
+
+After the kept/discarded decision, log any additional measurements the verify command or guard command produced. This is post-hoc enrichment — it does NOT affect the decision. The agent populates the `auxiliary_metrics` field with a freeform dict:
+
+```yaml
+auxiliary_metrics:
+  max_drawdown: 0.12
+  total_trades: 340
+  win_rate: 0.54
+  runtime_seconds: 12.4
+```
+
+Common auxiliary metrics by domain:
+
+| Domain | Typical auxiliary metrics |
+|--------|--------------------------|
+| Quant trading | max_drawdown, total_trades, win_rate, profit_factor, oos_decay |
+| ML classification | precision, recall, f1_score, auc_roc, confusion_matrix_fp |
+| NLP | BLEU, ROUGE-L, perplexity, token_count |
+| Systems | p50_latency_ms, p99_latency_ms, memory_mb, throughput_rps |
 
 ### Update the LOOP Artifact
 

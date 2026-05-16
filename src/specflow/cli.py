@@ -187,6 +187,12 @@ def cmd_generate_tests(args: argparse.Namespace) -> int:
     return cmd.run(root, vars(args))
 
 
+def cmd_autoresearch(args: argparse.Namespace) -> int:
+    from specflow.commands import autoresearch as autoresearch_cmd
+    root = _find_project_root()
+    return autoresearch_cmd.run(root, vars(args))
+
+
 # ── Parser builders ───────────────────────────────────────────────
 
 def _add_init_parser(subparsers):
@@ -443,6 +449,28 @@ def _add_generate_tests_parser(subparsers):
     p.add_argument("--dry-run", action="store_true", dest="dry_run", help="Show what would be created without writing files")
 
 
+def _add_autoresearch_parser(subparsers):
+    p = subparsers.add_parser("autoresearch", help="Autoresearch competition loop: plan, run, review, leaderboard")
+    sub = p.add_subparsers(dest="autoresearch_subcommand")
+
+    plan_p = sub.add_parser("plan", help="Plan a LOOP: setup gate checklist for a competition")
+    plan_p.add_argument("--competition", help="Competition ID (default: auto-detect active COMP)")
+    plan_p.add_argument("--profile", action="store_true", help="Run 3x noise variance probe on verify command")
+
+    run_p = sub.add_parser("run", help="Print 8-phase protocol checklist for a LOOP")
+    run_p.add_argument("--competition", help="Competition ID (default: auto-detect)")
+    run_p.add_argument("--loop", help="LOOP ID (default: running or draft LOOP for the COMP)")
+
+    review_p = sub.add_parser("review", help="Review FINDs, leaderboard, and loop history")
+    review_p.add_argument("--competition", help="Competition ID (default: auto-detect)")
+    review_p.add_argument("--top", type=int, default=5, help="Number of top EXPTs to show (default: 5)")
+
+    lb_p = sub.add_parser("leaderboard", help="Top EXPTs ranked by primary metric")
+    lb_p.add_argument("--competition", help="Competition ID (omit with --all)")
+    lb_p.add_argument("--all", action="store_true", help="Show leaderboard across all competitions")
+    lb_p.add_argument("--top", type=int, default=10, help="Number of EXPTs per competition (default: 10)")
+
+
 # ── Workflow-phase grouping for --help ────────────────────────────
 # argparse doesn't support subparser groups natively. Render groups via epilog
 # so `specflow --help` actually shows the phase headers, not just the source.
@@ -456,6 +484,7 @@ commands by workflow phase:
   CI:         hook, renumber-drafts, import, export, detect, change-impact,
               fingerprint-refresh, ci, ci-gate
   Recovery:   unlock, locks, rebuild-index, split, merge
+  Research:   autoresearch
 """
 
 
@@ -579,6 +608,9 @@ def main(argv: list[str] | None = None) -> int:
     _add_split_parser(subparsers)
     _add_merge_parser(subparsers)
 
+    # ── Research ────────────────────────────────────────────────
+    _add_autoresearch_parser(subparsers)
+
     args = parser.parse_args(argv)
 
     if args.command is None:
@@ -619,6 +651,7 @@ def main(argv: list[str] | None = None) -> int:
         "trace": cmd_trace,
         "ci-gate": cmd_ci_gate,
         "generate-tests": cmd_generate_tests,
+        "autoresearch": cmd_autoresearch,
     }
 
     handler = commands.get(args.command)

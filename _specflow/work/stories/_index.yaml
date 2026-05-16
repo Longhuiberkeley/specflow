@@ -759,4 +759,11 @@ artifacts:
     - pilot
     fingerprint: sha256:c65614aa26c4
     children: []
+  STORY-UPDATESK-86fb:
+    id: STORY-UPDATESK-86fb
+    title: Update SKILL.md to thin CLI wrapper and add pack context injection
+    status: draft
+    tags: []
+    fingerprint: sha256:e3b0c44298fc
+    children: []
 next_id: 76

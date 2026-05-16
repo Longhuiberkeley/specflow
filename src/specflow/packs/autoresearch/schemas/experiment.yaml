@@ -3,7 +3,7 @@ category: research
 prefix: EXPT
 id_format: "^EXPT-\\d{3,5}$"
 required_fields: [id, title, type, status, created, loop, metric_value, change_category, summary]
-optional_fields: [description, commit, parameters, guard_value, guard_passed, strategy_used, delta, duration_seconds, tags, suspect, fingerprint, links, modified, thinking_techniques]
+optional_fields: [description, commit, parameters, guard_value, guard_passed, strategy_used, delta, duration_seconds, auxiliary_metrics, tags, suspect, fingerprint, links, modified, thinking_techniques]
 allowed_status:
   kept: []
   discarded: []

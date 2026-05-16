@@ -116,6 +116,144 @@ A common pattern is to run two competitions against the same dataset with differ
 
 FINDs from COMP-001 inform LOOPs on COMP-002 when the user creates a LOOP with `mode: validate` and reads the screener's confirmed FINDs. The FIND schema's `applies_to` field indicates scope.
 
+## Multi-criteria Competitions
+
+Most real domains have one key metric but several important auxiliary concerns. The schema supports this through three distinct mechanisms — use all three deliberately rather than collapsing everything into a single composite number.
+
+### Primary Metric (for ranking)
+
+The COMP's `metric_name` + `metric_direction` fields define the **one number** the agent optimizes. This is what drives the `kept`/`discarded` decision in Phase 6.
+
+Choose a robustness-adjusted primary when possible:
+
+| Primary | Why it's better than the alternative |
+|---------|--------------------------------------|
+| `sharpe_walk_forward` | Tests generalization across temporal windows, not just one split |
+| `sharpe_bootstrap_lower_5pct` | Bootstrap CI lower bound is harder to overfit than point estimate |
+| `accuracy_5fold_mean` | Cross-validated mean is more stable than single-split accuracy |
+
+Point estimates over a single backtest are the most overfittable metrics in finance. Prefer metrics that bake generalization into the measurement itself.
+
+### Guards (binary floors)
+
+Guards are hard constraints that auto-discard experiments violating them. They use the COMP's `guard_command` + `guard_mode` fields. Unlike the primary metric, guards are binary — you either pass or you don't.
+
+**Why lexicographic guards beat composite scalars:** A composite like `0.6 * sharpe - 0.3 * drawdown_penalty` smears the constraint into the objective. The agent will find a basin where one component dominates (e.g., tolerating extreme drawdown to chase Sharpe). Guards stay binary and unforgeable.
+
+**Worked quant example:**
+
+```bash
+specflow create --type competition \
+  --title "Walk-forward momentum strategy" \
+  --verify-command "python scripts/evaluate.py --strategy {strategy} 2>&1 | grep 'sharpe_wf' | awk '{print $2}'" \
+  --metric-name "Walk-forward Sharpe" \
+  --metric-direction "higher_is_better" \
+  --guard-command "python scripts/guard_check.py --strategy {strategy}" \
+  --guard-mode "metric_valued"
+```
+
+Where `guard_check.py` checks multiple floors and exits non-zero if any fail:
+
+```python
+# guard_check.py — returns max_drawdown value, exits 1 if violation
+metrics = load_results()
+if metrics["max_drawdown"] > 0.15:
+    sys.exit(1)
+if metrics["total_trades"] < 100:
+    sys.exit(1)
+if metrics["oos_decay"] > 0.30:
+    sys.exit(1)
+print(metrics["max_drawdown"])  # metric_valued mode: prints the number
+```
+
+The guard catches the cheats before the EXPT is marked `kept`. The agent cannot optimize around it — it's a hard wall.
+
+### Auxiliary Metrics (for logging)
+
+Use the EXPT's `auxiliary_metrics` field to log any additional measurements without affecting the decision. This is structured data you can query later during `:review`.
+
+```yaml
+# In EXPT frontmatter
+metric_value: 1.83
+auxiliary_metrics:
+  max_drawdown: 0.12
+  total_trades: 340
+  oos_decay: 0.22
+  win_rate: 0.54
+  runtime_seconds: 12.4
+  profit_factor: 1.67
+```
+
+The agent populates this during Phase 7 (Log) after the kept/discarded decision. It's post-hoc enrichment — not a decision driver. The leaderboard ranks by primary metric; auxiliary metrics are visible in EXPT details for the review phase.
+
+### Choosing Strictness
+
+These are recommendations with tradeoffs, not mandates. The user decides how strict to be:
+
+| Strictness | When to use | Tradeoff |
+|------------|-------------|----------|
+| No guards | Early exploration, want maximum iteration throughput | May keep overfitted or risky experiments |
+| Single guard | Production strategy, one key risk to bound | Slightly slower loops (guard runs per iteration) |
+| Multiple guards | Regulated domain, multiple failure modes to prevent | More discards, fewer keeps, but higher quality |
+| Composite metric instead | Only when you truly have a multi-objective problem | Requires careful weighting, agent will game weights |
+
+## Leakage and Gaming
+
+Leakage occurs when evaluation data or evaluation artifacts are accessible to the optimization process. Gaming occurs when the agent finds a way to inflate the metric without genuine improvement. Both produce misleading results.
+
+### Read-only eval data
+
+The verify command should run against data the agent literally cannot open. If the LLM can read the test set, eventually it will fit to it.
+
+| Pattern | How to implement |
+|---------|-----------------|
+| File permissions | `eval/` directory owned by another user, permissions 400 |
+| Separate working directory | Verify command runs in a subprocess with a different cwd |
+| Protocol convention | Document `eval/` as off-limits in COMP description; agents respect this by convention |
+| Container isolation | Verify command runs inside Docker with read-only eval mount |
+
+Choose based on your threat model. A solo researcher can often trust convention. A shared CI system needs real isolation.
+
+### Verify output should be one number
+
+Don't let the verify command print equity curves, per-window stats, or per-trade details during the loop. That's leakage — the agent will use the rich output to guide the next iteration toward overfitting.
+
+**Pattern:** Save detailed diagnostics to a file the agent doesn't read until the post-loop review phase. The verify command prints only the primary metric to stdout.
+
+```bash
+# Good: verify outputs one number
+python scripts/evaluate.py --strategy {strategy} --save-dir results/ 2>&1 | grep 'sharpe_wf' | awk '{print $2}'
+
+# Bad: verify prints full equity curve to stdout
+python scripts/evaluate.py --strategy {strategy}  # agent sees per-window Sharpe and fits to them
+```
+
+The `--save-dir` pattern is the recommended approach: rich output goes to disk (available in review), one number goes to stdout (used by the loop).
+
+### Robustness-adjusted primaries
+
+Point estimates over a single backtest are the most overfittable metrics in finance. Prefer:
+
+| Metric type | Overfit resistance | When to use |
+|-------------|-------------------|-------------|
+| Walk-forward (rolling OOS) | High | Any temporal data; tests stability across windows |
+| Bootstrap CI lower bound | High | When you need a conservative estimate; hard to overfit the 5th percentile |
+| K-fold cross-validated mean | Medium | Classification/regression tasks; assumes exchangeable data |
+| Purged K-fold | Medium-High | Financial data with serial correlation; prevents leakage from adjacent folds |
+| Single-split point estimate | Low | Only for quick prototyping; don't trust results |
+
+The protocol's noise-handling section (Phase 5.1 in `autonomous-loop-protocol.md`) addresses measurement noise — running the same code multiple times and getting different numbers. That's different from generalization — whether the result holds on unseen data. Both problems matter. Noise handling fixes measurement; robustness-adjusted primaries fix generalization.
+
+### User decides strictness
+
+Not every competition needs maximum leakage protection. Examples:
+
+- **Quick prototype:** Single split, no guards, convention-only eval isolation. Fast iteration, accept that results are directional.
+- **Production strategy:** Walk-forward primary, multi-guard, read-only eval via permissions. Higher quality, fewer iterations per hour.
+- **Purged K-fold for finance:** Acceptable for many financial applications — it handles serial correlation while keeping most training data. User decides if the leakage from adjacent folds is tolerable for their regime.
+
+The anti-leakage patterns are a menu of options. Pick what fits your domain and threat model.
+
 ## Common Pitfalls
 
 | Pitfall | Symptom | Fix |
@@ -124,3 +262,7 @@ FINDs from COMP-001 inform LOOPs on COMP-002 when the user creates a LOOP with `
 | Metric diverges randomly | No clear improvement trend across iterations | Verify command depends on mutable state — isolate it |
 | No split method documented | Results can't be reproduced | Document dataset, split method, and assets in COMP fields |
 | Verify depends on network | Flaky results across runs | Mock external calls or use cached fixtures |
+| Composite metric gaming | Agent optimizes one component at expense of others | Switch to primary + guards (lexicographic) |
+| Lookahead in verify | In-sample metric improbably high | Use walk-forward or temporal split; check verify doesn't peek ahead |
+| Overfitting to test set | Sharpe degrades immediately in production | Read-only eval data; prefer robustness-adjusted primaries |
+| Rich verify output | Agent uses per-window details to guide next iteration | Verify prints one number; save rich output to disk for review only |

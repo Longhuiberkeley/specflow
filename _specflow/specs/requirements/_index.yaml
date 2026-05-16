@@ -338,4 +338,12 @@ artifacts:
     - traceability
     fingerprint: sha256:f0894af0e8ca
     children: []
+  REQ-AUTORESE-d684:
+    id: REQ-AUTORESE-d684
+    title: 'Autoresearch pack v0.2.0: multi-criteria support, CLI subcommand, and
+      harness-agnosticism'
+    status: draft
+    tags: []
+    fingerprint: sha256:e3b0c44298fc
+    children: []
 next_id: 35

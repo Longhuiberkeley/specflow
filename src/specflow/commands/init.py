@@ -39,12 +39,21 @@ def _apply_preset(root: Path, preset: str) -> int:
 
     config_lib.write_config(root, config)
 
+    context_snippet = result.get("context_snippet", "") or ""
+    context_injected = False
+    if context_snippet:
+        context_injected = scaffold_lib.inject_pack_context(
+            root, preset, context_snippet
+        )
+
     pieces = []
     if types_added:
         pieces.append(f"{len(types_added)} artifact type(s)")
     standards_added = result.get("standards_added", []) or []
     if standards_added:
         pieces.append(f"{len(standards_added)} standard(s)")
+    if context_injected:
+        pieces.append("instruction file updated")
     detail = ", ".join(pieces) if pieces else "no new items"
     print(f"  + Pack '{preset}' applied ({detail})")
     return 0

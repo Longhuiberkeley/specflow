@@ -213,4 +213,56 @@ def apply_pack(root: Path, pack_name: str, packs_dir: Path) -> dict[str, Any]:
         "types_added": types_added,
         "standards_added": standards_added,
         "skills_added": skills_added,
+        "context_snippet": manifest.get("context_snippet", ""),
     }
+
+
+_SENTINEL_START = "<!-- pack:{pack_name} context (auto-generated, do not edit manually) -->"
+_SENTINEL_END = "<!-- end pack:{pack_name} context -->"
+
+
+def inject_pack_context(root: Path, pack_name: str, context_snippet: str) -> bool:
+    """Inject a pack's context snippet into the platform instruction file.
+
+    Uses sentinel markers for idempotent updates. Returns True if the file
+    was modified (new injection or updated snippet).
+    """
+    if not context_snippet:
+        return False
+
+    platform_code, _ = platform.detect_platform(root)
+    if platform_code is None:
+        return False
+
+    cfg = platform.get_platform(platform_code)
+    if not cfg:
+        return False
+
+    instruction_file = cfg.get("instruction_file")
+    if not instruction_file:
+        return False
+
+    target = root / instruction_file
+    sentinel_start = _SENTINEL_START.format(pack_name=pack_name)
+    sentinel_end = _SENTINEL_END.format(pack_name=pack_name)
+
+    block = f"\n{sentinel_start}\n{context_snippet.strip()}\n{sentinel_end}\n"
+
+    if target.exists():
+        content = target.read_text(encoding="utf-8")
+        if sentinel_start in content:
+            start_idx = content.index(sentinel_start)
+            end_idx = content.index(sentinel_end) + len(sentinel_end)
+            existing_block = content[start_idx:end_idx]
+            new_block = block.strip()
+            if existing_block == new_block:
+                return False
+            content = content[:start_idx] + new_block + content[end_idx:]
+            target.write_text(content, encoding="utf-8")
+            return True
+        content = content.rstrip() + "\n" + block
+        target.write_text(content, encoding="utf-8")
+        return True
+    else:
+        target.write_text(block, encoding="utf-8")
+        return True

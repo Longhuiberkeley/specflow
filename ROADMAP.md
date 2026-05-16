@@ -138,6 +138,15 @@ Focus: **reverse impact analysis, decomposition completeness guidance, and disco
 - **Domain context pass-through** — plan skill reads domain classification from config and decisions from discovery
 - **Improved discover-to-plan handoff** — explicit approval instructions and next-step commands in exit message
 
+## v1.6.0
+
+Focus: **autoresearch pack v0.2.0 — harness-agnostic research loops with multi-criteria competitions.**
+
+- **Autoresearch CLI subcommand** — `specflow autoresearch plan|run|review|leaderboard` lets any LLM harness drive autonomous research loops without platform-specific skills; auto-detects active competition and supports `--all` cross-COMP leaderboards
+- **Multi-criteria competitions** — primary metric for ranking, binary guards for hard floors, freeform `auxiliary_metrics` on EXPT artifacts for post-hoc analysis (max_drawdown, total_trades, runtime_seconds, etc.); documented anti-leakage and anti-gaming patterns as recommendations
+- **Pack context injection** — packs declare `context_snippet` in `pack.yaml`; `specflow init --preset <pack>` injects a sentinel-bracketed block into the platform's instruction file (`AGENTS.md`, `.cursor/rules/specflow.md`, etc.) so host agents learn pack vocabulary without per-platform skill variants
+- **Thin skill wrapper** — `SKILL.md` references CLI backends for all subcommands; safety posture, anti-patterns, and principles preserved
+
 ## v1.5.0
 
 Focus: **unified thinking technique tracking and technique-to-BP feedback loop.**

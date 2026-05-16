@@ -4,6 +4,43 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.6.0] - 2026-05-16
+
+### Highlights
+
+- **Autoresearch pack v0.2.0** — autonomous research loops are now harness-agnostic. Any LLM harness (Claude Code, Cursor, scripted CI) can drive the iteration loop through a single `specflow autoresearch` CLI subcommand instead of platform-specific skills.
+- **Multi-criteria competitions** — competitions now support a primary metric for ranking, binary guards for hard floors, and freeform auxiliary metrics for post-hoc analysis. Documented patterns for leakage prevention and anti-gaming as recommendations, not mandates.
+- **Pack context injection** — installed packs now write a sentinel-bracketed context block into the project's platform instruction file (e.g. `AGENTS.md`) on `specflow init --preset <pack>`, giving the host agent the right vocabulary without requiring per-platform skill variants.
+
+### Features
+
+- `specflow autoresearch plan|run|review|leaderboard` CLI subcommand (`src/specflow/commands/autoresearch.py`)
+  - `plan`: prints setup-gate checklist for a competition, optional `--profile` for 3x noise variance probe
+  - `run`: prints the 8-phase iteration protocol with current LOOP progress (harness drives the loop; this command does not embed a model client)
+  - `review`: shows FINDs, top kept EXPTs with auxiliary metrics, and loop history
+  - `leaderboard`: ranks kept EXPTs by primary metric, supports `--all` for cross-COMP view
+  - Multi-COMP repos: auto-detects single active COMP, prompts when ambiguous, `--competition COMP-NNN` to disambiguate
+- `auxiliary_metrics` optional field on EXPT artifacts — freeform YAML dict for post-hoc enrichment (max_drawdown, total_trades, win_rate, runtime_seconds, etc.) that does not affect the kept/discarded decision
+- `inject_pack_context()` library function and `context_snippet` field in `pack.yaml` — packs declare a markdown snippet that gets injected into the platform's instruction file with idempotent sentinel markers (`<!-- pack:<name> context ... -->`)
+- `instruction_file` field on all 14 platforms in `templates/platforms.yaml` — points pack context injection at the right file per harness (AGENTS.md, .cursor/rules/specflow.md, .github/copilot-instructions.md, etc.)
+- "Multi-criteria competitions" section in `competition-setup-protocol.md` explains primary metric / guards / auxiliary metrics with a worked quant example and a strictness ladder
+- "Leakage and Gaming" section documents read-only eval data patterns, one-number verify output, and robustness-adjusted primaries as recommendations
+- Anti-gaming pointer in `autonomous-loop-protocol.md` Phase 5 + auxiliary metrics logging guidance in Phase 7 with domain-specific examples (quant, ML, NLP, systems)
+- `specflow init --preset autoresearch` now writes a `<!-- pack:autoresearch context -->` block into the detected platform's instruction file
+- 12 new tests in `tests/test_autoresearch_pack.py`: 7 CLI subcommand tests (`TestAutoresearchCLI`), 3 context-injection tests (`TestPackContextInjection`), 2 auxiliary-metrics schema tests
+
+### Fixes
+
+- `inject_pack_context()` is now actually called from `_apply_preset` in `init.py` — previously the function existed but no production code invoked it, leaving pack context injection as dead code
+- `specflow autoresearch leaderboard --all --competition COMP-X` now errors out instead of silently letting `--all` win
+- `src/specflow/__init__.py` `__version__` bumped from stale `1.2.0` to `1.6.0` to match `pyproject.toml`
+
+### Documentation
+
+- `SKILL.md` for the autoresearch skill thinned to reference CLI backends instead of inlining full protocol; safety posture, anti-patterns, principles, and rules sections preserved
+- Subcommands table maps each `/specflow-autoresearch:*` skill invocation to its `specflow autoresearch <sub>` CLI backend
+- Phase 7 logging examples in `autonomous-loop-protocol.md` now demonstrate `--auxiliary-metrics` JSON dict invocation
+
 ## [1.5.0] - 2026-05-07
 
 ### Highlights

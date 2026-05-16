@@ -1,16 +1,12 @@
 # SpecFlow Platform Registry
 #
 # Each platform entry defines:
-#   name:           Display name shown to users
-#   preferred:      Whether shown as a recommended option on install
-#   skills_dir:     Where to copy SpecFlow skill directories
-#   detection:      Directory/file markers used to auto-detect this platform
-#   legacy_dirs:    (optional) Old directories to clean up on reinstall
-#
-# Instruction file injection (AGENTS.md, CLAUDE.md, .cursor/rules/, etc.)
-# is handled by the /specflow-init skill, not the CLI. The skill reads
-# the agent-context.md template and writes it to the appropriate location
-# for the detected platform.
+#   name:             Display name shown to users
+#   preferred:        Whether shown as a recommended option on install
+#   skills_dir:       Where to copy SpecFlow skill directories
+#   instruction_file: Where to inject pack context (AGENTS.md, CLAUDE.md, etc.)
+#   detection:        Directory/file markers used to auto-detect this platform
+#   legacy_dirs:      (optional) Old directories to clean up on reinstall
 
 platforms:
 
@@ -18,6 +14,7 @@ platforms:
     name: "Claude Code"
     preferred: true
     skills_dir: .claude/skills
+    instruction_file: AGENTS.md
     detection:
       - .claude/
     legacy_dirs:
@@ -27,6 +24,7 @@ platforms:
     name: "Cursor"
     preferred: true
     skills_dir: .cursor/skills
+    instruction_file: .cursor/rules/specflow.md
     detection:
       - .cursor/
     legacy_dirs:
@@ -36,6 +34,7 @@ platforms:
     name: "Windsurf"
     preferred: false
     skills_dir: .windsurf/skills
+    instruction_file: .windsurf/rules/specflow.md
     detection:
       - .windsurf/
     legacy_dirs:
@@ -45,6 +44,7 @@ platforms:
     name: "Cline"
     preferred: false
     skills_dir: .cline/skills
+    instruction_file: .clinerules/specflow.md
     detection:
       - .cline/
     legacy_dirs:
@@ -54,6 +54,7 @@ platforms:
     name: "Gemini CLI"
     preferred: false
     skills_dir: .gemini/skills
+    instruction_file: GEMINI.md
     detection:
       - .gemini/
     legacy_dirs:
@@ -63,6 +64,7 @@ platforms:
     name: "OpenCode"
     preferred: false
     skills_dir: .opencode/skills
+    instruction_file: AGENTS.md
     detection:
       - .opencode/
     legacy_dirs:
@@ -73,6 +75,7 @@ platforms:
     name: "GitHub Copilot"
     preferred: false
     skills_dir: .github/skills
+    instruction_file: .github/copilot-instructions.md
     detection:
       - .github/copilot-instructions.md
     legacy_dirs:
@@ -83,6 +86,7 @@ platforms:
     name: "Roo Code"
     preferred: false
     skills_dir: .roo/skills
+    instruction_file: .roo/rules/specflow.md
     detection:
       - .roo/
     legacy_dirs:
@@ -92,6 +96,7 @@ platforms:
     name: "QwenCoder"
     preferred: false
     skills_dir: .qwen/skills
+    instruction_file: .qwen/rules/specflow.md
     detection:
       - .qwen/
     legacy_dirs:
@@ -101,6 +106,7 @@ platforms:
     name: "Kiro"
     preferred: false
     skills_dir: .kiro/skills
+    instruction_file: .kiro/steering/specflow.md
     detection:
       - .kiro/
     legacy_dirs:
@@ -110,6 +116,7 @@ platforms:
     name: "KiloCoder"
     preferred: false
     skills_dir: .kilocode/skills
+    instruction_file: .kilocode/rules/specflow.md
     detection:
       - .kilocode/
     legacy_dirs:
@@ -119,6 +126,7 @@ platforms:
     name: "Codex"
     preferred: false
     skills_dir: .agents/skills
+    instruction_file: AGENTS.md
     detection:
       - .codex/
     legacy_dirs:
@@ -128,6 +136,7 @@ platforms:
     name: "Trae"
     preferred: false
     skills_dir: .trae/skills
+    instruction_file: .trae/rules/specflow.md
     detection:
       - .trae/
     legacy_dirs:
@@ -137,5 +146,6 @@ platforms:
     name: "Junie"
     preferred: false
     skills_dir: .agents/skills
+    instruction_file: AGENTS.md
     detection:
       - .junie/

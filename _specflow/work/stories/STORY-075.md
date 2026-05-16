@@ -2,7 +2,7 @@
 id: STORY-075
 title: Test autoresearch pack end-to-end and pilot with quant_trade_rnd
 type: story
-status: draft
+status: implemented
 priority: high
 tags:
 - autoresearch

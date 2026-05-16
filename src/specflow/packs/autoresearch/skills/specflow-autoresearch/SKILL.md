@@ -30,12 +30,16 @@ Inspired by [Karpathy's autoresearch](https://github.com/karpathy/autoresearch),
 
 ## Subcommands
 
-| Subcommand | Purpose | Required Context |
+All subcommands have a CLI backend. Use the CLI for deterministic operations (artifact discovery, ranking, rendering) and the skill for conversational guidance (setup walkthrough, loop driving, judgment calls).
+
+| Skill Subcommand | CLI Backend | Purpose |
 |---|---|---|
-| `/specflow-autoresearch` | Run an autonomous LOOP on a COMP | COMP ID or walks user through creation |
-| `/specflow-autoresearch:plan` | Plan a LOOP (set mode, budget, review knowledge) before running | COMP ID |
-| `/specflow-autoresearch:review` | Review FINDs and EXPTs for a COMP, confirm draft FINDs | COMP ID |
-| `/specflow-autoresearch:leaderboard` | Show best EXPTs across all LOOPs for a COMP | COMP ID |
+| `/specflow-autoresearch` | `specflow autoresearch run` | Run an autonomous LOOP on a COMP |
+| `/specflow-autoresearch:plan` | `specflow autoresearch plan` | Plan a LOOP before running |
+| `/specflow-autoresearch:review` | `specflow autoresearch review` | Review FINDs and EXPTs for a COMP |
+| `/specflow-autoresearch:leaderboard` | `specflow autoresearch leaderboard` | Top EXPTs ranked by metric |
+
+For multi-competition repos, all commands accept `--competition COMP-NNN`. Omit to auto-detect the single active COMP, or specify when multiple exist. The `leaderboard` command also accepts `--all` for a cross-COMP view.
 
 ## Activation Triggers
 
@@ -61,17 +65,32 @@ The autoresearch skill grants the agent broad iterative authority — read, edit
 
 ## Setup Gate
 
-Before running any loop, complete these steps in order:
+Before running any loop, run the plan checklist and complete these steps:
 
-### Step 1: COMP Exists
+```bash
+specflow autoresearch plan --competition COMP-NNN    # setup gate checklist
+specflow autoresearch plan --competition COMP-NNN --profile  # with noise probe
+```
+
+The CLI command renders the setup checklist. Follow these conversational steps to complete it:
+
+### Step 1: COMP Exists and No Conflicting LOOP
 
 ```
 specflow trace COMP-NNN
 ```
 
-- If COMP exists → proceed to Step 2
+- If COMP exists → continue to the concurrent-LOOP check below
 - If no COMP exists → walk user through `references/competition-setup-protocol.md`
 - If user provides domain description (e.g., "BTC/USDT 30m sharpe") → extract COMP parameters and create it
+
+**Concurrent-LOOP check.** Inspect the trace output above. If any LOOP under COMP-NNN has `status: running`, do NOT silently start another one — Phase 4 commits will race on the same branch. Present the user with three options:
+
+- **Attach** — continue the existing LOOP from its current iteration count (no new artifact)
+- **Abort then restart** — `specflow update LOOP-NNN --status aborted`, then create a fresh LOOP
+- **New track** — create a separate COMP (e.g., COMP-002) for parallel exploration
+
+If no LOOP is running → proceed to Step 2.
 
 ### Step 2: Verify Command Dry-Runs
 
@@ -80,6 +99,8 @@ Run the COMP's `verify_command` on the current codebase:
 - Confirm exit code 0
 - Confirm output is a parseable number
 - If fails → guide user to fix the verify command or recreate the COMP
+
+**On `:plan` (recommended for any new COMP): noise variance probe.** Run `verify_command` three times back-to-back on the unchanged baseline. Parse each metric and report min / max / mean / stdev. If stdev exceeds ~5% of mean, the metric is noisy enough that single-run iterations will produce false-positive "keeps" and false-negative "discards" — point the user at the Noise Handling section of `references/autonomous-loop-protocol.md` to pick a strategy (multi-run median, confirmation run, or environment pinning) BEFORE committing a long budget. Skip with `--no-profile` if the user has already characterized the metric. The plain `/specflow-autoresearch` (run) path uses a single dry-run for fast feedback and assumes the metric is already trusted.
 
 ### Step 3: LOOP in Draft Status
 
@@ -117,7 +138,11 @@ Ask user to confirm before starting the loop.
 
 ## The Loop
 
-Read `references/autonomous-loop-protocol.md` for full protocol details.
+```bash
+specflow autoresearch run --competition COMP-NNN
+```
+
+The CLI prints the 8-phase protocol checklist with current progress. Read `references/autonomous-loop-protocol.md` for full protocol details. Summary:
 
 ```
 LOOP (budget iterations):
@@ -158,25 +183,25 @@ specflow create --type finding \
 
 ## Review Subcommand
 
-`/specflow-autoresearch:review COMP-NNN` triggers a manual review session:
+```bash
+specflow autoresearch review --competition COMP-NNN
+specflow autoresearch review --competition COMP-NNN --top 10
+```
 
-1. Show all FINDs for the competition (confirmed, draft, superseded)
-2. Show leaderboard: top N EXPTs by metric_value across all LOOPs
-3. Show loop history: each LOOP's mode, iteration count, best metric
-4. Ask user: confirm draft FINDs? Supersede outdated ones? Suggest next LOOP mode?
+The CLI shows all FINDs, top EXPTs (with auxiliary metrics), and loop history. After the CLI output, guide the user through:
+
+1. Confirm draft FINDs? Supersede outdated ones?
+2. Suggest next LOOP mode based on results (see `references/explore-exploit-protocol.md`)
+3. Review auxiliary metrics trends across kept EXPTs (drawdown increasing? trade count declining?)
 
 ## Leaderboard Subcommand
 
-`/specflow-autoresearch:leaderboard COMP-NNN` shows:
+```bash
+specflow autoresearch leaderboard --competition COMP-NNN
+specflow autoresearch leaderboard --all     # cross-COMP view
+```
 
-```
-=== COMP-001 Leaderboard ===
-#1  EXPT-047  +1.83  features  "Added cross-asset momentum features"  (LOOP-001)
-#2  EXPT-023  +1.45  params    "Kalman Q=0.001 tuning"                (LOOP-001)
-#3  EXPT-012  +1.20  basket    "Specialize on ADA single-asset"       (LOOP-001)
-#4  EXPT-061  +1.10  features  "Added rolling volatility features"    (LOOP-002)
-#5  EXPT-068  +0.95  params    "Threshold optimization 0.05→0.03"    (LOOP-002)
-```
+The CLI renders the ranked leaderboard with auxiliary metrics. No additional skill logic needed — the output is self-service.
 
 ## Anti-Patterns & Principles
 
