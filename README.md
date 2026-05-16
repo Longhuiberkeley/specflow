@@ -94,6 +94,7 @@ Full walkthrough in the [getting-started guide](docs/getting-started.md).
 | **Bring-your-own-standard** | Drop a PDF, URL, or pasted text. SpecFlow extracts clauses into compliance schemas |
 | **Immutable baselines** | Snapshot, diff, and generate audit evidence between releases |
 | **Runs in 14 AI assistants** | Claude Code, Cursor, Windsurf, Cline, Gemini CLI, OpenCode, Copilot, Roo, QwenCoder, Kiro, KiloCoder, Codex, Trae, Junie |
+| **Autoresearch loops** *(new)* | Define a competition + verify command, let your assistant iterate; every experiment becomes a tracked artifact |
 | **1 runtime dependency** | Just `pyyaml`. Everything else is stdlib. |
 
 ## The 10 slash commands
@@ -112,6 +113,36 @@ Full walkthrough in the [getting-started guide](docs/getting-started.md).
 | `/specflow-adapter` | CI, exchange (ReqIF), standards, team RBAC |
 
 All 10 skills accept freeform context. `/specflow-audit I'm worried about REQ coverage` scopes the audit to your concern.
+
+## Autoresearch — autonomous research loops (new in v1.6.0)
+
+If your project lives on a measurable metric (Sharpe ratio, F1 score, BLEU, P99 latency — anything a shell command can print as one number), the **autoresearch pack** turns SpecFlow into an autonomous experimentation lab.
+
+Define a **competition** (dataset + verify command + metric), set a **budget**, and let your assistant iterate: modify → commit → verify → keep/discard → log → repeat. Every iteration becomes an `EXPT` artifact; every loop produces condensed `FIND` artifacts that survive context rot and inform the next run.
+
+```bash
+# Install the pack into a project
+specflow init --preset autoresearch
+
+# Then either drive from the assistant…
+> /specflow-autoresearch:plan
+> /specflow-autoresearch         # runs the loop
+> /specflow-autoresearch:leaderboard
+
+# …or drive from the CLI (harness-agnostic)
+specflow autoresearch plan --competition COMP-001 --profile
+specflow autoresearch run --competition COMP-001
+specflow autoresearch leaderboard --all
+```
+
+What you get out of the box:
+
+- **Multi-criteria competitions** — primary metric for ranking, binary guards for hard floors (max drawdown, test pass, etc.), freeform `auxiliary_metrics` on each EXPT for post-hoc analysis
+- **Harness-agnostic CLI** — any LLM harness can drive the loop; no per-platform skill variants
+- **Knowledge condensation** — `FIND` artifacts capture what worked / what failed across loops so the next iteration starts smarter, not from scratch
+- **Documented anti-leakage and anti-gaming patterns** — read-only eval data, one-number verify output, robustness-adjusted primaries (walk-forward, bootstrap CI, K-fold)
+
+Adapted from [Karpathy's autoresearch](https://github.com/karpathy/autoresearch) via [autoresearch_fork](https://github.com/Longhuiberkeley/autoresearch_fork) and [Claude Autoresearch](https://github.com/uditgoenka/autoresearch), then folded into SpecFlow's artifact/V-model model.
 
 ## Philosophy
 
@@ -172,7 +203,7 @@ Everything is Markdown with YAML frontmatter. Your repo is the database.
 uv tool install git+https://github.com/Longhuiberkeley/specflow
 
 # Pin to a release
-uv tool install git+https://github.com/Longhuiberkeley/specflow@v1.1.0
+uv tool install git+https://github.com/Longhuiberkeley/specflow@v1.6.0
 
 # Run without installing (ephemeral)
 uvx --from git+https://github.com/Longhuiberkeley/specflow specflow init
