@@ -15,6 +15,17 @@ from specflow.lib import artifacts as art_lib
 from specflow.lib.display import RED, GREEN, CYAN, YELLOW, NC, BOLD, DIM
 
 
+def _domain_recommended_fields(domain: str) -> list[str]:
+    recs = {
+        "quant": ["max_drawdown", "total_trades", "win_rate", "profit_factor", "oos_decay"],
+        "ml": ["val_loss", "learning_rate", "batch_size", "epochs", "architecture"],
+        "nlp": ["perplexity", "token_count", "rouge_l", "bertscore_f1"],
+        "systems": ["p50_latency_ms", "p99_latency_ms", "memory_mb", "throughput_rps"],
+        "safety_critical": ["false_positive_rate", "false_negative_rate", "precision", "recall"],
+    }
+    return recs.get(domain, [])
+
+
 def _find_competitions(root: Path) -> list[art_lib.Artifact]:
     artifacts = art_lib.discover_artifacts(root)
     return [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "COMP"]
@@ -266,6 +277,36 @@ def _run_review(root: Path, args: dict) -> int:
     reverse = direction == "higher_is_better"
     kept.sort(key=lambda e: float(e.frontmatter.get("metric_value", 0)), reverse=reverse)
 
+    # Warnings section
+    warnings: list[str] = []
+
+    for l in loops:
+        if l.status in ("completed", "plateaued"):
+            loop_expts = _find_expts_for_loop(root, l.id)
+            loop_findings = [f for f in findings if f.frontmatter.get("source_loop") == l.id]
+            if not loop_findings:
+                warnings.append(f"  {YELLOW}⚠{NC} {CYAN}{l.id}{NC} is {l.status} but has zero FINDs")
+            for e in loop_expts:
+                if e.status == "kept" and not e.frontmatter.get("parameters"):
+                    warnings.append(f"  {YELLOW}⚠{NC} {CYAN}{e.id}{NC} (kept) has no `parameters` logged")
+                if e.status in ("discarded", "crashed") and not e.frontmatter.get("failure_analysis"):
+                    warnings.append(f"  {YELLOW}⚠{NC} {CYAN}{e.id}{NC} ({e.status}) has no `failure_analysis` logged")
+
+    domain = fm.get("domain")
+    if domain:
+        domain_recs = _domain_recommended_fields(domain)
+        for e in kept:
+            aux = e.frontmatter.get("auxiliary_metrics") or {}
+            missing = [f for f in domain_recs if f not in aux]
+            if missing:
+                warnings.append(f"  {YELLOW}⚠{NC} {CYAN}{e.id}{NC} missing recommended aux metrics for '{domain}': {', '.join(missing[:3])}")
+
+    if warnings:
+        print(f"{BOLD}Warnings:{NC}")
+        for w in warnings:
+            print(w)
+        print()
+
     top_n = args.get("top", 5)
     print(f"{BOLD}Top {top_n} Kept Experiments:{NC}")
     if not kept:
@@ -277,11 +318,18 @@ def _run_review(root: Path, args: dict) -> int:
         summary = e.title
         loop_ref = ef.get("loop", "?")
         aux = ef.get("auxiliary_metrics")
+        params = ef.get("parameters")
+        mo = ef.get("model_origin")
         line = f"  #{i+1}  {CYAN}{e.id}{NC}  {mv}  {cat}  \"{summary}\"  ({loop_ref})"
         print(line)
         if aux and isinstance(aux, dict):
             parts = [f"{k}={v}" for k, v in aux.items()]
             print(f"      {DIM}aux: {', '.join(parts)}{NC}")
+        if params and isinstance(params, dict):
+            parts = [f"{k}={v}" for k, v in params.items()]
+            print(f"      {DIM}params: {', '.join(parts)}{NC}")
+        if mo:
+            print(f"      {DIM}model_origin: {mo}{NC}")
     print()
 
     return 0
@@ -308,6 +356,9 @@ def _run_leaderboard(root: Path, args: dict) -> int:
 
     top_n = args.get("top", 10)
 
+    group_by = args.get("group_by")
+    show_family = args.get("show_family", False)
+
     for comp in comps:
         fm = comp.frontmatter
         direction = fm.get("metric_direction", "higher_is_better")
@@ -325,21 +376,48 @@ def _run_leaderboard(root: Path, args: dict) -> int:
             print()
             continue
 
-        for i, e in enumerate(kept[:top_n]):
-            ef = e.frontmatter
-            mv = ef.get("metric_value", "?")
-            cat = ef.get("change_category", "?")
-            summary = e.title
-            loop_ref = ef.get("loop", "?")
-            aux = ef.get("auxiliary_metrics")
+        # Family-of-good grouping
+        if show_family or (group_by == "model_origin"):
+            groups: dict[str, list[art_lib.Artifact]] = {}
+            for e in kept:
+                key = e.frontmatter.get("model_origin") or e.frontmatter.get("change_category", "unspecified")
+                groups.setdefault(str(key), []).append(e)
+            for key, g_expts in sorted(groups.items()):
+                g_expts.sort(key=lambda e: float(e.frontmatter.get("metric_value", 0)), reverse=reverse)
+                print(f"  {BOLD}{key}:{NC}")
+                for i, e in enumerate(g_expts[:top_n]):
+                    ef = e.frontmatter
+                    mv = ef.get("metric_value", "?")
+                    summary = e.title
+                    aux = ef.get("auxiliary_metrics")
+                    dm = ef.get("diversity_metrics")
+                    print(f"    {BOLD}#{i+1}{NC}  {CYAN}{e.id}{NC}  {mv}  \"{summary}\"")
+                    if aux and isinstance(aux, dict):
+                        parts = [f"{k}={v}" for k, v in aux.items()]
+                        print(f"          {DIM}aux: {', '.join(parts)}{NC}")
+                    if dm and isinstance(dm, dict):
+                        parts = [f"{k}={v}" for k, v in dm.items()]
+                        print(f"          {DIM}div: {', '.join(parts)}{NC}")
+                print()
+        else:
+            for i, e in enumerate(kept[:top_n]):
+                ef = e.frontmatter
+                mv = ef.get("metric_value", "?")
+                cat = ef.get("change_category", "?")
+                summary = e.title
+                loop_ref = ef.get("loop", "?")
+                aux = ef.get("auxiliary_metrics")
+                mo = ef.get("model_origin")
 
-            print(f"  {BOLD}#{i+1:>2}{NC}  {CYAN}{e.id}{NC}  {mv}  {cat}  "
-                  f"\"{summary}\"  ({loop_ref})")
-            if aux and isinstance(aux, dict):
-                parts = [f"{k}={v}" for k, v in aux.items()]
-                print(f"        {DIM}aux: {', '.join(parts)}{NC}")
+                print(f"  {BOLD}#{i+1:>2}{NC}  {CYAN}{e.id}{NC}  {mv}  {cat}  "
+                      f"\"{summary}\"  ({loop_ref})")
+                if aux and isinstance(aux, dict):
+                    parts = [f"{k}={v}" for k, v in aux.items()]
+                    print(f"        {DIM}aux: {', '.join(parts)}{NC}")
+                if mo:
+                    print(f"        {DIM}origin: {mo}{NC}")
 
-        print()
+            print()
 
     return 0
 

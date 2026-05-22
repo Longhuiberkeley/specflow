@@ -106,18 +106,21 @@ Run the COMP's `verify_command` on the current codebase:
 
 Create a LOOP artifact:
 
+LOOP-specific fields use the generic `--set KEY=VALUE` flag (repeatable; values parse as JSON when possible). Only `--type`, `--title`, and `--status` are first-class. A LOOP is created at `draft` (the default):
+
 ```bash
 specflow create --type loop \
   --title "Initial exploration" \
-  --competition COMP-001 \
-  --mode explore \
-  --budget 50
+  --set competition=COMP-001 \
+  --set mode=explore \
+  --set budget=50 \
+  --set goal="Pursue COMP-001 goal #1: find a first uncorrelated strategy with Sharpe > 2.0"
 ```
 
-Load confirmed FINDs into the LOOP's `knowledge_input`:
+`goal` is the run-scoped slice of `COMP.goals` this LOOP pursues — it focuses Phase 2a hypotheses. Load confirmed FINDs into the LOOP's `knowledge_input`:
 
 ```bash
-specflow update LOOP-001 --knowledge-input "FIND-001,FIND-002"
+specflow update LOOP-001 --set knowledge_input="FIND-001,FIND-002"
 ```
 
 If the user uses `/specflow-autoresearch:plan`, guide them through mode selection (see `references/explore-exploit-protocol.md`) and budget setting.
@@ -160,25 +163,27 @@ LOOP (budget iterations):
 
 After a LOOP completes, review all EXPTs and create or update competition FINDs. Follow `references/finding-generation-protocol.md` for the full playbook.
 
+Non-core fields use the generic `--set KEY=VALUE` flag (repeatable; values parse as JSON when possible). Only `--type`, `--title`, and `--status` are first-class.
+
 ```bash
 # Example: create a new finding from loop results
 specflow create --type finding \
   --title "Feature engineering outperforms model tuning" \
-  --competition COMP-001 \
-  --source-loop LOOP-001 \
-  --confidence medium \
   --status draft \
-  --summary "Cross-asset features drove largest improvements. Model changes had minimal impact."
+  --set competition=COMP-001 \
+  --set source_loop=LOOP-001 \
+  --set confidence=medium \
+  --set summary="Cross-asset features drove largest improvements. Model changes had minimal impact."
 
 # Example: supersede an outdated finding
 specflow update FIND-001 --status superseded
 specflow create --type finding \
   --title "Threshold=0.03 optimal but knife-edge sensitive" \
-  --competition COMP-001 \
-  --source-loop LOOP-003 \
-  --confidence medium \
   --status draft \
-  --summary "Previous finding confirmed but ±0.005 variation degrades by 40%."
+  --set competition=COMP-001 \
+  --set source_loop=LOOP-003 \
+  --set confidence=medium \
+  --set summary="Previous finding confirmed but ±0.005 variation degrades by 40%."
 ```
 
 ## Review Subcommand

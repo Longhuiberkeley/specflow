@@ -22,6 +22,12 @@ def run(root: Path, args: dict) -> int:
 
     updates = {}
 
+    try:
+        updates.update(art_lib.parse_set_fields(args.get("set_fields")))
+    except ValueError as exc:
+        print(f"{RED}✗ {exc}{NC}")
+        return 1
+
     status = args.get("status")
     if status:
         updates["status"] = status

@@ -48,6 +48,31 @@ Ask: "Is higher or lower better for your metric?"
 
 Record as COMP's `metric_direction` field: `higher_is_better` or `lower_is_better`.
 
+### Does this metric, alone, capture success?
+
+Before moving on, pause on intent. A single metric is sometimes exactly right ("the best chess engine" → win rate) and sometimes a thin proxy for what the user actually wants ("accurate **and** well-calibrated", "a family of strategies across asset classes", "fast enough to deploy"). Ask the user — or reason from the goal — whether the metric is the whole story. If not, capture the rest now rather than discovering it 40 iterations in:
+
+- a different `metric_name` that bakes in generalization (walk-forward Sharpe over single-split Sharpe)
+- `auxiliary_metrics` the loop should always log (calibration error alongside accuracy)
+- a non-`single_best` `objective_type` (next step)
+- `success_criteria` describing deploy-fit the raw metric won't show
+
+This is the difference between a number that climbs and a result that does the job.
+
+## Step 3.5: Choose Objective Type
+
+Ask: "Are you looking for one best result, a family of good results, or a Pareto front?"
+
+| objective_type | When to use | Example |
+|---|---|---|
+| `single_best` | One metric to rule them all | Best Sharpe ratio, lowest latency |
+| `family_of_good` | Need diverse, deployable candidates | 3 uncorrelated quant strategies; ensemble of 5 models |
+| `pareto_front` | Multi-objective tradeoff space | Accuracy vs inference speed; return vs drawdown |
+
+Record as COMP's `objective_type` field. Default to `single_best` if the user is unsure.
+
+**Why it matters:** `family_of_good` changes LOOP behavior — the agent prefers uncorrelated keeps over marginal metric gains, and the leaderboard groups by strategy family rather than ranking by raw metric alone.
+
 ## Step 4: Dry-Run the Verify Command
 
 **MANDATORY — dry-run before accepting the competition.**
@@ -79,14 +104,17 @@ A guard command runs after verification to catch regressions. If you want every 
 
 Example COMP with guard:
 
+COMP-specific fields are written with the generic `--set KEY=VALUE` flag (repeatable; values are parsed as JSON when possible, else kept as strings). Only `--type`, `--title`, and `--status` are first-class flags. **A COMP must be created with `--status active`** (`draft` is not a valid competition status).
+
 ```bash
 specflow create --type competition \
   --title "Track A: single split" \
-  --verify-command "python scripts/track_a.py --strategy {strategy}" \
-  --metric-name "Sharpe ratio" \
-  --metric-direction "higher_is_better" \
-  --guard-command "pytest tests/ -x" \
-  --guard-mode "pass_fail"
+  --status active \
+  --set verify_command="python scripts/track_a.py --strategy {strategy}" \
+  --set metric_name="Sharpe ratio" \
+  --set metric_direction=higher_is_better \
+  --set guard_command="pytest tests/ -x" \
+  --set guard_mode=pass_fail
 ```
 
 If no guard is defined, the loop skips Phase 5.5 entirely.
@@ -96,12 +124,87 @@ If no guard is defined, the loop skips Phase 5.5 entirely.
 ```bash
 specflow create --type competition \
   --title "Track A: single split" \
-  --verify-command "python scripts/track_a.py --strategy {strategy}" \
-  --metric-name "Sharpe ratio" \
-  --metric-direction "higher_is_better"
+  --status active \
+  --set verify_command="python scripts/track_a.py --strategy {strategy}" \
+  --set metric_name="Sharpe ratio" \
+  --set metric_direction=higher_is_better
 ```
 
 Record baseline metric from the dry-run as the initial reference point.
+
+## Step 6.5: Set Goals and Define the "Why"
+
+A COMP is not just a metric — it is a research question. Capture the goals explicitly so the agent knows when to stop and what success looks like:
+
+`goals` is a list of freeform strings — pass it as a JSON array:
+
+```bash
+specflow update COMP-001 --set goals='["Find 3 uncorrelated strategies with Sharpe > 2.0", "Walk-forward Sharpe degrades < 15% from in-sample", "Max drawdown < 10% across all candidates"]'
+```
+
+Goals are what the loop steers toward: they drive hypothesis framing (Phase 2a), Dynamic Termination (Phase 8), and what the post-check should validate (Step 7). The agent uses them to decide whether to stop early or continue.
+
+Also set `success_criteria` — a sentence explaining why a high metric might still fail. This is the deploy-fit definition the post-check enforces:
+
+```bash
+specflow update COMP-001 --set success_criteria="High Sharpe alone is not enough; strategy must be profitable after transaction costs and deployable with <5min setup time."
+```
+
+## Step 7 (Optional): Define Pre-Check and Post-Check Commands
+
+Instead of a single monolithic verify script, use a **unified runner with phase flags**:
+
+```bash
+# The same script handles all three phases
+specflow create --type competition \
+  --title "Pair-trading with Kalman" \
+  --status active \
+  --set verify_command="uv run python run_comp002.py {strategy} --phase=verify" \
+  --set pre_check_command="uv run python run_comp002.py {strategy} --phase=pre-check" \
+  --set post_check_command="uv run python run_comp002.py {strategy} --phase=post-check" \
+  --set metric_name="Sharpe ratio" \
+  --set metric_direction=higher_is_better
+```
+
+**Derive the checks from the goals, not just the metric.** The pre-check guards the inputs (some datasets/algorithms deserve EDA before a single verify runs); the post-check guards deploy-fit — it should test the conditions named in `success_criteria`, so a high-metric result that wouldn't survive deployment gets caught. Not every COMP needs both: pick the ones the goal actually implies.
+
+| Phase | Purpose | Quant Example | ML Example |
+|-------|---------|---------------|------------|
+| `pre-check` | EDA, data quality, structural validation | Cointegration test, stationarity test | Data leakage scan, class balance check |
+| `verify` | Primary metric extraction | Sharpe ratio on backtest | Validation accuracy / loss |
+| `post-check` | Deploy-fit: calibration, robustness, OOS, sensitivity | Walk-forward Sharpe, max drawdown, cost after slippage | OOS accuracy, calibration error, fairness metrics |
+
+Separate scripts also work — the protocol only cares that the commands exist and produce measurable output.
+
+**IMPORTANT:** Before creating a LOOP, the agent must confirm that all defined commands (verify, pre-check, post-check) exist and have passed a successful dry-run. No LOOP may be created against a COMP whose pipeline is untested.
+
+## Step 8 (Optional): Characterize Metric Noise
+
+Run the verify command 3x back-to-back on unchanged code. Record the results on the COMP so future LOOPs know the measurement floor:
+
+```bash
+# Run 3 times and capture
+for i in 1 2 3; do python run_comp002.py baseline --phase=verify; done
+# Results: 1.23, 1.31, 1.15
+
+specflow update COMP-001 --set noise_characterization='{"metric": "sharpe", "mean": 1.23, "stdev": 0.08, "min": 1.15, "max": 1.31, "strategy": "multi_run_median"}'
+```
+
+This prevents false-positive "keeps" when the improvement is within the noise floor.
+
+## Domain-Specific Auxiliary Metric Recommendations
+
+When `domain` is set on the COMP, the agent and lint system know which auxiliary metrics are expected. Log all that apply:
+
+| Domain | Recommended auxiliary_metrics |
+|--------|------------------------------|
+| `quant` | max_drawdown, total_trades, win_rate, profit_factor, oos_decay, walk_forward_sharpe, sortino_ratio, calmar_ratio |
+| `ml` | val_loss, learning_rate, batch_size, epochs, architecture, num_parameters, inference_ms, train_time_minutes |
+| `nlp` | perplexity, token_count, rouge_l, bertscore_f1, inference_tokens_per_sec |
+| `systems` | p50_latency_ms, p99_latency_ms, memory_mb, throughput_rps, cpu_percent, error_rate |
+| `safety_critical` | false_positive_rate, false_negative_rate, precision, recall, explainability_score, domain_coverage |
+
+These are recommendations, not mandates. The agent should log what it sees fit, but `artifact-lint` warns when a domain-recommended field is completely absent from a kept EXPT.
 
 ## Trust Boundary
 
@@ -145,11 +248,12 @@ Guards are hard constraints that auto-discard experiments violating them. They u
 ```bash
 specflow create --type competition \
   --title "Walk-forward momentum strategy" \
-  --verify-command "python scripts/evaluate.py --strategy {strategy} 2>&1 | grep 'sharpe_wf' | awk '{print $2}'" \
-  --metric-name "Walk-forward Sharpe" \
-  --metric-direction "higher_is_better" \
-  --guard-command "python scripts/guard_check.py --strategy {strategy}" \
-  --guard-mode "metric_valued"
+  --status active \
+  --set verify_command="python scripts/evaluate.py --strategy {strategy} 2>&1 | grep 'sharpe_wf' | awk '{print \$2}'" \
+  --set metric_name="Walk-forward Sharpe" \
+  --set metric_direction=higher_is_better \
+  --set guard_command="python scripts/guard_check.py --strategy {strategy}" \
+  --set guard_mode=metric_valued
 ```
 
 Where `guard_check.py` checks multiple floors and exits non-zero if any fail:

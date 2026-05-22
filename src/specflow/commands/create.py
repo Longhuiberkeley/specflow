@@ -54,6 +54,12 @@ def run(root: Path, args: dict) -> int:
 
     links = _parse_links(links_str) if links_str else []
 
+    try:
+        extra_fields = art_lib.parse_set_fields(args.get("set_fields"))
+    except ValueError as exc:
+        print(f"{RED}✗ {exc}{NC}")
+        return 1
+
     if from_standard:
         clause = _lookup_standard_clause(root, from_standard)
         if not clause:
@@ -119,6 +125,7 @@ def run(root: Path, args: dict) -> int:
         links=links,
         body=body,
         non_functional_category=nfr_category,
+        **extra_fields,
     )
 
     if result["ok"]:

@@ -225,6 +225,9 @@ def _add_create_parser(subparsers):
     p.add_argument("--skip-dedup-check", action="store_true", dest="skip_dedup_check", help="Bypass search-before-create")
     p.add_argument("--nfr-category", dest="nfr_category",
                    help="Non-functional requirement category (performance, security, reliability, usability, maintainability, scalability, compliance)")
+    p.add_argument("--set", action="append", dest="set_fields", metavar="KEY=VALUE",
+                   help="Set an arbitrary frontmatter field (repeatable). Value is parsed as JSON if possible, else kept as a string. "
+                        "E.g. --set metric_value=0.93 --set parameters='{\"lr\": 0.001}'")
 
 
 def _add_standards_parser(subparsers):
@@ -282,6 +285,9 @@ def _add_update_parser(subparsers):
     p.add_argument("--tags", help="Comma-separated tags (replaces existing)")
     p.add_argument("--output-files", dest="output_files", help="Comma-separated output file paths (replaces existing; empty string removes)")
     p.add_argument("--thinking-techniques", dest="thinking_techniques", help="Comma-separated technique names to append (e.g., premortem,devils_advocate)")
+    p.add_argument("--set", action="append", dest="set_fields", metavar="KEY=VALUE",
+                   help="Set an arbitrary frontmatter field (repeatable). Value is parsed as JSON if possible, else kept as a string. "
+                        "E.g. --set failure_analysis='...' --set goals='[\"...\"]'")
 
 
 def _add_go_parser(subparsers):
@@ -469,6 +475,11 @@ def _add_autoresearch_parser(subparsers):
     lb_p.add_argument("--competition", help="Competition ID (omit with --all)")
     lb_p.add_argument("--all", action="store_true", help="Show leaderboard across all competitions")
     lb_p.add_argument("--top", type=int, default=10, help="Number of EXPTs per competition (default: 10)")
+    lb_p.add_argument("--group-by", dest="group_by",
+                      choices=["model_origin", "change_category", "strategy_family"],
+                      help="Group kept EXPTs by a field instead of one flat ranking (swarm/ensemble view)")
+    lb_p.add_argument("--show-family", action="store_true", dest="show_family",
+                      help="Group by family for family_of_good competitions (shows diversity metrics per group)")
 
 
 # ── Workflow-phase grouping for --help ────────────────────────────

@@ -43,20 +43,29 @@ For each category that drove improvement, ask:
 - What was the progression? (e.g., "started with XGBoost, switched to Kalman, improved further with Q tuning")
 - Are there patterns across iterations? (e.g., "smaller time windows consistently beat larger ones")
 
-For categories that failed, ask:
-- What approaches were definitively falsified?
-- Is there a common thread? (e.g., "all mean-reversion approaches failed regardless of parameters")
+For categories that did not pan out, ask: what is the *honest* outcome? Falsifying an approach cleanly is often hard, and "it didn't work" is usually too strong. Classify each into one of:
+
+- **falsified** — a clear, repeatable negative across parameters and seeds ("all mean-reversion variants lost money regardless of threshold")
+- **conditional** — works only under stated conditions ("profitable on ETH but not ADA"; "needs >2 years of history")
+- **sensitive** — the result hinges on a knob or on noise, so it can't be trusted as-is. Prefer *"sensitive to parameter/noise — 0.020 vs 0.021 flips the outcome; may or may not be useful downstream"* over *"the algorithm doesn't work."* This is a robustness statement, not a verdict.
+- **inconclusive** — couldn't separate signal from the noise floor within the budget; genuinely unknown
+
+Recording the right one of these is more useful to the next LOOP than forcing a thumbs-down. A sensitive or inconclusive result is a pointer to *where to look next*, not a dead end.
+
+**Read `failure_analysis` and `hypothesis_outcome` from discarded and crashed EXPTs.** `failure_analysis` is the raw root-cause sentence the agent logged during Phase 7; `hypothesis_outcome` (supported / not_supported / inconclusive) says whether the Phase 2a hypothesis held. Together they make `what_failed` authoring faster and more honest. If an EXPT lacks `failure_analysis`, infer the root cause from `summary` and `parameters`.
 
 ### 4. Author the FIND
+
+FIND-specific fields use the generic `--set KEY=VALUE` flag; only `--type`, `--title`, and `--status` are first-class.
 
 ```bash
 specflow create --type finding \
   --title "Basket specialization outperforms broad baskets" \
-  --competition COMP-001 \
-  --source-loop LOOP-001 \
-  --confidence medium \
   --status draft \
-  --summary "Specializing on single assets (ADA, ETH) consistently outperforms multi-asset baskets. Broad basket approaches produce noisy signals."
+  --set competition=COMP-001 \
+  --set source_loop=LOOP-001 \
+  --set confidence=medium \
+  --set summary="Specializing on single assets (ADA, ETH) consistently outperforms multi-asset baskets. Broad basket approaches produce noisy signals."
 ```
 
 ## Field Guidance
@@ -75,14 +84,14 @@ Example:
 
 ### what_failed
 
-Falsified approaches with references. Future loops should avoid these.
+Approaches that didn't pan out, each tagged with its honest outcome (falsified / conditional / sensitive / inconclusive) and EXPT references. Future loops use this to decide what to avoid versus what to revisit differently.
 
 Example:
 ```
-- Trailing stops: all variants degraded performance (EXPT-004, EXPT-009, EXPT-014)
-- Mean-reversion on daily timeframe (EXPT-007, EXPT-011)
-- XGBoost with default parameters on this dataset (EXPT-001)
-- Ensemble methods: marginal improvement with 3x complexity cost (EXPT-016, EXPT-018)
+- Trailing stops [falsified]: all variants degraded performance (EXPT-004, EXPT-009, EXPT-014)
+- Threshold=0.03 entry [sensitive]: optimal at 0.030 but 0.020↔0.021 flips P&L sign — fragile, not deployable as-is (EXPT-023, EXPT-031)
+- Mean-reversion on daily timeframe [conditional]: works on ETH, fails on ADA (EXPT-007, EXPT-011)
+- LSTM depth sweep [inconclusive]: gains within the noise floor at this budget (EXPT-016, EXPT-018)
 ```
 
 ### next_steps
@@ -104,6 +113,27 @@ Example:
 | **medium** | Supported by one LOOP with 3+ kept EXPTs. Pattern is clear but not yet validated on a different split. |
 | **low** | Based on 1-2 kept EXPTs. Preliminary — needs confirmation before relying on it for direction. |
 
+### deployability
+
+Not all "what worked" findings are deployable. A high-Sharpe strategy with 1,000 micro-trades per day may be "what worked" but `not_deployable` due to transaction costs. Use this field to separate "works on paper" from "works in production."
+
+| Level | When to use |
+|-------|-------------|
+| **deployable** | Meets all COMP goals; post-checks pass; ready for live or production use |
+| **conditional** | Promising but needs additional guard (e.g., "deployable only with <0.1% slippage") |
+| **not_deployable** | Metric looks good but post-checks fail; too fragile; not cost-effective |
+
+### safety_assessment
+
+For `safety_critical` domains (medical, automotive, aerospace). A finding is not "confirmed" unless its safety impact is understood.
+
+| Level | When to use |
+|-------|-------------|
+| **pass** | No safety regressions; meets all domain-specific thresholds |
+| **conditional** | Safe under stated assumptions (e.g., "safe if training data includes demographic X") |
+| **fail** | Safety regression detected; do not deploy |
+| **not_applicable** | Domain is not safety-critical; field can be omitted |
+
 ## Supersession Pattern
 
 When new evidence contradicts or refines an existing FIND:
@@ -115,11 +145,11 @@ specflow update FIND-001 --status superseded
 # Create a refined finding
 specflow create --type finding \
   --title "Threshold sensitivity is knife-edge at 0.03, not robust" \
-  --competition COMP-001 \
-  --source-loop LOOP-003 \
-  --confidence medium \
   --status draft \
-  --summary "LOOP-001 found threshold=0.03 optimal, but LOOP-003 shows ±0.005 variation degrades performance by 40%. The optimum is real but fragile."
+  --set competition=COMP-001 \
+  --set source_loop=LOOP-003 \
+  --set confidence=medium \
+  --set summary="LOOP-001 found threshold=0.03 optimal, but LOOP-003 shows ±0.005 variation degrades performance by 40%. The optimum is real but fragile."
 ```
 
 ## Cross-Loop Synthesis
@@ -129,10 +159,10 @@ A FIND can synthesize patterns across multiple LOOPs without a single `source_lo
 ```bash
 specflow create --type finding \
   --title "Feature engineering consistently outperforms model tuning" \
-  --competition COMP-001 \
-  --confidence high \
   --status draft \
-  --summary "Across 4 loops and 120 experiments, adding new features produces larger metric improvements than model architecture changes. Feature-driven improvements average +0.5 per iteration vs +0.15 for model tuning."
+  --set competition=COMP-001 \
+  --set confidence=high \
+  --set summary="Across 4 loops and 120 experiments, adding new features produces larger metric improvements than model architecture changes. Feature-driven improvements average +0.5 per iteration vs +0.15 for model tuning."
 ```
 
 Leave `source_loop` absent. The `experiment_count` and `best_metric` fields should aggregate across all referenced loops.

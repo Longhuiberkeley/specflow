@@ -14,7 +14,7 @@ from specflow.lib import standards as standards_lib
 from specflow.lib import lint as lint_lib
 from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC
 
-CHECK_NAMES = ["schema", "links", "status", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "thinking-techniques"]
+CHECK_NAMES = ["schema", "links", "status", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "thinking-techniques", "autoresearch-logging"]
 
 
 def _run_check(
@@ -62,6 +62,8 @@ def _run_check(
         return _check_compliance_evidence(artifacts, root)
     elif check_name == "thinking-techniques":
         return _check_thinking_techniques(artifacts)
+    elif check_name == "autoresearch-logging":
+        return _check_autoresearch_logging(artifacts, root)
 
     return {"status_icon": "?", "detail": f"Unknown check: {check_name}",
             "blocking_count": 0, "warning_count": 0}
@@ -1054,6 +1056,88 @@ def _check_thinking_techniques(
 
     icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
     detail_msg = "\n".join(details) if details else "All spec artifacts challenged"
+
+    return {
+        "status_icon": icon,
+        "detail": detail_msg,
+        "blocking_count": 0,
+        "warning_count": warnings,
+    }
+
+
+_DOMAIN_RECOMMENDED: dict[str, list[str]] = {
+    "quant": ["max_drawdown", "total_trades", "win_rate", "profit_factor", "oos_decay"],
+    "ml": ["val_loss", "learning_rate", "batch_size", "epochs", "architecture"],
+    "nlp": ["perplexity", "token_count", "rouge_l", "bertscore_f1"],
+    "systems": ["p50_latency_ms", "p99_latency_ms", "memory_mb", "throughput_rps"],
+    "safety_critical": ["false_positive_rate", "false_negative_rate", "precision", "recall"],
+}
+
+
+def _check_autoresearch_logging(
+    artifacts: list[art_lib.Artifact],
+    root: Path,
+) -> dict[str, str | int]:
+    """Warn when autoresearch EXPTs are missing domain-recommended logging fields.
+
+    Checks:
+      - Kept EXPTs under a COMP with `domain` should have recommended auxiliary_metrics
+      - Discarded/crashed EXPTs should have failure_analysis
+      - Kept EXPTs with change_category in (model, params) should have parameters logged
+    """
+    warnings = 0
+    details: list[str] = []
+
+    # Build COMP domain index
+    comp_domains: dict[str, str] = {}
+    for art in artifacts:
+        if art_lib.get_prefix_from_id(art.id) == "COMP":
+            domain = art.frontmatter.get("domain")
+            if domain:
+                comp_domains[art.id] = domain
+
+    for art in artifacts:
+        if art_lib.get_prefix_from_id(art.id) != "EXPT":
+            continue
+
+        comp_id = art.frontmatter.get("competition")
+        if not comp_id:
+            # Try to resolve via LOOP link
+            loop_id = art.frontmatter.get("loop")
+            if loop_id:
+                for a in artifacts:
+                    if a.id == loop_id:
+                        comp_id = a.frontmatter.get("competition")
+                        break
+
+        domain = comp_domains.get(comp_id) if comp_id else None
+        status = art.status
+        aux = art.frontmatter.get("auxiliary_metrics") or {}
+        cat = art.frontmatter.get("change_category", "")
+
+        if status == "kept" and domain:
+            recs = _DOMAIN_RECOMMENDED.get(domain, [])
+            missing = [f for f in recs if f not in aux]
+            if missing:
+                warnings += 1
+                details.append(
+                    f"  ⚠ [{art.id}] missing recommended aux metrics for domain '{domain}': {', '.join(missing[:3])}"
+                )
+
+        if status == "kept" and cat in ("model", "params") and not art.frontmatter.get("parameters"):
+            warnings += 1
+            details.append(
+                f"  ⚠ [{art.id}] (kept, change_category={cat}) has no `parameters` logged"
+            )
+
+        if status in ("discarded", "crashed", "pre_check_failed") and not art.frontmatter.get("failure_analysis"):
+            warnings += 1
+            details.append(
+                f"  ⚠ [{art.id}] ({status}) has no `failure_analysis` logged"
+            )
+
+    icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
+    detail_msg = "\n".join(details) if details else "All autoresearch EXPTs have recommended logging fields"
 
     return {
         "status_icon": icon,

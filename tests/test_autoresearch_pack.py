@@ -742,3 +742,309 @@ class TestPackContextInjection:
 
         content = agents_md.read_text(encoding="utf-8")
         assert content.count("<!-- pack:autoresearch context") == 1
+
+
+# ── 8. New schema fields (v1.6.1) ───────────────────────────────────────────
+
+class TestNewSchemaFields:
+
+    def test_competition_schema_has_new_fields(self, project_root: Path):
+        schema_path = project_root / ".specflow" / "schema" / "competition.yaml"
+        schema = yaml.safe_load(schema_path.read_text())
+        opts = schema.get("optional_fields", [])
+        for field in ("objective_type", "success_criteria", "domain", "pre_check_command",
+                      "post_check_command", "noise_characterization", "goals"):
+            assert field in opts, f"competition.yaml should have optional field '{field}'"
+
+    def test_experiment_schema_has_new_fields(self, project_root: Path):
+        schema_path = project_root / ".specflow" / "schema" / "experiment.yaml"
+        schema = yaml.safe_load(schema_path.read_text())
+        opts = schema.get("optional_fields", [])
+        for field in ("parameters", "model_origin", "sweep_results", "checks",
+                      "baseline_note", "diversity_metrics", "failure_analysis",
+                      "hypothesis", "hypothesis_outcome"):
+            assert field in opts, f"experiment.yaml should have optional field '{field}'"
+
+    def test_loop_schema_has_new_fields(self, project_root: Path):
+        schema_path = project_root / ".specflow" / "schema" / "loop.yaml"
+        schema = yaml.safe_load(schema_path.read_text())
+        opts = schema.get("optional_fields", [])
+        for field in ("goal", "required_findings", "termination_suggestions"):
+            assert field in opts, f"loop.yaml should have optional field '{field}'"
+
+    def test_finding_schema_has_new_fields(self, project_root: Path):
+        schema_path = project_root / ".specflow" / "schema" / "finding.yaml"
+        schema = yaml.safe_load(schema_path.read_text())
+        opts = schema.get("optional_fields", [])
+        for field in ("deployability", "safety_assessment", "applies_to_domain"):
+            assert field in opts, f"finding.yaml should have optional field '{field}'"
+
+
+# ── 9. Autoresearch logging lint (v1.6.1) ──────────────────────────────────
+
+class TestAutoresearchLoggingLint:
+
+    def test_warns_on_missing_domain_aux_metrics(self, project_root: Path):
+        _write_artifact(
+            project_root, "COMP-010", "competition", "Quant Comp",
+            status="active",
+            extra_fm={
+                "created": "2026-05-15",
+                "verify_command": "pytest",
+                "metric_name": "Sharpe ratio",
+                "metric_direction": "higher_is_better",
+                "domain": "quant",
+            },
+        )
+        _write_artifact(
+            project_root, "EXPT-100", "experiment", "Quant Test",
+            status="kept",
+            extra_fm={
+                "created": "2026-05-15",
+                "loop": "LOOP-010",
+                "metric_value": 1.5,
+                "change_category": "params",
+                "summary": "Test",
+                "competition": "COMP-010",
+                "parameters": {"learning_rate": 0.01},
+                "auxiliary_metrics": {"win_rate": 0.6},  # missing max_drawdown, total_trades, profit_factor, oos_decay
+            },
+        )
+        arts = art_lib.discover_artifacts(project_root)
+        result = lint_cmd._check_autoresearch_logging(arts, project_root)
+        assert result["warning_count"] > 0
+        assert "max_drawdown" in result["detail"]
+
+    def test_warns_on_missing_parameters_for_model_change(self, project_root: Path):
+        _write_artifact(
+            project_root, "EXPT-101", "experiment", "Model Test",
+            status="kept",
+            extra_fm={
+                "created": "2026-05-15",
+                "loop": "LOOP-010",
+                "metric_value": 0.9,
+                "change_category": "model",
+                "summary": "Test",
+                "competition": "COMP-010",
+            },
+        )
+        arts = art_lib.discover_artifacts(project_root)
+        result = lint_cmd._check_autoresearch_logging(arts, project_root)
+        assert result["warning_count"] > 0
+        assert "parameters" in result["detail"]
+
+    def test_warns_on_missing_failure_analysis(self, project_root: Path):
+        _write_artifact(
+            project_root, "EXPT-102", "experiment", "Failed Test",
+            status="discarded",
+            extra_fm={
+                "created": "2026-05-15",
+                "loop": "LOOP-010",
+                "metric_value": 0.1,
+                "change_category": "params",
+                "summary": "Test",
+                "competition": "COMP-010",
+            },
+        )
+        arts = art_lib.discover_artifacts(project_root)
+        result = lint_cmd._check_autoresearch_logging(arts, project_root)
+        assert result["warning_count"] > 0
+        assert "failure_analysis" in result["detail"]
+
+
+# ── 10. Autoresearch review warnings (v1.6.1) ──────────────────────────────
+
+class TestAutoresearchReviewWarnings:
+
+    def test_review_warns_completed_loop_with_zero_finds(self, project_root: Path, capsys):
+        _write_artifact(
+            project_root, "COMP-020", "competition", "Review Test Comp",
+            status="active",
+            extra_fm={
+                "created": "2026-05-15",
+                "verify_command": "pytest",
+                "metric_name": "accuracy",
+                "metric_direction": "higher_is_better",
+            },
+        )
+        _write_artifact(
+            project_root, "LOOP-020", "loop", "Review Test Loop",
+            status="completed",
+            extra_fm={
+                "created": "2026-05-15",
+                "competition": "COMP-020",
+                "mode": "explore",
+                "budget": 10,
+                "iteration_count": 10,
+                "kept_count": 2,
+                "discarded_count": 8,
+            },
+        )
+        _write_artifact(
+            project_root, "EXPT-200", "experiment", "Review Test Expt",
+            status="kept",
+            extra_fm={
+                "created": "2026-05-15",
+                "loop": "LOOP-020",
+                "metric_value": 0.95,
+                "change_category": "features",
+                "summary": "Test expt",
+                "parameters": {"lr": 0.01},
+            },
+        )
+        rc = autoresearch_cmd.run(
+            project_root,
+            {"autoresearch_subcommand": "review", "competition": "COMP-020", "top": 5},
+        )
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "zero FINDs" in out
+
+
+# ── 11. Leaderboard grouping (v1.6.1) ──────────────────────────────────────
+
+class TestLeaderboardGrouping:
+
+    def test_leaderboard_groups_by_model_origin(self, project_root: Path, capsys):
+        _write_artifact(
+            project_root, "COMP-030", "competition", "Group Comp",
+            status="active",
+            extra_fm={
+                "created": "2026-05-15",
+                "verify_command": "pytest",
+                "metric_name": "accuracy",
+                "metric_direction": "higher_is_better",
+            },
+        )
+        _write_artifact(
+            project_root, "LOOP-030", "loop", "Group Loop",
+            status="completed",
+            extra_fm={
+                "created": "2026-05-15",
+                "competition": "COMP-030",
+                "mode": "explore",
+                "budget": 10,
+            },
+        )
+        for i, (mid, mo, mv) in enumerate([
+            ("EXPT-301", "pretrained", 0.95),
+            ("EXPT-302", "pretrained", 0.92),
+            ("EXPT-303", "trained_from_scratch", 0.88),
+        ]):
+            _write_artifact(
+                project_root, mid, "experiment", f"Group Expt {i+1}",
+                status="kept",
+                extra_fm={
+                    "created": "2026-05-15",
+                    "loop": "LOOP-030",
+                    "metric_value": mv,
+                    "change_category": "model",
+                    "summary": f"Test {i+1}",
+                    "model_origin": mo,
+                },
+            )
+        rc = autoresearch_cmd.run(
+            project_root,
+            {
+                "autoresearch_subcommand": "leaderboard",
+                "competition": "COMP-030",
+                "group_by": "model_origin",
+                "top": 10,
+            },
+        )
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "pretrained:" in out
+        assert "trained_from_scratch:" in out
+
+
+# ── 12. Generic --set CLI flag (v1.6.1) ────────────────────────────────────
+# These exercise the *CLI parser path* (specflow.cli.main), not direct file
+# writes. The autoresearch protocols depend on writing arbitrary frontmatter
+# (metric_value, change_category, goals, ...) through `create`/`update --set`;
+# without this wiring the documented loop fails with "unrecognized arguments".
+
+class TestCreateUpdateSetFlag:
+
+    def _find(self, root: Path, art_id: str):
+        for a in art_lib.discover_artifacts(root):
+            if a.id == art_id:
+                return a
+        return None
+
+    def test_create_set_writes_typed_fields(self, project_root: Path, monkeypatch):
+        from specflow import cli
+        monkeypatch.chdir(project_root)
+        rc = cli.main([
+            "create", "--type", "experiment", "--title", "CLI experiment",
+            "--status", "kept", "--skip-dedup-check", "--body", "experiment body",
+            "--set", "loop=LOOP-900",
+            "--set", "metric_value=0.93",
+            "--set", "change_category=model",
+            "--set", "summary=logged via --set",
+            "--set", 'parameters={"lr": 0.001, "epochs": 50}',
+            "--set", "hypothesis_outcome=supported",
+        ])
+        assert rc == 0
+        # Created EXPT should round-trip the typed fields into frontmatter.
+        expts = [a for a in art_lib.discover_artifacts(project_root)
+                 if art_lib.get_prefix_from_id(a.id) == "EXPT"]
+        assert len(expts) == 1
+        fm = expts[0].frontmatter
+        assert fm["loop"] == "LOOP-900"
+        assert fm["metric_value"] == 0.93           # JSON-parsed to float
+        assert fm["change_category"] == "model"
+        assert fm["parameters"] == {"lr": 0.001, "epochs": 50}  # JSON dict
+        assert fm["hypothesis_outcome"] == "supported"
+
+    def test_update_set_writes_list_field(self, project_root: Path, monkeypatch):
+        from specflow import cli
+        _write_artifact(
+            project_root, "COMP-900", "competition", "Set Comp",
+            status="active",
+            extra_fm={
+                "created": "2026-05-15", "verify_command": "pytest",
+                "metric_name": "accuracy", "metric_direction": "higher_is_better",
+            },
+        )
+        monkeypatch.chdir(project_root)
+        rc = cli.main([
+            "update", "COMP-900",
+            "--set", 'goals=["find 3 uncorrelated strategies", "stable walk-forward"]',
+            "--set", "domain=quant",
+        ])
+        assert rc == 0
+        fm = self._find(project_root, "COMP-900").frontmatter
+        assert fm["domain"] == "quant"
+        assert fm["goals"] == ["find 3 uncorrelated strategies", "stable walk-forward"]
+
+    def test_create_set_malformed_returns_error(self, project_root: Path, monkeypatch):
+        from specflow import cli
+        monkeypatch.chdir(project_root)
+        rc = cli.main([
+            "create", "--type", "requirement", "--title", "Bad set",
+            "--skip-dedup-check", "--set", "noequalshere",
+        ])
+        assert rc == 1
+
+
+class TestCLIFlagWiring:
+    """Argparse must accept the autoresearch flags — the wiring bug class."""
+
+    def test_leaderboard_accepts_group_and_family_flags(self, project_root: Path, monkeypatch):
+        from specflow import cli
+        _write_artifact(
+            project_root, "COMP-901", "competition", "LB Comp",
+            status="active",
+            extra_fm={
+                "created": "2026-05-15", "verify_command": "pytest",
+                "metric_name": "accuracy", "metric_direction": "higher_is_better",
+            },
+        )
+        monkeypatch.chdir(project_root)
+        # Previously these flags raised SystemExit(2): "unrecognized arguments".
+        rc = cli.main([
+            "autoresearch", "leaderboard", "--competition", "COMP-901",
+            "--group-by", "model_origin", "--show-family",
+        ])
+        assert rc == 0

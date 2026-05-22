@@ -48,6 +48,38 @@ specflow trace COMP-NNN
 **If any FAIL:** Stop and inform user. Do not enter the loop with broken preconditions.
 **If any WARN:** Log the warning, proceed with caution, inform user.
 
+## Phase 0.5: Pre-Check (Optional, Per COMP)
+
+If the COMP artifact defines a `pre_check_command`, run it **before** entering the main iteration loop and also before each individual iteration's verify phase. This is the agent's opportunity to perform EDA, data quality checks, or structural validation.
+
+```bash
+# Example pre-checks:
+#   - Cointegration test before pair-trading strategy verify
+#   - Stationarity test before mean-reversion verify
+#   - Data leakage scan before ML training verify
+#   - Feature distribution drift check
+```
+
+**Rules:**
+
+- Pre-check runs **after** Phase 3 (Modify) and **before** Phase 5 (Verify), on every iteration
+- If pre-check fails, do NOT run verify — log as `status: pre_check_failed` and proceed to next iteration
+- Pre-check failures are themselves learning signals — populate `failure_analysis` with the root cause
+- If no `pre_check_command` is defined on the COMP, skip this phase entirely
+
+**Logging pre-check results:**
+
+```bash
+specflow create --type experiment \
+  --title "Pre-check failed: cointegration p-value 0.12" \
+  --status discarded \
+  --set loop=LOOP-001 \
+  --set metric_value=0.0 \
+  --set change_category=pre_check \
+  --set summary="ADF test failed; pair not stationary" \
+  --set failure_analysis="Pair ADA/ETH showed p=0.12 on cointegration test. Skipped verify."
+```
+
 ## Phase 1: Review (before each iteration)
 
 Build situational awareness before every iteration. **You MUST complete ALL steps.**
@@ -103,7 +135,23 @@ IF LOOP.iteration_count >= LOOP.budget:
 
 ## Phase 2: Ideate (Strategic)
 
-Pick the NEXT change. **MUST consult git history, EXPTs, and FINDs before deciding.**
+This is the **research** half of autoresearch — not metric hill-climbing. Before picking a change, form a hypothesis driven by what the project is actually trying to achieve.
+
+### 2a. State a goal-driven hypothesis
+
+Read `COMP.goals`, `COMP.success_criteria`, `LOOP.goal`, and the open FINDs. Then write a **one-line hypothesis with a predicted effect and a reason**:
+
+> *"If I add cross-asset rolling-correlation features, walk-forward Sharpe should rise toward the >2.0 goal, because the current model has no regime signal."*
+
+The change you pick MUST test that hypothesis. A good hypothesis is falsifiable in principle and tied to a goal — not "try learning_rate=0.001 and see." Log it on the EXPT as `hypothesis` (Phase 7). After verify, Phase 6 records whether it was **supported / not_supported / inconclusive**. That outcome — not just the metric — is what FINDs synthesize.
+
+### 2b. Is the metric still a faithful proxy for the goal?
+
+Every ~10 iterations (and at each condense point), pause and ask: **does the primary metric still reflect `COMP.goals`?** If the agent is gaming the metric without serving the goal (e.g. Sharpe climbing on 3 curve-fit trades, accuracy rising while calibration rots), that is itself a finding — log it and adjust: add an auxiliary metric, tighten `success_criteria`, or switch `objective_type`. A metric that has drifted from intent is worse than no metric.
+
+### 2c. Pick the NEXT change
+
+**MUST consult git history, EXPTs, and FINDs before deciding.**
 
 **Priority order:**
 
@@ -370,9 +418,57 @@ ELIF crashed:
         safe_revert()
 ```
 
+**Record the hypothesis outcome.** Independent of keep/discard, judge the Phase 2a hypothesis against the result and set `hypothesis_outcome`:
+
+- `supported` — the predicted effect happened and is above the noise floor
+- `not_supported` — the predicted effect clearly did not happen
+- `inconclusive` — the change moved the metric within the noise floor, or the result is too parameter/data-sensitive to call (see the sensitivity framing in `finding-generation-protocol.md`)
+
+A `discarded` EXPT with a `not_supported` or `inconclusive` hypothesis is still valuable knowledge — it narrows the search and feeds `what_failed`.
+
 **Why `git revert` instead of `git reset --hard`?**
 
 `git revert` preserves the failed experiment in history — this IS the "memory." Future iterations can read `git log` and see what was tried and failed. `git reset --hard` destroys the commit entirely — the agent loses memory of what was attempted.
+
+## Phase 6.5: Post-Check (Optional, Per COMP)
+
+If the COMP artifact defines a `post_check_command`, run it **after** verify and after the keep/discard decision. Post-checks are calibration, robustness, or sanity validations that do not affect the primary metric decision but provide critical context for whether a "kept" experiment is actually deployable.
+
+**The post-check exists because a good core metric ≠ a good candidate.** It should validate the deploy-fit conditions named in `COMP.success_criteria` (cost after slippage, out-of-sample decay, robustness to parameter perturbation, fairness/safety thresholds) — i.e. whether this result would actually do the job the user wants, not just win the leaderboard. An EXPT that tops the metric but fails its deploy-fit post-checks is exactly the case `deployability` and `success_criteria` exist to catch.
+
+```bash
+# Example post-checks:
+#   - Walk-forward Sharpe on a held-out temporal split
+#   - Max drawdown floor check (separate from guard_command)
+#   - Trade count sanity (ensure not curve-fitting to 3 trades)
+#   - Out-of-sample decay estimate
+#   - Model bias / fairness metrics for safety-critical domains
+```
+
+**Rules:**
+
+- Post-check runs **after** Phase 6 (Decide), regardless of keep/discard status
+- Post-check failures on a `kept` EXPT are warnings, not rollbacks — the primary metric drove the decision
+- However, if the post-check reveals severe issues (e.g., OOS Sharpe collapsed from 2.0 to 0.1), log a strong `failure_analysis` and consider setting `deployability: not_deployable` on the eventual FIND
+- Populate the EXPT's `checks` array with all three stages:
+
+```yaml
+checks:
+  - name: cointegration_test
+    stage: pre
+    passed: true
+    output: "p-value: 0.03"
+  - name: verify_sharpe
+    stage: verify
+    passed: true
+    metric_value: 2.1
+  - name: walk_forward_sharpe
+    stage: post
+    passed: true
+    metric_value: 1.8
+```
+
+- If no `post_check_command` is defined on the COMP, skip this phase entirely
 
 ## Phase 7: Log (Create EXPT Artifact)
 
@@ -380,27 +476,31 @@ Replace TSV-based logging with SpecFlow artifact creation.
 
 ### Create the Experiment Artifact
 
+EXPT-specific fields are written with the generic `--set KEY=VALUE` flag (repeatable; the value is parsed as JSON when possible, otherwise kept as a string). Only `--type`, `--title`, and `--status` are first-class flags.
+
 ```bash
 specflow create --type experiment \
-  --status kept \
   --title "Added cross-asset momentum features" \
-  --loop LOOP-001 \
-  --metric-value 1.83 \
-  --change-category features \
-  --summary "Added BTC/ETH cross-asset rolling correlation features to the feature pipeline"
+  --status kept \
+  --set loop=LOOP-001 \
+  --set metric_value=1.83 \
+  --set change_category=features \
+  --set summary="Added BTC/ETH cross-asset rolling correlation features to the feature pipeline" \
+  --set hypothesis="Cross-asset features add regime signal, lifting walk-forward Sharpe toward the >2.0 goal" \
+  --set hypothesis_outcome=supported
 ```
 
-If the verify command or guard produced additional metrics, include them:
+If the verify command or guard produced additional metrics, include them as a JSON dict:
 
 ```bash
 specflow create --type experiment \
-  --status kept \
   --title "Added cross-asset momentum features" \
-  --loop LOOP-001 \
-  --metric-value 1.83 \
-  --change-category features \
-  --summary "Added BTC/ETH cross-asset rolling correlation features to the feature pipeline" \
-  --auxiliary-metrics '{"max_drawdown": 0.12, "total_trades": 340, "win_rate": 0.54, "runtime_seconds": 12.4}'
+  --status kept \
+  --set loop=LOOP-001 \
+  --set metric_value=1.83 \
+  --set change_category=features \
+  --set summary="Added BTC/ETH cross-asset rolling correlation features to the feature pipeline" \
+  --set auxiliary_metrics='{"max_drawdown": 0.12, "total_trades": 340, "win_rate": 0.54, "runtime_seconds": 12.4}'
 ```
 
 Field mapping from iteration data:
@@ -409,12 +509,20 @@ Field mapping from iteration data:
 |---------------|------------|
 | Git commit hash | `commit` (optional) |
 | Metric number | `metric_value` (required) |
-| Kept/discarded/crashed/no_op | `status` (required, terminal) |
+| Kept/discarded/crashed/no_op/pre_check_failed | `status` (required, terminal) |
 | What was changed | `summary` (required) |
 | Category of change | `change_category` (required) |
+| Goal-driven hypothesis tested (Phase 2a) | `hypothesis` (optional, text) |
+| Whether the hypothesis held | `hypothesis_outcome` (optional: supported / not_supported / inconclusive) |
 | Strategy identifier | `strategy_used` (optional) |
 | Metric delta from previous best | `delta` (optional) |
 | Duration of verify | `duration_seconds` (optional) |
+| Hyperparameters / config changed | `parameters` (optional, YAML dict) |
+| Model origin (pretrained, trained, fine-tuned) | `model_origin` (optional) |
+| Grid-search or multi-run internal results | `sweep_results` (optional, list) |
+| Pre/verify/post check results | `checks` (optional, list) |
+| Diversity vs existing keeps | `diversity_metrics` (optional, YAML dict) |
+| Root cause on discard/crash | `failure_analysis` (optional, text) |
 | Additional diagnostic metrics | `auxiliary_metrics` (optional, YAML dict) |
 
 ### Logging Auxiliary Metrics
@@ -438,17 +546,75 @@ Common auxiliary metrics by domain:
 | NLP | BLEU, ROUGE-L, perplexity, token_count |
 | Systems | p50_latency_ms, p99_latency_ms, memory_mb, throughput_rps |
 
+### Logging Parameters and Model Origin
+
+When `change_category` is `model` or `params`, the agent **shall** log the changed hyperparameters and model provenance. This is not optional for these categories — it is a required part of the experiment record so future loops can reproduce or vary the change.
+
+```yaml
+parameters:
+  learning_rate: 0.001
+  epochs: 50
+  batch_size: 32
+  architecture: ResNet-50
+model_origin: pretrained  # or trained_from_scratch, fine_tuned
+baseline_note: "Started from torchvision pretrained checkpoint; only classifier head retrained"
+```
+
+**Why model origin matters:** Two EXPTs may report the same metric but started from incomparable baselines. A `pretrained` model reaching 95% accuracy is not the same achievement as `trained_from_scratch` reaching 95%. Always log origin so the leaderboard and FINDs can contextualize results.
+
+### Logging Sweep Results
+
+If the experiment script internally performed a grid search or parameter sweep, capture all results in `sweep_results` so the single EXPT artifact preserves the full exploration:
+
+```yaml
+sweep_results:
+  - parameters: {learning_rate: 0.01}
+    metric_value: 0.87
+    status: discarded
+  - parameters: {learning_rate: 0.001}
+    metric_value: 0.93
+    status: kept
+  - parameters: {learning_rate: 0.0001}
+    metric_value: 0.91
+    status: discarded
+```
+
+This is preferred over creating many child EXPTs when the sweep is fast and exploratory. For formal, publishable parameter studies, create child EXPTs instead.
+
+### Logging Diversity Metrics
+
+In `family_of_good` competitions, log how diverse this experiment is from the current best or the population of keeps:
+
+```yaml
+diversity_metrics:
+  equity_correlation_to_best: 0.31
+  strategy_family: kalman_filter
+  feature_overlap_ratio: 0.15
+```
+
+The agent decides what "diversity" means per domain. In quant: correlation between equity curves. In ML: architecture family + feature overlap. In NLP: BLEU variance across prompt templates. There is no enforced schema — the agent logs whatever captures orthogonality in that domain.
+
+### Logging Failure Analysis
+
+When `status` is `discarded`, `crashed`, or `pre_check_failed`, populate `failure_analysis` with a one-sentence root cause before creating the EXPT artifact:
+
+```yaml
+failure_analysis: "Kalman Q=0.0001 caused over-aggressive reversion; 12 whipsaw trades in 3 days"
+```
+
+This is the raw data that FIND `what_failed` synthesis will read. Be specific, reference exact parameter values, and avoid vague language like "didn't work."
+
 ### Update the LOOP Artifact
 
 After each iteration, update the LOOP's running totals:
 
 ```bash
 specflow update LOOP-001 \
-  --iteration-count 23 \
-  --kept-count 8 \
-  --discarded-count 13 \
-  --best-metric 1.83 \
-  --best-experiment EXPT-047
+  --set iteration_count=23 \
+  --set kept_count=8 \
+  --set discarded_count=13 \
+  --set best_metric=1.83 \
+  --set best_experiment=EXPT-047
 ```
 
 LOOP fields updated every iteration:
@@ -510,6 +676,46 @@ The brief replaces raw EXPT details. It should be concise (~20 lines for 10 iter
 5. Try the OPPOSITE of what hasn't been working
 6. Try a radical architectural change
 
+### Dynamic Termination (Goal-Aware Stopping)
+
+Stopping should be dynamic and consider the COMP's `goals` and the LOOP's `termination_suggestions`, not just budget exhaustion or raw plateau.
+
+**Evaluating termination every iteration:**
+
+```
+# Gather current state
+kept_expts = all EXPTs in this LOOP with status == "kept"
+comp_goals = COMP.goals (list of goal strings)
+loop_suggestions = LOOP.termination_suggestions (list of suggestion strings)
+post_check_pass_rate = % of kept EXPTs where post_check passed
+
+# Decision tree
+goals_met = evaluate_goals(comp_goals, kept_expts)
+IF goals_met AND post_check_pass_rate >= 0.8:
+    PRINT "Goals met and post-checks healthy. Stopping early."
+    specflow update LOOP-001 --status completed
+    Go to FIND Authoring
+
+IF LOOP.iteration_count >= LOOP.budget:
+    PRINT "Budget exhausted."
+    specflow update LOOP-001 --status completed
+    Go to FIND Authoring
+
+IF plateau_patience triggered AND NOT goals_met:
+    PRINT "Plateau reached but goals unmet. Consider extending budget or switching mode."
+    # Do NOT auto-stop — let user decide
+    PRINT "Suggestion: review FINDs, adjust termination_suggestions, and start a new LOOP."
+
+IF plateau_patience triggered AND goals_met:
+    PRINT "Plateau reached and goals met. Stopping."
+    specflow update LOOP-001 --status completed
+    Go to FIND Authoring
+```
+
+**Why dynamic?** A quant project might have a goal "Find 3 uncorrelated strategies with Sharpe > 2.0." If the agent finds strategy #3 at iteration 30/50, it should stop — not burn 20 more iterations chasing marginal gains. Conversely, if Sharpe is 1.9 at iteration 48/50, the agent should not stop just because plateau_patience triggered; the user may want to extend budget.
+
+**Post-check weighting:** Even if the primary metric looks good, post-check failures (e.g., walk-forward Sharpe collapsed) are signals that the "kept" experiment may not actually satisfy the COMP's real-world goals. Require a healthy post-check pass rate before declaring victory.
+
 ### Early Exit on Plateau
 
 If `plateau_patience` is set on the LOOP artifact (optional, default 15), the loop can end before the budget is exhausted:
@@ -519,15 +725,14 @@ IF LOOP has plateau_patience field:
     consecutive_no_improvement = iterations since last "kept" status
     IF consecutive_no_improvement >= plateau_patience:
         PRINT "Plateau reached: no improvement in {consecutive_no_improvement} iterations"
-        specflow update LOOP-001 --status plateaued
-        Go to FIND Authoring
+        # Plateau alone does not stop the loop — see Dynamic Termination above
 ```
 
-This gives the unbounded-mode benefit (stop when progress stalls) without unbounded-mode risk (budget is still the hard ceiling). If the agent hits plateau_patience, the user should review FINDs, adjust strategy, and start a new LOOP — which is the right behavior when progress has stalled.
+Plateau is one signal among many (goals, post-check health, budget). It triggers a review, not an automatic stop, unless goals are already met.
 
 ### Loop Completion
 
-When budget is exhausted or goal is achieved:
+When budget is exhausted or goals are achieved (per Dynamic Termination):
 
 ```bash
 # Update LOOP status
@@ -563,11 +768,11 @@ Follow the full protocol in `references/finding-generation-protocol.md`. Summary
 # Example: create a new finding
 specflow create --type finding \
   --title "Feature engineering outperforms model tuning" \
-  --competition COMP-001 \
-  --source-loop LOOP-001 \
-  --confidence medium \
   --status draft \
-  --summary "Cross-asset features drove the largest improvements. Model architecture changes had minimal impact."
+  --set competition=COMP-001 \
+  --set source_loop=LOOP-001 \
+  --set confidence=medium \
+  --set summary="Cross-asset features drove the largest improvements. Model architecture changes had minimal impact."
 ```
 
 ## Crash Recovery

@@ -3,12 +3,35 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 import yaml
+
+
+def parse_set_fields(set_list: list[str] | None) -> dict[str, Any]:
+    """Parse repeatable ``--set KEY=VALUE`` CLI args into a frontmatter dict.
+
+    Each value is parsed as JSON when possible (so dicts, lists, numbers, and
+    bools type correctly), otherwise kept as a raw string. Raises ``ValueError``
+    on a malformed entry (missing ``=``) so the CLI can report it clearly.
+    """
+    fields: dict[str, Any] = {}
+    for entry in set_list or []:
+        if "=" not in entry:
+            raise ValueError(f"Invalid --set value '{entry}'. Expected KEY=VALUE.")
+        key, raw = entry.split("=", 1)
+        key = key.strip()
+        if not key:
+            raise ValueError(f"Invalid --set value '{entry}'. Empty key.")
+        try:
+            fields[key] = json.loads(raw)
+        except (json.JSONDecodeError, ValueError):
+            fields[key] = raw
+    return fields
 
 # Mapping of artifact type prefix to spec directory
 TYPE_TO_DIR: dict[str, str] = {

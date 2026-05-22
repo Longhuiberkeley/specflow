@@ -157,6 +157,22 @@ Focus: **unified thinking technique tracking and technique-to-BP feedback loop.*
 - **Technique-to-BP feedback loop** — BP staleness checks include CHL artifacts; synthesis prompts inject recent adversarial findings so BPs learn from what lenses caught
 - **Audit technique granularity** — audit CHLs carry per-axis names (`audit-horizontal`, `audit-vertical`, `audit-cross-cutting`) instead of monolithic `project-audit`
 
+## v1.6.1
+
+Focus: **richer experiment logging, flexible objectives, domain-aware and goal-driven autoresearch.**
+
+- **Generic `--set KEY=VALUE` on `create`/`update`** — repeatable, JSON-aware frontmatter writes flow into `create_artifact`/`update_artifact`. This is what makes the autoresearch protocols actually runnable from the CLI (EXPT/COMP/LOOP/FIND fields like `metric_value`, `verify_command`, `goals`, `failure_analysis` are no longer hardcoded flags)
+- **Goal-driven hypothesis loop** — Phase 2 ideation now reads `COMP.goals`/`success_criteria` and states a falsifiable hypothesis per experiment; `hypothesis` and `hypothesis_outcome` (supported/not_supported/inconclusive) added to `experiment.yaml`. Findings record honest outcomes (falsified / conditional / sensitive / inconclusive) instead of forcing "falsified"
+- **Intent drives checks** — pre/post-checks are derived from goals: pre-check guards inputs (EDA, leakage), post-check guards deploy-fit named in `success_criteria` (a good core metric ≠ a deployable candidate)
+- **Structured EXPT logging** — `parameters` (hyperparameters), `model_origin` (`pretrained`/`trained_from_scratch`/`fine_tuned`), `sweep_results` (grid-search capture), `diversity_metrics` (swarm/ensemble tracking), and `failure_analysis` (root cause on discarded EXPTs) added to `experiment.yaml`
+- **Pre/post experiment checks** — `pre_check_command` and `post_check_command` on COMP; `checks` array on EXPT records pre-check / verify / post-check pipeline results per iteration
+- **Flexible competition objectives** — `objective_type` (`single_best`, `family_of_good`, `pareto_front`) and `goals` on COMP; `termination_suggestions` on LOOP for dynamic, goal-oriented stopping
+- **Domain awareness** — `domain` field (`quant`, `ml`, `nlp`, `systems`, `safety_critical`) on COMP drives `artifact-lint` warnings when domain-recommended auxiliary metrics are missing
+- **Noise characterization persistence** — `noise_characterization` on COMP stores variance-probe results so future LOOPs know the measurement floor without re-profiling
+- **Deployability and safety** — `deployability` and `safety_assessment` fields on FIND for quant and safety-critical domains
+- **FIND enforcement** — `specflow autoresearch review` warns when a completed LOOP has zero FINDs or when discarded EXPTs lack `failure_analysis`
+- **Leaderboard grouping** — `specflow autoresearch leaderboard --group-by model_origin` and `--show-family` for swarm/ensemble views
+
 ## v1.x (Future)
 
 These may ship someday, but are not committed:
