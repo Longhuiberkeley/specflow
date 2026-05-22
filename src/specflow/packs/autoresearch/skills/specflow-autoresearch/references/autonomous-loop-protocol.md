@@ -135,7 +135,7 @@ IF LOOP.iteration_count >= LOOP.budget:
 
 ## Phase 2: Ideate (Strategic)
 
-This is the **research** half of autoresearch — not metric hill-climbing. Before picking a change, form a hypothesis driven by what the project is actually trying to achieve.
+This is the **research** half of autoresearch — not metric hill-climbing. Before picking a change, form a hypothesis driven by what the project is actually trying to achieve. Consult the [ML Methodology Handbook](methodology-handbook.md) for domain-specific best practices relevant to your ideation direction.
 
 ### 2a. State a goal-driven hypothesis
 

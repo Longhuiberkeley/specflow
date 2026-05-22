@@ -481,6 +481,27 @@ def _add_autoresearch_parser(subparsers):
     lb_p.add_argument("--show-family", action="store_true", dest="show_family",
                       help="Group by family for family_of_good competitions (shows diversity metrics per group)")
 
+    log_p = sub.add_parser("log", help="Log an experiment and auto-update LOOP counters")
+    log_p.add_argument("--loop", required=True, help="Parent LOOP ID")
+    log_p.add_argument("--status", required=True,
+                       choices=["kept", "discarded", "crashed", "no_op"],
+                       help="Experiment outcome")
+    log_p.add_argument("--metric-value", type=float, dest="metric_value",
+                       help="Primary metric value")
+    log_p.add_argument("--change-category", required=True, dest="change_category",
+                       help="Category of change (e.g. features, model, params)")
+    log_p.add_argument("--summary", required=True, help="One-line description of the change")
+    log_p.add_argument("--title", help="EXPT title (defaults to summary)")
+    log_p.add_argument("--set", dest="set_fields", action="append",
+                       help="Additional KEY=VALUE frontmatter fields")
+    log_p.add_argument("--no-update-loop", action="store_true", dest="no_update_loop",
+                       help="Skip auto-updating LOOP counters")
+
+    sf_p = sub.add_parser("suggest-finds", help="Draft FINDs from EXPTs in a completed LOOP")
+    sf_p.add_argument("--loop", required=True, help="LOOP ID to synthesize")
+    sf_p.add_argument("--write", action="store_true",
+                       help="Write the draft FIND artifacts instead of printing them")
+
 
 # ── Workflow-phase grouping for --help ────────────────────────────
 # argparse doesn't support subparser groups natively. Render groups via epilog

@@ -31,8 +31,10 @@ context_snippet: |
   | `/specflow-autoresearch:plan` | Plan a LOOP before running |
   | `/specflow-autoresearch:review` | Review FINDs and EXPTs |
   | `/specflow-autoresearch:leaderboard` | Top EXPTs ranked by metric |
+  | `/specflow-autoresearch:log` | Log an EXPT and auto-update LOOP counters |
+  | `/specflow-autoresearch:suggest-finds` | Draft FINDs from a completed LOOP's EXPTs |
 
-  **CLI commands:** `specflow autoresearch plan|run|review|leaderboard`
+  **CLI commands:** `specflow autoresearch plan|run|review|leaderboard|log|suggest-finds`
 
   **Lifecycle:** `COMP (active) → LOOP (draft→running→completed) → EXPT (kept/discarded) → FIND (draft→confirmed)`
 
@@ -42,3 +44,5 @@ context_snippet: |
   - Primary metric drives the kept/discarded decision; guards are binary floors; auxiliary metrics are logged for review
   - Verify command outputs one number to stdout; rich diagnostics go to disk
   - After LOOP completion, always review EXPTs and author/update FINDs
+  - Use `specflow autoresearch log` instead of raw `specflow create --type experiment` + `specflow update LOOP` — it is atomic and context-cheaper
+  - Spawn parallel subagents per `change_category` when synthesizing FINDs after a LOOP to keep context small

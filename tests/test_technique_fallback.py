@@ -30,7 +30,7 @@ def _make_cfg() -> LLMConfig:
 
 
 def test_lens_catalog_has_16_entries():
-    assert len(LENS_CATALOG) == 16
+    assert len(LENS_CATALOG) == 23
 
 
 def test_all_lens_names_matches_catalog():

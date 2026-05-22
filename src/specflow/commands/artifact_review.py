@@ -15,7 +15,7 @@ from specflow.lib import ci
 from specflow.lib import learning as learn_lib
 from specflow.lib.analysis import find_dead_code, find_similar_functions
 from specflow.lib.display import YELLOW_DIM, CYAN, NC, BOLD
-from specflow.lib.techniques import run_subagents, TechniqueFinding
+from specflow.lib.techniques import run_subagents, TechniqueFinding, ARTIFACT_LEVEL_DEFAULT_LENSES
 
 
 def _bootstrap_challenge_schema(root: Path) -> None:
@@ -275,17 +275,42 @@ def _create_learned_patterns(
 
 
 def _prompt_for_techniques(target_arts: list[art_lib.Artifact]) -> list[str]:
-    techniques = ["devils_advocate", "premortem", "assumption_surfacing", "red_blue_team"]
+    from specflow.lib.techniques import (
+        ARTIFACT_LEVEL_DEFAULT_LENSES,
+        LENS_CATEGORIES,
+    )
+
+    research_types = set(ARTIFACT_LEVEL_DEFAULT_LENSES.keys())
+    types_present = {a.type for a in target_arts}
+    research_types_present = types_present & research_types
+    has_software = bool(types_present - research_types_present)
+    has_research = bool(research_types_present)
+
+    # Mixed review: fall back to "both" category lenses to avoid domain mismatch
+    if has_research and has_software:
+        techniques = [
+            name for name, cat in LENS_CATEGORIES.items()
+            if cat == "both"
+        ]
+        label = "Mixed review — both-domain lenses only"
+    elif has_research and len(types_present) == 1:
+        art_type = target_arts[0].type
+        techniques = list(ARTIFACT_LEVEL_DEFAULT_LENSES.get(art_type, []))
+        label = f"Research defaults for {art_type}"
+    else:
+        techniques = ["devils_advocate", "premortem", "assumption_surfacing", "red_blue_team"]
+        label = "Software defaults"
+
     est_tokens = len(target_arts) * 3000 * len(techniques)
     print(f"\n{BOLD}Deep Review Subagents{NC}")
     print(f"Target artifacts: {len(target_arts)}")
-    print(f"Available techniques: {', '.join(techniques)}")
+    print(f"Techniques ({label}): {', '.join(techniques)}")
     print(f"Estimated token spend: ~{est_tokens} tokens")
-    
+
     if not sys.stdout.isatty():
         return techniques
-        
-    ans = input("Run all 4 subagents? [Y/n]: ").strip().lower()
+
+    ans = input("Run these subagents? [Y/n]: ").strip().lower()
     if ans in ("n", "no"):
         return []
     return techniques

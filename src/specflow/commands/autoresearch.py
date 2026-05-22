@@ -8,6 +8,7 @@ protocol checklists that any harness can follow.
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -228,6 +229,9 @@ def _run_run(root: Path, args: dict) -> int:
     print("  Phase 7: Log — Create EXPT artifact, update LOOP totals")
     print("  Phase 8: Repeat or Complete — Check budget, condense every 10 iterations")
     print()
+    print(f"{YELLOW}This command prints the protocol checklist. The loop is driven by the AI agent.{NC}")
+    print(f"{DIM}Run /specflow-autoresearch in your AI assistant to execute the loop.{NC}")
+    print()
     print(f"{DIM}Full protocol: references/autonomous-loop-protocol.md{NC}")
     print(f"{DIM}Mode guide:    references/explore-exploit-protocol.md{NC}")
     print()
@@ -422,6 +426,221 @@ def _run_leaderboard(root: Path, args: dict) -> int:
     return 0
 
 
+def _run_log(root: Path, args: dict) -> int:
+    loop_id = args.get("loop")
+    artifacts = art_lib.discover_artifacts(root)
+    id_index = art_lib.build_id_index(artifacts)
+    loop = id_index.get(loop_id)
+    if not loop or art_lib.get_prefix_from_id(loop.id) != "LOOP":
+        print(f"{RED}✗ LOOP '{loop_id}' not found.{NC}")
+        return 1
+
+    status = args.get("status")
+    metric_value = args.get("metric_value")
+    change_category = args.get("change_category")
+    summary = args.get("summary")
+    title = args.get("title") or summary
+
+    extra_fields = {}
+    set_fields = args.get("set_fields") or []
+    for entry in set_fields:
+        if "=" not in entry:
+            print(f"{RED}✗ Invalid --set value '{entry}'. Expected KEY=VALUE.{NC}")
+            return 1
+        key, raw = entry.split("=", 1)
+        key = key.strip()
+        if not key:
+            print(f"{RED}✗ Invalid --set value '{entry}'. Empty key.{NC}")
+            return 1
+        try:
+            extra_fields[key] = json.loads(raw)
+        except (json.JSONDecodeError, ValueError):
+            extra_fields[key] = raw
+
+    comp_id = loop.frontmatter.get("competition")
+    create_kwargs = {
+        "loop": loop_id,
+        "metric_value": metric_value if metric_value is not None else 0.0,
+        "change_category": change_category,
+        "summary": summary,
+        "competition": comp_id,
+        **extra_fields,
+    }
+
+    result = art_lib.create_artifact(
+        root,
+        artifact_type="experiment",
+        title=title,
+        status=status,
+        body=f"""# {title}
+
+{summary}
+""",
+        **create_kwargs,
+    )
+    if not result.get("ok"):
+        print(f"{RED}✗ Failed to create EXPT: {result.get('error')}{NC}")
+        return 1
+
+    expt_id = result["id"]
+    print(f"{GREEN}✓ Created {expt_id}{NC}")
+
+    if args.get("no_update_loop"):
+        return 0
+
+    # Auto-update LOOP counters
+    lf = loop.frontmatter
+    ic = lf.get("iteration_count", 0) + 1
+    kept = lf.get("kept_count", 0)
+    discarded = lf.get("discarded_count", 0)
+    if status == "kept":
+        kept += 1
+    elif status in ("discarded", "crashed"):
+        discarded += 1
+
+    updates: dict = {
+        "iteration_count": ic,
+        "kept_count": kept,
+        "discarded_count": discarded,
+    }
+
+    # Update best metric if applicable
+    if status == "kept" and metric_value is not None:
+        comp = id_index.get(comp_id) if comp_id else None
+        direction = "higher_is_better"
+        if comp:
+            direction = comp.frontmatter.get("metric_direction", "higher_is_better")
+        best_metric = lf.get("best_metric")
+        is_better = False
+        if best_metric is None:
+            is_better = True
+        elif direction == "higher_is_better":
+            is_better = metric_value > best_metric
+        else:
+            is_better = metric_value < best_metric
+        if is_better:
+            updates["best_metric"] = metric_value
+            updates["best_experiment"] = expt_id
+
+    up_result = art_lib.update_artifact(root, loop_id, **updates)
+    if up_result.get("ok"):
+        print(f"{GREEN}  ↳ Updated {loop_id}: iteration {ic}, kept {kept}, discarded {discarded}{NC}")
+        if "best_metric" in updates:
+            print(f"{GREEN}  ↳ New best metric: {updates['best_metric']} ({expt_id}){NC}")
+    else:
+        print(f"{YELLOW}  ⚠ LOOP update failed: {up_result.get('error')}{NC}")
+
+    return 0
+
+
+def _run_suggest_finds(root: Path, args: dict) -> int:
+    loop_id = args.get("loop")
+    artifacts = art_lib.discover_artifacts(root)
+    id_index = art_lib.build_id_index(artifacts)
+    loop = id_index.get(loop_id)
+    if not loop or art_lib.get_prefix_from_id(loop.id) != "LOOP":
+        print(f"{RED}✗ LOOP '{loop_id}' not found.{NC}")
+        return 1
+
+    expts = _find_expts_for_loop(root, loop_id)
+    if not expts:
+        print(f"{YELLOW}⚠ No EXPTs found for {loop_id}.{NC}")
+        return 0
+
+    # Group by change_category
+    groups: dict[str, list[art_lib.Artifact]] = {}
+    for e in expts:
+        cat = e.frontmatter.get("change_category", "unspecified")
+        groups.setdefault(cat, []).append(e)
+
+    comp_id = loop.frontmatter.get("competition")
+    what_worked: list[str] = []
+    what_failed: list[str] = []
+    next_steps: list[str] = []
+
+    for cat, g_expts in sorted(groups.items()):
+        kept = [e for e in g_expts if e.status == "kept"]
+        discarded = [e for e in g_expts if e.status == "discarded"]
+        crashed = [e for e in g_expts if e.status == "crashed"]
+        best = None
+        if kept:
+            direction = "higher_is_better"
+            if comp_id and comp_id in id_index:
+                direction = id_index[comp_id].frontmatter.get("metric_direction", "higher_is_better")
+            reverse = direction == "higher_is_better"
+            best = max(kept, key=lambda e: float(e.frontmatter.get("metric_value", 0)))
+            if not reverse:
+                best = min(kept, key=lambda e: float(e.frontmatter.get("metric_value", 0)))
+
+        if kept:
+            refs = ", ".join(e.id for e in kept[:3])
+            line = f"- {cat}: drove improvement ({refs})"
+            if best:
+                line += f" best={best.frontmatter.get('metric_value', '—')}"
+            what_worked.append(line)
+            # Next step: exploit if multiple keeps in same category
+            if len(kept) >= 2:
+                next_steps.append(f"- Exploit: refine {cat} further ({len(kept)} keeps)")
+        elif discarded or crashed:
+            refs = ", ".join(e.id for e in (discarded + crashed)[:3])
+            what_failed.append(f"- {cat}: no successes ({refs})")
+            next_steps.append(f"- Explore: avoid {cat} or try radically different approach")
+
+    if not what_worked and not what_failed:
+        print(f"{YELLOW}⚠ No actionable patterns in {loop_id} EXPTs.{NC}")
+        return 0
+
+    draft_fm = {
+        "type": "finding",
+        "status": "draft",
+        "competition": comp_id,
+        "source_loop": loop_id,
+        "confidence": "low" if len(expts) < 5 else "medium",
+        "summary": f"Synthesized from {len(expts)} experiments in {loop_id}",
+        "what_worked": "\n".join(what_worked) if what_worked else None,
+        "what_failed": "\n".join(what_failed) if what_failed else None,
+        "next_steps": "\n".join(next_steps) if next_steps else None,
+    }
+
+    if args.get("write"):
+        result = art_lib.create_artifact(
+            root,
+            artifact_type="finding",
+            title=f"Findings from {loop_id}",
+            status="draft",
+            body="# Auto-suggested findings\n\nReview and refine before confirming.\n",
+            competition=comp_id,
+            source_loop=loop_id,
+            confidence=draft_fm["confidence"],
+            summary=draft_fm["summary"],
+            what_worked=draft_fm["what_worked"],
+            what_failed=draft_fm["what_failed"],
+            next_steps=draft_fm["next_steps"],
+        )
+        if result.get("ok"):
+            print(f"{GREEN}✓ Created {result['id']}{NC}")
+        else:
+            print(f"{RED}✗ Failed to create FIND: {result.get('error')}{NC}")
+            return 1
+    else:
+        print(f"\n{BOLD}=== Suggested FIND for {loop_id} ==={NC}\n")
+        print(f"{DIM}# Paste into `specflow create --type finding ...` or re-run with --write{NC}\n")
+        print("---")
+        for key, value in draft_fm.items():
+            if value is None:
+                continue
+            if isinstance(value, list):
+                print(f"{key}:")
+                for item in value:
+                    print(f"  - {item}")
+            else:
+                print(f"{key}: {value}")
+        print("---")
+        print()
+
+    return 0
+
+
 def run(root: Path, args: dict) -> int:
     root = root.resolve()
     sub = args.get("autoresearch_subcommand")
@@ -434,7 +653,11 @@ def run(root: Path, args: dict) -> int:
         return _run_review(root, args)
     if sub == "leaderboard":
         return _run_leaderboard(root, args)
+    if sub == "log":
+        return _run_log(root, args)
+    if sub == "suggest-finds":
+        return _run_suggest_finds(root, args)
 
     print(f"{RED}✗ Unknown autoresearch subcommand. "
-          f"Use: plan, run, review, leaderboard{NC}")
+          f"Use: plan, run, review, leaderboard, log, suggest-finds{NC}")
     return 1

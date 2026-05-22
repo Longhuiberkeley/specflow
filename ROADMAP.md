@@ -173,6 +173,21 @@ Focus: **richer experiment logging, flexible objectives, domain-aware and goal-d
 - **FIND enforcement** — `specflow autoresearch review` warns when a completed LOOP has zero FINDs or when discarded EXPTs lack `failure_analysis`
 - **Leaderboard grouping** — `specflow autoresearch leaderboard --group-by model_origin` and `--show-family` for swarm/ensemble views
 
+## v1.6.2
+
+Focus: **experimental thinking lenses, concise context, atomic CLI sugar, and subagent guidance for autoresearch.**
+
+- **7 new research thinking lenses** — `leakage_audit`, `overfitting_multiple_comparisons`, `baseline_sanity`, `distribution_shift`, `ablation_attribution`, `metric_validity` (in per-level defaults), `reproducibility` (optional, not in defaults); added to `LENS_CATALOG` with `LENS_CATEGORIES` tagging (software/research/both)
+- **Per-level default lens sets** — COMP, LOOP, EXPT, FIND each get research-appropriate defaults that `artifact-review --depth deep` auto-selects when reviewing research artifacts
+- **Mixed-artifact review guard** — `artifact-review` detects when a review batch contains both software and research artifacts and falls back to `both`-category lenses only, preventing domain mismatch
+- **Concise lens prompts** — ~800 tokens saved across the 23-lens catalog by extracting repeated JSON/boilerplate into a single `_GENERIC_LENS_SUFFIX` injected at runtime
+- **Static ML methodology handbook** — curated 9-BP reference (`methodology-handbook.md`) with domain-keyed applicability (quant, tabular_ml, vision, nlp); advisory-only, referenced from setup and loop protocols
+- **Atomic EXPT logging** — `specflow autoresearch log` creates an EXPT artifact and auto-updates LOOP counters (`iteration_count`, `kept_count`, `discarded_count`, `best_metric`) in one CLI call
+- **Deterministic FIND drafting** — `specflow autoresearch suggest-finds` groups EXPTs by `change_category`, synthesizes `what_worked` / `what_failed` / `next_steps`, and either prints a draft or writes a FIND artifact with `--write`
+- **Subagent guidance in SKILL.md** — explicit instructions for spawning parallel subagents per `change_category` during FIND synthesis, and per-strategy-family in `family_of_good` competitions, to keep context windows small
+- **ML tracker coexistence** — documented integration pattern with MLflow, Weights & Biases, Neptune, MLRun, etc. via "Coexisting with External ML Trackers" section in `competition-setup-protocol.md`
+- **Passive-CLI banner** — `autoresearch run` prints a reminder that the AI agent drives the loop, not the CLI
+
 ## v1.x (Future)
 
 These may ship someday, but are not committed:

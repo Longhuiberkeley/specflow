@@ -1048,3 +1048,299 @@ class TestCLIFlagWiring:
             "--group-by", "model_origin", "--show-family",
         ])
         assert rc == 0
+
+
+class TestResearchThinkingLenses:
+    """v1.6.2: 7 new research lenses registered, per-level defaults, methodology handbook."""
+
+    def test_new_lens_names_in_all_lens_names(self):
+        from specflow.lib.techniques import ALL_LENS_NAMES, LENS_CATALOG
+        expected = {
+            "leakage_audit", "overfitting_multiple_comparisons", "baseline_sanity",
+            "distribution_shift", "ablation_attribution", "metric_validity",
+            "reproducibility",
+        }
+        for name in expected:
+            assert name in ALL_LENS_NAMES, f"{name} missing from ALL_LENS_NAMES"
+            assert name in LENS_CATALOG, f"{name} missing from LENS_CATALOG"
+
+    def test_lens_categories_covers_all(self):
+        from specflow.lib.techniques import ALL_LENS_NAMES, LENS_CATEGORIES
+        assert set(LENS_CATEGORIES.keys()) == ALL_LENS_NAMES
+        valid_cats = {"software", "research", "both"}
+        for name, cat in LENS_CATEGORIES.items():
+            assert cat in valid_cats, f"{name} has invalid category: {cat}"
+
+    def test_research_lens_names_subset(self):
+        from specflow.lib.techniques import RESEARCH_LENS_NAMES, ALL_LENS_NAMES, LENS_CATEGORIES
+        assert RESEARCH_LENS_NAMES <= ALL_LENS_NAMES
+        for name in RESEARCH_LENS_NAMES:
+            assert LENS_CATEGORIES[name] in ("research", "both")
+
+    def test_artifact_level_defaults_all_valid(self):
+        from specflow.lib.techniques import (
+            ARTIFACT_LEVEL_DEFAULT_LENSES, ALL_LENS_NAMES,
+        )
+        assert set(ARTIFACT_LEVEL_DEFAULT_LENSES.keys()) == {
+            "competition", "loop", "experiment", "finding",
+        }
+        for level, lenses in ARTIFACT_LEVEL_DEFAULT_LENSES.items():
+            for lens in lenses:
+                assert lens in ALL_LENS_NAMES, f"{lens} in {level} defaults not in catalog"
+
+    def test_reproducibility_not_in_any_default(self):
+        from specflow.lib.techniques import ARTIFACT_LEVEL_DEFAULT_LENSES
+        for level, lenses in ARTIFACT_LEVEL_DEFAULT_LENSES.items():
+            assert "reproducibility" not in lenses, f"reproducibility in {level} defaults"
+
+    def test_update_accepts_new_lens_names(self, project_root: Path, monkeypatch):
+        from specflow import cli
+        _write_artifact(
+            project_root, "COMP-750", "competition", "Lens Test Comp",
+            status="active",
+            extra_fm={
+                "created": "2026-05-20", "verify_command": "echo 0.5",
+                "metric_name": "acc", "metric_direction": "higher_is_better",
+            },
+        )
+        monkeypatch.chdir(project_root)
+        rc = cli.main([
+            "update", "COMP-750",
+            "--thinking-techniques", "leakage_audit,metric_validity,reproducibility",
+        ])
+        assert rc == 0
+        parsed = art_lib.parse_artifact(
+            art_lib.resolve_link_target(project_root, "COMP-750")
+        )
+        techniques = parsed.frontmatter.get("thinking_techniques", [])
+        assert "leakage_audit" in techniques
+        assert "reproducibility" in techniques
+
+    def test_methodology_handbook_exists(self):
+        handbook = (
+            PACKS_DIR / "autoresearch" / "skills" / "specflow-autoresearch"
+            / "references" / "methodology-handbook.md"
+        )
+        assert handbook.exists(), f"methodology-handbook.md not found at {handbook}"
+        content = handbook.read_text()
+        assert "BP-01" in content
+        assert "BP-09" in content
+        assert "applies_to" in content
+
+    def test_setup_protocol_references_handbook(self):
+        proto = (
+            PACKS_DIR / "autoresearch" / "skills" / "specflow-autoresearch"
+            / "references" / "competition-setup-protocol.md"
+        )
+        content = proto.read_text()
+        assert "methodology-handbook.md" in content
+
+    def test_loop_protocol_references_handbook(self):
+        proto = (
+            PACKS_DIR / "autoresearch" / "skills" / "specflow-autoresearch"
+            / "references" / "autonomous-loop-protocol.md"
+        )
+        content = proto.read_text()
+        assert "methodology-handbook.md" in content
+
+    def test_generic_lens_suffix_present(self):
+        from specflow.lib.techniques import _GENERIC_LENS_SUFFIX
+        assert "JSON array" in _GENERIC_LENS_SUFFIX
+        assert "CHECKLIST CONTEXT" in _GENERIC_LENS_SUFFIX
+
+    def test_lens_prompts_do_not_repeat_boilerplate(self):
+        from specflow.lib.techniques import LENS_CATALOG
+        for name, prompt in LENS_CATALOG.items():
+            assert "JSON array" not in prompt, f"{name} still embeds JSON boilerplate"
+            assert "CHECKLIST CONTEXT" not in prompt, f"{name} still embeds checklist boilerplate"
+
+    def test_mixed_review_uses_both_lenses_only(self, monkeypatch):
+        from specflow.commands.artifact_review import _prompt_for_techniques
+        from specflow.lib.techniques import LENS_CATEGORIES
+
+        monkeypatch.setattr("sys.stdout.isatty", lambda: False)
+
+        mixed = [
+            _make_art("EXPT-001", "experiment", status="kept"),
+            _make_art("STORY-001", "story", status="draft"),
+        ]
+        techniques = _prompt_for_techniques(mixed)
+        for t in techniques:
+            assert LENS_CATEGORIES[t] == "both", f"{t} is not a 'both' lens"
+
+    def test_homogeneous_research_review_uses_level_defaults(self, monkeypatch):
+        from specflow.commands.artifact_review import _prompt_for_techniques
+        from specflow.lib.techniques import ARTIFACT_LEVEL_DEFAULT_LENSES
+
+        monkeypatch.setattr("sys.stdout.isatty", lambda: False)
+
+        research_only = [
+            _make_art("EXPT-002", "experiment", status="kept"),
+            _make_art("EXPT-003", "experiment", status="discarded"),
+        ]
+        techniques = _prompt_for_techniques(research_only)
+        expected = ARTIFACT_LEVEL_DEFAULT_LENSES["experiment"]
+        assert techniques == expected
+
+    def test_homogeneous_software_review_uses_software_defaults(self, monkeypatch):
+        from specflow.commands.artifact_review import _prompt_for_techniques
+
+        monkeypatch.setattr("sys.stdout.isatty", lambda: False)
+
+        software_only = [
+            _make_art("STORY-002", "story", status="draft"),
+            _make_art("REQ-002", "requirement", status="approved"),
+        ]
+        techniques = _prompt_for_techniques(software_only)
+        assert "devils_advocate" in techniques
+        assert "premortem" in techniques
+        assert "red_blue_team" in techniques
+        assert "assumption_surfacing" in techniques
+
+
+class TestAutoresearchLogAndSuggestFinds:
+    """v1.6.2: smoke tests for autoresearch log and suggest-finds CLI commands."""
+
+    def _setup_comp_and_loop(self, root: Path) -> None:
+        _write_artifact(
+            root, "COMP-400", "competition", "Log Test Comp",
+            status="active",
+            extra_fm={
+                "created": "2026-05-20",
+                "verify_command": "pytest",
+                "metric_name": "accuracy",
+                "metric_direction": "higher_is_better",
+            },
+        )
+        _write_artifact(
+            root, "LOOP-400", "loop", "Log Test Loop",
+            status="running",
+            extra_fm={
+                "created": "2026-05-20",
+                "competition": "COMP-400",
+                "mode": "explore",
+                "budget": 50,
+                "iteration_count": 5,
+                "kept_count": 2,
+                "discarded_count": 3,
+                "best_metric": 0.85,
+                "best_experiment": "EXPT-401",
+            },
+        )
+
+    def test_log_creates_expt_and_updates_loop(self, project_root: Path, monkeypatch, capsys):
+        from specflow import cli
+        self._setup_comp_and_loop(project_root)
+        monkeypatch.chdir(project_root)
+        rc = cli.main([
+            "autoresearch", "log",
+            "--loop", "LOOP-400",
+            "--status", "kept",
+            "--metric-value", "0.92",
+            "--change-category", "features",
+            "--summary", "Added cross-asset momentum",
+        ])
+        assert rc == 0
+
+        expts = [a for a in art_lib.discover_artifacts(project_root)
+                 if art_lib.get_prefix_from_id(a.id) == "EXPT"]
+        assert len(expts) == 1
+        fm = expts[0].frontmatter
+        assert fm["loop"] == "LOOP-400"
+        assert fm["metric_value"] == 0.92
+        assert fm["change_category"] == "features"
+        assert fm["status"] == "kept"
+        assert fm["summary"] == "Added cross-asset momentum"
+
+        loop = art_lib.parse_artifact(
+            art_lib.resolve_link_target(project_root, "LOOP-400")
+        )
+        lf = loop.frontmatter
+        assert lf["iteration_count"] == 6
+        assert lf["kept_count"] == 3
+        assert lf["discarded_count"] == 3
+        assert lf["best_metric"] == 0.92
+
+    def test_log_no_update_loop_flag(self, project_root: Path, monkeypatch, capsys):
+        from specflow import cli
+        self._setup_comp_and_loop(project_root)
+        monkeypatch.chdir(project_root)
+        rc = cli.main([
+            "autoresearch", "log",
+            "--loop", "LOOP-400",
+            "--status", "discarded",
+            "--metric-value", "0.70",
+            "--change-category", "params",
+            "--summary", "Tuned learning rate",
+            "--no-update-loop",
+        ])
+        assert rc == 0
+
+        loop = art_lib.parse_artifact(
+            art_lib.resolve_link_target(project_root, "LOOP-400")
+        )
+        lf = loop.frontmatter
+        assert lf["iteration_count"] == 5  # unchanged
+        assert lf["discarded_count"] == 3  # unchanged
+
+    def test_suggest_finds_prints_draft(self, project_root: Path, monkeypatch, capsys):
+        from specflow import cli
+        self._setup_comp_and_loop(project_root)
+        # seed some EXPTs under LOOP-400
+        for i, (sid, status, mv, cat) in enumerate([
+            ("EXPT-410", "kept", 0.92, "features"),
+            ("EXPT-411", "kept", 0.88, "features"),
+            ("EXPT-412", "discarded", 0.75, "features"),
+            ("EXPT-413", "discarded", 0.60, "params"),
+        ]):
+            _write_artifact(
+                project_root, sid, "experiment", f"Expt {i+1}",
+                status=status,
+                extra_fm={
+                    "created": "2026-05-20",
+                    "loop": "LOOP-400",
+                    "metric_value": mv,
+                    "change_category": cat,
+                    "summary": f"Test {i+1}",
+                },
+            )
+        monkeypatch.chdir(project_root)
+        rc = cli.main([
+            "autoresearch", "suggest-finds",
+            "--loop", "LOOP-400",
+        ])
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "what_worked" in out
+        assert "features" in out
+        assert "params" in out
+        assert "LOOP-400" in out
+
+    def test_suggest_finds_writes_draft(self, project_root: Path, monkeypatch, capsys):
+        from specflow import cli
+        self._setup_comp_and_loop(project_root)
+        _write_artifact(
+            project_root, "EXPT-420", "experiment", "Expt 5",
+            status="kept",
+            extra_fm={
+                "created": "2026-05-20",
+                "loop": "LOOP-400",
+                "metric_value": 0.95,
+                "change_category": "model",
+                "summary": "Switched to transformer",
+            },
+        )
+        monkeypatch.chdir(project_root)
+        rc = cli.main([
+            "autoresearch", "suggest-finds",
+            "--loop", "LOOP-400",
+            "--write",
+        ])
+        assert rc == 0
+        finds = [a for a in art_lib.discover_artifacts(project_root)
+                 if art_lib.get_prefix_from_id(a.id) == "FIND"]
+        assert len(finds) == 1
+        fm = finds[0].frontmatter
+        assert fm["competition"] == "COMP-400"
+        assert fm["source_loop"] == "LOOP-400"
+        assert fm["status"] == "draft"

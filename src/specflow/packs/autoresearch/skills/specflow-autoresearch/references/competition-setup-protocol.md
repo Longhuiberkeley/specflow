@@ -358,6 +358,32 @@ Not every competition needs maximum leakage protection. Examples:
 
 The anti-leakage patterns are a menu of options. Pick what fits your domain and threat model.
 
+## Coexisting with External ML Trackers
+
+SpecFlow EXPT artifacts are the source of truth for the research loop, but they can coexist with dedicated ML tracking tools (MLflow, Weights & Biases, Neptune, MLRun, etc.). Treat them as complementary layers:
+
+| Layer | Tool | What it logs | When to use |
+|-------|------|-------------|-------------|
+| **Loop state** | SpecFlow EXPT | `metric_value`, `change_category`, `hypothesis`, `status` | Every iteration — lightweight, git-linked |
+| **Rich metrics** | ML tracker | Per-epoch loss curves, gradients, activation histograms | During training — too verbose for EXPT frontmatter |
+| **Hyperparameters** | Both | EXPT `parameters` + tracker config | Always — EXPT gets the summary, tracker gets the full sweep |
+
+**Integration pattern:**
+
+1. Your verify command can call an ML tracker internally:
+   ```bash
+   python train.py --track --project my-comp  # logs to wandb
+   ```
+2. The verify command still extracts exactly one number to stdout for the loop decision.
+3. Log the external run ID in EXPT `auxiliary_metrics` so review can cross-reference:
+   ```yaml
+   auxiliary_metrics:
+     wandb_run_id: "abc123"
+     mlflow_experiment_id: 42
+   ```
+
+**Why both?** The loop needs a deterministic, git-linked, human-readable record (EXPT). The tracker needs high-frequency, high-dimensional telemetry. Don't force the EXPT to carry per-epoch data — that's context bloat. Don't force the tracker to carry hypothesis narrative — that's its weakness. Use each for what it's good at.
+
 ## Common Pitfalls
 
 | Pitfall | Symptom | Fix |
@@ -370,3 +396,7 @@ The anti-leakage patterns are a menu of options. Pick what fits your domain and 
 | Lookahead in verify | In-sample metric improbably high | Use walk-forward or temporal split; check verify doesn't peek ahead |
 | Overfitting to test set | Sharpe degrades immediately in production | Read-only eval data; prefer robustness-adjusted primaries |
 | Rich verify output | Agent uses per-window details to guide next iteration | Verify prints one number; save rich output to disk for review only |
+
+## Post-Setup: Methodology Review
+
+Before starting a LOOP, review the [ML Methodology Handbook](methodology-handbook.md) for practices tagged with your `COMP.domain`. This catches common setup mistakes (wrong CV scheme, missing baselines) before they waste budget.

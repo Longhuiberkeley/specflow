@@ -41,6 +41,54 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Subcommands table maps each `/specflow-autoresearch:*` skill invocation to its `specflow autoresearch <sub>` CLI backend
 - Phase 7 logging examples in `autonomous-loop-protocol.md` now demonstrate `--auxiliary-metrics` JSON dict invocation
 
+## [1.6.2] - 2026-05-23
+
+### Highlights
+
+- **7 new research thinking lenses** — `leakage_audit`, `overfitting_multiple_comparisons`, `baseline_sanity`, `distribution_shift`, `ablation_attribution`, `metric_validity`, and `reproducibility` added to the adversarial catalog. Research artifacts (COMP, LOOP, EXPT, FIND) get per-level default lens sets selected automatically by `artifact-review --depth deep`.
+- **Concise prompts** — ~800 tokens saved across the 23-lens catalog by extracting repeated JSON/boilerplate into a single `_GENERIC_LENS_SUFFIX` injected at runtime.
+- **Atomic EXPT logging** — `specflow autoresearch log` creates an EXPT artifact and auto-updates LOOP counters (`iteration_count`, `kept_count`, `discarded_count`, `best_metric`) in one CLI call, replacing the error-prone two-step `create` + `update` sequence.
+- **Deterministic FIND drafting** — `specflow autoresearch suggest-finds` groups EXPTs by `change_category`, synthesizes `what_worked` / `what_failed` / `next_steps`, and either prints a draft or writes a FIND artifact with `--write`. Zero LLM tokens.
+- **Subagent guidance in SKILL.md** — explicit instructions for spawning parallel subagents per `change_category` during FIND synthesis, and per-strategy-family in `family_of_good` competitions, to keep context windows small.
+
+### Features
+
+- `LENS_CATEGORIES` three-way taxonomy (`software`, `research`, `both`) with `ARTIFACT_LEVEL_DEFAULT_LENSES` mapping artifact types to appropriate lens sets
+- `_prompt_for_techniques()` now detects mixed research+software artifact reviews and falls back to `both`-category lenses only, preventing `leakage_audit` from running on user stories
+- `autoresearch log` CLI subcommand with `--loop`, `--status`, `--metric-value`, `--change-category`, `--summary`, `--title`, `--set KEY=VALUE`, and `--no-update-loop` flags
+- `autoresearch suggest-finds` CLI subcommand with `--loop` and `--write` flags
+- Passive-CLI banner on `autoresearch run` — prints a one-line reminder that the AI agent drives the loop, not the CLI
+- "Coexisting with External ML Trackers" section in `competition-setup-protocol.md` — documents integration pattern with MLflow, Weights & Biases, Neptune, MLRun, etc.
+- Updated `pack.yaml` `context_snippet` to advertise `log` and `suggest-finds` commands
+- 13 new tests in `tests/test_autoresearch_pack.py`: 4 mixed-review / conciseness tests (`TestResearchThinkingLenses`), 4 smoke tests for `log` and `suggest-finds` (`TestAutoresearchLogAndSuggestFinds`)
+
+### Fixes
+
+- Mixed-artifact review bug where `artifact-review --all --depth deep` on a project with both software and research artifacts could apply research lenses to software artifacts
+
+## [1.6.1] - 2026-05-20
+
+### Highlights
+
+- **Goal-driven, richer autoresearch** — experiments now carry `hypothesis` / `hypothesis_outcome`, `pre_check_command` / `post_check_command`, `objective_type` (`single_best` / `family_of_good` / `pareto_front`), and `domain`-aware auxiliary metric linting.
+
+### Features
+
+- Generic `--set KEY=VALUE` flag on `specflow create` and `specflow update` — JSON-aware, repeatable, enables arbitrary frontmatter fields (EXPT `metric_value`, COMP `goals`, LOOP `termination_suggestions`, etc.) without hardcoding CLI flags
+- `hypothesis` and `hypothesis_outcome` (`supported` / `not_supported` / `inconclusive`) fields on `experiment.yaml`
+- `pre_check_command` and `post_check_command` on `competition.yaml` with `checks` array on EXPT recording pre/verify/post pipeline results
+- `objective_type` (`single_best`, `family_of_good`, `pareto_front`) and `goals` on COMP; `termination_suggestions` on LOOP for dynamic, goal-aware stopping
+- `domain` field (`quant`, `ml`, `nlp`, `systems`, `safety_critical`) on COMP drives `artifact-lint` warnings when domain-recommended auxiliary metrics are missing from kept EXPTs
+- `noise_characterization` on COMP stores variance-probe results
+- `deployability` and `safety_assessment` fields on FIND
+- `specflow autoresearch review` warns when completed LOOPs have zero FINDs or when discarded EXPTs lack `failure_analysis`
+- `specflow autoresearch leaderboard --group-by model_origin` and `--show-family` for swarm/ensemble views
+- `parameters`, `model_origin`, `sweep_results`, `diversity_metrics`, and `failure_analysis` fields on `experiment.yaml`
+
+### Fixes
+
+- `src/specflow/__init__.py` `__version__` bumped from `1.6.0` to `1.6.1` to match `pyproject.toml`
+
 ## [1.5.0] - 2026-05-07
 
 ### Highlights

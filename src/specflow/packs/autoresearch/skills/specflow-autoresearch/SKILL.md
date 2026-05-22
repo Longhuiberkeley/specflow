@@ -38,6 +38,8 @@ All subcommands have a CLI backend. Use the CLI for deterministic operations (ar
 | `/specflow-autoresearch:plan` | `specflow autoresearch plan` | Plan a LOOP before running |
 | `/specflow-autoresearch:review` | `specflow autoresearch review` | Review FINDs and EXPTs for a COMP |
 | `/specflow-autoresearch:leaderboard` | `specflow autoresearch leaderboard` | Top EXPTs ranked by metric |
+| `/specflow-autoresearch:log` | `specflow autoresearch log` | Log an EXPT and auto-update LOOP counters |
+| `/specflow-autoresearch:suggest-finds` | `specflow autoresearch suggest-finds` | Draft FINDs from a completed LOOP's EXPTs |
 
 For multi-competition repos, all commands accept `--competition COMP-NNN`. Omit to auto-detect the single active COMP, or specify when multiple exist. The `leaderboard` command also accepts `--all` for a cross-COMP view.
 
@@ -233,9 +235,40 @@ The CLI renders the ranked leaderboard with auxiliary metrics. No additional ski
 
 **Meta-principle:** Autonomy scales through constrained scope, clarified success, mechanized verification. Humans optimize strategy; agents optimize tactics.
 
+## Context Efficiency
+
+Autoresearch burns context windows fast. A 50-iteration LOOP can accumulate dozens of EXPTs, git diffs, and conversation turns. Keep the agent lean:
+
+- **Condense every 10 iterations** (Phase 8). Drop raw EXPT summaries; keep only the brief.
+- **Use CLI for deterministic work.** `specflow autoresearch log` creates EXPTs and updates LOOP counters in one call — cheaper than two separate `specflow create` + `specflow update` turns.
+- **Prefer `suggest-finds` over manual synthesis.** Let the CLI group EXPTs by `change_category` and pre-populate `what_worked` / `what_failed`. The agent edits the draft, not writes it from scratch.
+- **Subagent for parallel review.** When reviewing 10+ EXPTs after a LOOP, spawn parallel subagents per `change_category` family. Each subagent reads only its family's EXPTs and returns a mini-synthesis. The parent agent merges them into the final FIND. This keeps per-subagent context small.
+- **No prose in verify output.** The verify command must print exactly one number. Rich diagnostics go to disk for the review phase only.
+
+## Subagent Patterns
+
+The skill MAY spawn subagents in these specific situations:
+
+1. **Per-category EXPT review.** After a LOOP completes, group EXPTs by `change_category` (e.g. `features`, `model`, `params`). Spawn one subagent per category. Each subagent:
+   - Reads only EXPTs in its category
+   - Classifies outcomes: `supported` / `not_supported` / `sensitive` / `inconclusive`
+   - Returns a 5-line bullet list for `what_worked` or `what_failed`
+   The parent agent merges category outputs into the final FIND.
+
+2. **Family grouping.** In `family_of_good` competitions, spawn subagents per `strategy_family` or `model_origin`. Each subagent evaluates whether its family generalizes, then reports back to the parent for leaderboard grouping.
+
+3. **Phase 2 ideation variants.** When stuck (>5 consecutive discards), spawn 2-3 subagents in parallel with different ideation strategies:
+   - Subagent A: "Exploit last kept commit"
+   - Subagent B: "Explore orthogonal change_category"
+   - Subagent C: "Combine two previously successful changes"
+   The parent agent picks the most promising hypothesis and runs it.
+
+Subagents MUST return structured output (bullet lists, JSON, or YAML). The parent agent never delegates the full loop — only parallel analysis tasks.
+
 ## Rules
 
 - Always use `specflow create` for new EXPT and FIND artifacts — never edit artifact files directly
+- Prefer `specflow autoresearch log` over raw `specflow create --type experiment` + `specflow update LOOP-NNN` — it is atomic and context-cheaper
 - Always use `specflow update` for LOOP status transitions and running totals
 - EXPT status is terminal — once created (kept/discarded/crashed/no_op), it never changes
 - LOOP status follows: `draft` → `running` → `completed`/`plateaued`/`aborted`
@@ -243,6 +276,7 @@ The CLI renders the ranked leaderboard with auxiliary metrics. No additional ski
 - Run `specflow artifact-lint` after creating or updating artifacts
 - Never modify files under `.specflow/` — these are managed by CLI commands
 - After LOOP completion, always review EXPTs and author/update FINDs per `references/finding-generation-protocol.md`
+- Use `specflow autoresearch suggest-finds --loop LOOP-NNN` to generate a draft FIND, then edit and `specflow create --type finding`
 
 ## References
 
