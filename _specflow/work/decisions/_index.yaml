@@ -488,4 +488,14 @@ artifacts:
     - decision
     fingerprint: sha256:a582982a159c
     children: []
-next_id: 51
+  DEC-051:
+    id: DEC-051
+    title: "Change Record: feat: v1.6.3 \u2014 goal-driven research ladder + protocol\
+      \ split"
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:b2c29da4a28c
+    children: []
+next_id: 52
