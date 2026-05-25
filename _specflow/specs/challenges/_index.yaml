@@ -588,4 +588,19 @@ artifacts:
     tags: []
     fingerprint: sha256:bec2684098ae
     children: []
-next_id: 315
+  CHL-315:
+    id: CHL-315
+    title: "1 coverage gap(s):   \u26A0 [STORY-058] no UT linked via 'verified_by'\
+      \ (covers REQ REQ-026)"
+    status: open
+    tags: []
+    fingerprint: sha256:edae410d9586
+    children: []
+  CHL-316:
+    id: CHL-316
+    title: 146 schema warning(s)
+    status: open
+    tags: []
+    fingerprint: sha256:930f5f393275
+    children: []
+next_id: 317

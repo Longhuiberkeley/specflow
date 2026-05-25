@@ -77,6 +77,7 @@ Core questions (ask in order, skip if already answered):
 3. "What does success look like?"
 4. "What's the timeline or hard deadline?"
 5. "Are there hard constraints I should know about? (technology, compliance, budget)"
+6. **"What are the anti-requirements or negative constraints?"** (Generate 2-3 highly relevant examples based on their previous answers to help them think. E.g., if a web app: "must NOT use third-party analytics", if ML: "must NOT use external pre-trained weights", if enterprise: "must NOT store PII in logs").
 
 After each answer, update your readiness assessment silently.
 

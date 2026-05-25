@@ -137,13 +137,23 @@ IF LOOP.iteration_count >= LOOP.budget:
 
 This is the **research** half of autoresearch — not metric hill-climbing. Before picking a change, form a hypothesis driven by what the project is actually trying to achieve. Consult the [ML Methodology Handbook](methodology-handbook.md) for domain-specific best practices relevant to your ideation direction.
 
-### 2a. State a goal-driven hypothesis
+### 2a. Goal-mindful hypothesis (light check, every iteration)
 
-Read `COMP.goals`, `COMP.success_criteria`, `LOOP.goal`, and the open FINDs. Then write a **one-line hypothesis with a predicted effect and a reason**:
+The full research ladder (Goal → Thesis → RQ) was walked at LOOP creation and lives on `COMP.theses` + `LOOP.active_research_questions`. Per-iteration you do not re-walk it — you stay mindful of it.
+
+Read `LOOP.active_research_questions`, `COMP.constraints`, and the open FINDs. Write a **one-line hypothesis with a predicted effect and a reason**, tied to one of the active RQs:
 
 > *"If I add cross-asset rolling-correlation features, walk-forward Sharpe should rise toward the >2.0 goal, because the current model has no regime signal."*
 
-The change you pick MUST test that hypothesis. A good hypothesis is falsifiable in principle and tied to a goal — not "try learning_rate=0.001 and see." Log it on the EXPT as `hypothesis` (Phase 7). After verify, Phase 6 records whether it was **supported / not_supported / inconclusive**. That outcome — not just the metric — is what FINDs synthesize.
+Before committing to it, answer three quick questions in working context (no artifacts — speed matters):
+
+1. **Which active RQ does this EXPT serve?** Name it. If none — pause. Either pick a different change or deliberately update `LOOP.active_research_questions` (don't drift silently into off-agenda work).
+2. **Am I just wiggling parameters under the same RQ + hypothesis shape as last iteration?** If yes → only continue if the last EXPT taught you something specific that justifies *this* next point. Otherwise **escalate up the ladder**: try a different hypothesis under the same RQ, or reconsider whether the RQ itself is the right one this loop. Don't sink-cost into parameter drift.
+3. **If this EXPT succeeds, what does it tell me about my RQ/thesis?** If you can't name it, the hypothesis isn't goal-driven yet — rework it.
+
+Record the chosen RQ on the EXPT via `--set research_question="..."` so Phase 6 / FIND authoring can reconstruct the chain. The full ladder (goal → thesis) is already pinned on COMP/LOOP — no need to re-record it per EXPT.
+
+A good hypothesis is falsifiable in principle and tied to a goal — not "try learning_rate=0.001 and see." Log it on the EXPT as `hypothesis` (Phase 7). After verify, Phase 6 records whether it was **supported / not_supported / inconclusive**. That outcome — not just the metric — is what FINDs synthesize.
 
 ### 2b. Is the metric still a faithful proxy for the goal?
 
@@ -169,7 +179,22 @@ Every ~10 iterations (and at each condense point), pause and ask: **does the pri
 - Don't chase marginal gains with ugly complexity
 - Don't ignore git history — it's the primary learning mechanism between iterations
 
-**Budget consideration:** If remaining iterations are limited (<3 left), prioritize exploiting successes over exploration.
+### 2d. Pre-EXPT premise check
+
+Before writing the EXPT code, ask: **"Does the core premise of this hypothesis depend on a data or statistical property I haven't verified?"** If yes, validate it with a quick script *before* running the full pipeline — it's much cheaper than a failed EXPT.
+
+Examples:
+- Before testing mean-reversion strategies → check the series is actually stationary/cointegrated
+- Before training models to fix class imbalance → check the actual class distribution
+- Before adding regime-detection features → check regimes are detectable on this asset
+
+If the premise is false, discard the hypothesis here (don't run it through Phase 3+) and return to 2a with a new one. If the premise checks out, proceed.
+
+### 2e. No blind parameter sweeps
+
+You are a researcher, not a grid-search algorithm. Do not burn loop iterations on small parameter increments (e.g., `learning_rate` 0.001 → 0.0005 → 0.0001 across three EXPTs). If you need to find the optimal value of a parameter, **write a local sweep script**, analyze its output, and log **one** EXPT with the optimum (and the sweep curve in `sweep_results`).
+
+A loop iteration is the unit for a *hypothesis test*, not a *parameter point*. If 2a self-assessment showed you're parameter-wiggling, this is your other escape valve — collapse the wiggle into a single sweep EXPT or escalate up the ladder.
 
 **Mode-aware ideation:** Consult `references/explore-exploit-protocol.md` for mode-specific behavior. In `explore` mode, read FIND `what_failed` to avoid repeats and aim for creative variation. In `exploit` mode, read FIND `what_worked` for direction and stay in successful categories. In `validate` mode, re-run best approaches.
 
@@ -282,68 +307,7 @@ IF extracted_value does NOT match pattern: ^-?[0-9]+\.?[0-9]*$
 
 ## Phase 5.1: Noise Handling (for Volatile Metrics)
 
-Some metrics are inherently noisy — benchmark times, ML accuracy, financial metrics. A single measurement can mislead.
-
-### Strategy 1: Multi-Run Verification
-
-```bash
-# Multi-run with median (reliable for noisy metrics):
-for i in 1 2 3; do
-  <verify_command> 2>&1 | <extract_pattern>
-done | sort -n | sed -n '2p'  # median of 3 runs
-```
-
-### Strategy 2: Minimum Improvement Threshold
-
-Ignore improvements smaller than the noise floor. If metric improved but delta < noise threshold, treat as discard to avoid keeping noise.
-
-### Strategy 3: Confirmation Run
-
-```
-IF metric_improved:
-    second_metric = run_verify()
-    IF abs(second_metric - first_metric) / first_metric < 0.01:
-        STATUS = "keep"     # confirmed — both runs agree
-    ELSE:
-        STATUS = "discard"  # first result was noise
-```
-
-### Strategy 4: Environment Pinning
-
-```bash
-# Pin random seeds for ML/statistical workloads
-PYTHONHASHSEED=42 python train.py --seed 42
-
-# Use deterministic test ordering
-pytest -p no:randomly
-
-# Flush caches before benchmarking
-redis-cli FLUSHALL 2>/dev/null; <verify_command>
-```
-
-### When to Use Each Strategy
-
-| Metric Type | Noise Level | Strategy |
-|-------------|-------------|----------|
-| Test coverage (%) | None | No special handling |
-| Bundle size (bytes) | None | No special handling |
-| Benchmark time (ms) | Medium | Multi-run median (3 runs) |
-| ML training loss | High | Environment pinning + confirmation run |
-| Financial metrics (Sharpe, etc.) | High | Warm-up + multi-run + min-delta |
-
-### Preventing Premature Rollbacks
-
-When a metric seems worse but could be noise:
-
-```
-IF metric_worse AND abs(delta) < noise_floor:
-    second_result = run_verify()
-    IF second_result also worse:
-        STATUS = "discard"
-    ELSE:
-        STATUS = "keep"
-        LOG "NOISE: initial regression not confirmed on re-run"
-```
+If the COMP metric is volatile (benchmark times, ML accuracy, financial metrics), a single verify run can mislead. Pick a strategy (multi-run median, confirmation run, environment pinning, or min-delta threshold) — see **`references/noise-handling-protocol.md`** for the full menu and selection table. For deterministic metrics (test coverage %, bundle size in bytes), skip this phase.
 
 ## Phase 5.5: Guard (Regression Check)
 
@@ -468,7 +432,13 @@ checks:
     metric_value: 1.8
 ```
 
-- If no `post_check_command` is defined on the COMP, skip this phase entirely
+- If no `post_check_command` is defined on the COMP, skip this static phase, but consider Dynamic Post-Checks.
+
+### Dynamic Post-Check & Deep Failure Analysis
+
+Even without a static `post_check_command`, the agent should dynamically determine if further validation is needed based on the `hypothesis`:
+*   **Highly successful EXPT:** Are there any secondary assumptions or calibration checks we should run to verify the success is real and not an artifact of gaming the metric?
+*   **Highly expected to succeed, but failed miserably:** If an EXPT performed very badly, we typically skip post-checks. BUT if the hypothesis was strongly reasoned and the result contradicts established domain knowledge, **do not just log and move on**. Pause and run a quick script to inspect *why* it failed (e.g., print the confusion matrix, plot the worst predictions, check the gradients for vanishing/exploding). Log this deep dive in the EXPT's `failure_analysis` field.
 
 ## Phase 7: Log (Create EXPT Artifact)
 
@@ -777,38 +747,7 @@ specflow create --type finding \
 
 ## Crash Recovery
 
-### Within an iteration (verify command failures)
-
-- Syntax error → fix immediately, don't count as separate iteration
-- Runtime error → attempt fix (max 3 tries), then move on
-- Resource exhaustion (OOM) → revert, try smaller variant
-- Infinite loop/hang → kill after timeout, revert, avoid that approach
-- External dependency failure → skip, log, try different approach
-
-### Session crash (agent itself dies mid-iteration)
-
-If the agent crashes, the working tree may be in a partially modified state. On the next invocation, Phase 0 precondition checks will detect this.
-
-**Recovery rules:**
-
-```
-IF working tree is dirty (changes not yet committed):
-    # Agent crashed during Phase 3 (modify) — before commit
-    # These changes were never verified. Discard them.
-    git checkout -- <in-scope files>
-    Resume loop from Phase 1
-
-IF last commit is "experiment(...)" with no matching EXPT artifact:
-    # Agent crashed after Phase 4 (commit) but before Phase 7 (log)
-    # The experiment was never recorded. Revert it.
-    safe_revert()
-    Resume loop from Phase 1
-
-IF working tree is clean AND last commit has a matching EXPT artifact:
-    # Agent crashed after Phase 7 (log) — clean state
-    # Nothing to recover. Resume normally.
-    Resume loop from Phase 1
-```
+For verify-command failures within an iteration (syntax errors, runtime errors, OOM, hangs) and for session crashes that leave the working tree in a partial state, see **`references/crash-recovery-protocol.md`**. Phase 0 precondition checks must invoke its recovery rules before re-entering the loop.
 
 ## Communication
 

@@ -72,19 +72,19 @@ specflow create --type finding \
 
 ### what_worked
 
-Concrete approaches that improved the metric. Each entry references specific EXPTs.
+Concrete approaches that improved the metric. Each entry references specific EXPTs. **Where possible, name the `COMP.theses` entry the evidence supports** — this is how theses accumulate evidence over loops.
 
 Example:
 ```
-- Single-asset specialization on ADA (EXPT-005, EXPT-012)
-- Kalman filter with Q=0.001 (EXPT-003, EXPT-021)
-- Feature engineering: cross-asset momentum (EXPT-008, EXPT-015)
-- Threshold optimization: 0.03 entry threshold (EXPT-023)
+- Single-asset specialization on ADA (EXPT-005, EXPT-012) — supports thesis: "basket narrowing improves Sharpe on this universe"
+- Kalman filter with Q=0.001 (EXPT-003, EXPT-021) — supports thesis: "Kalman filters outperform OLS on intraday bars"
+- Feature engineering: cross-asset momentum (EXPT-008, EXPT-015) — supports thesis: "cross-asset regime signals lift Sharpe"
+- Threshold optimization: 0.03 entry threshold (EXPT-023) — no thesis link (parameter-level finding)
 ```
 
 ### what_failed
 
-Approaches that didn't pan out, each tagged with its honest outcome (falsified / conditional / sensitive / inconclusive) and EXPT references. Future loops use this to decide what to avoid versus what to revisit differently.
+Approaches that didn't pan out, each tagged with its honest outcome (falsified / conditional / sensitive / inconclusive) and EXPT references. **Where the evidence refutes or refines a `COMP.theses` entry, name it.** Future loops use this to decide what to avoid versus what to revisit differently, and to retire theses that no longer earn their keep.
 
 Example:
 ```

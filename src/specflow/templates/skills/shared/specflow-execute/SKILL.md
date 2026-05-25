@@ -52,7 +52,9 @@ The planning-to-executing phase gate IS the readiness check. Run it unconditiona
    ```
    uv run specflow handbook generate execute-impl
    ```
-   Read the output with `uv run specflow handbook show execute-impl`. The generated BPs provide domain-specific guidance on what good implementation and testing look like for this project's domain. They also appear automatically in artifact review prompts. If no API key is configured, this step is skipped gracefully.
+   Read the output with `uv run specflow handbook show execute-impl`. The generated BPs provide domain-specific guidance on what good implementation and testing look like for this project's domain. 
+
+**Proactive Enforcement Loop:** Actively audit your implementation strategy against these BPs before writing code. If a BP suggests a specific pattern (e.g., defensive copies for data pipelines, dependency injection for web apps), ensure your code uses it, and briefly tell the user that you applied it. If no API key is configured, this step is skipped gracefully.
 
 ### Step 2: Wave Planning
 
@@ -67,9 +69,13 @@ For each story (or wave of stories):
 
 1. Run `uv run specflow go` to execute all waves, or implement manually:
    a. **Load context:** Read the story, its linked REQ, ARCH, and DDD artifacts.
-   b. **Implement the code** per the detailed design in DDD artifacts.
-   c. **Follow the acceptance criteria** -- implement each criterion from the story.
-   d. **Quick thinking check** (from `references/thinking-techniques.md`): before writing each function, ask "what's the most unexpected input?" and "does this share state with another STORY in this wave?"
+   b. **Decompose and Validate:** For complex stories (especially ML/quant data pipelines, trading logic, or multi-step algorithms), **do not write monolithic code immediately**.
+      - Present a logical decomposition first (e.g., "1. Data ingestion, 2. Signal generation, 3. Portfolio allocation").
+      - Propose internal sanity checks (e.g., "I will assert that the resulting weights sum to 1.0").
+      - Ask the user: *"Does this flow and these checks look correct before I implement the code?"*
+   c. **Implement the code** per the detailed design and your validated decomposition.
+   d. **Follow the acceptance criteria** -- implement each criterion from the story.
+   e. **Quick thinking check** (from `references/thinking-techniques.md`): before writing each function, ask "what's the most unexpected input?" and "does this share state with another STORY in this wave?"
 
 ### Step 4: Status Updates
 

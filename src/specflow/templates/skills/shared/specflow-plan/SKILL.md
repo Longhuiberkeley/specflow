@@ -49,7 +49,15 @@ uv run specflow handbook generate plan-ddd
 uv run specflow handbook generate plan-story
 ```
 
-Read the generated BPs with `uv run specflow handbook show plan-arc` and reference them during Steps 3–5. The BPs provide domain-specific guidance on what good architecture, detailed design, and story decomposition look like for this project's domain. If no API key is configured, this step is skipped gracefully.
+Read the generated BPs with `uv run specflow handbook show plan-arc`. 
+
+**Proactive Enforcement Loop:** Do not just passively read the BPs or thinking techniques. You must actively audit your own output against them.
+1. Draft your architecture/design internally.
+2. Run a self-audit against the generated BPs and `thinking-techniques.md`.
+3. If your draft violates a BP (e.g., missed a security boundary, failed a coupling check), revise it *before* presenting it to the user.
+4. When presenting to the user, briefly explain *how* the BPs and techniques shaped your proposal (e.g., *"Following the domain BP to separate data from rules, I split X and Y. I also ran a premortem check and added Z as a fallback."*). This shows your work and guides the user toward better architectural decisions.
+
+If no API key is configured, this step is skipped gracefully.
 
 ### Step 3: Architecture Proposal
 

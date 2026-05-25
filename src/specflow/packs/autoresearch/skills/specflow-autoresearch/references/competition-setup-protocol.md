@@ -150,7 +150,44 @@ Also set `success_criteria` — a sentence explaining why a high metric might st
 specflow update COMP-001 --set success_criteria="High Sharpe alone is not enough; strategy must be profitable after transaction costs and deployable with <5min setup time."
 ```
 
+## Step 6.6: Define Boundaries and Constraints
+
+Ask the user explicitly about the rules of engagement for this competition:
+
+> "What are the strict boundaries or constraints for this research? (e.g., Are pre-trained weights allowed? Is external unlabeled data okay? Are there any forbidden libraries or techniques?)"
+
+Record their answers in the COMP's `constraints` field. This prevents the agent from finding "solutions" that violate the user's implicit rules (like downloading a pre-trained model when the goal was to train from scratch, or expanding the dataset beyond allowed limits).
+
+```bash
+specflow update COMP-001 --set constraints="Must be trained from scratch with randomized weights. External unlabeled data is allowed for pre-training, but no external labeled data. Do not use the transformers library."
+```
+
+## Step 6.7: Define Research Theses (the durable agenda)
+
+Goals say *what success looks like*. Theses say *what we believe about this domain that, if true, would get us there*. They are the broader claims a series of hypotheses test across multiple loops — the durable research agenda above any single experiment.
+
+Ask the user:
+
+> *"Beyond hitting the metric — what are the 2–4 substantive claims about this domain you're trying to validate or refute over the next several loops? These will guide hypothesis generation in every iteration, and FINDs will accumulate evidence for or against them."*
+
+Examples to seed the conversation:
+
+- quant: *"Cross-asset regime signals lift risk-adjusted return"*, *"Mean-reversion dominates on intraday bars for this universe"*
+- ML: *"Data augmentation beats architecture changes on this dataset"*, *"Pretraining on unlabeled domain data closes the labeled-data gap"*
+- systems: *"Tail latency is bound by GC, not network"*, *"Read-heavy workloads benefit more from caching than indexing"*
+
+Record:
+
+```bash
+specflow update COMP-001 --set theses='["Cross-asset regime signals lift Sharpe", "Kalman filters outperform OLS on intraday bars for this universe"]'
+```
+
+Theses are *not* hypotheses — they're broader claims that hypotheses test. They evolve: add new ones as loops surface them, refute old ones with evidence, supersede when refined. The agent surfaces them at the start of every LOOP and links FINDs back to them in `what_worked` / `what_failed`.
+
 ## Step 7 (Optional): Define Pre-Check and Post-Check Commands
+
+Instead of passively waiting for the user to define checks, **proactively suggest them based on the domain and goals**. Ask the user:
+> "Before we start running optimization loops, should we write a pre-check script (e.g., to verify the class distribution of your images, or check if the series are actually cointegrated)? And should we add a post-check to validate the deployability of successful results?"
 
 Instead of a single monolithic verify script, use a **unified runner with phase flags**:
 

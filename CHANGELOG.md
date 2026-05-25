@@ -41,7 +41,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Subcommands table maps each `/specflow-autoresearch:*` skill invocation to its `specflow autoresearch <sub>` CLI backend
 - Phase 7 logging examples in `autonomous-loop-protocol.md` now demonstrate `--auxiliary-metrics` JSON dict invocation
 
-## [1.6.2] - 2026-05-23
+## [1.6.3] - 2026-05-25
+
+### Highlights
+
+- **Goal-driven research ladder** — autoresearch now treats experiments as evidence under a tiered hierarchy of Goals → Theses → Research Questions → Hypothesis → EXPT → Parameters. The ladder is walked once at LOOP creation; per-iteration the agent stays goal-mindful via a 3-question self-assessment that prevents parameter-wandering and sunk-cost on the wrong axis.
+- **Protocol split** — `autonomous-loop-protocol.md` trimmed (839 → 758 lines) by extracting `noise-handling-protocol.md` (Phase 5.1 strategies) and `crash-recovery-protocol.md` (verify-failure and session-crash rules) into dedicated reference files, reducing per-iteration context tax.
+- **Pre/post-EXPT mindfulness** — consolidated Phase 2d (premise check before running the EXPT) and Phase 2e (no blind parameter sweeps; collapse sweeps into one EXPT with a local script) into cleaner, less redundant rules. Dynamic post-check guidance for deep failure analysis on strongly-reasoned-but-failed EXPTs.
+- **Constraints as a first-class field** — `COMP.constraints` captures forbidden data/techniques (e.g. "no pre-trained weights", "no transformers library") so the agent doesn't propose solutions that violate the user's implicit rules.
+
+### Features
+
+- `COMP.theses` (list of strings) — durable, cross-loop research agenda
+- `LOOP.active_research_questions` (list of strings) — loop-scoped operationalization of theses
+- `COMP.constraints` (string) — rules of engagement (forbidden data, libraries, techniques)
+- `EXPT.research_question` (string) — links the EXPT back to the active RQ it serves
+- `references/noise-handling-protocol.md` — strategy menu for volatile metrics (multi-run, confirmation, env pinning, min-delta)
+- `references/crash-recovery-protocol.md` — recovery rules for verify failures and session crashes
+- `competition-setup-protocol.md` Step 6.6 (constraints) and Step 6.7 (theses elicitation)
+- FIND authoring template asks for the `COMP.theses` entry each finding supports, refutes, or refines — closes the evidence loop across LOOPs
+- Proactive enforcement loops in `specflow-plan`, `specflow-execute`, `specflow-discover` skills — BPs are now actively audited against, not passively read; decomposition + sanity checks suggested before monolithic implementation; anti-requirements elicited during discovery
+
+### Changes
+
+- Phase 2a rewritten as a goal-mindfulness check (3 quick questions) rather than a full ladder rewalk per iteration — the heavy lift lives in Setup Gate
+- Phase 5.1 (noise handling) and Crash Recovery sections in the main protocol replaced with one-line pointers to their dedicated reference files
+
+
 
 ### Highlights
 

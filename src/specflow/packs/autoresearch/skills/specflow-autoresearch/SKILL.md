@@ -119,13 +119,23 @@ specflow create --type loop \
   --set goal="Pursue COMP-001 goal #1: find a first uncorrelated strategy with Sharpe > 2.0"
 ```
 
-`goal` is the run-scoped slice of `COMP.goals` this LOOP pursues — it focuses Phase 2a hypotheses. Load confirmed FINDs into the LOOP's `knowledge_input`:
+**Walk the research ladder once, here.** This is the only place the full Goal → Thesis → Research Question chain gets explicitly stepped through. After LOOP creation it's pinned in the artifacts and Phase 2a just stays mindful of it.
+
+1. Read `COMP.goals`, `COMP.theses`, `COMP.constraints` and confirmed FINDs.
+2. `LOOP.goal` is the run-scoped slice of `COMP.goals` this LOOP pursues (set above).
+3. `LOOP.active_research_questions` is the concrete, falsifiable operationalization of one or more `COMP.theses` on *this* dataset/verify command. Write 1–3:
+
+```bash
+specflow update LOOP-001 --set active_research_questions='["Does 30m cross-asset rolling correlation predict 1h regime shifts in this universe?", "Does narrowing the basket to ADA/ETH improve Sharpe vs the full universe?"]'
+```
+
+4. Load confirmed FINDs into the LOOP's `knowledge_input`:
 
 ```bash
 specflow update LOOP-001 --set knowledge_input="FIND-001,FIND-002"
 ```
 
-If the user uses `/specflow-autoresearch:plan`, guide them through mode selection (see `references/explore-exploit-protocol.md`) and budget setting.
+If the user uses `/specflow-autoresearch:plan`, guide them through mode selection (see `references/explore-exploit-protocol.md`), budget setting, and the ladder walk above.
 
 ### Step 4: User Confirms
 
@@ -280,7 +290,9 @@ Subagents MUST return structured output (bullet lists, JSON, or YAML). The paren
 
 ## References
 
-- `references/autonomous-loop-protocol.md` — Full 8-phase loop protocol with atomicity rules, crash recovery, noise handling, and guard protocol
-- `references/competition-setup-protocol.md` — Walkthrough for creating COMP artifacts with verify command, metric direction, and dry-run validation
+- `references/autonomous-loop-protocol.md` — Full 8-phase loop protocol with atomicity rules and the goal-mindful ideation check
+- `references/noise-handling-protocol.md` — Strategy menu for volatile metrics (multi-run, confirmation, env pinning, min-delta) — referenced from Phase 5
+- `references/crash-recovery-protocol.md` — Recovery rules for verify failures and session crashes — referenced from Phase 0 and Phase 5
+- `references/competition-setup-protocol.md` — Walkthrough for creating COMP artifacts with verify command, metric direction, goals/theses/constraints, and dry-run validation
 - `references/explore-exploit-protocol.md` — Mode behavior (explore/exploit/validate) and how each influences Phase 2 ideation
-- `references/finding-generation-protocol.md` — Playbook for authoring and updating FIND artifacts after LOOP completion
+- `references/finding-generation-protocol.md` — Playbook for authoring and updating FIND artifacts after LOOP completion (including linking evidence to COMP.theses)
