@@ -4,6 +4,32 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.6.4] - 2026-05-29
+
+### Highlights
+
+- **Status cascade automation** — new `specflow cascade-status` and `specflow reconcile` commands automate the previously manual process of propagating STORY status to linked ARCH/DDD/REQ artifacts and detecting stories with implementation evidence.
+- **Status-cascade lint check** — `artifact-lint` now warns when a STORY is `implemented`/`verified` but linked ARCH/DDD still sits at `approved`, catching status drift before it compounds.
+
+### Features
+
+- `specflow cascade-status STORY-NNN` — one-liner to propagate `implemented`/`verified` status to linked ARCH (via `guided_by`), DDD (via `specified_by`), and optionally REQ (via `--include-req`). Dry-run support with `--dry-run`.
+- `specflow reconcile` — auto-detects approved stories with implementation evidence (output files on disk or git commits referencing the story ID), promotes to `implemented`, and optionally cascades. Dry-run support with `--dry-run`, cascade control with `--no-cascade`.
+- `status-cascade` lint check in `artifact-lint` — warns when STORY is `implemented`/`verified` but linked ARCH/DDD is still `approved`, or when STORY is `verified` but linked REQ is still `approved`. Non-blocking (warnings only). Actionable message suggests `specflow cascade-status`.
+- Both new commands registered in CLI dispatch table and help epilog (`Execute` phase).
+
+### Fixes
+
+- `executor.py` no longer prematurely calls `update_artifact(status="implemented")` during wave execution. Wave commit messages now say "wave N prepared" instead of claiming implementation.
+- `specflow-execute` SKILL.md (both `.claude/skills/` and `templates/skills/`) Step 4 now uses `cascade-status` instead of manual per-artifact updates.
+- `agent-context.md` strengthened with explicit 2-step status update instruction (update + cascade-status) for both `/specflow-execute` and ad-hoc sessions.
+
+### Changes
+
+- Autoresearch SKILL.md: Post-Loop section clarified that delegate-review subagent creates FINDs (not the main agent). Added lifecycle flow diagram. Updated rules.
+- `docs/plan-autoresearch-integration.md`: learning flow diagram updated to reflect delegate-review subagent pattern.
+- `_HELP_EPILOG` in `cli.py` updated to list `cascade-status` and `reconcile` under Execute phase.
+
 ## [1.6.0] - 2026-05-16
 
 ### Highlights
@@ -448,6 +474,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Unified skill templates across all platforms
 - Rewrote documentation for public-readiness
 
+[1.6.4]: https://github.com/Longhuiberkeley/specflow/releases/tag/v1.6.4
 [1.5.0]: https://github.com/Longhuiberkeley/specflow/releases/tag/v1.5.0
 [1.4.1]: https://github.com/Longhuiberkeley/specflow/releases/tag/v1.4.1
 [1.4.0]: https://github.com/Longhuiberkeley/specflow/releases/tag/v1.4.0

@@ -66,25 +66,25 @@ COMP-001 (Competition: defines dataset, split method, metric, verify command)
 
 ```
 LOOP-001 starts
-  → reads FINDINGs: (none, first loop)
+  → reads FINDs: (none, first loop)
   → runs 50 experiments
-  → agent reviews EXPTs, updates FINDINGS.md with FIND-001, FIND-002
+  → LOOP completes → delegate-review subagent synthesizes EXPTs → FIND-001, FIND-002 (draft)
 
 LOOP-002 starts
-  → reads FINDINGs: FIND-001, FIND-002
+  → reads FINDs: FIND-001, FIND-002 (confirmed)
   → agent knows: "basket specialization works", "trailing stops falsified"
   → ideation is informed by this knowledge
   → runs 30 experiments refining what works
-  → agent reviews EXPTs, updates FINDINGS.md with FIND-003
+  → LOOP completes → delegate-review subagent → FIND-003 (draft)
 
 LOOP-003 starts
-  → reads FINDINGs: FIND-001, FIND-002, FIND-003
+  → reads FINDs: FIND-001, FIND-002, FIND-003 (all confirmed)
   → agent knows everything from prior loops
   → tries fundamentally different approach (explore mode)
-  → updates FINDINGS.md at completion
+  → LOOP completes → delegate-review subagent → FINDs updated
 ```
 
-The key insight: **FINDINGS.md is the memory that survives context rot.** A fresh agent (or even a different agent from a different session) can read the FINDINGs and immediately understand what has been tried, what worked, and what to do next. This is what autoresearch's TSV file fails to provide at scale.
+The key insight: **FINDs are the memory that survives context rot.** A fresh agent (or even a different agent from a different session) can read the FINDs and immediately understand what has been tried, what worked, and what to do next. The delegate-review subagent keeps the main loop's context clean by handling synthesis in an isolated context.
 
 ### 2.3 Explore vs Exploit vs Validate
 

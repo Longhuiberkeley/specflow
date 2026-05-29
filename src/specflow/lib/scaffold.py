@@ -243,6 +243,14 @@ def inject_pack_context(root: Path, pack_name: str, context_snippet: str) -> boo
         return False
 
     target = root / instruction_file
+
+    if not target.exists():
+        if instruction_file == "AGENTS.md":
+            if platform_code == "claude-code" and (root / "CLAUDE.md").exists():
+                target = root / "CLAUDE.md"
+            elif platform_code == "gemini" and (root / "GEMINI.md").exists():
+                target = root / "GEMINI.md"
+
     sentinel_start = _SENTINEL_START.format(pack_name=pack_name)
     sentinel_end = _SENTINEL_END.format(pack_name=pack_name)
 

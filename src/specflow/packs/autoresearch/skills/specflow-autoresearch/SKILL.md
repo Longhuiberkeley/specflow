@@ -40,6 +40,7 @@ All subcommands have a CLI backend. Use the CLI for deterministic operations (ar
 | `/specflow-autoresearch:leaderboard` | `specflow autoresearch leaderboard` | Top EXPTs ranked by metric |
 | `/specflow-autoresearch:log` | `specflow autoresearch log` | Log an EXPT and auto-update LOOP counters |
 | `/specflow-autoresearch:suggest-finds` | `specflow autoresearch suggest-finds` | Draft FINDs from a completed LOOP's EXPTs |
+| `/specflow-autoresearch:delegate-review` | (Subagent Hook) | Spawn subagent to synthesize EXPTs into FINDs and finalize LOOP |
 
 For multi-competition repos, all commands accept `--competition COMP-NNN`. Omit to auto-detect the single active COMP, or specify when multiple exist. The `leaderboard` command also accepts `--all` for a cross-COMP view.
 
@@ -151,6 +152,24 @@ Knowledge:    FIND-001, FIND-002 (2 confirmed findings loaded)
 
 Ask user to confirm before starting the loop.
 
+## Autoresearch Lifecycle
+
+```
+COMP (active)
+ └→ LOOP-NNN (draft → running → completed)
+       └→ EXPT-001..N (kept/discarded/crashed per iteration)
+              ↓
+       delegate-review subagent (spawned after LOOP completes)
+              ↓
+       EXPTs grouped by change_category → synthesized into FINDs
+              ↓
+       FIND-001..N (draft → confirmed → superseded/falsified)
+              ↓
+       LOOP finalized, knowledge feeds next LOOP
+```
+
+Each new LOOP reads all confirmed FINDs for its COMP before starting (Phase 1: Review). This is how the agent learns across loops.
+
 ## The Loop
 
 ```bash
@@ -162,23 +181,28 @@ The CLI prints the 8-phase protocol checklist with current progress. Read `refer
 ```
 LOOP (budget iterations):
   Phase 1: Review — Read FINDs + current EXPTs + git history
-  Phase 2: Ideate — Pick next change based on mode, knowledge, and history
+  Phase 2: Ideate — Pick next change based on mode, knowledge, and history. You MUST form and record a hypothesis and research question before modifying.
   Phase 3: Modify — Make ONE focused change to in-scope files
   Phase 4: Commit — Git commit with experiment(<scope>): prefix
   Phase 5: Verify — Run COMP.verify_command, extract metric number
-  Phase 6: Decide — Kept (improved) / Discarded (same/worse) / Crashed (error)
+  Phase 6: Decide — Kept (improved) / Discarded (same/worse) / Crashed (error). Before deciding, inspect auxiliary metrics, logs, loss curves, or array subsets.
   Phase 7: Log — Create EXPT artifact via specflow create, update LOOP totals
   Phase 8: Repeat or Complete — Check budget, update FINDs on completion
 ```
+## Post-Loop: Delegate Review
 
-## Post-Loop: FIND Authoring
+After a LOOP completes, **delegate review to a subagent** via `/specflow-autoresearch:delegate-review`. The subagent reads all EXPTs, synthesizes them into FIND artifacts, and finalizes the LOOP status. This keeps the main loop's context clean.
 
-After a LOOP completes, review all EXPTs and create or update competition FINDs. Follow `references/finding-generation-protocol.md` for the full playbook.
+The subagent follows `references/finding-generation-protocol.md` for the full playbook. It will:
 
-Non-core fields use the generic `--set KEY=VALUE` flag (repeatable; values parse as JSON when possible). Only `--type`, `--title`, and `--status` are first-class.
+1. Read all EXPTs in the completed LOOP
+2. Group by `change_category`, identify which categories drove improvement
+3. Create new FINDs for genuinely new insights, or supersede existing FINDs with refined understanding
+4. Update the LOOP status to `completed` or `plateaued`
+
+Example FINDs the subagent will produce:
 
 ```bash
-# Example: create a new finding from loop results
 specflow create --type finding \
   --title "Feature engineering outperforms model tuning" \
   --status draft \
@@ -186,17 +210,9 @@ specflow create --type finding \
   --set source_loop=LOOP-001 \
   --set confidence=medium \
   --set summary="Cross-asset features drove largest improvements. Model changes had minimal impact."
-
-# Example: supersede an outdated finding
-specflow update FIND-001 --status superseded
-specflow create --type finding \
-  --title "Threshold=0.03 optimal but knife-edge sensitive" \
-  --status draft \
-  --set competition=COMP-001 \
-  --set source_loop=LOOP-003 \
-  --set confidence=medium \
-  --set summary="Previous finding confirmed but ±0.005 variation degrades by 40%."
 ```
+
+For small loops (< 10 EXPTs), you may author FINDs directly instead of delegating. In that case, follow `references/finding-generation-protocol.md` manually.
 
 ## Review Subcommand
 
@@ -273,6 +289,8 @@ The skill MAY spawn subagents in these specific situations:
    - Subagent C: "Combine two previously successful changes"
    The parent agent picks the most promising hypothesis and runs it.
 
+4. **Delegate Review.** Use `/specflow-autoresearch:delegate-review` to spawn a subagent that takes over the review phase. This subagent synthesizes EXPT data into FIND artifacts and finalizes the LOOP state, keeping the main loop's context clean.
+
 Subagents MUST return structured output (bullet lists, JSON, or YAML). The parent agent never delegates the full loop — only parallel analysis tasks.
 
 ## Rules
@@ -285,7 +303,7 @@ Subagents MUST return structured output (bullet lists, JSON, or YAML). The paren
 - FIND status follows: `draft` → `confirmed` → `superseded`/`falsified`
 - Run `specflow artifact-lint` after creating or updating artifacts
 - Never modify files under `.specflow/` — these are managed by CLI commands
-- After LOOP completion, always review EXPTs and author/update FINDs per `references/finding-generation-protocol.md`
+- After LOOP completion, delegate review via `/specflow-autoresearch:delegate-review`. The review subagent synthesizes EXPTs into FINDs and finalizes LOOP status. For small loops (< 10 EXPTs), you may author FINDs directly per `references/finding-generation-protocol.md`
 - Use `specflow autoresearch suggest-finds --loop LOOP-NNN` to generate a draft FIND, then edit and `specflow create --type finding`
 
 ## References

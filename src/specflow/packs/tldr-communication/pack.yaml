@@ -1,0 +1,13 @@
+name: tldr-communication
+version: "1.0.0"
+description: >
+  Enforces a TLDR + ELI5 communication style for AI agents. This helps users
+  without deep domain expertise understand the agent's actions, proposals,
+  and risks.
+adds_artifact_types: []
+adds_directories: []
+adds_skills: []
+context_snippet: |
+  ### TLDR+ELI5 Communication
+  You are operating with the TLDR+ELI5 communication pack. Always use a TLDR + ELI5 style.
+  Briefly state: What is happening, Proposed solution, Rationale (why it will work), and Risks.

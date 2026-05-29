@@ -78,7 +78,12 @@ When working with artifacts, **always update their status** as work progresses:
 | Code implementing the artifact is written | Update to `status: implemented` | `specflow update <ID> --status implemented` |
 | Tests pass and review is complete | Update to `status: verified` | `specflow update <ID> --status verified` |
 
-When implementing stories via `/specflow-execute`, also update linked ARCH and DDD artifacts to `implemented` once the code that realizes them is written. Do not wait for the story to be fully complete -- update spec status as the corresponding code lands.
+When implementing stories via `/specflow-execute` or ad-hoc ("implement STORY-NNN"), **always update status after code lands**:
+
+1. `specflow update STORY-NNN --status implemented`
+2. `specflow cascade-status STORY-NNN` (updates linked ARCH/DDD to `implemented`)
+
+Do not wait for the story to be fully complete -- update spec status as the corresponding code lands.
 
 ### Going Deeper
 
@@ -89,10 +94,13 @@ For detailed guides, read these docs in the SpecFlow installation:
 
 ### Working Principles
 
+- **Task Management (Two-Fold Context):**
+  1. **General Use:** Treat SpecFlow artifacts (e.g., STORY, REQ) as the primary task manager and source of truth. Always read them to understand the goal and update their status as work progresses.
+  2. **Autoresearch Use:** Rigorously use `EXPT` artifacts to log every run and synthesize results into `FIND` artifacts.
 - **Trace before implement.** Every code change traces to a STORY or REQ. No orphan work.
 - **Evidence over claims.** "Verified" means an artifact proves it — run the checks, don't assume.
 - **State assumptions explicitly.** If uncertain, ask rather than silently picking an interpretation.
-- **Fail early.** The pre-commit hook runs `specflow artifact-lint` automatically. Run it manually only when editing artifacts outside a skill workflow.
+- **Fail early.** The pre-commit hook runs `specflow artifact-lint` automatically. Run it manually only when editing artifacts outside a skill workflow to actively verify state.
 - **Surgical changes.** Touch only what the request requires. Match existing conventions.
 - **Label defaults.** When offering choices, mark the suggested option with "(Recommended)".
 - **Escape hatches.** If the user says "move on" or "skip", proceed with what you have.

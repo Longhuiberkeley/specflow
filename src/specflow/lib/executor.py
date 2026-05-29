@@ -10,7 +10,7 @@ from typing import Any
 
 import yaml
 
-from specflow.lib.artifacts import Artifact, discover_artifacts, parse_artifact, resolve_link_target, update_artifact
+from specflow.lib.artifacts import Artifact, discover_artifacts, parse_artifact, resolve_link_target
 from specflow.lib.locks import acquire_lock, check_lock, release_lock
 from specflow.lib.waves import compute_waves, filter_executable_stories
 
@@ -190,7 +190,7 @@ def load_execution_state(root: Path) -> ExecutionState | None:
 def auto_commit_wave(root: Path, wave_num: int, story_ids: list[str]) -> bool:
     """Create a git commit after a wave completes."""
     ids_str = ", ".join(story_ids)
-    message = f"specflow: wave {wave_num} complete [{ids_str}]"
+    message = f"specflow: wave {wave_num} prepared [{ids_str}]"
 
     try:
         subprocess.run(["git", "add", "-A"], cwd=str(root), capture_output=True, check=True)
@@ -326,7 +326,6 @@ def run_execution(
             wave_results.append(result)
 
             if result["ok"]:
-                update_artifact(root, sid, status="implemented")
                 state.completed.append(sid)
             else:
                 state.failed.append(sid)

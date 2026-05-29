@@ -61,6 +61,18 @@ def cmd_done(args: argparse.Namespace) -> int:
     return done_cmd.run(root, vars(args))
 
 
+def cmd_cascade_status(args: argparse.Namespace) -> int:
+    from specflow.commands import cascade_status as cmd
+    root = _find_project_root()
+    return cmd.run(root, vars(args))
+
+
+def cmd_reconcile(args: argparse.Namespace) -> int:
+    from specflow.commands import reconcile as cmd
+    root = _find_project_root()
+    return cmd.run(root, vars(args))
+
+
 def cmd_standards_gaps(args: argparse.Namespace) -> int:
     from specflow.commands import standards_gaps as gaps_cmd
     root = _find_project_root()
@@ -304,9 +316,22 @@ def _add_done_parser(subparsers):
     p.add_argument("--no-patterns", action="store_true", dest="no_patterns", help="Skip pattern extraction entirely")
 
 
+def _add_cascade_status_parser(subparsers):
+    p = subparsers.add_parser("cascade-status", help="Cascade STORY status to linked ARCH/DDD/REQ specs")
+    p.add_argument("artifact_id", help="STORY artifact ID (e.g. STORY-001)")
+    p.add_argument("--include-req", action="store_true", dest="include_req", help="Also cascade to linked REQ artifacts")
+    p.add_argument("--dry-run", action="store_true", dest="dry_run", help="Preview changes without writing")
+
+
+def _add_reconcile_parser(subparsers):
+    p = subparsers.add_parser("reconcile", help="Auto-detect implemented stories and update status")
+    p.add_argument("--dry-run", action="store_true", dest="dry_run", help="Preview changes without writing")
+    p.add_argument("--no-cascade", action="store_false", dest="cascade", help="Skip cascading to linked ARCH/DDD")
+
+
 def _add_artifact_lint_parser(subparsers):
     p = subparsers.add_parser("artifact-lint", help="Run deterministic validation checks on artifacts")
-    p.add_argument("--type", choices=["schema", "links", "status", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "gate"], help="Run only a specific check")
+    p.add_argument("--type", choices=["schema", "links", "status", "status-cascade", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "gate"], help="Run only a specific check")
     p.add_argument("--fix", action="store_true", help="Auto-fix (rebuild indexes, recompute fingerprints)")
     p.add_argument("--gate", help="Phase-gate checklist name")
     p.add_argument("--method", choices=["programmatic", "llm"], default="programmatic", help="Validation method")
@@ -510,7 +535,7 @@ _HELP_EPILOG = """\
 commands by workflow phase:
   Discover:   init, status, domain, handbook, patterns
   Plan:       create, update
-  Execute:    go, done, generate-tests
+  Execute:    go, done, cascade-status, reconcile, generate-tests
   Review:     artifact-lint, checklist-run, artifact-review, project-audit, trace
   Release:    baseline, document-changes
   CI:         hook, renumber-drafts, import, export, detect, change-impact,
@@ -609,6 +634,8 @@ def main(argv: list[str] | None = None) -> int:
     # ── Execute ─────────────────────────────────────────────────
     _add_go_parser(subparsers)
     _add_done_parser(subparsers)
+    _add_cascade_status_parser(subparsers)
+    _add_reconcile_parser(subparsers)
     _add_generate_tests_parser(subparsers)
 
     # ── Review ──────────────────────────────────────────────────
@@ -663,6 +690,8 @@ def main(argv: list[str] | None = None) -> int:
         "go": cmd_go,
         "checklist-run": cmd_checklist_run,
         "done": cmd_done,
+        "cascade-status": cmd_cascade_status,
+        "reconcile": cmd_reconcile,
         "change-impact": cmd_change_impact,
         "fingerprint-refresh": cmd_fingerprint_refresh,
         "baseline": cmd_baseline,

@@ -188,6 +188,16 @@ Focus: **experimental thinking lenses, concise context, atomic CLI sugar, and su
 - **ML tracker coexistence** — documented integration pattern with MLflow, Weights & Biases, Neptune, MLRun, etc. via "Coexisting with External ML Trackers" section in `competition-setup-protocol.md`
 - **Passive-CLI banner** — `autoresearch run` prints a reminder that the AI agent drives the loop, not the CLI
 
+## v1.6.4
+
+Focus: **status cascade automation and reconciliation.**
+
+- **Status cascade** — `specflow cascade-status STORY-NNN` propagates `implemented`/`verified` to linked ARCH/DDD (optionally REQ) in one call, replacing manual per-artifact updates
+- **Reconciliation** — `specflow reconcile` auto-detects approved stories with implementation evidence (output files on disk or git commits) and promotes them to `implemented`
+- **Status-cascade lint** — `artifact-lint` warns when STORY status outpaces linked ARCH/DDD status, catching drift before it compounds
+- **Executor fix** — `specflow go` no longer prematurely marks artifacts as `implemented` during wave assembly
+- **Execute skill update** — Step 4 uses `cascade-status` one-liner instead of manual per-artifact updates
+
 ## v1.x (Future)
 
 These may ship someday, but are not committed:

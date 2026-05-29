@@ -14,7 +14,7 @@ from specflow.lib import standards as standards_lib
 from specflow.lib import lint as lint_lib
 from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC
 
-CHECK_NAMES = ["schema", "links", "status", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "thinking-techniques", "autoresearch-logging"]
+CHECK_NAMES = ["schema", "links", "status", "status-cascade", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "thinking-techniques", "autoresearch-logging"]
 
 
 def _run_check(
@@ -34,6 +34,8 @@ def _run_check(
         return _check_links(artifacts, root)
     elif check_name == "status":
         return _check_status(artifacts, schema_dir)
+    elif check_name == "status-cascade":
+        return _check_status_cascade(artifacts)
     elif check_name == "ids":
         return _check_ids(artifacts, schema_dir)
     elif check_name == "fingerprints":
@@ -188,6 +190,69 @@ def _check_status(
         "status_icon": icon,
         "detail": detail_msg,
         "blocking_count": blocking,
+        "warning_count": warnings,
+    }
+
+
+def _check_status_cascade(
+    artifacts: list[art_lib.Artifact],
+) -> dict[str, str | int]:
+    """Warn when a STORY is implemented/verified but linked specs lag behind."""
+    id_index = art_lib.build_id_index(artifacts)
+    warnings = 0
+    details: list[str] = []
+
+    stories = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "STORY"]
+
+    for story in stories:
+        if story.status not in ("implemented", "verified"):
+            continue
+
+        for link in story.links:
+            target = id_index.get(link.target)
+            if target is None:
+                continue
+
+            target_prefix = art_lib.get_prefix_from_id(target.id)
+
+            if link.role == "guided_by" and target_prefix == "ARCH":
+                if target.status == "approved":
+                    warnings += 1
+                    details.append(
+                        f"  \u26a0 [{story.id}] is '{story.status}' but linked "
+                        f"{target.id} (ARCH) is still 'approved' -- run "
+                        f"`specflow cascade-status {story.id}`"
+                    )
+
+            elif link.role == "specified_by" and target_prefix == "DDD":
+                if target.status == "approved":
+                    warnings += 1
+                    details.append(
+                        f"  \u26a0 [{story.id}] is '{story.status}' but linked "
+                        f"{target.id} (DDD) is still 'approved' -- run "
+                        f"`specflow cascade-status {story.id}`"
+                    )
+
+        if story.status == "verified":
+            for link in story.links:
+                target = id_index.get(link.target)
+                if target is None:
+                    continue
+                if link.role == "implements" and art_lib.get_prefix_from_id(target.id) == "REQ":
+                    if target.status == "approved":
+                        warnings += 1
+                        details.append(
+                            f"  \u26a0 [{story.id}] is 'verified' but linked "
+                            f"{target.id} (REQ) is still 'approved' -- update REQ status"
+                        )
+
+    icon = GREEN + "\u2713" + NC if warnings == 0 else YELLOW + "\u26a0" + NC
+    detail_msg = "\n".join(details) if details else "All linked spec statuses consistent with stories"
+
+    return {
+        "status_icon": icon,
+        "detail": detail_msg,
+        "blocking_count": 0,
         "warning_count": warnings,
     }
 

@@ -67,7 +67,7 @@ The planning-to-executing phase gate IS the readiness check. Run it unconditiona
 
 For each story (or wave of stories):
 
-1. Run `uv run specflow go` to execute all waves, or implement manually:
+1. Run `uv run specflow go` to compute wave context, or implement manually:
    a. **Load context:** Read the story, its linked REQ, ARCH, and DDD artifacts.
    b. **Decompose and Validate:** For complex stories (especially ML/quant data pipelines, trading logic, or multi-step algorithms), **do not write monolithic code immediately**.
       - Present a logical decomposition first (e.g., "1. Data ingestion, 2. Signal generation, 3. Portfolio allocation").
@@ -79,16 +79,14 @@ For each story (or wave of stories):
 
 ### Step 4: Status Updates
 
-After implementation, update artifact statuses:
+After implementing a story, update its status and cascade to linked specs:
 
 ```
 uv run specflow update STORY-001 --status implemented
+uv run specflow cascade-status STORY-001
 ```
 
-If the linked DDD/ARCH artifacts should reflect implementation:
-```
-uv run specflow update DDD-001 --status implemented
-```
+`cascade-status` automatically updates linked ARCH/DDD artifacts from `approved` to `implemented`. Add `--include-req` to also cascade to the linked REQ.
 
 **Execution state is machine-managed.** `specflow go` writes per-artifact locks to `.specflow/locks/*.json` while waves run and tracks progress in `.specflow/execution-state.yaml`. Do not edit these by hand -- the CLI releases locks on completion and uses `execution-state.yaml` to resume interrupted runs.
 
