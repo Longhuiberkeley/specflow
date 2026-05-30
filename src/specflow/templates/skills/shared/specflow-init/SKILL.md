@@ -85,60 +85,7 @@ Append flags as needed:
 
 This scaffolds `.specflow/`, `_specflow/`, config files, schemas, checklists, and installs skill directories for the target platform. When `--domain` is provided, it also persists the domain classification and attempts to generate project-level best practices (the "process booklet").
 
-### 4. Inject SpecFlow instructions into the platform's instruction file
-
-The `specflow init` CLI does **not** modify instruction files. This step is performed by the agent running this skill.
-
-#### 4a. Read the instruction template
-
-Locate and read `agent-context.md` from the installed specflow package:
-
-```sh
-python3 -c "from pathlib import Path; import specflow; print(Path(specflow.__file__).parent / 'templates' / 'agent-context.md')"
-```
-
-Read the file at the printed path. This template contains the SpecFlow instruction block (slash commands table, lifecycle flow, working principles, conventions).
-
-#### 4b. Determine the target instruction file
-
-| Platform | Target File |
-|----------|------------|
-| `claude-code` | `AGENTS.md` -- use `CLAUDE.md` only if it already exists and `AGENTS.md` does not |
-| `cursor` | `.cursor/rules/specflow.mdc` |
-| `windsurf` | `.windsurf/rules/specflow.md` |
-| `cline` | `.clinerules/specflow.md` |
-| `gemini` | `AGENTS.md` -- use `GEMINI.md` only if it already exists and `AGENTS.md` does not |
-| `opencode` | `AGENTS.md` |
-| `github-copilot` | `.github/copilot-instructions.md` |
-| `roo` | `.roo/rules/specflow.md` |
-| `qwen` | `.qwen/rules/specflow.md` |
-| `kiro` | `.kiro/rules/specflow.md` |
-| `kilocode` | `.kilocode/rules/specflow.md` |
-| `codex` | `AGENTS.md` |
-| `trae` | `.trae/rules/specflow.md` |
-| `junie` | `AGENTS.md` |
-| (default) | `AGENTS.md` |
-
-#### 4c. Inject the block
-
-1. Read the target file (if it exists). Check whether it already contains `<!-- SpecFlow section`. If it does, **skip injection entirely** -- it is idempotent.
-2. If the marker is not present, append the following to the end of the file (create the file if it does not exist):
-
-```
-<!-- SpecFlow section (auto-generated, do not edit manually) -->
-<contents of agents-section.md>
-<!-- End SpecFlow section -->
-```
-
-3. For `.mdc` files (Cursor), prepend a frontmatter header before the block:
-
-```yaml
----
-description: SpecFlow instructions
----
-```
-
-### 5. Verify git hook installation
+### 4. Verify git hook installation
 
 The `specflow init` command installs a pre-commit hook automatically when `.git/` exists. Check the command output for:
 
@@ -148,7 +95,7 @@ The `specflow init` command installs a pre-commit hook automatically when `.git/
 
 If the project has no `.git/` directory yet, inform the user they can run `uv run specflow hook install` after initializing git.
 
-### 6. Generate CI workflow (if requested)
+### 5. Generate CI workflow (if requested)
 
 If a CI provider was specified and the adapters config was generated, the init command may have already created the workflow file. Verify from the output. If not, run:
 
@@ -156,7 +103,7 @@ If a CI provider was specified and the adapters config was generated, the init c
 uv run specflow ci generate
 ```
 
-### 7. Report and recommend next steps
+### 6. Report and recommend next steps
 
 Summarize what was done:
 
@@ -164,7 +111,7 @@ Summarize what was done:
 - Configuration files written (`config.yaml`, `state.yaml`, `adapters.yaml`)
 - Domain classification persisted (if `--domain` was provided)
 - Project best practices generated (if domain was set and API key available)
-- Instruction file updated (target file path)
+- Instruction file updated (the CLI automatically injects base context and pack snippets)
 - Pre-commit hook installed
 - CI workflow generated (if applicable)
 - Packs applied (if any)

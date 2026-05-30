@@ -18,7 +18,7 @@ def _get_packs_dir() -> Path:
     return Path(__file__).parent.parent / "packs"
 
 
-def _apply_preset(root: Path, preset: str) -> int:
+def _apply_preset(root: Path, preset: str, platform_code: str | None = None) -> int:
     packs_dir = _get_packs_dir()
     result = scaffold_lib.apply_pack(root, preset, packs_dir)
     if not result["ok"]:
@@ -43,7 +43,7 @@ def _apply_preset(root: Path, preset: str) -> int:
     context_injected = False
     if context_snippet:
         context_injected = scaffold_lib.inject_pack_context(
-            root, preset, context_snippet
+            root, preset, context_snippet, platform_code
         )
 
     pieces = []
@@ -246,11 +246,16 @@ def run(root: Path, args: dict) -> int:
     scaffold_lib.copy_adapters_config(root, _get_package_templates())
     print("  + adapters.yaml copied")
 
-    preset = args.get("preset")
-    if preset:
-        print(f"  Applying preset pack '{preset}'...")
-        if _apply_preset(root, preset) != 0:
-            return 1
+    if scaffold_lib.inject_base_context(root, _get_package_templates(), platform_code):
+        print("  + SpecFlow instructions injected into your instruction file.")
+
+    preset_str = args.get("preset")
+    if preset_str:
+        presets = [p.strip() for p in preset_str.split(",") if p.strip()]
+        for preset in presets:
+            print(f"  Applying preset pack '{preset}'...")
+            if _apply_preset(root, preset, platform_code) != 0:
+                return 1
 
     with_types = args.get("with_types", "")
     if with_types:
@@ -277,7 +282,6 @@ def run(root: Path, args: dict) -> int:
 
     print(f"\n+ SpecFlow initialized in {root}")
     print(f"  Platform: {platform_name}")
-    print("  Next: your AI assistant will inject SpecFlow instructions into your instruction file.")
     print("  Run 'specflow status' to see the project dashboard.")
     return 0
 

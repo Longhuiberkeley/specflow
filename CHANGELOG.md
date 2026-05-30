@@ -4,6 +4,27 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.6.5] - 2026-05-30
+
+### Highlights
+
+- **CLI-driven instruction injection** — `specflow init` now deterministically injects the base SpecFlow context block into the platform's instruction file (AGENTS.md, CLAUDE.md, etc.) using idempotent HTML-comment sentinels. No more manual copy-paste by the agent.
+- **Multi-preset support** — `--preset` accepts comma-separated packs (e.g., `--preset autoresearch,tldr-communication`). Each pack's context snippet is injected as an independent sentinel block.
+- **Condensed base context** — `agent-context.md` reduced from ~90 lines to 24 lines while retaining all functional rules (V-Model, status lifecycle, traceability, cascading).
+
+### Features
+
+- `scaffold.inject_base_context()` — new function that reads `agent-context.md` and appends it to the instruction file with `<!-- SpecFlow section -->` sentinel markers. Handles create, append, update, and idempotent no-op.
+- `scaffold._get_target_instruction_file()` — shared helper resolving the correct instruction file per platform, with CLAUDE.md/GEMINI.md fallback.
+- `--preset` flag in `specflow init` now splits on commas and applies each pack sequentially.
+- `inject_pack_context()` accepts `explicit_platform` parameter, fixing a timing bug on fresh repos where platform detection returned `None`.
+
+### Changes
+
+- `agent-context.md` trimmed from ~90 lines to 24 lines (removed redundant tables, tutorial text, docs links).
+- `specflow-init` SKILL.md step 4 (manual injection) removed — the CLI now handles this deterministically.
+- Base context is always injected before pack context, ensuring consistent ordering in the instruction file.
+
 ## [1.6.4] - 2026-05-29
 
 ### Highlights

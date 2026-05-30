@@ -220,17 +220,25 @@ def apply_pack(root: Path, pack_name: str, packs_dir: Path) -> dict[str, Any]:
 _SENTINEL_START = "<!-- pack:{pack_name} context (auto-generated, do not edit manually) -->"
 _SENTINEL_END = "<!-- end pack:{pack_name} context -->"
 
+_BASE_SENTINEL_START = "<!-- SpecFlow section (auto-generated, do not edit manually) -->"
+_BASE_SENTINEL_END = "<!-- End SpecFlow section -->"
 
-def inject_pack_context(root: Path, pack_name: str, context_snippet: str) -> bool:
-    """Inject a pack's context snippet into the platform instruction file.
 
-    Uses sentinel markers for idempotent updates. Returns True if the file
-    was modified (new injection or updated snippet).
-    """
-    if not context_snippet:
-        return False
+def _get_target_instruction_file(root: Path, platform_code: str, instruction_file: str) -> Path | None:
+    target = root / instruction_file
+    if not target.exists() and instruction_file == "AGENTS.md":
+        if platform_code == "claude-code" and (root / "CLAUDE.md").exists():
+            target = root / "CLAUDE.md"
+        elif platform_code == "gemini" and (root / "GEMINI.md").exists():
+            target = root / "GEMINI.md"
+    return target
 
-    platform_code, _ = platform.detect_platform(root)
+
+def inject_base_context(root: Path, templates_dir: Path, explicit_platform: str | None = None) -> bool:
+    """Inject the base SpecFlow instructions into the platform instruction file."""
+    platform_code = explicit_platform
+    if platform_code is None:
+        platform_code, _ = platform.detect_platform(root)
     if platform_code is None:
         return False
 
@@ -242,14 +250,65 @@ def inject_pack_context(root: Path, pack_name: str, context_snippet: str) -> boo
     if not instruction_file:
         return False
 
-    target = root / instruction_file
+    target = _get_target_instruction_file(root, platform_code, instruction_file)
+    if not target:
+        return False
 
-    if not target.exists():
-        if instruction_file == "AGENTS.md":
-            if platform_code == "claude-code" and (root / "CLAUDE.md").exists():
-                target = root / "CLAUDE.md"
-            elif platform_code == "gemini" and (root / "GEMINI.md").exists():
-                target = root / "GEMINI.md"
+    src = templates_dir / "agent-context.md"
+    if not src.exists():
+        return False
+
+    context_snippet = src.read_text(encoding="utf-8").strip()
+    block = f"\n{_BASE_SENTINEL_START}\n{context_snippet}\n{_BASE_SENTINEL_END}\n"
+
+    if target.exists():
+        content = target.read_text(encoding="utf-8")
+        if _BASE_SENTINEL_START in content:
+            start_idx = content.index(_BASE_SENTINEL_START)
+            end_idx = content.index(_BASE_SENTINEL_END) + len(_BASE_SENTINEL_END)
+            existing_block = content[start_idx:end_idx]
+            new_block = block.strip()
+            if existing_block == new_block:
+                return False
+            content = content[:start_idx] + new_block + content[end_idx:]
+            target.write_text(content, encoding="utf-8")
+            return True
+        content = content.rstrip() + "\n" + block
+        target.write_text(content, encoding="utf-8")
+        return True
+    else:
+        if instruction_file.endswith(".mdc"):
+            block = f"---\ndescription: SpecFlow instructions\n---\n{block}"
+        target.write_text(block.lstrip(), encoding="utf-8")
+        return True
+
+
+def inject_pack_context(root: Path, pack_name: str, context_snippet: str, explicit_platform: str | None = None) -> bool:
+    """Inject a pack's context snippet into the platform instruction file.
+
+    Uses sentinel markers for idempotent updates. Returns True if the file
+    was modified (new injection or updated snippet).
+    """
+    if not context_snippet:
+        return False
+
+    platform_code = explicit_platform
+    if platform_code is None:
+        platform_code, _ = platform.detect_platform(root)
+    if platform_code is None:
+        return False
+
+    cfg = platform.get_platform(platform_code)
+    if not cfg:
+        return False
+
+    instruction_file = cfg.get("instruction_file")
+    if not instruction_file:
+        return False
+
+    target = _get_target_instruction_file(root, platform_code, instruction_file)
+    if not target:
+        return False
 
     sentinel_start = _SENTINEL_START.format(pack_name=pack_name)
     sentinel_end = _SENTINEL_END.format(pack_name=pack_name)

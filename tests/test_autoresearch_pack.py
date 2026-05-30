@@ -744,6 +744,162 @@ class TestPackContextInjection:
         assert content.count("<!-- pack:autoresearch context") == 1
 
 
+# ── 7b. Base context injection ────────────────────────────────────────────
+
+TEMPLATES_DIR = Path(__file__).parent.parent / "src" / "specflow" / "templates"
+
+
+class TestBaseContextInjection:
+
+    def test_creates_agents_md_on_fresh_repo(self, fresh_project: Path):
+        agents_md = fresh_project / "AGENTS.md"
+        assert not agents_md.exists()
+
+        modified = scaffold_lib.inject_base_context(
+            fresh_project, TEMPLATES_DIR, "claude-code"
+        )
+        assert modified
+
+        content = agents_md.read_text(encoding="utf-8")
+        assert "<!-- SpecFlow section (auto-generated, do not edit manually) -->" in content
+        assert "<!-- End SpecFlow section -->" in content
+        assert "## SpecFlow" in content
+        assert "specflow update" in content
+
+    def test_appends_to_existing_agents_md(self, fresh_project: Path):
+        agents_md = fresh_project / "AGENTS.md"
+        agents_md.write_text("# My Project\n\nExisting user content.\n", encoding="utf-8")
+
+        modified = scaffold_lib.inject_base_context(
+            fresh_project, TEMPLATES_DIR, "claude-code"
+        )
+        assert modified
+
+        content = agents_md.read_text(encoding="utf-8")
+        assert "# My Project" in content
+        assert "Existing user content." in content
+        assert "<!-- SpecFlow section (auto-generated, do not edit manually) -->" in content
+        lines_before = content.index("<!-- SpecFlow section") < content.index("Existing user content.")
+        assert lines_before is False
+
+    def test_idempotent_on_rerun(self, fresh_project: Path):
+        agents_md = fresh_project / "AGENTS.md"
+        agents_md.write_text("# Content\n", encoding="utf-8")
+
+        modified1 = scaffold_lib.inject_base_context(
+            fresh_project, TEMPLATES_DIR, "claude-code"
+        )
+        assert modified1
+
+        modified2 = scaffold_lib.inject_base_context(
+            fresh_project, TEMPLATES_DIR, "claude-code"
+        )
+        assert not modified2
+
+        content = agents_md.read_text(encoding="utf-8")
+        assert content.count("<!-- SpecFlow section (auto-generated, do not edit manually) -->") == 1
+
+    def test_updates_existing_block_on_template_change(self, fresh_project: Path):
+        agents_md = fresh_project / "AGENTS.md"
+        agents_md.write_text(
+            "# Content\n\n<!-- SpecFlow section (auto-generated, do not edit manually) -->\n## Old\n<!-- End SpecFlow section -->\n",
+            encoding="utf-8",
+        )
+
+        modified = scaffold_lib.inject_base_context(
+            fresh_project, TEMPLATES_DIR, "claude-code"
+        )
+        assert modified
+
+        content = agents_md.read_text(encoding="utf-8")
+        assert "## Old" not in content
+        assert "## SpecFlow" in content
+        assert "# Content" in content
+        assert content.count("<!-- SpecFlow section (auto-generated, do not edit manually) -->") == 1
+
+    def test_falls_back_to_claude_md(self, tmp_path: Path):
+        root = tmp_path / "project"
+        root.mkdir()
+        (root / ".claude").mkdir()
+        (root / ".specflow" / "schema").mkdir(parents=True)
+        (root / ".specflow" / "standards").mkdir(parents=True)
+        claude_md = root / "CLAUDE.md"
+        claude_md.write_text("# Existing CLAUDE.md\n", encoding="utf-8")
+
+        modified = scaffold_lib.inject_base_context(
+            root, TEMPLATES_DIR, "claude-code"
+        )
+        assert modified
+
+        assert not (root / "AGENTS.md").exists()
+        content = claude_md.read_text(encoding="utf-8")
+        assert "<!-- SpecFlow section (auto-generated, do not edit manually) -->" in content
+        assert "# Existing CLAUDE.md" in content
+
+    def test_base_before_packs_ordering(self, fresh_project: Path):
+        agents_md = fresh_project / "AGENTS.md"
+        agents_md.write_text("# Content\n", encoding="utf-8")
+
+        scaffold_lib.inject_base_context(fresh_project, TEMPLATES_DIR, "claude-code")
+
+        result = scaffold_lib.apply_pack(fresh_project, "autoresearch", PACKS_DIR)
+        snippet = result["context_snippet"]
+        scaffold_lib.inject_pack_context(fresh_project, "autoresearch", snippet, "claude-code")
+
+        content = agents_md.read_text(encoding="utf-8")
+        base_pos = content.index("<!-- SpecFlow section (auto-generated, do not edit manually) -->")
+        pack_pos = content.index("<!-- pack:autoresearch context")
+        assert base_pos < pack_pos
+
+
+# ── 7c. Multi-preset support ────────────────────────────────────────────
+
+class TestMultiPreset:
+
+    def test_two_packs_create_two_sentinel_blocks(self, fresh_project: Path):
+        agents_md = fresh_project / "AGENTS.md"
+        agents_md.write_text("# Content\n", encoding="utf-8")
+
+        for pack_name in ("autoresearch", "tldr-communication"):
+            result = scaffold_lib.apply_pack(fresh_project, pack_name, PACKS_DIR)
+            assert result["ok"]
+            snippet = result["context_snippet"]
+            if snippet:
+                scaffold_lib.inject_pack_context(
+                    fresh_project, pack_name, snippet, "claude-code"
+                )
+
+        content = agents_md.read_text(encoding="utf-8")
+        assert "<!-- pack:autoresearch context" in content
+        assert "<!-- pack:tldr-communication context" in content
+        assert "# Content" in content
+
+    def test_reinstall_preserves_both_packs(self, fresh_project: Path):
+        agents_md = fresh_project / "AGENTS.md"
+        agents_md.write_text("# Content\n", encoding="utf-8")
+
+        for pack_name in ("autoresearch", "tldr-communication"):
+            result = scaffold_lib.apply_pack(fresh_project, pack_name, PACKS_DIR)
+            snippet = result["context_snippet"]
+            if snippet:
+                scaffold_lib.inject_pack_context(
+                    fresh_project, pack_name, snippet, "claude-code"
+                )
+
+        content_before = agents_md.read_text(encoding="utf-8")
+
+        for pack_name in ("autoresearch", "tldr-communication"):
+            result = scaffold_lib.apply_pack(fresh_project, pack_name, PACKS_DIR)
+            snippet = result["context_snippet"]
+            if snippet:
+                scaffold_lib.inject_pack_context(
+                    fresh_project, pack_name, snippet, "claude-code"
+                )
+
+        content_after = agents_md.read_text(encoding="utf-8")
+        assert content_before == content_after
+
+
 # ── 8. New schema fields (v1.6.1) ───────────────────────────────────────────
 
 class TestNewSchemaFields:
