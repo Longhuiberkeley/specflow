@@ -4,6 +4,24 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.7.1] - 2026-05-31
+
+### Highlights
+
+- **Cross-platform skill export** — `specflow export --skills --format <fmt> --output <dir>` converts all 10 SpecFlow skills to platform-specific formats: `cursor-rules` (.mdc for Cursor), `gemini-toml` (TOML commands for Gemini CLI), `codex-agents` (TOML agents for Codex), `markdown` (plain rules for Windsurf, Cline, Roo, and others).
+- **Dogfooding** — DEC-052, DEC-053, DEC-054 created retroactively for v1.6.6, v1.6.7, and v1.7.0 changes. The SpecFlow framework now traces its own evolution.
+
+### Features
+
+- `src/specflow/lib/skill_export.py` — `export_skills()` supports 4 target formats with per-format converters
+- `specflow export --skills --format cursor-rules|gemini-toml|codex-agents|markdown` — CLI interface
+- `specflow export` now shows both artifact and skill export options in help
+
+### Changes
+
+- `export_cmd.py`: added skill export path alongside existing artifact export path
+- DEC artifacts: DEC-052 (v1.6.6 context/routing), DEC-053 (v1.6.7 protocol hardening), DEC-054 (v1.7.0 multi-agent/orphan detection) — all with review_status: reviewed, linked to parent AUD artifact
+
 ## [1.7.0] - 2026-05-31
 
 ### Highlights

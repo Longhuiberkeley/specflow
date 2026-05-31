@@ -386,11 +386,15 @@ def _add_import_parser(subparsers):
 
 
 def _add_export_parser(subparsers):
-    p = subparsers.add_parser("export", help="Export artifacts to an external format")
+    p = subparsers.add_parser("export", help="Export artifacts to an external format or skills to platform formats")
     sub = p.add_subparsers(dest="export_subcommand")
     # Primary: --adapter flag
     p.add_argument("--adapter", help="Adapter name (e.g. reqif)")
     p.add_argument("--output", help="Path to write the exported file")
+    # Skill export: --format flag
+    p.add_argument("--format", dest="export_format", choices=["cursor-rules", "gemini-toml", "codex-agents", "markdown"],
+                   help="Export SPECFLOW skills to a platform-specific format (use with --output to set target dir)")
+    p.add_argument("--skills", action="store_true", dest="export_skills", help="Export SpecFlow skills (use with --format)")
     # Legacy: reqif subcommand
     rp = sub.add_parser("reqif", help="Export requirements to ReqIF XML (deprecated, use --adapter reqif)")
     rp.add_argument("--output", required=True, help="Path to write the ReqIF XML file")

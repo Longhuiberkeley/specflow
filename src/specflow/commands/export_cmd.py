@@ -1,7 +1,10 @@
-"""specflow export — Export artifacts to external formats.
+"""specflow export — Export artifacts to external formats or skills to platform formats.
 
-Primary interface: specflow export --adapter <name> --output <file>
-Legacy alias:   specflow export <format> --output <file>  (deprecated)
+Primary interface:
+  specflow export --adapter <name> --output <file>     (artifact export)
+  specflow export --skills --format <fmt> --output <dir>  (skill export)
+Legacy alias:
+  specflow export <format> --output <file>             (deprecated)
 """
 
 from __future__ import annotations
@@ -14,6 +17,31 @@ from specflow.lib.display import RED, GREEN, NC
 
 def run(root: Path, args: dict) -> int:
     root = root.resolve()
+
+    # Skill export path
+    if args.get("export_skills"):
+        from specflow.lib.skill_export import export_skills, FORMAT_HANDLERS
+
+        fmt = args.get("export_format")
+        if not fmt:
+            print(f"{RED}✗ --format required with --skills. "
+                  f"Available: {', '.join(FORMAT_HANDLERS)}{NC}")
+            return 1
+
+        output = args.get("output")
+        if not output:
+            output = "."
+        out_dir = Path(output).expanduser().resolve()
+
+        result = export_skills(out_dir, fmt)
+        if not result.get("ok"):
+            print(f"{RED}✗ {result.get('error')}{NC}")
+            return 1
+
+        print(f"{GREEN}✓ Exported {result['count']} skill(s) in {fmt} format to {result['output_dir']}{NC}")
+        return 0
+
+    # Artifact export path (existing)
     adapter_name = args.get("adapter")
     output = args.get("output")
 
@@ -25,6 +53,7 @@ def run(root: Path, args: dict) -> int:
             output = args.get("output")
         if not adapter_name:
             print(f"{RED}✗ specflow export --adapter <name> --output <file> required{NC}")
+            print(f"   Or: specflow export --skills --format <fmt> --output <dir>{NC}")
             return 1
 
     if not output:

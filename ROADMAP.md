@@ -188,6 +188,14 @@ Focus: **experimental thinking lenses, concise context, atomic CLI sugar, and su
 - **ML tracker coexistence** — documented integration pattern with MLflow, Weights & Biases, Neptune, MLRun, etc. via "Coexisting with External ML Trackers" section in `competition-setup-protocol.md`
 - **Passive-CLI banner** — `autoresearch run` prints a reminder that the AI agent drives the loop, not the CLI
 
+## v1.7.1
+
+Focus: **cross-platform skill export and dogfooding.**
+
+- **Cross-platform skill export** — `specflow export --skills --format cursor-rules|gemini-toml|codex-agents|markdown` converts 10 SpecFlow skills to platform-specific formats
+- **Dogfooding** — DEC-052..054 created retroactively for v1.6.6-v1.7.0 changes, linked to AUD-038
+- **Deferred**: skill chaining, protocol compliance checks, wave parallelism → future releases
+
 ## v1.7.0
 
 Focus: **multi-agent integration, orphan detection, and hook hardening.**

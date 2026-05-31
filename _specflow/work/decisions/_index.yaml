@@ -498,4 +498,26 @@ artifacts:
     - auto-generated
     fingerprint: sha256:b2c29da4a28c
     children: []
-next_id: 52
+  DEC-052:
+    id: DEC-052
+    title: 'v1.6.6: Context rebalancing, routing clarity, and drift prevention'
+    status: approved
+    tags: []
+    fingerprint: sha256:27f997cccbc0
+    children: []
+  DEC-053:
+    id: DEC-053
+    title: "v1.6.7: Autoresearch protocol hardening \u2014 EDA, cross-LOOP learning,\
+      \ EXPT quality"
+    status: approved
+    tags: []
+    fingerprint: sha256:19b82c6e8539
+    children: []
+  DEC-054:
+    id: DEC-054
+    title: 'v1.7.0: Multi-agent integration, orphan detection, and hook hardening'
+    status: approved
+    tags: []
+    fingerprint: sha256:b0fe64d28449
+    children: []
+next_id: 55
