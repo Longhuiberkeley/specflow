@@ -4,6 +4,39 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.7.0] - 2026-05-31
+
+### Highlights
+
+- **Multi-agent patterns in core skills** — artifact-review gets parallel adversarial lens fan-out for deep reviews; plan gets parallel ARCH candidate generation (3 decomposition seeds); audit lens fan-out now scales with error count (2-5 subagents); change-impact-review fans out per artifact type group for large impact cones (6+ artifacts). All patterns have conditional guards and sequential fallbacks.
+- **Orphan code detection** — `specflow detect orphan-code` scans all source files and reports which are not referenced by any STORY/REQ's `output_files`. `--retro-link STORY-NNN` retroactively links all orphan files to an existing story.
+- **Pre-commit hook hardened** — now blocks on link integrity failures and schema validation errors (in addition to existing RBAC checks). Suspect flag warnings on commit.
+- **RBAC pre-check in execute gate** — execute Step 1 now checks team authorization before implementation, surfacing RBAC failures as warnings.
+- **Protocol integrations reference** — new `protocol-integrations.md` maps all producer-consumer relationships: COMP→LOOP, LOOP→EXPT, EXPT→FIND, cross-loop feedback, skill-to-protocol mapping, and cross-cutting concerns.
+
+### Features
+
+- `specflow-artifact-review`: Step 5b — Deep Review with Parallel Lenses (triggered by safety/security/compliance tags, high-priority REQs, or user request)
+- `specflow-plan`: Step 2.5 — Parallel Architecture Candidate Generation (domain-driven, technical-layers, risk-first decomposition seeds)
+- `specflow-audit`: Step 2 — error-driven lens fan-out (standard 2 agents, elevated 3-4, critical 4-5 + synthesis agent)
+- `specflow-change-impact-review`: Step 3 — blast-radius fan-out (standard sequential, elevated per-type groups, critical per-artifact + synthesis)
+- `specflow detect orphan-code` — scans source files for SpecFlow traceability. `--retro-link` flag for batch retroactive linking.
+- `src/specflow/lib/orphans.py` — `find_orphan_code()` and `retro_link()` functions
+- `references/protocol-integrations.md` — comprehensive producer-consumer map across all autoresearch protocols and core skills
+
+### Changes
+
+- Pre-commit hook (`hook.py`): added link integrity check (blocking), schema validation (blocking), suspect flag warnings
+- Execute gate: added RBAC pre-check (Step 1 item 6)
+- Autoresearch SKILL.md: added protocol-integrations.md to references
+
+### Deferred to v1.7.1
+
+- Skill chaining via artifact state machine
+- Protocol compliance checks in audit
+- Cross-platform skill export (`specflow export --format`)
+- Execute wave parallelism (requires file-level dependency analysis)
+
 ## [1.6.7] - 2026-05-31
 
 ### Highlights

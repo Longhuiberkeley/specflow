@@ -188,6 +188,17 @@ Focus: **experimental thinking lenses, concise context, atomic CLI sugar, and su
 - **ML tracker coexistence** — documented integration pattern with MLflow, Weights & Biases, Neptune, MLRun, etc. via "Coexisting with External ML Trackers" section in `competition-setup-protocol.md`
 - **Passive-CLI banner** — `autoresearch run` prints a reminder that the AI agent drives the loop, not the CLI
 
+## v1.7.0
+
+Focus: **multi-agent integration, orphan detection, and hook hardening.**
+
+- **Multi-agent in core skills** — artifact-review: parallel adversarial lenses for deep review. Plan: parallel ARCH candidates (3 decomposition seeds). Audit: error-driven lens fan-out (2-5 agents). Change-impact: blast-radius fan-out (per-type or per-artifact)
+- **Orphan code detection** — `specflow detect orphan-code` + `--retro-link` for batch retroactive traceability
+- **Pre-commit hook hardened** — link integrity (blocking), schema validation (blocking), suspect flag warnings
+- **RBAC pre-check in execute** — gate checks team authorization before implementation
+- **Protocol integrations reference** — comprehensive producer-consumer map across all protocols
+- **Deferred**: skill chaining, protocol compliance checks, cross-platform export, wave parallelism → v1.7.1
+
 ## v1.6.7
 
 Focus: **autoresearch protocol hardening — EDA enforcement, cross-loop learning, and EXPT quality.**

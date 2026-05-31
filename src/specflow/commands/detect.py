@@ -1,10 +1,12 @@
 """CLI handler for 'specflow detect' — project hygiene scans.
 
-Two informational subcommands that never block:
+Three informational subcommands that never block:
 - `specflow detect dead-code` — declared-but-unreferenced top-level symbols.
 - `specflow detect similarity` — near-duplicate function bodies.
+- `specflow detect orphan-code` — source files not referenced by any STORY/REQ.
+  Use `--retro-link STORY-NNN` to retroactively link all orphan files.
 
-Both always return exit code 0 regardless of findings.
+All return exit code 0 regardless of findings (informational only).
 """
 
 from __future__ import annotations
@@ -18,8 +20,9 @@ from specflow.lib.analysis import (
     find_dead_code,
     find_similar_functions,
 )
+from specflow.lib.orphans import find_orphan_code, retro_link
 
-from specflow.lib.display import YELLOW_DIM, GREEN, CYAN, NC
+from specflow.lib.display import YELLOW_DIM, GREEN, CYAN, NC, RED
 
 BOLD = "\033[1m"
 
@@ -78,12 +81,50 @@ def _run_similarity(root: Path, args: dict[str, Any]) -> int:
     return 0
 
 
+def _run_orphan_code(root: Path, args: dict[str, Any]) -> int:
+    result = find_orphan_code(root)
+    orphans = result["orphan_files"]
+    total = result["total_count"]
+    ref_count = result["referenced_count"]
+
+    print(f"{BOLD}SpecFlow Detect — Orphan Code{NC}")
+    print(f"  Source files scanned: {total}")
+    print(f"  Referenced by STORY/REQ: {ref_count}")
+    print(f"  Orphan files: {len(orphans)}")
+
+    if not orphans:
+        print(f"  {GREEN}✓{NC} All source files trace to a STORY or REQ")
+        return 0
+
+    print(f"  {YELLOW_DIM}Unreferenced source files:{NC}")
+    for f in sorted(orphans):
+        print(f"    {_rel(root, f)}")
+
+    retro_story = args.get("retro_link_story")
+    if retro_story:
+        print(f"\n  {CYAN}Retro-linking all orphan files to {retro_story}...{NC}")
+        linked = 0
+        for f in orphans:
+            if retro_link(root, str(_rel(root, f)), retro_story):
+                linked += 1
+        print(f"  {GREEN}✓{NC} Linked {linked}/{len(orphans)} orphan files to {retro_story}")
+        if linked < len(orphans):
+            print(f"  {YELLOW_DIM}{len(orphans) - linked} files could not be linked (STORY not found or file error){NC}")
+    else:
+        print(f"\n  {CYAN}Tip:{NC} Use --retro-link STORY-NNN to retroactively link all orphan files to an existing story.")
+
+    print(f"  {CYAN}Informational only — review before taking action.{NC}")
+    return 0
+
+
 def run(root: Path, args: dict[str, Any]) -> int:
     subcommand = args.get("detect_subcommand")
     if subcommand == "dead-code":
         return _run_dead_code(root, args)
     if subcommand == "similarity":
         return _run_similarity(root, args)
+    if subcommand == "orphan-code":
+        return _run_orphan_code(root, args)
 
-    print("Usage: specflow detect {dead-code|similarity}")
+    print("Usage: specflow detect {dead-code|similarity|orphan-code}")
     return 1

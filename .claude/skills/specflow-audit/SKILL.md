@@ -53,7 +53,12 @@ After the core audit completes, offer to run deeper, AI-driven adversarial revie
 If accepted:
 1. Read `../specflow-references/references/adversarial-lenses.md` for the full 16-lens catalog. Select lenses relevant to the findings from Step 1 (e.g., if coverage gaps found → use `audit-vertical`; if dependency issues → use `dependency_shock`).
 2. For any artifact flagged during Step 1, run `uv run specflow trace <ARTIFACT_ID>` to understand its full upstream/downstream dependency context before evaluating lenses.
-3. Create 2 parallel subagents (if your environment supports it) to evaluate these lenses against the V-model specifications.
+
+3. **Parallel lens fan-out (error-driven scaling):**
+   - **Standard (0-2 errors in Step 1):** Create 2 parallel subagents (if your environment supports it) each covering a subset of the selected lenses. Sequential fallback: run lens groups sequentially.
+   - **Elevated (3-7 errors in Step 1):** Create 3-4 parallel subagents (if supported), one lens per subagent. This gives each lens its own context window for deeper analysis. Sequential fallback: run lenses one at a time.
+   - **Critical (8+ errors in Step 1):** Create 4-5 parallel subagents, plus a dedicated cross-cutting subagent that reads ALL lens outputs and synthesizes systemic patterns (e.g., "4 of 5 lenses flagged the same coupling issue — this is architectural, not local"). Sequential fallback: run all lenses sequentially, then a dedicated synthesis pass.
+
 4. Consolidate the findings from the adversarial wings.
 5. When creating CHL artifacts, use specific technique names (e.g., `premortem`, `stress_scale`, `dependency_shock`) rather than the generic `project-audit` label. The deterministic core findings use `audit-horizontal`, `audit-vertical`, and `audit-cross-cutting`.
 6. After running lenses on sampled artifacts, record which techniques were applied:

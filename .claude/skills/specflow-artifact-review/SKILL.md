@@ -113,6 +113,26 @@ For the full 16-lens catalog (stress-scale, dependency shock, reversal, five-why
 
 **Rule:** never propose a lens whose finding would be a direct duplicate of a checklist item already run in Step 3. If a lens would only repeat the checklist, skip it.
 
+### Step 5b: Deep Review with Parallel Lenses (Optional, for high-stakes artifacts)
+
+For artifacts where quality is critical (safety, security, compliance, or user-facing contracts), fan out adversarial lenses as parallel subagents. Each lens gets its own context window, producing deeper analysis than sequential single-agent review.
+
+**Trigger conditions** (any one of):
+- Artifact has tags: `safety`, `security`, `compliance`, `api`, `contract`
+- Artifact is a REQ with `priority: high` or `critical`
+- User explicitly requests "deep review," "thorough review," or "adversarial review"
+- The artifact is part of a release baseline
+
+**Pattern** (if your platform supports spawning subagents):
+1. Select 3-5 lenses from the 16-lens catalog relevant to the artifact's domain and tags.
+2. Spawn one subagent per lens. Each subagent receives: the artifact content, the checklist results from Steps 3-4, and its assigned lens. Each returns findings at `blocking`/`warning`/`info` severity.
+3. The parent agent deduplicates across lens outputs (same finding from multiple lenses = stronger signal) and merges into the final report.
+
+**Fallback (no subagent support):** Apply lenses sequentially — 3-5 passes through the artifact, one lens per pass. Same result, higher context load.
+
+**Subagent prompt template:**
+> "You are an adversarial reviewer using the [LENS NAME] lens. Review artifact [ID]. Context: [checklist findings so far]. Question: [lens-specific question]. Return findings as: severity | finding | evidence from artifact. Be specific — cite line numbers or sections."
+
 ### Step 6: Report Findings
 
 Present results organized by severity:

@@ -64,6 +64,30 @@ Read the generated BPs with `uv run specflow handbook show plan-arc`.
 
 If no API key is configured, this step is skipped gracefully.
 
+### Step 2.5: Parallel Architecture Candidate Generation (Optional, for complex systems)
+
+For systems with 3+ REQs, multiple external integrations, or cross-cutting concerns spanning security/performance/compliance, generate 2-3 alternative architecture decompositions before committing to one. This prevents single-approach myopia.
+
+**Trigger conditions** (any one of):
+- 5+ approved REQs in scope
+- REQs span 2+ domains (e.g., web + data pipeline + auth)
+- Architecture will have 4+ components
+- User explicitly asks for alternatives or says "what are my options?"
+
+**Pattern** (if your platform supports spawning subagents):
+1. Prepare a brief with: all approved REQ summaries, domain context, external system constraints, and NFRs.
+2. Spawn 2-3 subagents with different decomposition seeds:
+   - **Seed A (domain-driven):** Decompose by business domain / bounded context
+   - **Seed B (technical-layers):** Decompose by technical layer (API → Service → Data)
+   - **Seed C (risk-first):** Decompose by what's most likely to fail — isolate risky components
+3. Each subagent returns: component list with responsibilities, interfaces between components, rationale for the decomposition.
+4. The parent agent presents the 2-3 alternatives to the user as a comparison, highlighting trade-offs (coupling, deployability, team fit). The user picks one; the parent proceeds with detailed ARCH creation.
+
+**Fallback (no subagent support):** Generate alternatives sequentially — draft Seed A, then deliberately re-think from Seed B's perspective, then Seed C. Present the same comparison.
+
+**Subagent prompt template:**
+> "You are a software architect using a [SEED] decomposition strategy. Design an architecture for [system summary]. Approved REQs: [summaries]. Constraints: [NFRs, external systems, domain]. Return: component list with responsibilities, interface map, rationale for this decomposition vs alternatives."
+
 ### Step 3: Architecture Proposal
 
 Discuss component structure with the user. For each component:

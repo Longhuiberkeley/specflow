@@ -93,6 +93,39 @@ def _pre_commit(root: Path) -> int:
         )
         return 1
 
+    # Link integrity check (blocking — broken links are corrupted accounting)
+    link_result = subprocess.run(
+        ["uv", "run", "specflow", "artifact-lint", "--type", "links"],
+        capture_output=True, text=True, cwd=str(root), check=False,
+    )
+    if link_result.returncode != 0:
+        print(f"{RED}✗ specflow pre-commit: link integrity check failed{NC}")
+        print(link_result.stdout[-2000:] if len(link_result.stdout) > 2000 else link_result.stdout)
+        print(f"\n{YELLOW}Fix broken links before committing, or use --no-verify to bypass.{NC}")
+        return 1
+
+    # Schema validation (blocking — schema violations produce invalid artifacts)
+    schema_result = subprocess.run(
+        ["uv", "run", "specflow", "artifact-lint", "--type", "schema"],
+        capture_output=True, text=True, cwd=str(root), check=False,
+    )
+    if schema_result.returncode != 0:
+        print(f"{RED}✗ specflow pre-commit: schema validation failed{NC}")
+        print(schema_result.stdout[-2000:] if len(schema_result.stdout) > 2000 else schema_result.stdout)
+        print(f"\n{YELLOW}Fix schema violations before committing, or use --no-verify to bypass.{NC}")
+        return 1
+
+    # Suspect flag check (warning — committing against suspect specs risks rework)
+    for change in changes:
+        artifact_id = Path(change["path"]).stem
+        suspect_result = subprocess.run(
+            ["uv", "run", "specflow", "status", "--artifact", artifact_id],
+            capture_output=True, text=True, cwd=str(root), check=False,
+        )
+        if "suspect" in suspect_result.stdout.lower():
+            print(f"{YELLOW}⚠ specflow pre-commit: {artifact_id} is flagged suspect.{NC}")
+            print(f"  {YELLOW}Proceeding may waste effort if upstream specs are stale.{NC}")
+
     return 0
 
 

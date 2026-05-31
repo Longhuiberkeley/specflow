@@ -61,6 +61,15 @@ For each DEC and its impact cone:
 
    Apply the selected lenses to the cone artifacts only — never the full project. Each lens is one focused question; spend a few sentences per lens, not a deep audit. The output is one or more findings per lens, which feed Step 4.
 
+6. **Parallel fan-out for large impact cones (if your platform supports spawning subagents):**
+   - **Standard (1-5 impacted artifacts):** Review sequentially — context load is manageable.
+   - **Elevated (6-15 impacted artifacts):** Spawn one subagent per artifact type group (e.g., REQs together, ARCHs together). Each subagent applies the selected lenses to its group and returns findings.
+   - **Critical (16+ impacted artifacts):** Spawn one subagent per artifact + one synthesis subagent that reads all outputs and identifies cross-artifact patterns. This prevents missing systemic issues that only emerge when you see the whole cone.
+   - **Fallback (no subagent support):** Review in artifact-type groups sequentially. For critical cones, do a two-pass review: first pass per-artifact, second pass cross-artifact synthesis.
+
+   **Subagent prompt template (per-artifact-group):**
+   > "You are reviewing the impact of change [DEC-ID]: [summary]. Review artifact group [types] within the blast radius. Apply lenses: [lens list]. For each artifact: does the change introduce contradictions, unhandled edge cases, or missing updates? Return findings at blocking/warning/info severity with artifact references."
+
 ### Step 4: Filing Findings
 
 If issues are discovered during the review of a DEC's impact cone:

@@ -397,7 +397,7 @@ def _add_export_parser(subparsers):
 
 
 def _add_detect_parser(subparsers):
-    p = subparsers.add_parser("detect", help="Project-hygiene scans (dead code, similarity)")
+    p = subparsers.add_parser("detect", help="Project-hygiene scans (dead code, similarity, orphans)")
     sub = p.add_subparsers(dest="detect_subcommand")
     dp = sub.add_parser("dead-code", help="Report unreferenced functions/classes")
     dp.add_argument("--src-dir", dest="src_dir", default="src", help="Source root (default: src)")
@@ -405,6 +405,8 @@ def _add_detect_parser(subparsers):
     sp.add_argument("--src-dir", dest="src_dir", default="src", help="Source root (default: src)")
     sp.add_argument("--min-statements", dest="min_statements", type=int, default=10, help="Min function length")
     sp.add_argument("--threshold", type=float, default=0.9, help="Jaccard similarity threshold")
+    op = sub.add_parser("orphan-code", help="Report source files not referenced by any STORY or REQ")
+    op.add_argument("--retro-link", dest="retro_link_story", help="STORY ID to retroactively link all orphan files to")
 
 
 def _add_change_impact_parser(subparsers):
