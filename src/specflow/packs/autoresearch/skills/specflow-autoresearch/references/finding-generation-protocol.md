@@ -134,6 +134,42 @@ For `safety_critical` domains (medical, automotive, aerospace). A finding is not
 | **fail** | Safety regression detected; do not deploy |
 | **not_applicable** | Domain is not safety-critical; field can be omitted |
 
+## Auxiliary Metric Synthesis
+
+Auxiliary metrics are logged on every EXPT but are rarely analyzed systematically. This section ensures they don't get buried.
+
+### When to Synthesize Auxiliary Metrics
+
+Auxiliary metrics matter when:
+
+1. **Primary is flat but auxiliary moves.** This is the canonical buried signal. A LOOP could produce 50 EXPTs where Sharpe (primary) is flat but max drawdown steadily decreases. The primary-only view says "no progress"; the auxiliary view says "the strategy is getting safer."
+
+2. **Auxiliary trend contradicts primary.** If the primary metric improves but an auxiliary metric degrades (e.g., accuracy up but calibration down), the improvement may be gaming the metric. Flag this in `what_failed` as a `conditional` finding.
+
+3. **Auxiliary metrics converge to a stable regime.** Even without primary improvement, convergence (e.g., trade count stabilizing, runtime decreasing, memory usage plateauing) indicates the system is finding a stable operating point — useful for production readiness.
+
+### Analysis Method
+
+For each auxiliary metric tracked across >=5 EXPTs:
+
+1. **Correlation with primary:** Spearman rank correlation. Co-moving metrics are redundant (consider dropping). Orthogonal metrics provide independent signal.
+2. **Trend detection:** Simple linear regression on the auxiliary metric vs iteration number. Significant slope (p<0.05) → trend worth surfacing.
+3. **Breakpoint detection:** Did the auxiliary metric shift at a specific EXPT? That EXPT may have had side effects invisible to the primary metric.
+
+**Tag findings from auxiliary metrics with source: `auxiliary_metric`** so the next LOOP knows this insight came from secondary analysis, not primary verification.
+
+### Mandatory Cross-Loop Synthesis Triggers
+
+Certain conditions REQUIRE a cross-loop synthesis FIND regardless of whether the agent thinks one is needed:
+
+| Trigger | Action |
+|---------|--------|
+| 2+ completed LOOPs on the same COMP | Create at least one synthesis FIND comparing the two LOOPs (what changed, what stayed the same) |
+| 3+ completed LOOPs on the same COMP | Create a "state of the COMP" FIND summarizing cumulative knowledge, remaining unknowns, and recommended next direction |
+| A FIND with `confidence: low` is now 2+ LOOPs old | Re-evaluate: has new evidence raised or lowered confidence? Update the FIND or supersede it. Low-confidence findings that are old are stale — they represent uncertainty that may have been resolved without being captured. |
+| A `what_worked` finding from >3 LOOPs ago has never been reproduced | Flag as `confidence: low` with note: "Not reproduced since LOOP-NNN." The finding may be specific to a stale code snapshot. |
+| Cumulative EXPT count across all LOOPs exceeds 100 | Create a meta-analysis FIND: which change_categories delivered ROI, which are saturated, what's the overall trajectory |
+
 ## Supersession Pattern
 
 When new evidence contradicts or refines an existing FIND:
@@ -151,6 +187,50 @@ specflow create --type finding \
   --set confidence=medium \
   --set summary="LOOP-001 found threshold=0.03 optimal, but LOOP-003 shows ±0.005 variation degrades performance by 40%. The optimum is real but fragile."
 ```
+
+## Cross-EXPT Pattern Detection
+
+Before authoring FINDs for this LOOP, scan for patterns that single-axis (per-category) grouping misses. These are meta-signals worth surfacing as separate FINDs or enriching existing ones.
+
+### 1. Cross-Category Interaction Detection
+
+Some categories amplify or cancel each other. Check:
+
+- **Synergistic pairs:** Did EXPTs in category A perform better when preceded by a kept EXPT in category B? (e.g., model architecture changes only helped AFTER feature engineering was done)
+- **Antagonistic pairs:** Did one category's success undo another's? (e.g., regularization improvements erased gains from a previous feature engineering EXPT)
+- **Sequencing effects:** Did the ORDER of changes matter? (e.g., "normalization first, then architecture" worked but "architecture first" didn't)
+- **Cross-category patterns:**
+  - File-level: Which files appeared in kept EXPTs across multiple categories? (likely core leverage points)
+  - Complexity: Did complexity increase with improvement, or did simpler changes win?
+  - Temporal: Did improvement cluster in early iterations (low-hanging fruit) or was it steady?
+  - Budget-efficiency: Which categories delivered the most improvement per iteration?
+
+### 2. Progression Shape Analysis
+
+Look at the metric trajectory across iterations within this LOOP:
+
+- **Step-function:** Metric jumped and stayed flat → a single high-leverage change was found early
+- **Gradual improvement:** Metric trended up steadily → cumulative small wins
+- **Oscillation:** Metric went up and down → high noise floor, or competing changes undoing each other
+- **Saturation:** Metric improved then plateaued → diminishing returns on the current approach
+
+The progression shape informs `next_steps`: step-function → search for the next lever. Gradual → keep going in same direction. Oscillation → increase noise handling. Saturation → switch approach or mode.
+
+### 3. Negative-Space Analysis
+
+What was NEVER tried? This is as important as what worked:
+
+- **Untried theses:** Which `COMP.theses` entries were never tested this LOOP? Why?
+- **Untried category pairs:** Are there combinations of `change_category` values that were never co-tested?
+- **Unexplored parameter regions:** Did all parameter sweeps stay in the same region? Is there a completely different part of the parameter space worth probing?
+- **Budget allocation vs return:** Did the LOOP spend 80% of iterations on a category that produced 10% of improvement?
+
+### 4. Design Quality Trends
+
+Aggregate `design_quality` scores (from Phase 6.6) across the LOOP:
+- If most EXPTs score 1-2 (Flawed/Invalid), the LOOP's knowledge is unreliable — lower confidence on all FINDs
+- If high-quality EXPTs (3-4) consistently point one way, increase confidence
+- If high-quality EXPTs disagree, that's a GENUINE uncertainty — document it, don't force consensus
 
 ## Cross-Loop Synthesis
 

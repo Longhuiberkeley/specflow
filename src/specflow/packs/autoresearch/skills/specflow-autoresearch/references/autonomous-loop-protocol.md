@@ -48,6 +48,27 @@ specflow trace COMP-NNN
 **If any FAIL:** Stop and inform user. Do not enter the loop with broken preconditions.
 **If any WARN:** Log the warning, proceed with caution, inform user.
 
+## Step 0b: Prior-LOOP Review (before first iteration)
+
+If this is not the first LOOP on this COMP, build context from ALL prior LOOPs before formulating the first iteration. FINDs are lossy compression — they preserve conclusions but discard search-space information. This step recovers that signal.
+
+**You MUST complete ALL steps before entering the iteration loop.**
+
+1. **Read the last completed LOOP's full state.** Use `specflow trace LOOP-NNN` on the most recently completed LOOP. Read its `iteration_count`, `kept_count`, `discarded_count`, `best_metric`, `best_experiment`, and `termination_suggestions`. Understand the trajectory: where did the prior LOOP start vs. end?
+
+2. **Read prior LOOP's condensation briefs.** If the prior LOOP persisted its 10-iteration condensation briefs on the LOOP artifact (see Phase 8), read them. They capture mid-loop trajectory, dead ends that didn't make it into FINDs, and abandoned directions.
+
+3. **Group discarded EXPT failure analyses by root cause.** Read `failure_analysis` fields from discarded EXPTs in the prior LOOP. Cluster them: parameter sensitivity, data quality, premise violation, metric gaming, noise floor. This tells you what kinds of experiments failed and WHY — not just that they failed.
+
+4. **Cross-reference prior FINDs against the LOOP evidence.** Read all confirmed FINDs for this COMP. For each FIND, ask: does the prior LOOP's raw evidence (EXPT distribution, failure clusters, git history) support or challenge the FIND's conclusions? FINDs may claim "feature engineering outperforms model tuning" but the raw EXPTs might show model tuning was never adequately tested.
+
+5. **Compare trajectories across LOOPs.** If there are 2+ prior LOOPs, identify arcs: is the same dead end hit every time? Has a `what_worked` finding been relied on but never reproduced in a different LOOP? Are confidence levels on old FINDs justified by cumulative evidence or just recency bias?
+
+6. **Read prior FINDs' `next_steps` and `termination_suggestions`.** These are the last LOOP's explicit guidance for THIS LOOP. Compare against what actually happened in the prior LOOP — were the suggestions followed? If not, why?
+
+**Record findings in working context.** This context informs Phase 2 ideation for the ENTIRE loop. If this is the first LOOP on this COMP, skip this step — there is no prior loop to learn from.
+
+
 ## Phase 0.5: Pre-Check (Optional, Per COMP)
 
 If the COMP artifact defines a `pre_check_command`, run it **before** entering the main iteration loop and also before each individual iteration's verify phase. This is the agent's opportunity to perform EDA, data quality checks, or structural validation.
@@ -65,9 +86,52 @@ If the COMP artifact defines a `pre_check_command`, run it **before** entering t
 - Pre-check runs **after** Phase 3 (Modify) and **before** Phase 5 (Verify), on every iteration
 - If pre-check fails, do NOT run verify — log as `status: pre_check_failed` and proceed to next iteration
 - Pre-check failures are themselves learning signals — populate `failure_analysis` with the root cause
-- If no `pre_check_command` is defined on the COMP, skip this phase entirely
+- If no `pre_check_command` is defined on the COMP, skip this static phase entirely — but Phase 0.6 (mandatory EDA) still applies.
 
-**Logging pre-check results:**
+## Phase 0.6: Mandatory Initial EDA (before first iteration)
+
+**This phase runs ONCE at loop start.** It provides a data-quality foundation for ALL subsequent iterations. Unlike Phase 0.5 (which is per-iteration and COMP-specific), this is a universal baseline that every domain needs.
+
+**You MUST complete ALL checks.** Fatal problems cause an immediate hard stop — do not enter the iteration loop. Non-fatal findings are recorded on the LOOP for reference.
+
+### Universal Checks (all domains)
+
+| # | Check | What to look for | Fatal if |
+|---|-------|-----------------|----------|
+| 1 | **Target/outcome distribution** | Class balance, skew, outliers, range | Target has >95% single class; metric range is zero |
+| 2 | **Missingness pattern** | % missing per feature, MNAR vs MCAR | >50% of features have >30% missing |
+| 3 | **Cardinality** | Unique values per categorical, constant columns | All features are constant (no signal) |
+| 4 | **Scale and range** | Min/max/mean/std per numeric feature | Features differ by >1e6 in scale without normalization path |
+
+### Domain-Specific Checks
+
+| Domain | Additional checks |
+|--------|------------------|
+| **quant** | Stationarity (ADF on price series), autocorrelation structure, temporal ordering integrity, survivorship bias check |
+| **tabular_ml** | Train/test overlap (hash-based), target leakage detection (high-correlation predictors), temporal split integrity |
+| **vision** | Image dimension consistency, corrupt file detection, label quality (random sample manual check) |
+| **nlp** | Text length distribution, language detection, encoding consistency, token count outliers |
+
+### EDA Workflow
+
+1. **Run the checks.** Use quick scripts — the goal is detection, not a polished report. For tabular data, a `pandas-profiling` or `ydata-profiling` report is acceptable. For quant, a 20-line Python script with statsmodels is sufficient.
+
+2. **Record findings on the LOOP artifact:**
+   ```bash
+   specflow update LOOP-NNN \
+     --set eda_completed=true \
+     --set eda_summary="Target: 35% class-1 (reasonable). Missingness: <2% all features. Cardinality: 3 constant columns removed. Scale: normalized."
+   ```
+
+3. **Fatal problems → hard stop.** If any fatal condition above is met, do NOT enter the iteration loop. Create a FIND documenting the data quality issue and ask the user to fix the data before re-running.
+
+4. **Non-fatal findings → log and proceed.** Warnings (e.g., moderate skew, one feature with high cardinality) go in `eda_summary`. They inform ideation but don't block the loop.
+
+### Skip Rule
+
+If a prior LOOP on the same COMP has `eda_completed: true` AND the data has not changed (same COMP `data_source`, same git hash of data files), skip this phase. The prior LOOP's `eda_summary` is valid. If data has changed, re-run EDA — stale data quality assumptions are dangerous.
+
+**Logging pre-check results (Phase 0.5):**
 
 ```bash
 specflow create --type experiment \
@@ -179,16 +243,36 @@ Every ~10 iterations (and at each condense point), pause and ask: **does the pri
 - Don't chase marginal gains with ugly complexity
 - Don't ignore git history — it's the primary learning mechanism between iterations
 
-### 2d. Pre-EXPT premise check
+### 2d. Pre-EXPT premise check (mandatory gate)
 
-Before writing the EXPT code, ask: **"Does the core premise of this hypothesis depend on a data or statistical property I haven't verified?"** If yes, validate it with a quick script *before* running the full pipeline — it's much cheaper than a failed EXPT.
+**This is a blocking gate. Do not skip it. Every EXPT must pass this check before entering Phase 3.**
 
-Examples:
-- Before testing mean-reversion strategies → check the series is actually stationary/cointegrated
-- Before training models to fix class imbalance → check the actual class distribution
-- Before adding regime-detection features → check regimes are detectable on this asset
+The premise check prevents running experiments whose core assumptions are untested — a single premise violation can waste a full iteration (or many, if the violation is systematic).
 
-If the premise is false, discard the hypothesis here (don't run it through Phase 3+) and return to 2a with a new one. If the premise checks out, proceed.
+**Checklist (answer ALL three before proceeding):**
+
+1. **Data property check:** Does the core premise of this hypothesis depend on a data or statistical property I haven't verified?
+   - *Before testing mean-reversion strategies → verify stationarity/cointegration*
+   - *Before training models to fix class imbalance → verify the actual class distribution*
+   - *Before adding regime-detection features → verify regimes are detectable on this asset*
+   - *Before testing a new loss function → verify the current loss isn't already optimal given noise*
+
+2. **Prior art check:** Has this EXACT change (same file, same direction, same magnitude) been attempted in a prior LOOP?
+   - Read prior LOOP's discarded EXPTs — not just this LOOP's. Cross-LOOP repetition is the most wasteful failure mode.
+   - If yes: what is DIFFERENT this time? If nothing, discard the hypothesis NOW.
+
+3. **Metric-gaming check:** Could this change improve the primary metric WITHOUT improving the actual goal?
+   - *Adding more trades to a Sharpe ratio → inflates numerator without real alpha*
+   - *Reducing test set size → lower variance, higher reported accuracy*
+   - *Switching to a model with more parameters → better fit, same generalization*
+   - If yes: add an auxiliary metric that would catch the gaming, or tighten the guard condition.
+
+**Outcome:**
+- **All three pass** → proceed to Phase 3 (Modify).
+- **Any check fails with a fixable issue** → address the issue (e.g., run the missing check, add the auxiliary metric), then proceed.
+- **Any check fails with an unfixable issue** → discard the hypothesis here. Do NOT burn an iteration on it. Return to 2a with a note about WHY it was discarded. This is valuable — it narrows the search space without wasting budget.
+
+**Record the premise check outcome in working context.** If the hypothesis is discarded at this gate, the Phase 7 log should note it as `no_op` (not `discarded` — it was never attempted).
 
 ### 2e. No blind parameter sweeps
 
@@ -412,8 +496,14 @@ If the COMP artifact defines a `post_check_command`, run it **after** verify and
 **Rules:**
 
 - Post-check runs **after** Phase 6 (Decide), regardless of keep/discard status
-- Post-check failures on a `kept` EXPT are warnings, not rollbacks — the primary metric drove the decision
-- However, if the post-check reveals severe issues (e.g., OOS Sharpe collapsed from 2.0 to 0.1), log a strong `failure_analysis` and consider setting `deployability: not_deployable` on the eventual FIND
+- Post-check failures are graded by severity:
+
+| Severity | Condition | Consequence |
+|----------|-----------|-------------|
+| **minor** | Metric within 90% of threshold; fixable with small adjustment | Log warning. Proceed. Note in FIND as `conditional` deployability. |
+| **moderate** | Metric 50-90% of threshold; structural issue but not fatal | Log strong `failure_analysis`. Do NOT revert the keep — but defer deployability decision to FIND authoring. Flag as `needs_post_check_review` on the EXPT. |
+| **severe** | Metric below 50% of threshold; OOS collapse, safety violation, or gamed metric | The "kept" status is suspect. Log `failure_analysis` with severity marker. Set `deployability: not_deployable` on the EXPT. Flag for mandatory FIND discussion — the improvement may not be real. |
+
 - Populate the EXPT's `checks` array with all three stages:
 
 ```yaml
@@ -439,6 +529,54 @@ checks:
 Even without a static `post_check_command`, the agent should dynamically determine if further validation is needed based on the `hypothesis`:
 *   **Highly successful EXPT:** Are there any secondary assumptions or calibration checks we should run to verify the success is real and not an artifact of gaming the metric?
 *   **Highly expected to succeed, but failed miserably:** If an EXPT performed very badly, we typically skip post-checks. BUT if the hypothesis was strongly reasoned and the result contradicts established domain knowledge, **do not just log and move on**. Pause and run a quick script to inspect *why* it failed (e.g., print the confusion matrix, plot the worst predictions, check the gradients for vanishing/exploding). Log this deep dive in the EXPT's `failure_analysis` field.
+
+## Phase 6.6: EXPT Postmortem (every EXPT, kept or discarded)
+
+**Every EXPT produces knowledge, not just the kept ones.** This phase runs after the keep/discard decision and after post-checks. It extracts structured lessons regardless of outcome.
+
+### Design Quality Rubric
+
+Rate every EXPT on design quality. This separates "good idea, wrong hypothesis" from "sloppy experiment, untestable hypothesis" — critical for calibrating how much weight FIND authors give this EXPT.
+
+| Score | Label | Criteria |
+|-------|-------|----------|
+| 4 | **Definitive** | Hypothesis was falsifiable and clearly tested. Controls were isolated. Result is unambiguous regardless of outcome. |
+| 3 | **Sound** | Hypothesis was reasonable and testable. One minor confound (e.g., one other parameter changed). Result is interpretable. |
+| 2 | **Flawed** | Multiple confounds or weak controls. Result direction is suggestive but attribution is uncertain. |
+| 1 | **Invalid** | Hypothesis was untestable as formulated, or a fatal confound makes the result uninterpretable. The EXPT should not be cited as evidence for any conclusion. |
+
+A `discarded` EXPT with design quality 4 is MORE valuable than a `kept` EXPT with design quality 2. The former definitively eliminates a hypothesis; the latter may be noise.
+
+### Lesson Extraction (ALL EXPTs)
+
+For EVERY EXPT, regardless of outcome, extract at least one lesson:
+
+1. **What did we learn?** One sentence. Even for a crashed EXPT: "The verify environment can't handle >1M rows without OOM" is a lesson.
+2. **Source tag:** Where did the knowledge come from? `primary_metric` | `auxiliary_metric` | `failure_analysis` | `post_check` | `crash_telemetry` | `design_flaw`
+3. **Portability:** Is this lesson specific to this COMP/LOOP, or generalizable? `local` (specific to this setup) | `conditional` (may apply to similar setups) | `general` (domain-wide insight)
+
+### Auxiliary Signal Check (before logging)
+
+Before logging auxiliary metrics, ask: **"Did any auxiliary metric move when the primary was flat?"**
+
+This is the most common source of buried findings. A LOOP could produce 50 EXPTs where Sharpe is flat but max drawdown is steadily decreasing or trade count is converging to a stable regime. Single-axis (primary metric only) analysis would miss this entirely.
+
+- If an auxiliary metric shows a trend (>3 consecutive EXPTs moving in the same direction), flag it for FIND authoring: "Auxiliary signal detected: max_drawdown improved from 0.25 → 0.12 across EXPT-030..039 while Sharpe was flat. Possible regime: the strategy is getting safer without getting more profitable."
+- Record this on the EXPT as `auxiliary_signal: true` with a note.
+
+### New EXPT Fields
+
+Record these on the EXPT artifact at log time:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `design_quality` | integer 1-4 | Design quality score per rubric above |
+| `design_quality_note` | text | One-sentence justification of the score |
+| `lesson_extracted` | text | One-sentence lesson (mandatory for all EXPTs) |
+| `lesson_source` | text | `primary_metric` / `auxiliary_metric` / `failure_analysis` / `post_check` / `crash_telemetry` / `design_flaw` |
+| `lesson_portability` | text | `local` / `conditional` / `general` |
+| `auxiliary_signal` | boolean | True if auxiliary metrics show a trend when primary is flat |
+| `crash_telemetry` | text | If crashed: last working step, partial output, error trace (for pre-recovery extraction) |
 
 ## Phase 7: Log (Create EXPT Artifact)
 
@@ -596,6 +734,9 @@ LOOP fields updated every iteration:
 | `discarded_count` | Increment if status == discarded or crashed |
 | `best_metric` | Update if new metric is better (respecting metric_direction) |
 | `best_experiment` | Set to EXPT ID when best_metric updates |
+| `eda_completed` | Set to `true` after Phase 0.6 completes (once per LOOP) |
+| `eda_summary` | One-paragraph summary of EDA findings (once per LOOP) |
+| `condensation_brief_10` (etc.) | Persisted condensation brief at each 10-iteration checkpoint |
 
 ### Summary Reporting
 
@@ -631,7 +772,12 @@ IF LOOP.iteration_count > 0 AND LOOP.iteration_count % 10 == 0:
     2. Release detailed EXPT content from working memory
        - Keep: the brief, FINDs, LOOP state, last 3 git diffs
        - Drop: individual EXPT summaries, older git diffs, intermediate reasoning
-    3. Log that condensation occurred (agent context only — no artifact to create)
+    3. **Persist the condensation brief on the LOOP artifact.** This is NOT agent-context-only — it MUST be persisted so the next LOOP's Step 0b can read it:
+       ```bash
+       specflow update LOOP-NNN \
+         --set condensation_brief_10="Iter 1-10: kept 4 (best +0.8, EXPT-005), discarded 6. Features: improvement. Params: dead end. Crashed: 0."
+       ```
+       Use field names `condensation_brief_10`, `condensation_brief_20`, etc. for each 10-iteration checkpoint.
     4. Continue to Phase 1 with condensed context
 ```
 
@@ -724,7 +870,42 @@ Best iteration: EXPT-047 "Added cross-asset momentum features"
 
 ### FIND Authoring (Post-Loop)
 
-After the LOOP completes, the agent MUST review all EXPTs and author or update competition FINDs. This is the critical step that makes the next LOOP smarter.
+After the LOOP completes, the agent MUST run a LOOP post-mortem, then review all EXPTs and author or update competition FINDs.
+
+#### LOOP Post-Mortem (before FIND authoring)
+
+Before synthesizing FINDs, capture the LOOP's qualitative knowledge. FINDs are conclusions about the COMP; the post-mortem is knowledge about the PROCESS — it makes the NEXT LOOP smarter.
+
+**Populate these fields on the LOOP artifact:**
+
+```bash
+specflow update LOOP-NNN \
+  --set lessons_learned="..." \
+  --set looplevel_findings="..."
+```
+
+**`lessons_learned`** — structured qualitative knowledge. Write as a YAML dict with these keys:
+
+| Key | Content |
+|-----|---------|
+| `best_change_categories` | Ranked list of change_categories by improvement, with representative EXPT refs |
+| `worst_change_categories` | Categories that consistently failed, with root causes |
+| `persistent_dead_ends` | Approaches attempted in THIS loop and PRIOR loops that still fail — these are strong signals to avoid |
+| `sensitivity_discoveries` | Parameters or data properties the result was unexpectedly sensitive to |
+| `noise_floor_estimate` | Observed run-to-run variance — helps next LOOP set `min_delta` thresholds |
+| `surprising_results` | Any outcome that contradicted the hypothesis or domain knowledge |
+| `recommendations_for_next_loop` | Concrete, actionable: "Try X," "Avoid Y," "Investigate Z with a different mode" |
+| `unexplored_directions` | Ideas that emerged during this LOOP but were never attempted — seeds for the next LOOP's Phase 2c |
+
+**`looplevel_findings`** — patterns visible only at the LOOP level (not individual EXPTs):
+- Did the metric improve in phases (step-function) or gradually?
+- Did a particular strategy work for a while then saturate?
+- Were there synergistic pairs of change_categories that worked better together?
+- Did the budget allocation match where improvement came from? (e.g., 80% of iterations on params but 80% of improvement from features)
+
+**Why this matters:** A LOOP's raw EXPTs may show 5 `kept` out of 50, but the post-mortem captures that 4 of those 5 came from one change_category tried early, and the remaining 45 iterations were fruitless parameter sweeps. The next LOOP should spend its budget differently. Without the post-mortem, the next LOOP only sees the distilled FINDs — it loses the process story.
+
+#### FIND Authoring
 
 Follow the full protocol in `references/finding-generation-protocol.md`. Summary:
 

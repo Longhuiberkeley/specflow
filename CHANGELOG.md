@@ -4,6 +4,27 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.6.7] - 2026-05-31
+
+### Highlights
+
+- **Mandatory initial EDA** — new Phase 0.6 in autonomous-loop-protocol runs once at LOOP start: 4 universal data-quality checks + domain-specific checks. Fatal problems cause hard stop. Skip rule if prior LOOP's EDA covers same COMP with unchanged data.
+- **Prior-LOOP review** — new Step 0b reads the last LOOP's full state (EXPTs, failure clusters, condensation briefs, trajectory) before formulating the first iteration. Cross-references FINDs against raw LOOP evidence.
+- **LOOP post-mortem** — `lessons_learned` and `looplevel_findings` fields capture process knowledge (ranked categories, persistent dead ends, sensitivity discoveries, noise floor) before FIND authoring.
+- **EXPT design quality rubric** — Phase 6.6 rates every EXPT 1-4 (Invalid→Definitive) and extracts a lesson regardless of outcome. Auxiliary signal check catches buried metrics (primary flat, secondary moving).
+- **Cross-EXPT pattern detection** — finding-generation-protocol now detects synergistic/antagonistic category pairs, progression shapes, negative-space analysis, and design quality trends.
+- **Auxiliary metric synthesis** — systematic analysis of auxiliary metrics: correlation with primary, trend detection, breakpoint detection. Mandatory cross-loop synthesis triggers (2+ LOOPs, 3+ LOOPs, stale low-confidence FINDs).
+- **Graded post-check consequences** — minor/moderate/severe tiers replace binary pass/fail. Severe post-check failures flag `deployability: not_deployable`.
+- **Supporting protocol hardening** — noise-handling gets EXPT validity gate (4 checks before strategy selection), crash-recovery gets pre-recovery telemetry extraction, methodology BP-01 elevated from advisory to mandatory.
+
+### Changes
+
+- `autonomous-loop-protocol.md`: 8 additions — Step 0b (prior-LOOP review), Phase 0.6 (mandatory EDA), Phase 2d strengthened to structured 3-item gate, Phase 6.5 graded post-check consequences, Phase 6.6 (EXPT postmortem + design quality rubric), LOOP post-mortem before FIND authoring, condensation briefs persisted on LOOP, tracking fields (eda_completed, eda_summary, condensation_brief_N).
+- `finding-generation-protocol.md`: 3 additions — Cross-EXPT Pattern Detection (interaction detection, progression shapes, negative-space analysis, design quality trends), Auxiliary Metric Synthesis (correlation, trend, breakpoint), Mandatory Cross-Loop Synthesis Triggers (5 trigger conditions).
+- `noise-handling-protocol.md`: EXPT Validity Gate inserted before strategy selection (4 checks: execution integrity, parameter validity, data integrity, baseline comparability).
+- `crash-recovery-protocol.md`: Pre-Recovery Telemetry Extraction inserted (5 steps: identify successful steps, capture crash signature, log partial results, record crash_telemetry, then apply recovery).
+- `methodology-handbook.md`: Header changed from "Advisory only" to "BP-01 is mandatory." BP-01 tagged `[MANDATORY]` with enforcement reference.
+
 ## [1.6.6] - 2026-05-31
 
 ### Highlights

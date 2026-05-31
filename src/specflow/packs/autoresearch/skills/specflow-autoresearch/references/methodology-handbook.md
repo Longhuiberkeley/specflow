@@ -1,6 +1,6 @@
 # ML Methodology Handbook
 
-Canonical best practices for ML/experimental work. Advisory only — not enforced.
+Best practices for ML/experimental work. BP-01 is mandatory (enforced by Phase 0.6 of autonomous-loop-protocol). BP-02 through BP-09 are advisory but strongly recommended.
 
 ## Domain Fit Gate
 
@@ -15,9 +15,10 @@ Each practice lists `applies_to` domains. Only apply practices tagged for your `
 
 ---
 
-## BP-01: EDA Before Modeling
+## BP-01: EDA Before Modeling [MANDATORY]
 
 **applies_to:** all
+**enforcement:** Mandatory. Enforced by Phase 0.6 of `autonomous-loop-protocol.md`. A COMP that skips EDA runs blind — the LOOP is stopped before the first iteration.
 
 Understand your data before touching a model. Distribution shapes, missingness patterns, cardinality, target imbalance, and temporal structure dictate every downstream choice. Skipping EDA means discovering leakage or drift after burning budget.
 

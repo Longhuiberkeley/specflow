@@ -2,7 +2,20 @@
 
 When to read: during Phase 5 of `autonomous-loop-protocol.md`, only when the COMP metric is volatile (benchmark times, ML accuracy, financial metrics). For deterministic metrics (test coverage %, bundle size in bytes), skip this file entirely — single-run verification is sufficient.
 
-Some metrics are inherently noisy. A single measurement can mislead: a "kept" decision may be noise, a "discard" may be a real improvement hidden under variance. Pick a strategy below based on the metric's noise profile.
+Some metrics are inherently noisy. A single measurement can mislead: a "kept" decision may be noise, a "discard" may be a real improvement hidden under variance. But BEFORE picking a noise strategy, validate that the EXPT itself was even valid.
+
+## EXPT Validity Gate (mandatory before noise strategy selection)
+
+Not all noisy results deserve noise handling. Some EXPTs are so fundamentally broken that noise handling would just polish garbage. Apply this gate first:
+
+| Check | Question | If fail |
+|-------|----------|---------|
+| **Execution integrity** | Did the verify command run to completion without errors? | If crash/error, this is a crash-recovery situation — see crash-recovery-protocol. Noise handling does not apply. |
+| **Parameter validity** | Were the intended parameters actually applied? (Check logs for silent config overwrites, YAML parsing errors, default fallbacks) | If parameters were silently wrong, the EXPT is invalid. Log as `design_quality: 1` and discard. Do NOT run noise handling. |
+| **Data integrity** | Is the input data identical to what was expected? (Check row counts, date ranges, file hashes) | If data drifted or was truncated, the EXPT is testing a different condition than intended. Log as invalid. |
+| **Baseline comparability** | Is the baseline metric from the same code snapshot / environment? | If the environment changed (new dependency version, different hardware, different seed convention), the delta may be an artifact. Flag with `environment_note`. |
+
+Only after ALL four checks pass should you apply the noise strategies below. An EXPT that fails the validity gate is not "noisy" — it's invalid. Log it, extract the lesson (per Phase 6.6), and move on.
 
 ## Strategy 1: Multi-Run Verification
 

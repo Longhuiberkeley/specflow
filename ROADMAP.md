@@ -188,6 +188,19 @@ Focus: **experimental thinking lenses, concise context, atomic CLI sugar, and su
 - **ML tracker coexistence** — documented integration pattern with MLflow, Weights & Biases, Neptune, MLRun, etc. via "Coexisting with External ML Trackers" section in `competition-setup-protocol.md`
 - **Passive-CLI banner** — `autoresearch run` prints a reminder that the AI agent drives the loop, not the CLI
 
+## v1.6.7
+
+Focus: **autoresearch protocol hardening — EDA enforcement, cross-loop learning, and EXPT quality.**
+
+- **Mandatory initial EDA** — Phase 0.6: 4 universal + domain-specific data checks run once at LOOP start; fatal problems hard-stop before any iteration
+- **Prior-LOOP review** — Step 0b: reads last LOOP's full state (raw EXPTs, failure clusters, condensation briefs, trajectory) before first iteration
+- **LOOP post-mortem** — `lessons_learned` + `looplevel_findings` fields capture process knowledge: ranked categories, dead ends, sensitivity discoveries, noise floor, unexplored directions
+- **EXPT design quality rubric** — Phase 6.6: every EXPT rated 1-4 (Invalid→Definitive), lesson extracted regardless of outcome, auxiliary signal detection
+- **Cross-EXPT pattern detection** — interaction detection (synergistic/antagonistic pairs), progression shape analysis, negative-space analysis, design quality trends
+- **Auxiliary metric synthesis** — systematic correlation/trend/breakpoint analysis; mandatory cross-loop synthesis triggers (2+ LOOPs, 3+ LOOPs, stale low-confidence FINDs)
+- **Graded post-check consequences** — minor/moderate/severe tiers; severe = `deployability: not_deployable`
+- **Supporting protocols hardened** — noise-handling: EXPT validity gate. Crash-recovery: pre-recovery telemetry. Methodology: BP-01 mandatory
+
 ## v1.6.6
 
 Focus: **context rebalancing, routing clarity, and drift prevention.**

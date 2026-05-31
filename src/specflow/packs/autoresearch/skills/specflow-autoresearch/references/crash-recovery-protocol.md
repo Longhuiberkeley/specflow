@@ -16,6 +16,27 @@ When to read: during Phase 0 precondition checks (to detect prior-session crash 
 
 If the agent crashes, the working tree may be in a partially modified state. On the next invocation, Phase 0 precondition checks must detect this and recover before re-entering the loop.
 
+### Pre-Recovery Telemetry Extraction
+
+**Before reverting or discarding anything**, extract what can be learned from the partial state. A crash is not just a failure — it's a signal about the system's boundaries.
+
+1. **Identify what ran successfully.** Which steps completed before the crash? Read partial output files, log fragments, and git status. The last successful step is a lower bound on what works.
+
+2. **Capture the crash signature.** What was the exact error? OOM at what data size? Timeout at what iteration count? This is telemetry for future LOOPs: "verify command fails with OOM above 500K rows" or "training loop hangs at epoch 47."
+
+3. **Log partial results.** If the EXPT produced any output before crashing (partial metrics, intermediate checkpoints, half-written results), save them. A Sharpe of 0.5 after 200/500 epochs is not a final result, but it IS a signal — the approach may have been directionally correct but hit a resource wall.
+
+4. **Record `crash_telemetry` on the EXPT (if one was started):**
+   ```bash
+   specflow create --type experiment \
+     --title "[CRASHED] <original title>" \
+     --status crashed \
+     --set crash_telemetry="Last step: Phase 5 verify. Error: OOM at 500K rows. Partial metric: 0.5 after 200/500 epochs. git hash: abc1234."
+   ```
+   This telemetry is read by Phase 6.6 for lesson extraction — even crashed EXPTs produce knowledge.
+
+5. **Only THEN apply recovery.** After telemetry is captured, proceed with the recovery rules below. The telemetry extraction should take <1 minute — don't deep-dive, just capture what's immediately visible.
+
 **Recovery rules:**
 
 ```
