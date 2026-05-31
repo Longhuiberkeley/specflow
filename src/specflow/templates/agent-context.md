@@ -29,3 +29,4 @@ Work: `STORY`, `SPIKE`, `DEC`, `DEF` (in `_specflow/work/`) must link to specs.
 - Use core `/specflow-*` skills for ALL engineering work: requirements, architecture, stories, implementation, review, release.
 - Packs (e.g., autoresearch) are **separate subsystems**. Only use pack skills when the user explicitly asks for that pack's domain. Never invoke pack skills for codebase exploration, bug investigation, feature implementation, or general engineering — those are core engineering.
 - **By default**, new features go through the full pipeline. Typo fixes and trivial changes may use the lean path — but still trace to a STORY.
+- **Escape hatch:** The user can always override. When the user says "skip," "proceed anyway," or "move on," do exactly that. But before proceeding past a blocking check, articulate: "Proceeding past [specific item]. Risk: [what could go wrong]. Noted."

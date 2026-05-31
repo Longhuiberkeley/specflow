@@ -64,12 +64,12 @@ def _scan_source_files(root: Path) -> list[Path]:
     source_files: list[Path] = []
     for entry in root.rglob("*"):
         if not entry.is_file():
-            # Prune excluded directories
-            if entry.is_dir() and entry.name in EXCLUDE_DIRS:
-                # Don't descend into excluded dirs
-                pass  # rglob still descends; we filter below
             continue
-        # Check if any parent is an excluded directory
+        # Filter out files inside excluded directories.
+        # Note: rglob traverses ALL directories (including excluded ones).
+        # This is acceptable for typical SpecFlow project sizes (hundreds of files,
+        # not thousands). For very large projects with deep node_modules trees,
+        # consider switching to os.walk with selective pruning.
         parts = set(p.name for p in entry.parents if p != root)
         if parts & EXCLUDE_DIRS:
             continue
@@ -92,12 +92,14 @@ def _collect_referenced_files(artifacts, root: Path) -> set[Path]:
                     resolved = (root / f).resolve()
                     if resolved.exists():
                         referenced.add(resolved)
-        # Check for file paths mentioned in the body
+        # Check for file paths mentioned in the body via backtick-quoted references.
+        # This is a best-effort heuristic: it matches `code` patterns at line start
+        # but won't catch mid-sentence references, multi-backtick code fences, or
+        # paths split across lines. The primary mechanism is output_files frontmatter.
         body = art.body or ""
         for line in body.splitlines():
             line = line.strip()
             if line.startswith("`") and "`" in line[1:]:
-                # Backtick-quoted file path
                 fname = line.split("`")[1]
                 candidate = (root / fname).resolve()
                 if candidate.exists() and candidate.is_file():

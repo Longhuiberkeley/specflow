@@ -110,11 +110,12 @@ def _run_orphan_code(root: Path, args: dict[str, Any]) -> int:
         print(f"  {GREEN}✓{NC} Linked {linked}/{len(orphans)} orphan files to {retro_story}")
         if linked < len(orphans):
             print(f"  {YELLOW_DIM}{len(orphans) - linked} files could not be linked (STORY not found or file error){NC}")
+        return 0 if linked == len(orphans) else 1
     else:
         print(f"\n  {CYAN}Tip:{NC} Use --retro-link STORY-NNN to retroactively link all orphan files to an existing story.")
+        print(f"  {YELLOW_DIM}Orphan code breaks SpecFlow traceability. Run with --retro-link to fix, or review manually.{NC}")
 
-    print(f"  {CYAN}Informational only — review before taking action.{NC}")
-    return 0
+    return 1
 
 
 def run(root: Path, args: dict[str, Any]) -> int:

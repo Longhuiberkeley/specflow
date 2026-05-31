@@ -312,10 +312,11 @@ Subagents MUST return structured output (bullet lists, JSON, or YAML). The paren
 
 ## References
 
-- `references/autonomous-loop-protocol.md` — Full 8-phase loop protocol with atomicity rules and the goal-mindful ideation check
+- `references/autonomous-loop-protocol.md` — Full 8-phase loop protocol with atomicity rules and the goal-mindful ideation check — referenced from Step 2 (run LOOP)
 - `references/noise-handling-protocol.md` — Strategy menu for volatile metrics (multi-run, confirmation, env pinning, min-delta) — referenced from Phase 5
 - `references/crash-recovery-protocol.md` — Recovery rules for verify failures and session crashes — referenced from Phase 0 and Phase 5
-- `references/competition-setup-protocol.md` — Walkthrough for creating COMP artifacts with verify command, metric direction, goals/theses/constraints, and dry-run validation
-- `references/protocol-integrations.md` — Maps all producer-consumer relationships across protocols: COMP→LOOP, LOOP→EXPT, EXPT→FIND, cross-loop feedback, skill-to-protocol mapping, cross-cutting concerns
-- `references/explore-exploit-protocol.md` — Mode behavior (explore/exploit/validate) and how each influences Phase 2 ideation
-- `references/finding-generation-protocol.md` — Playbook for authoring and updating FIND artifacts after LOOP completion (including linking evidence to COMP.theses)
+- `references/competition-setup-protocol.md` — Walkthrough for creating COMP artifacts with verify command, metric direction, goals/theses/constraints, and dry-run validation — referenced from Step 0 (setup)
+- `references/protocol-integrations.md` — Maps all producer-consumer relationships across protocols: COMP→LOOP, LOOP→EXPT, EXPT→FIND, cross-loop feedback, skill-to-protocol mapping, cross-cutting concerns — referenced from all steps for dependency context
+- `references/explore-exploit-protocol.md` — Mode behavior (explore/exploit/validate) and how each influences Phase 2 ideation — referenced from Phase 2c
+- `references/finding-generation-protocol.md` — Playbook for authoring and updating FIND artifacts after LOOP completion — referenced from Step 3 (review)
+- `references/methodology-handbook.md` — Domain-specific ML best practices (BP-01 mandatory via Phase 0.6, BP-02..09 advisory) — referenced from Phase 2

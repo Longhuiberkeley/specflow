@@ -90,7 +90,7 @@ If the COMP artifact defines a `pre_check_command`, run it **before** entering t
 
 ## Phase 0.6: Mandatory Initial EDA (before first iteration)
 
-**This phase runs ONCE at loop start.** It provides a data-quality foundation for ALL subsequent iterations. Unlike Phase 0.5 (which is per-iteration and COMP-specific), this is a universal baseline that every domain needs.
+**This phase runs ONCE at loop start.** It provides a data-quality foundation for ALL subsequent iterations. Unlike Phase 0.5 (which is per-iteration and COMP-specific), this is a universal baseline that every domain needs. This phase implements BP-01 (EDA Before Modeling) from the [ML Methodology Handbook](methodology-handbook.md) — the handbook provides the rationale and anti-patterns; this phase provides the enforcement mechanism.
 
 **You MUST complete ALL checks.** Fatal problems cause an immediate hard stop — do not enter the iteration loop. Non-fatal findings are recorded on the LOOP for reference.
 
