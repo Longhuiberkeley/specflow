@@ -21,7 +21,8 @@ EXCLUDE_DIRS: set[str] = {
     "node_modules", ".next", "dist", "build", ".specflow",
     "_specflow", ".claude", ".cursor", ".windsurf", ".codex",
     ".opencode", ".agents", ".roo", ".qwen", ".kiro", ".kilocode",
-    ".trae", ".github", ".husky", ".clinerules",
+    ".trae", ".github", ".husky", ".clinerules", ".cline",
+    ".gemini", ".junie",
 }
 
 EXCLUDE_PATTERNS: list[str] = [

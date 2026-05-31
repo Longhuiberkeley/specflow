@@ -56,9 +56,9 @@ The planning-to-executing phase gate IS the readiness check. Run it before any i
 
 6. **RBAC pre-check (if `.specflow/adapters.yaml` has team config):** Verify the current user is authorized to implement the in-scope stories. Run `uv run specflow hook pre-commit` as a dry-run — it checks RBAC on staged artifact changes. If the project has no team configuration, skip this step. If RBAC check fails, surface the failure as a `warning` — the user can proceed but the commit hook will catch it.
 
- **Why this is mandatory:** the gate verifies the task is sufficiently specified to start coding (ARCH exists, links resolve, AC are clear, interfaces defined, test strategy specified, dependencies approved, RBAC allows implementation). Skipping it lets implementation start against draft specs and produces rework.
+ **Why the gate is mandatory:** the gate verifies the task is sufficiently specified to start coding (ARCH exists, links resolve, AC are clear, interfaces defined, test strategy specified, dependencies approved, RBAC allows implementation). Skipping it lets implementation start against draft specs and produces rework.
 
-6. **Load execution-phase best practices** as context for implementation:
+7. **Load execution-phase best practices** as context for implementation:
    ```
    uv run specflow handbook generate execute-impl
    ```

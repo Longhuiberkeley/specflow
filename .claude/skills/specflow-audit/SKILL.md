@@ -55,7 +55,7 @@ If accepted:
 2. For any artifact flagged during Step 1, run `uv run specflow trace <ARTIFACT_ID>` to understand its full upstream/downstream dependency context before evaluating lenses.
 
 3. **Parallel lens fan-out (error-driven scaling):**
-   - **Standard (0-2 errors in Step 1):** Create 2 parallel subagents (if your environment supports it) each covering a subset of the selected lenses. Sequential fallback: run lens groups sequentially.
+   - **Standard (0-2 errors in Step 1):** Create 2 parallel subagents (if your platform supports spawning subagents) each covering a subset of the selected lenses. Sequential fallback: run lens groups sequentially.
    - **Elevated (3-7 errors in Step 1):** Create 3-4 parallel subagents (if supported), one lens per subagent. This gives each lens its own context window for deeper analysis. Sequential fallback: run lenses one at a time.
    - **Critical (8+ errors in Step 1):** Create 4-5 parallel subagents, plus a dedicated cross-cutting subagent that reads ALL lens outputs and synthesizes systemic patterns (e.g., "4 of 5 lenses flagged the same coupling issue — this is architectural, not local"). Sequential fallback: run all lenses sequentially, then a dedicated synthesis pass.
 

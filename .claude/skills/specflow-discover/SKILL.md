@@ -277,13 +277,13 @@ Requirements are already approved. Run `/specflow-execute` to implement.
   - `blocking` → Stop. Report the failure. Ask the user to fix before proceeding.
   - `warning` → Present. Ask whether to proceed. Do not proceed silently.
   - `info` → Note for awareness. Proceed.
-- **Escape hatch:** The user can always override. When the user says "skip," "proceed anyway," or "move on," do exactly that. But before proceeding past a `blocking` item, articulate what is being skipped and why.
+- **Escape hatch:** The user can always override. When the user says "skip," "proceed anyway," or "move on," do exactly that. But before proceeding past a `blocking` item, articulate: "Proceeding past [specific blocking item]. Risk: [what could go wrong]. Noted."
 - Requirements answer **"WHAT must the system do?"** — never HOW.
 - Use normative language: "The system **shall**..." (mandatory), "The system **should**..." (recommended), "The system **may**..." (optional).
 - No implementation details, technology choices, or architectural decisions in REQs.
 - Each REQ must have acceptance criteria.
 - One question at a time — never batch.
-- **Escape Hatch Rule**: If the user signals they've provided enough context (e.g., 'that's enough', 'move on', 'skip'), immediately proceed to artifact generation with what you have.
+- **Escape Hatch Rule**: If the user signals they've provided enough context (e.g., 'that's enough', 'move on', 'skip'), proceed to artifact generation. Before doing so, articulate: "Proceeding with [N] questions answered. Risk: requirements may be incomplete. Noted."
 - **Question Cap**: Limit the discovery conversation to 15-20 questions total. If more are needed, suggest the user may want to refine requirements first (which likely means the discover->plan pipeline needs restructuring).
 - Every skill that offers the user a choice must include "(Recommended)" labels on the suggested default.
 - When in doubt about level boundaries, read `references/level-boundaries.md`.

@@ -96,6 +96,11 @@ Repeat Steps 2-5 for all unreviewed DECs discovered in Step 1.
 
 ## Rules
 
+- **Gate severity:**
+  - `blocking` → Stop. Report the failure. Ask the user to fix before proceeding.
+  - `warning` → Present. Ask whether to proceed. Do not proceed silently.
+  - `info` → Note for awareness. Proceed.
+- **Escape hatch:** The user can always override. When the user says "skip," "proceed anyway," or "move on," do exactly that. But before proceeding past a `blocking` item, articulate: "Proceeding past [specific blocking item]. Risk: [what could go wrong]. Noted."
 - **Idempotency:** Always check for `review_status: unreviewed`. If none exist, do nothing.
 - **Scoping:** Strictly limit the review to the blast radius computed by `change-impact`. Do not review the entire project.
 - **Traceability:** Ensure all findings (CHLs) are explicitly linked to the source DEC that triggered them.
