@@ -268,28 +268,32 @@ Autoresearch burns context windows fast. A 50-iteration LOOP can accumulate doze
 - **Condense every 10 iterations** (Phase 8). Drop raw EXPT summaries; keep only the brief.
 - **Use CLI for deterministic work.** `specflow autoresearch log` creates EXPTs and updates LOOP counters in one call — cheaper than two separate `specflow create` + `specflow update` turns.
 - **Prefer `suggest-finds` over manual synthesis.** Let the CLI group EXPTs by `change_category` and pre-populate `what_worked` / `what_failed`. The agent edits the draft, not writes it from scratch.
-- **Subagent for parallel review.** When reviewing 10+ EXPTs after a LOOP, spawn parallel subagents per `change_category` family. Each subagent reads only its family's EXPTs and returns a mini-synthesis. The parent agent merges them into the final FIND. This keeps per-subagent context small.
+- **Subagent for parallel review (platform-dependent).** When reviewing 10+ EXPTs after a LOOP, if your platform supports spawning subagents, spawn parallel subagents per `change_category` family. Each subagent reads only its family's EXPTs and returns a mini-synthesis. The parent agent merges them into the final FIND. This keeps per-subagent context small. If your platform does NOT support subagents, process categories sequentially.
 - **No prose in verify output.** The verify command must print exactly one number. Rich diagnostics go to disk for the review phase only.
 
 ## Subagent Patterns
 
-The skill MAY spawn subagents in these specific situations:
+The skill MAY spawn subagents in these specific situations (**if your platform supports spawning subagents** — if not, use the sequential fallback described for each):
 
-1. **Per-category EXPT review.** After a LOOP completes, group EXPTs by `change_category` (e.g. `features`, `model`, `params`). Spawn one subagent per category. Each subagent:
+1. **Per-category EXPT review.** After a LOOP completes, group EXPTs by `change_category` (e.g. `features`, `model`, `params`). Spawn one subagent per category (if your platform supports it). Each subagent:
    - Reads only EXPTs in its category
    - Classifies outcomes: `supported` / `not_supported` / `sensitive` / `inconclusive`
    - Returns a 5-line bullet list for `what_worked` or `what_failed`
    The parent agent merges category outputs into the final FIND.
+   **Fallback (no subagent support):** Process categories sequentially — read all EXPTs in the first category, classify, repeat. Synthesize at the end. Same result, higher context load.
 
-2. **Family grouping.** In `family_of_good` competitions, spawn subagents per `strategy_family` or `model_origin`. Each subagent evaluates whether its family generalizes, then reports back to the parent for leaderboard grouping.
+2. **Family grouping.** In `family_of_good` competitions, spawn subagents per `strategy_family` or `model_origin` (if your platform supports it). Each subagent evaluates whether its family generalizes, then reports back to the parent for leaderboard grouping.
+   **Fallback (no subagent support):** Evaluate families one at a time sequentially, then compile the leaderboard.
 
-3. **Phase 2 ideation variants.** When stuck (>5 consecutive discards), spawn 2-3 subagents in parallel with different ideation strategies:
+3. **Phase 2 ideation variants.** When stuck (>5 consecutive discards), spawn 2-3 subagents in parallel (if your platform supports it) with different ideation strategies:
    - Subagent A: "Exploit last kept commit"
    - Subagent B: "Explore orthogonal change_category"
    - Subagent C: "Combine two previously successful changes"
    The parent agent picks the most promising hypothesis and runs it.
+   **Fallback (no subagent support):** Run the three ideation strategies sequentially — try strategy A first, evaluate, then B, then C. Pick the best result.
 
-4. **Delegate Review.** Use `/specflow-autoresearch:delegate-review` to spawn a subagent that takes over the review phase. This subagent synthesizes EXPT data into FIND artifacts and finalizes the LOOP state, keeping the main loop's context clean.
+4. **Delegate Review.** Use `/specflow-autoresearch:delegate-review` to spawn a subagent (if your platform supports it) that takes over the review phase. This subagent synthesizes EXPT data into FIND artifacts and finalizes the LOOP state, keeping the main loop's context clean.
+   **Fallback (no subagent support):** Author FINDs directly per `references/finding-generation-protocol.md`. This is the standard path for small loops (<10 EXPTs) and works on any platform.
 
 Subagents MUST return structured output (bullet lists, JSON, or YAML). The parent agent never delegates the full loop — only parallel analysis tasks.
 

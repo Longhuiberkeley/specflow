@@ -1,6 +1,6 @@
 ---
 name: specflow-discover
-description: Use when the user wants to discover, capture, or author new requirements. Triggers a progressive disclosure conversation to extract specifications and create REQ artifacts.
+description: Use to start the SpecFlow requirements discovery workflow — the entry point for any new feature, enhancement, or specification task. Triggers when the user says "add X," "build Y," "create Z," "I need requirements for," "capture specs for," or "what should the system do?" This is step 1 of the core lifecycle — use it FIRST for any new feature or change that needs specification, BEFORE specflow-plan and specflow-execute. NOT for: data exploration, data cleaning, researching technologies, prototyping, running experiments, or technical prep work unrelated to requirements authoring.
 ---
 
 ## Freeform Input Handling
@@ -273,6 +273,11 @@ Requirements are already approved. Run `/specflow-execute` to implement.
 
 ## Rules
 
+- **Gate severity:**
+  - `blocking` → Stop. Report the failure. Ask the user to fix before proceeding.
+  - `warning` → Present. Ask whether to proceed. Do not proceed silently.
+  - `info` → Note for awareness. Proceed.
+- **Escape hatch:** The user can always override. When the user says "skip," "proceed anyway," or "move on," do exactly that. But before proceeding past a `blocking` item, articulate what is being skipped and why.
 - Requirements answer **"WHAT must the system do?"** — never HOW.
 - Use normative language: "The system **shall**..." (mandatory), "The system **should**..." (recommended), "The system **may**..." (optional).
 - No implementation details, technology choices, or architectural decisions in REQs.

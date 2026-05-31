@@ -1,6 +1,6 @@
 ---
 name: specflow-execute
-description: Use when stories are planned and the user wants to implement them. Orchestrates implementation, updates artifact statuses, and creates test artifacts.
+description: DEFAULT implementation path for ANY code change in this project. Orchestrates implementation of planned stories, updates artifact statuses, creates V-model test artifacts (UT/IT/QT), and enforces traceability. Triggers when the user says "implement," "write code for," "build," "fix bug in," or any code-writing request. This is step 3 of the core lifecycle — use it for ALL implementation work. For trivial changes (typos, formatting, dependency updates), the lean path is available — but every code change still traces to a STORY. NOT for: requirements gathering (use specflow-discover), architecture design (use specflow-plan), or research experiments (use specflow-autoresearch if installed).
 ---
 
 ## Freeform Input Handling
@@ -22,9 +22,17 @@ Orchestrate the implementation of planned stories and update tracking artifacts.
 
 ## Workflow
 
-### Step 1: Implementation-Readiness Gate (mandatory)
+### Step 1: Implementation-Readiness Gate
 
-The planning-to-executing phase gate IS the readiness check. Run it unconditionally before any implementation work — never skip it, never treat it as advisory.
+The planning-to-executing phase gate IS the readiness check. Run it before any implementation work. The gate adapts to change scope:
+
+| Change type | Minimum bar |
+|-------------|-------------|
+| New feature / new component | Full gate pass (no blocking items). All warnings reviewed. |
+| Bug fix (unknown root cause) | REQ must exist. STORY must have acceptance criteria. |
+| Bug fix (clear scope, existing REQ) | STORY linked to REQ. DDD optional. |
+| Refactoring (no behavior change) | STORY linked to affected ARCH. Warnings advisory. |
+| Typo / formatting / dependency updates | Gate is advisory. State skip reason and proceed. |
 
 1. **Run the deterministic gate:**
    ```
@@ -42,7 +50,7 @@ The planning-to-executing phase gate IS the readiness check. Run it unconditiona
 
 3. **Identify the in-scope STORY set.** Use `uv run specflow go --dry-run` to compute the next wave; that's the read-set for this run. Avoid reading STORYs outside the upcoming wave unless an LLM-judged item explicitly requires cross-story analysis.
 
-4. **Check `suspect: true` flags** on linked artifacts in the in-scope set. If upstream specs are suspect, surface this to the user before proceeding.
+4. **Check `suspect: true` flags** on ALL linked artifacts in the in-scope set. Run `uv run specflow status` and scan for suspect markers. If upstream specs are suspect, surface this as a `blocking` item — do not proceed against stale specs without explicit user confirmation. Report: "Artifact [ID] is flagged suspect (modified [date]). [Reason]. Proceeding may waste effort. Continue anyway?"
 
 5. Run `uv run specflow status` silently for the state overview.
 
@@ -177,6 +185,11 @@ Report results and fix any issues.
 
 ## Rules
 
+- **Gate severity:**
+  - `blocking` → Stop. Report the failure. Ask the user to fix before proceeding.
+  - `warning` → Present. Ask whether to proceed. Do not proceed silently.
+  - `info` → Note for awareness. Proceed.
+- **Escape hatch:** The user can always override. When the user says "skip," "proceed anyway," or "move on," do exactly that. But before proceeding past a `blocking` item, articulate: "Proceeding past [specific blocking item]. Risk: [what could go wrong]. Noted."
 - Always update `status` and `modified` timestamp via `specflow update` -- never edit artifact files directly.
 - Link tests to what they verify using `verified_by` role.
 - Run `uv run specflow artifact-lint` after status changes.

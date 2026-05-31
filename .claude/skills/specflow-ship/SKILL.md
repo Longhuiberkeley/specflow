@@ -1,6 +1,6 @@
 ---
 name: specflow-ship
-description: Use when the user wants to release a version. Produces a baseline, generates change records, runs a quick audit, and presents a release summary.
+description: REQUIRED to release a version. Produces a baseline, generates change records (DEC), runs a quick audit, and presents a release summary. Triggers when the user says "release," "ship," "publish v," or asks to tag a version. This is the final step of the core lifecycle — use it when implementation is complete and verified. NOT for: mid-development checkpoints (use specflow-audit or specflow-artifact-review).
 ---
 
 ## Freeform Input Handling
@@ -57,6 +57,11 @@ uv run specflow project-audit --quick
 3. Require explicit user confirmation to proceed if there are errors.
 
 ## Rules
+- **Gate severity:**
+  - `blocking` → Stop. Report the failure. Ask the user to fix before proceeding.
+  - `warning` → Present. Ask whether to proceed. Do not proceed silently.
+  - `info` → Note for awareness. Proceed.
+- **Escape hatch:** The user can always override. When the user says "skip," "proceed anyway," or "move on," do exactly that. But before proceeding past a `blocking` item, articulate: "Proceeding past [specific blocking item]. Risk: [what could go wrong]. Noted."
 - Ensure the tag format follows project conventions.
 - Never skip the Quick Audit step.
 - Only proceed past the Advisory Gate if the user gives explicit confirmation when errors are present.

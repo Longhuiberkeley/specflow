@@ -1,6 +1,6 @@
 ---
 name: specflow-audit
-description: Use when the user wants a full-project health review. Runs a zero-question deterministic core with optional adversarial wings. Creates AUD and CHL artifacts.
+description: Use for a FULL-PROJECT health review — runs a zero-question deterministic core with optional adversarial wings. Creates AUD and CHL artifacts. Triggers when the user says "audit the project," "health check," "how healthy is the project," or asks for a comprehensive project-wide assessment. NOT for: single-artifact review (use specflow-artifact-review), reviewing blast radius of recent changes (use specflow-change-impact-review), or quick spot-checks of one file.
 ---
 
 ## Freeform Input Handling
@@ -90,5 +90,10 @@ Present a concise summary to the user:
 - Next steps (e.g., "Review the new Challenge artifacts and address them in the next planning phase").
 
 ## Rules
+- **Gate severity:**
+  - `blocking` → Stop. Report the failure. Ask the user to fix before proceeding.
+  - `warning` → Present. Ask whether to proceed. Do not proceed silently.
+  - `info` → Note for awareness. Proceed.
+- **Escape hatch:** The user can always override. When the user says "skip," "proceed anyway," or "move on," do exactly that. But before proceeding past a `blocking` item, articulate: "Proceeding past [specific blocking item]. Risk: [what could go wrong]. Noted."
 - Do not ask context-gathering questions before the deterministic core runs. The core must be zero-question.
 - Ensure any generated CHL artifacts include actionable recommendations.

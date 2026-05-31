@@ -1,6 +1,6 @@
 ---
 name: specflow-init
-description: Use when setting up SpecFlow in a new or existing project. Conversational bootstrap that scaffolds directories, installs hooks, generates CI workflows, and recommends next steps.
+description: Use when setting up SpecFlow in a new or existing project for the FIRST TIME. Conversational bootstrap that scaffolds directories, installs hooks, generates CI workflows, and recommends next steps. NOT for: re-initializing an already-configured project, adding packs to an existing setup (use specflow-adapter), or routine configuration changes.
 ---
 
 ## Freeform Input Handling
@@ -85,58 +85,19 @@ Append flags as needed:
 
 This scaffolds `.specflow/`, `_specflow/`, config files, schemas, checklists, and installs skill directories for the target platform. When `--domain` is provided, it also persists the domain classification and attempts to generate project-level best practices (the "process booklet").
 
-### 4. Inject SpecFlow instructions into the platform's instruction file
+### 4. Verify SpecFlow instruction injection
 
-The `specflow init` CLI does **not** modify instruction files. This step is performed by the agent running this skill.
+The `specflow init` CLI has already injected the SpecFlow instruction block into the platform's instruction file (via `scaffold.py`). Verify it landed correctly.
 
-#### 4a. Read the instruction template
+#### 4a. Check the injected block
 
-Locate and read `agent-context.md` from the installed specflow package:
-
-```sh
-python3 -c "from pathlib import Path; import specflow; print(Path(specflow.__file__).parent / 'templates' / 'agent-context.md')"
-```
-
-Read the file at the printed path. This template contains the SpecFlow instruction block (slash commands table, lifecycle flow, working principles, conventions).
+Verify that the target instruction file contains the SpecFlow sentinel marker:
 
 #### 4b. Determine the target instruction file
 
-| Platform | Target File |
-|----------|------------|
-| `claude-code` | `AGENTS.md` -- use `CLAUDE.md` only if it already exists and `AGENTS.md` does not |
-| `cursor` | `.cursor/rules/specflow.mdc` |
-| `windsurf` | `.windsurf/rules/specflow.md` |
-| `cline` | `.clinerules/specflow.md` |
-| `gemini` | `AGENTS.md` -- use `GEMINI.md` only if it already exists and `AGENTS.md` does not |
-| `opencode` | `AGENTS.md` |
-| `github-copilot` | `.github/copilot-instructions.md` |
-| `roo` | `.roo/rules/specflow.md` |
-| `qwen` | `.qwen/rules/specflow.md` |
-| `kiro` | `.kiro/rules/specflow.md` |
-| `kilocode` | `.kilocode/rules/specflow.md` |
-| `codex` | `AGENTS.md` |
-| `trae` | `.trae/rules/specflow.md` |
-| `junie` | `AGENTS.md` |
-| (default) | `AGENTS.md` |
+The `specflow init` CLI command has already handled instruction injection automatically (via `scaffold.py`). The instruction file should already contain the SpecFlow block wrapped in `<!-- SpecFlow section ... -->` sentinels. Verify it was injected correctly by checking the target file for the sentinel marker.
 
-#### 4c. Inject the block
-
-1. Read the target file (if it exists). Check whether it already contains `<!-- SpecFlow section`. If it does, **skip injection entirely** -- it is idempotent.
-2. If the marker is not present, append the following to the end of the file (create the file if it does not exist):
-
-```
-<!-- SpecFlow section (auto-generated, do not edit manually) -->
-<contents of agents-section.md>
-<!-- End SpecFlow section -->
-```
-
-3. For `.mdc` files (Cursor), prepend a frontmatter header before the block:
-
-```yaml
----
-description: SpecFlow instructions
----
-```
+If the marker is missing (unusual), the target file mapping is:
 
 ### 5. Verify git hook installation
 

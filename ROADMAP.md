@@ -188,6 +188,19 @@ Focus: **experimental thinking lenses, concise context, atomic CLI sugar, and su
 - **ML tracker coexistence** — documented integration pattern with MLflow, Weights & Biases, Neptune, MLRun, etc. via "Coexisting with External ML Trackers" section in `competition-setup-protocol.md`
 - **Passive-CLI banner** — `autoresearch run` prints a reminder that the AI agent drives the loop, not the CLI
 
+## v1.6.6
+
+Focus: **context rebalancing, routing clarity, and drift prevention.**
+
+- **Injected context rebalanced** — `agent-context.md` rewritten: 4:1 core-to-pack ratio (was 0.6:1), routing section declares packs as separate subsystems with anti-triggers
+- **Pack context stubs** — autoresearch `context_snippet` reduced from 30 lines to 6-line routing stub; operational detail deferred to on-demand SKILL.md
+- **Graduated skill triggers** — all 10 skill descriptions rewritten: execute is DEFAULT, discover bridges natural language ("add X," "build Y"), mutual anti-triggers on audit/artifact-review/change-impact-review
+- **Standardized gate language** — `blocking`/`warning`/`info` severity vocabulary and articulated escape hatches on all 6 operational skills
+- **Graduated obligation in execute** — 5-tier change-type table replaces binary "never skip" gate
+- **Articulated escape hatches** — `AGENTS.md` L108: silent skip → articulated skip with risk statement
+- **Platform-safe subagent patterns** — 5 autoresearch spawn locations guarded with "if your platform supports it" + sequential fallback paths
+- **Stale docs fixed** — `specflow-init` Step 4 updated to reflect CLI auto-injection
+
 ## v1.6.4
 
 Focus: **status cascade automation and reconciliation.**

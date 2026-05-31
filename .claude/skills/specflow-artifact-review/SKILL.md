@@ -1,6 +1,6 @@
 ---
 name: specflow-artifact-review
-description: Use when the user wants to review, validate, or verify any SpecFlow artifacts. Triggers context-specific checks using automated scripts and checklist review.
+description: Use to review, validate, or verify SPECIFIC SpecFlow artifacts — one artifact or a small named set. Triggers context-specific checks using automated scripts and checklist review. Triggers when the user says "review this REQ," "validate the ARCH," "check this story," or asks about a specific artifact's quality. NOT for: full-project health checks (use specflow-audit), reviewing blast radius of recent DEC changes (use specflow-change-impact-review), or general code review outside SpecFlow artifacts.
 ---
 
 ## Freeform Input Handling
@@ -183,6 +183,11 @@ Use `--no-patterns` to skip pattern extraction, or `--auto` to skip prompts. Thi
 
 ## Rules
 
+- **Gate severity:**
+  - `blocking` → Stop. Report the failure. Ask the user to fix before proceeding.
+  - `warning` → Present. Ask whether to proceed. Do not proceed silently.
+  - `info` → Note for awareness. Proceed.
+- **Escape hatch:** The user can always override. When the user says "skip," "proceed anyway," or "move on," do exactly that. But before proceeding past a `blocking` item, articulate: "Proceeding past [specific blocking item]. Risk: [what could go wrong]. Noted."
 - **Automated lint (zero tokens) always runs first.** LLM-judged checks only run if lint passes.
 - **Checklists before lenses, always.** Lenses complement checklists; they do not replace them.
 - Severity levels: `blocking` (must fix), `warning` (should fix), `info` (nice to know).

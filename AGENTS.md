@@ -105,7 +105,7 @@ When implementing stories via `/specflow-execute`, also update linked ARCH and D
 - **Fail early.** Run `specflow artifact-lint` after changes, not at release time.
 - **Surgical changes.** Touch only what the request requires. Match existing conventions.
 - **Label defaults.** When offering choices, mark the suggested option with "(Recommended)".
-- **Escape hatches.** If the user says "move on" or "skip", proceed with what you have.
+- **Escape hatches.** If the user says "move on" or "skip", proceed with what they request. But before proceeding past a blocking check or required step, articulate what is being skipped and why: "Proceeding past [specific item]. Risk: [what could go wrong]. Noted." This preserves the accounting record.
 
 ### Conventions
 

@@ -1,6 +1,6 @@
 ---
 name: specflow-change-impact-review
-description: Use when the user wants to run the change-audit pipeline to autonomously review impact cones of recent changes and log findings.
+description: Use to review the IMPACT CONE of recent changes — finds unreviewed DEC artifacts, computes blast radius, reviews impact, creates CHL findings. Triggers when the user says "what's the impact of this change," "review recent changes," "change impact," or after a series of commits/PRs. NOT for: full-project audits (use specflow-audit), single-artifact review (use specflow-artifact-review), or reviewing changes that don't have DEC artifacts yet.
 ---
 
 ## Freeform Input Handling

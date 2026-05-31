@@ -1,6 +1,6 @@
 ---
 name: specflow-plan
-description: Use when requirements are approved and the user wants to break them down into architecture, design, and stories. Triggers architecture discussion and artifact population.
+description: REQUIRED after discover when REQs are approved. Breaks approved requirements into architecture (ARCH), detailed design (DDD), and stories (STORY). Triggers when the user says "design the architecture," "plan the implementation," "break this down," or when REQs are approved and the user is ready to move forward. This is step 2 of the core lifecycle — use it BEFORE any implementation begins. NOT for: quick bug fixes (use specflow-execute with lean path), research tasks, or infrastructure setup.
 ---
 
 ## Freeform Input Handling
@@ -26,7 +26,7 @@ Break down approved requirements into architecture, detailed design, and user st
 
 1. Read all REQ artifacts from `_specflow/specs/requirements/`.
 2. Verify all REQs have `status: approved`. If any are still `draft`, tell the user which ones need approval before planning can proceed.
-3. Optionally run the phase gate: `uv run specflow artifact-lint --type gate --gate specifying-to-planning`.
+3. Run the phase gate: `uv run specflow artifact-lint --type gate --gate specifying-to-planning`. Run it by default — only skip if the user explicitly declines.
 4. If gate fails, report blockers and stop.
 
 ### Step 2: Read & Understand Requirements
@@ -213,6 +213,11 @@ Update `.specflow/state.yaml`: set `current: planning`, add history entry.
 
 ## Rules
 
+- **Gate severity:**
+  - `blocking` → Stop. Report the failure. Ask the user to fix before proceeding.
+  - `warning` → Present. Ask whether to proceed. Do not proceed silently.
+  - `info` → Note for awareness. Proceed.
+- **Escape hatch:** The user can always override. When the user says "skip," "proceed anyway," or "move on," do exactly that. But before proceeding past a `blocking` item, articulate: "Proceeding past [specific blocking item]. Risk: [what could go wrong]. Noted."
 - ARCH answers "HOW is the system structured?" — defines interfaces between components, not user-facing behavior.
 - DDD answers "HOW does each part work internally?" — implementation-level detail for developers.
 - STORY references specs, doesn't replace them. Use link roles: `implements` (→ REQ), `guided_by` (→ ARCH), `specified_by` (→ DDD).

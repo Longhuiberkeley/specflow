@@ -4,6 +4,34 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.6.6] - 2026-05-31
+
+### Highlights
+
+- **Injected context rebalanced** — `agent-context.md` rewritten with 4:1 core-to-pack ratio (was 0.6:1), routing section, and "Stop. This is a SpecFlow project." priming. Autoresearch `context_snippet` reduced from 30 lines to 6-line routing stub with anti-triggers.
+- **Graduated skill trigger strength** — all 10 skill descriptions rewritten with feature-request bridging, anti-triggers, and graduated obligation levels. Execute is now DEFAULT for all code changes; discover bridges natural language ("add X," "build Y").
+- **Standardized gate vocabulary** — `blocking`/`warning`/`info` severity language and articulated escape hatches added to all 6 operational skills and AGENTS.md.
+- **Multi-agent platform safety** — 5 subagent spawn locations in autoresearch now guarded with "if your platform supports it" + sequential fallback paths.
+
+### Changes
+
+- `agent-context.md`: rewritten from 24 lines to 28 lines with routing section, pack anti-triggers, graduated obligation. Ratio shifted from 0.6:1 to ~4:1 core:pack.
+- `autoresearch/pack.yaml`: `context_snippet` reduced from 30 lines to 6-line routing stub — defers operational detail to on-demand SKILL.md.
+- All 10 skill descriptions: graduated strength (DEFAULT → Obligation → Standard → Specialized), anti-triggers on 8 skills, feature-request bridging on discover.
+- All 6 operational SKILL.md files: gate severity vocabulary + articulated escape hatch ("Proceeding past [item]. Risk: [risk]. Noted.").
+- `specflow-execute` Step 1: binary "never skip" replaced with graduated obligation table (5 change types with minimum bars), suspect-flag sweep made `blocking`.
+- `specflow-plan` Step 1: "Optionally" removed — gate runs by default.
+- `AGENTS.md` L108: silent skip → articulated skip with risk statement.
+- `specflow-init` Step 4: updated to reflect CLI auto-injection (was stale).
+- `specflow-autoresearch/SKILL.md`: 5 subagent spawn locations now guarded + sequential fallback paths.
+
+### Fixes
+
+- **Routing gap**: feature requests ("add a login page") now route to discover instead of straight to code.
+- **Review collision**: audit/artifact-review/change-impact-review now have mutual anti-triggers.
+- **Silent bypass**: escape hatches preserved but now produce an accounting record.
+- **Platform fragility**: unconditional subagent spawn instructions in autoresearch now have fallbacks for Windsurf and Junie.
+
 ## [1.6.5] - 2026-05-30
 
 ### Highlights
