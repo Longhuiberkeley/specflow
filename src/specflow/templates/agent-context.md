@@ -30,3 +30,12 @@ Work: `STORY`, `SPIKE`, `DEC`, `DEF` (in `_specflow/work/`) must link to specs.
 - Packs (e.g., autoresearch) are **separate subsystems**. Only use pack skills when the user explicitly asks for that pack's domain. Never invoke pack skills for codebase exploration, bug investigation, feature implementation, or general engineering — those are core engineering.
 - **By default**, new features go through the full pipeline. Typo fixes and trivial changes may use the lean path — but still trace to a STORY.
 - **Escape hatch:** The user can always override. When the user says "skip," "proceed anyway," or "move on," do exactly that. But before proceeding past a blocking check, articulate: "Proceeding past [specific item]. Risk: [what could go wrong]. Noted."
+
+### When to Escalate (Permanence Test)
+SPIKE/STORY are throwaway; REQ/ARCH/DDD (and, for research, COMP) are durable. When work outgrows a one-off answer — you're building something reusable, iterating a second time, defining an interface, or needing it to survive this session — promote to a durable artifact when ANY of these holds:
+- **Reuse** — the output will be depended on by future work (a dataset object, a pipeline, an API client), not a one-off answer.
+- **Second pass** — you're iterating on the same thing again; it has stopped being exploratory.
+- **Interface** — it defines a contract other code/research will call (→ ARCH/DDD).
+- **Survival** — it must outlive this session / be understood by a fresh agent.
+
+To promote, create the REQ/ARCH/DDD (or hand-author a new COMP) and link `derives_from` the originating SPIKE/COMP so context and traceability carry forward — don't silently keep spiking. See `specflow-execute/references/escalation-and-promotion.md` for the recipe.

@@ -1,6 +1,6 @@
 ---
 name: specflow-init
-description: Use when setting up SpecFlow in a new or existing project. Conversational bootstrap that scaffolds directories, installs hooks, generates CI workflows, and recommends next steps.
+description: Use when setting up SpecFlow in a new or existing project for the FIRST TIME. Conversational bootstrap that scaffolds directories, installs hooks, generates CI workflows, and recommends next steps. NOT for: re-initializing an already-configured project, adding packs to an existing setup (use specflow-adapter), or routine configuration changes.
 ---
 
 ## Freeform Input Handling
@@ -85,7 +85,21 @@ Append flags as needed:
 
 This scaffolds `.specflow/`, `_specflow/`, config files, schemas, checklists, and installs skill directories for the target platform. When `--domain` is provided, it also persists the domain classification and attempts to generate project-level best practices (the "process booklet").
 
-### 4. Verify git hook installation
+### 4. Verify SpecFlow instruction injection
+
+The `specflow init` CLI has already injected the SpecFlow instruction block into the platform's instruction file (via `scaffold.py`). Verify it landed correctly.
+
+#### 4a. Check the injected block
+
+Verify that the target instruction file contains the SpecFlow sentinel marker:
+
+#### 4b. Determine the target instruction file
+
+The `specflow init` CLI command has already handled instruction injection automatically (via `scaffold.py`). The instruction file should already contain the SpecFlow block wrapped in `<!-- SpecFlow section ... -->` sentinels. Verify it was injected correctly by checking the target file for the sentinel marker.
+
+If the marker is missing (unusual), the target file mapping is:
+
+### 5. Verify git hook installation
 
 The `specflow init` command installs a pre-commit hook automatically when `.git/` exists. Check the command output for:
 
@@ -95,7 +109,7 @@ The `specflow init` command installs a pre-commit hook automatically when `.git/
 
 If the project has no `.git/` directory yet, inform the user they can run `uv run specflow hook install` after initializing git.
 
-### 5. Generate CI workflow (if requested)
+### 6. Generate CI workflow (if requested)
 
 If a CI provider was specified and the adapters config was generated, the init command may have already created the workflow file. Verify from the output. If not, run:
 
@@ -103,7 +117,7 @@ If a CI provider was specified and the adapters config was generated, the init c
 uv run specflow ci generate
 ```
 
-### 6. Report and recommend next steps
+### 7. Report and recommend next steps
 
 Summarize what was done:
 
@@ -111,7 +125,7 @@ Summarize what was done:
 - Configuration files written (`config.yaml`, `state.yaml`, `adapters.yaml`)
 - Domain classification persisted (if `--domain` was provided)
 - Project best practices generated (if domain was set and API key available)
-- Instruction file updated (the CLI automatically injects base context and pack snippets)
+- Instruction file updated (target file path)
 - Pre-commit hook installed
 - CI workflow generated (if applicable)
 - Packs applied (if any)

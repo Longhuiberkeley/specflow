@@ -56,10 +56,24 @@ Load from `.specflow/checklists/learned/`. These are auto-generated from past de
 ```
 For each artifact being reviewed:
   1. Load all applicable checklists
-  2. Run automated items first (zero tokens)
-  3. If all automated items pass, run LLM-judged items
-  4. Collect results, organize by severity
+  2. Deduplicate (identical check text → keep higher severity)
+  3. Sort: automated first, then proactive, then reactive/standard
+  4. Pass 1: Run automated items (zero tokens)
+  5. If any blocking automated item fails → STOP, skip LLM items
+  6. Pass 2: Run LLM-judged items (proactive mode items first)
+  7. Collect results, organize by severity
+  8. Persist to .specflow/checklist-log/
+  9. Update artifact's checklists_applied frontmatter
 ```
+
+## Proactive & Reactive Modes
+
+Checklist items can have a `mode` field:
+- **standard** (default): Normal review items
+- **proactive**: Edge case discovery items — "What could go wrong?"
+- **reactive**: Prevention patterns learned from past work
+
+Proactive items are included when `--proactive` flag is used. Reactive items (from `learned/PREV-*.yaml`) auto-load based on tag matching.
 
 ## Checklist File Format
 

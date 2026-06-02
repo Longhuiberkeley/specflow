@@ -1,6 +1,6 @@
 ---
 name: specflow-discover
-description: Use when the user wants to discover, capture, or author new requirements. Triggers a progressive disclosure conversation to extract specifications and create REQ artifacts.
+description: Use to start the SpecFlow requirements discovery workflow — the entry point for any new feature, enhancement, or specification task. Triggers when the user says "add X," "build Y," "create Z," "I need requirements for," "capture specs for," or "what should the system do?" This is step 1 of the core lifecycle — use it FIRST for any new feature or change that needs specification, BEFORE specflow-plan and specflow-execute. NOT for: data exploration, data cleaning, researching technologies, prototyping, running experiments, or technical prep work unrelated to requirements authoring.
 ---
 
 ## Freeform Input Handling
@@ -64,7 +64,8 @@ For bounded changes like "add dark mode" or "fix the login redirect":
 1. Generate a single REQ artifact with minimal metadata.
 2. Generate a single STORY artifact linked to the REQ via `implements`.
 3. Auto-approve both (set `status: approved`).
-4. Skip to Step 5 (Artifact Creation).
+4. Record the lean assessment on the REQ: `uv run specflow update <REQ-ID> --thinking-techniques lean_assessment`
+5. Skip to Step 5 (Artifact Creation).
 
 ### Step 2F: Full Discovery — Phase 1: Context-Free Questions
 
@@ -122,11 +123,13 @@ After each answer, update your readiness assessment silently.
    - API service → include auth, rate limiting, API versioning
 3. Cover applicable items from: error handling, security, observability, scalability, deployment.
 
-### Step 4: Requirements Summary & Approval
+### Step 4: Requirements Summary & Inter-REQ Dependencies
 
 1. Present a numbered summary of all discovered requirements to the user.
 2. Ask: "Does this capture everything? Anything missing or incorrect?"
 3. Iterate until user approves.
+4. **Inter-REQ dependency prompting**: Ask: "Do any of these requirements depend on others being implemented first? For example, 'user authentication' might need to be done before 'password reset'."
+5. For each dependency the user identifies, record it: `uv run specflow update <dependent-REQ> --links "[{\"target\": \"<prerequisite-REQ>\", \"role\": \"derives_from\"}]"`. These dependency links influence story wave ordering during planning.
 
 ### Step 5: Challenge Requirements
 
@@ -143,7 +146,36 @@ For each REQ, briefly challenge it: "Before I write this — is this actually ne
 
 Present concerns as a quick summary. Let the user confirm, revise, or drop requirements before proceeding.
 
+**Persist significant challenge results as decision artifacts** so they survive across sessions and are available to the plan skill:
+
+- **Dropped requirement**: Create a DEC artifact with title "Dropped: \<summary\>", status `approved`, body explaining the rationale for dropping.
+  ```
+  uv run specflow create --type decision --title "Dropped: <summary>" --status approved --body "<rationale>"
+  ```
+- **Assumption surfaced**: Create a DEC artifact with title "Assumption: \<text\>", status `draft`, body containing the assumption, what happens if wrong, and what validates it.
+  ```
+  uv run specflow create --type decision --title "Assumption: <text>" --status draft --body "<assumption, consequence if wrong, validation>"
+  ```
+- **Risk identified**: Create a DEC artifact with title "Risk: \<text\>", status `draft`, body containing the risk, likelihood, impact, and mitigation.
+  ```
+  uv run specflow create --type decision --title "Risk: <text>" --status draft --body "<risk, likelihood, impact, mitigation>"
+  ```
+
+Only create DEC artifacts for significant findings. If no challenges produce actionable results, skip DEC creation to avoid noise.
+
 If the user requested specific techniques or said "go deep", expand the selection accordingly.
+
+After applying thinking techniques, record which techniques were applied to each artifact — even if they passed cleanly (no findings):
+
+```
+uv run specflow update <REQ-ID> --thinking-techniques <technique1,technique2>
+```
+
+For example, if devil's advocate and five-whys were applied to REQ-001:
+
+```
+uv run specflow update REQ-001 --thinking-techniques devils_advocate,five_whys
+```
 
 ### Step 6: Artifact Creation
 
@@ -218,16 +250,40 @@ Wait for user acknowledgement before proceeding to phase transition.
 If this was the first discovery and the project was in `idle` state, update state:
 - Edit `.specflow/state.yaml`: set `current: specifying`, add history entry.
 
-**Exit message:** Report the REQ (and STORY, for lean path) IDs created, and recommend the next skill — `/specflow-plan` for the full path, `/specflow-execute` for the lean path.
+**Exit message (full path):** List created REQ IDs and provide explicit next steps:
+
+```
+Created: REQ-<id-1>, REQ-<id-2>, ...
+
+**Next steps:**
+1. Review the requirements above.
+2. Approve them: `specflow update REQ-<id> --status approved` (repeat for each)
+3. Run `/specflow-plan` to decompose into architecture and stories.
+
+Requirements are currently in **draft** status and must be approved before planning.
+```
+
+**Exit message (lean path):** REQs and STORYs were auto-approved during lean discovery:
+
+```
+Created: REQ-<id> (approved), STORY-<id> (approved)
+
+Requirements are already approved. Run `/specflow-execute` to implement.
+```
 
 ## Rules
 
+- **Gate severity:**
+  - `blocking` → Stop. Report the failure. Ask the user to fix before proceeding.
+  - `warning` → Present. Ask whether to proceed. Do not proceed silently.
+  - `info` → Note for awareness. Proceed.
+- **Escape hatch:** The user can always override. When the user says "skip," "proceed anyway," or "move on," do exactly that. But before proceeding past a `blocking` item, articulate: "Proceeding past [specific blocking item]. Risk: [what could go wrong]. Noted."
 - Requirements answer **"WHAT must the system do?"** — never HOW.
 - Use normative language: "The system **shall**..." (mandatory), "The system **should**..." (recommended), "The system **may**..." (optional).
 - No implementation details, technology choices, or architectural decisions in REQs.
 - Each REQ must have acceptance criteria.
 - One question at a time — never batch.
-- **Escape Hatch Rule**: If the user signals they've provided enough context (e.g., 'that's enough', 'move on', 'skip'), immediately proceed to artifact generation with what you have.
+- **Escape Hatch Rule**: If the user signals they've provided enough context (e.g., 'that's enough', 'move on', 'skip'), proceed to artifact generation. Before doing so, articulate: "Proceeding with [N] questions answered. Risk: requirements may be incomplete. Noted."
 - **Question Cap**: Limit the discovery conversation to 15-20 questions total. If more are needed, suggest the user may want to refine requirements first (which likely means the discover->plan pipeline needs restructuring).
 - Every skill that offers the user a choice must include "(Recommended)" labels on the suggested default.
 - When in doubt about level boundaries, read `references/level-boundaries.md`.
@@ -239,4 +295,4 @@ If this was the first discovery and the project was in `idle` state, update stat
 - `references/normative-language.md` — Proper requirement phrasing: RFC 2119 keywords, EARS sentence patterns, ambiguity word list, compound shall detection, passive voice avoidance.
 - `references/domain-checklists/<type>.md` — Per-domain question sets for Phase 2.
 - `references/cross-cutting.md` — Cross-cutting concern checklists for Phase 3.
-- `references/thinking-techniques.md` — Discovery-stage adversarial thinking techniques.
+- `references/thinking-techniques.md` — Discovery-stage adversarial thinking techniques (points to shared catalog at `../specflow-references/references/adversarial-lenses.md`).

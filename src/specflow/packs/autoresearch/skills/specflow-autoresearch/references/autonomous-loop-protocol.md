@@ -102,6 +102,8 @@ If the COMP artifact defines a `pre_check_command`, run it **before** entering t
 | 2 | **Missingness pattern** | % missing per feature, MNAR vs MCAR | >50% of features have >30% missing |
 | 3 | **Cardinality** | Unique values per categorical, constant columns | All features are constant (no signal) |
 | 4 | **Scale and range** | Min/max/mean/std per numeric feature | Features differ by >1e6 in scale without normalization path |
+| 5 | **Dimensionality** | n_features vs n_samples ratio; multicollinearity (pairwise correlation / VIF) — see BP-14 | n_features > n_samples with no regularization or reduction plan |
+| 6 | **Train/test distribution** | Adversarial-validation AUC of a train-vs-test classifier — see BP-11 | Not fatal; AUC → 1.0 means CV is untrustworthy (shift/leak) — record it and treat CV scores with suspicion |
 
 ### Domain-Specific Checks
 
@@ -111,6 +113,8 @@ If the COMP artifact defines a `pre_check_command`, run it **before** entering t
 | **tabular_ml** | Train/test overlap (hash-based), target leakage detection (high-correlation predictors), temporal split integrity |
 | **vision** | Image dimension consistency, corrupt file detection, label quality (random sample manual check) |
 | **nlp** | Text length distribution, language detection, encoding consistency, token count outliers |
+
+These checks operationalize **BP-01** (EDA), **BP-10/11/12** (validation integrity), and **BP-14** (dimensionality) from the handbook — read those BPs for rationale and fixes when a check fires.
 
 ### EDA Workflow
 
@@ -199,7 +203,7 @@ IF LOOP.iteration_count >= LOOP.budget:
 
 ## Phase 2: Ideate (Strategic)
 
-This is the **research** half of autoresearch — not metric hill-climbing. Before picking a change, form a hypothesis driven by what the project is actually trying to achieve. Consult the [ML Methodology Handbook](methodology-handbook.md) for domain-specific best practices relevant to your ideation direction.
+This is the **research** half of autoresearch — not metric hill-climbing. Before picking a change, form a hypothesis driven by what the project is actually trying to achieve. Consult the [ML Methodology Handbook](methodology-handbook.md) for best practices relevant to your ideation direction — pull the group that matches the change you're considering: **validation integrity (BP-10–12)** before trusting any score, **statistical traps (BP-13–16)** when a result looks too good or you've tried many variants, **optimize-the-objective (BP-17–19)** when tuning toward the metric, and **finishing moves (BP-20–22)** only once a single strong model exists. Respect the **transfer filter** at the top of the handbook: never import a leaderboard-gaming tactic that raises the metric without raising the goal.
 
 ### 2a. Goal-mindful hypothesis (light check, every iteration)
 
@@ -222,6 +226,15 @@ A good hypothesis is falsifiable in principle and tied to a goal — not "try le
 ### 2b. Is the metric still a faithful proxy for the goal?
 
 Every ~10 iterations (and at each condense point), pause and ask: **does the primary metric still reflect `COMP.goals`?** If the agent is gaming the metric without serving the goal (e.g. Sharpe climbing on 3 curve-fit trades, accuracy rising while calibration rots), that is itself a finding — log it and adjust: add an auxiliary metric, tighten `success_criteria`, or switch `objective_type`. A metric that has drifted from intent is worse than no metric.
+
+**Multi-output / vector targets (BP-19).** When the goal is a vector `[x, y, z]` or the primary metric is an aggregate over components, the single scalar can rise while a component regresses (Simpson's paradox, BP-16). Record each component as its own auxiliary metric using the convention `component_<name>` and check **every** component, not just the aggregate:
+
+```bash
+specflow update EXPT-NNNNN \
+  --set auxiliary_metrics='{"component_x": 0.81, "component_y": 0.77, "component_z": 0.42}'
+```
+
+If the aggregate improved only by trading one component off against another, that is not real progress — note it and, if persistent, split the COMP or add a per-component guard. (No schema change: `auxiliary_metrics` is a free dict; the `component_*` prefix is the convention Phase-6/FIND synthesis keys on.)
 
 ### 2c. Pick the NEXT change
 

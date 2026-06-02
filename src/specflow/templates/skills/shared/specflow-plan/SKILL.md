@@ -1,6 +1,6 @@
 ---
 name: specflow-plan
-description: Use when requirements are approved and the user wants to break them down into architecture, design, and stories. Triggers architecture discussion and artifact population.
+description: REQUIRED after discover when REQs are approved. Breaks approved requirements into architecture (ARCH), detailed design (DDD), and stories (STORY). Triggers when the user says "design the architecture," "plan the implementation," "break this down," or when REQs are approved and the user is ready to move forward. This is step 2 of the core lifecycle — use it BEFORE any implementation begins. NOT for: quick bug fixes (use specflow-execute with lean path), research tasks, or infrastructure setup.
 ---
 
 ## Freeform Input Handling
@@ -26,18 +26,23 @@ Break down approved requirements into architecture, detailed design, and user st
 
 1. Read all REQ artifacts from `_specflow/specs/requirements/`.
 2. Verify all REQs have `status: approved`. If any are still `draft`, tell the user which ones need approval before planning can proceed.
-3. Optionally run the phase gate: `uv run specflow artifact-lint --type gate --gate specifying-to-planning`.
+3. Run the phase gate: `uv run specflow artifact-lint --type gate --gate specifying-to-planning`. Run it by default — only skip if the user explicitly declines.
 4. If gate fails, report blockers and stop.
 
 ### Step 2: Read & Understand Requirements
 
 1. Read every approved REQ artifact in full — body and acceptance criteria, not just titles.
-2. Identify:
+2. **Read domain context** from `.specflow/config.yaml`:
+   - Read `project.domain` (set during discover via `specflow domain set`).
+   - Read `project.domain_tags` list.
+   - If domain is set: prefix the summary with "This is a \<domain\> project with focus on \<tags\>. Domain-specific decomposition considerations apply."
+3. **Load decision artifacts** created during discovery. Read any DEC artifacts from `_specflow/work/decisions/` that were produced by the discover skill's challenge step. These contain assumptions, risks, and dropped requirements that inform architectural choices.
+4. Identify:
    - Core domain concepts and entities
    - Cross-cutting concerns (auth, logging, error handling)
    - External system integrations
    - Non-functional constraints (performance, scale, compliance)
- 3. Summarize your understanding back to the user: "Here's what I see as the system scope. Correct?"
+5. Summarize your understanding back to the user: "Here's what I see as the system scope. Correct?"
 
 ### Step 2.5: Generate Planning Best Practices
 
@@ -58,6 +63,30 @@ Read the generated BPs with `uv run specflow handbook show plan-arc`.
 4. When presenting to the user, briefly explain *how* the BPs and techniques shaped your proposal (e.g., *"Following the domain BP to separate data from rules, I split X and Y. I also ran a premortem check and added Z as a fallback."*). This shows your work and guides the user toward better architectural decisions.
 
 If no API key is configured, this step is skipped gracefully.
+
+### Step 2.5: Parallel Architecture Candidate Generation (Optional, for complex systems)
+
+For systems with 3+ REQs, multiple external integrations, or cross-cutting concerns spanning security/performance/compliance, generate 2-3 alternative architecture decompositions before committing to one. This prevents single-approach myopia.
+
+**Trigger conditions** (any one of):
+- 5+ approved REQs in scope
+- REQs span 2+ domains (e.g., web + data pipeline + auth)
+- Architecture will have 4+ components
+- User explicitly asks for alternatives or says "what are my options?"
+
+**Pattern** (if your platform supports spawning subagents):
+1. Prepare a brief with: all approved REQ summaries, domain context, external system constraints, and NFRs.
+2. Spawn 2-3 subagents with different decomposition seeds:
+   - **Seed A (domain-driven):** Decompose by business domain / bounded context
+   - **Seed B (technical-layers):** Decompose by technical layer (API → Service → Data)
+   - **Seed C (risk-first):** Decompose by what's most likely to fail — isolate risky components
+3. Each subagent returns: component list with responsibilities, interfaces between components, rationale for the decomposition.
+4. The parent agent presents the 2-3 alternatives to the user as a comparison, highlighting trade-offs (coupling, deployability, team fit). The user picks one; the parent proceeds with detailed ARCH creation.
+
+**Fallback (no subagent support):** Generate alternatives sequentially — draft Seed A, then deliberately re-think from Seed B's perspective, then Seed C. Present the same comparison.
+
+**Subagent prompt template:**
+> "You are a software architect using a [SEED] decomposition strategy. Design an architecture for [system summary]. Approved REQs: [summaries]. Constraints: [NFRs, external systems, domain]. Return: component list with responsibilities, interface map, rationale for this decomposition vs alternatives."
 
 ### Step 3: Architecture Proposal
 
@@ -87,7 +116,7 @@ uv run specflow create \
 
 ### Step 4: Detailed Design (Where Needed)
 
-Not every ARCH component needs a DDD. Create DDD artifacts only for components that need algorithmic detail — complex logic, state machines, data transformations, or protocol handling.
+Not every ARCH component needs a DDD. **Read `references/ddd-selection.md`** for the 6-question decision checklist to determine which ARCHs need DDD artifacts. Create DDD artifacts only for components that answer YES to at least one question — complex logic, state machines, data transformations, protocol handling, concurrent access, or error recovery.
 
 For each DDD:
 1. Specify function signatures with input/output types
@@ -120,6 +149,13 @@ For each ARCH, briefly: "6 months from now this failed — what went wrong? Any 
 Present concerns and let the user revise before creating artifacts.
 
 If the user requested specific techniques or said "go deep", expand the selection accordingly.
+
+After applying thinking techniques, record which techniques were applied to each artifact — even if they passed cleanly:
+
+```
+uv run specflow update <ARCH-ID> --thinking-techniques <technique1,technique2>
+uv run specflow update <DDD-ID> --thinking-techniques <technique1,technique2>
+```
 
 ### Step 5: Story Breakdown (SPIDR)
 
@@ -201,6 +237,11 @@ Update `.specflow/state.yaml`: set `current: planning`, add history entry.
 
 ## Rules
 
+- **Gate severity:**
+  - `blocking` → Stop. Report the failure. Ask the user to fix before proceeding.
+  - `warning` → Present. Ask whether to proceed. Do not proceed silently.
+  - `info` → Note for awareness. Proceed.
+- **Escape hatch:** The user can always override. When the user says "skip," "proceed anyway," or "move on," do exactly that. But before proceeding past a `blocking` item, articulate: "Proceeding past [specific blocking item]. Risk: [what could go wrong]. Noted."
 - ARCH answers "HOW is the system structured?" — defines interfaces between components, not user-facing behavior.
 - DDD answers "HOW does each part work internally?" — implementation-level detail for developers.
 - STORY references specs, doesn't replace them. Use link roles: `implements` (→ REQ), `guided_by` (→ ARCH), `specified_by` (→ DDD).
@@ -215,4 +256,4 @@ Update `.specflow/state.yaml`: set `current: planning`, add history entry.
 - `references/story-writing.md` — Story template and acceptance criteria patterns.
 - `references/link-roles.md` — Complete link role vocabulary with usage examples.
 - `references/level-boundaries.md` — REQ vs ARCH vs DDD boundary rules with examples.
-- `references/thinking-techniques.md` — Planning-stage adversarial thinking techniques.
+- `references/thinking-techniques.md` — Planning-stage adversarial thinking techniques (points to shared catalog at `../specflow-references/references/adversarial-lenses.md`).

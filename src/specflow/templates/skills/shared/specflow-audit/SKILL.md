@@ -1,6 +1,6 @@
 ---
 name: specflow-audit
-description: Use when the user wants a full-project health review. Runs a zero-question deterministic core with optional adversarial wings. Creates AUD and CHL artifacts.
+description: Use for a FULL-PROJECT health review — runs a zero-question deterministic core with optional adversarial wings. Creates AUD and CHL artifacts. Triggers when the user says "audit the project," "health check," "how healthy is the project," or asks for a comprehensive project-wide assessment. NOT for: single-artifact review (use specflow-artifact-review), reviewing blast radius of recent changes (use specflow-change-impact-review), or quick spot-checks of one file.
 ---
 
 ## Freeform Input Handling
@@ -51,10 +51,20 @@ After the core audit completes, offer to run deeper, AI-driven adversarial revie
 - "The deterministic audit is complete. Would you like me to run the adversarial wings to review qualitative alignment? (Recommended: Yes, if preparing for a release/milestone)"
 
 If accepted:
-1. Formulate up to 16 lenses (e.g., edge-case logic, security posture, performance, coupling).
+1. Read `../specflow-references/references/adversarial-lenses.md` for the full 16-lens catalog. Select lenses relevant to the findings from Step 1 (e.g., if coverage gaps found → use `audit-vertical`; if dependency issues → use `dependency_shock`).
 2. For any artifact flagged during Step 1, run `uv run specflow trace <ARTIFACT_ID>` to understand its full upstream/downstream dependency context before evaluating lenses.
-3. Create 2 parallel subagents (if your environment supports it) to evaluate these lenses against the V-model specifications.
+
+3. **Parallel lens fan-out (error-driven scaling):**
+   - **Standard (0-2 errors in Step 1):** Create 2 parallel subagents (if your platform supports spawning subagents) each covering a subset of the selected lenses. Sequential fallback: run lens groups sequentially.
+   - **Elevated (3-7 errors in Step 1):** Create 3-4 parallel subagents (if supported), one lens per subagent. This gives each lens its own context window for deeper analysis. Sequential fallback: run lenses one at a time.
+   - **Critical (8+ errors in Step 1):** Create 4-5 parallel subagents, plus a dedicated cross-cutting subagent that reads ALL lens outputs and synthesizes systemic patterns (e.g., "4 of 5 lenses flagged the same coupling issue — this is architectural, not local"). Sequential fallback: run all lenses sequentially, then a dedicated synthesis pass.
+
 4. Consolidate the findings from the adversarial wings.
+5. When creating CHL artifacts, use specific technique names (e.g., `premortem`, `stress_scale`, `dependency_shock`) rather than the generic `project-audit` label. The deterministic core findings use `audit-horizontal`, `audit-vertical`, and `audit-cross-cutting`.
+6. After running lenses on sampled artifacts, record which techniques were applied:
+   ```
+   uv run specflow update <ARTIFACT_ID> --thinking-techniques premortem,stress_scale
+   ```
 
 ### Step 3: Artifact Creation
 
@@ -85,5 +95,10 @@ Present a concise summary to the user:
 - Next steps (e.g., "Review the new Challenge artifacts and address them in the next planning phase").
 
 ## Rules
+- **Gate severity:**
+  - `blocking` → Stop. Report the failure. Ask the user to fix before proceeding.
+  - `warning` → Present. Ask whether to proceed. Do not proceed silently.
+  - `info` → Note for awareness. Proceed.
+- **Escape hatch:** The user can always override. When the user says "skip," "proceed anyway," or "move on," do exactly that. But before proceeding past a `blocking` item, articulate: "Proceeding past [specific blocking item]. Risk: [what could go wrong]. Noted."
 - Do not ask context-gathering questions before the deterministic core runs. The core must be zero-question.
 - Ensure any generated CHL artifacts include actionable recommendations.

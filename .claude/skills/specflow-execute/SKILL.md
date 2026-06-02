@@ -34,6 +34,8 @@ The planning-to-executing phase gate IS the readiness check. Run it before any i
 | Refactoring (no behavior change) | STORY linked to affected ARCH. Warnings advisory. |
 | Typo / formatting / dependency updates | Gate is advisory. State skip reason and proceed. |
 
+**Escalation check.** If you arrived here mid-chat on work that started as a SPIKE or ad-hoc experiment, apply the **Permanence Test** before treating it as throwaway — work that will be reused, is on its second pass, defines an interface, or must outlive the session should be **promoted** to a durable REQ/ARCH/DDD (or a research COMP) first. See `references/escalation-and-promotion.md` for the recipe.
+
 1. **Run the deterministic gate:**
    ```
    uv run specflow artifact-lint --type gate --gate planning-to-executing

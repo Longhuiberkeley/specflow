@@ -1,6 +1,6 @@
 ---
 name: specflow-artifact-review
-description: Use when the user wants to review, validate, or verify any SpecFlow artifacts. Triggers context-specific checks using automated scripts and checklist review.
+description: Use to review, validate, or verify SPECIFIC SpecFlow artifacts — one artifact or a small named set. Triggers context-specific checks using automated scripts and checklist review. Triggers when the user says "review this REQ," "validate the ARCH," "check this story," or asks about a specific artifact's quality. NOT for: full-project health checks (use specflow-audit), reviewing blast radius of recent DEC changes (use specflow-change-impact-review), or general code review outside SpecFlow artifacts.
 ---
 
 ## Freeform Input Handling
@@ -109,9 +109,29 @@ uv run specflow checklist-run --proactive <ARTIFACT_ID>
 
 This surfaces proactive challenge items ("what could go wrong? what's missing?") alongside the assembled checklist.
 
-For the full 16-lens catalog (stress-scale, dependency shock, reversal, five-whys, outside view, worst-case user, regulator, temporal drift, composition, inversion, competitor, cost-scaling) and the lens-selection checklist UX, read `references/adversarial-lenses.md`.
+For the full 16-lens catalog (stress-scale, dependency shock, reversal, five-whys, outside view, worst-case user, regulator, temporal drift, composition, inversion, competitor, cost-scaling) and the lens-selection checklist UX, read `../specflow-references/references/adversarial-lenses.md`.
 
 **Rule:** never propose a lens whose finding would be a direct duplicate of a checklist item already run in Step 3. If a lens would only repeat the checklist, skip it.
+
+### Step 5b: Deep Review with Parallel Lenses (Optional, for high-stakes artifacts)
+
+For artifacts where quality is critical (safety, security, compliance, or user-facing contracts), fan out adversarial lenses as parallel subagents. Each lens gets its own context window, producing deeper analysis than sequential single-agent review.
+
+**Trigger conditions** (any one of):
+- Artifact has tags: `safety`, `security`, `compliance`, `api`, `contract`
+- Artifact is a REQ with `priority: high` or `critical`
+- User explicitly requests "deep review," "thorough review," or "adversarial review"
+- The artifact is part of a release baseline
+
+**Pattern** (if your platform supports spawning subagents):
+1. Select 3-5 lenses from the 16-lens catalog relevant to the artifact's domain and tags.
+2. Spawn one subagent per lens. Each subagent receives: the artifact content, the checklist results from Steps 3-4, and its assigned lens. Each returns findings at `blocking`/`warning`/`info` severity.
+3. The parent agent deduplicates across lens outputs (same finding from multiple lenses = stronger signal) and merges into the final report.
+
+**Fallback (no subagent support):** Apply lenses sequentially — 3-5 passes through the artifact, one lens per pass. Same result, higher context load.
+
+**Subagent prompt template:**
+> "You are an adversarial reviewer using the [LENS NAME] lens. Review artifact [ID]. Context: [checklist findings so far]. Question: [lens-specific question]. Return findings as: severity | finding | evidence from artifact. Be specific — cite line numbers or sections."
 
 ### Step 6: Report Findings
 
@@ -183,6 +203,11 @@ Use `--no-patterns` to skip pattern extraction, or `--auto` to skip prompts. Thi
 
 ## Rules
 
+- **Gate severity:**
+  - `blocking` → Stop. Report the failure. Ask the user to fix before proceeding.
+  - `warning` → Present. Ask whether to proceed. Do not proceed silently.
+  - `info` → Note for awareness. Proceed.
+- **Escape hatch:** The user can always override. When the user says "skip," "proceed anyway," or "move on," do exactly that. But before proceeding past a `blocking` item, articulate: "Proceeding past [specific blocking item]. Risk: [what could go wrong]. Noted."
 - **Automated lint (zero tokens) always runs first.** LLM-judged checks only run if lint passes.
 - **Checklists before lenses, always.** Lenses complement checklists; they do not replace them.
 - Severity levels: `blocking` (must fix), `warning` (should fix), `info` (nice to know).
@@ -196,4 +221,4 @@ Use `--no-patterns` to skip pattern extraction, or `--auto` to skip prompts. Thi
 - `references/checklist-assembly.md` — How checklists are assembled for review.
 - `references/severity-levels.md` — Severity level definitions and escalation rules.
 - `references/challenge-engine.md` — Proactive and reactive challenge modes.
-- `references/adversarial-lenses.md` — Full 16-lens catalog and lens-selection UX for adversarial review.
+- `../specflow-references/references/adversarial-lenses.md` — Full 16-lens catalog, per-phase defaults, and lens-selection UX.

@@ -188,6 +188,24 @@ Focus: **experimental thinking lenses, concise context, atomic CLI sugar, and su
 - **ML tracker coexistence** — documented integration pattern with MLflow, Weights & Biases, Neptune, MLRun, etc. via "Coexisting with External ML Trackers" section in `competition-setup-protocol.md`
 - **Passive-CLI banner** — `autoresearch run` prints a reminder that the AI agent drives the loop, not the CLI
 
+## v1.8.0 (Planned)
+
+Focus: **swarm observability, synthesis conflict resolution, semantic drift detection, and human steering.**
+
+- **Cost and Token Observability** — add `--dry-run` to multi-agent skills (e.g., `/specflow-audit`, `/specflow-plan`) to estimate token cost before fan-out. Log token/cost telemetry to `.specflow/telemetry/` for post-hoc analysis.
+- **Synthesis Conflict Resolution Rubric** — introduce a rigorous conflict-resolution rubric for synthesis agents (e.g., merging parallel ARCH candidates). Mandate `ask_user` prompts when parallel seeds fundamentally diverge on core constraints.
+- **Stale Code Detection (Semantic Drift)** — add a lint check that flags `implemented` or `verified` code/artifacts as "stale" when their governing upstream REQ or ARCH is modified.
+- **Human-in-the-Loop Readability** — evolve `specflow autoresearch review` into a robust CLI dashboard, ensuring LOOP logs, FINDs, and EXPT rubrics remain human-readable when humans need to step in and steer the AI swarm.
+- **Proactive Dogfooding Enforcement** — enforce that SpecFlow development proactive uses `/specflow-plan` and `/specflow-execute` on itself, drafting and approving DEC and ARCH artifacts *before* writing framework code.
+
+### Delivered
+
+- **Autoresearch methodology depth (BP-10–22)** — expanded `methodology-handbook.md` with four new groups: validation integrity (split-first, adversarial validation, out-of-fold), statistical traps (multiple-comparisons, dimensionality/curse-of-dimensionality, distribution shift, Simpson's paradox), optimize-the-objective (eval-metric/post-processing, calibration, multi-output decomposition), and finishing moves (diverse ensembling, seed averaging, pseudo-labeling), plus a bias catalog. Added a **Kaggle transfer filter** distinguishing tactics that generalize to deployment from leaderboard-gaming that increases overfitting. Wired into the loop's EDA checks (dimensionality + adversarial validation) and Phase-2 ideation so the BPs are consulted live, not left as a dead reference. Multi-output `[x,y,z]` targets get per-component `auxiliary_metrics` discipline and per-component finding synthesis; best-of-many findings are confidence-capped until confirmed (multiple-comparisons).
+- **Escalation / Permanence Test** — added a "when to escalate" heuristic to the always-loaded base context (`agent-context.md` + injected instruction block) so the agent recognizes, during free-form chat, when throwaway SPIKE/STORY work has become durable and should be promoted to REQ/ARCH/DDD (or a research COMP). New `specflow-execute/references/escalation-and-promotion.md` recipe (SPIKE→spec, COMP→COMP) with `derives_from` lineage; cross-linked from execute and discover; COMP-evolution guidance added to the autoresearch skill.
+- **Skill template freshness fix** — synced the shipping skill templates (`src/specflow/templates/skills/shared/`) from the live dogfood layer, resolving pre-existing drift across all 10 core skills (stale descriptions, missing `ddd-selection.md`, the relocated shared `specflow-references/adversarial-lenses.md`). New `specflow init`s now ship current skills/BPs/thinking-techniques rather than stale copies.
+
+> Deferred: an audit/lint detector that flags long-lived SPIKEs / repeated ad-hoc work that should have been promoted (a work-side complement to the *Stale Code Detection* item above). Also deferred: optional structured multi-output schema (typed per-component fields on COMP/EXPT) if the `component_<name>` convention proves too loose.
+
 ## v1.7.1
 
 Focus: **cross-platform skill export and dogfooding.**

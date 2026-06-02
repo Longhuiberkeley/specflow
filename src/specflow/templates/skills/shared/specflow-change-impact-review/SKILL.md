@@ -1,6 +1,6 @@
 ---
 name: specflow-change-impact-review
-description: Use when the user wants to run the change-audit pipeline to autonomously review impact cones of recent changes and log findings.
+description: Use to review the IMPACT CONE of recent changes — finds unreviewed DEC artifacts, computes blast radius, reviews impact, creates CHL findings. Triggers when the user says "what's the impact of this change," "review recent changes," "change impact," or after a series of commits/PRs. NOT for: full-project audits (use specflow-audit), single-artifact review (use specflow-artifact-review), or reviewing changes that don't have DEC artifacts yet.
 ---
 
 ## Freeform Input Handling
@@ -49,7 +49,7 @@ For each DEC and its impact cone:
    - Unhandled edge cases introduced by the change.
    - Missing updates to related tests or documentation.
 
-5. **Auto-select adversarial lenses based on cone signals.** Pure pattern-matching misses risks that need an explicit frame. Inspect the tags and types in the impact cone and pick 2-3 lenses from `specflow-artifact-review/references/adversarial-lenses.md` to apply to the impacted artifacts. Selection rules:
+5. **Auto-select adversarial lenses based on cone signals.** Pure pattern-matching misses risks that need an explicit frame. Inspect the tags and types in the impact cone and pick 2-3 lenses from `../specflow-references/references/adversarial-lenses.md` to apply to the impacted artifacts. Selection rules:
 
    | Signal in cone | Lenses to add |
    |---|---|
@@ -60,6 +60,15 @@ For each DEC and its impact cone:
    | None of the above | **Premortem** + **Composition** (default minimum) |
 
    Apply the selected lenses to the cone artifacts only — never the full project. Each lens is one focused question; spend a few sentences per lens, not a deep audit. The output is one or more findings per lens, which feed Step 4.
+
+6. **Parallel fan-out for large impact cones (if your platform supports spawning subagents):**
+   - **Standard (1-5 impacted artifacts):** Review sequentially — context load is manageable.
+   - **Elevated (6-15 impacted artifacts):** Spawn one subagent per artifact type group (e.g., REQs together, ARCHs together). Each subagent applies the selected lenses to its group and returns findings.
+   - **Critical (16+ impacted artifacts):** Spawn one subagent per artifact + one synthesis subagent that reads all outputs and identifies cross-artifact patterns. This prevents missing systemic issues that only emerge when you see the whole cone.
+   - **Fallback (no subagent support):** Review in artifact-type groups sequentially. For critical cones, do a two-pass review: first pass per-artifact, second pass cross-artifact synthesis.
+
+   **Subagent prompt template (per-artifact-group):**
+   > "You are reviewing the impact of change [DEC-ID]: [summary]. Review artifact group [types] within the blast radius. Apply lenses: [lens list]. For each artifact: does the change introduce contradictions, unhandled edge cases, or missing updates? Return findings at blocking/warning/info severity with artifact references."
 
 ### Step 4: Filing Findings
 
@@ -77,12 +86,21 @@ After the review for a specific DEC is complete:
 1. Update the DEC's `review_status` in its YAML frontmatter.
    - If issues were found and CHL artifacts created, set `review_status: flagged`.
    - If the change is clean and no issues were found, set `review_status: reviewed`.
-2. Save the updated DEC artifact.
+2. Record which lenses were applied to each impacted artifact:
+   ```bash
+   uv run specflow update <ARTIFACT-ID> --thinking-techniques <lens1,lens2>
+   ```
+3. Save the updated DEC artifact.
 
 Repeat Steps 2-5 for all unreviewed DECs discovered in Step 1.
 
 ## Rules
 
+- **Gate severity:**
+  - `blocking` → Stop. Report the failure. Ask the user to fix before proceeding.
+  - `warning` → Present. Ask whether to proceed. Do not proceed silently.
+  - `info` → Note for awareness. Proceed.
+- **Escape hatch:** The user can always override. When the user says "skip," "proceed anyway," or "move on," do exactly that. But before proceeding past a `blocking` item, articulate: "Proceeding past [specific blocking item]. Risk: [what could go wrong]. Noted."
 - **Idempotency:** Always check for `review_status: unreviewed`. If none exist, do nothing.
 - **Scoping:** Strictly limit the review to the blast radius computed by `change-impact`. Do not review the entire project.
 - **Traceability:** Ensure all findings (CHLs) are explicitly linked to the source DEC that triggered them.

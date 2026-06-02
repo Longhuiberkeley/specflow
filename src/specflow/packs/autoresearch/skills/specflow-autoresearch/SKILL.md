@@ -170,6 +170,23 @@ COMP (active)
 
 Each new LOOP reads all confirmed FINDs for its COMP before starting (Phase 1: Review). This is how the agent learns across loops.
 
+## Evolving a COMP
+
+A COMP is **durable** — it pins a dataset, metric, and verify command. When the research scope genuinely shifts, **do not keep spiking inside the old COMP or quietly mutating its `verify_command`**: that orphans the existing EXPTs/FINDs from the thing they were measured against. Author a **new COMP** by hand (it's a deliberate, one-time setup — keep it manual). Two cases:
+
+- **Builds on a prior COMP** (same problem, refined — e.g. COMP-001 → COMP-002 adds a data source or tightens the split). Create the new COMP, link it to the old one, and carry forward the proven knowledge so the first LOOP doesn't re-derive it:
+  ```bash
+  specflow create --type competition --title "Track A v2: + cross-asset features" \
+    --set verify_command="..." --set metric_name="Sharpe" --set metric_direction=higher_is_better \
+    --set links='[{"target":"COMP-001","role":"derives_from"}]'
+  # then the first LOOP on COMP-002 loads confirmed FINDs from COMP-001:
+  specflow create --type loop --title "..." --set competition=COMP-002 \
+    --set mode=explore --set budget=40 --set knowledge_input='["FIND-003","FIND-007"]'
+  ```
+- **A genuinely new thing** (different dataset, different metric, different target). Create a fresh COMP with **no link** — a clean research scope. Don't contort the old COMP to host it.
+
+Rule of thumb: if the `verify_command`, `metric_name`, dataset, or target would change, that's a **new COMP**, not a new SPIKE and not an in-place edit. (This is the research-side mirror of the Permanence Test — see the SpecFlow base context.)
+
 ## The Loop
 
 ```bash

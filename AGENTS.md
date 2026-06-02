@@ -107,6 +107,17 @@ When implementing stories via `/specflow-execute`, also update linked ARCH and D
 - **Label defaults.** When offering choices, mark the suggested option with "(Recommended)".
 - **Escape hatches.** If the user says "move on" or "skip", proceed with what they request. But before proceeding past a blocking check or required step, articulate what is being skipped and why: "Proceeding past [specific item]. Risk: [what could go wrong]. Noted." This preserves the accounting record.
 
+### When to Escalate (Permanence Test)
+
+SPIKE/STORY are throwaway; REQ/ARCH/DDD (and, for research, COMP) are durable. When work outgrows a one-off answer — you're building something reusable, iterating a second time, defining an interface, or needing it to survive this session — promote to a durable artifact when ANY of these holds:
+
+- **Reuse** — the output will be depended on by future work (a dataset object, a pipeline, an API client), not a one-off answer.
+- **Second pass** — you're iterating on the same thing again; it has stopped being exploratory.
+- **Interface** — it defines a contract other code/research will call (→ ARCH/DDD).
+- **Survival** — it must outlive this session / be understood by a fresh agent.
+
+To promote, create the REQ/ARCH/DDD (or hand-author a new COMP) and link `derives_from` the originating SPIKE/COMP so context and traceability carry forward — don't silently keep spiking. See `specflow-execute/references/escalation-and-promotion.md` for the recipe.
+
 ### Conventions
 
 - Status flow: `draft` → `approved` → `implemented` → `verified`

@@ -113,6 +113,8 @@ Example:
 | **medium** | Supported by one LOOP with 3+ kept EXPTs. Pattern is clear but not yet validated on a different split. |
 | **low** | Based on 1-2 kept EXPTs. Preliminary — needs confirmation before relying on it for direction. |
 
+**Multiple-comparisons cap (BP-13).** A `what_worked` finding selected as the *best of many* EXPTs is upward-biased — the more variants the LOOP tried, the more its top result owes to luck. **Cap such a finding at `confidence: medium` until it is confirmed on a fresh seed or a held-out slice.** Only a passed confirmation run (or reproduction in a later LOOP) earns `high`. Note the confirmation status in `what_worked` (e.g., "confirmed on seeds 7/11/13" vs "single-seed, unconfirmed").
+
 ### deployability
 
 Not all "what worked" findings are deployable. A high-Sharpe strategy with 1,000 micro-trades per day may be "what worked" but `not_deployable` due to transaction costs. Use this field to separate "works on paper" from "works in production."
@@ -155,6 +157,14 @@ For each auxiliary metric tracked across >=5 EXPTs:
 1. **Correlation with primary:** Spearman rank correlation. Co-moving metrics are redundant (consider dropping). Orthogonal metrics provide independent signal.
 2. **Trend detection:** Simple linear regression on the auxiliary metric vs iteration number. Significant slope (p<0.05) → trend worth surfacing.
 3. **Breakpoint detection:** Did the auxiliary metric shift at a specific EXPT? That EXPT may have had side effects invisible to the primary metric.
+
+### Per-Component Analysis for Multi-Output Targets (BP-19)
+
+When the COMP target is a vector and EXPTs carry `component_<name>` auxiliary metrics, analyze **each component as its own series**, not only the aggregate:
+
+1. **Per-component trend:** Run the trend detection above on every `component_*` series. Flag any component whose trend is *down* while the aggregate is *up* — record it in `what_failed` as `conditional` ("aggregate gain came at the cost of component_z").
+2. **Component balance:** If the aggregate is flat but components are drifting apart (one up, one down), the system is trading off, not improving — surface as a finding so the next LOOP can rebalance or split the objective.
+3. **Component correlation:** Strongly anti-correlated components signal a genuine trade-off frontier; report it so goals/weights can be reconsidered rather than blindly maximized.
 
 **Tag findings from auxiliary metrics with source: `auxiliary_metric`** so the next LOOP knows this insight came from secondary analysis, not primary verification.
 
