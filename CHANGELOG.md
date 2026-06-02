@@ -4,6 +4,36 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.7.3] - 2026-06-02
+
+### Highlights
+
+- **Autoresearch methodology depth (22 BPs)** — expanded `methodology-handbook.md` with four new groups: validation integrity (split-first preprocessing, adversarial validation, out-of-fold meta-steps), statistical traps (multiple comparisons, dimensionality as a modeling concern, distribution shift, Simpson's paradox), optimize-the-real-objective (eval-metric post-processing, calibration, multi-output decomposition), and finishing moves (diverse ensembling, seed averaging, pseudo-labeling). Added a Kaggle transfer filter and a bias catalog. Wired into EDA checks and Phase-2 ideation so BPs are consulted live.
+- **Escalation / Permanence Test** — new heuristic in the always-loaded context so the agent recognizes when throwaway SPIKE/STORY work has become durable and should be promoted to REQ/ARCH/DDD (or a research COMP). Uses situational trigger wording ("when work outgrows a one-off answer"). New `escalation-and-promotion.md` recipe with worked examples and `derives_from` lineage. Cross-linked from execute Step 1 and discover readiness check.
+- **Skill template freshness sync** — synced shipping templates from the live dogfood layer, fixing drift across all 10 core skills. Relocated `adversarial-lenses.md` to shared `specflow-references/` directory. Added `ddd-selection.md` to plan references.
+
+### Features
+
+- `methodology-handbook.md`: 22 best practices (BP-01 mandatory, BP-02–22 advisory) with anti-patterns, domain fit gates, and bias catalog
+- `escalation-and-promotion.md`: SPIKE→spec promotion recipe with `derives_from` lineage tracking
+- `agent-context.md`: Permanence Test with situational trigger ("when work outgrows a one-off answer")
+- `specflow-references/references/adversarial-lenses.md`: shared 16-lens catalog used by discover, plan, execute, artifact-review, audit, and change-impact-review
+
+## [1.7.2] - 2026-05-31
+
+### Highlights
+
+- **Post-review fixes** — 9 fixes from adversarial review: missing gate block in change-impact-review, orphan exclude dirs, escape hatch wording consistency, guard wording standardization, step numbering, agent-context escape hatch, orphan exit code, Phase 0.6/BP-01 cross-references, reference description consistency.
+
+### Fixes
+
+- Missing gate block in `specflow-change-impact-review` SKILL.md
+- Orphan code detection: exclude dirs not being respected
+- Escape hatch wording standardized across all skills
+- Guard wording consistency in autoresearch loop protocol
+- Step numbering consistency in execute and discover
+- Phase 0.6 / BP-01 cross-reference clarity in loop protocol
+
 ## [1.7.1] - 2026-05-31
 
 ### Highlights
