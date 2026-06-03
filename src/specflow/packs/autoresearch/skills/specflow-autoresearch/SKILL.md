@@ -199,6 +199,9 @@ The CLI prints the 8-phase protocol checklist with current progress. Read `refer
 LOOP (budget iterations):
   Phase 1: Review — Read FINDs + current EXPTs + git history
   Phase 2: Ideate — Pick next change based on mode, knowledge, and history. You MUST form and record a hypothesis and research question before modifying.
+             Phase 2a: Goal-mindful hypothesis + HIGHEST-IMPACT FORCING (mandatory gate)
+             Phase 2c: Pick change + CATEGORY DIVERSITY GATE (mandatory — blocks 3+ consecutive same-category)
+             Phase 2d: Premise check + IDEA DIVERSITY CHECK (mandatory — blocks narrow-lens thinking)
   Phase 3: Modify — Make ONE focused change to in-scope files
   Phase 4: Commit — Git commit with experiment(<scope>): prefix
   Phase 5: Verify — Run COMP.verify_command, extract metric number
@@ -206,6 +209,18 @@ LOOP (budget iterations):
   Phase 7: Log — Create EXPT artifact via specflow create, update LOOP totals
   Phase 8: Repeat or Complete — Check budget, update FINDs on completion
 ```
+
+**New structural gates (not advisory):**
+
+| Gate | Phase | What it enforces |
+|------|-------|-----------------|
+| First-Principles Decomposition | 0.7 | Agent articulates diverse research directions before any iteration; surprise budget reserves ~10% for long shots |
+| Highest-Impact Forcing | 2a | Agent names the highest-impact thing; justifies if not doing it; calibration check against agenda ranking |
+| Category Diversity Gate | 2c | Blocks 3+ consecutive EXPTs in same change_category (2 in explore mode); uses canonical category set |
+| Idea Diversity Check | 2d | Catches same-approach repetition even within a category |
+| Stuck Detector (hard) | 8 | Mandatory category switch after 5+ consecutive discards |
+| Domain Research Checklist | 0.7 | Loads domain-specific research checklists with common traps per domain |
+| Direction Status Tracking | 6.6 | Updates research agenda direction status (unexplored/in_progress/exhausted/promising) after each EXPT |
 ## Post-Loop: Delegate Review
 
 After a LOOP completes, **delegate review to a subagent** via `/specflow-autoresearch:delegate-review`. The subagent reads all EXPTs, synthesizes them into FIND artifacts, and finalizes the LOOP status. This keeps the main loop's context clean.
@@ -329,11 +344,12 @@ Subagents MUST return structured output (bullet lists, JSON, or YAML). The paren
 
 ## References
 
-- `references/autonomous-loop-protocol.md` — Full 8-phase loop protocol with atomicity rules and the goal-mindful ideation check — referenced from Step 2 (run LOOP)
+- `references/autonomous-loop-protocol.md` — Full 8-phase loop protocol with atomicity rules, goal-mindful ideation check, first-principles decomposition (Phase 0.7), category diversity gate, canonical change_category set, surprise budget, direction status tracking, and stuck detector — referenced from Step 2 (run LOOP)
 - `references/noise-handling-protocol.md` — Strategy menu for volatile metrics (multi-run, confirmation, env pinning, min-delta) — referenced from Phase 5
 - `references/crash-recovery-protocol.md` — Recovery rules for verify failures and session crashes — referenced from Phase 0 and Phase 5
 - `references/competition-setup-protocol.md` — Walkthrough for creating COMP artifacts with verify command, metric direction, goals/theses/constraints, and dry-run validation — referenced from Step 0 (setup)
 - `references/protocol-integrations.md` — Maps all producer-consumer relationships across protocols: COMP→LOOP, LOOP→EXPT, EXPT→FIND, cross-loop feedback, skill-to-protocol mapping, cross-cutting concerns — referenced from all steps for dependency context
 - `references/explore-exploit-protocol.md` — Mode behavior (explore/exploit/validate) and how each influences Phase 2 ideation — referenced from Phase 2c
 - `references/finding-generation-protocol.md` — Playbook for authoring and updating FIND artifacts after LOOP completion — referenced from Step 3 (review)
-- `references/methodology-handbook.md` — Domain-specific ML best practices (BP-01 mandatory via Phase 0.6, BP-02..09 advisory) — referenced from Phase 2
+- `references/methodology-handbook.md` — Domain-specific ML best practices (BP-01/02 mandatory, BP-05/07 gated, BP-03..09 advisory) — referenced from Phase 2
+- `references/domain-research-checklists.md` — Per-domain first-principles research checklists (quant, tabular_ml, vision, nlp, generic) with common traps per domain — loaded during Phase 0.7 for structured ideation breadth and trap awareness

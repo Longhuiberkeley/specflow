@@ -148,6 +148,65 @@ specflow create --type experiment \
   --set failure_analysis="Pair ADA/ETH showed p=0.12 on cointegration test. Skipped verify."
 ```
 
+## Phase 0.7: First-Principles Decomposition (MANDATORY, before first iteration)
+
+**This phase runs ONCE at loop start, after Phase 0.6 EDA.** It forces the agent to think from first principles — articulating what could actually improve the metric, not just what code is easiest to write. This is the structural fix for the agent's tendency to default to narrow parameter tweaking instead of genuinely creative research.
+
+**You MUST complete ALL steps. This is a hard gate — the loop does not start without a recorded research agenda.**
+
+### Step 1: Load Domain Research Checklist
+
+Read the checklist matching `COMP.domain` from `references/domain-research-checklists.md`. If `COMP.domain` is not set or does not match a listed domain, use the Generic checklist.
+
+### Step 2: Answer Three First-Principles Questions
+
+Write explicit answers in working context. Vague or evasive answers are not acceptable:
+
+1. **What are the possible sources of improvement?** List every *category* of thing that could plausibly improve the metric. Not specific changes — categories. Example for quant: data quality, feature engineering (domain signals), feature engineering (cross-asset), modeling paradigm, position sizing, exit logic, portfolio construction, execution. Aim for 5-8 categories.
+
+2. **Which assumption, if wrong, would change everything?** Name the biggest assumption embedded in the current approach. If that assumption is wrong, the entire direction is wasted. This is the thing you should validate BEFORE spending budget on derivatives of the current approach.
+
+3. **What would a domain expert try first?** Not "what would an ML engineer try" — what would someone with deep domain knowledge try? The gap between this answer and what the previous LOOP tried is usually the gap between parameter-tweaking and real research.
+
+### Step 3: Build and Record the Research Agenda
+
+Create a ranked agenda of research directions, scored by expected impact. This is NOT a list of specific EXPTs — it is a list of *categories of investigation*, each representing a fundamentally different approach:
+
+```bash
+specflow update LOOP-NNN \
+  --set research_agenda='[
+    {"direction": "Feature engineering: cross-asset regime signals", "expected_impact": "high", "status": "unexplored", "rationale": "Current model has no regime awareness; regimes are documented in this market"},
+    {"direction": "Validation integrity: check for look-ahead in features", "expected_impact": "high", "status": "unexplored", "rationale": "If features leak, all improvements are false"},
+    {"direction": "Data quality: stationarity and survivorship audit", "expected_impact": "medium", "status": "unexplored", "rationale": "Non-stationary inputs could explain instability"},
+    {"direction": "Modeling: try regime-switching vs single model", "expected_impact": "medium", "status": "unexplored", "rationale": "Single model may average away regime-specific signals"},
+    {"direction": "Exit logic: dynamic stop-loss based on volatility", "expected_impact": "low", "status": "unexplored", "rationale": "Current fixed stop may be suboptimal"},
+    {"direction": "Parameter tuning: refine current best model", "expected_impact": "low", "status": "unexplored", "rationale": "Last resort — only after above directions are explored"}
+  ]'
+```
+
+**Rules:**
+- Minimum 5 distinct research directions (exception: if the domain checklist has fewer than 5 distinct sections, use all sections — don't pad with filler)
+- At least 3 must be in different `change_category` values (not just 5 variants of the same category)
+- Parameter tuning / hyperparameter optimization must NOT be ranked first or second unless all higher-impact directions have already been explored in prior LOOPs
+- The agenda is a living document — update it when a direction is exhausted or a new one emerges
+- Each direction MUST have a `status` field: `unexplored` (not tried yet), `in_progress` (actively being tested), `exhausted` (tried 3+ times with consistent failure), `promising` (producing improvements). Update status after each EXPT in Phase 6.6.
+- **Surprise budget:** Reserve ~10% of the LOOP's iteration budget (minimum 1 EXPT) for directions the agent rates as `low` expected impact. These "long shots" test assumptions the agent might be blind to. Mark them with `--set surprise=true` on the EXPT. Do NOT cluster them — spread one every ~10 iterations.
+
+### Step 4: Coverage Map
+
+Record which areas have been explored in prior LOOPs (read prior FINDs and EXPTs from Step 0b) and which are unexplored:
+
+```bash
+specflow update LOOP-NNN \
+  --set category_coverage='{"data": 3, "features": 7, "model": 2, "params": 15, "exit": 0, "pipeline": 0}'
+```
+
+**This coverage map drives the diversity gate in Phase 2c.** Categories with 0 prior EXPTs must be explored before adding more EXPTs to already-explored categories.
+
+### Skip Rule
+
+If a prior LOOP on the same COMP has `research_agenda` recorded AND the agenda is still valid (same COMP goals, same constraints, same data), the agent may inherit it — but MUST re-rank based on new FINDs and add any directions that emerged from the prior LOOP's `unexplored_directions` field.
+
 ## Phase 1: Review (before each iteration)
 
 Build situational awareness before every iteration. **You MUST complete ALL steps.**
@@ -205,19 +264,26 @@ IF LOOP.iteration_count >= LOOP.budget:
 
 This is the **research** half of autoresearch — not metric hill-climbing. Before picking a change, form a hypothesis driven by what the project is actually trying to achieve. Consult the [ML Methodology Handbook](methodology-handbook.md) for best practices relevant to your ideation direction — pull the group that matches the change you're considering: **validation integrity (BP-10–12)** before trusting any score, **statistical traps (BP-13–16)** when a result looks too good or you've tried many variants, **optimize-the-objective (BP-17–19)** when tuning toward the metric, and **finishing moves (BP-20–22)** only once a single strong model exists. Respect the **transfer filter** at the top of the handbook: never import a leaderboard-gaming tactic that raises the metric without raising the goal.
 
+**Structural gates in this phase:** Phase 2a includes a mandatory highest-impact forcing question. Phase 2c includes a mandatory category diversity gate. Phase 2d includes an idea diversity check. These are not advisory — they are enforced. The research agenda from Phase 0.7 is the reference for all gates.
+
 ### 2a. Goal-mindful hypothesis (light check, every iteration)
 
 The full research ladder (Goal → Thesis → RQ) was walked at LOOP creation and lives on `COMP.theses` + `LOOP.active_research_questions`. Per-iteration you do not re-walk it — you stay mindful of it.
 
-Read `LOOP.active_research_questions`, `COMP.constraints`, and the open FINDs. Write a **one-line hypothesis with a predicted effect and a reason**, tied to one of the active RQs:
+Read `LOOP.active_research_questions`, `COMP.constraints`, the open FINDs, and the `research_agenda` from Phase 0.7. Write a **one-line hypothesis with a predicted effect and a reason**, tied to one of the active RQs:
 
 > *"If I add cross-asset rolling-correlation features, walk-forward Sharpe should rise toward the >2.0 goal, because the current model has no regime signal."*
 
-Before committing to it, answer three quick questions in working context (no artifacts — speed matters):
+Before committing to it, answer **four** questions in working context (no artifacts — speed matters). The first three are quick; the fourth is the structural gate:
 
 1. **Which active RQ does this EXPT serve?** Name it. If none — pause. Either pick a different change or deliberately update `LOOP.active_research_questions` (don't drift silently into off-agenda work).
 2. **Am I just wiggling parameters under the same RQ + hypothesis shape as last iteration?** If yes → only continue if the last EXPT taught you something specific that justifies *this* next point. Otherwise **escalate up the ladder**: try a different hypothesis under the same RQ, or reconsider whether the RQ itself is the right one this loop. Don't sink-cost into parameter drift.
 3. **If this EXPT succeeds, what does it tell me about my RQ/thesis?** If you can't name it, the hypothesis isn't goal-driven yet — rework it.
+4. **Highest-impact forcing (MANDATORY GATE):** "The highest-impact thing I could try right now is **X**. I am about to do **Y**." Write both explicitly.
+   - If X == Y → proceed. You're doing the highest-impact thing.
+   - If X != Y → you must justify why Y is better *right now* (e.g., "X requires a script I need to write first, Y is a quick test to rule out a confound"). If you cannot justify, do X instead.
+   - If you cannot name an X that differs from Y, that itself is a signal — you may be stuck in a local optimum of idea space. Re-read the research agenda.
+   - **Calibration check:** If your claimed X contradicts the research_agenda ranking (agenda says direction A is high-impact, you claim direction C is highest-impact), you must explicitly note the disagreement and explain why you're overriding the agenda. The agenda might be wrong — but you must argue the case, not silently ignore it.
 
 Record the chosen RQ on the EXPT via `--set research_question="..."` so Phase 6 / FIND authoring can reconstruct the chain. The full ladder (goal → thesis) is already pinned on COMP/LOOP — no need to re-record it per EXPT.
 
@@ -238,9 +304,86 @@ If the aggregate improved only by trading one component off against another, tha
 
 ### 2c. Pick the NEXT change
 
-**MUST consult git history, EXPTs, and FINDs before deciding.**
+**MUST consult git history, EXPTs, FINDs, AND the research agenda before deciding.**
 
-**Priority order:**
+### 2c-i. Category Diversity Gate (MANDATORY)
+
+Before selecting a change, check the LOOP's `category_coverage` and the last N EXPTs' `change_category` values:
+
+```
+# Threshold is mode-dependent (see explore-exploit-protocol.md):
+#   explore mode: N = 2 (tighter — explore exists to find NEW approaches)
+#   exploit/validate mode: N = 3
+
+last_N_categories = [EXPT[-1].change_category, ..., EXPT[-N].change_category]
+
+IF all N are the same category:
+    BLOCK: You may NOT pick another EXPT in this category.
+    Required action: Pick a change in a DIFFERENT change_category.
+    Consult research_agenda for the highest-impact unexplored direction.
+    Override: Only if the agent can articulate why (N+1)th consecutive same-category
+    is genuinely the highest-impact move (see Phase 2a question 4).
+
+IF category has 0 prior EXPTs and another category has 10+:
+    STRONG BIAS: Prefer the unexplored category unless the explored category
+    is actively producing improvements (kept in last 2 iterations).
+```
+
+**Rationale:** The agent's default behavior is to stay in the same category because the code is already structured for it. The diversity gate forces the agent to consider genuinely different approaches. The threshold is mode-dependent: explore mode blocks at 2 consecutive (it exists specifically for breadth), exploit/validate modes block at 3.
+
+### Canonical change_category values
+
+The `change_category` field on EXPTs and the keys in `category_coverage` MUST use a consistent set of names. The agent normalizes its chosen category to this set at EXPT creation time — no abbreviations, synonyms, or ad-hoc names.
+
+**Default set** (used unless the COMP defines `custom_categories`):
+
+| Category | Scope |
+|----------|-------|
+| `data` | Data quality, sourcing, cleaning, augmentation, sampling |
+| `features` | Feature engineering, selection, encoding, transformations |
+| `model` | Model family, architecture, ensemble composition |
+| `params` | Hyperparameters, learning rate, regularization strength |
+| `loss` | Loss function, objective, evaluation metric alignment |
+| `preprocessing` | Scaling, normalization, tokenization, pipeline steps |
+| `validation` | CV scheme, split strategy, adversarial validation |
+| `exit` | Exit logic, stop-loss, take-profit (quant-specific) |
+| `basket` | Universe/asset selection, portfolio construction (quant-specific) |
+| `pipeline` | Training pipeline, data loading, infrastructure |
+| `ensemble` | Stacking, blending, seed averaging (only after strong single model) |
+| `calibration` | Probability calibration, threshold tuning, post-processing |
+
+**Customizing per COMP.** If the default set doesn't fit the domain, the COMP can override:
+
+```bash
+# Add domain-specific categories (merged with defaults):
+specflow update COMP-NNN --set custom_categories='["prompt", "retrieval", "rag"]'
+
+# Replace defaults entirely (for highly specialized domains):
+specflow update COMP-NNN --set custom_categories='["data", "signal", "execution", "risk", "regime"]'
+```
+
+The agent reads `COMP.custom_categories` at Phase 0.7. If set, it uses that list instead of the defaults. The diversity gate, category_coverage, and all gates count against the active set — whatever it is. If the agent's change doesn't fit any active category, it picks the closest match. New categories are not invented mid-loop.
+
+**Recording:** After each EXPT, update `category_coverage` on the LOOP:
+
+```bash
+specflow update LOOP-NNN \
+  --set category_coverage='{"data": 3, "features": 8, "model": 2, "params": 15, "exit": 0, "pipeline": 0}'
+```
+
+### 2c-ii. Research Agenda Alignment
+
+Cross-reference the chosen change against the `research_agenda` from Phase 0.7:
+
+- Which agenda direction does this change serve?
+- Is there a higher-ranked direction that has NOT been attempted yet?
+- If yes, why aren't you pursuing that direction instead?
+
+This is not a blocker — but the agent must articulate the answer. If the agent consistently avoids the top-ranked directions, that is itself a finding (the agenda may be wrong, or the agent may be avoiding hard problems).
+
+### 2c-iii. Priority order
+
+**Priority order (subject to diversity gate above):**
 
 1. **Fix crashes/failures** from previous iteration first
 2. **Exploit successes** — run `git diff` on last kept commit, try variants in same direction
@@ -262,7 +405,7 @@ If the aggregate improved only by trading one component off against another, tha
 
 The premise check prevents running experiments whose core assumptions are untested — a single premise violation can waste a full iteration (or many, if the violation is systematic).
 
-**Checklist (answer ALL three before proceeding):**
+**Checklist (answer ALL four before proceeding):**
 
 1. **Data property check:** Does the core premise of this hypothesis depend on a data or statistical property I haven't verified?
    - *Before testing mean-reversion strategies → verify stationarity/cointegration*
@@ -280,10 +423,16 @@ The premise check prevents running experiments whose core assumptions are untest
    - *Switching to a model with more parameters → better fit, same generalization*
    - If yes: add an auxiliary metric that would catch the gaming, or tighten the guard condition.
 
+4. **Idea diversity check (NEW):** Is this the same *type* of idea as the last 2+ EXPTs?
+   - Same `change_category` AND same general approach (e.g., "add a feature" vs "remove a feature" are both `features` but different approaches).
+   - If the last 3 EXPTs were all "add X feature" → the approach may be saturated. Try a fundamentally different direction from the research agenda.
+   - This catches the "narrow lens" pattern: the agent tests minor variants of one idea instead of exploring the full research space.
+
 **Outcome:**
-- **All three pass** → proceed to Phase 3 (Modify).
-- **Any check fails with a fixable issue** → address the issue (e.g., run the missing check, add the auxiliary metric), then proceed.
-- **Any check fails with an unfixable issue** → discard the hypothesis here. Do NOT burn an iteration on it. Return to 2a with a note about WHY it was discarded. This is valuable — it narrows the search space without wasting budget.
+- **All four pass** → proceed to Phase 3 (Modify).
+- **Check 4 fails (idea diversity)** → return to Phase 2c and pick a different change_category or approach. This is NOT optional.
+- **Any other check fails with a fixable issue** → address the issue (e.g., run the missing check, add the auxiliary metric), then proceed.
+- **Any other check fails with an unfixable issue** → discard the hypothesis here. Do NOT burn an iteration on it. Return to 2a with a note about WHY it was discarded. This is valuable — it narrows the search space without wasting budget.
 
 **Record the premise check outcome in working context.** If the hypothesis is discarded at this gate, the Phase 7 log should note it as `no_op` (not `discarded` — it was never attempted).
 
@@ -568,6 +717,28 @@ For EVERY EXPT, regardless of outcome, extract at least one lesson:
 2. **Source tag:** Where did the knowledge come from? `primary_metric` | `auxiliary_metric` | `failure_analysis` | `post_check` | `crash_telemetry` | `design_flaw`
 3. **Portability:** Is this lesson specific to this COMP/LOOP, or generalizable? `local` (specific to this setup) | `conditional` (may apply to similar setups) | `general` (domain-wide insight)
 
+### Research Agenda Update (after lesson extraction)
+
+The research agenda from Phase 0.7 is a living document. After extracting lessons, check whether the agenda needs updating:
+
+1. **Direction status update:** If this EXPT served a research_agenda direction, update that direction's `status`:
+   - 3+ EXPTs in this direction, all discarded → set `status: exhausted`
+   - 2+ EXPTs producing improvements → set `status: promising`
+   - First EXPT in direction → set `status: in_progress`
+
+2. **Agenda feedback from lessons:** If the lesson contradicts or refines an agenda direction, update the direction's `rationale`. Example: if 5 data-quality EXPTs all pass but produce no metric improvement, the lesson "data quality is not the bottleneck" should update the data direction to `exhausted` with that rationale.
+
+3. **New direction discovery:** If a lesson suggests a research direction NOT on the agenda (e.g., "the verify command itself may be miscalibrated"), add it to the agenda with `status: unexplored`.
+
+```bash
+# Example: update direction status after consistent failure
+specflow update LOOP-NNN \
+  --set research_agenda='[
+    {"direction": "Feature engineering: cross-asset regime signals", "expected_impact": "high", "status": "exhausted", "rationale": "Tried 4 EXPTs; no improvement — regime signal may not exist in this data"},
+    ...
+  ]'
+```
+
 ### Auxiliary Signal Check (before logging)
 
 Before logging auxiliary metrics, ask: **"Did any auxiliary metric move when the primary was flat?"**
@@ -750,6 +921,9 @@ LOOP fields updated every iteration:
 | `eda_completed` | Set to `true` after Phase 0.6 completes (once per LOOP) |
 | `eda_summary` | One-paragraph summary of EDA findings (once per LOOP) |
 | `condensation_brief_10` (etc.) | Persisted condensation brief at each 10-iteration checkpoint |
+| `research_agenda` | Phase 0.7 first-principles decomposition — ranked research directions |
+| `category_coverage` | Dict of change_category → EXPT count — drives diversity gate |
+| `stuck_state` | Active stuck state when 5+ consecutive discards — tracks blocked categories |
 
 ### Summary Reporting
 
@@ -796,14 +970,27 @@ IF LOOP.iteration_count > 0 AND LOOP.iteration_count % 10 == 0:
 
 The brief replaces raw EXPT details. It should be concise (~20 lines for 10 iterations). If the agent needs specific EXPT details later, it can re-read individual artifacts via `specflow trace LOOP-NNN`.
 
-**When stuck (>5 consecutive discards):**
+**When stuck (>5 consecutive discards) — HARD GATE, not advisory:**
 
-1. Re-read ALL in-scope files from scratch
-2. Re-read the competition's FINDs and the original goal
-3. Review entire EXPT history for patterns
-4. Try combining 2-3 previously successful changes
-5. Try the OPPOSITE of what hasn't been working
-6. Try a radical architectural change
+When 5+ consecutive EXPTs are discarded, the following steps are **mandatory**, not suggestions. The agent MUST execute them before the next iteration:
+
+1. **Category switch (MANDATORY).** Check `category_coverage`. If the current `change_category` has 5+ more EXPTs than any other category, the agent is **blocked** from that category until at least one EXPT in an under-explored category is attempted. This is the structural enforcement — the agent cannot continue tweaking the same category.
+2. **Re-read ALL in-scope files from scratch** — not summaries, the actual code
+3. **Re-read the research agenda** from Phase 0.7 — which high-impact directions haven't been tried?
+4. **Re-read the competition's FINDs and the original goal**
+5. **Review entire EXPT history for patterns** — are all discards the same type of failure?
+6. **Try the OPPOSITE of what hasn't been working** — if features keep failing, try removing features. If model complexity fails, try simpler.
+7. **Try a radical architectural change** — different paradigm entirely
+8. **Reassess the research agenda** — if stuck despite diverse exploration, the agenda itself may be wrong. Update it.
+
+**Enforcement:** After 5 consecutive discards, log the stuck state on the LOOP:
+
+```bash
+specflow update LOOP-NNN \
+  --set stuck_state='{"consecutive_discards": 7, "blocked_category": "params", "forced_category": "features", "agenda_reassessed": true}'
+```
+
+The `stuck_state` persists until a non-discard EXPT breaks the streak. If the streak reaches 10, recommend to the user that the LOOP be stopped and a new LOOP started with a different mode or research agenda.
 
 ### Dynamic Termination (Goal-Aware Stopping)
 

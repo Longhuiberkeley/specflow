@@ -23,7 +23,7 @@ Maps every producer-consumer relationship across SpecFlow's autoresearch protoco
 | `COMP.pre_check_command` | Phase 0.5 (per-iteration pre-check) | `autonomous-loop-protocol.md` |
 | `COMP.post_check_command` | Phase 6.5 (post-check after verify) | `autonomous-loop-protocol.md` |
 | `COMP.noise_characterization` | Phase 5 (noise strategy selection) | `noise-handling-protocol.md` |
-| `COMP.domain` | Phase 0.6 (domain-specific EDA checks), Phase 2 (methodology BP selection) | `autonomous-loop-protocol.md`, `methodology-handbook.md` |
+| `COMP.domain` | Phase 0.6 (domain-specific EDA checks), Phase 0.7 (domain research checklist loading), Phase 2 (methodology BP selection) | `autonomous-loop-protocol.md`, `methodology-handbook.md`, `domain-research-checklists.md` |
 
 ### LOOP → LOOP (cross-loop learning)
 
@@ -35,14 +35,23 @@ Maps every producer-consumer relationship across SpecFlow's autoresearch protoco
 | `LOOP.termination_suggestions` | Step 0b, Phase 2a (next LOOP's direction) | `autonomous-loop-protocol.md` |
 | `LOOP.best_metric` | New LOOP baseline | `autonomous-loop-protocol.md` |
 | `LOOP.eda_summary` | Phase 0.6 skip rule | `autonomous-loop-protocol.md` |
+| `LOOP.research_agenda` | Phase 2a (highest-impact forcing + calibration), Phase 2c (diversity gate), Phase 2d (idea diversity check), Phase 6.6 (direction status update) | `autonomous-loop-protocol.md`, `domain-research-checklists.md` |
+| `LOOP.category_coverage` | Phase 2c (diversity gate), Phase 8 (stuck detector) | `autonomous-loop-protocol.md` |
+| `LOOP.stuck_state` | Phase 8 (mandatory category switch) | `autonomous-loop-protocol.md` |
 
 ### LOOP → EXPT
 
 | LOOP field | EXPT consumes | Protocol |
 |------------|---------------|----------|
 | `LOOP.active_research_questions` | Phase 2a (hypothesis-RQ linkage) | `autonomous-loop-protocol.md` |
-| `LOOP.budget` | Phase 1 Step 4 (budget check) | `autonomous-loop-protocol.md` |
+| `LOOP.budget` | Phase 1 Step 4 (budget check), Phase 0.7 (surprise budget allocation) | `autonomous-loop-protocol.md` |
 | `LOOP.iteration_count` | Phase 7 (update running totals) | `autonomous-loop-protocol.md` |
+
+### COMP → Category System
+
+| COMP field | Consumed by | Protocol |
+|------------|-------------|----------|
+| `COMP.custom_categories` | Phase 0.7 (override default category set), Phase 2c (diversity gate uses active set) | `autonomous-loop-protocol.md` |
 
 ### EXPT → FIND
 
@@ -59,6 +68,7 @@ Maps every producer-consumer relationship across SpecFlow's autoresearch protoco
 | `EXPT.crash_telemetry` | Pre-recovery knowledge extraction | `crash-recovery-protocol.md`, Phase 6.6 |
 | `EXPT.parameters` + `EXPT.sweep_results` | Reproducibility, parameter sensitivity analysis | `finding-generation-protocol.md` |
 | `EXPT.diversity_metrics` | Family grouping, leaderboard ranking | `competition-setup-protocol.md` |
+| `EXPT.surprise` | Identifies long-shot experiments from surprise budget | `autonomous-loop-protocol.md` (Phase 0.7) |
 
 ### FIND → LOOP (feedback cycle)
 
@@ -101,7 +111,10 @@ Maps every producer-consumer relationship across SpecFlow's autoresearch protoco
 | BP | Enforced by | Protocol file |
 |----|------------|---------------|
 | BP-01 (EDA Before Modeling) | Phase 0.6 (mandatory) | `autonomous-loop-protocol.md` |
+| BP-02 (Strong Baseline First) | Phase 0.7 (mandatory — baseline must be in research agenda top-2) | `autonomous-loop-protocol.md` |
 | BP-02..BP-09 (advisory) | Phase 2 (consulted during ideation) | `autonomous-loop-protocol.md` |
+| BP-05 (Feature Engineering Over Architecture) | Phase 2c diversity gate (gated — `features` must be explored before heavy `model`/`params`) | `autonomous-loop-protocol.md` |
+| BP-07 (Advanced Techniques Late) | Phase 0.7 research agenda (gated — advanced techniques must not be top-3 without strong base) | `autonomous-loop-protocol.md` |
 | BP-08 (Characterize Noise) | COMP setup noise probe, Phase 5 noise strategy | `noise-handling-protocol.md`, `competition-setup-protocol.md` |
 
 ## Skill-to-Protocol Mapping
@@ -122,3 +135,4 @@ Maps every producer-consumer relationship across SpecFlow's autoresearch protoco
 | Data quality assurance | `autonomous-loop-protocol.md` (Phase 0.6 EDA, Phase 0.5 pre-check, Phase 2d premise check), `noise-handling-protocol.md` (validity gate) | Phase 0.6 runs once at loop start; Phase 0.5 runs per-iteration; Phase 2d per-EXPT checks should consult Phase 0.6 results (e.g., stationarity check in 2d is answered by 0.6); noise validity gate runs per-EXPT |
 | Metric integrity | `autonomous-loop-protocol.md` (Phase 2b, Phase 5, Phase 6.5), `noise-handling-protocol.md` | Phase 2b checks metric-goal alignment; Phase 5 handles noise; Phase 6.5 grades post-check severity |
 | Failure learning | `autonomous-loop-protocol.md` (Phase 6.6, Phase 7 failure_analysis), `crash-recovery-protocol.md` (pre-recovery telemetry), `finding-generation-protocol.md` (what_failed authoring) | Phase 6.6 extracts lessons; crash telemetry captures partial results; FIND authoring synthesizes into what_failed |
+| Ideation diversity & first-principles thinking | `autonomous-loop-protocol.md` (Phase 0.7 research agenda with direction_status, Phase 2a highest-impact forcing + calibration, Phase 2c diversity gate + canonical categories, Phase 2d idea diversity check, Phase 6.6 agenda feedback, Phase 8 stuck detector), `domain-research-checklists.md` (domain-specific checklists + common traps), `explore-exploit-protocol.md` (explore mode category alternation) | Phase 0.7 builds the agenda; Phase 2c gates on category coverage; Phase 2d catches narrow-lens thinking; Phase 6.6 updates direction status; stuck detector forces category switch; domain checklists provide structured ideation breadth and trap awareness |

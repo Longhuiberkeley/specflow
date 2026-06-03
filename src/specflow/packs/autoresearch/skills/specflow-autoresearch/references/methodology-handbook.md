@@ -1,6 +1,6 @@
 # ML Methodology Handbook
 
-Best practices for ML/experimental work. BP-01 is mandatory (enforced by Phase 0.6 of autonomous-loop-protocol). BP-02 through BP-22 are advisory but strongly recommended.
+Best practices for ML/experimental work. BP-01 and BP-02 are mandatory (enforced by structural gates). BP-05 and BP-07 are gated (enforced by Phase 2c diversity gate and research agenda alignment). BP-03, BP-04, BP-06, BP-08, BP-09 are advisory but strongly recommended.
 
 These are grouped: **BP-01–09** (foundations), **BP-10–12** (validation integrity), **BP-13–16** (statistical traps), **BP-17–19** (optimize the real objective), **BP-20–22** (finishing moves), plus a **Bias Catalog**. Phase 2 ideation should pull the groups relevant to the current hypothesis — they are meant to be consulted live, not read once.
 
@@ -40,9 +40,10 @@ Understand your data before touching a model. Distribution shapes, missingness p
 
 **Anti-pattern:** Jumping to a neural net on day one without checking if the target has 95% class imbalance.
 
-## BP-02: Strong Baseline First
+## BP-02: Strong Baseline First [MANDATORY]
 
 **applies_to:** all
+**enforcement:** Mandatory. Enforced by Phase 0.7 (First-Principles Decomposition). The research agenda MUST include "establish baseline" as a top-priority direction if no baseline exists. The agent may NOT skip to sophisticated approaches until the simplest reasonable baseline has been tested and its metric recorded.
 
 Implement the simplest reasonable baseline before anything fancy. Buy-and-hold (quant), majority class or global mean (tabular), pretrained model zero-shot (vision/nlp). If your sophisticated approach barely beats trivial, the problem is either too easy or your approach isn't helping.
 
@@ -64,9 +65,10 @@ Time-series data needs walk-forward or embargoed splits, not k-fold. Group-struc
 
 **Anti-pattern:** Using StratifiedKFold on stock returns with temporal autocorrelation.
 
-## BP-05: Feature Engineering Over Architecture
+## BP-05: Feature Engineering Over Architecture [GATED]
 
 **applies_to:** `tabular_ml`, `quant`
+**enforcement:** Gated by Phase 2c diversity gate. If the category_coverage shows `model` or `params` has significantly more EXPTs than `features`, the diversity gate forces the agent to try feature engineering before more model/params iterations. The research agenda must rank feature engineering direction above model architecture direction unless prior FINDs show features are exhausted.
 
 On tabular data, handcrafted features with domain knowledge dominate architectural innovations. GBDT with good features beats deep learning with raw features. Spend features budget before model budget.
 
@@ -85,9 +87,10 @@ Deviating is fine but justify it. Don't use a transformer on tabular data becaus
 
 **Anti-pattern:** Using BERT to encode a 50-column numeric dataset.
 
-## BP-07: Advanced Techniques Late
+## BP-07: Advanced Techniques Late [GATED]
 
 **applies_to:** all
+**enforcement:** Gated by Phase 0.7 research agenda. Ensembling, stacking, pseudo-labeling, and TTA must NOT appear in the top-3 research agenda directions unless the agent can articulate why a single strong model already exists. The research agenda's ranking must reflect: fundamentals → feature engineering → modeling → advanced techniques. If the agent attempts advanced techniques without evidence of a strong base model, Phase 2d (premise check) should flag it as premature optimization.
 
 Ensembling, stacking, pseudo-labeling, and TTA are finishing moves, not opening moves. Apply them only after a single strong model with good features. They amplify signal but also amplify mistakes.
 
@@ -244,5 +247,5 @@ Quick reference — the *tell* (how it shows up) and the *fix*. These are cross-
 | **Selection bias** | Sample isn't representative of where the model will run (e.g. only liquid assets, only complete rows). | Define the target population first; sample/weight to match it. |
 | **Survivorship bias** | Dead/delisted/failed cases are missing from the data. | Use point-in-time data that includes entities as they existed then. |
 | **Look-ahead / data-snooping** | Metric improbably high; a feature uses information not available at decision time. | Strict temporal cutoffs; build features from the past only (ties to BP-10/12). |
-| **Confirmation bias (in ideation)** | Only testing variants of the hypothesis you already like; ignoring `what_failed`. | In `explore` mode deliberately test the opposite; read prior FIND `what_failed`. |
+| **Confirmation bias (in ideation)** | Only testing variants of the hypothesis you already like; ignoring `what_failed`. | In `explore` mode deliberately test the opposite; read prior FIND `what_failed`. **Structural enforcement:** Phase 2c diversity gate blocks 3+ consecutive same-category EXPTs, preventing the agent from staying in a comfortable local optimum. Phase 2d check 4 (idea diversity) catches same-approach repetition even within a category. |
 | **Label leakage** | A feature is a proxy for, or computed from, the target. | Audit each feature's provenance; drop anything that wouldn't exist at prediction time. |
