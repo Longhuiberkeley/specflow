@@ -173,12 +173,12 @@ artifacts:
   ARCH-022:
     id: ARCH-022
     title: Pack-as-integration-boundary for autoresearch
-    status: draft
+    status: implemented
     tags:
     - autoresearch
     - architecture
     - pack
-    fingerprint: sha256:eb67a3e49d1c
+    fingerprint: sha256:0b506123054f
     children: []
   ARCH-023:
     id: ARCH-023

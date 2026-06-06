@@ -41,91 +41,79 @@ The install mechanism (`uv tool install`, `uvx`, `python -m specflow`) is our co
 <!-- SpecFlow section (auto-generated, do not edit manually) -->
 ## SpecFlow
 
-This project uses **SpecFlow** — a spec-driven development framework.
-All specifications and work items are tracked as Markdown + YAML frontmatter.
-The primary interface is `/specflow-*` slash commands in your AI assistant.
+**Stop.** This is a SpecFlow project. All engineering work flows through `/specflow-*` skills.
 
-### Where Artifacts Live
+You are working in a **SpecFlow** project (spec-driven development). 
+Specs and work items are Markdown + YAML files. Do not edit `.specflow/` manually.
 
-- `_specflow/specs/` — V-model specification artifacts (requirements, architecture, design, tests)
-- `_specflow/work/` — Agile delivery artifacts (stories, spikes, decisions, defects)
-- `.specflow/` — Framework internals (config, schemas, impact log, baselines). **Do not edit manually.**
+### Interfaces
+**Primary:** Use `/specflow-*` skills (e.g., `/specflow-discover`, `/specflow-plan`, `/specflow-execute`).
+**CLI:** Use `specflow <cmd>` (e.g. `specflow trace <ID>`, `specflow update <ID>`) for automation and CI — not as a substitute for the skill workflow.
 
-### Slash Commands
+### Core Lifecycle
+`init → discover → plan → execute → artifact-review → ship` (Audit & impact-review as needed).
 
-| Command | Purpose |
-|---------|---------|
-| `/specflow-init` | Bootstrap project structure, install skills, optional CI |
-| `/specflow-discover` | Capture requirements through guided conversation |
-| `/specflow-plan` | Break approved REQs into architecture + stories |
-| `/specflow-execute` | Implement stories with test generation |
-| `/specflow-artifact-review` | Quality review of specific artifacts |
-| `/specflow-change-impact-review` | Blast-radius review of recent commits/PRs |
-| `/specflow-audit` | Full-project periodic health check |
-| `/specflow-ship` | Release: baseline + change records + quick audit |
-| `/specflow-pack-author` | Author a standards compliance pack |
-| `/specflow-adapter` | Manage CI, exchange, standards ingestion, team RBAC |
+### The V-Model & Work
+Specs: `REQ` (Requirements) → `ARCH` (Architecture) → `DDD` (Detailed Design).
+Tests: `QT` (verify REQ), `IT` (verify ARCH), `UT` (verify DDD).
+Work: `STORY`, `SPIKE`, `DEC`, `DEF` (in `_specflow/work/`) must link to specs.
 
-### Skills vs CLI
+### Memory & Context
 
-| Interface | When to Use | Example |
-|-----------|-------------|---------|
-| **Skills** (`/specflow-*`) | Interactive work in your AI assistant | `/specflow-discover` |
-| **CLI** (`specflow <cmd>`) | CI pipelines, automation, terminal | `specflow artifact-lint` |
+SpecFlow IS your persistent memory. You do not have reliable conversation memory across sessions — you have artifacts.
 
-Skills compose CLI commands internally. You can always use the CLI directly when you prefer the terminal or need automation.
+**Four-axis memory:**
+- `spec/` = **semantic memory** (persistent truth, blueprints). REQ/ARCH/DDD survive every session.
+- `work/` = **episodic memory** (what happened, when, why). STORY/SPIKE/DEC record the journey.
+- `impact-log/` = **temporal memory** (causality — what changed, why, what it affected). Suspect propagation tracks downstream impact.
+- `links` = **relational memory** (how artifacts connect). `specflow trace <ID>` walks the graph.
 
-### Lifecycle Flow
+**Recall before you act:**
+- Run `specflow status` for a project-wide overview (phase, counts, stale items).
+- Scan `_index.yaml` files in relevant directories — they give you title + status + tags for every artifact without reading full bodies.
+- Read `.specflow/state.yaml` for current phase; `.specflow/config.yaml` for domain context.
+- Use `specflow trace <ID>` to walk the link chain and understand context.
+- Use `git log --since=<date> -- _specflow/` for temporal recall — "what changed recently."
+- Check `.specflow/impact-log/` for causality — what changed and why.
+- For research: read FIND artifacts first — they are accumulated knowledge that survives context rot.
+- Run `specflow artifact-lint` to detect context debt (orphans, broken links, missing coverage).
 
-```
-init → discover → plan → execute → artifact-review → ship
-                                    ├── audit (periodic health check)
-                                    ├── change-impact-review (per-commit/PR)
-                                    └── adapter (CI, exchange, team setup)
-```
+**Journal as you work:**
+- Non-trivial decisions → DEC artifact (not just enacted and forgotten).
+- Discoveries, dead-ends, rationale → the work artifact you're executing.
+- Use the Permanence Test (below): ephemeral → work/, reusable → spec/.
+- If you find yourself working on something unlinked → convert to SPIKE or promote to a linked STORY.
 
-### Artifact Status Lifecycle
+**Context management for fresh sessions:**
+- A fresh agent reads `_index.yaml` files to reconstruct project state cheaply.
+- Prefer breadth-first (scan indexes) then depth (read specific artifacts), not the reverse.
+- Run `specflow artifact-lint` to assess memory health before starting work.
 
-When working with artifacts, **always update their status** as work progresses:
+### Workflow Rules
+- **Traceability:** Every code change must trace to a STORY or REQ. No orphan work.
+- **STORY linkage:** Every STORY must link to at least one spec artifact (REQ, ARCH, or DDD). Unlinked work is research — use SPIKE for that.
+- **No self-approval:** Agents may NEVER move an artifact from `draft` to `approved` without human confirmation. Plan phase is conversational — the human iterates as long as needed. The agent presents, the human approves.
+- **Status Flow:** `draft` → `approved` → `implemented` → `verified`.
+- **Updates:** Use `specflow update <ID> --status <status>` for all YAML/status changes.
+- **Cascading:** When STORY code lands: `specflow update STORY-NNN --status implemented` then `specflow cascade-status STORY-NNN`.
+- **Evidence:** Don't assume "verified"; run checks/tests to prove it.
+- **Validation:** Run `specflow artifact-lint` after manual artifact edits.
+- **Suspect resolution:** When an artifact is flagged `suspect`, actively propose resolution to the human (create DEF, mark resolved, or update the artifact). Do not let suspect flags sit unresolved.
 
-| Trigger | Action | Command |
-|---------|--------|---------|
-| Creating a new artifact | Set `status: draft` | `specflow create --type <type> --status draft` |
-| User approves the artifact | Update to `status: approved` | `specflow update <ID> --status approved` |
-| Code implementing the artifact is written | Update to `status: implemented` | `specflow update <ID> --status implemented` |
-| Tests pass and review is complete | Update to `status: verified` | `specflow update <ID> --status verified` |
-
-When implementing stories via `/specflow-execute`, also update linked ARCH and DDD artifacts to `implemented` once the code that realizes them is written. Do not wait for the story to be fully complete -- update spec status as the corresponding code lands.
-
-### Working Principles
-
-- **Trace before implement.** Every code change traces to a STORY or REQ. No orphan work.
-- **Evidence over claims.** "Verified" means an artifact proves it — run the checks, don't assume.
-- **State assumptions explicitly.** If uncertain, ask rather than silently picking an interpretation.
-- **Fail early.** Run `specflow artifact-lint` after changes, not at release time.
-- **Surgical changes.** Touch only what the request requires. Match existing conventions.
-- **Label defaults.** When offering choices, mark the suggested option with "(Recommended)".
-- **Escape hatches.** If the user says "move on" or "skip", proceed with what they request. But before proceeding past a blocking check or required step, articulate what is being skipped and why: "Proceeding past [specific item]. Risk: [what could go wrong]. Noted." This preserves the accounting record.
+### Routing
+- Use core `/specflow-*` skills for ALL engineering work: requirements, architecture, stories, implementation, review, release.
+- Packs (e.g., autoresearch) are **separate subsystems**. Only use pack skills when the user explicitly asks for that pack's domain. Never invoke pack skills for codebase exploration, bug investigation, feature implementation, or general engineering — those are core engineering.
+- **By default**, new features go through the full pipeline. Typo fixes and trivial changes may use the lean path — but still trace to a STORY.
+- **Escape hatch:** The user can always override. When the user says "skip," "proceed anyway," or "move on," do exactly that. But before proceeding past a blocking check, articulate: "Proceeding past [specific item]. Risk: [what could go wrong]. Noted."
 
 ### When to Escalate (Permanence Test)
-
 SPIKE/STORY are throwaway; REQ/ARCH/DDD (and, for research, COMP) are durable. When work outgrows a one-off answer — you're building something reusable, iterating a second time, defining an interface, or needing it to survive this session — promote to a durable artifact when ANY of these holds:
-
 - **Reuse** — the output will be depended on by future work (a dataset object, a pipeline, an API client), not a one-off answer.
 - **Second pass** — you're iterating on the same thing again; it has stopped being exploratory.
 - **Interface** — it defines a contract other code/research will call (→ ARCH/DDD).
 - **Survival** — it must outlive this session / be understood by a fresh agent.
 
 To promote, create the REQ/ARCH/DDD (or hand-author a new COMP) and link `derives_from` the originating SPIKE/COMP so context and traceability carry forward — don't silently keep spiking. See `specflow-execute/references/escalation-and-promotion.md` for the recipe.
-
-### Conventions
-
-- Status flow: `draft` → `approved` → `implemented` → `verified`
-- Stories link to specs via `links:` in YAML frontmatter
-- `.specflow/` internals are managed by CLI commands — never edit manually
-- Use `specflow update <ID>` for all status transitions and frontmatter changes
-- Run `specflow artifact-lint` after creating or updating artifacts
-
 <!-- End SpecFlow section -->
 
 ## Release Process

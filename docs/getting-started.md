@@ -11,14 +11,14 @@ A walkthrough from cold install to a complete discover → plan → execute → 
   uv tool install git+https://github.com/Longhuiberkeley/specflow
   ```
 
-## Skills vs CLI
+## Two ways to drive, one engine
 
-SpecFlow has two interfaces:
+SpecFlow has two interfaces over one shared substrate (the artifact graph + deterministic gates):
 
-- **Skills** (`/specflow-*`) -- guided conversations in your AI assistant. Use these for day-to-day work.
-- **CLI** (`specflow <cmd>`) -- deterministic terminal commands. Use these for CI, automation, or when you prefer the terminal.
+- **AI-first — Skills** (`/specflow-*`): guided conversations in your AI assistant. The default, day-to-day experience; the agent manages the graph and escalates to you at approval gates.
+- **ALM / direct — CLI** (`specflow <cmd>`): deterministic terminal commands that work **with no API key**. A complete, standalone ALM for CI, automation, teams, or when you prefer the terminal.
 
-Skills call CLI commands under the hood. You can always use the CLI directly.
+Skills call the same CLI commands under the hood — you can always drive the CLI directly, and the two lanes mix freely (agent drafts, a human or CI reviewer approves). This walkthrough uses the AI-first slash-command surface; see the [Lifecycle overview](lifecycle.md) for both lanes side by side.
 
 ## 1. Initialize your project
 

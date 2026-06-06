@@ -14,7 +14,7 @@ from specflow.lib import standards as standards_lib
 from specflow.lib import lint as lint_lib
 from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC
 
-CHECK_NAMES = ["schema", "links", "status", "status-cascade", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "thinking-techniques", "autoresearch-logging"]
+CHECK_NAMES = ["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "thinking-techniques", "autoresearch-logging"]
 
 
 def _run_check(
@@ -36,6 +36,8 @@ def _run_check(
         return _check_status(artifacts, schema_dir)
     elif check_name == "status-cascade":
         return _check_status_cascade(artifacts)
+    elif check_name == "story-linkage":
+        return _check_story_linkage(artifacts)
     elif check_name == "ids":
         return _check_ids(artifacts, schema_dir)
     elif check_name == "fingerprints":
@@ -131,14 +133,18 @@ def _check_links(
             blocking += 1
             details.append(f"  ✗ [{art.id}] broken link: {link.target} (not found)")
 
-    # Orphans
+    # Orphans (SPIKEs exempt — they're expected to be standalone research)
     orphans = art_lib.find_orphans(artifacts)
-    if orphans:
-        warnings += len(orphans)
-        orphan_ids = ", ".join(a.id for a in orphans[:5])
-        if len(orphans) > 5:
-            orphan_ids += f" (+{len(orphans) - 5} more)"
-        details.append(f"  ⚠ {len(orphans)} orphan(s) with no links: {orphan_ids}")
+    spike_orphans = [a for a in orphans if art_lib.get_prefix_from_id(a.id) == "SPIKE"]
+    non_spike_orphans = [a for a in orphans if art_lib.get_prefix_from_id(a.id) != "SPIKE"]
+    if non_spike_orphans:
+        warnings += len(non_spike_orphans)
+        orphan_ids = ", ".join(a.id for a in non_spike_orphans[:5])
+        if len(non_spike_orphans) > 5:
+            orphan_ids += f" (+{len(non_spike_orphans) - 5} more)"
+        details.append(f"  ⚠ {len(non_spike_orphans)} orphan(s) with no links: {orphan_ids}")
+    if spike_orphans:
+        details.append(f"  ℹ {len(spike_orphans)} SPIKE(s) with no links (expected for research artifacts)")
 
     # Missing V-model pairs
     missing_pairs = art_lib.find_missing_v_pairs(artifacts)
@@ -197,14 +203,35 @@ def _check_status(
 def _check_status_cascade(
     artifacts: list[art_lib.Artifact],
 ) -> dict[str, str | int]:
-    """Warn when a STORY is implemented/verified but linked specs lag behind."""
+    """Warn when a STORY is implemented/verified but linked specs lag behind.
+
+    Also flags (as blocking) when a STORY beyond draft has linked specs still
+    in draft \u2014 implementation against unapproved specs violates the no-self-
+    approval rule.
+    """
     id_index = art_lib.build_id_index(artifacts)
+    blocking = 0
     warnings = 0
     details: list[str] = []
 
     stories = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "STORY"]
 
     for story in stories:
+        # Check: STORY beyond draft with linked specs still in draft
+        if story.status in ("approved", "implemented", "verified"):
+            for link in story.links:
+                target = id_index.get(link.target)
+                if target is None:
+                    continue
+                target_prefix = art_lib.get_prefix_from_id(target.id)
+                if target_prefix in _SPEC_PREFIXES and target.status == "draft":
+                    blocking += 1
+                    details.append(
+                        f"  \u2717 [{story.id}] is '{story.status}' but linked "
+                        f"{target.id} ({target_prefix}) is still 'draft' -- "
+                        f"specs must be approved before implementation"
+                    )
+
         if story.status not in ("implemented", "verified"):
             continue
 
@@ -246,13 +273,69 @@ def _check_status_cascade(
                             f"{target.id} (REQ) is still 'approved' -- update REQ status"
                         )
 
-    icon = GREEN + "\u2713" + NC if warnings == 0 else YELLOW + "\u26a0" + NC
+    icon = GREEN + "\u2713" + NC if blocking == 0 and warnings == 0 else (
+        RED + "\u2717" + NC if blocking > 0 else YELLOW + "\u26a0" + NC
+    )
     detail_msg = "\n".join(details) if details else "All linked spec statuses consistent with stories"
 
     return {
         "status_icon": icon,
         "detail": detail_msg,
-        "blocking_count": 0,
+        "blocking_count": blocking,
+        "warning_count": warnings,
+    }
+
+
+# Spec prefixes that satisfy STORY linkage requirement.
+_SPEC_PREFIXES = {"REQ", "ARCH", "DDD"}
+
+
+def _check_story_linkage(
+    artifacts: list[art_lib.Artifact],
+) -> dict[str, str | int]:
+    """Enforce that every STORY links to at least one spec artifact (REQ/ARCH/DDD).
+
+    STORY without spec linkage is research \u2014 it should be a SPIKE instead.
+    Stories in 'draft' status are given a warning; stories beyond draft get a
+    blocking error since they are being acted on without traced requirements.
+    """
+    blocking = 0
+    warnings = 0
+    details: list[str] = []
+
+    stories = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "STORY"]
+
+    for story in stories:
+        has_spec_link = False
+        for link in story.links:
+            target_prefix = art_lib.get_prefix_from_id(link.target)
+            if target_prefix in _SPEC_PREFIXES:
+                has_spec_link = True
+                break
+
+        if not has_spec_link:
+            if story.status == "draft":
+                warnings += 1
+                details.append(
+                    f"  \u26a0 [{story.id}] has no spec linkage (link to a "
+                    f"REQ/ARCH/DDD, or convert to SPIKE if this is research)"
+                )
+            else:
+                blocking += 1
+                details.append(
+                    f"  \u2717 [{story.id}] '{story.status}' with no spec linkage \u2014 "
+                    f"link to a REQ/ARCH/DDD or convert to SPIKE"
+                )
+
+    icon = GREEN + "\u2713" + NC if blocking == 0 and warnings == 0 else (
+        RED + "\u2717" + NC if blocking > 0 else YELLOW + "\u26a0" + NC
+    )
+    detail_msg = "\n".join(details) if details else f"All {len(stories)} story/stories linked to spec artifacts"
+
+    return {
+        "status_icon": icon,
+        "detail": detail_msg,
+        "blocking_count": blocking,
         "warning_count": warnings,
     }
 

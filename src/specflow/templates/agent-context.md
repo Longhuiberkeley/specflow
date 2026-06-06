@@ -17,13 +17,47 @@ Specs: `REQ` (Requirements) → `ARCH` (Architecture) → `DDD` (Detailed Design
 Tests: `QT` (verify REQ), `IT` (verify ARCH), `UT` (verify DDD).
 Work: `STORY`, `SPIKE`, `DEC`, `DEF` (in `_specflow/work/`) must link to specs.
 
+### Memory & Context
+
+SpecFlow IS your persistent memory. You do not have reliable conversation memory across sessions — you have artifacts.
+
+**Four-axis memory:**
+- `spec/` = **semantic memory** (persistent truth, blueprints). REQ/ARCH/DDD survive every session.
+- `work/` = **episodic memory** (what happened, when, why). STORY/SPIKE/DEC record the journey.
+- `impact-log/` = **temporal memory** (causality — what changed, why, what it affected). Suspect propagation tracks downstream impact.
+- `links` = **relational memory** (how artifacts connect). `specflow trace <ID>` walks the graph.
+
+**Recall before you act:**
+- Run `specflow status` for a project-wide overview (phase, counts, stale items).
+- Scan `_index.yaml` files in relevant directories — they give you title + status + tags for every artifact without reading full bodies.
+- Read `.specflow/state.yaml` for current phase; `.specflow/config.yaml` for domain context.
+- Use `specflow trace <ID>` to walk the link chain and understand context.
+- Use `git log --since=<date> -- _specflow/` for temporal recall — "what changed recently."
+- Check `.specflow/impact-log/` for causality — what changed and why.
+- For research: read FIND artifacts first — they are accumulated knowledge that survives context rot.
+- Run `specflow artifact-lint` to detect context debt (orphans, broken links, missing coverage).
+
+**Journal as you work:**
+- Non-trivial decisions → DEC artifact (not just enacted and forgotten).
+- Discoveries, dead-ends, rationale → the work artifact you're executing.
+- Use the Permanence Test (below): ephemeral → work/, reusable → spec/.
+- If you find yourself working on something unlinked → convert to SPIKE or promote to a linked STORY.
+
+**Context management for fresh sessions:**
+- A fresh agent reads `_index.yaml` files to reconstruct project state cheaply.
+- Prefer breadth-first (scan indexes) then depth (read specific artifacts), not the reverse.
+- Run `specflow artifact-lint` to assess memory health before starting work.
+
 ### Workflow Rules
 - **Traceability:** Every code change must trace to a STORY or REQ. No orphan work.
+- **STORY linkage:** Every STORY must link to at least one spec artifact (REQ, ARCH, or DDD). Unlinked work is research — use SPIKE for that.
+- **No self-approval:** Agents may NEVER move an artifact from `draft` to `approved` without human confirmation. Plan phase is conversational — the human iterates as long as needed. The agent presents, the human approves.
 - **Status Flow:** `draft` → `approved` → `implemented` → `verified`.
 - **Updates:** Use `specflow update <ID> --status <status>` for all YAML/status changes.
 - **Cascading:** When STORY code lands: `specflow update STORY-NNN --status implemented` then `specflow cascade-status STORY-NNN`.
 - **Evidence:** Don't assume "verified"; run checks/tests to prove it.
 - **Validation:** Run `specflow artifact-lint` after manual artifact edits.
+- **Suspect resolution:** When an artifact is flagged `suspect`, actively propose resolution to the human (create DEF, mark resolved, or update the artifact). Do not let suspect flags sit unresolved.
 
 ### Routing
 - Use core `/specflow-*` skills for ALL engineering work: requirements, architecture, stories, implementation, review, release.

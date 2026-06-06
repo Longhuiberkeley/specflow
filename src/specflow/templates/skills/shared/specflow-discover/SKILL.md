@@ -24,8 +24,8 @@ Conduct a structured discovery conversation to capture requirements as REQ artif
 
 ### Step 0: Initialize
 
-1. Read `.specflow/state.yaml` to confirm the project phase. If `current` is `idle` or `discovering`, proceed. Otherwise, warn the user that discovery may conflict with the current phase.
-2. Run `uv run specflow status` silently to see existing artifact counts.
+1. **Recall first:** run `uv run specflow brief` for a one-call digest — phase, inventory by category/status, open suspects, next wave, and recent changes. This replaces the manual ritual of scanning every `_index.yaml`; drill into specific `_index.yaml` files or `specflow trace <ID>` only for the artifacts you need to read in full.
+2. Confirm the project phase from the brief (or `.specflow/state.yaml`). If `current` is `idle` or `discovering`, proceed. Otherwise, warn the user that discovery may conflict with the current phase.
 3. If artifacts already exist, ask: "Do you want to add new requirements, or refine existing ones?"
 
 ### Step 1: Readiness Assessment (Silent, After Every Exchange)
@@ -61,9 +61,9 @@ After each user response, silently evaluate readiness dimensions:
 
 For bounded changes like "add dark mode" or "fix the login redirect":
 
-1. Generate a single REQ artifact with minimal metadata.
-2. Generate a single STORY artifact linked to the REQ via `implements`.
-3. Auto-approve both (set `status: approved`).
+1. Generate a single REQ artifact (status `draft`) with minimal metadata.
+2. Generate a single STORY artifact (status `draft`) linked to the REQ via `implements`.
+3. **Tier 0 approval (still a gate).** Present a compact summary — TLDR + the REQ and STORY in 2-3 lines — and approve **only on the user's confirmation** (`specflow update <ID> --status approved` for each). Do not silently auto-approve: a lean change lowers how much the human must read, not whether they confirm (see `../specflow-references/references/approval-presentation.md`).
 4. Record the lean assessment on the REQ: `uv run specflow update <REQ-ID> --thinking-techniques lean_assessment`
 5. Skip to Step 5 (Artifact Creation).
 
@@ -220,30 +220,16 @@ uv run specflow artifact-lint
 
 Report results to user.
 
-### Step 6.5: Human-Review Summary
+### Step 6.5: Approval Gate
 
-Before transitioning phases, present a structured summary so the user can validate the discovery outcome:
+Present the discovered requirements following the **Approval Presentation Format** (see `../specflow-references/references/approval-presentation.md`):
 
-```
-## Summary for Human Review
+1. **TLDR** — What was discovered and the path taken (lean vs. full), in 1-3 sentences.
+2. **Changes inline** — Each REQ with its key acceptance criteria and scope boundaries (IN/OUT). The human should not need to open a file.
+3. **Assessment lenses** — Apply completeness (happy path + error/edge cases covered?), and a brief **Risk Profile** per REQ (reversibility is high — these are specs — so the salient axes are *confidence* and any assumption that needs validation: stakeholders, success-criteria interpretation, domain-checklist defaults).
+4. **Action options** — Approve (you mark the REQs `approved` on the user's say-so) / Request changes / Discuss.
 
-### Key Decisions Made
-- Path taken: lean vs. full discovery — and why
-- Scope boundaries: what was explicitly declared IN / OUT of scope
-- Accepted constraints: hard constraints the user confirmed (tech, timeline, compliance)
-
-### Assumptions That Need Validation
-- Stakeholders / primary users identified — risk if wrong: requirements target the wrong audience
-- Success criteria interpretation — risk if wrong: acceptance criteria miss the real goal
-- Any domain-checklist answer taken as a default — risk if wrong: downstream ARCH/DDD is built on a bad premise
-
-### Please Review
-- For each REQ: do the acceptance criteria cover happy path + at least one error/edge case?
-- Any cross-cutting concern you skipped (auth, observability, scalability) that should be a REQ?
-- Any requirement that feels like HOW (implementation) rather than WHAT (behavior)?
-```
-
-Wait for user acknowledgement before proceeding to phase transition.
+**You must NOT self-approve.** REQs stay `draft` until the user explicitly confirms; only then run `specflow update REQ-<id> --status approved`. Also flag if not already surfaced: any cross-cutting concern skipped (auth, observability, scalability) that should be a REQ, and any requirement that reads as HOW (implementation) rather than WHAT (behavior).
 
 ### Step 7: Phase Transition
 
@@ -263,12 +249,12 @@ Created: REQ-<id-1>, REQ-<id-2>, ...
 Requirements are currently in **draft** status and must be approved before planning.
 ```
 
-**Exit message (lean path):** REQs and STORYs were auto-approved during lean discovery:
+**Exit message (lean path):** after the user confirmed the Tier 0 approval, REQs and STORYs are approved:
 
 ```
 Created: REQ-<id> (approved), STORY-<id> (approved)
 
-Requirements are already approved. Run `/specflow-execute` to implement.
+Requirements approved. Run `/specflow-execute` to implement.
 ```
 
 ## Rules

@@ -24,10 +24,11 @@ Break down approved requirements into architecture, detailed design, and user st
 
 ### Step 1: Phase Gate Check
 
-1. Read all REQ artifacts from `_specflow/specs/requirements/`.
-2. Verify all REQs have `status: approved`. If any are still `draft`, tell the user which ones need approval before planning can proceed.
-3. Run the phase gate: `uv run specflow artifact-lint --type gate --gate specifying-to-planning`. Run it by default — only skip if the user explicitly declines.
-4. If gate fails, report blockers and stop.
+1. **Recall first:** run `uv run specflow brief` for a one-call digest of phase, inventory, suspects, and recent changes — then drill into specific `_index.yaml` files or full artifact bodies only as needed.
+2. Read all REQ artifacts from `_specflow/specs/requirements/`.
+3. Verify all REQs have `status: approved`. If any are still `draft`, tell the user which ones need approval before planning can proceed.
+4. Run the phase gate: `uv run specflow artifact-lint --type gate --gate specifying-to-planning`. Run it by default — only skip if the user explicitly declines.
+5. If gate fails, report blockers and stop.
 
 ### Step 2: Read & Understand Requirements
 
@@ -194,38 +195,34 @@ uv run specflow artifact-lint
 
 Report any issues. Fix broken links or schema violations.
 
-### Step 7: User Review
+### Step 7: User Review (Approval Gate)
 
-Present the complete artifact set to the user:
-- X ARCH artifacts (architecture)
-- Y DDD artifacts (detailed design)
-- Z STORY artifacts (stories)
-- W SPIKE artifacts (research)
+**You must follow the Approval Presentation Format** (see `../specflow-references/references/approval-presentation.md`). Present:
 
-Ask user to review and approve. Iterate as needed.
+1. **TLDR** — What was planned and why (1-3 sentences, no jargon).
+2. **Changes inline** — List every ARCH, DDD, STORY, and SPIKE with key content. The human should not need to open any file to understand the proposal.
+3. **Assessment lenses** — Apply traceability, completeness, linkage, coverage, and staleness lenses, then a **Risk Profile per change** (reversibility, blast radius via `specflow change-impact`, and your confidence + the reason it isn't higher). Show ✅/⚠️/❌ results.
+4. **Risk-proportional gate** — Assign a tier (0 light / 1 normal / 2 stop) from the risk profile and present accordingly; for Tier 2 changes, point at the specific concern. Do not calibrate the tier from past approvals.
+5. **Action options** — Approve / Request changes / Discuss / Reject.
+
+**CRITICAL: You must NOT self-approve.** All artifacts remain in `draft` until the human explicitly approves. The plan phase is conversational — the human may iterate, discuss, and request changes as many times as needed. Wait for explicit approval.
+
+If the human requests changes:
+1. Identify which lens failed (from the feedback).
+2. Revise the relevant artifact(s).
+3. Re-present with updated assessment, highlighting what changed.
+4. Repeat until approved or abandoned.
+
+Only on explicit "approve" → run `specflow update <ID> --status approved` for each artifact.
 
 ### Step 7.5: Human-Review Summary
 
-Before flipping the phase, present a structured summary so the user can catch any silent decisions baked in during planning:
+Before the phase transition, ensure the user has explicitly acknowledged the assessment results. Key items to highlight if not already surfaced in Step 7:
 
-```
-## Summary for Human Review
-
-### Key Decisions Made
-- Component decomposition rationale (why these boundaries and not others)
-- Which ARCHs got DDDs vs. which were left interface-only, and why
-- SPIDR dimensions that drove the story split (Spike / Path / Interface / Data / Rules)
-
-### Assumptions That Need Validation
-- Each ARCH's deployment/isolation assumption — risk if wrong: coupling surprises at integration time
-- Story sizing assumptions (each story fits one sprint / wave) — risk if wrong: waves stall
-- Non-functional targets carried forward from REQs (latency, scale, cost) — risk if wrong: the plan is solving the wrong problem
-
-### Please Review
 - Is every approved REQ covered by at least one STORY? (flag any REQ with no `implements` link)
 - Any STORY that should be a SPIKE because the answer is genuinely unknown?
 - Any ARCH with a public interface that has no corresponding DDD and probably needs one?
-```
+- Key assumptions that need validation (deployment model, story sizing, NFR targets)
 
 Wait for user acknowledgement before the phase transition.
 

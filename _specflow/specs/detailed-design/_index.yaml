@@ -173,31 +173,31 @@ artifacts:
   DDD-023:
     id: DDD-023
     title: "pack.yaml adds_skills field \u2014 semantics and install behavior"
-    status: draft
+    status: implemented
     tags:
     - autoresearch
     - pack
     - skills
-    fingerprint: sha256:9c3e5899dc1e
+    fingerprint: sha256:0d5c48ec4acc
     children: []
   DDD-024:
     id: DDD-024
     title: Dynamic status dashboard via category field
-    status: draft
+    status: implemented
     tags:
     - autoresearch
     - status
     - dashboard
-    fingerprint: sha256:4c61ac9398f3
+    fingerprint: sha256:d2c9837b3079
     children: []
   DDD-025:
     id: DDD-025
     title: "Autonomous loop protocol \u2014 8 phases"
-    status: draft
+    status: implemented
     tags:
     - autoresearch
     - protocol
     - loop
-    fingerprint: sha256:4ff1afd8c3e0
+    fingerprint: sha256:4b574c0c8505
     children: []
 next_id: 26

@@ -159,26 +159,14 @@ Each finding should note which layer produced it (`lint`, `checklist`, `llm`, or
 
 ### Step 7: Human-Review Summary
 
-Before offering remediation, present a structured summary so the user can validate the review itself — not just its findings:
+Present the review findings following the **Approval Presentation Format** (see `../specflow-references/references/approval-presentation.md`):
 
-```
-## Summary for Human Review
+1. **TLDR** — What was reviewed and the overall health verdict (1-3 sentences).
+2. **Findings inline** — Each finding with severity, source layer (lint/checklist/llm/lens), and the specific artifact section. The human should not need to open files to understand what's wrong.
+3. **Assessment lenses** — Which lenses were applied, which were skipped, and why. Show ✅/⚠️/❌ results per lens.
+4. **Key decisions** — Scope of review, severity calls that were borderline, assumptions made.
 
-### Key Decisions Made
-- Scope of this review (which artifact IDs, which depth)
-- Which lenses were applied vs. skipped, and why
-- Severity classification calls that were borderline
-
-### Assumptions That Need Validation
-- Each artifact's stated purpose was taken at face value — risk if wrong: review is graded against the wrong rubric
-- Severity thresholds follow `references/severity-levels.md` defaults — risk if wrong: urgency signal is miscalibrated for this project
-- Lenses not run may have found issues we missed — risk if wrong: false clean bill of health
-
-### Please Review
-- Every `blocking` and `warning` finding individually — decide fix-now vs. defer
-- Any artifact that passed cleanly but feels risky — consider rerunning with a deeper lens selection
-- Any finding flagged as `info` that you think should be a `warning`
-```
+Wait for user acknowledgement on each `blocking` and `warning` finding before proceeding to remediation.
 
 ### Step 8: "Improve Now?" Prompt
 

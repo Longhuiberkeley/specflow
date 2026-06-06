@@ -1,3 +1,3 @@
 """SpecFlow — Spec-Driven Development Framework."""
 
-__version__ = "1.6.4"
+__version__ = "1.8.0"

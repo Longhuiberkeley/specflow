@@ -29,6 +29,18 @@ items:
     script: "uv run specflow artifact-lint --type links"
     severity: blocking
 
+  - id: CKL-GATE-004-09
+    check: "Every STORY links to a spec artifact (REQ/ARCH/DDD); research is a SPIKE"
+    automated: true
+    script: "uv run specflow artifact-lint --type story-linkage"
+    severity: blocking
+
+  - id: CKL-GATE-004-10
+    check: "No STORY beyond draft links to a spec still in draft (no implementing against unapproved specs)"
+    automated: true
+    script: "uv run specflow artifact-lint --type status-cascade"
+    severity: blocking
+
   - id: CKL-GATE-004-05
     check: "Every STORY has a clear acceptance definition"
     automated: false

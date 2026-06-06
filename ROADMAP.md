@@ -198,15 +198,17 @@ Focus: **autoresearch methodology depth, escalation/permanence test, and templat
 
 > Deferred: an audit/lint detector that flags long-lived SPIKEs / repeated ad-hoc work that should have been promoted (a work-side complement to the v1.8.0 *Stale Code Detection* item). Also deferred: optional structured multi-output schema (typed per-component fields on COMP/EXPT) if the `component_<name>` convention proves too loose.
 
-## v1.8.0 (Planned)
+## v1.8.0
 
-Focus: **swarm observability, synthesis conflict resolution, semantic drift detection, and human steering.**
+Focus: **SpecFlow-as-memory, the suspect → DEF pipeline, and risk-proportional approval gates.**
 
-- **Cost and Token Observability** — add `--dry-run` to multi-agent skills (e.g., `/specflow-audit`, `/specflow-plan`) to estimate token cost before fan-out. Log token/cost telemetry to `.specflow/telemetry/` for post-hoc analysis.
-- **Synthesis Conflict Resolution Rubric** — introduce a rigorous conflict-resolution rubric for synthesis agents (e.g., merging parallel ARCH candidates). Mandate `ask_user` prompts when parallel seeds fundamentally diverge on core constraints.
-- **Stale Code Detection (Semantic Drift)** — add a lint check that flags `implemented` or `verified` code/artifacts as "stale" when their governing upstream REQ or ARCH is modified.
-- **Human-in-the-Loop Readability** — evolve `specflow autoresearch review` into a robust CLI dashboard, ensuring LOOP logs, FINDs, and EXPT rubrics remain human-readable when humans need to step in and steer the AI swarm.
-- **Proactive Dogfooding Enforcement** — enforce that SpecFlow development proactive uses `/specflow-plan` and `/specflow-execute` on itself, drafting and approving DEC and ARCH artifacts *before* writing framework code.
+- **`specflow brief`** — one-call deterministic recall digest (phase, inventory by category/status, open suspects, next wave, recent changes), so a fresh agent reconstructs project state in one command instead of a six-command ritual. Four-axis memory model (semantic/episodic/temporal/relational) documented in the always-loaded context.
+- **Suspect → DEF pipeline** — `specflow defect-from-suspect <ID> --req <REQ>` creates a fully-traceable, indexed defect (`fails_to_meet` → REQ, `exposed_by` → suspect) from a suspect-flagged artifact; the helper now routes through `create_artifact` rather than a hand-rolled writer.
+- **Risk-proportional approval gates** — per-change Risk Profile (reversibility, blast radius via `specflow change-impact`, AI confidence) and tiers (0 light / 1 normal / 2 stop) in the approval-presentation format; "no self-approval" enforced and scoped to the agent; discover lean path reconciled to confirm rather than silently auto-approve.
+- **Spec-approval enforcement** (partial delivery of the planned *Stale Code Detection / Semantic Drift*) — new `story-linkage` lint and a now-blocking status-cascade check ("STORY beyond draft linked to a draft spec"), wired into the planning-to-executing gate.
+- **Two ways to drive, one engine** — dual-mode positioning (AI-first default + standalone ALM, no API key) with a two-lane lifecycle flowchart (Mermaid + ASCII).
+
+> Deferred from the original v1.8.0 plan: cost/token observability (`--dry-run` on fan-out skills + `.specflow/telemetry/`), the synthesis conflict-resolution rubric, the `specflow autoresearch review` dashboard, and proactive dogfooding enforcement. The full semantic-drift "stale on upstream change" lint remains partially open (suspect flags already cover ARCH/REQ modification; the explicit lint is future work).
 
 ## v1.7.1
 

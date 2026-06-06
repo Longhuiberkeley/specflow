@@ -594,3 +594,109 @@ class TestCheckThinkingTechniques:
                         extra_fm={"thinking_techniques": ["lean_assessment"]})
         result = lint_cmd._check_thinking_techniques([art])
         assert result["warning_count"] == 0
+
+
+# ── _check_story_linkage ─────────────────────────────────────────────────────
+
+class TestCheckStoryLinkage:
+    def test_story_linked_to_req_passes(self, project_root: Path):
+        _write_artifact(project_root, "REQ-001", "requirement", "Test REQ")
+        _write_artifact(
+            project_root, "STORY-001", "story", "Linked Story", status="approved",
+            links=[{"target": "REQ-001", "role": "implements"}],
+        )
+        arts = art_lib.discover_artifacts(project_root)
+        result = lint_cmd._check_story_linkage(arts)
+        assert result["blocking_count"] == 0
+        assert result["warning_count"] == 0
+
+    def test_draft_story_without_spec_warns(self, project_root: Path):
+        _write_artifact(project_root, "STORY-001", "story", "Orphan Story", status="draft")
+        arts = art_lib.discover_artifacts(project_root)
+        result = lint_cmd._check_story_linkage(arts)
+        assert result["blocking_count"] == 0
+        assert result["warning_count"] == 1
+        assert "STORY-001" in result["detail"]
+
+    def test_approved_story_without_spec_is_blocking(self, project_root: Path):
+        _write_artifact(project_root, "STORY-001", "story", "Orphan Story", status="approved")
+        arts = art_lib.discover_artifacts(project_root)
+        result = lint_cmd._check_story_linkage(arts)
+        assert result["blocking_count"] == 1
+        assert result["warning_count"] == 0
+
+    def test_story_linked_only_to_non_spec_is_unlinked(self, project_root: Path):
+        # A link to another STORY does not satisfy spec linkage.
+        _write_artifact(project_root, "STORY-000", "story", "Other Story")
+        _write_artifact(
+            project_root, "STORY-001", "story", "Dependent Story", status="implemented",
+            links=[{"target": "STORY-000", "role": "depends_on"}],
+        )
+        arts = art_lib.discover_artifacts(project_root)
+        result = lint_cmd._check_story_linkage(arts)
+        # STORY-000 (draft, no spec) warns; STORY-001 (implemented, no spec) blocks.
+        assert result["blocking_count"] == 1
+
+    def test_arch_or_ddd_linkage_satisfies(self, project_root: Path):
+        _write_artifact(project_root, "ARCH-001", "architecture", "Test ARCH")
+        _write_artifact(
+            project_root, "STORY-001", "story", "Story via ARCH", status="implemented",
+            links=[{"target": "ARCH-001", "role": "implements"}],
+        )
+        arts = art_lib.discover_artifacts(project_root)
+        result = lint_cmd._check_story_linkage(arts)
+        assert result["blocking_count"] == 0
+
+
+# ── _check_status_cascade (draft-spec blocking) ──────────────────────────────
+
+class TestCheckStatusCascadeDraftSpec:
+    def test_implemented_story_with_draft_spec_is_blocking(self, project_root: Path):
+        _write_artifact(project_root, "REQ-001", "requirement", "Draft REQ", status="draft")
+        _write_artifact(
+            project_root, "STORY-001", "story", "Premature Story", status="implemented",
+            links=[{"target": "REQ-001", "role": "implements"}],
+        )
+        arts = art_lib.discover_artifacts(project_root)
+        result = lint_cmd._check_status_cascade(arts)
+        assert result["blocking_count"] >= 1
+        assert "still 'draft'" in result["detail"]
+
+    def test_approved_story_with_approved_spec_no_block(self, project_root: Path):
+        _write_artifact(project_root, "REQ-001", "requirement", "Approved REQ", status="approved")
+        _write_artifact(
+            project_root, "STORY-001", "story", "OK Story", status="approved",
+            links=[{"target": "REQ-001", "role": "implements"}],
+        )
+        arts = art_lib.discover_artifacts(project_root)
+        result = lint_cmd._check_status_cascade(arts)
+        assert result["blocking_count"] == 0
+
+    def test_draft_story_with_draft_spec_no_block(self, project_root: Path):
+        # A draft story is not yet being acted on — no blocking error.
+        _write_artifact(project_root, "REQ-001", "requirement", "Draft REQ", status="draft")
+        _write_artifact(
+            project_root, "STORY-001", "story", "Draft Story", status="draft",
+            links=[{"target": "REQ-001", "role": "implements"}],
+        )
+        arts = art_lib.discover_artifacts(project_root)
+        result = lint_cmd._check_status_cascade(arts)
+        assert result["blocking_count"] == 0
+
+
+# ── SPIKE orphan exemption ───────────────────────────────────────────────────
+
+class TestSpikeOrphanExemption:
+    def test_orphan_spike_not_counted_as_warning(self, project_root: Path):
+        _write_artifact(project_root, "SPIKE-001", "spike", "Standalone research")
+        arts = art_lib.discover_artifacts(project_root)
+        result = lint_cmd._check_links(arts, project_root)
+        # SPIKE orphan is informational, not a warning.
+        assert "SPIKE(s) with no links" in result["detail"]
+        assert result["warning_count"] == 0
+
+    def test_orphan_non_spike_still_warns(self, project_root: Path):
+        _write_artifact(project_root, "REQ-001", "requirement", "Orphan REQ")
+        arts = art_lib.discover_artifacts(project_root)
+        result = lint_cmd._check_links(arts, project_root)
+        assert result["warning_count"] >= 1

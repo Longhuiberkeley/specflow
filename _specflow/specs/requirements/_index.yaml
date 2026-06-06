@@ -271,72 +271,72 @@ artifacts:
   REQ-028:
     id: REQ-028
     title: Autonomous experimentation loop on SpecFlow
-    status: draft
+    status: implemented
     tags:
     - autoresearch
     - autonomous
     - top-level
-    fingerprint: sha256:354bc6e04c4a
+    fingerprint: sha256:e147e64db46f
     children: []
   REQ-029:
     id: REQ-029
     title: Competition-scoped experiment tracking
-    status: draft
+    status: implemented
     tags:
     - autoresearch
     - competition
     - tracking
-    fingerprint: sha256:785750e6db1f
+    fingerprint: sha256:daef09d1fccd
     children: []
   REQ-030:
     id: REQ-030
     title: Knowledge condensation across loops
-    status: draft
+    status: implemented
     tags:
     - autoresearch
     - findings
     - knowledge
-    fingerprint: sha256:2533020447de
+    fingerprint: sha256:b606fae4b2cc
     children: []
   REQ-031:
     id: REQ-031
     title: Explore / exploit / validate LOOP modes
-    status: draft
+    status: implemented
     tags:
     - autoresearch
     - modes
     - ideation
-    fingerprint: sha256:89755ebe9d3f
+    fingerprint: sha256:80943df95d8f
     children: []
   REQ-032:
     id: REQ-032
     title: Pack system supports skill installation
-    status: draft
+    status: implemented
     tags:
     - autoresearch
     - pack-system
     - skills
-    fingerprint: sha256:bae75f482113
+    fingerprint: sha256:2a535b0f42cd
     children: []
   REQ-033:
     id: REQ-033
     title: Dynamic status dashboard for new artifact categories
-    status: draft
+    status: implemented
     tags:
     - autoresearch
     - status
     - dashboard
-    fingerprint: sha256:791e8bc22869
+    fingerprint: sha256:1aa5228eebfe
     children: []
   REQ-034:
     id: REQ-034
     title: Traceability covers research chain
-    status: draft
+    status: implemented
     tags:
     - autoresearch
     - trace
     - traceability
-    fingerprint: sha256:f0894af0e8ca
+    fingerprint: sha256:b178dbe6cf6f
     children: []
   REQ-AUTORESE-d684:
     id: REQ-AUTORESE-d684

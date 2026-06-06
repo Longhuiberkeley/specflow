@@ -4,6 +4,42 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.8.0] - 2026-06-07
+
+### Highlights
+
+- **SpecFlow as memory, made real.** New `specflow brief` gives a one-call deterministic recall digest (phase, inventory by category/status, open suspects, next wave, recent changes) so a fresh agent reconstructs project state in one command instead of a six-command ritual. The four-axis memory model (semantic/episodic/temporal/relational) is documented in the always-loaded context.
+- **Suspect → DEF pipeline, end to end.** New `specflow defect-from-suspect <ID> --req <REQ>` creates a defect with full traceability (`fails_to_meet` → REQ, `exposed_by` → the suspect artifact), registered in the index. The helper now routes through `create_artifact` (indexed, fingerprinted, schema-validated) instead of a hand-rolled writer.
+- **Approval gates that let the human be lazy *safely*.** The approval-presentation format now requires a per-change Risk Profile — reversibility, blast radius (via `specflow change-impact`), and an AI confidence signal — plus risk-proportional tiers (0 light / 1 normal / 2 stop) derived from intrinsic change properties (never from approval history). "No self-approval" is enforced and scoped to the agent.
+- **Two ways to drive, one engine.** SpecFlow is positioned as a single engine: AI-first (the default) and a standalone ALM (CLI/CI, no API key). New two-lane lifecycle flowchart (Mermaid + ASCII).
+
+### Features
+
+- `specflow brief` — one-call recall digest (`--since` window for recent changes)
+- `specflow defect-from-suspect` — suspect → DEF with auto-linked traceability
+- `story-linkage` lint check — every STORY must link to a REQ/ARCH/DDD (draft = warning, beyond draft = blocking); SPIKEs exempt as standalone research
+- Risk-proportional approval gates and per-change Risk Profile in `specflow-references/references/approval-presentation.md`; wired into plan/execute/ship/artifact-review and discover
+- Four-axis memory model + recall-first guidance in `agent-context.md`
+
+### Fixes
+
+- `create_defect_from_suspect` now uses `create_artifact` — previously hand-rolled, so suspect-derived DEFs were not registered in `_index.yaml` and had a mismatched link role
+- `approval-presentation.md` reference path corrected across 4 skills (moved into `specflow-references/references/`)
+- discover: lean path no longer silently auto-approves — it now presents a Tier 0 summary and approves only on confirmation; Step 6.5 uses the approval-presentation format (reconciles the new no-self-approval rule)
+- `__version__` corrected `1.6.4` → `1.8.0` (it is stamped into scaffolded project configs as the framework version)
+- `artifact-lint --type` choices aligned with the runner (`thinking-techniques`, `autoresearch-logging`)
+
+### Documentation
+
+- "Two ways to drive, one engine" framing in `README.md` and `docs/getting-started.md`
+- `docs/lifecycle.md`: two-lane flowchart (Mermaid primary + ASCII fallback); fixed the 10-vs-9 command-table mismatch (added `/specflow-adapter`)
+- `docs/cli-reference.md`: cataloged `brief` and `defect-from-suspect`
+
+### Notes
+
+- **Behavior change:** the status-cascade "STORY beyond draft linked to a draft spec" condition is now **blocking** (was advisory) and is enforced in the planning-to-executing gate. Upgrading projects with pre-existing drift will see this surface — remedy: approve/implement the upstream specs (or convert the work to a SPIKE).
+- **Known limitation:** there is no lightweight command yet to refresh `agent-context.md`/skills in an existing project after upgrading the framework; re-run `specflow init` to re-sync. Tracked as a follow-up.
+
 ## [1.7.3] - 2026-06-02
 
 ### Highlights

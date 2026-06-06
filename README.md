@@ -20,6 +20,15 @@ Old-school ALM tools were built for a world where humans typed every line. They 
 
 SpecFlow keeps the rigor (V-model traceability, impact analysis, audit baselines, standards packs) and drops the parts that slow teams down (servers, licenses, portals, click-through workflows). It runs wherever your AI assistant runs — Claude Code, Cursor, Cline, and 11 others.
 
+## Two ways to drive, one engine
+
+SpecFlow is a single engine — the artifact graph plus a deterministic CLI, gates, and traceability — that you can drive two ways:
+
+- **AI-first (the default).** You talk; an agent runs the `/specflow-*` skills, manages the artifact graph, and escalates to you at approval gates. This is the primary experience.
+- **ALM / direct (the standalone foundation).** The CLI, phase-gates, V-model tests, baselines, and RBAC work **with no API key** — a human, a team, or CI can drive the whole lifecycle by hand. It's a complete ALM on its own; the AI layer is an optional driver on top, not a dependency.
+
+Both lanes operate on the same substrate and the same gates, so you can mix them: an agent drafts, a human or CI reviewer approves. See the [Lifecycle overview](docs/lifecycle.md) for the two-lane flowchart.
+
 ## Feel it in 30 seconds
 
 ```bash

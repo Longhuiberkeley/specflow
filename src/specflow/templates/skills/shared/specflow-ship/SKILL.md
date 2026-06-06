@@ -47,14 +47,16 @@ Run a fast health check across the final state of the release:
 uv run specflow project-audit --quick
 ```
 
-### Step 4: Review and Advisory
+### Step 4: Review and Advisory (Approval Gate)
 
-1. Present the release summary, including:
-   - Links to the created baseline snapshot.
-   - Links to the generated DEC artifacts.
-   - A summary of the audit report.
-2. **Advisory Gate:** If the audit severity is >= `error`, present a clear warning. "The audit returned errors. Are you sure you want to proceed with this release? (Recommended: No, fix errors first)"
-3. Require explicit user confirmation to proceed if there are errors.
+Present the release summary following the **Approval Presentation Format** (see `../specflow-references/references/approval-presentation.md`):
+
+1. **TLDR** — What's being released, version tag, scope summary (1-3 sentences).
+2. **Changes inline** — Baseline snapshot details, DEC artifacts with key changes summarized (not just links), audit findings. The human should not need to open files.
+3. **Assessment lenses** — Apply staleness, coverage, and compliance lenses, then a **Risk Profile** for the release (a release is **irreversible** by default — a published tag is a one-way door; report blast radius and your confidence). Show ✅/⚠️/❌ results.
+4. **Risk-proportional gate** — A release is Tier 2 (irreversible): point at any specific concern and require targeted sign-off. Never auto-proceed a release.
+5. **Advisory Gate:** If the audit severity is >= `error`, present a clear warning. "The audit returned errors. Are you sure you want to proceed with this release? (Recommended: No, fix errors first)"
+6. Require explicit user confirmation to proceed if there are errors.
 
 ## Rules
 - **Gate severity:**

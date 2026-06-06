@@ -31,6 +31,12 @@ def cmd_artifact_lint(args: argparse.Namespace) -> int:
     return cmd.run(root, vars(args))
 
 
+def cmd_brief(args: argparse.Namespace) -> int:
+    from specflow.commands import brief as cmd
+    root = _find_project_root()
+    return cmd.run(root, vars(args))
+
+
 def cmd_create(args: argparse.Namespace) -> int:
     from specflow.commands import create as create_cmd
     root = _find_project_root()
@@ -81,6 +87,12 @@ def cmd_standards_gaps(args: argparse.Namespace) -> int:
 
 def cmd_change_impact(args: argparse.Namespace) -> int:
     from specflow.commands import change_impact as cmd
+    root = _find_project_root()
+    return cmd.run(root, vars(args))
+
+
+def cmd_defect_from_suspect(args: argparse.Namespace) -> int:
+    from specflow.commands import defect_from_suspect as cmd
     root = _find_project_root()
     return cmd.run(root, vars(args))
 
@@ -222,6 +234,11 @@ def _add_status_parser(subparsers):
     subparsers.add_parser("status", help="Show project dashboard")
 
 
+def _add_brief_parser(subparsers):
+    p = subparsers.add_parser("brief", help="One-call recall digest: phase, inventory, suspects, next wave, recent changes")
+    p.add_argument("--since", help="Recent-changes window for git log (default: '7 days ago')")
+
+
 def _add_create_parser(subparsers):
     p = subparsers.add_parser("create", help="Create a new artifact")
     p.add_argument("--type", help="Artifact type (required unless --from-standard is used)")
@@ -331,7 +348,7 @@ def _add_reconcile_parser(subparsers):
 
 def _add_artifact_lint_parser(subparsers):
     p = subparsers.add_parser("artifact-lint", help="Run deterministic validation checks on artifacts")
-    p.add_argument("--type", choices=["schema", "links", "status", "status-cascade", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "gate"], help="Run only a specific check")
+    p.add_argument("--type", choices=["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "thinking-techniques", "autoresearch-logging", "gate"], help="Run only a specific check")
     p.add_argument("--fix", action="store_true", help="Auto-fix (rebuild indexes, recompute fingerprints)")
     p.add_argument("--gate", help="Phase-gate checklist name")
     p.add_argument("--method", choices=["programmatic", "llm"], default="programmatic", help="Validation method")
@@ -418,6 +435,15 @@ def _add_change_impact_parser(subparsers):
     p.add_argument("artifact_id", nargs="?", help="Filter by source artifact ID")
     p.add_argument("--resolve", help="Resolve suspect flag on artifact ID")
     p.add_argument("--flag", action="store_true", help="Flag matched artifacts as suspect (source-file impact)")
+
+
+def _add_defect_from_suspect_parser(subparsers):
+    p = subparsers.add_parser("defect-from-suspect", help="Create a DEF from a suspect-flagged artifact with auto-linked traceability")
+    p.add_argument("suspect_id", help="The suspect-flagged artifact (e.g., ARCH-001)")
+    p.add_argument("--req", required=True, help="Upstream REQ whose change caused the suspect flag")
+    p.add_argument("--severity", choices=["low", "medium", "high", "critical"], default="medium", help="Defect severity")
+    p.add_argument("--impact-event", dest="impact_event", help="Path to the impact-log YAML event (recorded in the DEF body)")
+    p.add_argument("--title", help="Override the auto-generated defect title")
 
 
 def _add_fingerprint_refresh_parser(subparsers):
@@ -628,6 +654,7 @@ def main(argv: list[str] | None = None) -> int:
     # ── Discover ────────────────────────────────────────────────
     _add_init_parser(subparsers)
     _add_status_parser(subparsers)
+    _add_brief_parser(subparsers)
     _add_standards_parser(subparsers)
     _add_domain_parser(subparsers)
     _add_handbook_parser(subparsers)
@@ -661,6 +688,7 @@ def main(argv: list[str] | None = None) -> int:
     _add_export_parser(subparsers)
     _add_detect_parser(subparsers)
     _add_change_impact_parser(subparsers)
+    _add_defect_from_suspect_parser(subparsers)
     _add_fingerprint_refresh_parser(subparsers)
     _add_ci_parser(subparsers)
     _add_trace_parser(subparsers)
@@ -686,6 +714,7 @@ def main(argv: list[str] | None = None) -> int:
         # New names
         "init": cmd_init,
         "status": cmd_status,
+        "brief": cmd_brief,
         "standards": cmd_standards,
         "domain": cmd_domain,
         "handbook": cmd_handbook,
@@ -699,6 +728,7 @@ def main(argv: list[str] | None = None) -> int:
         "cascade-status": cmd_cascade_status,
         "reconcile": cmd_reconcile,
         "change-impact": cmd_change_impact,
+        "defect-from-suspect": cmd_defect_from_suspect,
         "fingerprint-refresh": cmd_fingerprint_refresh,
         "baseline": cmd_baseline,
         "document-changes": cmd_document_changes,

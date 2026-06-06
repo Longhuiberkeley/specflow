@@ -31,6 +31,18 @@ Show the project dashboard — current phase, artifact counts by status, flagged
 specflow status
 ```
 
+### `specflow brief`
+
+One-call recall digest for resuming any session: project phase, inventory by category/status, open suspect flags, the next executable wave, and recent `_specflow/` changes. Deterministic aggregation of existing data — the cheap way to reconstruct project state instead of scanning every `_index.yaml` by hand.
+
+```bash
+specflow brief [--since "7 days ago"]
+```
+
+| Flag | Purpose |
+|------|---------|
+| `--since` | Window for the "recent changes" git log (default: `7 days ago`) |
+
 ### `specflow standards gaps`
 
 List uncovered standard clauses — clauses in `.specflow/standards/` with no REQ linking to them via `complies_with`.
@@ -267,6 +279,22 @@ Report and resolve suspect flags from change propagation.
 ```bash
 specflow change-impact [ARTIFACT_ID] [--resolve ARTIFACT_ID]
 ```
+
+### `specflow defect-from-suspect`
+
+Materialize the suspect → DEF pipeline: when a suspect-flagged artifact genuinely no longer satisfies its upstream requirement, create a DEF with full traceability (`fails_to_meet` → REQ, `exposed_by` → the suspect artifact), registered in the index. Pair with `change-impact --resolve` once addressed.
+
+```bash
+specflow defect-from-suspect SUSPECT_ID --req REQ_ID [--severity LEVEL] [--impact-event PATH] [--title TITLE]
+```
+
+| Flag | Purpose |
+|------|---------|
+| `SUSPECT_ID` | The suspect-flagged artifact (e.g., `ARCH-001`) |
+| `--req` | Upstream REQ whose change caused the suspect flag (required) |
+| `--severity` | `low` \| `medium` \| `high` \| `critical` (default: `medium`) |
+| `--impact-event` | Path to the impact-log YAML event (recorded in the DEF body) |
+| `--title` | Override the auto-generated defect title |
 
 ---
 

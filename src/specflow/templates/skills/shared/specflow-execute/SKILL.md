@@ -52,7 +52,11 @@ The planning-to-executing phase gate IS the readiness check. Run it before any i
 
 3. **Identify the in-scope STORY set.** Use `uv run specflow go --dry-run` to compute the next wave; that's the read-set for this run. Avoid reading STORYs outside the upcoming wave unless an LLM-judged item explicitly requires cross-story analysis.
 
-4. **Check `suspect: true` flags** on ALL linked artifacts in the in-scope set. Run `uv run specflow status` and scan for suspect markers. If upstream specs are suspect, surface this as a `blocking` item — do not proceed against stale specs without explicit user confirmation. Report: "Artifact [ID] is flagged suspect (modified [date]). [Reason]. Proceeding may waste effort. Continue anyway?"
+4. **Check `suspect: true` flags** on ALL linked artifacts in the in-scope set. Run `uv run specflow status` and scan for suspect markers. If upstream specs are suspect, do NOT just warn — **actively propose resolution**:
+   - "ARCH-001 is suspect (REQ-001 changed on 2026-06-01). Options: (a) Create DEF — the ARCH genuinely no longer satisfies the REQ. (b) Mark resolved — the change was cosmetic. (c) Update ARCH to match the new REQ."
+   - The human picks. You execute. Do not let suspect flags sit unresolved.
+   - If the human chooses (a): run `uv run specflow defect-from-suspect <SUSPECT_ID> --req <REQ_ID> [--severity ...]`. This creates a DEF with auto-linked `fails_to_meet` → REQ and `exposed_by` → the suspect artifact, registered in the index. Then `uv run specflow change-impact --resolve <SUSPECT_ID>` once addressed.
+   - If the human chooses (b): `uv run specflow change-impact --resolve <SUSPECT_ID>`.
 
 5. Run `uv run specflow status` silently for the state overview.
 
@@ -80,8 +84,9 @@ The planning-to-executing phase gate IS the readiness check. Run it before any i
 For each story (or wave of stories):
 
 1. Run `uv run specflow go` to compute wave context, or implement manually:
-   a. **Load context:** Read the story, its linked REQ, ARCH, and DDD artifacts.
-   b. **Decompose and Validate:** For complex stories (especially ML/quant data pipelines, trading logic, or multi-step algorithms), **do not write monolithic code immediately**.
+   a. **Load context:** Run `uv run specflow brief` for a one-call digest (phase, inventory, suspects, next wave, recent changes), then read the story and its linked REQ, ARCH, and DDD artifacts. Use the brief's inventory and `_index.yaml` to scope what to open — read full bodies only for the in-scope set.
+   b. **Verify spec approval:** All linked spec artifacts (REQ/ARCH/DDD) must be `approved` or later. If any linked spec is still `draft`, STOP and ask the human: "STORY-NNN links to ARCH-NNN which is still `draft`. I need approval before implementing against it. Approve ARCH-NNN? (y/n)" Do not implement against unapproved specs.
+   c. **Decompose and Validate:** For complex stories (especially ML/quant data pipelines, trading logic, or multi-step algorithms), **do not write monolithic code immediately**.
       - Present a logical decomposition first (e.g., "1. Data ingestion, 2. Signal generation, 3. Portfolio allocation").
       - Propose internal sanity checks (e.g., "I will assert that the resulting weights sum to 1.0").
       - Ask the user: *"Does this flow and these checks look correct before I implement the code?"*
@@ -137,28 +142,21 @@ uv run specflow create \
 
 Read `references/test-pairing.md` when you are unsure which test level a given change needs.
 
-### Step 5.5: Human-Review Summary
+### Step 5.5: Human-Review Summary (Approval Gate)
 
-Before running full validation, present a structured summary so the user can catch silent implementation decisions:
+Before running full validation, present the implementation summary following the **Approval Presentation Format** (see `../specflow-references/references/approval-presentation.md`):
 
-```
-## Summary for Human Review
+1. **TLDR** — What was implemented and what changed (1-3 sentences).
+2. **Changes inline** — For each STORY implemented: what code was written, what tests were created, any deviations from ARCH/DDD. The human should not need to open files.
+3. **Assessment lenses** — Apply coverage, traceability, and staleness lenses, then a **Risk Profile per change** (reversibility, blast radius via `specflow change-impact`, confidence + why it isn't higher).
+4. **Risk-proportional gate** — Assign a tier (0 light / 1 normal / 2 stop) from the risk profile; for Tier 2, point at the specific concern. Tier comes from the change, not past approvals.
+5. **Action options** — Approve / Request changes / Discuss.
 
-### Key Decisions Made
-- Implementation choices not pre-specified by DDD (library/framework picks, file layout)
-- Test strategy: how QT / IT / UT are split per story, and where you stopped
-- Any deviation from the linked ARCH/DDD and why
-
-### Assumptions That Need Validation
-- External dependencies assumed available in test (stubs, fixtures, network) -- risk if wrong: tests pass locally but fail in CI
-- Performance/latency assumptions baked into code -- risk if wrong: NFRs silently violated
-- Any STORY that was implemented without a linked DDD -- risk if wrong: future changes lack a specification anchor
-
-### Please Review
-- For each STORY: does every acceptance criterion map to at least one of UT / IT / QT?
-- Any STORY marked `implemented` whose linked ARCH/DDD is still `approved` (not `implemented`)?
-- Any code file written that is NOT referenced by a test artifact?
-```
+Key items to surface if not already addressed:
+- For each STORY: does every acceptance criterion map to at least one test (UT/IT/QT)?
+- Any STORY marked `implemented` whose linked ARCH/DDD is still `approved`?
+- Any code file NOT referenced by a test artifact?
+- Implementation choices not pre-specified by DDD (library picks, file layout)
 
 Wait for user acknowledgement before proceeding.
 

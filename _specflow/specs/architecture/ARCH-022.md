@@ -2,7 +2,7 @@
 id: ARCH-022
 title: Pack-as-integration-boundary for autoresearch
 type: architecture
-status: draft
+status: implemented
 priority: high
 rationale: Shipping autoresearch as a pack (not core) keeps the default SpecFlow experience
   unchanged for non-research projects and establishes a reusable pattern for future
@@ -18,6 +18,8 @@ links:
 - target: REQ-032
   role: derives_from
 created: '2026-05-15'
+modified: '2026-06-07'
+fingerprint: sha256:0b506123054f
 ---
 
 # Pack-as-integration-boundary for autoresearch

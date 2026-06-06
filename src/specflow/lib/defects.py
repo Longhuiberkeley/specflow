@@ -5,6 +5,10 @@ challenge engine to surface a prevention-pattern candidate derived from the
 defect's resolution. The extraction is best-effort — a failure here must not
 block the status transition itself.
 
+Also provides `create_defect_from_suspect` for the suspect → DEF pipeline,
+which auto-links a defect to the upstream REQ (`fails_to_meet`) and the suspect
+artifact that surfaced the drift (`exposed_by`).
+
 Depends on STORY-010 (prevention pattern extraction, see lib/learning.py).
 """
 
@@ -89,3 +93,80 @@ def _seed_check(defect: art_lib.Artifact, broken_reqs: list[str], catching_tests
             f"regression test covering the failure mode of {defect.id}."
         )
     return f"Capture a regression test covering the failure mode of {defect.id}."
+
+
+def create_defect_from_suspect(
+    root: Path,
+    suspect_artifact_id: str,
+    upstream_req_id: str,
+    impact_event_path: str | None = None,
+    severity: str = "medium",
+    title: str | None = None,
+) -> dict[str, Any]:
+    """Create a DEF artifact linked to a suspect event for the suspect → DEF pipeline.
+
+    This is the programmatic helper called when a human approves creating a DEF
+    from an unresolved suspect flag. It auto-populates the linkage fields so the
+    DEF carries full traceability back to the upstream change that caused the drift.
+
+    The DEF is created through `artifacts.create_artifact`, so it is registered
+    in `_index.yaml`, gets a fingerprint, is schema-validated, and uses the
+    draft-ID scheme on feature branches — the same path as `specflow create`.
+
+    Args:
+        root: Project root directory.
+        suspect_artifact_id: The artifact flagged as suspect (e.g., "ARCH-001").
+        upstream_req_id: The upstream artifact whose change caused the suspect flag.
+        impact_event_path: Path to the impact-log YAML event, recorded in the body
+            for traceability back to the causing change.
+        severity: Defect severity (low, medium, high, critical).
+        title: Optional override title; auto-generated if not provided.
+
+    Returns:
+        Dict with ok status and the created DEF id/path, or error details.
+    """
+    suspect_path = art_lib.resolve_link_target(root, suspect_artifact_id)
+    if suspect_path is None:
+        return {"ok": False, "error": f"suspect artifact '{suspect_artifact_id}' not found"}
+
+    suspect = art_lib.parse_artifact(suspect_path)
+    if suspect is None:
+        return {"ok": False, "error": f"cannot parse suspect artifact '{suspect_artifact_id}'"}
+
+    if not title:
+        title = f"{suspect_artifact_id} no longer satisfies {upstream_req_id} after upstream change"
+
+    # fails_to_meet → upstream REQ that changed; exposed_by → the suspect artifact
+    # that surfaced the drift. Both roles are allowed by the defect schema.
+    links = [
+        {"target": upstream_req_id, "role": "fails_to_meet"},
+        {"target": suspect_artifact_id, "role": "exposed_by"},
+    ]
+
+    body_lines = [
+        "## Context",
+        "",
+        f"Artifact **{suspect_artifact_id}** was flagged `suspect` after "
+        f"**{upstream_req_id}** changed. This defect tracks the resolution of that "
+        f"suspect flag.",
+    ]
+    if impact_event_path:
+        body_lines += ["", f"Impact event: `{impact_event_path}`"]
+    body_lines += [
+        "",
+        "## Resolution",
+        "",
+        "(To be filled when the defect is resolved.)",
+    ]
+    body = "\n".join(body_lines)
+
+    return art_lib.create_artifact(
+        root,
+        "defect",
+        title=title,
+        status="open",
+        priority=severity,
+        tags=["suspect-derived"],
+        links=links,
+        body=body,
+    )
