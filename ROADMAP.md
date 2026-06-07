@@ -283,6 +283,8 @@ Focus: **status cascade automation and reconciliation.**
 These may ship someday, but are not committed:
 
 - **Auto-capture `output_files` on execute/`done`** — record the source files a story produced as it's implemented, so `detect orphan-code` and `source-drift` work without manual `--retro-link`. The detection + audit surfacing shipped in v1.9.0; this is the capture half. Needs care around renames, deletions, and files shared across stories.
+- **`pytest` job in CI** — the dogfood `.github/workflows/specflow.yml` runs the SpecFlow artifact checks (lint / audit / change-impact) but **not** the Python test suite, so a code regression can land on `main` without CI catching it. Add a `uv run pytest` job (and ship it in the GitHub Actions template/generator so installed projects get the same guard).
+- **Continued skill ↔ template reconciliation / prompt tuning** — v1.9.0 made `.claude/skills` and `templates/skills/shared` byte-identical (richer-wins). Future skill-prompt edits should update both trees together (mirror live→ship); revisit if prompts need deeper tuning.
 - **Product variant management** — tag-based product line engineering for multi-trim / multi-variant projects
 - **FMEA / risk analysis** — hazard, safety-goal, and risk-control artifact types via industry packs
 - **REST API** — programmatic access for custom toolchain integration
