@@ -466,4 +466,14 @@ artifacts:
     status: approved
     tags: []
     title: 'v1.7.0: Multi-agent integration, orphan detection, and hook hardening'
-next_id: 55
+  DEC-055:
+    id: DEC-055
+    title: "Change Record: chore: close v1.8.1 audit warnings \u2014 full V-model\
+      \ close-out"
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:2d13c1cad097
+    children: []
+next_id: 56
