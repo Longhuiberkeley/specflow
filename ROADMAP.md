@@ -198,6 +198,19 @@ Focus: **autoresearch methodology depth, escalation/permanence test, and templat
 
 > Deferred: an audit/lint detector that flags long-lived SPIKEs / repeated ad-hoc work that should have been promoted (a work-side complement to the v1.8.0 *Stale Code Detection* item). Also deferred: optional structured multi-output schema (typed per-component fields on COMP/EXPT) if the `component_<name>` convention proves too loose.
 
+## v1.9.0
+
+Focus: **self-contained engine — full retirement of external LLM use.**
+
+- **Zero external API calls** — removed `call_llm`, `LLMConfig`, the OpenRouter client, and the Pass-2 workflow from `lib/ci.py`; SpecFlow now ships no LLM client of its own. All intelligence comes from the host harness (Claude Code, Codex, OpenCode, …); the deterministic/ALM lane runs with no agent and no API key.
+- **Thinking techniques → prompt generators** — `build_prompt → TechniquePrompt`; `artifact-review --depth deep` emits the full system+user prompt for the host agent to apply.
+- **CI fully self-contained** — workflow generator, static template, and dogfood `.github` workflow drop the Pass-2 job and `OPENROUTER_API_KEY` secret.
+- **Removed:** `specflow handbook` command (+ `lib/handbook.py`, `lib/best_practices.py`), `artifact-review --fast`, the `ci.llm` config block. `artifact-lint --method llm` deprecated (falls through to programmatic). BPs are now first-class `BP-NNN` artifacts authored by the agent during discover/plan.
+- **Orphan-code traceability lens** — `project-audit` (full mode) now flags source files not traced to any STORY/REQ via `output_files`, distinguishing "tracking not adopted" (info) from "files slipped through" (warn). Surfaced in the audit skill + docs alongside `specflow detect orphan-code --retro-link`.
+- **Consistency** — installed skills (`.claude/skills`) reconciled byte-for-byte with shipped templates; "LLM-judged" → "agent-judged" terminology unified; docs "local check vs. agent review" spectrum guide added.
+
+> Deferred: **auto-capture of `output_files` during execute/`done`** — the higher-value half of orphan-code traceability (makes detection actually fire). Held back as its own change because it's a behavior change to the execute path with real edge cases (renames, deletes, multi-story files). See *v1.x (Future)*.
+
 ## v1.8.0
 
 Focus: **SpecFlow-as-memory, the suspect → DEF pipeline, and risk-proportional approval gates.**
@@ -269,6 +282,7 @@ Focus: **status cascade automation and reconciliation.**
 
 These may ship someday, but are not committed:
 
+- **Auto-capture `output_files` on execute/`done`** — record the source files a story produced as it's implemented, so `detect orphan-code` and `source-drift` work without manual `--retro-link`. The detection + audit surfacing shipped in v1.9.0; this is the capture half. Needs care around renames, deletions, and files shared across stories.
 - **Product variant management** — tag-based product line engineering for multi-trim / multi-variant projects
 - **FMEA / risk analysis** — hazard, safety-goal, and risk-control artifact types via industry packs
 - **REST API** — programmatic access for custom toolchain integration
