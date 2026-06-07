@@ -1,185 +1,185 @@
 artifacts:
   UT-001:
-    id: UT-001
-    title: Artifact Library Unit Tests
-    status: implemented
-    tags: []
     fingerprint: sha256:8d2dc05d2165
-    children: []
+    id: UT-001
+    status: implemented
+    tags: []
+    title: Artifact Library Unit Tests
   UT-002:
-    id: UT-002
-    title: RBAC Engine Unit Tests
-    status: implemented
-    tags: []
     fingerprint: sha256:c354009ca33b
-    children: []
+    id: UT-002
+    status: implemented
+    tags: []
+    title: RBAC Engine Unit Tests
   UT-003:
-    id: UT-003
-    title: Baseline Management Unit Tests
-    status: implemented
-    tags: []
     fingerprint: sha256:06399e9f0a6e
-    children: []
+    id: UT-003
+    status: implemented
+    tags: []
+    title: Baseline Management Unit Tests
   UT-004:
-    id: UT-004
-    title: Standards Loading Unit Tests
-    status: implemented
-    tags: []
     fingerprint: sha256:0b12d6bfed31
-    children: []
+    id: UT-004
+    status: implemented
+    tags: []
+    title: Standards Loading Unit Tests
   UT-005:
-    id: UT-005
-    title: Execution Orchestrator Unit Tests
-    status: implemented
-    tags: []
     fingerprint: sha256:1618c671e70f
-    children: []
+    id: UT-005
+    status: implemented
+    tags: []
+    title: Execution Orchestrator Unit Tests
   UT-006:
-    id: UT-006
-    title: Review and Lint Pipeline Unit Tests
-    status: implemented
-    tags: []
     fingerprint: sha256:79839961dc1e
-    children: []
+    id: UT-006
+    status: implemented
+    tags: []
+    title: Review and Lint Pipeline Unit Tests
   UT-007:
-    id: UT-007
-    title: CLI Core Unit Tests
-    status: implemented
-    tags: []
     fingerprint: sha256:ebec3f722ec6
-    children: []
+    id: UT-007
+    status: implemented
+    tags: []
+    title: CLI Core Unit Tests
   UT-008:
-    id: UT-008
-    title: Pack-Author Pipeline Unit Tests
-    status: implemented
-    tags: []
     fingerprint: sha256:2ab820e8e2ba
-    children: []
+    id: UT-008
+    status: implemented
+    tags: []
+    title: Pack-Author Pipeline Unit Tests
   UT-010:
-    id: UT-010
-    title: ReqIF and Standards Unit Tests
-    status: implemented
-    tags: []
     fingerprint: sha256:f3e90c976565
-    children: []
+    id: UT-010
+    status: implemented
+    tags: []
+    title: ReqIF and Standards Unit Tests
   UT-011:
-    id: UT-011
-    title: Audit Engine Unit Tests
-    status: implemented
-    tags: []
     fingerprint: sha256:a9345accd2b0
-    children: []
+    id: UT-011
+    status: implemented
+    tags: []
+    title: Audit Engine Unit Tests
   UT-012:
-    id: UT-012
-    title: Pack Extraction Protocol Unit Tests
-    status: implemented
-    tags: []
     fingerprint: sha256:5488569c46f8
-    children: []
+    id: UT-012
+    status: implemented
+    tags: []
+    title: Pack Extraction Protocol Unit Tests
   UT-013:
-    id: UT-013
-    title: Recovery Primitives Implementation Unit Tests
-    status: implemented
-    tags: []
     fingerprint: sha256:25c5241984e8
-    children: []
+    id: UT-013
+    status: implemented
+    tags: []
+    title: Recovery Primitives Implementation Unit Tests
   UT-014:
-    id: UT-014
-    title: Skill Prompt Optimization Unit Tests
-    status: implemented
-    tags: []
     fingerprint: sha256:09b62d573f2b
-    children: []
+    id: UT-014
+    status: implemented
+    tags: []
+    title: Skill Prompt Optimization Unit Tests
   UT-015:
-    id: UT-015
-    title: Deterministic Analytics Engine Unit Tests
-    status: implemented
-    tags: []
     fingerprint: sha256:e829c88af26c
-    children: []
-  UT-016:
-    id: UT-016
-    title: Convention Evaluation Logic Unit Tests
+    id: UT-015
     status: implemented
     tags: []
+    title: Deterministic Analytics Engine Unit Tests
+  UT-016:
     fingerprint: sha256:e203714c35f4
-    children: []
+    id: UT-016
+    status: implemented
+    tags: []
+    title: Convention Evaluation Logic Unit Tests
   UT-017:
+    fingerprint: ''
     id: UT-017
+    status: draft
+    tags: []
     title: 'Unit Test for DDD-011: CLI Core Detailed Design'
-    status: draft
-    tags: []
-    fingerprint: ''
-    children: []
   UT-018:
+    fingerprint: ''
     id: UT-018
+    status: draft
+    tags: []
     title: 'Unit Test for DDD-012: Traceability Chain Detailed Design'
-    status: draft
-    tags: []
-    fingerprint: ''
-    children: []
   UT-019:
+    fingerprint: ''
     id: UT-019
+    status: draft
+    tags: []
     title: 'Unit Test for DDD-013: Provider-Agnostic CI Gate Detailed Design'
-    status: draft
-    tags: []
-    fingerprint: ''
-    children: []
   UT-020:
+    fingerprint: ''
     id: UT-020
+    status: draft
+    tags: []
     title: 'Unit Test for DDD-014: V-Model Test Scaffolding Detailed Design'
-    status: draft
-    tags: []
-    fingerprint: ''
-    children: []
   UT-021:
+    fingerprint: ''
     id: UT-021
+    status: draft
+    tags: []
     title: 'Unit Test for DDD-015: Test Engine DDD'
-    status: draft
-    tags: []
-    fingerprint: ''
-    children: []
   UT-022:
+    fingerprint: ''
     id: UT-022
+    status: draft
+    tags: []
     title: 'Unit Test for DDD-016: Deprecation Cleanup DDD'
-    status: draft
-    tags: []
-    fingerprint: ''
-    children: []
   UT-023:
+    fingerprint: ''
     id: UT-023
+    status: draft
+    tags: []
     title: 'Unit Test for DDD-017: Config Merge and Version Detection Algorithm'
-    status: draft
-    tags: []
-    fingerprint: ''
-    children: []
   UT-024:
+    fingerprint: ''
     id: UT-024
+    status: draft
+    tags: []
     title: 'Unit Test for DDD-018: Body Quality Validation and File Existence Checks'
-    status: draft
-    tags: []
-    fingerprint: ''
-    children: []
   UT-025:
+    fingerprint: ''
     id: UT-025
-    title: 'Unit Test for DDD-019: Source File to Artifact Reverse Mapping Algorithm'
     status: draft
     tags: []
-    fingerprint: ''
-    children: []
+    title: 'Unit Test for DDD-019: Source File to Artifact Reverse Mapping Algorithm'
   UT-026:
+    fingerprint: ''
     id: UT-026
+    status: draft
+    tags: []
     title: 'Unit Test for DDD-020: SPIDR Coverage, Wave Validation, and Generic BP
       Fallback'
-    status: draft
-    tags: []
-    fingerprint: ''
-    children: []
   UT-027:
+    fingerprint: ''
     id: UT-027
-    title: 'Unit Test for DDD-021: Discovery Persistence and Plan Domain Handoff'
     status: draft
     tags: []
+    title: 'Unit Test for DDD-021: Discovery Persistence and Plan Domain Handoff'
+  UT-028:
     fingerprint: ''
-    children: []
-next_id: 28
+    id: UT-028
+    status: verified
+    tags: []
+    title: 'Unit Test for STORY-064/065/066: Pack Install, Schema Lifecycle, EXPT
+      Terminal Status'
+  UT-029:
+    fingerprint: ''
+    id: UT-029
+    status: verified
+    tags: []
+    title: 'Unit Test for STORY-068/069/071: Autoresearch CLI, Logging, Suggest-Finds'
+  UT-030:
+    fingerprint: ''
+    id: UT-030
+    status: verified
+    tags: []
+    title: 'Unit Test for STORY-070/072/073/074: Schema Fields, Logging Lint, Review,
+      Thinking Lenses, Flag Wiring'
+  UT-031:
+    fingerprint: ''
+    id: UT-031
+    status: verified
+    tags: []
+    title: 'Unit Test for STORY-075: Autoresearch CLI Hardening and --set Flag'
+next_id: 32

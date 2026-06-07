@@ -1,149 +1,135 @@
 artifacts:
   IT-001:
-    id: IT-001
-    title: Command Integration Test Suite
-    status: implemented
-    tags: []
     fingerprint: sha256:60a09bb21d81
-    children: []
+    id: IT-001
+    status: implemented
+    tags: []
+    title: Command Integration Test Suite
   IT-002:
-    id: IT-002
-    title: Framework Machinery Integration Tests
-    status: implemented
-    tags: []
     fingerprint: sha256:6549770dd566
-    children: []
+    id: IT-002
+    status: implemented
+    tags: []
+    title: Framework Machinery Integration Tests
   IT-003:
-    id: IT-003
-    title: Skill and Platform Integration Tests
-    status: implemented
-    tags: []
     fingerprint: sha256:22224e2eff62
-    children: []
+    id: IT-003
+    status: implemented
+    tags: []
+    title: Skill and Platform Integration Tests
   IT-004:
-    id: IT-004
-    title: Compliance and Exchange Integration Tests
-    status: implemented
-    tags: []
     fingerprint: sha256:33e53c9e9618
-    children: []
+    id: IT-004
+    status: implemented
+    tags: []
+    title: Compliance and Exchange Integration Tests
   IT-005:
-    id: IT-005
-    title: Pack-Author Pipeline Integration Tests
-    status: implemented
-    tags: []
     fingerprint: sha256:d4ae0561c090
-    children: []
+    id: IT-005
+    status: implemented
+    tags: []
+    title: Pack-Author Pipeline Integration Tests
   IT-008:
-    id: IT-008
-    title: Audit and Review Engine Integration Tests
-    status: implemented
-    tags: []
     fingerprint: sha256:388ad76380bb
-    children: []
+    id: IT-008
+    status: implemented
+    tags: []
+    title: Audit and Review Engine Integration Tests
   IT-009:
-    id: IT-009
-    title: Traceability Chain Engine Integration Tests
-    status: implemented
-    tags: []
     fingerprint: sha256:aa4d070796d6
-    children: []
+    id: IT-009
+    status: implemented
+    tags: []
+    title: Traceability Chain Engine Integration Tests
   IT-010:
-    id: IT-010
-    title: Provider-Agnostic CI Gate Integration Tests
-    status: implemented
-    tags: []
     fingerprint: sha256:c4751b7ef679
-    children: []
+    id: IT-010
+    status: implemented
+    tags: []
+    title: Provider-Agnostic CI Gate Integration Tests
   IT-011:
-    id: IT-011
-    title: V-Model Test Scaffolding Engine Integration Tests
-    status: implemented
-    tags: []
     fingerprint: sha256:9521fa62d618
-    children: []
+    id: IT-011
+    status: implemented
+    tags: []
+    title: V-Model Test Scaffolding Engine Integration Tests
   IT-012:
-    id: IT-012
-    title: Command Wrappers & Adapter Framework Integration
-    status: implemented
-    tags: []
     fingerprint: sha256:7fef35c0d009
-    children: []
+    id: IT-012
+    status: implemented
+    tags: []
+    title: Command Wrappers & Adapter Framework Integration
   IT-013:
-    id: IT-013
-    title: Tier 1 Conversational Routing Integration
-    status: implemented
-    tags: []
     fingerprint: sha256:991a89f98198
-    children: []
+    id: IT-013
+    status: implemented
+    tags: []
+    title: Tier 1 Conversational Routing Integration
   IT-014:
-    id: IT-014
-    title: Change-Audit & Pack-Author Pipelines Integration
-    status: implemented
-    tags: []
     fingerprint: sha256:25ead5ea9eed
-    children: []
-  IT-015:
-    id: IT-015
-    title: Structure Checklists & Doc Lifecycle Integration
+    id: IT-014
     status: implemented
     tags: []
+    title: Change-Audit & Pack-Author Pipelines Integration
+  IT-015:
     fingerprint: sha256:99da61ccaeb7
-    children: []
+    id: IT-015
+    status: implemented
+    tags: []
+    title: Structure Checklists & Doc Lifecycle Integration
   IT-016:
+    fingerprint: ''
     id: IT-016
+    status: draft
+    tags: []
     title: 'Integration Test for ARCH-014: Test Engine'
-    status: draft
-    tags: []
-    fingerprint: ''
-    children: []
   IT-017:
+    fingerprint: ''
     id: IT-017
+    status: draft
+    tags: []
     title: 'Integration Test for ARCH-015: Deprecation Cleanup'
-    status: draft
-    tags: []
-    fingerprint: ''
-    children: []
   IT-018:
+    fingerprint: ''
     id: IT-018
+    status: draft
+    tags: []
     title: 'Integration Test for ARCH-016: Init Upgrade Engine'
-    status: draft
-    tags: []
-    fingerprint: ''
-    children: []
   IT-019:
+    fingerprint: ''
     id: IT-019
+    status: draft
+    tags: []
     title: 'Integration Test for ARCH-017: Spec Quality Gate'
-    status: draft
-    tags: []
-    fingerprint: ''
-    children: []
   IT-020:
+    fingerprint: ''
     id: IT-020
+    status: draft
+    tags: []
     title: 'Integration Test for ARCH-018: File Traceability Layer'
-    status: draft
-    tags: []
-    fingerprint: ''
-    children: []
   IT-021:
+    fingerprint: ''
     id: IT-021
+    status: draft
+    tags: []
     title: 'Integration Test for ARCH-019: Reverse Impact Engine'
-    status: draft
-    tags: []
-    fingerprint: ''
-    children: []
   IT-022:
+    fingerprint: ''
     id: IT-022
+    status: draft
+    tags: []
     title: 'Integration Test for ARCH-020: Decomposition Guidance System'
-    status: draft
-    tags: []
-    fingerprint: ''
-    children: []
   IT-023:
+    fingerprint: ''
     id: IT-023
-    title: 'Integration Test for ARCH-021: Skill Continuity Layer'
     status: draft
     tags: []
+    title: 'Integration Test for ARCH-021: Skill Continuity Layer'
+  IT-024:
     fingerprint: ''
-    children: []
-next_id: 24
+    id: IT-024
+    status: verified
+    tags: []
+    title: "Integration Test for STORY-067: End-to-End COMP\u2192LOOP\u2192EXPT\u2192\
+      FIND Trace Chain"
+next_id: 25

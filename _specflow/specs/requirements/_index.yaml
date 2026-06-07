@@ -1,40 +1,37 @@
 artifacts:
   REQ-001:
+    fingerprint: sha256:f900d4c4d133
     id: REQ-001
-    title: CLI Interface
     status: implemented
     tags:
     - functional
     - cli
     - core
     - mvp
-    fingerprint: sha256:f900d4c4d133
-    children: []
+    title: CLI Interface
   REQ-002:
+    fingerprint: sha256:d8326bb048bf
     id: REQ-002
-    title: Artifact Structure
     status: implemented
     tags:
     - functional
     - core
     - format
     - mvp
-    fingerprint: sha256:d8326bb048bf
-    children: []
+    title: Artifact Structure
   REQ-003:
+    fingerprint: sha256:b5aa25c44a5e
     id: REQ-003
-    title: Trace & Suspect Propagation
     status: implemented
     tags:
     - functional
     - traceability
     - impact
     - core
-    fingerprint: sha256:b5aa25c44a5e
-    children: []
+    title: Trace & Suspect Propagation
   REQ-004:
+    fingerprint: sha256:7dba50c26b8b
     id: REQ-004
-    title: AI Execution Boundaries
     status: implemented
     tags:
     - functional
@@ -42,308 +39,287 @@ artifacts:
     - skills
     - token-optimization
     - core
-    fingerprint: sha256:7dba50c26b8b
-    children: []
+    title: AI Execution Boundaries
   REQ-005:
+    fingerprint: sha256:6f99e7a3c664
     id: REQ-005
-    title: Cross-Platform & Compliance
     status: implemented
     tags:
     - functional
     - cross-platform
     - compliance
     - baselines
-    fingerprint: sha256:6f99e7a3c664
-    children: []
+    title: Cross-Platform & Compliance
   REQ-006:
+    fingerprint: sha256:e90cea5f6ff8
     id: REQ-006
-    title: Pack-Author Extraction Quality
     status: implemented
     tags:
     - quality
     - packs
     - skills
-    fingerprint: sha256:e90cea5f6ff8
-    children: []
+    title: Pack-Author Extraction Quality
   REQ-007:
+    fingerprint: sha256:60d395d3afe9
     id: REQ-007
-    title: Traceability Depth Reporting
     status: implemented
     tags:
     - traceability
     - reporting
     - cli
-    fingerprint: sha256:60d395d3afe9
-    children: []
+    title: Traceability Depth Reporting
   REQ-008:
+    fingerprint: sha256:315c1da1c9b1
     id: REQ-008
-    title: Provider-Agnostic CI Gate
     status: implemented
     tags:
     - rbac
     - ci
     - adapters
-    fingerprint: sha256:315c1da1c9b1
-    children: []
+    title: Provider-Agnostic CI Gate
   REQ-009:
+    fingerprint: sha256:f31fd2c5f5bf
     id: REQ-009
-    title: Test Suite Foundation
     status: implemented
     tags:
     - testing
     - quality
     - foundation
-    fingerprint: sha256:f31fd2c5f5bf
-    children: []
+    title: Test Suite Foundation
   REQ-010:
+    fingerprint: sha256:871c5c92e289
     id: REQ-010
-    title: EARS Quality in Prompts and Lint Safety Net
     status: implemented
     tags:
     - quality
     - ears
     - requirements
     - lint
-    fingerprint: sha256:871c5c92e289
-    children: []
+    title: EARS Quality in Prompts and Lint Safety Net
   REQ-011:
+    fingerprint: sha256:8d9cee00fff1
     id: REQ-011
-    title: ReqIF Round-Trip Quality
     status: implemented
     tags:
     - reqif
     - interop
     - quality
-    fingerprint: sha256:8d9cee00fff1
-    children: []
+    title: ReqIF Round-Trip Quality
   REQ-012:
+    fingerprint: sha256:366da1ce85ef
     id: REQ-012
-    title: Compliance Score Dashboard
     status: implemented
     tags:
     - compliance
     - reporting
     - status
-    fingerprint: sha256:366da1ce85ef
-    children: []
+    title: Compliance Score Dashboard
   REQ-013:
+    fingerprint: sha256:4c1318cb16bb
     id: REQ-013
-    title: V-Model Test Scaffolding and Execute Enhancement
     status: implemented
     tags:
     - testing
     - vmodel
     - scaffolding
     - cli
-    fingerprint: sha256:4c1318cb16bb
-    children: []
+    title: V-Model Test Scaffolding and Execute Enhancement
   REQ-014:
+    fingerprint: sha256:6f6e3908348c
     id: REQ-014
-    title: Deprecation Cleanup and Schema Fixes
     status: implemented
     tags:
     - cleanup
     - deprecation
     - schema
-    fingerprint: sha256:6f6e3908348c
-    children: []
+    title: Deprecation Cleanup and Schema Fixes
   REQ-015:
+    fingerprint: sha256:d50438e9f68c
     id: REQ-015
-    title: Compliance Evidence Reports
     status: implemented
     tags:
     - compliance
     - reports
     - shipping
-    fingerprint: sha256:d50438e9f68c
-    children: []
+    title: Compliance Evidence Reports
   REQ-016:
+    fingerprint: sha256:3cb45db0cc09
     id: REQ-016
-    title: Standards Gap Analysis v2
     status: implemented
     tags:
     - standards
     - compliance
     - analysis
-    fingerprint: sha256:3cb45db0cc09
-    children: []
+    title: Standards Gap Analysis v2
   REQ-017:
+    fingerprint: sha256:079139fa65c6
     id: REQ-017
-    title: Configurable Artifact Type Extensions
     status: implemented
     tags:
     - compliance
     - packs
     - artifact-types
     - v0.3.0
-    fingerprint: sha256:079139fa65c6
-    children: []
+    title: Configurable Artifact Type Extensions
   REQ-018:
-    id: REQ-018
-    title: Unified CLI Framework & Install UX
-    status: implemented
-    tags: []
     fingerprint: sha256:b6d1a6353a6d
-    children: []
+    id: REQ-018
+    status: implemented
+    tags: []
+    title: Unified CLI Framework & Install UX
   REQ-019:
-    id: REQ-019
-    title: AI Skill Ecosystem Restructuring
-    status: implemented
-    tags: []
     fingerprint: sha256:2ee62d518ddd
-    children: []
+    id: REQ-019
+    status: implemented
+    tags: []
+    title: AI Skill Ecosystem Restructuring
   REQ-020:
-    id: REQ-020
-    title: Continuous Auditing & BYOC Compliance
-    status: implemented
-    tags: []
     fingerprint: sha256:e79531ed4d2b
-    children: []
-  REQ-021:
-    id: REQ-021
-    title: Convention Enforcement & Docs Architecture
+    id: REQ-020
     status: implemented
     tags: []
+    title: Continuous Auditing & BYOC Compliance
+  REQ-021:
     fingerprint: sha256:2842da43fa7e
-    children: []
+    id: REQ-021
+    status: implemented
+    tags: []
+    title: Convention Enforcement & Docs Architecture
   REQ-022:
+    fingerprint: sha256:35fa1932c235
     id: REQ-022
-    title: Init Upgrade Safety
     status: implemented
     tags:
     - init
     - upgrade
     - config
-    fingerprint: sha256:35fa1932c235
-    children: []
+    title: Init Upgrade Safety
   REQ-023:
+    fingerprint: sha256:f79686a4868b
     id: REQ-023
-    title: Specification Body Quality Enforcement
     status: implemented
     tags:
     - lint
     - quality
     - architecture
     - design
-    fingerprint: sha256:f79686a4868b
-    children: []
+    title: Specification Body Quality Enforcement
   REQ-024:
+    fingerprint: sha256:ad89de5deef9
     id: REQ-024
-    title: Output File Traceability
     status: implemented
     tags:
     - traceability
     - output-files
-    fingerprint: sha256:ad89de5deef9
-    children: []
+    title: Output File Traceability
   REQ-025:
+    fingerprint: sha256:6b5b2cefd15a
     id: REQ-025
-    title: Reverse Impact Analysis
     status: implemented
     tags:
     - traceability
     - impact
     - git
-    fingerprint: sha256:6b5b2cefd15a
-    children: []
+    title: Reverse Impact Analysis
   REQ-026:
+    fingerprint: sha256:83dad8ff9bbc
     id: REQ-026
-    title: Decomposition Completeness Guidance
     status: implemented
     tags:
     - plan
     - decomposition
     - spidr
     - handbook
-    fingerprint: sha256:83dad8ff9bbc
-    children: []
+    title: Decomposition Completeness Guidance
   REQ-027:
+    fingerprint: sha256:070ded3802c3
     id: REQ-027
-    title: Discovery-to-Plan Skill Continuity
     status: implemented
     tags:
     - discover
     - plan
     - continuity
     - domain
-    fingerprint: sha256:070ded3802c3
-    children: []
+    title: Discovery-to-Plan Skill Continuity
   REQ-028:
+    fingerprint: sha256:e147e64db46f
     id: REQ-028
-    title: Autonomous experimentation loop on SpecFlow
     status: implemented
     tags:
     - autoresearch
     - autonomous
     - top-level
-    fingerprint: sha256:e147e64db46f
-    children: []
+    title: Autonomous experimentation loop on SpecFlow
   REQ-029:
+    fingerprint: sha256:daef09d1fccd
     id: REQ-029
-    title: Competition-scoped experiment tracking
     status: implemented
     tags:
     - autoresearch
     - competition
     - tracking
-    fingerprint: sha256:daef09d1fccd
-    children: []
+    title: Competition-scoped experiment tracking
   REQ-030:
+    fingerprint: sha256:b606fae4b2cc
     id: REQ-030
-    title: Knowledge condensation across loops
     status: implemented
     tags:
     - autoresearch
     - findings
     - knowledge
-    fingerprint: sha256:b606fae4b2cc
-    children: []
+    title: Knowledge condensation across loops
   REQ-031:
+    fingerprint: sha256:80943df95d8f
     id: REQ-031
-    title: Explore / exploit / validate LOOP modes
     status: implemented
     tags:
     - autoresearch
     - modes
     - ideation
-    fingerprint: sha256:80943df95d8f
-    children: []
+    title: Explore / exploit / validate LOOP modes
   REQ-032:
+    fingerprint: sha256:2a535b0f42cd
     id: REQ-032
-    title: Pack system supports skill installation
     status: implemented
     tags:
     - autoresearch
     - pack-system
     - skills
-    fingerprint: sha256:2a535b0f42cd
-    children: []
+    title: Pack system supports skill installation
   REQ-033:
+    fingerprint: sha256:1aa5228eebfe
     id: REQ-033
-    title: Dynamic status dashboard for new artifact categories
     status: implemented
     tags:
     - autoresearch
     - status
     - dashboard
-    fingerprint: sha256:1aa5228eebfe
-    children: []
+    title: Dynamic status dashboard for new artifact categories
   REQ-034:
+    fingerprint: sha256:b178dbe6cf6f
     id: REQ-034
-    title: Traceability covers research chain
     status: implemented
     tags:
     - autoresearch
     - trace
     - traceability
-    fingerprint: sha256:b178dbe6cf6f
-    children: []
+    title: Traceability covers research chain
+  REQ-035:
+    fingerprint: ''
+    id: REQ-035
+    status: draft
+    tags:
+    - autoresearch
+    - logging
+    - domain-awareness
+    - quant
+    - safety
+    title: Enhanced autoresearch logging, objectives, and domain-aware checks
   REQ-AUTORESE-d684:
+    fingerprint: ''
     id: REQ-AUTORESE-d684
-    title: 'Autoresearch pack v0.2.0: multi-criteria support, CLI subcommand, and
-      harness-agnosticism'
     status: draft
     tags: []
-    fingerprint: sha256:e3b0c44298fc
-    children: []
-next_id: 35
+    title: 'Autoresearch pack v0.2.0: multi-criteria support, CLI subcommand, and
+      harness-agnosticism'
+next_id: 37

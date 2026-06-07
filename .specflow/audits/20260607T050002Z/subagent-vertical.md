@@ -1,0 +1,21 @@
+# Vertical Analysis Details
+
+- [warn] STORY-068 (implements REQ-028): no test verification
+- [warn] STORY-070 (implements REQ-028): no test verification
+- [warn] STORY-071 (implements REQ-028): no test verification
+- [warn] STORY-075 (implements REQ-028): no test verification
+- [warn] STORY-069 (implements REQ-029): no test verification
+- [warn] STORY-074 (implements REQ-029): no test verification
+- [warn] STORY-075 (implements REQ-029): no test verification
+- [warn] STORY-069 (implements REQ-030): no test verification
+- [warn] STORY-073 (implements REQ-030): no test verification
+- [warn] STORY-075 (implements REQ-030): no test verification
+- [warn] STORY-070 (implements REQ-031): no test verification
+- [warn] STORY-072 (implements REQ-031): no test verification
+- [warn] STORY-064 (implements REQ-032): no test verification
+- [warn] STORY-075 (implements REQ-032): no test verification
+- [warn] REQ-033: no ARCH refinement in V-model thread
+- [warn] STORY-065 (implements REQ-033): no test verification
+- [warn] STORY-066 (implements REQ-033): no test verification
+- [warn] REQ-034: no ARCH refinement in V-model thread
+- [warn] STORY-067 (implements REQ-034): no test verification

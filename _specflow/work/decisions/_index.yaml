@@ -1,523 +1,469 @@
 artifacts:
   DEC-001:
-    id: DEC-001
-    title: 'Change Record: Another dummy commit'
-    status: approved
-    tags:
-    - change-record
-    - auto-generated
     fingerprint: sha256:61ec1480f775
-    children: []
-  DEC-002:
-    id: DEC-002
-    title: 'Change Record: Third dummy commit'
+    id: DEC-001
     status: approved
     tags:
     - change-record
     - auto-generated
+    title: 'Change Record: Another dummy commit'
+  DEC-002:
     fingerprint: sha256:7038a4aa9538
-    children: []
+    id: DEC-002
+    status: approved
+    tags:
+    - change-record
+    - auto-generated
+    title: 'Change Record: Third dummy commit'
   DEC-003:
+    fingerprint: sha256:482d2b0a340e
     id: DEC-003
+    status: approved
+    tags:
+    - change-record
+    - auto-generated
     title: "Change Record: feat: implement STORY-043, STORY-044, STORY-045 \u2014\
       \ coverage metrics, ReqIF round-trip, generate-tests"
+  DEC-004:
+    fingerprint: sha256:6458c1ac2f33
+    id: DEC-004
     status: approved
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:482d2b0a340e
-    children: []
-  DEC-004:
-    id: DEC-004
     title: 'Change Record: feat: add requirements quality lint check to artifact-lint
       (STORY-042)'
+  DEC-005:
+    fingerprint: sha256:3b592133ad5a
+    id: DEC-005
     status: approved
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:6458c1ac2f33
-    children: []
-  DEC-005:
-    id: DEC-005
     title: 'Change Record: feat: add EARS patterns, ambiguity list, quality guidance
       to normative-language.md (STORY-041)'
+  DEC-006:
+    fingerprint: sha256:1319a5fc5bcb
+    id: DEC-006
     status: approved
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:3b592133ad5a
-    children: []
-  DEC-006:
-    id: DEC-006
     title: 'Change Record: feat: remove 8 deprecated CLI aliases, add reqif_metadata
       to requirement schema (STORY-040)'
-    status: approved
-    tags:
-    - change-record
-    - auto-generated
-    fingerprint: sha256:1319a5fc5bcb
-    children: []
   DEC-007:
-    id: DEC-007
-    title: 'Change Record: specs: add v0.2.0 stories (STORY-040 through STORY-045)'
-    status: approved
-    tags:
-    - change-record
-    - auto-generated
     fingerprint: sha256:58389a54269f
-    children: []
+    id: DEC-007
+    status: approved
+    tags:
+    - change-record
+    - auto-generated
+    title: 'Change Record: specs: add v0.2.0 stories (STORY-040 through STORY-045)'
   DEC-008:
-    id: DEC-008
-    title: 'Change Record: specs: add v0.2.0 and v0.3.0 REQ artifacts'
-    status: approved
-    tags:
-    - change-record
-    - auto-generated
     fingerprint: sha256:be001a65d608
-    children: []
+    id: DEC-008
+    status: approved
+    tags:
+    - change-record
+    - auto-generated
+    title: 'Change Record: specs: add v0.2.0 and v0.3.0 REQ artifacts'
   DEC-009:
-    id: DEC-009
-    title: 'Change Record: fix: correct AUD review_status from ''open'' to ''unreviewed'''
-    status: approved
-    tags:
-    - change-record
-    - auto-generated
     fingerprint: sha256:1da48c943c0b
-    children: []
+    id: DEC-009
+    status: approved
+    tags:
+    - change-record
+    - auto-generated
+    title: 'Change Record: fix: correct AUD review_status from ''open'' to ''unreviewed'''
   DEC-010:
-    id: DEC-010
-    title: 'Change Record: specs: update STORY-036 to 039 and linked specs to implemented'
-    status: approved
-    tags:
-    - change-record
-    - auto-generated
     fingerprint: sha256:46b71479fc8e
-    children: []
-  DEC-011:
-    id: DEC-011
-    title: 'Change Record: specs: add REQ-006 through REQ-009, STORY-036 through STORY-039'
+    id: DEC-010
     status: approved
     tags:
     - change-record
     - auto-generated
+    title: 'Change Record: specs: update STORY-036 to 039 and linked specs to implemented'
+  DEC-011:
     fingerprint: sha256:d30d8ef64f72
-    children: []
+    id: DEC-011
+    status: approved
+    tags:
+    - change-record
+    - auto-generated
+    title: 'Change Record: specs: add REQ-006 through REQ-009, STORY-036 through STORY-039'
   DEC-012:
+    fingerprint: sha256:a8e7ef7f2a15
     id: DEC-012
+    status: approved
+    tags:
+    - change-record
+    - auto-generated
     title: 'Change Record: feat: platform registry, skill sync, README rewrite, and
       public-readiness overhaul (STORY-033/034/035)'
+  DEC-013:
+    fingerprint: sha256:6d8708d97031
+    id: DEC-013
     status: approved
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:a8e7ef7f2a15
-    children: []
-  DEC-013:
-    id: DEC-013
     title: 'Change Record: fix(STORY-032): update status to implemented and move deleted
       shell wrappers to archive'
+  DEC-014:
+    fingerprint: sha256:76cda2f52a7d
+    id: DEC-014
     status: approved
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:6d8708d97031
-    children: []
-  DEC-014:
-    id: DEC-014
     title: 'Change Record: chore(audit): auto-generated system gap challenges and
       audit artifacts'
+  DEC-015:
+    fingerprint: sha256:234daa75f88e
+    id: DEC-015
     status: approved
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:76cda2f52a7d
-    children: []
-  DEC-015:
-    id: DEC-015
     title: 'Change Record: docs(stories): add M4 UX and skill overhaul stories (STORY-032
       to STORY-035)'
+  DEC-016:
+    fingerprint: sha256:f6a3fa86f8d8
+    id: DEC-016
     status: approved
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:234daa75f88e
-    children: []
-  DEC-016:
-    id: DEC-016
     title: "Change Record: feat(stories): update STORY-032/033/034 \u2014 template\
       \ unification + prompt quality + agents-section rewrite"
-    status: approved
-    tags:
-    - change-record
-    - auto-generated
-    fingerprint: sha256:f6a3fa86f8d8
-    children: []
   DEC-017:
+    fingerprint: sha256:63d644a996a4
     id: DEC-017
-    title: 'Change Record: fix: post-review remediation for STORY-029/030/031'
     status: approved
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:63d644a996a4
-    children: []
+    title: 'Change Record: fix: post-review remediation for STORY-029/030/031'
   DEC-018:
+    fingerprint: sha256:9f02c907e977
     id: DEC-018
+    status: approved
+    tags:
+    - change-record
+    - auto-generated
     title: 'Change Record: fix(STORY-025): remediate 5 review gaps in change-audit
       pipeline'
-    status: approved
-    tags:
-    - change-record
-    - auto-generated
-    fingerprint: sha256:9f02c907e977
-    children: []
   DEC-019:
-    id: DEC-019
-    title: 'Change Record: Dummy commit for testing document-changes'
-    status: approved
-    tags:
-    - change-record
-    - auto-generated
     fingerprint: sha256:547899eb8c20
-    children: []
-  DEC-020:
-    id: DEC-020
-    title: 'Change Record: fix(checklists): upsert checklist entries instead of appending'
+    id: DEC-019
     status: approved
     tags:
     - change-record
     - auto-generated
+    title: 'Change Record: Dummy commit for testing document-changes'
+  DEC-020:
     fingerprint: sha256:b07086a8c725
-    children: []
+    id: DEC-020
+    status: approved
+    tags:
+    - change-record
+    - auto-generated
+    title: 'Change Record: fix(checklists): upsert checklist entries instead of appending'
   DEC-021:
+    fingerprint: sha256:cf3f453e915e
     id: DEC-021
+    status: approved
+    tags:
+    - change-record
+    - auto-generated
     title: 'Change Record: feat: ship artifact-review depth (STORY-024) and unified
       adapter framework (STORY-026)'
+  DEC-022:
+    fingerprint: sha256:67c7249e153d
+    id: DEC-022
     status: approved
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:cf3f453e915e
-    children: []
-  DEC-022:
-    id: DEC-022
     title: "Change Record: feat(STORY-028): BYOC rework \u2014 /specflow-pack-author\
       \ skill + iso26262-demo relabel"
+  DEC-023:
+    fingerprint: sha256:bd2d35d294f3
+    id: DEC-023
     status: approved
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:67c7249e153d
-    children: []
-  DEC-023:
-    id: DEC-023
     title: 'Change Record: feat(stories): complete STORY-021 skill rewrites + STORY-022
       command rename'
+  DEC-024:
+    fingerprint: sha256:50b37ba95e82
+    id: DEC-024
     status: approved
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:bd2d35d294f3
-    children: []
-  DEC-024:
-    id: DEC-024
     title: 'Change Record: fix(stories): amend STORY-021 and STORY-024 from review
       feedback'
-    status: approved
-    tags:
-    - change-record
-    - auto-generated
-    fingerprint: sha256:50b37ba95e82
-    children: []
   DEC-025:
+    fingerprint: sha256:13131f7c3116
     id: DEC-025
-    title: "Change Record: feat(stories): add STORY-021\u2013031 from post-P8 retrospective"
     status: approved
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:13131f7c3116
-    children: []
+    title: "Change Record: feat(stories): add STORY-021\u2013031 from post-P8 retrospective"
   DEC-026:
+    fingerprint: sha256:34e11c295824
     id: DEC-026
+    status: approved
+    tags:
+    - change-record
+    - auto-generated
     title: "Change Record: feat(P8): intelligence & scaling \u2014 tiered dedup +\
       \ project-hygiene detect commands"
+  DEC-027:
+    fingerprint: sha256:2dbe46d0cbf0
+    id: DEC-027
     status: approved
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:34e11c295824
-    children: []
-  DEC-027:
-    id: DEC-027
     title: "Change Record: feat(P7): team & enterprise \u2014 RBAC, draft IDs, CI,\
       \ ReqIF, defect hook"
+  DEC-028:
+    fingerprint: sha256:b6b6a174e5f5
+    id: DEC-028
     status: approved
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:2dbe46d0cbf0
-    children: []
-  DEC-028:
-    id: DEC-028
     title: 'Change Record: feat(P6): implement compliance, baselines, standards packs,
       and change records'
+  DEC-029:
+    fingerprint: sha256:3ae336a55e36
+    id: DEC-029
     status: approved
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:b6b6a174e5f5
-    children: []
-  DEC-029:
-    id: DEC-029
     title: 'Change Record: feat(P4/P5): implement traceability and execution engine
       with review fixes'
+  DEC-030:
+    fingerprint: sha256:7a4db403f623
+    id: DEC-030
     status: approved
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:3ae336a55e36
-    children: []
-  DEC-030:
-    id: DEC-030
     title: 'Change Record: feat(P3): complete self-planning gate and generate P4-P8
       stories'
+  DEC-031:
+    fingerprint: sha256:0be8b2262b50
+    id: DEC-031
     status: approved
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:7a4db403f623
-    children: []
-  DEC-031:
-    id: DEC-031
     title: 'Change Record: feat: complete P2 verification with remediation (D-16,
       D-17)'
-    status: approved
-    tags:
-    - change-record
-    - auto-generated
-    fingerprint: sha256:0be8b2262b50
-    children: []
   DEC-032:
+    fingerprint: sha256:f57869e3acc7
     id: DEC-032
-    title: 'Change Record: feat: complete P1 self-specification with review fixes'
     status: approved
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:f57869e3acc7
-    children: []
+    title: 'Change Record: feat: complete P1 self-specification with review fixes'
   DEC-033:
+    fingerprint: sha256:8ba531e23086
     id: DEC-033
+    status: approved
+    tags:
+    - change-record
+    - auto-generated
     title: 'Change Record: fix(coverage): update story coverage calculation and resolve
       v-model gaps'
+  DEC-034:
+    fingerprint: sha256:80b0f2015eaf
+    id: DEC-034
     status: approved
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:8ba531e23086
-    children: []
-  DEC-034:
-    id: DEC-034
     title: "Change Record: feat(specs): wire V-model verification chain \u2014 UT/IT/QT\
       \ specs for 48 stories, promote all to verified"
+  DEC-035:
+    fingerprint: sha256:a690b9a2f765
+    id: DEC-035
     status: approved
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:80b0f2015eaf
-    children: []
-  DEC-035:
-    id: DEC-035
     title: 'Change Record: feat(specs): add ARCH-007/008/009, update ARCH-004, close
       refinement gaps for REQ-007/008/013/016/017'
+  DEC-036:
+    fingerprint: sha256:1e465313ebad
+    id: DEC-036
     status: approved
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:a690b9a2f765
-    children: []
-  DEC-036:
-    id: DEC-036
     title: "Change Record: fix(specs): resolve quality nits \u2014 ambiguity, passive\
       \ voice, compound shall; lint skips code spans"
+  DEC-037:
+    fingerprint: sha256:e307505607c6
+    id: DEC-037
     status: approved
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:1e465313ebad
-    children: []
-  DEC-037:
-    id: DEC-037
     title: 'Change Record: docs: update README/ROADMAP to v0.3.0, promote REQ-001..005
       to implemented'
+  DEC-038:
+    fingerprint: sha256:74462558a966
+    id: DEC-038
     status: approved
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:e307505607c6
-    children: []
-  DEC-038:
-    id: DEC-038
     title: 'Change Record: chore(specs): promote REQ-015/016/017, stale CHL-286/288,
       resolve impact-log, rebuild indexes'
+  DEC-039:
+    fingerprint: sha256:bac0903b58c8
+    id: DEC-039
     status: approved
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:74462558a966
-    children: []
-  DEC-039:
-    id: DEC-039
     title: 'Change Record: chore(specs): update STORY-046/047/048 to implemented,
       refresh fingerprints'
+  DEC-040:
+    fingerprint: sha256:80c7b89eaebe
+    id: DEC-040
     status: approved
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:bac0903b58c8
-    children: []
-  DEC-040:
-    id: DEC-040
     title: "Change Record: feat(specs): v0.3.0 spec-sync \u2014 CHL dedup fix, ARCH-006/DDD-006,\
       \ STORY-046/047/048, REQ-017 rescope"
+  DEC-041:
+    fingerprint: sha256:be7dc3e66d0c
+    id: DEC-041
     status: approved
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:80c7b89eaebe
-    children: []
-  DEC-041:
-    id: DEC-041
     title: 'Change Record: feat(specs): add v0.3.0 architecture, design, requirements,
       and test artifacts'
+  DEC-042:
+    fingerprint: sha256:a7f95cf4eba2
+    id: DEC-042
     status: approved
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:be7dc3e66d0c
-    children: []
-  DEC-042:
-    id: DEC-042
     title: 'Change Record: docs(specs): sync ARCH-001/002/003 and DDD-002/003 with
       v0.2.0 codebase'
-    status: approved
+  DEC-043:
+    fingerprint: ''
+    id: DEC-043
+    status: draft
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:a7f95cf4eba2
-    children: []
-  DEC-043:
-    id: DEC-043
     title: "Change Record: chore: release v1.3.1 \u2014 close verification gap, promote\
       \ DECs"
+  DEC-044:
+    fingerprint: ''
+    id: DEC-044
     status: draft
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:cbdcb722d290
-    children: []
-  DEC-044:
-    id: DEC-044
     title: "Change Record: feat: v1.4.0 \u2014 compliance evidence quality + REVIEW\
       \ artifact type"
-    status: draft
-    tags:
-    - change-record
-    - auto-generated
-    fingerprint: sha256:7264722098e3
-    children: []
   DEC-045:
+    fingerprint: ''
     id: DEC-045
-    title: Autoresearch ships as an opt-in pack, not core
     status: approved
     tags:
     - autoresearch
     - architecture
     - decision
-    fingerprint: sha256:e38b1fce8cf0
-    children: []
+    title: Autoresearch ships as an opt-in pack, not core
   DEC-046:
+    fingerprint: ''
     id: DEC-046
-    title: COMP is the top-level scope, not project or strategy
     status: approved
     tags:
     - autoresearch
     - scope
     - decision
-    fingerprint: sha256:6ce248b56246
-    children: []
+    title: COMP is the top-level scope, not project or strategy
   DEC-047:
+    fingerprint: ''
     id: DEC-047
-    title: EXPT artifacts are write-once with terminal status
     status: approved
     tags:
     - autoresearch
     - experiment
     - decision
-    fingerprint: sha256:5de697da9fa4
-    children: []
+    title: EXPT artifacts are write-once with terminal status
   DEC-048:
+    fingerprint: ''
     id: DEC-048
-    title: FINDING updates are manual, agent-driven (no auto-aggregation in v1)
     status: approved
     tags:
     - autoresearch
     - findings
     - decision
-    fingerprint: sha256:5bba90b2e78b
-    children: []
+    title: FINDING updates are manual, agent-driven (no auto-aggregation in v1)
   DEC-049:
+    fingerprint: ''
     id: DEC-049
-    title: "Inline execution only \u2014 fresh-mode orchestrator/worker deferred"
     status: approved
     tags:
     - autoresearch
     - execution
     - decision
-    fingerprint: sha256:e86f0969a455
-    children: []
+    title: "Inline execution only \u2014 fresh-mode orchestrator/worker deferred"
   DEC-050:
+    fingerprint: ''
     id: DEC-050
-    title: Pack-bundled skills follow no-overwrite install policy
     status: approved
     tags:
     - autoresearch
     - pack
     - skills
     - decision
-    fingerprint: sha256:a582982a159c
-    children: []
+    title: Pack-bundled skills follow no-overwrite install policy
   DEC-051:
+    fingerprint: ''
     id: DEC-051
-    title: "Change Record: feat: v1.6.3 \u2014 goal-driven research ladder + protocol\
-      \ split"
     status: draft
     tags:
     - change-record
     - auto-generated
-    fingerprint: sha256:b2c29da4a28c
-    children: []
+    title: "Change Record: feat: v1.6.3 \u2014 goal-driven research ladder + protocol\
+      \ split"
   DEC-052:
+    fingerprint: ''
     id: DEC-052
-    title: 'v1.6.6: Context rebalancing, routing clarity, and drift prevention'
     status: approved
     tags: []
-    fingerprint: sha256:27f997cccbc0
-    children: []
+    title: 'v1.6.6: Context rebalancing, routing clarity, and drift prevention'
   DEC-053:
+    fingerprint: ''
     id: DEC-053
+    status: approved
+    tags: []
     title: "v1.6.7: Autoresearch protocol hardening \u2014 EDA, cross-LOOP learning,\
       \ EXPT quality"
-    status: approved
-    tags: []
-    fingerprint: sha256:19b82c6e8539
-    children: []
   DEC-054:
+    fingerprint: ''
     id: DEC-054
-    title: 'v1.7.0: Multi-agent integration, orphan detection, and hook hardening'
     status: approved
     tags: []
-    fingerprint: sha256:b0fe64d28449
-    children: []
+    title: 'v1.7.0: Multi-agent integration, orphan detection, and hook hardening'
 next_id: 55

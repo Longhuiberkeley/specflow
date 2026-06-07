@@ -14,6 +14,8 @@ links:
   role: implements
 - target: ARCH-022
   role: guided_by
+- target: SPIKE-001
+  role: derives_from
 created: '2026-05-15'
 ---
 
