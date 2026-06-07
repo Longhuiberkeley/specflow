@@ -19,6 +19,12 @@ def cmd_init(args: argparse.Namespace) -> int:
     return init_cmd.run(root, vars(args))
 
 
+def cmd_refresh(args: argparse.Namespace) -> int:
+    from specflow.commands import refresh as refresh_cmd
+    root = _find_project_root()
+    return refresh_cmd.run(root, vars(args))
+
+
 def cmd_status(args: argparse.Namespace) -> int:
     from specflow.commands import status as status_cmd
     root = _find_project_root()
@@ -230,6 +236,17 @@ def _add_init_parser(subparsers):
     p.add_argument("--force", action="store_true", help="Force clean re-initialization (backs up existing config/state/schemas)")
 
 
+def _add_refresh_parser(subparsers):
+    p = subparsers.add_parser("refresh", help="Update skills, agent-context, and templates without full re-init")
+    p.add_argument("--platform", help="AI platform code (e.g., claude-code, cursor, windsurf)")
+    p.add_argument("--no-skills", action="store_true", dest="no_skills", help="Skip skill update")
+    p.add_argument("--no-context", action="store_true", dest="no_context", help="Skip agent-context re-injection")
+    p.add_argument("--schemas", action="store_true", help="Also update schema files (new only unless --force)")
+    p.add_argument("--checklists", action="store_true", help="Also update checklist templates (new only)")
+    p.add_argument("--force", action="store_true", help="Overwrite schemas even if they already exist")
+    p.add_argument("--dry-run", action="store_true", dest="dry_run", help="Show what would change without writing")
+
+
 def _add_status_parser(subparsers):
     subparsers.add_parser("status", help="Show project dashboard")
 
@@ -348,7 +365,7 @@ def _add_reconcile_parser(subparsers):
 
 def _add_artifact_lint_parser(subparsers):
     p = subparsers.add_parser("artifact-lint", help="Run deterministic validation checks on artifacts")
-    p.add_argument("--type", choices=["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "thinking-techniques", "autoresearch-logging", "gate"], help="Run only a specific check")
+    p.add_argument("--type", choices=["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "thinking-techniques", "autoresearch-logging", "spike-lifecycle", "source-drift", "gate"], help="Run only a specific check")
     p.add_argument("--fix", action="store_true", help="Auto-fix (rebuild indexes, recompute fingerprints)")
     p.add_argument("--gate", help="Phase-gate checklist name")
     p.add_argument("--method", choices=["programmatic", "llm"], default="programmatic", help="Validation method")
@@ -565,7 +582,7 @@ def _add_autoresearch_parser(subparsers):
 # so `specflow --help` actually shows the phase headers, not just the source.
 _HELP_EPILOG = """\
 commands by workflow phase:
-  Discover:   init, status, domain, handbook, patterns
+  Discover:   init, refresh, status, domain, handbook, patterns
   Plan:       create, update
   Execute:    go, done, cascade-status, reconcile, generate-tests
   Review:     artifact-lint, checklist-run, artifact-review, project-audit, trace
@@ -653,6 +670,7 @@ def main(argv: list[str] | None = None) -> int:
 
     # ── Discover ────────────────────────────────────────────────
     _add_init_parser(subparsers)
+    _add_refresh_parser(subparsers)
     _add_status_parser(subparsers)
     _add_brief_parser(subparsers)
     _add_standards_parser(subparsers)
@@ -713,6 +731,7 @@ def main(argv: list[str] | None = None) -> int:
     commands = {
         # New names
         "init": cmd_init,
+        "refresh": cmd_refresh,
         "status": cmd_status,
         "brief": cmd_brief,
         "standards": cmd_standards,

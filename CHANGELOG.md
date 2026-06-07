@@ -4,6 +4,32 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.8.1] - 2026-06-07
+
+### Highlights
+
+- **`specflow refresh`** — Update skills, agent-context, schemas, and checklists without full re-init. Supports `--dry-run` preview, selective skips (`--no-skills`, `--no-context`), and `--force` schema overwrite.
+- **Two new artifact-lint checks** — `spike-lifecycle` (stale/zombie/repeated-topic detection for SPIKEs) and `source-drift` (fingerprint-based output-file change detection with auto-seeding on first run).
+
+### Features
+
+- `specflow refresh` command — idempotent skill/context/schema/checklist updates; properly guarded `--dry-run` that never writes or deletes; legacy directory cleanup only on live run
+- `artifact-lint --type spike-lifecycle` — detects stale SPIKEs past their timebox, zombie SPIKEs with substantive findings but no downstream links, and repeated-topic patterns (3+ SPIKEs sharing a tag); ISO 8601 datetime parsing with timezone awareness
+- `artifact-lint --type source-drift` — stores SHA256 fingerprints of declared `output_files` in `.specflow/source-fingerprints.yaml`; auto-seeds on first run; warns on drift unless artifact is already suspect-flagged; skips glob patterns and missing files
+
+### Fixes
+
+- SPIKE `created` field parsing now tries `datetime.fromisoformat` first (handles `2024-01-01T00:00:00Z` and `+00:00` offsets) before falling back to `%Y-%m-%d` — previously ISO timestamps caused a silent skip
+- Removed dead `config_lib` import and unused `_hash_file` helper from refresh.py
+- Legacy-directory `rmtree` now guarded behind `dry_run` check in `_install_skills`
+- Source-drift docstring corrected (removed misleading `--fix` re-seed claim; users should delete `.specflow/source-fingerprints.yaml` to re-seed)
+
+### Tests
+
+- 11 new tests: 3 refresh (dry-run, --no-skills, schemas), 5 spike-lifecycle (stale, ISO timestamp, zombie, healthy, repeated-tag), 3 source-drift (seed, drift detection, suspect exemption)
+- 7 new CLI hardening tests: `autoresearch log --set`, JSON number parsing, malformed `--set` error, nonexistent loop error, plan/run/review via `cli.main`
+- Total: 445 tests passing
+
 ## [1.8.0] - 2026-06-07
 
 ### Highlights

@@ -1500,3 +1500,158 @@ class TestAutoresearchLogAndSuggestFinds:
         assert fm["competition"] == "COMP-400"
         assert fm["source_loop"] == "LOOP-400"
         assert fm["status"] == "draft"
+
+
+# ── 13. Autoresearch CLI hardening (v1.8.1) ────────────────────────────────
+# These tests exercise the real CLI path (cli.main) for autoresearch
+# subcommands that were previously only tested via direct run() calls.
+
+class TestAutoresearchCLIHardening:
+    """Fill the CLI-path test gap: --set on log, error paths, plan/run/review via cli.main."""
+
+    def _setup_comp_and_loop(self, root: Path) -> None:
+        _write_artifact(
+            root, "COMP-500", "competition", "CLI Hardening Comp",
+            status="active",
+            extra_fm={
+                "created": "2026-05-20",
+                "verify_command": "pytest",
+                "metric_name": "accuracy",
+                "metric_direction": "higher_is_better",
+            },
+        )
+        _write_artifact(
+            root, "LOOP-500", "loop", "CLI Hardening Loop",
+            status="running",
+            extra_fm={
+                "created": "2026-05-20",
+                "competition": "COMP-500",
+                "mode": "explore",
+                "budget": 50,
+                "iteration_count": 3,
+                "kept_count": 1,
+                "discarded_count": 2,
+                "best_metric": 0.85,
+                "best_experiment": "EXPT-501",
+            },
+        )
+        _write_artifact(
+            root, "EXPT-501", "experiment", "Prior Best",
+            status="kept",
+            extra_fm={
+                "created": "2026-05-20",
+                "loop": "LOOP-500",
+                "metric_value": 0.85,
+                "change_category": "features",
+                "summary": "Baseline",
+            },
+        )
+
+    def test_log_with_set_writes_fields(self, project_root: Path, monkeypatch):
+        from specflow import cli
+        self._setup_comp_and_loop(project_root)
+        monkeypatch.chdir(project_root)
+        rc = cli.main([
+            "autoresearch", "log",
+            "--loop", "LOOP-500",
+            "--status", "kept",
+            "--metric-value", "0.93",
+            "--change-category", "model",
+            "--summary", "Transformer backbone",
+            "--set", "lr=0.001",
+            "--set", 'parameters={"lr": 0.001, "layers": 6}',
+        ])
+        assert rc == 0
+
+        expts = [a for a in art_lib.discover_artifacts(project_root)
+                 if art_lib.get_prefix_from_id(a.id) == "EXPT"
+                 and a.frontmatter.get("loop") == "LOOP-500"
+                 and a.id != "EXPT-501"]
+        assert len(expts) == 1
+        fm = expts[0].frontmatter
+        assert fm["lr"] == 0.001  # json.loads parses "0.001" to float
+        assert fm["parameters"] == {"lr": 0.001, "layers": 6}
+        assert fm["metric_value"] == 0.93
+
+    def test_log_with_set_json_number(self, project_root: Path, monkeypatch):
+        from specflow import cli
+        self._setup_comp_and_loop(project_root)
+        monkeypatch.chdir(project_root)
+        rc = cli.main([
+            "autoresearch", "log",
+            "--loop", "LOOP-500",
+            "--status", "kept",
+            "--metric-value", "0.90",
+            "--change-category", "params",
+            "--summary", "Number test",
+            "--set", "batch_size=64",
+        ])
+        assert rc == 0
+
+        expts = [a for a in art_lib.discover_artifacts(project_root)
+                 if art_lib.get_prefix_from_id(a.id) == "EXPT"
+                 and a.frontmatter.get("loop") == "LOOP-500"
+                 and a.id != "EXPT-501"]
+        assert len(expts) == 1
+        # "64" is valid JSON → parsed to int
+        assert expts[0].frontmatter["batch_size"] == 64
+
+    def test_log_set_malformed_returns_error(self, project_root: Path, monkeypatch, capsys):
+        from specflow import cli
+        self._setup_comp_and_loop(project_root)
+        monkeypatch.chdir(project_root)
+        rc = cli.main([
+            "autoresearch", "log",
+            "--loop", "LOOP-500",
+            "--status", "kept",
+            "--metric-value", "0.5",
+            "--change-category", "params",
+            "--summary", "bad set",
+            "--set", "no-equals-sign",
+        ])
+        assert rc == 1
+        out = capsys.readouterr().out
+        assert "Invalid --set" in out
+
+    def test_log_nonexistent_loop_returns_error(self, project_root: Path, monkeypatch, capsys):
+        from specflow import cli
+        self._setup_comp_and_loop(project_root)
+        monkeypatch.chdir(project_root)
+        rc = cli.main([
+            "autoresearch", "log",
+            "--loop", "LOOP-999",
+            "--status", "kept",
+            "--metric-value", "0.5",
+            "--change-category", "params",
+            "--summary", "ghost loop",
+        ])
+        assert rc == 1
+        out = capsys.readouterr().out
+        assert "not found" in out
+
+    def test_plan_via_cli(self, project_root: Path, monkeypatch, capsys):
+        from specflow import cli
+        self._setup_comp_and_loop(project_root)
+        monkeypatch.chdir(project_root)
+        rc = cli.main(["autoresearch", "plan"])
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "COMP-500" in out
+
+    def test_run_via_cli(self, project_root: Path, monkeypatch, capsys):
+        from specflow import cli
+        self._setup_comp_and_loop(project_root)
+        monkeypatch.chdir(project_root)
+        rc = cli.main(["autoresearch", "run", "--competition", "COMP-500"])
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "8-Phase Protocol" in out
+
+    def test_review_via_cli(self, project_root: Path, monkeypatch, capsys):
+        from specflow import cli
+        self._setup_comp_and_loop(project_root)
+        monkeypatch.chdir(project_root)
+        rc = cli.main(["autoresearch", "review", "--competition", "COMP-500"])
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "EXPT-501" in out

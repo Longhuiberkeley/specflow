@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import hashlib
 import re
 import subprocess
+from collections import Counter
+from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
@@ -14,7 +17,7 @@ from specflow.lib import standards as standards_lib
 from specflow.lib import lint as lint_lib
 from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC
 
-CHECK_NAMES = ["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "thinking-techniques", "autoresearch-logging"]
+CHECK_NAMES = ["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "thinking-techniques", "autoresearch-logging", "spike-lifecycle", "source-drift"]
 
 
 def _run_check(
@@ -68,6 +71,10 @@ def _run_check(
         return _check_thinking_techniques(artifacts)
     elif check_name == "autoresearch-logging":
         return _check_autoresearch_logging(artifacts, root)
+    elif check_name == "spike-lifecycle":
+        return _check_spike_lifecycle(artifacts, root)
+    elif check_name == "source-drift":
+        return _check_source_drift(artifacts, root)
 
     return {"status_icon": "?", "detail": f"Unknown check: {check_name}",
             "blocking_count": 0, "warning_count": 0}
@@ -1286,6 +1293,246 @@ def _check_autoresearch_logging(
 
     icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
     detail_msg = "\n".join(details) if details else "All autoresearch EXPTs have recommended logging fields"
+
+    return {
+        "status_icon": icon,
+        "detail": detail_msg,
+        "blocking_count": 0,
+        "warning_count": warnings,
+    }
+
+
+# ── SPIKE lifecycle defaults ──────────────────────────────────────
+_DEFAULT_SPIKE_AGE_DAYS = 30
+_MIN_ZOMBIE_WORD_COUNT = 100
+_REPEATED_TAG_THRESHOLD = 3
+
+
+def _check_spike_lifecycle(
+    artifacts: list[art_lib.Artifact],
+    root: Path,
+) -> dict[str, str | int]:
+    """Detect SPIKE lifecycle issues: stale, zombie, and repeated-topic patterns.
+
+    Sub-checks:
+      - Stale: draft/approved SPIKE older than its timebox (or 30 days default).
+      - Zombie: completed SPIKE with substantive body but no derives_from link
+        to a non-SPIKE artifact — findings produced but never acted on.
+      - Repeated topic: 3+ SPIKEs sharing the same tag — pattern of repeated
+        exploration that should consolidate into a proper requirement.
+    """
+    warnings = 0
+    details: list[str] = []
+    now = datetime.now(timezone.utc)
+
+    spikes = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "SPIKE"]
+
+    if not spikes:
+        return {
+            "status_icon": GREEN + "✓" + NC,
+            "detail": "No SPIKEs found",
+            "blocking_count": 0,
+            "warning_count": 0,
+        }
+
+    # Build a set of non-SPIKE artifact IDs for zombie detection
+    non_spike_ids = {a.id for a in artifacts if art_lib.get_prefix_from_id(a.id) != "SPIKE"}
+
+    # ── Stale detection ───────────────────────────────────────────
+    for sp in spikes:
+        if sp.status not in ("draft", "approved"):
+            continue
+
+        created_str = sp.frontmatter.get("created", "")
+        if not created_str:
+            continue
+
+        try:
+            if isinstance(created_str, datetime):
+                created_dt = created_str
+            else:
+                raw = str(created_str)
+                try:
+                    created_dt = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+                except ValueError:
+                    created_dt = datetime.strptime(raw, "%Y-%m-%d")
+                if created_dt.tzinfo is None:
+                    created_dt = created_dt.replace(tzinfo=timezone.utc)
+        except (ValueError, TypeError):
+            continue
+
+        age_days = (now - created_dt).days
+        timebox_str = sp.frontmatter.get("timebox")
+        if timebox_str:
+            try:
+                timebox_days = int(timebox_str)
+            except (ValueError, TypeError):
+                timebox_days = _DEFAULT_SPIKE_AGE_DAYS
+        else:
+            timebox_days = _DEFAULT_SPIKE_AGE_DAYS
+
+        if age_days > timebox_days:
+            warnings += 1
+            details.append(
+                f"  ⚠ [{sp.id}] stale: {sp.status} for {age_days} days "
+                f"(timebox: {timebox_days}d)"
+            )
+
+    # ── Zombie detection ──────────────────────────────────────────
+    for sp in spikes:
+        if sp.status != "completed":
+            continue
+
+        body = sp.body or ""
+        word_count = len(body.split())
+        if word_count < _MIN_ZOMBIE_WORD_COUNT:
+            continue  # Short body — probably a no-finding SPIKE, which is fine
+
+        # Check if anything non-SPIKE links TO this SPIKE via derives_from
+        has_downstream = False
+        for art in artifacts:
+            if art_lib.get_prefix_from_id(art.id) == "SPIKE":
+                continue
+            for link in art.links:
+                if link.target == sp.id and link.role == "derives_from":
+                    has_downstream = True
+                    break
+            if has_downstream:
+                break
+
+        if not has_downstream:
+            warnings += 1
+            details.append(
+                f"  ⚠ [{sp.id}] zombie: completed with {word_count} words of findings "
+                f"but nothing links to it via derives_from"
+            )
+
+    # ── Repeated-topic detection ──────────────────────────────────
+    tag_counter: Counter[str] = Counter()
+    tag_spikes: dict[str, list[str]] = {}
+    for sp in spikes:
+        tags = sp.frontmatter.get("tags") or []
+        if isinstance(tags, str):
+            tags = [t.strip() for t in tags.split(",") if t.strip()]
+        for tag in tags:
+            tag_counter[tag] += 1
+            tag_spikes.setdefault(tag, []).append(sp.id)
+
+    for tag, count in tag_counter.items():
+        if count >= _REPEATED_TAG_THRESHOLD:
+            spike_ids = ", ".join(tag_spikes[tag][:5])
+            details.append(
+                f"  ℹ {count} SPIKEs share tag '{tag}': {spike_ids} — "
+                f"consider consolidating into a requirement"
+            )
+
+    icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
+    detail_msg = "\n".join(details) if details else f"All {len(spikes)} SPIKEs lifecycle-healthy"
+
+    return {
+        "status_icon": icon,
+        "detail": detail_msg,
+        "blocking_count": 0,
+        "warning_count": warnings,
+    }
+
+
+# ── Source-file drift detection ────────────────────────────────────
+
+_SOURCE_FP_FILE = ".specflow/source-fingerprints.yaml"
+
+
+def _hash_file_content(path: Path) -> str:
+    """Compute SHA256 hex digest of a file's contents."""
+    return hashlib.sha256(path.read_bytes()).hexdigest()[:16]
+
+
+def _load_source_fingerprints(root: Path) -> dict[str, dict[str, str]]:
+    """Load stored source fingerprints from .specflow/source-fingerprints.yaml."""
+    fp_path = root / _SOURCE_FP_FILE
+    if not fp_path.exists():
+        return {}
+    try:
+        data = yaml.safe_load(fp_path.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def _save_source_fingerprints(root: Path, data: dict[str, dict[str, str]]) -> None:
+    """Save source fingerprints to .specflow/source-fingerprints.yaml."""
+    fp_path = root / _SOURCE_FP_FILE
+    fp_path.parent.mkdir(parents=True, exist_ok=True)
+    fp_path.write_text(yaml.dump(data, default_flow_style=False, sort_keys=True), encoding="utf-8")
+
+
+def _check_source_drift(
+    artifacts: list[art_lib.Artifact],
+    root: Path,
+) -> dict[str, str | int]:
+    """Detect when output_files have changed but the artifact is not suspect-flagged.
+
+    Compares current file hashes against stored source fingerprints in
+    .specflow/source-fingerprints.yaml. Warns if a file hash has changed
+    and the governing artifact is not already suspect.
+
+    First run: if no fingerprint file exists but at least one artifact declares
+    output_files, the check silently seeds the file with current hashes and
+    returns 0 warnings. Re-run on the next commit to detect drift.
+
+    To re-seed fingerprints after reviewing changes, delete
+    ``.specflow/source-fingerprints.yaml`` and re-run.
+    """
+    stored = _load_source_fingerprints(root)
+    current: dict[str, dict[str, str]] = {}
+    warnings = 0
+    details: list[str] = []
+    seeded = False
+
+    for art in artifacts:
+        output_files = art.frontmatter.get("output_files")
+        if not output_files or not isinstance(output_files, list):
+            continue
+
+        art_hashes: dict[str, str] = {}
+        for file_path in output_files:
+            if not isinstance(file_path, str):
+                continue
+            if any(c in file_path for c in _GLOB_CHARS):
+                continue
+
+            resolved = (root / file_path).resolve()
+            if not resolved.is_file():
+                continue
+
+            current_hash = _hash_file_content(resolved)
+            art_hashes[file_path] = current_hash
+
+            stored_hash = (stored.get(art.id) or {}).get(file_path)
+            if stored_hash and stored_hash != current_hash and not art.suspect:
+                warnings += 1
+                details.append(
+                    f"  ⚠ [{art.id}] source file changed: {file_path} "
+                    f"(stored: {stored_hash}, now: {current_hash}) — "
+                    f"artifact is not suspect-flagged"
+                )
+
+        if art_hashes:
+            current[art.id] = art_hashes
+
+    fp_path = root / _SOURCE_FP_FILE
+    if not stored and current:
+        _save_source_fingerprints(root, current)
+        seeded = True
+        details.append(
+            f"  ℹ Seeded source fingerprints for {len(current)} artifact(s) "
+            f"→ {fp_path.relative_to(root)}. Re-run to detect drift."
+        )
+
+    icon = GREEN + "✓" + NC if warnings == 0 and not seeded else (
+        YELLOW + "⚠" + NC if warnings > 0 else CYAN + "ℹ" + NC
+    )
+    detail_msg = "\n".join(details) if details else "No source-file drift detected"
 
     return {
         "status_icon": icon,
