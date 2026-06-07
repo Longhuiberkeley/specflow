@@ -50,12 +50,6 @@ def default_config(project_name: str = "") -> dict:
             },
         },
         "ci": {
-            "llm": {
-                "provider": "openrouter",
-                "model": "google/gemma-4-26b-a4b-it:free",
-                "api_key_env": "OPENROUTER_API_KEY",
-                "base_url": "https://openrouter.ai/api/v1",
-            },
         },
     }
 

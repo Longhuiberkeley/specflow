@@ -98,7 +98,7 @@ Select which stories to implement. The skill:
 /specflow-artifact-review
 ```
 
-Runs a quality gate on your artifacts: deterministic lint checks first (zero tokens), then LLM-judged checklist review. Reports findings by severity — blocking, warning, info.
+Runs a quality gate on your artifacts: deterministic lint checks first (zero tokens), then agent-judged checklist review. Reports findings by severity — blocking, warning, info. Fully self-contained — no external API calls.
 
 For reviewing the impact of recent commits:
 

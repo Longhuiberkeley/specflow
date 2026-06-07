@@ -9,7 +9,7 @@ This skill accepts freeform user input alongside the command. Interpret the user
 
 - **No additional context** → run the standard workflow (deterministic core only)
 - **A question or concern** → run the deterministic core, then address the question directly using the results
-- **A request for depth** ("go deep", "be thorough", "all lenses") → run deterministic core + full LLM analysis
+- **A request for depth** ("go deep", "be thorough", "all lenses") → run deterministic core + full agent-driven analysis
 - **A specific focus** ("focus on REQ-003", "check compliance only") → narrow scope to the request, still run deterministic core first
 
 Always run the deterministic core regardless of input. It costs zero tokens and provides the foundation for any analysis.
@@ -24,11 +24,13 @@ Full-project health review.
 
 ### Step 1: Deterministic Core (Zero-Question)
 
-Run the automated audit pipeline silently. This covers horizontal, vertical, and cross-cutting checks.
+Run the automated audit pipeline silently. This covers horizontal, vertical, and cross-cutting checks — including an **orphan-code lens** that flags source files not traced to any STORY/REQ via `output_files`. (Skipped under `--quick`.)
 
 ```
 uv run specflow project-audit
 ```
+
+If the audit reports orphaned source code, list the specific files with `uv run specflow detect orphan-code` and offer to adopt them (`--retro-link STORY-NNN`) so every file traces back to a spec.
 
 After the project audit, run the chain depth survey to show traceability coverage distribution:
 

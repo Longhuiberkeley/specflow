@@ -228,14 +228,6 @@ def run(root: Path, args: dict) -> int:
         config_lib.set_domain(root, domain, domain_tags)
         print(f"  + Domain set: {domain}" + (f" (tags: {', '.join(domain_tags)})" if domain_tags else ""))
 
-        try:
-            from specflow.lib import best_practices as bp_lib
-            result = bp_lib.ensure_project_bps(root, domain, domain_tags)
-            if result.get("ok") and result.get("path"):
-                print(f"  + Project best practices generated: {result['path']}")
-        except Exception:
-            pass
-
     print("  + Schema files copied")
 
     print("  Copying checklist templates...")

@@ -1,0 +1,9 @@
+artifacts:
+  BP-001:
+    id: BP-001
+    title: Test BP
+    status: draft
+    tags: []
+    fingerprint: sha256:50c13e082b3c
+    children: []
+next_id: 2

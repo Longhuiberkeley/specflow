@@ -279,29 +279,6 @@ class TestInitDomainFlags:
         assert domain == ""
         assert tags == []
 
-    def test_init_generates_project_bps_when_domain_set(self, tmp_path: Path):
-        from specflow.lib import best_practices as bp_lib
-
-        root = tmp_path / "test-project"
-
-        yaml_output = yaml.dump({
-            "domain": "embedded",
-            "level": "project",
-            "best_practices": [{"id": "BP-PROJ-01", "title": "Safety first"}],
-        }, default_flow_style=False)
-
-        with patch("specflow.lib.ci.load_llm_config") as mock_load, \
-             patch("specflow.lib.ci.call_llm") as mock_call:
-            mock_load.return_value = MagicMock(api_key="test-key")
-            mock_call.return_value = {"ok": True, "content": yaml_output}
-
-            self._run_init(root, "embedded")
-
-        cached = bp_lib.read_cached(root, "embedded", "project", "embedded")
-        assert cached is not None
-        assert cached["best_practices"][0]["title"] == "Safety first"
-
-
 class TestLearnableTechniquesConfig:
     def test_default_includes_adversarial(self, tmp_path: Path):
         cfg_dir = tmp_path / ".specflow"

@@ -9,7 +9,7 @@ This skill accepts freeform user input alongside the command. Interpret the user
 
 - **No additional context** → run the standard workflow (deterministic core only)
 - **A question or concern** → run the deterministic core, then address the question directly using the results
-- **A request for depth** ("go deep", "be thorough", "all lenses") → run deterministic core + full LLM analysis
+- **A request for depth** ("go deep", "be thorough", "all lenses") → run deterministic core + full agent-driven analysis
 - **A specific focus** ("focus on REQ-003", "check compliance only") → narrow scope to the request, still run deterministic core first
 
 Always run the deterministic core regardless of input. It costs zero tokens and provides the foundation for any analysis.
@@ -124,7 +124,6 @@ Summarize what was done:
 - Directories created (`.specflow/`, `_specflow/`, platform skills directory)
 - Configuration files written (`config.yaml`, `state.yaml`, `adapters.yaml`)
 - Domain classification persisted (if `--domain` was provided)
-- Project best practices generated (if domain was set and API key available)
 - Instruction file updated (target file path)
 - Pre-commit hook installed
 - CI workflow generated (if applicable)

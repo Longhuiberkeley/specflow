@@ -301,6 +301,45 @@ def _cross_cutting_analysis(
     if consistency_findings:
         results["consistency"] = consistency_findings
 
+    # Orphan source-code lens: source files not traced to any STORY/REQ via
+    # output_files. Surfaces the dormant `detect orphan-code` scan in the audit.
+    # Distinguishes "tracking not adopted" (info) from "files slipped through
+    # partial tracking" (warn) to avoid alarm fatigue.
+    orphan_findings: list[dict[str, str]] = []
+    try:
+        from specflow.lib.orphans import find_orphan_code
+
+        oc = find_orphan_code(root)
+        total = oc["total_count"]
+        referenced = oc["referenced_count"]
+        orphan_n = len(oc["orphan_files"])
+        if total > 0:
+            if referenced == 0 and orphan_n > 0:
+                orphan_findings.append({
+                    "severity": "info",
+                    "message": (
+                        f"Source↔spec tracking not in use: 0/{total} source files linked to a "
+                        f"STORY/REQ via output_files. Run `specflow detect orphan-code`."
+                    ),
+                })
+            elif orphan_n > 0:
+                orphan_findings.append({
+                    "severity": "warn",
+                    "message": (
+                        f"{orphan_n}/{total} source files orphaned (not traced to any STORY/REQ). "
+                        f"Run `specflow detect orphan-code` (adopt with --retro-link)."
+                    ),
+                })
+            else:
+                orphan_findings.append({
+                    "severity": "info",
+                    "message": f"All {total} source files traced to a STORY/REQ.",
+                })
+    except Exception:
+        pass
+    if orphan_findings:
+        results["orphan-code"] = orphan_findings
+
     return results
 
 

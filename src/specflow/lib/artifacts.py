@@ -46,6 +46,7 @@ TYPE_TO_DIR: dict[str, str] = {
     "spike": "work/spikes",
     "decision": "work/decisions",
     "defect": "work/defects",
+    "best-practice": "specs/best-practices",
 }
 
 # Prefix to type mapping (reverse)
@@ -61,6 +62,7 @@ PREFIX_TO_TYPE: dict[str, str] = {
     "SPIKE": "spike",
     "DEC": "decision",
     "DEF": "defect",
+    "BP": "best-practice",
 }
 
 TYPE_TO_PREFIX: dict[str, str] = {v: k for k, v in PREFIX_TO_TYPE.items()}

@@ -2,7 +2,7 @@
 
 SpecFlow is **one engine driven two ways**:
 
-- **AI-first (the default experience).** You talk; an agent runs the `/specflow-*` skills, manages the artifact graph, and escalates to you at approval gates. Optional API key for richer judgement.
+- **AI-first (the default experience).** You talk; an agent runs the `/specflow-*` skills, manages the artifact graph, and escalates to you at approval gates. The intelligence comes from your host harness (Claude Code, Codex, OpenCode, …) — **SpecFlow itself makes zero external API calls** and ships no LLM client of its own.
 - **ALM / direct (the standalone foundation).** The artifact graph, deterministic CLI, phase-gates, traceability, V-model tests, baselines, and RBAC work **with no API key** — a human, a team, or CI can drive the whole lifecycle by hand. This is a complete ALM in its own right; the AI layer is an optional driver on top of it, not a dependency.
 
 Both lanes operate on the **same substrate and the same gates**, so you can mix them: an agent drafts in the AI-first lane, a reviewer approves in the ALM lane via CLI or CI. The skills never do anything you couldn't do by hand — they just compose the same `specflow …` commands.
@@ -18,7 +18,7 @@ flowchart TB
     classDef engine fill:#eef2ff,stroke:#7c83db,color:#111;
     classDef gate fill:#fff0f0,stroke:#cc7a7a,color:#111;
 
-    subgraph AI["AI-first lane — default driver (conversational · API key optional)"]
+    subgraph AI["AI-first lane — default driver (conversational · agent-driven · zero external API calls)"]
         direction TB
         BR["specflow brief<br/>recall / orient (resume any session)"] --> AID["/specflow-discover/"]
         AID --> AG1{{"human approval gate<br/>agent presents · no self-approval · risk tiers"}}
@@ -28,7 +28,7 @@ flowchart TB
         AIE -. "suspect?" .-> DFS["specflow defect-from-suspect"]
     end
 
-    subgraph ALM["ALM / direct lane — standalone (CLI · CI · no API key)"]
+    subgraph ALM["ALM / direct lane — standalone (CLI · CI · no agent)"]
         direction TB
         ALS["specflow status / trace<br/>read state"] --> ALC["specflow create / update"]
         ALC --> ALG["human runs update --status approved<br/>(reviewer / CI / operator)"]
@@ -65,7 +65,7 @@ flowchart TB
                  └──────────▲───────────────────────────▲──────────┘
                             │                            │
    AI-FIRST (default driver)│                            │ ALM / DIRECT (standalone)
-   conversational · API opt │      same commands,        │ CLI · CI · no API key
+   conversational·agent-led │      same commands,        │ CLI · CI · no agent
    ─────────────────────────│      same gates            │ ────────────────────────
    specflow brief  (recall) ─┘                           └─ specflow status / trace
             │                                                       │  (read state)

@@ -11,11 +11,10 @@ from specflow.commands import artifact_lint, checklist_run
 from specflow.lib import artifacts as art_lib
 from specflow.lib import checklists
 from specflow.lib import challenges as chl_lib
-from specflow.lib import ci
 from specflow.lib import learning as learn_lib
 from specflow.lib.analysis import find_dead_code, find_similar_functions
 from specflow.lib.display import YELLOW_DIM, CYAN, NC, BOLD
-from specflow.lib.techniques import run_subagents, TechniqueFinding, ARTIFACT_LEVEL_DEFAULT_LENSES
+from specflow.lib.techniques import generate_technique_prompts, TechniqueFinding, ARTIFACT_LEVEL_DEFAULT_LENSES
 
 
 def _bootstrap_challenge_schema(root: Path) -> None:
@@ -57,28 +56,13 @@ def _format_prompt(
     artifact: art_lib.Artifact,
     items: list[checklists.ChecklistItem],
     root: Path | None = None,
-    fast: bool = False,
 ) -> str:
     lines: list[str] = []
 
     if root is not None:
-        from specflow.lib import best_practices as bp_lib
         from specflow.lib import ci as ci_mod
-        from specflow.lib.config import get_domain
 
-        domain, domain_tags = get_domain(root)
-        phase = ci_mod._ARTIFACT_TYPE_TO_PHASE.get(artifact.type, "review")
-        clause_ids = [
-            link.target for link in artifact.links
-            if link.role == "complies_with" and link.target
-        ]
-        existing_techniques = artifact.frontmatter.get("thinking_techniques") or None
-        prefix = bp_lib.compose_review_prefix(
-            root, domain, domain_tags, phase, clause_ids,
-            artifact_type=artifact.type,
-            skip_synthesis=fast,
-            existing_techniques=existing_techniques,
-        )
+        prefix = ci_mod.load_active_bp_context(root, artifact)
         if prefix:
             lines.append(prefix.rstrip())
             lines.append("")
@@ -99,37 +83,6 @@ def _format_prompt(
         if item.llm_prompt:
             lines.append(f"   guidance: {item.llm_prompt}")
     return "\n".join(lines)
-
-
-def _run_llm_checklist(
-    root: Path, target_artifacts: list[art_lib.Artifact], cfg: ci.LLMConfig,
-    fast: bool = False,
-) -> list[TechniqueFinding]:
-    findings = []
-    for art in target_artifacts:
-        assembled = checklists.assemble_checklist(root, art)
-        llm_items = [i for i in assembled.items if not i.automated]
-        if not llm_items:
-            continue
-        
-        prompt = _format_prompt(art, llm_items, root=root, fast=fast)
-        result = ci.call_llm(cfg, ci.SYSTEM_PROMPT, prompt)
-        if not result.get("ok"):
-            print(f"  {YELLOW_DIM}⚠ LLM call failed for {art.id}: {result.get('error')}{NC}")
-            continue
-            
-        dict_items = [{"id": i.id, "check": i.check, "severity": i.severity, "llm_prompt": i.llm_prompt} for i in llm_items]
-        parsed = ci.parse_batch_response(result.get("content", ""), dict_items)
-        for p, item in zip(parsed, llm_items):
-            if p.get("verdict") == "FAIL":
-                findings.append(TechniqueFinding(
-                    title=item.check,
-                    rationale=p.get("reason", "Failed checklist item"),
-                    severity=item.severity,
-                    technique="checklist-run",
-                    target_id=art.id,
-                ))
-    return findings
 
 
 def _get_target_artifacts(root: Path, args: dict[str, Any]) -> list[art_lib.Artifact]:
@@ -360,42 +313,49 @@ def run(root: Path, args: dict[str, Any]) -> int:
     if depth == "quick":
         return 2 if (lint_rc == 1 or check_rc == 1) else 0
         
-    # 3. Target collection & Config
+    # 3. Target collection
     targets = _get_target_artifacts(root, args)
     if not targets:
         return 2 if (lint_rc == 1 or check_rc == 1) else 0
-        
-    cfg = ci.load_llm_config(root)
-    if not cfg.api_key:
-        print(f"{YELLOW_DIM}⚠ Cannot run LLM depth: missing {ci.DEFAULT_KEY_ENV} in environment.{NC}")
-        return 2 if (lint_rc == 1 or check_rc == 1) else 0
 
     print(f"\n{CYAN}SpecFlow Artifact Review — Depth: {depth}{NC}")
-    
-    fast = args.get("fast", False)
-    if fast:
-        print("(--fast: skipping BP synthesis, using cached best practices only)")
-    
-    # 4. Normal depth: LLM checklist
-    print("Running LLM checklist judgment...")
-    findings = _run_llm_checklist(root, targets, cfg, fast=fast)
-    
-    # 5. Deep depth: Techniques
+
+    findings: list[TechniqueFinding] = []
+
+    # 4. Normal depth: emit agent-judged checklist items as a self-contained prompt.
+    #    SpecFlow makes no external API calls — the host agent (Claude, Codex,
+    #    OpenCode, …) reads this prompt and produces the judgement itself.
+    for art in targets:
+        assembled = checklists.assemble_checklist(root, art)
+        agent_items = [i for i in assembled.items if not i.automated]
+        if agent_items:
+            prompt = _format_prompt(art, agent_items, root=root)
+            print(f"\n  {BOLD}Agent-judged checks for {art.id} ({len(agent_items)} items){NC} — host agent evaluates the prompt below:")
+            print(prompt)
+
+    # 5. Deep depth: thinking techniques as full prompts for the host agent.
     if depth == "deep":
         techs_str = args.get("techniques")
         if techs_str:
             techniques = [t.strip() for t in techs_str.split(",") if t.strip()]
         else:
             techniques = _prompt_for_techniques(targets)
-            
+
         if techniques:
-            print(f"Fanning out {len(techniques)} subagent(s)...")
+            print(f"\n  Generating {len(techniques)} technique prompt(s) for the host agent...")
             for art in targets:
                 assembled = checklists.assemble_checklist(root, art)
                 ctx = "\n".join([f"- {i.check}" for i in assembled.items])
-                tech_findings = run_subagents(techniques, [art], ctx, cfg)
-                findings.extend(tech_findings)
-                
+                prompts = generate_technique_prompts(techniques, [art], ctx)
+                for p in prompts:
+                    print(f"\n  ┌─ {p.technique} → {p.artifact_id}")
+                    print(f"  │ {p.diversity_hint}")
+                    print(f"  ├─ SYSTEM:")
+                    print(p.system_prompt)
+                    print(f"  ├─ USER:")
+                    print(p.user_prompt)
+                    print(f"  └─ (host agent applies this technique with its own intelligence — no external API call)")
+
             _record_techniques_on_artifacts(root, targets, techniques)
                 
     # 6. Hygiene findings (these do not have target_id naturally, but we can assign to root or skip CHL)

@@ -21,7 +21,7 @@ An adapter can implement any combination of these. The built-in GitHub Actions a
 - **Axis:** CI generation
 - **Generates:** `.github/workflows/specflow.yml`
 - **Operations:**
-  - `artifact-lint` (always included — Pass 1: programmatic, Pass 2: LLM-judged opt-in)
+  - `artifact-lint` (always included — fully deterministic, zero external API calls)
   - `change-impact` (blast-radius review on PRs)
   - `project-audit` (full audit on push to main)
   - `release-gate` (gate check on tag pushes)
@@ -96,4 +96,4 @@ See `docs/authoring-an-adapter.md` for the full guide. Quick summary:
 
 ## CI Coexistence
 
-SpecFlow generates its own dedicated workflow file (`.github/workflows/specflow.yml`) and does not modify any existing CI files. Multiple workflows coexist in the same repository. The generated workflow uses distinct job names (`specflow-pass-1`, `specflow-pass-2`, etc.) to avoid collisions.
+SpecFlow generates its own dedicated workflow file (`.github/workflows/specflow.yml`) and does not modify any existing CI files. Multiple workflows coexist in the same repository. The generated workflow uses distinct job names (`specflow-pass-1`, etc.) to avoid collisions.

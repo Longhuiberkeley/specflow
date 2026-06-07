@@ -1564,18 +1564,9 @@ def run(root: Path, args: dict) -> int:
         print("   Run 'uv run specflow init' first.")
         return 1
 
-    # --method llm: delegate to the Pass-2 orchestrator (non-blocking summary).
+    # --method llm is deprecated: all checks are now self-contained and deterministic.
+    # If someone passes --method llm, fall through to programmatic checks.
     method = args.get("method", "programmatic")
-    if method == "llm":
-        from specflow.lib import ci as ci_lib
-        outcome = ci_lib.run_pass_two(root)
-        report = ci_lib.format_pass_two_report(outcome)
-        print(f"\n{CYAN}SpecFlow Artifact Lint — Pass 2 (LLM-judged){NC}")
-        print(f"{CYAN}{'─' * 50}{NC}")
-        print(report)
-        print(f"{CYAN}{'─' * 50}{NC}")
-        # Pass 2 never blocks: always exit 0 so CI can post the comment.
-        return 0
 
     # Handle --gate mode
     check_type = args.get("type")
@@ -1679,7 +1670,7 @@ def _run_gate_check(root: Path, gate_name: str) -> int:
         automated = item.get("automated", False)
 
         if not automated:
-            print(f"  {YELLOW}○{NC} [{item_id}] {check_desc} (LLM-judged, skipped)")
+            print(f"  {YELLOW}○{NC} [{item_id}] {check_desc} (agent-judged, skipped by programmatic runner)")
             continue
 
         # Run the automated script check

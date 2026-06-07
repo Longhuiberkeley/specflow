@@ -9,7 +9,7 @@ This skill accepts freeform user input alongside the command. Interpret the user
 
 - **No additional context** → run the standard workflow (deterministic core only)
 - **A question or concern** → run the deterministic core, then address the question directly using the results
-- **A request for depth** ("go deep", "be thorough", "all lenses") → run deterministic core + full LLM analysis
+- **A request for depth** ("go deep", "be thorough", "all lenses") → run deterministic core + full agent-driven analysis
 - **A specific focus** ("focus on REQ-003", "check compliance only") → narrow scope to the request, still run deterministic core first
 
 Always run the deterministic core regardless of input. It costs zero tokens and provides the foundation for any analysis.
@@ -41,18 +41,22 @@ The planning-to-executing phase gate IS the readiness check. Run it before any i
    uv run specflow artifact-lint --type gate --gate planning-to-executing
    ```
    - Exit 1 → at least one automated blocking item failed (missing ARCH, broken links, etc.). **Stop. Do not proceed.** Report the failures verbatim and ask the user to address them. Re-run the gate after fixes.
-   - Exit 0 → automated checks pass; LLM-judged items show as `○` (skipped by the deterministic runner).
+   - Exit 0 → automated checks pass; agent-judged items show as `○` (skipped by the deterministic runner).
 
-2. **Evaluate the LLM-judged items yourself.** Read `.specflow/checklists/phase-gates/planning-to-executing.yaml`. For every item with `automated: false`, scope artifact reads narrowly:
+2. **Evaluate the agent-judged items yourself.** Read `.specflow/checklists/phase-gates/planning-to-executing.yaml`. For every item with `automated: false`, scope artifact reads narrowly:
    - Use `_index.yaml` files in `_specflow/work/stories/` and `_specflow/specs/architecture/` to enumerate IDs, statuses, and link metadata without opening every artifact body.
-   - Open full artifact bodies only for the subset that needs LLM judgement (e.g., the STORYs in the current wave, ARCHs referenced by those STORYs). At 100+ stories, sample by wave or by suspect/recently-modified flags rather than reading every file.
+   - Open full artifact bodies only for the subset that needs agent judgement (e.g., the STORYs in the current wave, ARCHs referenced by those STORYs). At 100+ stories, sample by wave or by suspect/recently-modified flags rather than reading every file.
    - Then answer the `llm_prompt` against the scoped subset and report findings as:
      - `blocking` severity items → these MUST be addressed before proceeding.
      - `warning` severity items → present them and ask the user whether to proceed anyway. Do not proceed silently.
 
-3. **Identify the in-scope STORY set.** Use `uv run specflow go --dry-run` to compute the next wave; that's the read-set for this run. Avoid reading STORYs outside the upcoming wave unless an LLM-judged item explicitly requires cross-story analysis.
+3. **Identify the in-scope STORY set.** Use `uv run specflow go --dry-run` to compute the next wave; that's the read-set for this run. Avoid reading STORYs outside the upcoming wave unless an agent-judged item explicitly requires cross-story analysis.
 
-4. **Check `suspect: true` flags** on ALL linked artifacts in the in-scope set. Run `uv run specflow status` and scan for suspect markers. If upstream specs are suspect, surface this as a `blocking` item — do not proceed against stale specs without explicit user confirmation. Report: "Artifact [ID] is flagged suspect (modified [date]). [Reason]. Proceeding may waste effort. Continue anyway?"
+4. **Check `suspect: true` flags** on ALL linked artifacts in the in-scope set. Run `uv run specflow status` and scan for suspect markers. If upstream specs are suspect, do NOT just warn — **actively propose resolution**:
+   - "ARCH-001 is suspect (REQ-001 changed on 2026-06-01). Options: (a) Create DEF — the ARCH genuinely no longer satisfies the REQ. (b) Mark resolved — the change was cosmetic. (c) Update ARCH to match the new REQ."
+   - The human picks. You execute. Do not let suspect flags sit unresolved.
+   - If the human chooses (a): run `uv run specflow defect-from-suspect <SUSPECT_ID> --req <REQ_ID> [--severity ...]`. This creates a DEF with auto-linked `fails_to_meet` → REQ and `exposed_by` → the suspect artifact, registered in the index. Then `uv run specflow change-impact --resolve <SUSPECT_ID>` once addressed.
+   - If the human chooses (b): `uv run specflow change-impact --resolve <SUSPECT_ID>`.
 
 5. Run `uv run specflow status` silently for the state overview.
 
@@ -60,13 +64,9 @@ The planning-to-executing phase gate IS the readiness check. Run it before any i
 
  **Why the gate is mandatory:** the gate verifies the task is sufficiently specified to start coding (ARCH exists, links resolve, AC are clear, interfaces defined, test strategy specified, dependencies approved, RBAC allows implementation). Skipping it lets implementation start against draft specs and produces rework.
 
-7. **Load execution-phase best practices** as context for implementation:
-   ```
-   uv run specflow handbook generate execute-impl
-   ```
-   Read the output with `uv run specflow handbook show execute-impl`. The generated BPs provide domain-specific guidance on what good implementation and testing look like for this project's domain. 
+7. **Load best practices** as context for implementation. Read BP artifacts from `_specflow/specs/best-practices/`. If execution-phase BPs don't exist yet, generate them covering implementation patterns relevant to the project domain.
 
-**Proactive Enforcement Loop:** Actively audit your implementation strategy against these BPs before writing code. If a BP suggests a specific pattern (e.g., defensive copies for data pipelines, dependency injection for web apps), ensure your code uses it, and briefly tell the user that you applied it. If no API key is configured, this step is skipped gracefully.
+**Proactive Enforcement Loop:** Actively audit your implementation strategy against these BPs before writing code. If a BP suggests a specific pattern (e.g., defensive copies for data pipelines, dependency injection for web apps), ensure your code uses it, and briefly tell the user that you applied it.
 
 ### Step 2: Wave Planning
 
@@ -80,8 +80,9 @@ The planning-to-executing phase gate IS the readiness check. Run it before any i
 For each story (or wave of stories):
 
 1. Run `uv run specflow go` to compute wave context, or implement manually:
-   a. **Load context:** Read the story, its linked REQ, ARCH, and DDD artifacts.
-   b. **Decompose and Validate:** For complex stories (especially ML/quant data pipelines, trading logic, or multi-step algorithms), **do not write monolithic code immediately**.
+   a. **Load context:** Run `uv run specflow brief` for a one-call digest (phase, inventory, suspects, next wave, recent changes), then read the story and its linked REQ, ARCH, and DDD artifacts. Use the brief's inventory and `_index.yaml` to scope what to open — read full bodies only for the in-scope set.
+   b. **Verify spec approval:** All linked spec artifacts (REQ/ARCH/DDD) must be `approved` or later. If any linked spec is still `draft`, STOP and ask the human: "STORY-NNN links to ARCH-NNN which is still `draft`. I need approval before implementing against it. Approve ARCH-NNN? (y/n)" Do not implement against unapproved specs.
+   c. **Decompose and Validate:** For complex stories (especially ML/quant data pipelines, trading logic, or multi-step algorithms), **do not write monolithic code immediately**.
       - Present a logical decomposition first (e.g., "1. Data ingestion, 2. Signal generation, 3. Portfolio allocation").
       - Propose internal sanity checks (e.g., "I will assert that the resulting weights sum to 1.0").
       - Ask the user: *"Does this flow and these checks look correct before I implement the code?"*
@@ -137,28 +138,21 @@ uv run specflow create \
 
 Read `references/test-pairing.md` when you are unsure which test level a given change needs.
 
-### Step 5.5: Human-Review Summary
+### Step 5.5: Human-Review Summary (Approval Gate)
 
-Before running full validation, present a structured summary so the user can catch silent implementation decisions:
+Before running full validation, present the implementation summary following the **Approval Presentation Format** (see `../specflow-references/references/approval-presentation.md`):
 
-```
-## Summary for Human Review
+1. **TLDR** — What was implemented and what changed (1-3 sentences).
+2. **Changes inline** — For each STORY implemented: what code was written, what tests were created, any deviations from ARCH/DDD. The human should not need to open files.
+3. **Assessment lenses** — Apply coverage, traceability, and staleness lenses, then a **Risk Profile per change** (reversibility, blast radius via `specflow change-impact`, confidence + why it isn't higher).
+4. **Risk-proportional gate** — Assign a tier (0 light / 1 normal / 2 stop) from the risk profile; for Tier 2, point at the specific concern. Tier comes from the change, not past approvals.
+5. **Action options** — Approve / Request changes / Discuss.
 
-### Key Decisions Made
-- Implementation choices not pre-specified by DDD (library/framework picks, file layout)
-- Test strategy: how QT / IT / UT are split per story, and where you stopped
-- Any deviation from the linked ARCH/DDD and why
-
-### Assumptions That Need Validation
-- External dependencies assumed available in test (stubs, fixtures, network) -- risk if wrong: tests pass locally but fail in CI
-- Performance/latency assumptions baked into code -- risk if wrong: NFRs silently violated
-- Any STORY that was implemented without a linked DDD -- risk if wrong: future changes lack a specification anchor
-
-### Please Review
-- For each STORY: does every acceptance criterion map to at least one of UT / IT / QT?
-- Any STORY marked `implemented` whose linked ARCH/DDD is still `approved` (not `implemented`)?
-- Any code file written that is NOT referenced by a test artifact?
-```
+Key items to surface if not already addressed:
+- For each STORY: does every acceptance criterion map to at least one test (UT/IT/QT)?
+- Any STORY marked `implemented` whose linked ARCH/DDD is still `approved`?
+- Any code file NOT referenced by a test artifact?
+- Implementation choices not pre-specified by DDD (library picks, file layout)
 
 Wait for user acknowledgement before proceeding.
 

@@ -59,8 +59,8 @@ For each artifact being reviewed:
   2. Deduplicate (identical check text → keep higher severity)
   3. Sort: automated first, then proactive, then reactive/standard
   4. Pass 1: Run automated items (zero tokens)
-  5. If any blocking automated item fails → STOP, skip LLM items
-  6. Pass 2: Run LLM-judged items (proactive mode items first)
+  5. If any blocking automated item fails → STOP, skip agent-judged items
+  6. Agent-judged: evaluate non-automated items (proactive mode items first)
   7. Collect results, organize by severity
   8. Persist to .specflow/checklist-log/
   9. Update artifact's checklists_applied frontmatter

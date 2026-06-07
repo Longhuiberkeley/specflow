@@ -294,25 +294,6 @@ def _add_domain_parser(subparsers):
     sub.add_parser("show", help="Show the current project domain")
 
 
-def _add_handbook_parser(subparsers):
-    p = subparsers.add_parser("handbook", help="Manage the domain best-practice cache")
-    sub = p.add_subparsers(dest="handbook_subcommand")
-    for name, helptext in (
-        ("generate", "Synthesize best practices for (domain, project|phase) via LLM"),
-        ("show", "Print cached best practices"),
-        ("path", "Print the cache file path"),
-        ("list", "List all cached best-practice files"),
-    ):
-        if name == "list":
-            sub.add_parser(name, help=helptext)
-            continue
-        sp = sub.add_parser(name, help=helptext)
-        sp.add_argument("phase", help="'project' or a phase name (e.g., plan-arc, plan-ddd, verify-unit)")
-        sp.add_argument("--domain", help="Override domain (defaults to value from `specflow domain show`)")
-        if name == "generate":
-            sp.add_argument("--overwrite", action="store_true", help="Regenerate even if cache exists")
-
-
 def _add_patterns_parser(subparsers):
     p = subparsers.add_parser("patterns", help="Inspect learned prevention patterns")
     sub = p.add_subparsers(dest="patterns_subcommand")
@@ -414,9 +395,6 @@ def _add_import_parser(subparsers):
     # Primary: --adapter flag (handled by the parent parser, not subcommand)
     p.add_argument("--adapter", help="Adapter name (e.g. reqif)")
     p.add_argument("file", nargs="?", help="Path to the source file")
-    # Legacy: reqif subcommand
-    rp = sub.add_parser("reqif", help="Import requirements from ReqIF XML (deprecated, use --adapter reqif)")
-    rp.add_argument("file", help="Path to the ReqIF XML file")
 
 
 def _add_export_parser(subparsers):
@@ -429,9 +407,6 @@ def _add_export_parser(subparsers):
     p.add_argument("--format", dest="export_format", choices=["cursor-rules", "gemini-toml", "codex-agents", "markdown"],
                    help="Export SPECFLOW skills to a platform-specific format (use with --output to set target dir)")
     p.add_argument("--skills", action="store_true", dest="export_skills", help="Export SpecFlow skills (use with --format)")
-    # Legacy: reqif subcommand
-    rp = sub.add_parser("reqif", help="Export requirements to ReqIF XML (deprecated, use --adapter reqif)")
-    rp.add_argument("--output", required=True, help="Path to write the ReqIF XML file")
 
 
 def _add_detect_parser(subparsers):
@@ -469,7 +444,7 @@ def _add_fingerprint_refresh_parser(subparsers):
 
 
 def _add_artifact_review_parser(subparsers):
-    p = subparsers.add_parser("artifact-review", help="Compose lint, checklist review, and LLM judgement/techniques")
+    p = subparsers.add_parser("artifact-review", help="Compose lint, checklist review, and thinking-technique prompts")
     _add_artifact_review_args(p)
 
 
@@ -582,7 +557,7 @@ def _add_autoresearch_parser(subparsers):
 # so `specflow --help` actually shows the phase headers, not just the source.
 _HELP_EPILOG = """\
 commands by workflow phase:
-  Discover:   init, refresh, status, domain, handbook, patterns
+  Discover:   init, refresh, status, domain, patterns
   Plan:       create, update
   Execute:    go, done, cascade-status, reconcile, generate-tests
   Review:     artifact-lint, checklist-run, artifact-review, project-audit, trace
@@ -600,11 +575,10 @@ def _add_artifact_review_args(p):
     p.add_argument("artifact_id", nargs="?", help="Artifact ID to review (omit with --all)")
     p.add_argument("--all", action="store_true", help="Review all artifacts")
     p.add_argument("--depth", choices=["quick", "normal", "deep"], default="quick",
-                   help="Review depth (quick=lint+checklist; normal=add LLM judgement; deep=add thinking techniques)")
+                   help="Review depth (quick=lint+checklist; normal=add agent-judged checks; deep=add thinking-technique prompts)")
     p.add_argument("--techniques", help="Comma-separated list of thinking techniques to run (for --depth deep)")
     p.add_argument("--gate", help="Phase-gate checklist")
     p.add_argument("--proactive", action="store_true", help="Include proactive challenge items")
-    p.add_argument("--fast", action="store_true", help="Skip best-practice synthesis (use cached BPs only, no LLM calls for BP generation)")
 
 
 def _add_project_audit_args(p):
@@ -619,12 +593,6 @@ def cmd_standards(args: argparse.Namespace) -> int:
     if args.standards_subcommand == "gaps":
         return cmd_standards_gaps(args)
     return 1
-
-
-def cmd_handbook(args: argparse.Namespace) -> int:
-    from specflow.commands import handbook as handbook_cmd
-    root = _find_project_root()
-    return handbook_cmd.run(root, vars(args))
 
 
 def cmd_patterns(args: argparse.Namespace) -> int:
@@ -675,7 +643,6 @@ def main(argv: list[str] | None = None) -> int:
     _add_brief_parser(subparsers)
     _add_standards_parser(subparsers)
     _add_domain_parser(subparsers)
-    _add_handbook_parser(subparsers)
     _add_patterns_parser(subparsers)
 
     # ── Plan ────────────────────────────────────────────────────
@@ -736,7 +703,6 @@ def main(argv: list[str] | None = None) -> int:
         "brief": cmd_brief,
         "standards": cmd_standards,
         "domain": cmd_domain,
-        "handbook": cmd_handbook,
         "patterns": cmd_patterns,
         "artifact-lint": cmd_artifact_lint,
         "create": cmd_create,

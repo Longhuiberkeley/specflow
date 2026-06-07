@@ -1,10 +1,12 @@
 """GitHub Actions CI adapter.
 
 Generates CI workflows for declared operations:
-  - artifact-lint
+  - artifact-lint (always included as base validation)
   - change-impact
   - project-audit
   - release-gate
+
+All CI checks are self-contained and deterministic — zero external API calls.
 
 Also provides the default Bash hook script via `get_hook_script()`.
 """
@@ -41,43 +43,8 @@ _PASS1 = """\
         run: pip install uv
       - name: Install SpecFlow
         run: uv sync
-      - name: Validate artifacts (zero tokens)
+      - name: Validate artifacts (deterministic, zero tokens)
         run: uv run specflow artifact-lint --method programmatic
-"""
-
-_PASS2 = """\
-  specflow-pass-2:
-    name: Pass 2 — LLM-judged review (opt-in)
-    runs-on: ubuntu-latest
-    needs: specflow-pass-1
-    if: ${{ vars.SPECFLOW_LLM_CHECKS == 'true' }}
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: Install uv
-        run: pip install uv
-      - name: Install SpecFlow
-        run: uv sync
-      - name: LLM-judged review
-        env:
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-        run: uv run specflow artifact-lint --method llm | tee llm-report.txt
-      - name: Post PR comment
-        if: ${{ github.event_name == 'pull_request' }}
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const body = fs.readFileSync('llm-report.txt', 'utf8');
-            await github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '### SpecFlow Pass 2 (LLM-judged)\\n\\n```\\n' + body + '\\n```',
-            });
 """
 
 _CHANGE_IMPACT = """\
@@ -99,8 +66,6 @@ _CHANGE_IMPACT = """\
       - name: Install SpecFlow
         run: uv sync
       - name: Change-impact review
-        env:
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: uv run specflow change-impact --all || true
 """
 
@@ -197,16 +162,16 @@ class GitHubActionsAdapter(Adapter):
     def generate_ci_workflow(self, ops: list[str]) -> dict[Path, str]:
         """Generate a complete GitHub Actions workflow.
 
-        Pass 1 (artifact-lint) and Pass 2 (LLM review) are always included
-        as the base validation layer. Additional operation jobs are appended
-        based on the *ops* list.
+        Pass 1 (artifact-lint) is always included as the base validation layer.
+        Additional operation jobs are appended based on the *ops* list.
+        All checks are deterministic — no external API calls.
         """
         ops_set = set(ops)
-        parts = [_HEADER, _PASS1, _PASS2]
+        parts = [_HEADER, _PASS1]
 
         for op in ops_set:
             if op == "artifact-lint":
-                continue  # already in pass-1 / pass-2
+                continue  # already in pass-1
             block = _OP_JOBS.get(op)
             if block:
                 parts.append(block)

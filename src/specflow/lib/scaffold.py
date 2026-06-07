@@ -21,6 +21,7 @@ SPEC_DIRS = [
     "work/spikes",
     "work/decisions",
     "work/defects",
+    "specs/best-practices",
 ]
 
 # Internal directories under .specflow/

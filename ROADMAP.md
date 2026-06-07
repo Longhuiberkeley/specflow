@@ -85,7 +85,7 @@ Focus: **domain intelligence and learning feedback.**
 - **Per-item checklist scoping** — `applies_to.types` on individual checklist items overrides top-level filter
 - **Configurable learning** — `learnable_techniques` and `max_patterns_per_session` in config.yaml
 - **`specflow patterns`** — inspect learned prevention patterns (`list`, `show`)
-- **`specflow handbook`** — manage domain BP cache (`generate`, `show`, `path`, `list`)
+- **Best Practice artifacts (BP-NNN)** — domain-specific best practices as first-class SpecFlow artifacts, agent-generated and traceable
 - **`--fast` flag** on `artifact-review` — skip BP synthesis for CI, use cached only
 - **Auto-backup** — `--overwrite` backs up previous BP file before regenerating
 - **`specflow done` auto-extraction** — `--auto` is now the default, extracts patterns from implemented stories
@@ -132,7 +132,7 @@ Focus: **reverse impact analysis, decomposition completeness guidance, and disco
 - **SPIDR dimension coverage** — `artifact-lint` reports when decomposition dimensions have no stories
 - **Story dependency cycle detection** — `artifact-lint` detects circular dependencies between stories during planning
 - **DDD selection decision tree** — reference document with 6-question checklist for DDD artifact necessity
-- **Generic best-practice fallback** — bundled generic BP templates for offline handbook generation (no API key required)
+- **Generic best-practice fallback** — agent generates domain BPs from its own knowledge; no API key required
 - **Discovery challenge persistence** — thinking technique results persisted as DEC artifacts for plan skill consumption
 - **Inter-REQ dependency prompting** — discover skill captures requirement dependencies as `derives_from` links
 - **Domain context pass-through** — plan skill reads domain classification from config and decisions from discovery

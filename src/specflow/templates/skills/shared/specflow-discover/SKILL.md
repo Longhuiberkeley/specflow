@@ -9,7 +9,7 @@ This skill accepts freeform user input alongside the command. Interpret the user
 
 - **No additional context** → run the standard workflow (deterministic core only)
 - **A question or concern** → run the deterministic core, then address the question directly using the results
-- **A request for depth** ("go deep", "be thorough", "all lenses") → run deterministic core + full LLM analysis
+- **A request for depth** ("go deep", "be thorough", "all lenses") → run deterministic core + full agent-driven analysis
 - **A specific focus** ("focus on REQ-003", "check compliance only") → narrow scope to the request, still run deterministic core first
 
 Always run the deterministic core regardless of input. It costs zero tokens and provides the foundation for any analysis.
@@ -102,11 +102,11 @@ After each answer, update your readiness assessment silently.
    ```
    Add tags that further qualify the project (e.g., `--tag real-time --tag safety-critical` for embedded; `--tag phi --tag hipaa` for healthcare; `--tag pii` for fintech). These drive domain-aware checklist items at plan / review time.
 
-5. **Generate project-level best practices** based on the classified domain:
+5. **Generate project-level best practices** as BP artifacts. Based on the classified domain, create domain-specific best practices:
    ```
-   uv run specflow handbook generate project
+   uv run specflow create --type best-practice --title "<practice>" --status approved --tags "<domain>" --body "## Practice\n...\n## Rationale\n...\n## Verification\n..."
    ```
-   This produces a project-specific set of domain best practices (the "process booklet") that guides all downstream plan, execute, and review skills. The generated BPs are cached and human-editable. If no API key is configured, this step is skipped gracefully.
+   Generate 3-5 BPs covering the most impactful domain practices (e.g., for embedded: memory safety, interrupt handling; for web-app: input validation, CSRF protection). Link each to the domain standard if applicable via `--links`. These BPs guide all downstream plan, execute, and review skills. The agent reads them from `_specflow/specs/best-practices/` — no external API calls needed.
 
 6. Present questions from the domain checklist. These should offer **bounded choices with opinionated defaults**:
    - "For your use case (small team, read-heavy), SQLite is simplest, PostgreSQL handles growth best — which fits?"

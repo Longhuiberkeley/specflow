@@ -2,7 +2,7 @@
 
 Adversarial lenses are "thinking techniques" that probe artifacts from angles curated checklists do not cover. Only apply them **after** running assembled checklists — lenses are complementary, not duplicative.
 
-Each lens runs as a focused LLM pass. Findings aggregate as items in the final severity report, tagged `lens:<name>` so the user can distinguish curated-checklist coverage from adversarial probes.
+Each lens runs as a focused agent reasoning pass. Findings aggregate as items in the final severity report, tagged `lens:<name>` so the user can distinguish curated-checklist coverage from adversarial probes.
 
 ## Full catalog
 

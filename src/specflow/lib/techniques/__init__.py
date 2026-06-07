@@ -1,16 +1,19 @@
-"""Thinking technique subagent framework."""
+"""Thinking technique prompt generation framework.
+
+SpecFlow is self-contained — techniques generate prompts for the host agent
+(Claude, Codex, OpenCode, etc.) to apply natively. No external LLM API calls.
+
+The host agent applies techniques using its own intelligence. When the harness
+supports subagents, techniques encourage running each one as a separate
+subagent for maximum creative diversity. When it doesn't, one agent applies
+all techniques sequentially.
+"""
 
 from __future__ import annotations
 
-import concurrent.futures
-import json
-import re
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Any
 
 from specflow.lib.artifacts import Artifact
-from specflow.lib.ci import LLMConfig, call_llm
 
 
 LENS_CATALOG: dict[str, str] = {
@@ -139,8 +142,7 @@ LENS_CATALOG: dict[str, str] = {
     ),
 }
 
-# Generic suffix appended to every catalog prompt by _run_generic_lens.
-# Keeping it here once saves ~35 words per lens (≈ 800 tokens across the catalog).
+# Generic suffix appended to every catalog prompt.
 _GENERIC_LENS_SUFFIX = (
     " Do NOT duplicate findings already covered in the provided CHECKLIST CONTEXT. "
     'Output a JSON array: [{"title": "<short finding title>", "rationale": "<explanation>", "severity": "warn|error"}]. '
@@ -190,6 +192,7 @@ ARTIFACT_LEVEL_DEFAULT_LENSES: dict[str, list[str]] = {
 
 @dataclass
 class TechniqueFinding:
+    """A finding produced by applying a thinking technique."""
     title: str
     rationale: str
     severity: str  # info | warn | error
@@ -197,46 +200,46 @@ class TechniqueFinding:
     target_id: str | None = None
 
 
-def parse_json_response(text: str) -> list[dict[str, str]]:
-    """Parse a JSON array response from the model."""
-    stripped = text.strip()
-    fence = re.search(r"```(?:json)?\s*(\[.*?\])\s*```", stripped, re.DOTALL)
-    if fence:
-        stripped = fence.group(1)
-    else:
-        start = stripped.find("[")
-        end = stripped.rfind("]")
-        if start != -1 and end != -1 and end > start:
-            stripped = stripped[start : end + 1]
+@dataclass
+class TechniquePrompt:
+    """A prompt for the host agent to apply a thinking technique.
 
-    try:
-        parsed = json.loads(stripped)
-    except Exception:
-        parsed = []
-        
-    findings = []
-    if isinstance(parsed, list):
-        for entry in parsed:
-            if not isinstance(entry, dict):
-                continue
-            findings.append({
-                "title": str(entry.get("title", "")).strip(),
-                "rationale": str(entry.get("rationale", "")).strip(),
-                "severity": str(entry.get("severity", "")).strip().lower(),
-            })
-    return findings
+    The host agent (Claude, Codex, OpenCode, etc.) applies the technique
+    using its own intelligence. The diversity_hint encourages running
+    each technique as a separate subagent when the harness supports it.
+    """
+    technique: str
+    system_prompt: str
+    user_prompt: str
+    diversity_hint: str
+    artifact_id: str
 
 
-def _run_generic_lens(
+def build_technique_prompt(
     technique_name: str,
     artifact: Artifact,
     context: str,
-    cfg: LLMConfig,
-) -> list[dict[str, str]]:
-    """Run a lens using the generic prompt from LENS_CATALOG."""
+) -> TechniquePrompt | None:
+    """Build a prompt for the host agent to apply a thinking technique.
+
+    If a dedicated Python module exists at specflow.lib.techniques.<name>,
+    its prompt builder is used. Otherwise, falls back to the generic
+    LENS_CATALOG prompt.
+    """
+    import importlib
+
+    # Try dedicated module first
+    try:
+        mod = importlib.import_module(f"specflow.lib.techniques.{technique_name}")
+        return mod.build_prompt(artifact, context)
+    except ImportError:
+        pass
+
+    # Fall back to generic catalog lens
     base_prompt = LENS_CATALOG.get(technique_name, "")
     if not base_prompt:
-        return []
+        return None
+
     system_prompt = base_prompt + _GENERIC_LENS_SUFFIX
     user_prompt = f"""
 Artifact ID: {artifact.id}
@@ -247,95 +250,38 @@ Body:
 CHECKLIST CONTEXT (do not duplicate these findings):
 {context}
 """
-    result = call_llm(cfg, system_prompt, user_prompt)
-    if not result.get("ok"):
-        raise Exception(result.get("error", "Unknown LLM error"))
-    return parse_json_response(result.get("content", ""))
+    return TechniquePrompt(
+        technique=technique_name,
+        system_prompt=system_prompt,
+        user_prompt=user_prompt,
+        diversity_hint=(
+            "Run as a separate subagent for maximum creative diversity. "
+            "Each technique benefits from an independent reasoning path."
+        ),
+        artifact_id=artifact.id,
+    )
 
 
-def execute_technique(
-    technique_name: str,
-    artifact: Artifact,
-    context: str,
-    cfg: LLMConfig,
-) -> list[TechniqueFinding]:
-    """Execute a single thinking technique against an artifact.
-
-    If a dedicated Python module exists at specflow.lib.techniques.<name>,
-    it is used directly. Otherwise, falls back to a generic LLM call using
-    the lens description from LENS_CATALOG.
-    """
-    import importlib
-    
-    try:
-        mod = importlib.import_module(f"specflow.lib.techniques.{technique_name}")
-    except ImportError:
-        if technique_name not in LENS_CATALOG:
-            return [TechniqueFinding(
-                title=f"Unknown technique: {technique_name}",
-                rationale=f"No dedicated module or catalog entry for '{technique_name}'.",
-                severity="error",
-                technique="framework"
-            )]
-        try:
-            results = _run_generic_lens(technique_name, artifact, context, cfg)
-            findings = []
-            for r in results:
-                findings.append(TechniqueFinding(
-                    title=r.get("title", "Untitled finding"),
-                    rationale=r.get("rationale", ""),
-                    severity=r.get("severity", "info"),
-                    technique=technique_name,
-                    target_id=artifact.id,
-                ))
-            return findings
-        except Exception as e:
-            return [TechniqueFinding(
-                title=f"Error executing {technique_name}",
-                rationale=str(e),
-                severity="error",
-                technique="framework",
-                target_id=artifact.id,
-            )]
-        
-    try:
-        results = mod.run(artifact, context, cfg)
-        findings = []
-        for r in results:
-            findings.append(TechniqueFinding(
-                title=r.get("title", "Untitled finding"),
-                rationale=r.get("rationale", ""),
-                severity=r.get("severity", "info"),
-                technique=technique_name,
-                target_id=artifact.id,
-            ))
-        return findings
-    except Exception as e:
-        return [TechniqueFinding(
-            title=f"Error executing {technique_name}",
-            rationale=str(e),
-            severity="error",
-            technique="framework",
-            target_id=artifact.id,
-        )]
-
-
-def run_subagents(
+def generate_technique_prompts(
     techniques: list[str],
     artifacts: list[Artifact],
     context: str,
-    cfg: LLMConfig,
-) -> list[TechniqueFinding]:
-    """Run all specified techniques against all target artifacts in parallel."""
-    all_findings = []
-    
-    with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(techniques) * len(artifacts), 8)) as executor:
-        futures = []
-        for tech in techniques:
-            for art in artifacts:
-                futures.append(executor.submit(execute_technique, tech, art, context, cfg))
-        
-        for future in concurrent.futures.as_completed(futures):
-            all_findings.extend(future.result())
-            
-    return all_findings
+) -> list[TechniquePrompt]:
+    """Generate prompts for all technique × artifact combinations.
+
+    Returns a list of TechniquePrompt objects for the host agent to execute.
+    The host agent should apply each prompt using its own intelligence and
+    produce TechniqueFinding objects from the results.
+
+    When the harness supports subagents (e.g., Claude Code's Agent tool),
+    each prompt should ideally be dispatched to a separate subagent for
+    creative diversity. When it doesn't, one agent applies all prompts
+    sequentially — this works fine for simpler tasks.
+    """
+    prompts = []
+    for tech in techniques:
+        for art in artifacts:
+            prompt = build_technique_prompt(tech, art, context)
+            if prompt:
+                prompts.append(prompt)
+    return prompts

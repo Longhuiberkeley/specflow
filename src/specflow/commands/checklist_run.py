@@ -27,7 +27,7 @@ def _check_artifact(
     print(f"  Type: {artifact.type} | Tags: {artifact.tags}")
     print(f"  Sources: {', '.join(assembled.sources) if assembled.sources else '(none)'}")
     print(f"  Items: {len(assembled.items)} ({sum(1 for i in assembled.items if i.automated)} automated, "
-          f"{sum(1 for i in assembled.items if not i.automated)} LLM-judged)")
+          f"{sum(1 for i in assembled.items if not i.automated)} agent-judged)")
 
     if not assembled.items:
         print("  \033[0;33mWarning: No checklists matched this artifact.\033[0m")
@@ -45,12 +45,12 @@ def _check_artifact(
             print(f"    {symbol} {r.item_id}{detail}")
 
     if blocking_failed:
-        print("\n  \033[0;31mBlocking automated check failed — LLM checks skipped.\033[0m")
+        print("\n  \033[0;31mBlocking automated check failed — agent checks skipped.\033[0m")
 
-    # Pass 2: LLM-judged items (listed for the skill to evaluate)
+    # Agent-judged items (listed for the host agent to evaluate)
     llm_items = [i for i in assembled.items if not i.automated]
     if llm_items and not blocking_failed:
-        print(f"\n  LLM-judged checks ({len(llm_items)} pending):")
+        print(f"\n  Agent-judged checks ({len(llm_items)} pending):")
         for item in llm_items:
             mode_label = f" [{item.mode}]" if item.mode != "standard" else ""
             print(f"    • [{item.severity}]{mode_label} {item.check}")
@@ -103,7 +103,7 @@ def _run_dedup(root: Path) -> int:
         print(f"    ... and {len(candidates) - 10} more")
 
     print(f"  Candidates file: {rel}")
-    print("  Review with the check skill for LLM confirmation (tier 3).")
+    print("  Review with the check skill for agent confirmation (tier 3).")
     return 0
 
 

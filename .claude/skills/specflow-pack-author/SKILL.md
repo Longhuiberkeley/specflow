@@ -9,7 +9,7 @@ This skill accepts freeform user input alongside the command. Interpret the user
 
 - **No additional context** → run the standard workflow (deterministic core only)
 - **A question or concern** → run the deterministic core, then address the question directly using the results
-- **A request for depth** ("go deep", "be thorough", "all lenses") → run deterministic core + full LLM analysis
+- **A request for depth** ("go deep", "be thorough", "all lenses") → run deterministic core + full agent-driven analysis
 - **A specific focus** ("focus on REQ-003", "check compliance only") → narrow scope to the request, still run deterministic core first
 
 Always run the deterministic core regardless of input. It costs zero tokens and provides the foundation for any analysis.
@@ -18,7 +18,7 @@ Always run the deterministic core regardless of input. It costs zero tokens and 
 
 # SpecFlow Pack Author
 
-Guide the user through LLM-assisted creation of a standards compliance pack. The pack can later be installed into a SpecFlow project via `specflow init --preset` or manual copy.
+Guide the user through agent-assisted creation of a standards compliance pack. The pack can later be installed into a SpecFlow project via `specflow init --preset` or manual copy.
 
 ## Workflow
 
@@ -39,7 +39,7 @@ For each source, extract:
 
 ### Large Document Strategy
 
-For documents over ~30 pages or multi-part standards (e.g., ISO 26262 Parts 1-12), follow this structured extraction protocol. The goal is to constrain the LLM to predictable, bounded tasks rather than unbounded whole-document reasoning.
+For documents over ~30 pages or multi-part standards (e.g., ISO 26262 Parts 1-12), follow this structured extraction protocol. The goal is to constrain the agent to predictable, bounded tasks rather than unbounded whole-document reasoning.
 
 #### Phase 1: Table of Contents Extraction
 
@@ -223,7 +223,7 @@ Present a summary to the user:
 - Preserve the original clause IDs from the source standard.
 - Keep descriptions concise but complete — one to two sentences.
 - If the user provides a multi-part standard (e.g., ISO 26262 Parts 1-12), ask which parts to include before extraction.
-- **Adapter framework (optional):** If `src/specflow/lib/adapters/base.py` is present, use `StandardsAdapter.ingest_standard(source, source_type)` for clause extraction — it returns a structured list of `{id, title, description}` dicts. Falls back to direct LLM parsing if the adapter is unavailable or returns empty results.
+- **Adapter framework (optional):** If `src/specflow/lib/adapters/base.py` is present, use `StandardsAdapter.ingest_standard(source, source_type)` for clause extraction — it returns a structured list of `{id, title, description}` dicts. Falls back to direct agent parsing if the adapter is unavailable or returns empty results.
 
 ## References
 

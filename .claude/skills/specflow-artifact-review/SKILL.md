@@ -9,7 +9,7 @@ This skill accepts freeform user input alongside the command. Interpret the user
 
 - **No additional context** → run the standard workflow (deterministic core only)
 - **A question or concern** → run the deterministic core, then address the question directly using the results
-- **A request for depth** ("go deep", "be thorough", "all lenses") → run deterministic core + full LLM analysis
+- **A request for depth** ("go deep", "be thorough", "all lenses") → run deterministic core + full agent-driven analysis
 - **A specific focus** ("focus on REQ-003", "check compliance only") → narrow scope to the request, still run deterministic core first
 
 Always run the deterministic core regardless of input. It costs zero tokens and provides the foundation for any analysis.
@@ -18,7 +18,7 @@ Always run the deterministic core regardless of input. It costs zero tokens and 
 
 # SpecFlow Artifact Review
 
-Review artifacts by composing deterministic lint → context-specific checklists → LLM judgment → optional adversarial lenses. Lens-based thinking techniques always come **after** checklists, never before.
+Review artifacts by composing deterministic lint → context-specific checklists → agent-judged review → optional adversarial lenses. Lens-based thinking techniques always come **after** checklists, never before.
 
 ## Workflow
 
@@ -32,7 +32,7 @@ uv run specflow artifact-lint
 
 This runs schema, link, status, ID, fingerprint, and acceptance-criteria checks.
 
-If any **blocking** issues are found, report them and stop. The user must fix blocking issues before LLM-judged review — otherwise LLM findings will be noise on top of structural problems.
+If any **blocking** issues are found, report them and stop. The user must fix blocking issues before agent-judged review — otherwise agent findings will be noise on top of structural problems.
 
 ### Step 2: Review Dashboard
 
@@ -80,9 +80,9 @@ The `checklist-run` command automatically assembles:
 
 Read `references/checklist-assembly.md` for the full assembly algorithm.
 
-**Read the full checklist output before continuing.** You will need to know what has already been covered so the LLM and lens passes complement rather than re-ask.
+**Read the full checklist output before continuing.** You will need to know what has already been covered so the agent and lens passes complement rather than re-ask.
 
-### Step 4: Run LLM-Judged Checklist Items
+### Step 4: Agent-Judged Checklist Items
 
 For each assembled checklist item that is **not** automated (`automated: false`):
 
@@ -155,30 +155,16 @@ Present results organized by severity:
 - Status transitions: all valid
 ```
 
-Each finding should note which layer produced it (`lint`, `checklist`, `llm`, or `lens:<name>`), so the user can tell curated coverage from adversarial probing.
+Each finding should note which layer produced it (`lint`, `checklist`, `agent`, or `lens:<name>`), so the user can tell curated coverage from adversarial probing.
 
-### Step 7: Human-Review Summary
+### Step 7: Review Summary (Approval Format)
 
-Before offering remediation, present a structured summary so the user can validate the review itself — not just its findings:
+Present results following the **Approval Presentation Format** (see `../specflow-references/references/approval-presentation.md`):
 
-```
-## Summary for Human Review
-
-### Key Decisions Made
-- Scope of this review (which artifact IDs, which depth)
-- Which lenses were applied vs. skipped, and why
-- Severity classification calls that were borderline
-
-### Assumptions That Need Validation
-- Each artifact's stated purpose was taken at face value — risk if wrong: review is graded against the wrong rubric
-- Severity thresholds follow `references/severity-levels.md` defaults — risk if wrong: urgency signal is miscalibrated for this project
-- Lenses not run may have found issues we missed — risk if wrong: false clean bill of health
-
-### Please Review
-- Every `blocking` and `warning` finding individually — decide fix-now vs. defer
-- Any artifact that passed cleanly but feels risky — consider rerunning with a deeper lens selection
-- Any finding flagged as `info` that you think should be a `warning`
-```
+1. **TLDR** — Review scope and overall result (1-3 sentences).
+2. **Findings inline** — Each finding with severity, artifact ID, and evidence. The human should not need to open files.
+3. **Assessment lenses** — Which lenses were applied vs. skipped, and why. **Risk Profile** for any `blocking` or `warning` finding (reversibility, blast radius, confidence).
+4. **Action options** — Fix now / Defer / Discuss / Re-run with deeper lenses.
 
 ### Step 8: "Improve Now?" Prompt
 
@@ -208,7 +194,7 @@ Use `--no-patterns` to skip pattern extraction, or `--auto` to skip prompts. Thi
   - `warning` → Present. Ask whether to proceed. Do not proceed silently.
   - `info` → Note for awareness. Proceed.
 - **Escape hatch:** The user can always override. When the user says "skip," "proceed anyway," or "move on," do exactly that. But before proceeding past a `blocking` item, articulate: "Proceeding past [specific blocking item]. Risk: [what could go wrong]. Noted."
-- **Automated lint (zero tokens) always runs first.** LLM-judged checks only run if lint passes.
+- **Automated lint (zero tokens) always runs first.** Agent-judged checks only run if lint passes.
 - **Checklists before lenses, always.** Lenses complement checklists; they do not replace them.
 - Severity levels: `blocking` (must fix), `warning` (should fix), `info` (nice to know).
 - Never skip automated checks, even if the user asks for "just a quick review."

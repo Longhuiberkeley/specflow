@@ -238,13 +238,13 @@ Constraint checklists loaded while generating or reviewing artifacts. Enforce le
 
 Validate generated output before the user sees it. Assembled from artifact type + domain tags + shared checklists + learned patterns. Stored in `.specflow/checklists/review/`.
 
-### Automated vs LLM-judged
+### Automated vs agent-judged
 
 Every checklist item declares `automated: true|false`:
 - **Automated** (zero tokens): verified by Python CLI (schema, links, status, fingerprints)
-- **LLM-judged** (token cost): requires intelligence (quality, ambiguity, contradiction)
+- **Agent-judged** (host agent intelligence): requires reasoning (quality, ambiguity, contradiction)
 
-CI runs automated checks first. LLM-judged checks run only if automated checks pass.
+CI runs automated checks first. Agent-judged checks are displayed for the host agent to evaluate — fully self-contained, no external API calls.
 
 ### Checklist file format
 
@@ -299,7 +299,7 @@ These are the **primary user interface** — skill file invocations via `/specfl
 | `/specflow-discover` | `specflow-discover/` | Discovery conversation (3-phase progressive disclosure with readiness assessment). Generates REQ artifacts. Adapts ceremony to ambiguity — bounded changes get lean artifacts automatically. |
 | `/specflow-plan` | `specflow-plan/` | Architecture and story breakdown discussion. Proposes architecture, design, stories. Populates `specs/` and `work/`. |
 | `/specflow-execute` | `specflow-execute/` | Orchestrates parallel subagent execution per story wave. Reports progress, handles locks, auto-commits per task. |
-| `/specflow-artifact-review` | `specflow-artifact-review/` | Context-specific review. Assembles criteria from artifact type + domain tags + shared + learned checklists. Runs automated then LLM-judged checks. |
+| `/specflow-artifact-review` | `specflow-artifact-review/` | Context-specific review. Assembles criteria from artifact type + domain tags + shared + learned checklists. Runs automated then agent-judged checks. |
 | `/specflow-change-impact-review` | `specflow-change-impact-review/` | Blast-radius review of recent commits/PRs via unreviewed change records. Idempotent. |
 | `/specflow-audit` | `specflow-audit/` | Full-project periodic health check. Deterministic core with optional adversarial wings. |
 | `/specflow-ship` | `specflow-ship/` | Release workflow: immutable baseline, change records, quick audit. |
@@ -323,6 +323,7 @@ All programmatic commands are `specflow <subcommand>` subcommands of the Python 
 | `specflow baseline diff` | Compare two baselines |
 | `specflow detect dead-code` | AST-based informational scan for declared-but-unreferenced functions/classes (exit 0 regardless of findings) |
 | `specflow detect similarity` | Token-level informational scan for near-duplicate function bodies (exit 0 regardless of findings) |
+| `specflow detect orphan-code` | Report source files not traced to any STORY/REQ via `output_files`; `--retro-link STORY-NNN` adopts them. Also surfaced as a lens in `project-audit`. |
 
 ### State machine
 

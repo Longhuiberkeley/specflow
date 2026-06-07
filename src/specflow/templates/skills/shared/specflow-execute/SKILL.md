@@ -9,7 +9,7 @@ This skill accepts freeform user input alongside the command. Interpret the user
 
 - **No additional context** → run the standard workflow (deterministic core only)
 - **A question or concern** → run the deterministic core, then address the question directly using the results
-- **A request for depth** ("go deep", "be thorough", "all lenses") → run deterministic core + full LLM analysis
+- **A request for depth** ("go deep", "be thorough", "all lenses") → run deterministic core + full agent-driven analysis
 - **A specific focus** ("focus on REQ-003", "check compliance only") → narrow scope to the request, still run deterministic core first
 
 Always run the deterministic core regardless of input. It costs zero tokens and provides the foundation for any analysis.
@@ -41,16 +41,16 @@ The planning-to-executing phase gate IS the readiness check. Run it before any i
    uv run specflow artifact-lint --type gate --gate planning-to-executing
    ```
    - Exit 1 → at least one automated blocking item failed (missing ARCH, broken links, etc.). **Stop. Do not proceed.** Report the failures verbatim and ask the user to address them. Re-run the gate after fixes.
-   - Exit 0 → automated checks pass; LLM-judged items show as `○` (skipped by the deterministic runner).
+   - Exit 0 → automated checks pass; agent-judged items show as `○` (skipped by the deterministic runner).
 
-2. **Evaluate the LLM-judged items yourself.** Read `.specflow/checklists/phase-gates/planning-to-executing.yaml`. For every item with `automated: false`, scope artifact reads narrowly:
+2. **Evaluate the agent-judged items yourself.** Read `.specflow/checklists/phase-gates/planning-to-executing.yaml`. For every item with `automated: false`, scope artifact reads narrowly:
    - Use `_index.yaml` files in `_specflow/work/stories/` and `_specflow/specs/architecture/` to enumerate IDs, statuses, and link metadata without opening every artifact body.
-   - Open full artifact bodies only for the subset that needs LLM judgement (e.g., the STORYs in the current wave, ARCHs referenced by those STORYs). At 100+ stories, sample by wave or by suspect/recently-modified flags rather than reading every file.
+   - Open full artifact bodies only for the subset that needs agent judgement (e.g., the STORYs in the current wave, ARCHs referenced by those STORYs). At 100+ stories, sample by wave or by suspect/recently-modified flags rather than reading every file.
    - Then answer the `llm_prompt` against the scoped subset and report findings as:
      - `blocking` severity items → these MUST be addressed before proceeding.
      - `warning` severity items → present them and ask the user whether to proceed anyway. Do not proceed silently.
 
-3. **Identify the in-scope STORY set.** Use `uv run specflow go --dry-run` to compute the next wave; that's the read-set for this run. Avoid reading STORYs outside the upcoming wave unless an LLM-judged item explicitly requires cross-story analysis.
+3. **Identify the in-scope STORY set.** Use `uv run specflow go --dry-run` to compute the next wave; that's the read-set for this run. Avoid reading STORYs outside the upcoming wave unless an agent-judged item explicitly requires cross-story analysis.
 
 4. **Check `suspect: true` flags** on ALL linked artifacts in the in-scope set. Run `uv run specflow status` and scan for suspect markers. If upstream specs are suspect, do NOT just warn — **actively propose resolution**:
    - "ARCH-001 is suspect (REQ-001 changed on 2026-06-01). Options: (a) Create DEF — the ARCH genuinely no longer satisfies the REQ. (b) Mark resolved — the change was cosmetic. (c) Update ARCH to match the new REQ."
@@ -64,13 +64,9 @@ The planning-to-executing phase gate IS the readiness check. Run it before any i
 
  **Why the gate is mandatory:** the gate verifies the task is sufficiently specified to start coding (ARCH exists, links resolve, AC are clear, interfaces defined, test strategy specified, dependencies approved, RBAC allows implementation). Skipping it lets implementation start against draft specs and produces rework.
 
-7. **Load execution-phase best practices** as context for implementation:
-   ```
-   uv run specflow handbook generate execute-impl
-   ```
-   Read the output with `uv run specflow handbook show execute-impl`. The generated BPs provide domain-specific guidance on what good implementation and testing look like for this project's domain. 
+7. **Load best practices** as context for implementation. Read BP artifacts from `_specflow/specs/best-practices/`. If execution-phase BPs don't exist yet, generate them covering implementation patterns relevant to the project domain.
 
-**Proactive Enforcement Loop:** Actively audit your implementation strategy against these BPs before writing code. If a BP suggests a specific pattern (e.g., defensive copies for data pipelines, dependency injection for web apps), ensure your code uses it, and briefly tell the user that you applied it. If no API key is configured, this step is skipped gracefully.
+**Proactive Enforcement Loop:** Actively audit your implementation strategy against these BPs before writing code. If a BP suggests a specific pattern (e.g., defensive copies for data pipelines, dependency injection for web apps), ensure your code uses it, and briefly tell the user that you applied it.
 
 ### Step 2: Wave Planning
 

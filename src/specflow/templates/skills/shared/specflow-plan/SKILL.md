@@ -9,7 +9,7 @@ This skill accepts freeform user input alongside the command. Interpret the user
 
 - **No additional context** → run the standard workflow (deterministic core only)
 - **A question or concern** → run the deterministic core, then address the question directly using the results
-- **A request for depth** ("go deep", "be thorough", "all lenses") → run deterministic core + full LLM analysis
+- **A request for depth** ("go deep", "be thorough", "all lenses") → run deterministic core + full agent-driven analysis
 - **A specific focus** ("focus on REQ-003", "check compliance only") → narrow scope to the request, still run deterministic core first
 
 Always run the deterministic core regardless of input. It costs zero tokens and provides the foundation for any analysis.
@@ -45,27 +45,17 @@ Break down approved requirements into architecture, detailed design, and user st
    - Non-functional constraints (performance, scale, compliance)
 5. Summarize your understanding back to the user: "Here's what I see as the system scope. Correct?"
 
-### Step 2.5: Generate Planning Best Practices
+### Step 2.5: Load Best Practices
 
-Before starting architecture work, generate phase-level best practices for the planning phases. These are domain-specific and complement any installed standards packs:
-
-```
-uv run specflow handbook generate plan-arc
-uv run specflow handbook generate plan-ddd
-uv run specflow handbook generate plan-story
-```
-
-Read the generated BPs with `uv run specflow handbook show plan-arc`. 
+Read existing BP artifacts from `_specflow/specs/best-practices/`. If no planning-phase BPs exist yet, generate them as BP artifacts covering architecture, detailed design, and story best practices. Create each with structured body (## Practice / ## Rationale / ## Verification).
 
 **Proactive Enforcement Loop:** Do not just passively read the BPs or thinking techniques. You must actively audit your own output against them.
 1. Draft your architecture/design internally.
-2. Run a self-audit against the generated BPs and `thinking-techniques.md`.
+2. Run a self-audit against the BPs and `thinking-techniques.md`.
 3. If your draft violates a BP (e.g., missed a security boundary, failed a coupling check), revise it *before* presenting it to the user.
-4. When presenting to the user, briefly explain *how* the BPs and techniques shaped your proposal (e.g., *"Following the domain BP to separate data from rules, I split X and Y. I also ran a premortem check and added Z as a fallback."*). This shows your work and guides the user toward better architectural decisions.
+4. When presenting to the user, briefly explain *how* the BPs and techniques shaped your proposal (e.g., *"Following BP-001 to separate data from rules, I split X and Y. I also ran a premortem check and added Z as a fallback."*). This shows your work and guides the user toward better architectural decisions.
 
-If no API key is configured, this step is skipped gracefully.
-
-### Step 2.5: Parallel Architecture Candidate Generation (Optional, for complex systems)
+### Step 2.6: Parallel Architecture Candidate Generation (Optional, for complex systems)
 
 For systems with 3+ REQs, multiple external integrations, or cross-cutting concerns spanning security/performance/compliance, generate 2-3 alternative architecture decompositions before committing to one. This prevents single-approach myopia.
 

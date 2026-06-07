@@ -137,29 +137,15 @@ specflow domain show
 |------|---------|
 | `--tag` | Domain qualifier (repeatable, e.g., `--tag real-time --tag safety-critical`) |
 
-### `specflow handbook`
+### Best Practice Artifacts (BP)
 
-Manage the domain best-practice cache — the project's living process booklet.
+Best practices are first-class SpecFlow artifacts (`BP-NNN`) stored in `_specflow/specs/best-practices/`. The agent generates them during discovery and planning — no external API calls needed.
 
 ```bash
-specflow handbook generate [project|PHASE] [--domain DOMAIN] [--overwrite]
-specflow handbook show [project|PHASE] [--domain DOMAIN]
-specflow handbook path [project|PHASE] [--domain DOMAIN]
-specflow handbook list
+specflow create --type best-practice --title "..." --status approved --body "## Practice\n...\n## Rationale\n...\n## Verification\n..."
 ```
 
-| Subcommand | Purpose |
-|------------|---------|
-| `generate` | Synthesize BPs via LLM and cache (one-time per domain+phase) |
-| `show` | Print cached BPs as YAML |
-| `path` | Print cache file path |
-| `list` | List all cached BP files |
-
-Two-level cache:
-- **Project-level:** one file per domain, generated after `specflow domain set`
-- **Phase-level:** one file per (domain, phase), auto-synthesized on first artifact review
-
-Files are intentionally human-editable. Use `--overwrite` to regenerate from LLM.
+BPs are traceable: `derives_from` → standards, `applies_to` → REQ/ARCH/DDD/STORY, `supersedes` → older BPs. See `approval-presentation.md` for how BPs integrate with the review workflow.
 
 ### `specflow patterns`
 
@@ -221,20 +207,19 @@ specflow checklist-run [ARTIFACT_ID] [--all] [--gate GATE] [--proactive] [--dedu
 
 ### `specflow artifact-review`
 
-Compose lint, checklist review, and LLM judgment.
+Compose lint, checklist review, and thinking technique prompts.
 
 ```bash
-specflow artifact-review [ARTIFACT_ID] [--all] [--depth {quick,normal,deep}] [--techniques TECHNIQUES] [--gate GATE] [--fast]
+specflow artifact-review [ARTIFACT_ID] [--all] [--depth {quick,normal,deep}] [--techniques TECHNIQUES] [--gate GATE]
 ```
 
 | Flag | Purpose |
 |------|---------|
 | `--all` | Review all artifacts |
-| `--depth` | `quick` (lint+checklist), `normal` (add LLM judgment), `deep` (add thinking techniques) |
+| `--depth` | `quick` (lint+checklist), `normal` (add agent-judged checks), `deep` (add thinking technique prompts) |
 | `--techniques` | Comma-separated techniques for `--depth deep` |
 | `--gate` | Phase-gate checklist |
 | `--proactive` | Include proactive challenge items |
-| `--fast` | Skip BP synthesis (use cached best practices only, no LLM calls for BP generation) |
 
 ### `specflow project-audit`
 
@@ -355,7 +340,11 @@ Project-hygiene scans.
 ```bash
 specflow detect dead-code     # Report unreferenced functions/classes
 specflow detect similarity    # Report near-identical function pairs
+specflow detect orphan-code   # Report source files not traced to any STORY/REQ
+specflow detect orphan-code --retro-link STORY-042   # Adopt orphans into a STORY's output_files
 ```
+
+Orphan-code is also surfaced as a lens in `specflow project-audit` (full mode, not `--quick`): it distinguishes "source↔spec tracking not yet adopted" (info) from "files slipped through partial tracking" (warn).
 
 ### `specflow renumber-drafts`
 
