@@ -257,7 +257,8 @@ def run(root: Path, args: dict) -> int:
 
     # Status distribution
     status_parts = []
-    for s in ["draft", "approved", "implemented", "verified"]:
+    for s in ["draft", "approved", "implemented", "verified",
+              "superseded", "deprecated", "cancelled"]:
         c = by_status.get(s, 0)
         if c > 0:
             status_parts.append(f"{c} {s}")

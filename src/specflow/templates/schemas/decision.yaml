@@ -8,6 +8,7 @@ allowed_status:
   draft: []
   approved: [draft]
   superseded: [approved]
+  cancelled: [draft, approved]
 allowed_review_status: [unreviewed, reviewed, flagged, addressed, accepted, stale]
 allowed_link_roles: [derives_from, addresses]
 directory: _specflow/work/decisions/

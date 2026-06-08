@@ -94,14 +94,21 @@ def validate_artifact_schema(
             "message": f'Invalid status "{status}" (allowed: {", ".join(allowed)})',
         })
 
-    # Link role validation
+    # Link role validation. Unknown roles are a warning, never a blocker
+    # (accounting, not policing) — but we enrich the message with a direction-aware
+    # suggestion so the canonical vocabulary stays self-reinforcing.
     allowed_roles = schema.get("allowed_link_roles", [])
     if allowed_roles:
+        from specflow.lib import role_normalize
         for link in artifact.links:
             if link.role and link.role not in allowed_roles:
+                message = f'Unknown link role "{link.role}" on link to {link.target}'
+                suggestion = role_normalize.suggest_canonical(link.role)
+                if suggestion:
+                    message += f" — {suggestion.hint}"
                 issues.append({
                     "severity": "warning",
-                    "message": f'Unknown link role "{link.role}" on link to {link.target}',
+                    "message": message,
                 })
 
     # review_status validation
@@ -138,6 +145,11 @@ def validate_artifact_schema(
 
 VALID_STATUS_ORDER = ["draft", "approved", "implemented", "verified"]
 
+# Terminal states sit outside the linear lifecycle: the artifact is retired, not
+# in flight. A retired child must not hold its parent back, and ordering
+# comparisons against a retired parent are meaningless.
+TERMINAL_STATUSES = {"cancelled", "deprecated", "superseded"}
+
 
 def _validate_status_transition(current: str, expected: str) -> bool:
     """Check if a status is valid (exists in the lifecycle)."""
@@ -161,7 +173,10 @@ def validate_status_hierarchy(artifacts: list[art_lib.Artifact]) -> list[dict[st
                 if a.id != art.id and art_lib.get_base_id(a.id) == art.id
             ]
             if children and art.status == "verified":
-                non_verified = [c.id for c in children if c.status != "verified"]
+                non_verified = [
+                    c.id for c in children
+                    if c.status != "verified" and c.status not in TERMINAL_STATUSES
+                ]
                 if non_verified:
                     issues.append({
                         "severity": "blocking",
@@ -173,7 +188,7 @@ def validate_status_hierarchy(artifacts: list[art_lib.Artifact]) -> list[dict[st
         else:
             # This is a child — check its own status isn't ahead of parent
             parent = id_index.get(parent_id)
-            if parent:
+            if parent and parent.status not in TERMINAL_STATUSES:
                 parent_idx = VALID_STATUS_ORDER.index(parent.status) if parent.status in VALID_STATUS_ORDER else -1
                 child_idx = VALID_STATUS_ORDER.index(art.status) if art.status in VALID_STATUS_ORDER else -1
                 if child_idx > parent_idx:

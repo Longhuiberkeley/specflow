@@ -9,5 +9,7 @@ allowed_status:
   approved: [draft]
   implemented: [approved]
   verified: [implemented]
+  deprecated: [approved, implemented, verified]
+  cancelled: [draft, approved, implemented, verified]
 allowed_link_roles: [refined_by, verified_by, derives_from, specified_by, complies_with]
 directory: _specflow/specs/detailed-design/

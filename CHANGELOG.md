@@ -4,6 +4,34 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.9.1] - 2026-06-09
+
+### Highlights
+
+- **Disciplined relationships.** The link-role vocabulary stays deliberately frozen and behavior-paired (D-18); instead of adding roles, drift now gets *named and corrected*. Unknown link roles lint to a direction-aware suggestion, lifecycle gets real terminal statuses, and `specflow trace` is the documented answer to "what points at X?" — no inverse roles, no dead vocabulary.
+
+### Features
+
+- **Role normalizer** (`lib/role_normalize.py`) — `artifact-lint` enriches the "Unknown link role" warning with a canonical suggestion: synonyms (`validates`→`validated_by`, `extends`→`refined_by`), inverse roles (`superseded_by`→author `supersedes`, or query `specflow trace`), and lifecycle "roles" that are really statuses (`cancels`→`status: cancelled`). Still a warning, never a blocker.
+- **Terminal lifecycle statuses** — `cancelled` (terminated, no replacement) and `deprecated` (discouraged) added to requirement/architecture/detailed-design/story schemas; `cancelled` added to decision alongside the existing `superseded`. Lifecycle is modeled as status, not as link roles.
+
+### Fixes
+
+- **Terminal-status hierarchy guard** — `validate_status_hierarchy` no longer lets a `cancelled`/`deprecated`/`superseded` child block its parent from `verified`, and skips ordering comparisons against a retired parent. Without this, cancelling one child story would permanently block the parent from being marked verified.
+- **Dashboard status distribution** — `specflow status` now surfaces `superseded`/`deprecated`/`cancelled` counts instead of silently omitting them.
+
+### Documentation
+
+- New decision **D-18** (frozen, behavior-paired link-role vocabulary); link-role and architecture docs document "inverses are queries, lifecycle is status"; resolved the `mitigates`/`satisfies` doc-vs-schema mismatch (noted as pack-contributed). Status-lifecycle reference now covers `superseded`/`cancelled`/`deprecated`.
+
+### Tests
+
+- 18 new role-normalizer tests (synonym/inverse/lifecycle + enriched-lint integration) and 4 status-hierarchy regression tests for terminal states. Total: 434 passing.
+
+### Known limitations
+
+- ReqIF export still coerces `cancelled`/`deprecated` to `draft` (ReqIF has no equivalent state); round-trip fidelity for terminal statuses is unchanged.
+
 ## [1.8.1] - 2026-06-07
 
 ### Highlights

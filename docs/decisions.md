@@ -215,3 +215,21 @@ Each decision documents the context, options considered, the resolution, and rat
 **Decision:** Users interact with SpecFlow exclusively through `/specflow-*` skill commands in their AI coding tool (Claude Code, OpenCode, Gemini CLI). The Python CLI (`specflow validate`, `specflow status`, etc.) is infrastructure — called by skills internally, by CI/CD pipelines, and by power users who know what they're doing. Documentation and onboarding teach skills first; CLI is referenced as "under the hood."
 
 **Rationale:** The user's mental model should be: type a `/specflow-*` command, it just works. The skill decides whether to run the program silently or engage in conversation based on context. Presenting two parallel surfaces forces users to make meta-decisions about which tool to use, violating the modeless design philosophy (D-03).
+
+---
+
+### D-18: Frozen, Behavior-Paired Link-Role Vocabulary
+
+**Context:** A project on an older SpecFlow that was driven by free-chat (rarely invoking skills) accumulated ~101 ad-hoc link roles, and an agent proposed a "1.9.1" adding 8 new core roles (`extends`, `mandates`, `cancels`, `deprecates`, and inverse roles `superseded_by` / `derives` / `refines` / `produces`). The proposal misdiagnosed the cause: unknown roles are a **warning, not a rejection** (`lib/lint.py`), so nothing forced the proliferation — it came from unconstrained authoring. The proposed roles also duplicated existing semantics or belonged in a different mechanism.
+
+**Options considered:**
+- Expand the core vocabulary with the 8 proposed roles
+- Add inverse roles so relationships can be authored from either end
+- Keep the vocabulary frozen; close the real gaps with behavior + status
+
+**Decision:** The link-role vocabulary is **frozen and behavior-paired** — a role exists only when a query or validation consumes it (the "dead vocabulary" principle). New roles arrive through packs with matching behavior, never ad-hoc. Three rules follow:
+- **Inverses are queries, not vocabulary.** Each edge is stored once and traversed both ways; `specflow trace <ID>` shows upstream and downstream. No `superseded_by` / `implemented_by` / `refines`.
+- **Lifecycle is status, not links.** Retirement is modeled as `status`: `superseded` (has successor via the `supersedes` link), `cancelled` (terminated, no replacement), `deprecated` (discouraged). Added in 1.9.1 to spec/work schemas. No `cancels` / `deprecates` roles.
+- **Near-misses get normalized, not blessed.** `lib/role_normalize.py` maps common ad-hoc roles to their canonical equivalent and `artifact-lint` surfaces the suggestion, keeping the vocabulary self-reinforcing even under free-chat authoring.
+
+**Rationale:** Adding roles without consuming behavior is dead vocabulary that fragments traceability and invites further drift. `derives_from` already carries evidence lineage and `refined_by` covers additive specs for every query that exists, so `extends` / `mandates` / broadened `informs` add ambiguity without capability. The durable fix for sloppy authoring is a louder, more helpful linter plus a real home for lifecycle states — not a bigger dictionary.

@@ -204,7 +204,19 @@ Transitions enforced by validation scripts. Status meanings:
 - `implemented`: code exists, awaiting verification
 - `verified`: corresponding test level confirms compliance
 
+Terminal states retire an artifact without deleting it (lifecycle is a status, never a
+link role):
+- `superseded`: replaced by a successor that links back with `supersedes`
+- `cancelled`: terminated outright — no replacement
+- `deprecated`: still valid but discouraged; don't build on it
+
 ## Link Role Vocabulary
+
+The role vocabulary is **frozen and behavior-paired**: a role exists only when a query or
+validation consumes it (see `docs/decisions.md`). New domains add roles through packs, not
+ad-hoc — unknown roles lint to a warning with a suggested canonical equivalent, never a hard
+error. The `mitigates` / `satisfies` rows below are contributed by the safety/ISO-26262 pack
+and are absent from core schemas unless that pack is active.
 
 | Role | Direction | Meaning |
 |------|-----------|---------|
@@ -221,6 +233,10 @@ Transitions enforced by validation scripts. Status meanings:
 | `fails_to_meet` | defect -> spec | This defect shows the target requirement is not met |
 | `addresses` | CR -> defect/spec | This change request addresses the target |
 | `executes` | test-run -> test | This test run executes the target test artifact |
+
+Links are stored once and traversed both directions, so there are **no inverse roles**
+(`superseded_by`, `implemented_by`, …). To see what points *at* an artifact, query backlinks
+with `specflow trace <ID>` — it walks both upstream and downstream.
 
 ## Checklist System
 

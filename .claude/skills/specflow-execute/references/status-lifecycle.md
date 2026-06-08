@@ -13,6 +13,24 @@ draft → approved → implemented → verified
 | `implemented` | Code exists, awaiting verification | `approved` |
 | `verified` | Corresponding test level confirms compliance | `implemented` |
 
+## Terminal Lifecycle States (Retiring an Artifact)
+
+When an artifact is no longer the live truth, model that as a **status change — not a
+relationship role.** There are three distinct ends, and choosing the right one preserves
+traceability:
+
+| Status | Meaning | How to express |
+|--------|---------|----------------|
+| `superseded` | Replaced by a successor that carries the intent forward | Set the *successor's* link to `supersedes` the old artifact, and set the old artifact's `status: superseded` |
+| `cancelled` | Terminated outright — no replacement, the intent is dropped | Set `status: cancelled` (e.g. a DEC cancels the work) |
+| `deprecated` | Still technically valid but discouraged — don't build on it | Set `status: deprecated` |
+
+Do **not** invent link roles like `cancelled_by`, `deprecates`, or `superseded_by`. The
+"who replaced/cancelled me" question is answered by querying backlinks with
+`specflow trace <ID>` (links are stored once and traversed both ways) plus the `supersedes`
+edge on the successor. `cancelled`/`deprecated` are reachable from any active state;
+`superseded` follows the `supersedes` link.
+
 ## Defect Lifecycle
 
 ```

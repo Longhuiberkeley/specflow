@@ -10,6 +10,7 @@ import pytest
 from specflow.commands import artifact_lint as lint_cmd
 from specflow.commands import trace as trace_cmd
 from specflow.lib import artifacts as art_lib
+from specflow.lib import lint as lint_lib
 
 _SCHEMA_TYPES = [
     ("requirement", "REQ"), ("architecture", "ARCH"), ("detailed-design", "DDD"),
@@ -700,3 +701,34 @@ class TestSpikeOrphanExemption:
         arts = art_lib.discover_artifacts(project_root)
         result = lint_cmd._check_links(arts, project_root)
         assert result["warning_count"] >= 1
+
+
+# ── validate_status_hierarchy with terminal statuses ─────────────────────────
+
+class TestStatusHierarchyTerminalStates:
+    def test_cancelled_child_does_not_block_verified_parent(self):
+        # REQ-001 verified, child REQ-001.1 cancelled (retired) → no blocking issue.
+        parent = _make_art("REQ-001", "requirement", status="verified")
+        child = _make_art("REQ-001.1", "requirement", status="cancelled")
+        issues = lint_lib.validate_status_hierarchy([parent, child])
+        assert not [i for i in issues if i["severity"] == "blocking"]
+
+    def test_deprecated_child_does_not_block_verified_parent(self):
+        parent = _make_art("REQ-001", "requirement", status="verified")
+        child = _make_art("REQ-001.1", "requirement", status="deprecated")
+        issues = lint_lib.validate_status_hierarchy([parent, child])
+        assert not [i for i in issues if i["severity"] == "blocking"]
+
+    def test_draft_child_still_blocks_verified_parent(self):
+        # Regression guard: a genuinely-incomplete child must still block.
+        parent = _make_art("REQ-001", "requirement", status="verified")
+        child = _make_art("REQ-001.1", "requirement", status="draft")
+        issues = lint_lib.validate_status_hierarchy([parent, child])
+        assert [i for i in issues if i["severity"] == "blocking"]
+
+    def test_verified_child_under_terminal_parent_not_flagged_ahead(self):
+        # A cancelled parent is retired; ordering comparison is meaningless.
+        parent = _make_art("REQ-001", "requirement", status="cancelled")
+        child = _make_art("REQ-001.1", "requirement", status="verified")
+        issues = lint_lib.validate_status_hierarchy([parent, child])
+        assert not [i for i in issues if i["severity"] == "blocking"]

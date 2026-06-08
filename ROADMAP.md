@@ -198,6 +198,15 @@ Focus: **autoresearch methodology depth, escalation/permanence test, and templat
 
 > Deferred: an audit/lint detector that flags long-lived SPIKEs / repeated ad-hoc work that should have been promoted (a work-side complement to the v1.8.0 *Stale Code Detection* item). Also deferred: optional structured multi-output schema (typed per-component fields on COMP/EXPT) if the `component_<name>` convention proves too loose.
 
+## v1.9.1
+
+Focus: **disciplined relationships — vocabulary stays frozen, drift gets named.**
+
+- **Role normalizer** (`lib/role_normalize.py`) — `artifact-lint` turns the silent "Unknown link role" warning into a direction-aware suggestion: same-direction synonyms (`validates`→`validated_by`, `extends`→`refined_by`), inverse roles (`superseded_by`→author `supersedes`, or query `specflow trace`), and lifecycle "roles" that are really statuses (`cancels`→`status: cancelled`). Still a warning, never a blocker — accounting, not policing.
+- **Terminal lifecycle statuses** — `cancelled` (terminated, no replacement) and `deprecated` (discouraged) added to requirement/architecture/detailed-design/story schemas; `cancelled` added to decision alongside the existing `superseded`. Gives "this artifact is dead" a real home instead of invented `cancelled_by` roles.
+- **Backlink guidance** — `specflow trace` already walks upstream *and* downstream; documented as the answer to "what supersedes/implements/refines X?" so nobody hand-authors inverse roles. Link-role and architecture docs updated; resolved the `mitigates`/`satisfies` doc-vs-schema mismatch (pack-contributed, noted as such).
+- **Design record (D-18)** — the link-role vocabulary is frozen and behavior-paired; inverses are queries, lifecycle is status, near-misses get normalized not blessed. The durable answer to "should we add 8 roles?" (no).
+
 ## v1.9.0
 
 Focus: **self-contained engine — full retirement of external LLM use.**
