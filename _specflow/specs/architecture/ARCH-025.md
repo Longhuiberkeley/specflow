@@ -15,7 +15,7 @@ links:
 - target: REQ-034
   role: derives_from
 - target: ARCH-023
-  role: refines
+  role: refined_by
 created: '2026-06-07'
 ---
 
