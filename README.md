@@ -1,5 +1,9 @@
 # SpecFlow
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![uv](https://img.shields.io/badge/uv-managed-purple.svg)](https://docs.astral.sh/uv/)
+
 TLDR: I want to make a framework that can build production level codebase easier
 - You should know what you want to build more or less
 - I designed this to be somewhat token efficient
@@ -19,6 +23,14 @@ Traditional ALM asks you to leave your editor, log into a website, and click thr
 Old-school ALM tools were built for a world where humans typed every line. They made sense when writing code was slow and ceremony was cheap. AI coding assistants flipped that: the code comes out fast, and the ritual is the bottleneck.
 
 SpecFlow keeps the rigor (V-model traceability, impact analysis, audit baselines, standards packs) and drops the parts that slow teams down (servers, licenses, portals, click-through workflows). It runs wherever your AI assistant runs — Claude Code, Cursor, Cline, and 11 others.
+
+## What SpecFlow expects you to bring
+
+SpecFlow does not do ideation. It does not have a PM persona that interrogates your product idea, a CEO agent that validates your business model, or a brainstorming mode that figures out what you should build. That work should happen *before* SpecFlow — on a whiteboard, in a conversation with your team, with your favorite AI chatbot, wherever.
+
+SpecFlow starts when you know what you want to build. `/specflow-discover` captures and structures what's already in your head through a guided conversation (specify + clarify). `/specflow-plan` breaks it into architecture and implementable stories. `/specflow-execute` builds it.
+
+If you need help deciding *what* to build, use a tool that does ideation well. When you're ready to specify, track, and build it with compliance-grade rigor — that's SpecFlow.
 
 ## Two ways to drive, one engine
 
@@ -233,6 +245,7 @@ This creates `_specflow/` and `.specflow/` in your repo, and copies skill files 
 
 - [Getting started](docs/getting-started.md) — tutorial walkthrough
 - [Lifecycle overview](docs/lifecycle.md) — flowchart and command tiers
+- [Where SpecFlow fits](docs/comparison.md) — what it is, what it isn't, and how it compares to other tools
 - [Command reference](docs/commands.md) — per-skill interface spec
 - [CLI reference](docs/cli-reference.md) — raw CLI for CI
 - [Architecture](docs/architecture.md) — technical design
