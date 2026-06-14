@@ -4,6 +4,35 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.9.3] - 2026-06-14
+
+### Highlights
+
+- **Adoption rewritten around the component (D-20).** Brownfield code is now linked to specs via **ARCH/DDD `output_files` globs** — one ARCH per component, a package glob covering hundreds of files in a single entry. **STORY is reserved for forward action** and is no longer backfilled, eliminating the zombie-story problem on large repos. The default huge-repo strategy is **skeleton-first**: one ARCH per component across the whole project, then `specflow adopt status` flags which components deserve REQ/DDD deepening.
+
+### Features
+
+- **`specflow adopt status`** — adoption completeness, derived from the graph (no state file). Project/boundary dashboard (coverage %, per-ARCH depth + drift) and per-artifact view (realization, acceptance criteria, verification, provenance, gaps, drift). Available with the `adoption` pack.
+- **`output_files` globs are now a core feature** (`lib.files.expand_output_files`). Literal paths and `**` patterns both work; the orphan meter, `reconcile`, and the source-drift lint check all expand globs through one shared helper, so a package glob in any artifact is honored uniformly.
+- **Orphan meter credits ARCH/DDD** in addition to STORY/REQ (D-20 code-linking model). Lean (ARCH-only) adoption now moves the coverage meter.
+- **`specflow brief` Adoption section** — gated on `backfilled` tags; shows coverage %, backfilled counts by type, biggest un-adopted cluster, and a pointer to `adopt status`. Greenfield projects pay zero cost (the section is omitted).
+- **`specflow detect orphan-code` enhancements** — coverage % display, biggest un-adopted cluster hint, `--retro-link` now accepts any artifact ID (STORY/ARCH/DDD/REQ).
+- **`retro-link` accepts any artifact type** (was hardcoded to STORY) — the usual target is now the adopting ARCH.
+
+### Fixes
+
+- **Globs no longer silently skipped** by `reconcile`, the source-drift lint, and the output-files existence check. Before this, a package glob in `output_files` was invisible to all three — adopted ARCHs with globs were never drift-checked, never credited as reconcile evidence, and globs matching nothing were never surfaced.
+- **Skill/concept drift fix in the adoption pack**: the old Phase-5 reference to `specflow reconcile` for "confirming backfilled STORY statuses match reality" was incorrect — `reconcile` only promotes approved STORYs and ignores backfilled ones. Replaced with `specflow adopt status` (the completeness view), which is a real adoption signal.
+- **V-level-aware depth in `adopt status`** — REQ no longer shows "missing parent spec" (it IS the top of the V); DDD no longer asks for a child DDD.
+
+### Documentation
+
+- New decision **D-20** (adoption links code via ARCH/DDD; STORY reserved for forward action; `output_files` globs are core; completeness is derived from the graph).
+- `docs/architecture.md`: new "Code Realization (D-20)" section + updated `detect orphan-code` row + `adopt status` row in the commands table.
+- `docs/cli-reference.md`: new `specflow adopt status` section + `detect orphan-code` notes on glob support and coverage %.
+- `docs/getting-started.md` brownfield section: updated for ARCH-per-component code-linking + skeleton-first.
+- Adoption pack `pack.yaml` 0.1.0 → 0.2.0; `SKILL.md` and 4 references rewritten for D-20; pack `context_snippet` updated.
+
 ## [1.9.1] - 2026-06-09
 
 ### Highlights

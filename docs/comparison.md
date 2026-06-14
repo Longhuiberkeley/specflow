@@ -36,6 +36,8 @@ If you need help deciding *what* to build — product validation, market fit, MV
 
 SpecFlow trusts that you've done the thinking. Our job is to make sure the thinking survives into the codebase — structured, traceable, and validated.
 
+> **Existing codebase?** SpecFlow's default flow is greenfield, but the optional **adoption pack** (`/specflow-init --preset adoption` → `/specflow-adopt`) inventories an existing codebase, backfills specs for what already exists, and cuts an as-built baseline — so you can adopt SpecFlow mid-project rather than start over.
+
 ---
 
 ## SpecFlow vs. AI Coding Frameworks

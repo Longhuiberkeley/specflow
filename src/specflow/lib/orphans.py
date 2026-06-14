@@ -2,123 +2,47 @@
 
 Provides:
   find_orphan_code() — scan project for unreferenced source files
-  retro_link()      — create a STORY to retroactively cover orphan files
+  retro_link()       — retroactively link an orphan file to an artifact's output_files
+
+Code-linking model (D-20): `output_files` may live on STORY (forward action),
+ARCH (component / adoption custody), DDD (detailed-design), or REQ. The orphan
+meter credits all four. Glob patterns in `output_files` are expanded via
+`lib.files.expand_output_files` so a single ARCH can cover a whole package.
 """
 
 from __future__ import annotations
 
-import subprocess
 from pathlib import Path
 
 import yaml
 
-from specflow.lib.artifacts import discover_artifacts
+from specflow.lib import artifacts as art_lib
+from specflow.lib import files as files_lib
 
 
-# Directories and patterns to exclude from orphan scanning
-EXCLUDE_DIRS: set[str] = {
-    ".git", ".venv", "venv", "__pycache__", ".pytest_cache",
-    "node_modules", ".next", "dist", "build", ".specflow",
-    "_specflow", ".claude", ".cursor", ".windsurf", ".codex",
-    ".opencode", ".agents", ".roo", ".qwen", ".kiro", ".kilocode",
-    ".trae", ".github", ".husky", ".clinerules", ".cline",
-    ".gemini", ".junie",
-}
-
-EXCLUDE_PATTERNS: list[str] = [
-    "*.pyc", "*.pyo", "*.so", "*.o", "*.a", "*.dylib", "*.dll",
-    "*.class", "*.jar", "*.war", "*.egg", "*.whl",
-    "*.min.js", "*.min.css", "*.map",
-    "package-lock.json", "yarn.lock", "uv.lock", "poetry.lock",
-    "*.log", "*.tmp", "*.swp", "*.swo", "*~",
-]
-
-SOURCE_EXTENSIONS: set[str] = {
-    ".py", ".js", ".ts", ".tsx", ".jsx", ".go", ".rs", ".java",
-    ".c", ".cpp", ".h", ".hpp", ".rb", ".php", ".swift", ".kt",
-    ".scala", ".r", ".R", ".sql", ".sh", ".bash", ".zsh",
-    ".yaml", ".yml", ".toml", ".json", ".xml", ".md", ".mdc",
-    ".css", ".scss", ".less", ".html", ".vue", ".svelte",
-    ".tf", ".dockerfile", ".proto", ".graphql",
-}
-
-
-def _is_source_file(filepath: Path) -> bool:
-    """Check if a file is a trackable source file (not generated, not config)."""
-    suffix = filepath.suffix.lower()
-    if suffix not in SOURCE_EXTENSIONS:
-        return False
-    for pattern in EXCLUDE_PATTERNS:
-        if filepath.match(pattern):
-            return False
-    # Skip common generated/config file names
-    name = filepath.name.lower()
-    if name in ("dockerfile", "makefile", "docker-compose.yml", ".gitignore",
-                 ".dockerignore", ".editorconfig", ".prettierrc", ".eslintrc"):
-        return False
-    return True
-
-
-def _scan_source_files(root: Path) -> list[Path]:
-    """Scan project root for all source files, excluding known non-source dirs."""
-    source_files: list[Path] = []
-    for entry in root.rglob("*"):
-        if not entry.is_file():
-            continue
-        # Filter out files inside excluded directories.
-        # Note: rglob traverses ALL directories (including excluded ones).
-        # This is acceptable for typical SpecFlow project sizes (hundreds of files,
-        # not thousands). For very large projects with deep node_modules trees,
-        # consider switching to os.walk with selective pruning.
-        parts = set(p.name for p in entry.parents if p != root)
-        if parts & EXCLUDE_DIRS:
-            continue
-        if _is_source_file(entry):
-            source_files.append(entry)
-    return source_files
-
-
-def _collect_referenced_files(artifacts, root: Path) -> set[Path]:
-    """Collect all output_files and body-referenced files from artifacts."""
-    referenced: set[Path] = set()
-    for art in artifacts:
-        if art.type not in ("story", "requirement"):
-            continue
-        # Check output_files frontmatter field
-        output_files = art.frontmatter.get("output_files")
-        if output_files and isinstance(output_files, list):
-            for f in output_files:
-                if isinstance(f, str):
-                    resolved = (root / f).resolve()
-                    if resolved.exists():
-                        referenced.add(resolved)
-        # Check for file paths mentioned in the body via backtick-quoted references.
-        # This is a best-effort heuristic: it matches `code` patterns at line start
-        # but won't catch mid-sentence references, multi-backtick code fences, or
-        # paths split across lines. The primary mechanism is output_files frontmatter.
-        body = art.body or ""
-        for line in body.splitlines():
-            line = line.strip()
-            if line.startswith("`") and "`" in line[1:]:
-                fname = line.split("`")[1]
-                candidate = (root / fname).resolve()
-                if candidate.exists() and candidate.is_file():
-                    referenced.add(candidate)
-    return referenced
+# Artifact types whose `output_files` count as "referencing" code. STORY covers
+# forward action; ARCH/DDD cover adoption custody of existing components; REQ
+# is kept for backward compatibility (its schema doesn't bless output_files,
+# but some projects set it and we don't want to orphan their code on upgrade).
+REFERENCING_TYPES: set[str] = {"story", "requirement", "architecture", "detailed-design"}
 
 
 def find_orphan_code(root: Path) -> dict:
-    """Find source code files not referenced by any STORY or REQ artifact.
+    """Find source code files not referenced by any STORY/REQ/ARCH/DDD artifact.
+
+    A file is "referenced" if it appears in any referencing artifact's
+    `output_files` (literal path OR glob match) or is cited via a backtick-quoted
+    path at the start of a body line (best-effort heuristic).
 
     Returns:
         dict with keys:
           orphan_files: list of Path objects (unreferenced source files)
-          referenced_files: count of referenced source files
-          total_source_files: total source files scanned
+          referenced_count: count of referenced source files
+          total_count: total source files scanned
     """
     root = Path(root).resolve()
-    artifacts = discover_artifacts(root)
-    source_files = _scan_source_files(root)
+    artifacts = art_lib.discover_artifacts(root)
+    source_files = files_lib.scan_source_files(root)
     referenced = _collect_referenced_files(artifacts, root)
 
     orphans = [f for f in source_files if f.resolve() not in referenced]
@@ -130,25 +54,64 @@ def find_orphan_code(root: Path) -> dict:
     }
 
 
-def retro_link(root: Path, filepath: str, story_id: str) -> bool:
-    """Retroactively link an orphan file to an existing STORY's output_files.
+def _collect_referenced_files(artifacts, root: Path) -> set[Path]:
+    """Collect all output_files (frontmatter) and body-referenced files from artifacts.
+
+    Globs in `output_files` are expanded via `expand_output_files`. Only the
+    four referencing types contribute (see REFERENCING_TYPES).
+    """
+    referenced: set[Path] = set()
+    for art in artifacts:
+        if art.type not in REFERENCING_TYPES:
+            continue
+        expanded = files_lib.expand_output_files(root, art.frontmatter.get("output_files"))
+        referenced.update(expanded)
+        # Body heuristic: backtick-quoted paths at line start. Best-effort; the
+        # primary mechanism is the frontmatter output_files field above.
+        body = art.body or ""
+        for line in body.splitlines():
+            line = line.strip()
+            if line.startswith("`") and "`" in line[1:]:
+                fname = line.split("`")[1]
+                candidate = (root / fname).resolve()
+                if candidate.exists() and candidate.is_file():
+                    referenced.add(candidate)
+    return referenced
+
+
+def retro_link(root: Path, filepath: str, target_id: str) -> bool:
+    """Retroactively link an orphan file to an artifact's output_files.
 
     Args:
         root: Project root
         filepath: Path to the orphan source file (relative or absolute)
-        story_id: STORY artifact ID (e.g., "STORY-042")
+        target_id: Artifact ID (e.g. "ARCH-003", "STORY-042", "DDD-007").
+            The artifact's directory is resolved from its prefix, so any
+            artifact type that owns output_files can be a target.
 
     Returns:
-        True if successful, False if STORY not found or file doesn't exist
+        True if successful, False if target not found or file doesn't exist
     """
-    root = root.resolve()
-    story_path = root / "_specflow" / "work" / "stories" / f"{story_id}.md"
-    if not story_path.exists():
-        return False
+    root = Path(root).resolve()
+
+    # Resolve the target artifact's path from its ID prefix.
+    target_path = art_lib.resolve_link_target(root, target_id)
+    if target_path is None or not Path(target_path).exists():
+        # Fall back to the legacy STORY-only path for any caller that passed a
+        # bare STORY id we couldn't resolve through the link graph.
+        legacy = root / "_specflow" / "work" / "stories" / f"{target_id}.md"
+        if legacy.exists():
+            target_path = legacy
+        else:
+            return False
+    target_path = Path(target_path)
 
     file_path = Path(filepath)
     if file_path.is_absolute():
-        rel_path = file_path.relative_to(root)
+        try:
+            rel_path = file_path.relative_to(root)
+        except ValueError:
+            return False
     else:
         rel_path = file_path
         file_path = (root / filepath).resolve()
@@ -156,8 +119,7 @@ def retro_link(root: Path, filepath: str, story_id: str) -> bool:
     if not file_path.exists():
         return False
 
-    # Read existing STORY frontmatter
-    text = story_path.read_text(encoding="utf-8")
+    text = target_path.read_text(encoding="utf-8")
     if not text.startswith("---"):
         return False
     end = text.find("---", 3)
@@ -174,10 +136,8 @@ def retro_link(root: Path, filepath: str, story_id: str) -> bool:
         output_files.append(rel_str)
         fm["output_files"] = output_files
 
-    # Rewrite frontmatter
-    import io
     new_fm = yaml.dump(fm, default_flow_style=False, allow_unicode=True, sort_keys=False)
     new_text = f"---\n{new_fm}---{text[end+3:]}"
-    story_path.write_text(new_text, encoding="utf-8")
+    target_path.write_text(new_text, encoding="utf-8")
 
     return True

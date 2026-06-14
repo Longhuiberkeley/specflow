@@ -238,6 +238,41 @@ Links are stored once and traversed both directions, so there are **no inverse r
 (`superseded_by`, `implemented_by`, …). To see what points *at* an artifact, query backlinks
 with `specflow trace <ID>` — it walks both upstream and downstream.
 
+## Code Realization (D-20)
+
+Code is linked to specs via the `output_files` frontmatter field on **ARCH** and **DDD** (and on
+STORY for forward action). The
+`output_files` value is a list of file paths and/or glob patterns. Globs are expanded through
+`specflow.lib.files.expand_output_files`, which is the single source of truth shared by the
+orphan meter, the reconcile command, and the source-drift lint check — so a package glob in
+any artifact is honored uniformly:
+
+```yaml
+# One ARCH covers a whole package
+links:
+  - target: REQ-007
+    role: derives_from
+output_files:
+  - "src/main/java/com/acme/payments/**/*.java"
+```
+
+| Artifact | Carries `output_files`? | When |
+|----------|--------------------------|------|
+| **REQ**  | no (behavioral) | Code refs don't belong here — use ARCH |
+| **ARCH** | yes (component custody) | Adoption: one per component, typically a package glob |
+| **DDD**  | yes (internals) | Adoption: finer-grained file set for the detail |
+| **STORY** | yes (forward action) | Forward work: subset of files the change touches |
+| **UT/IT/QT** | (rarely) | An executable test targeting specific files |
+
+**Adoption rule (D-20):** backfilled artifacts are tagged `backfilled`; backfilled code is
+linked via ARCH/DDD `output_files` only — adoption creates zero STORYs. STORY is reserved
+for forward action and appears only when someone changes adopted code, `specified_by` the
+existing ARCH.
+
+**Why globs:** on a 200k-LOC monorepo, one ARCH with `src/main/java/com/acme/payments/**/*.java`
+in its `output_files` covers hundreds of files in a single entry — feasible, reviewable, and
+credited in every downstream view. A bare file list would not be.
+
 ## Checklist System
 
 Three layers at every phase:
@@ -339,7 +374,8 @@ All programmatic commands are `specflow <subcommand>` subcommands of the Python 
 | `specflow baseline diff` | Compare two baselines |
 | `specflow detect dead-code` | AST-based informational scan for declared-but-unreferenced functions/classes (exit 0 regardless of findings) |
 | `specflow detect similarity` | Token-level informational scan for near-duplicate function bodies (exit 0 regardless of findings) |
-| `specflow detect orphan-code` | Report source files not traced to any STORY/REQ via `output_files`; `--retro-link STORY-NNN` adopts them. Also surfaced as a lens in `project-audit`. |
+| `specflow detect orphan-code` | Report source files not traced to any STORY/REQ/ARCH/DDD via `output_files` (literal paths + glob patterns). Reports coverage % and the biggest un-adopted cluster. `--retro-link <ID>` adopts them to a target artifact of any type. |
+| `specflow adopt status` | Adoption completeness, derived from the graph: project/boundary dashboard (coverage %, per-ARCH depth + drift) or per-artifact view (realization, criteria, verification, provenance, gaps, drift). No state file — fully computed. |
 
 ### State machine
 

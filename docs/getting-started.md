@@ -49,6 +49,19 @@ _specflow/
 .claude/skills/               # 10 slash command skill files
 ```
 
+### Already have a codebase? (Brownfield adoption)
+
+The walkthrough below assumes a greenfield project. If you're bringing an **existing** codebase into SpecFlow, install the optional **adoption pack** and start at `/specflow-adopt` instead of `/specflow-discover`:
+
+```
+/specflow-init --preset adoption
+/specflow-adopt
+```
+
+`/specflow-adopt` inventories your current code, docs, and tests; backfills **one ARCH per component** (with `output_files` package globs linking the code) plus REQ/DDD/DEC where they add value, all tagged `backfilled` with statuses like `implemented`/`verified` that reflect reality; cuts an **as-built baseline** (`adoption-v0`); and retro-links any remaining orphan code. **STORY is not backfilled** — it's reserved for forward action and appears only when someone changes adopted code.
+
+For large repos the default strategy is **skeleton-first**: one ARCH per component across the whole project gets every component under coverage fast, then `specflow adopt status` flags which components deserve REQ (behavior) + DDD (internals) deepening. Adoption is incremental (one subsystem per pass) and resumable, surfaces conflicting sources for you to resolve, and **hands off to the normal lifecycle** — so once a subsystem is adopted, new work there flows through `/specflow-discover` → plan → execute as below. Greenfield projects skip this entirely.
+
 ## 2. Discover requirements
 
 ```

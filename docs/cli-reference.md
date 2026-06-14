@@ -338,13 +338,35 @@ specflow export --adapter reqif [--output FILE]
 Project-hygiene scans.
 
 ```bash
-specflow detect dead-code     # Report unreferenced functions/classes
-specflow detect similarity    # Report near-identical function pairs
-specflow detect orphan-code   # Report source files not traced to any STORY/REQ
-specflow detect orphan-code --retro-link STORY-042   # Adopt orphans into a STORY's output_files
+specflow detect dead-code                                  # Report unreferenced functions/classes
+specflow detect similarity                                 # Report near-identical function pairs
+specflow detect orphan-code                                # Coverage % + unreferenced source files (globs honored)
+specflow detect orphan-code --retro-link ARCH-003          # Adopt orphans into an ARCH's output_files (STORY/ARCH/DDD/REQ)
 ```
 
+`output_files` on STORY/REQ/ARCH/DDD may be literal paths or glob patterns (`**/*.java`).
+The orphan meter credits all four types and expands globs through `lib.files.expand_output_files`,
+the same helper reconcile and source-drift use — so a package glob in any artifact's
+`output_files` is honored uniformly. The command reports **coverage %** (referenced ÷ total)
+and the **biggest un-adopted cluster** (the top-level directory with the most orphan files).
+
 Orphan-code is also surfaced as a lens in `specflow project-audit` (full mode, not `--quick`): it distinguishes "source↔spec tracking not yet adopted" (info) from "files slipped through partial tracking" (warn).
+
+### `specflow adopt status`
+
+Adoption completeness, **derived from the graph** (no state file). Available with the `adoption` pack (`/specflow-init --preset adoption`).
+
+```bash
+specflow adopt status                # Project + per-boundary dashboard
+specflow adopt status REQ-007         # Per-artifact completeness report
+specflow adopt status ARCH-003
+```
+
+The **project view** shows coverage %, backfilled count by type, inference debt (artifacts whose rationale flags "inferred / not confirmed"), and a per-ARCH boundary dashboard (file count, depth skeleton/full, drift flag, parent REQ). The biggest un-adopted cluster is flagged.
+
+The **per-artifact view** shows realization neighbors (arch realizes a REQ, DDD details an ARCH), acceptance-criteria count (for REQs), linked tests, provenance parsed from `tags` + `rationale`, depth, gaps (files under an ARCH's glob not covered by any child DDD; realizing ARCHs with no DDD), and post-adoption drift (from `.specflow/source-fingerprints.yaml`).
+
+For large repos, the default strategy is **skeleton-first**: one ARCH per component across the whole project, then deepen (REQ/DDD/tests) for components `adopt status` flags as high-churn, thin, or unverified. See `src/specflow/packs/adoption/skills/specflow-adopt/` for the full protocol.
 
 ### `specflow renumber-drafts`
 
