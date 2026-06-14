@@ -30,6 +30,8 @@ SpecFlow does not do ideation. It does not have a PM persona that interrogates y
 
 SpecFlow starts when you know what you want to build. `/specflow-discover` captures and structures what's already in your head through a guided conversation (specify + clarify). `/specflow-plan` breaks it into architecture and implementable stories. `/specflow-execute` builds it.
 
+**Already have a codebase?** Install the optional **adoption pack** (`/specflow-init --preset adoption`) and run `/specflow-adopt` — it inventories your existing code/docs/tests, backfills artifacts describing what already exists, and cuts an as-built baseline so forward change is governed from there. Greenfield projects skip this and start at `/specflow-discover`.
+
 If you need help deciding *what* to build, use a tool that does ideation well. When you're ready to specify, track, and build it with compliance-grade rigor — that's SpecFlow.
 
 ## Two ways to drive, one engine

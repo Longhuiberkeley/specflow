@@ -1,5 +1,6 @@
 # SpecFlow
 .specflow/locks/
+.mimocode/
 .specflow/checklist-log/
 .specflow/dedup-candidates.yaml
 

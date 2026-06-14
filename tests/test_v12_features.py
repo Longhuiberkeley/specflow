@@ -289,8 +289,24 @@ class TestCheckOutputFiles:
         assert result["warning_count"] >= 1
         assert "not found" in result["detail"]
 
-    def test_glob_pattern_skipped(self, project_root: Path):
+    def test_glob_pattern_matching_nothing_warns(self, project_root: Path):
+        # A glob that matches nothing is surfaced as ambiguous (the package may
+        # be deleted, or the pattern may be a typo). Previously globs were
+        # silently skipped — that hid broken/stale output_files globs.
         arts = [_make_art("ARCH-001", "architecture", extra_fm={"output_files": ["output/YY_MM_DD_*.json"]})]
+        result = lint_cmd._check_output_files(arts, project_root)
+        assert result["warning_count"] == 1
+        assert "matched nothing" in result["detail"]
+
+    def test_glob_pattern_matching_files_passes(self, project_root: Path):
+        # A glob that resolves to real files is credited — no warning. This is
+        # the core adoption use case: one ARCH covering a package via a glob.
+        pkg = project_root / "src" / "payments"
+        pkg.mkdir(parents=True, exist_ok=True)
+        (pkg / "charge.py").write_text("pass", encoding="utf-8")
+        (pkg / "refund.py").write_text("pass", encoding="utf-8")
+        arts = [_make_art("ARCH-001", "architecture",
+                          extra_fm={"output_files": ["src/payments/**/*.py"]})]
         result = lint_cmd._check_output_files(arts, project_root)
         assert result["warning_count"] == 0
 
@@ -306,8 +322,11 @@ class TestCheckOutputFiles:
             "output_files": ["src/exists.py", "src/missing.py", "output/*.json"]
         })]
         result = lint_cmd._check_output_files(arts, project_root)
-        assert result["warning_count"] == 1
+        # Two warnings: the literal miss (src/missing.py) + the glob that
+        # matched nothing (output/*.json).
+        assert result["warning_count"] == 2
         assert "src/missing.py" in result["detail"]
+        assert "matched nothing" in result["detail"]
 
 
 class TestUpdateOutputFiles:

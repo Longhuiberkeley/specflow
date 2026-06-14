@@ -299,6 +299,7 @@ These may ship someday, but are not committed:
 - **REST API** — programmatic access for custom toolchain integration
 - **Static HTML export** — `specflow export --html` for zero-dependency dashboard generation
 - **Multi-pack aggregated compliance** — unified compliance view across all installed standards
+- **Adoption pack (`/specflow-adopt`)** — bring an existing codebase into SpecFlow: inventory → backfill ARCH/DDD/REQ/DEC (tagged `backfilled`) → cut an as-built baseline → retro-link existing code → hand off to the normal lifecycle. ARCH-per-component code-linking via `output_files` globs, zero backfilled STORYs (STORY reserved for forward action), skeleton-first strategy, `specflow adopt status` completeness view (coverage %, per-ARCH boundary dashboard, per-artifact depth/gaps/drift). Incremental/resumable, conflict-surfacing, zero new Python. Opt-in pack (`/specflow-init --preset adoption`); greenfield projects don't need it. Implemented; see D-19 and D-20.
 
 ## Out of Scope
 

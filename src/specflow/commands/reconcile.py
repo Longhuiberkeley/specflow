@@ -5,22 +5,22 @@ from pathlib import Path
 from typing import Any
 
 from specflow.lib import artifacts as art_lib
+from specflow.lib import files as files_lib
 from specflow.lib.display import GREEN, YELLOW, RED, NC
 
 
 def _story_has_output_files(story: art_lib.Artifact, root: Path) -> bool:
-    """Check if any declared output_files exist on disk."""
+    """Check if any declared output_files exist on disk.
+
+    Glob patterns are expanded via `files.expand_output_files`, so a STORY
+    whose output_files is a package glob is credited as soon as any matching
+    file exists. Literal entries use the same expansion (a literal that exists
+    resolves to itself).
+    """
     output_files = story.frontmatter.get("output_files")
     if not output_files or not isinstance(output_files, list):
         return False
-    for fp in output_files:
-        if not isinstance(fp, str):
-            continue
-        if any(c in fp for c in "*?["):
-            continue
-        if (root / fp).exists():
-            return True
-    return False
+    return bool(files_lib.expand_output_files(root, output_files))
 
 
 def _story_in_git_log(story: art_lib.Artifact, root: Path) -> bool:

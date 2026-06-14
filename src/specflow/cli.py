@@ -163,6 +163,12 @@ def cmd_detect(args: argparse.Namespace) -> int:
     return detect_cmd.run(root, vars(args))
 
 
+def cmd_adopt(args: argparse.Namespace) -> int:
+    from specflow.commands import adopt as adopt_cmd
+    root = _find_project_root()
+    return adopt_cmd.run(root, vars(args))
+
+
 def cmd_unlock(args: argparse.Namespace) -> int:
     from specflow.commands import unlock as unlock_cmd
     root = _find_project_root()
@@ -418,8 +424,22 @@ def _add_detect_parser(subparsers):
     sp.add_argument("--src-dir", dest="src_dir", default="src", help="Source root (default: src)")
     sp.add_argument("--min-statements", dest="min_statements", type=int, default=10, help="Min function length")
     sp.add_argument("--threshold", type=float, default=0.9, help="Jaccard similarity threshold")
-    op = sub.add_parser("orphan-code", help="Report source files not referenced by any STORY or REQ")
-    op.add_argument("--retro-link", dest="retro_link_story", help="STORY ID to retroactively link all orphan files to")
+    op = sub.add_parser("orphan-code", help="Report source files not referenced by any STORY/REQ/ARCH/DDD")
+    op.add_argument("--retro-link", dest="retro_link_target",
+                    help="Artifact ID (STORY/ARCH/DDD/REQ) to retroactively link all orphan files to")
+
+
+def _add_adopt_parser(subparsers):
+    p = subparsers.add_parser("adopt", help="Brownfield adoption status + completeness (adoption pack)")
+    sub = p.add_subparsers(dest="adopt_subcommand")
+    status_p = sub.add_parser(
+        "status",
+        help="Adoption completeness: project/boundary view, or per-artifact for a given ID",
+    )
+    status_p.add_argument(
+        "target", nargs="?", default=None,
+        help="Optional artifact ID (REQ/ARCH/DDD) for the per-artifact completeness view",
+    )
 
 
 def _add_change_impact_parser(subparsers):
@@ -566,6 +586,7 @@ commands by workflow phase:
               fingerprint-refresh, ci, ci-gate
   Recovery:   unlock, locks, rebuild-index, split, merge
   Research:   autoresearch
+  Adoption:   adopt (brownfield; install via /specflow-init --preset adoption)
 """
 
 
@@ -678,6 +699,7 @@ def main(argv: list[str] | None = None) -> int:
     _add_ci_parser(subparsers)
     _add_trace_parser(subparsers)
     _add_ci_gate_parser(subparsers)
+    _add_adopt_parser(subparsers)
 
     # ── Recovery ────────────────────────────────────────────────
     _add_unlock_parser(subparsers)
@@ -734,6 +756,7 @@ def main(argv: list[str] | None = None) -> int:
         "ci-gate": cmd_ci_gate,
         "generate-tests": cmd_generate_tests,
         "autoresearch": cmd_autoresearch,
+        "adopt": cmd_adopt,
     }
 
     handler = commands.get(args.command)

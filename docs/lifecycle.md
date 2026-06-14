@@ -42,6 +42,8 @@ flowchart TB
         STORY --> WRK["DEC · DEF · AUD"]
     end
 
+    ADOPT["/specflow-adopt (adoption pack)<br/>existing codebase → backfill → as-built baseline"]
+    ADOPT -.-> ENG
     AI ==> ENG
     ALM ==> ENG
     ENG ==> REV["/specflow-artifact-review/"]
@@ -103,6 +105,21 @@ flowchart TB
                             (baseline + DECs + quick audit)
 ```
 </details>
+
+## Adoption — bringing an existing project in
+
+Everything above assumes you **start** with SpecFlow. If you have an **existing** codebase, install the optional **adoption pack** and run `/specflow-adopt` instead of starting at `/specflow-discover`:
+
+```
+/specflow-init --preset adoption   # install the adoption pack
+/specflow-adopt                     # inventory → backfill → as-built baseline
+```
+
+`/specflow-adopt` records the project's **current state** as artifacts (REQ/ARCH/DDD/DEC, tagged `backfilled`, with honest statuses like `implemented`/`verified` for code that already exists), cuts an **as-built baseline** (`adoption-v0`), and retro-links existing code. From that point, drift is measured against the adoption snapshot — not from zero — and **forward work resumes through the normal lifecycle** (`/specflow-discover` → plan → execute). New features are *not* `backfilled`; they're governed-forward.
+
+Adoption is **incremental and resumable**: one subsystem boundary per pass, `specflow detect orphan-code` as the progress meter, interleaved with ongoing development. It reuses the core artifact model (no new types/statuses) and surfaces conflicting sources to you rather than guessing. See the adoption pack's README and the `/specflow-adopt` skill for detail.
+
+> Greenfield projects (started with `/specflow-init`) do **not** need the adoption pack — go straight to `/specflow-discover`.
 
 ## Tier 1 — Slash Commands (the AI-first product)
 

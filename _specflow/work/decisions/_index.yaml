@@ -476,4 +476,20 @@ artifacts:
     - auto-generated
     fingerprint: sha256:2d13c1cad097
     children: []
-next_id: 56
+  DEC-056:
+    id: DEC-056
+    title: 'Change Record: fix: ship best-practice schema to templates, register audit/challenge
+      types, fix ARCH-025 role'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:3e0d84f9cf21
+    children: []
+  DEC-057:
+    id: DEC-057
+    title: 'D-19/D-20: Adoption Pack — brownfield adoption via ARCH-per-component code-linking'
+    status: approved
+    fingerprint: sha256:93fa18075af9
+    children: []
+next_id: 58

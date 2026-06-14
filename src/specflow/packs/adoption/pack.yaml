@@ -1,0 +1,35 @@
+name: adoption
+version: "0.2.0"
+description: >
+  Bring an EXISTING codebase into SpecFlow. Inventory current code, docs, and
+  tests; backfill REQ/ARCH/DDD/DEC describing what already exists; link code to
+  ARCH/DDD via `output_files` package globs (D-20); cut an as-built baseline;
+  and steer deepening with `specflow adopt status`. STORY is NOT backfilled —
+  it is reserved for forward action. Install ONLY for brownfield adoption;
+  greenfield projects started with /specflow-init do not need this pack.
+# Adoption reuses the core artifact model — it records reality, it does not
+# extend the vocabulary. No new types, no new directories.
+adds_artifact_types: []
+adds_directories: []
+adds_skills:
+  - specflow-adopt
+context_snippet: |
+  ### Adoption Pack (optional)
+  This project has the **adoption** pack installed — for bringing an EXISTING
+  codebase into SpecFlow (brownfield), not for starting greenfield work.
+  **Use `/specflow-adopt`** to inventory current code/docs/tests, backfill
+  REQ/ARCH/DDD/DEC describing what already exists (tagged `backfilled`),
+  cut an as-built baseline (`adoption-v0`), and retro-link existing code.
+  **Code is linked to ARCH/DDD via `output_files` globs** (one ARCH per
+  component covers a whole package). **STORY is not backfilled** — it is
+  reserved for forward action and appears only when someone changes adopted
+  code (`specified_by` the existing ARCH). For large repos, default to
+  **skeleton-first**: one ARCH per component across the whole project, then
+  deepen (REQ/DDD/tests) for components `specflow adopt status` flags as
+  high-churn, thin, or unverified. Adoption is **incremental and resumable** —
+  one subsystem boundary per pass, with `specflow adopt status` as the
+  progress/completeness dashboard. Conflicting sources (README vs code, doc
+  vs test) are surfaced to the user, never silently resolved.
+  **After adoption**, forward work uses the normal lifecycle:
+  `/specflow-discover` → plan → execute. New features are NOT `backfilled`.
+  **Never use for:** greenfield projects (use `/specflow-discover` directly).

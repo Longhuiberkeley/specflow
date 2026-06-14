@@ -13,6 +13,7 @@ import yaml
 
 from specflow.lib import artifacts as art_lib
 from specflow.lib import draft_ids as draft_lib
+from specflow.lib import files as files_lib
 from specflow.lib import standards as standards_lib
 from specflow.lib import lint as lint_lib
 from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC
@@ -924,17 +925,15 @@ def _check_spec_body(
     }
 
 
-_GLOB_CHARS = set("*?[")
-
-
 def _check_output_files(
     artifacts: list[art_lib.Artifact],
     root: Path,
 ) -> dict[str, str | int]:
     """Verify that declared output_files exist on the filesystem.
 
-    Glob patterns (containing *, ?, [) are skipped.
-    Paths are resolved relative to project root.
+    Literal paths resolve relative to project root. Glob patterns are expanded
+    via `files.expand_output_files`; a glob that matches zero files is flagged
+    (ambiguous — either the package was deleted or the pattern is a typo).
     """
     warnings = 0
     details: list[str] = []
@@ -944,16 +943,16 @@ def _check_output_files(
         if not output_files or not isinstance(output_files, list):
             continue
 
-        for file_path in output_files:
-            if not isinstance(file_path, str):
-                continue
-            if any(c in file_path for c in _GLOB_CHARS):
-                continue
+        # Literal misses: declared file is gone.
+        for missing in files_lib.literal_missing(root, output_files):
+            warnings += 1
+            details.append(f"  ⚠ [{art.id}] output file not found: {missing}")
 
-            resolved = (root / file_path).resolve()
-            if not resolved.exists():
+        # Glob misses: pattern matched nothing (ambiguous; worth surfacing).
+        for glob_entry in files_lib.glob_entries(output_files):
+            if not files_lib.expand_output_files(root, [glob_entry]):
                 warnings += 1
-                details.append(f"  ⚠ [{art.id}] output file not found: {file_path}")
+                details.append(f"  ⚠ [{art.id}] output_files glob matched nothing: {glob_entry}")
 
     icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
     detail_msg = "\n".join(details) if details else "All declared output files exist"
@@ -1439,8 +1438,6 @@ def _check_spike_lifecycle(
 
 # ── Source-file drift detection ────────────────────────────────────
 
-_SOURCE_FP_FILE = ".specflow/source-fingerprints.yaml"
-
 
 def _hash_file_content(path: Path) -> str:
     """Compute SHA256 hex digest of a file's contents."""
@@ -1449,7 +1446,7 @@ def _hash_file_content(path: Path) -> str:
 
 def _load_source_fingerprints(root: Path) -> dict[str, dict[str, str]]:
     """Load stored source fingerprints from .specflow/source-fingerprints.yaml."""
-    fp_path = root / _SOURCE_FP_FILE
+    fp_path = root / files_lib.SOURCE_FP_FILE
     if not fp_path.exists():
         return {}
     try:
@@ -1461,7 +1458,7 @@ def _load_source_fingerprints(root: Path) -> dict[str, dict[str, str]]:
 
 def _save_source_fingerprints(root: Path, data: dict[str, dict[str, str]]) -> None:
     """Save source fingerprints to .specflow/source-fingerprints.yaml."""
-    fp_path = root / _SOURCE_FP_FILE
+    fp_path = root / files_lib.SOURCE_FP_FILE
     fp_path.parent.mkdir(parents=True, exist_ok=True)
     fp_path.write_text(yaml.dump(data, default_flow_style=False, sort_keys=True), encoding="utf-8")
 
@@ -1475,6 +1472,11 @@ def _check_source_drift(
     Compares current file hashes against stored source fingerprints in
     .specflow/source-fingerprints.yaml. Warns if a file hash has changed
     and the governing artifact is not already suspect.
+
+    Glob patterns in `output_files` are expanded via `files.expand_output_files`
+    so an ARCH/STORY covering a package glob is drift-checked for every file
+    the glob matches. The stored fingerprint key is the glob string itself;
+    all files under a glob are hashed together (any change triggers drift).
 
     First run: if no fingerprint file exists but at least one artifact declares
     output_files, the check silently seeds the file with current hashes and
@@ -1495,24 +1497,20 @@ def _check_source_drift(
             continue
 
         art_hashes: dict[str, str] = {}
-        for file_path in output_files:
-            if not isinstance(file_path, str):
-                continue
-            if any(c in file_path for c in _GLOB_CHARS):
-                continue
-
-            resolved = (root / file_path).resolve()
-            if not resolved.is_file():
-                continue
-
+        # Expand globs + literals into concrete files via the shared helper.
+        for resolved in files_lib.expand_output_files(root, output_files):
+            try:
+                rel = str(resolved.relative_to(root.resolve()))
+            except ValueError:
+                rel = str(resolved)
             current_hash = _hash_file_content(resolved)
-            art_hashes[file_path] = current_hash
+            art_hashes[rel] = current_hash
 
-            stored_hash = (stored.get(art.id) or {}).get(file_path)
+            stored_hash = (stored.get(art.id) or {}).get(rel)
             if stored_hash and stored_hash != current_hash and not art.suspect:
                 warnings += 1
                 details.append(
-                    f"  ⚠ [{art.id}] source file changed: {file_path} "
+                    f"  ⚠ [{art.id}] source file changed: {rel} "
                     f"(stored: {stored_hash}, now: {current_hash}) — "
                     f"artifact is not suspect-flagged"
                 )
@@ -1520,7 +1518,7 @@ def _check_source_drift(
         if art_hashes:
             current[art.id] = art_hashes
 
-    fp_path = root / _SOURCE_FP_FILE
+    fp_path = root / files_lib.SOURCE_FP_FILE
     if not stored and current:
         _save_source_fingerprints(root, current)
         seeded = True
