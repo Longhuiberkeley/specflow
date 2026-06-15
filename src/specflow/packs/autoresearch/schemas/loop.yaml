@@ -1,7 +1,7 @@
 type: loop
 category: research
 prefix: LOOP
-id_format: "^LOOP-\\d{3}$"
+id_format: "^LOOP-\\d{3,5}$"
 required_fields: [id, title, type, status, created, competition, mode, budget]
 optional_fields: [description, goal, active_research_questions, required_findings, termination_suggestions, best_metric, best_experiment, plateau_patience, knowledge_input, started_at, completed_at, iteration_count, kept_count, discarded_count, tags, suspect, fingerprint, links, modified, thinking_techniques]
 allowed_status:

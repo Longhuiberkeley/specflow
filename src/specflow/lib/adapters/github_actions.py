@@ -5,6 +5,7 @@ Generates CI workflows for declared operations:
   - change-impact
   - project-audit
   - release-gate
+  - pytest
 
 All CI checks are self-contained and deterministic — zero external API calls.
 
@@ -132,6 +133,23 @@ _CI_GATE = """\
         run: uv run specflow ci-gate --base ${{ github.base_ref }} --head ${{ github.head_ref }}
 """
 
+_PYTEST = """\
+  pytest:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install uv
+        run: pip install uv
+      - name: Install dependencies
+        run: uv sync
+      - name: Run pytest
+        run: uv run pytest tests/ -v
+"""
+
 _HEADER = """\
 name: SpecFlow
 
@@ -149,6 +167,7 @@ _OP_JOBS: dict[str, str] = {
     "project-audit": _PROJECT_AUDIT,
     "release-gate": _RELEASE_GATE,
     "ci-gate": _CI_GATE,
+    "pytest": _PYTEST,
 }
 
 

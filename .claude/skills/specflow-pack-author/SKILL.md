@@ -153,7 +153,7 @@ clauses:
 ```yaml
 type: {type}
 prefix: {PREFIX}
-id_format: "^{PREFIX}-\\d{3}(\\.\\d{1,3})?$"
+id_format: "^{PREFIX}-\\d{3,5}(\\.\\d{1,3})?$"
 required_fields:
   - id
   - title

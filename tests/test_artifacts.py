@@ -6,6 +6,7 @@ import textwrap
 from pathlib import Path
 
 import pytest
+import yaml
 
 from specflow.lib import artifacts as art_lib
 
@@ -393,3 +394,97 @@ class TestIdUtilities:
         assert art_lib.check_dot_notation_depth("REQ-001") == 1
         assert art_lib.check_dot_notation_depth("REQ-001.1") == 2
         assert art_lib.check_dot_notation_depth("REQ-001.1.1") == 3
+
+
+_STD_FLOW = {"draft": [], "approved": ["draft"], "implemented": ["approved"], "verified": ["implemented"]}
+
+
+def _scaffold_full_project(tmp: Path) -> Path:
+    root = tmp / "project"
+    schema_dir = root / ".specflow" / "schema"
+    schema_dir.mkdir(parents=True, exist_ok=True)
+
+    for art_type, prefix in [("requirement", "REQ"), ("architecture", "ARCH"), ("story", "STORY")]:
+        schema = {
+            "type": art_type,
+            "prefix": prefix,
+            "allowed_status": dict(_STD_FLOW),
+            "allowed_link_roles": ["implements", "verifies"],
+        }
+        (schema_dir / f"{art_type}.yaml").write_text(yaml.dump(schema), encoding="utf-8")
+
+    config = {
+        "project": {"name": "test-project", "created": "2026-01-01"},
+        "artifact_types": ["requirement", "architecture", "story"],
+        "active_packs": [],
+    }
+    (root / ".specflow" / "config.yaml").write_text(yaml.dump(config), encoding="utf-8")
+    (root / ".specflow" / "state.yaml").write_text(
+        yaml.dump({"current": "executing", "history": []}), encoding="utf-8"
+    )
+
+    for subdir in [
+        "_specflow/specs/requirements", "_specflow/specs/architecture",
+        "_specflow/work/stories",
+    ]:
+        (root / subdir).mkdir(parents=True, exist_ok=True)
+
+    return root
+
+
+class TestCreateArtifactFingerprint:
+    def test_fingerprint_in_frontmatter(self, tmp_path: Path):
+        root = _scaffold_full_project(tmp_path)
+        result = art_lib.create_artifact(root, "requirement", title="Test Req", body="some body")
+        assert result["ok"]
+
+        art = art_lib.parse_artifact(Path(result["path"]))
+        assert art is not None
+        assert art.fingerprint == result["fingerprint"]
+        assert art.fingerprint.startswith("sha256:")
+
+    def test_fingerprint_survives_rebuild(self, tmp_path: Path):
+        root = _scaffold_full_project(tmp_path)
+        result = art_lib.create_artifact(root, "requirement", title="Test", body="content")
+        original_fp = result["fingerprint"]
+
+        art_lib.rebuild_index(root)
+
+        index = art_lib._read_index(root / "_specflow" / "specs" / "requirements" / "_index.yaml")
+        assert index["artifacts"][result["id"]]["fingerprint"] == original_fp
+
+
+class TestRebuildIndexSafety:
+    def test_warns_on_dropped_artifacts(self, tmp_path: Path, caplog):
+        import logging
+        root = _scaffold_full_project(tmp_path)
+        result = art_lib.create_artifact(root, "requirement", title="To Drop", body="body")
+        art_id = result["id"]
+
+        md_path = Path(result["path"])
+        md_path.unlink()
+        assert not md_path.exists()
+
+        with caplog.at_level(logging.WARNING):
+            art_lib.rebuild_index(root)
+
+        assert art_id in caplog.text
+        assert "dropped" in caplog.text
+
+    def test_warns_on_erased_fingerprint(self, tmp_path: Path, caplog):
+        import logging
+        root = _scaffold_full_project(tmp_path)
+        result = art_lib.create_artifact(root, "requirement", title="Has FP", body="body")
+        art_id = result["id"]
+        original_fp = result["fingerprint"]
+
+        md_path = Path(result["path"])
+        content = md_path.read_text(encoding="utf-8")
+        content = content.replace(f"fingerprint: {original_fp}\n", "")
+        md_path.write_text(content, encoding="utf-8")
+
+        with caplog.at_level(logging.WARNING):
+            art_lib.rebuild_index(root)
+
+        assert "fingerprint erased" in caplog.text
+        assert art_id in caplog.text

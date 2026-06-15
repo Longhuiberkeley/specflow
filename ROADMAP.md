@@ -198,6 +198,14 @@ Focus: **autoresearch methodology depth, escalation/permanence test, and templat
 
 > Deferred: an audit/lint detector that flags long-lived SPIKEs / repeated ad-hoc work that should have been promoted (a work-side complement to the v1.8.0 *Stale Code Detection* item). Also deferred: optional structured multi-output schema (typed per-component fields on COMP/EXPT) if the `component_<name>` convention proves too loose.
 
+## v1.9.4
+
+Focus: **data safety and CI hardening.**
+
+- **`rebuild-index` fingerprint source-of-truth** — `create_artifact()` now writes `fingerprint` into `.md` frontmatter (not just `_index.yaml`), so fingerprints survive `rebuild_index()`. `rebuild_index()` warns before dropping index entries or erasing fingerprints instead of doing it silently. Root cause: `_render_artifact_file()` never received the computed fingerprint; `update_artifact()` already did this correctly.
+- **`pytest` job in CI** — dogfood `.github/workflows/specflow.yml` now runs `uv run pytest tests/` as a blocking gate. GitHub Actions adapter includes `pytest` as an available `ci.operations` key for new projects.
+- **Schema id\_format widening completed** — last remaining `\d{3}` pattern in `pack-author` template reference fixed to `\d{3,5}`.
+
 ## v1.9.1
 
 Focus: **disciplined relationships — vocabulary stays frozen, drift gets named.**
@@ -292,8 +300,6 @@ Focus: **status cascade automation and reconciliation.**
 These may ship someday, but are not committed:
 
 - **Auto-capture `output_files` on execute/`done`** — record the source files a story produced as it's implemented, so `detect orphan-code` and `source-drift` work without manual `--retro-link`. The detection + audit surfacing shipped in v1.9.0; this is the capture half. Needs care around renames, deletions, and files shared across stories.
-- **`pytest` job in CI** — the dogfood `.github/workflows/specflow.yml` runs the SpecFlow artifact checks (lint / audit / change-impact) but **not** the Python test suite, so a code regression can land on `main` without CI catching it. Add a `uv run pytest` job (and ship it in the GitHub Actions template/generator so installed projects get the same guard).
-- **`rebuild-index` data-safety + fingerprint source-of-truth** — `rebuild-index` regenerates each `_index.yaml` purely from the `.md` files, so it *silently* (a) drops index entries that have no backing file (e.g. a ghost `BP-001` entry in `best-practices/_index.yaml`) and (b) empties fingerprints that live only in the index, not in frontmatter. Root cause: the audit and change-record generators write `fingerprint` into the index but **not** into the artifact's `.md` frontmatter, so those fingerprints are fragile and vanish on any rebuild (observed on AUD-046–050, DEC-055). Fix: make generators write `fingerprint` into frontmatter (files = source of truth), and have `rebuild-index` **warn** before dropping an entry or emptying a fingerprint instead of doing it silently. Low severity (recovery command, terminal artifacts; spec artifacts keep file-level fingerprints), but it can silently weaken suspect-cascade/drift signals on auto-generated artifacts. Surfaced during the v1.9.3 release.
 - **Continued skill ↔ template reconciliation / prompt tuning** — v1.9.0 made `.claude/skills` and `templates/skills/shared` byte-identical (richer-wins). Future skill-prompt edits should update both trees together (mirror live→ship); revisit if prompts need deeper tuning.
 - **Product variant management** — tag-based product line engineering for multi-trim / multi-variant projects
 - **FMEA / risk analysis** — hazard, safety-goal, and risk-control artifact types via industry packs

@@ -4,12 +4,15 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 import yaml
+
+logger = logging.getLogger(__name__)
 
 
 def parse_set_fields(set_list: list[str] | None) -> dict[str, Any]:
@@ -520,6 +523,7 @@ def _render_artifact_file(
     tags: list[str] | None = None,
     links: list[dict[str, str]] | None = None,
     body: str = "",
+    fingerprint: str = "",
     **kwargs: Any,
 ) -> str:
     from datetime import date
@@ -540,6 +544,8 @@ def _render_artifact_file(
     fm["suspect"] = False
     fm["links"] = links or []
     fm["created"] = today
+    if fingerprint:
+        fm["fingerprint"] = fingerprint
     for k, v in kwargs.items():
         if v is not None:
             fm[k] = v
@@ -618,6 +624,7 @@ def create_artifact(
         tags=tags,
         links=links,
         body=body,
+        fingerprint=fingerprint,
         **kwargs,
     )
 
@@ -733,6 +740,9 @@ def rebuild_index(root: Path, artifact_type: str | None = None) -> dict[str, Any
             continue
 
         index_path = target_dir / "_index.yaml"
+        old_index = _read_index(index_path)
+        old_artifacts = old_index.get("artifacts", {})
+
         artifacts_data: dict[str, Any] = {}
         max_num = 0
 
@@ -758,6 +768,21 @@ def rebuild_index(root: Path, artifact_type: str | None = None) -> dict[str, Any
                 "fingerprint": art.fingerprint,
                 "children": [],
             }
+
+        dropped = set(old_artifacts.keys()) - set(artifacts_data.keys())
+        if dropped:
+            logger.warning(
+                "rebuild_index: %s dropped %d artifact(s) from index: %s",
+                atype, len(dropped), ", ".join(sorted(dropped)),
+            )
+
+        for art_id, new_entry in artifacts_data.items():
+            old_entry = old_artifacts.get(art_id, {})
+            if old_entry.get("fingerprint") and not new_entry.get("fingerprint"):
+                logger.warning(
+                    "rebuild_index: %s fingerprint erased for %s (was %s)",
+                    atype, art_id, old_entry["fingerprint"],
+                )
 
         index_data = {
             "artifacts": artifacts_data,

@@ -20,6 +20,20 @@ jobs:
         run: uv sync
       - name: Validate artifacts (deterministic, zero tokens)
         run: uv run specflow artifact-lint --method programmatic
+  pytest:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install uv
+        run: pip install uv
+      - name: Install dependencies
+        run: uv sync
+      - name: Run pytest
+        run: uv run pytest tests/ -v
   specflow-project-audit:
     name: Project audit
     runs-on: ubuntu-latest

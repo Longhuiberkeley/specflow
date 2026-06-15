@@ -96,7 +96,7 @@ SpecFlow IS your persistent memory. You do not have reliable conversation memory
 - **Status Flow:** `draft` → `approved` → `implemented` → `verified`.
 - **Updates:** Use `specflow update <ID> --status <status>` for all YAML/status changes.
 - **Cascading:** When STORY code lands: `specflow update STORY-NNN --status implemented` then `specflow cascade-status STORY-NNN`.
-- **Evidence:** Don't assume "verified"; run checks/tests to prove it.
+- **Evidence:** Don't assume "verified." Capture the gate baseline *before* you change — test pass/fail counts and the names of currently-failing tests (or `artifact-lint` counts if no test runner exists yet). After implementing, re-run the *same* gate and report the delta ("baseline 2 failing {a,b} → still 2" / "now 3: +c, I caused it"). Never claim "no regressions" without a captured baseline to diff against.
 - **Validation:** Run `specflow artifact-lint` after manual artifact edits.
 - **Suspect resolution:** When an artifact is flagged `suspect`, actively propose resolution to the human (create DEF, mark resolved, or update the artifact). Do not let suspect flags sit unresolved.
 

@@ -42,6 +42,8 @@ uv run specflow document-changes --since <prev>
 
 ### Step 3: Quick Audit
 
+**Verification-gate re-run (blocking).** A release is a one-way door, so confirm the gate is green *now* — not just that it was green at execute time. Re-run the test suite (the same gate execute baselined in Step 3 of `/specflow-execute`). A non-green gate is **`blocking`**: stop, report the failures verbatim, and do not proceed until green. If execute recorded a baseline + delta, surface it here. `project-audit --quick` below checks artifact health; it does *not* prove the suite passes — both must be green to ship.
+
 Run a fast health check across the final state of the release:
 ```
 uv run specflow project-audit --quick

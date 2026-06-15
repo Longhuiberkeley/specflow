@@ -40,7 +40,7 @@ An empty list means the status is a valid terminal state (no further transition 
 ```yaml
 type: hazard
 prefix: HAZ
-id_format: "^HAZ-\\d{3}(\\.\\d{1,3})?$"
+id_format: "^HAZ-\\d{3,5}(\\.\\d{1,3})?$"
 required_fields:
   - id
   - title
