@@ -204,7 +204,9 @@ Focus: **data safety and CI hardening.**
 
 - **`rebuild-index` fingerprint source-of-truth** — `create_artifact()` now writes `fingerprint` into `.md` frontmatter (not just `_index.yaml`), so fingerprints survive `rebuild_index()`. `rebuild_index()` warns before dropping index entries or erasing fingerprints instead of doing it silently. Root cause: `_render_artifact_file()` never received the computed fingerprint; `update_artifact()` already did this correctly.
 - **`pytest` job in CI** — dogfood `.github/workflows/specflow.yml` now runs `uv run pytest tests/` as a blocking gate. GitHub Actions adapter includes `pytest` as an available `ci.operations` key for new projects.
-- **Schema id\_format widening completed** — last remaining `\d{3}` pattern in `pack-author` template reference fixed to `\d{3,5}`.
+- **Schema id\_format widening — project + skill-doc sync** — the `\d{3}`→`\d{3,5}` widening had only landed in shipped `templates/schemas/`. Regenerated the project's own `.specflow/schema/` from templates (it was a fossil — 10 files still `\d{3}`, three at `\d{3,4}`, only `story.yaml` current) and fixed the live `pack-author` reference doc that lagged its own template. Only `id_format` had drifted. Exposed a systemic gap (see Future).
+- **Verification-gate step ordering** — the execute skill's verification-gate delta now runs *inside* Step 6 (Validation) before the exit/handoff message, instead of as an orphan "Step 6.5" placed after it; the exit message now reports the delta. The `AGENTS.md` / `agent-context.md` Evidence bullet was tightened to match sibling altitude.
+- **`thinking_techniques` recorded at discovery** — the discover skill now records the lenses actually applied to each REQ via `update --thinking-techniques` (the plan skill already did this for ARCH/DDD). Closes the disconnect where the challenge step ran but left the field empty, inviting cosmetic backfill to satisfy lint.
 
 ## v1.9.1
 
@@ -301,6 +303,7 @@ These may ship someday, but are not committed:
 
 - **Auto-capture `output_files` on execute/`done`** — record the source files a story produced as it's implemented, so `detect orphan-code` and `source-drift` work without manual `--retro-link`. The detection + audit surfacing shipped in v1.9.0; this is the capture half. Needs care around renames, deletions, and files shared across stories.
 - **Continued skill ↔ template reconciliation / prompt tuning** — v1.9.0 made `.claude/skills` and `templates/skills/shared` byte-identical (richer-wins). Future skill-prompt edits should update both trees together (mirror live→ship); revisit if prompts need deeper tuning.
+- **Schema sync for initialized projects** — template `schema/*.yaml` edits don't propagate to an existing project's `.specflow/schema/`; the only re-sync path today is `init --force` (which does far more than schemas). A targeted `specflow sync-schema` — or a drift lint that flags `.specflow/schema/` divergence from the installed templates — would catch silent staleness. Surfaced in v1.9.4 when the `id_format` widening had not reached the dogfood project.
 - **Product variant management** — tag-based product line engineering for multi-trim / multi-variant projects
 - **FMEA / risk analysis** — hazard, safety-goal, and risk-control artifact types via industry packs
 - **REST API** — programmatic access for custom toolchain integration

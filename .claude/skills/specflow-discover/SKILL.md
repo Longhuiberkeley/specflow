@@ -163,6 +163,11 @@ Present concerns as a quick summary. Let the user confirm, revise, or drop requi
 
 Only create DEC artifacts for significant findings. If no challenges produce actionable results, skip DEC creation to avoid noise.
 
+After challenging the REQs, record which techniques you applied to each — even if it passed cleanly — so the `thinking_techniques` field reflects reasoning that actually happened here, not a label added later to satisfy lint (technique names come from `references/thinking-techniques.md`):
+```
+uv run specflow update <REQ-ID> --thinking-techniques <technique1,technique2>
+```
+
 If the user requested specific techniques or said "go deep", expand the selection accordingly.
 
 After applying thinking techniques, record which techniques were applied to each artifact — even if they passed cleanly (no findings):

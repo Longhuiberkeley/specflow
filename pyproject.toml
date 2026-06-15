@@ -1,6 +1,6 @@
 [project]
 name = "specflow"
-version = "1.9.3"
+version = "1.9.4"
 description = "Spec-driven development for AI-speed teams — compliance-grade traceability in your git repo"
 readme = "README.md"
 license = "MIT"

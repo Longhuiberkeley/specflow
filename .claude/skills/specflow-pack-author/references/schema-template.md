@@ -79,4 +79,4 @@ directory: _specflow/specs/hazards/
 - `type`: lowercase, singular (e.g., `hazard` not `hazards`)
 - `prefix`: uppercase, 2-4 letters (e.g., `HAZ`, `THR`, `CTRL`)
 - `directory`: `_specflow/specs/{plural-type}/` (e.g., `_specflow/specs/hazards/`)
-- ID format: `^{PREFIX}-\\d{3}(\\.\\d{1,3})?$` for parent.child numbering
+- ID format: `^{PREFIX}-\\d{3,5}(\\.\\d{1,3})?$` for parent.child numbering

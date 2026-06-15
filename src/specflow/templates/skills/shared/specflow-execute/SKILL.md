@@ -77,7 +77,7 @@ The planning-to-executing phase gate IS the readiness check. Run it before any i
 
 ### Step 3: Implementation
 
-**Capture the gate baseline first (once per run).** Before writing any code, run the project's test suite and record the baseline — pass/fail counts and the names of currently-failing tests. This is the diff point for later "no regressions" claims. If the project has no test runner yet, capture the `artifact-lint` baseline instead and say so explicitly. You will re-run this same gate in Step 6.5 and report the delta.
+**Capture the gate baseline first (once per run).** Before writing any code, run the project's test suite and record the baseline — pass/fail counts and the names of currently-failing tests. This is the diff point for later "no regressions" claims. If the project has no test runner yet, capture the `artifact-lint` baseline instead and say so explicitly. You will re-run this same gate in Step 6 (Validation) and report the delta.
 
 For each story (or wave of stories):
 
@@ -167,13 +167,11 @@ uv run specflow artifact-lint
 
 Report results and fix any issues.
 
-**Exit message:** Report the count of stories marked `implemented` and tests created (UT/IT/QT). Recommend the next skill -- `/specflow-artifact-review`.
-
-### Step 6.5: Verification-Gate Delta
-
-Re-run the *same* gate you baselined at the top of Step 3 (the test suite, or `artifact-lint` if that was the baseline). Report the delta vs baseline: "baseline N failing {a,b} → now M failing {…}: +c I caused it / -d I fixed it / unchanged." Read a real exit code — don't grep narrowed to your own files. If the count rose, you caused a regression: revert the offending step, re-diagnose, re-sequence — don't stack a fix on a broken base.
+**Verification-gate delta.** Re-run the *same* gate you baselined at the top of Step 3 (the test suite, or `artifact-lint` if that was the baseline). Report the delta vs baseline: "baseline N failing {a,b} → now M failing {…}: +c I caused it / -d I fixed it / unchanged." Read a real exit code — don't grep narrowed to your own files. If the count rose, you caused a regression: revert the offending step, re-diagnose, re-sequence — don't stack a fix on a broken base.
 
 Record the gate result (baseline + final + delta) in the STORY or its linked UT/IT/QT artifact so `verified` is traced, not asserted. Do not move a STORY or test artifact to `verified` without this delta on record.
+
+**Exit message:** Report the count of stories marked `implemented`, tests created (UT/IT/QT), and the verification-gate delta. Recommend the next skill -- `/specflow-artifact-review`.
 
 ### Step 7: Phase Closure (Optional)
 
