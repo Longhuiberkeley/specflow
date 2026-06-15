@@ -18,8 +18,8 @@ links:
 - target: ARCH-022
   role: guided_by
 created: '2026-05-15'
-modified: '2026-05-15'
-fingerprint: sha256:49a55a0c309a
+modified: '2026-06-15'
+fingerprint: sha256:4f5d8d729f6c
 ---
 
 # Extend apply_pack with skill installation step
@@ -34,9 +34,9 @@ fingerprint: sha256:49a55a0c309a
 - Use `platform.detect_platform()` + `platform.get_skills_dir()` (no changes needed there)
 - Extend return dict with `skills_added: [<name>...]`
 
-## Acceptance
+## Acceptance Criteria
 
-- Pack manifest with `adds_skills: [foo]` and a `skills/foo/` directory results in `<platform_skills_dir>/foo/` being created on first install
-- Reinstalling the pack does not overwrite an existing skill directory
-- A pack declaring skills but installed in a project with no detected platform produces a warning, not an error
-- Return value includes `skills_added`
+1. Pack manifest with `adds_skills: [foo]` and a `skills/foo/` directory results in `<platform_skills_dir>/foo/` being created on first install
+2. Reinstalling the pack does not overwrite an existing skill directory
+3. A pack declaring skills but installed in a project with no detected platform produces a warning, not an error
+4. Return value includes `skills_added`

@@ -8,6 +8,7 @@ tags:
 - intelligence
 - analysis
 - P8
+- spidr-spike
 suspect: false
 links:
 - target: REQ-004
@@ -26,7 +27,7 @@ checklists_applied:
   timestamp: '2026-04-11T13:45:49Z'
 - checklist: check-STORY-020
   timestamp: '2026-04-14T17:03:23Z'
-modified: '2026-04-22'
+modified: '2026-06-15'
 fingerprint: sha256:77229e571f6c
 version: 1
 ---

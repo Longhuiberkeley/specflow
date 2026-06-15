@@ -35,10 +35,10 @@ created: '2026-05-15'
 
 - SPIKE-001 must complete first — it produces the concrete diff list
 
-## Acceptance
+## Acceptance Criteria
 
-- Each of the 8 phases has a clearly demarcated section
-- Examples use `specflow create --type experiment ...` (not TSV append)
-- Crash recovery still has the 3-attempt cap
-- Stuck detection still triggers at 5 consecutive discards
-- Atomicity 'one-sentence test' preserved verbatim
+1. Each of the 8 phases has a clearly demarcated section
+2. Examples use `specflow create --type experiment ...` (not TSV append)
+3. Crash recovery still has the 3-attempt cap
+4. Stuck detection still triggers at 5 consecutive discards
+5. Atomicity 'one-sentence test' preserved verbatim

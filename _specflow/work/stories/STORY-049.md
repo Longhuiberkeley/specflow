@@ -7,6 +7,7 @@ priority: high
 tags:
 - lint
 - quality
+- spidr-rules
 suspect: false
 links:
 - target: REQ-023
@@ -16,7 +17,7 @@ links:
 - target: DDD-018
   role: specified_by
 created: '2026-05-04'
-modified: '2026-05-04'
+modified: '2026-06-15'
 fingerprint: sha256:1fb053d274f4
 ---
 

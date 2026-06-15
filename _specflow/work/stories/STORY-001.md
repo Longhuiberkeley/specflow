@@ -8,6 +8,7 @@ tags:
 - traceability
 - impact
 - P4
+- spidr-path
 suspect: false
 links:
 - target: REQ-003
@@ -23,7 +24,7 @@ links:
 - target: QT-005
   role: verified_by
 created: '2026-04-11'
-modified: '2026-04-22'
+modified: '2026-06-15'
 fingerprint: sha256:7e927cb96b50
 checklists_applied:
 - checklist: check-STORY-001

@@ -17,6 +17,8 @@ links:
 - target: SPIKE-001
   role: derives_from
 created: '2026-05-15'
+modified: '2026-06-15'
+fingerprint: sha256:062e77a573e6
 ---
 
 # Create autoresearch pack directory and pack.yaml manifest
@@ -59,9 +61,9 @@ adds_skills:
   - specflow-autoresearch
 ```
 
-## Acceptance
+## Acceptance Criteria
 
-- `specflow init --with-pack autoresearch` in a fresh test project creates all four `_specflow/specs/<...>` directories
-- The 4 schemas (from STORY-069) are copied into `.specflow/schema/`
-- The skill (from Wave 3) is copied into the platform's skills directory
-- README.md briefly explains pack purpose and references the autoresearch_fork attribution
+1. `specflow init --with-pack autoresearch` in a fresh test project creates all four `_specflow/specs/<...>` directories
+2. The 4 schemas (from STORY-069) are copied into `.specflow/schema/`
+3. The skill (from Wave 3) is copied into the platform's skills directory
+4. README.md briefly explains pack purpose and references the autoresearch_fork attribution

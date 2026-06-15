@@ -38,9 +38,9 @@ created: '2026-05-15'
 - **Loop execution**: references the 8-phase protocol
 - **Anti-patterns**: from autoresearch's `core-principles.md` (merged in)
 
-## Acceptance
+## Acceptance Criteria
 
-- File renders correctly via the existing skill display in Claude Code / Cursor / etc.
-- Each subcommand has a one-paragraph description and an example invocation
-- Setup gate steps explicit and numbered
-- Anti-patterns section includes all 7 Karpathy principles from autoresearch fork
+1. File renders correctly via the existing skill display in Claude Code / Cursor / etc.
+2. Each subcommand has a one-paragraph description and an example invocation
+3. Setup gate steps explicit and numbered
+4. Anti-patterns section includes all 7 Karpathy principles from autoresearch fork

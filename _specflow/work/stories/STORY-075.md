@@ -52,8 +52,8 @@ Install the autoresearch pack into the user's `quant_trade_rnd` project:
 5. Confirm `specflow status` shows a Research row
 6. Confirm `specflow trace COMP-001` renders the hierarchy
 
-## Acceptance
+## Acceptance Criteria
 
-- All 5 tests pass in CI
-- Pilot produces at least one COMP, one LOOP, ≥10 EXPTs, and one FIND
-- User confirms the workflow feels natural for their backtesting use case (CS2 / HKJC / crypto)
+1. All 5 tests pass in CI
+2. Pilot produces at least one COMP, one LOOP, ≥10 EXPTs, and one FIND
+3. User confirms the workflow feels natural for their backtesting use case (CS2 / HKJC / crypto)

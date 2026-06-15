@@ -15,8 +15,8 @@ links:
 - target: DDD-024
   role: specified_by
 created: '2026-05-15'
-modified: '2026-05-15'
-fingerprint: sha256:3811045800b3
+modified: '2026-06-15'
+fingerprint: sha256:afd897eb39a8
 ---
 
 # Add category field to existing schema YAMLs
@@ -36,9 +36,9 @@ All existing schema YAMLs in `src/specflow/templates/schemas/` declare a `catego
 
 One-line addition per file. No code changes.
 
-## Acceptance
+## Acceptance Criteria
 
-- `grep -L 'category:' src/specflow/templates/schemas/*.yaml` returns nothing (all top-level files have the field)
-- Same for `optional/*.yaml`
-- Existing schema-validation tests still pass
-- iso26262-demo pack's `hazard.yaml` also gets a category line
+1. `grep -L 'category:' src/specflow/templates/schemas/*.yaml` returns nothing (all top-level files have the field)
+2. Same for `optional/*.yaml`
+3. Existing schema-validation tests still pass
+4. iso26262-demo pack's `hazard.yaml` also gets a category line

@@ -12,6 +12,7 @@ tags:
 - core
 suspect: false
 fingerprint: sha256:9796f65acf40
+thinking_techniques: [assumption-surfacing, devil's-advocate]
 links:
 - target: REQ-001
   role: derives_from

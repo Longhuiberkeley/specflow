@@ -13,8 +13,8 @@ links:
 - target: REQ-034
   role: implements
 created: '2026-05-15'
-modified: '2026-05-15'
-fingerprint: sha256:00995fe102ba
+modified: '2026-06-15'
+fingerprint: sha256:b09436eed97b
 ---
 
 # Extend specflow trace to render research chain
@@ -29,9 +29,9 @@ fingerprint: sha256:00995fe102ba
 - Possibly a new helper in `src/specflow/lib/artifacts.py` to walk COMP → LOOPs → EXPTs efficiently
 - Realistic size estimate: ~80 lines (not 30 — the existing `_print_tree` is flat upstream/downstream)
 
-## Acceptance
+## Acceptance Criteria
 
-- `specflow trace COMP-NNN` shows: COMP header, list of LOOPs nested under COMP, each LOOP with mode/iter/best/status, EXPT summary counts per LOOP, separate FINDINGs section with FIND IDs and statuses
-- `specflow trace LOOP-NNN` shows parent COMP + all EXPTs in that LOOP
-- `specflow trace EXPT-NNN` shows parent LOOP + COMP
-- Non-research artifacts continue to use the existing flat upstream/downstream renderer
+1. `specflow trace COMP-NNN` shows: COMP header, list of LOOPs nested under COMP, each LOOP with mode/iter/best/status, EXPT summary counts per LOOP, separate FINDINGs section with FIND IDs and statuses
+2. `specflow trace LOOP-NNN` shows parent COMP + all EXPTs in that LOOP
+3. `specflow trace EXPT-NNN` shows parent LOOP + COMP
+4. Non-research artifacts continue to use the existing flat upstream/downstream renderer

@@ -9,6 +9,7 @@ tags:
 - CLI
 - skills
 - M1-clarity
+- spidr-interface
 suspect: false
 links:
 - target: REQ-018
@@ -27,7 +28,7 @@ created: '2026-04-14'
 checklists_applied:
 - checklist: check-STORY-022
   timestamp: '2026-04-14T17:03:23Z'
-modified: '2026-04-22'
+modified: '2026-06-15'
 fingerprint: sha256:ea3bae1e6e1b
 version: 1
 ---

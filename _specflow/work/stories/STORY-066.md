@@ -15,8 +15,8 @@ links:
 - target: DDD-024
   role: specified_by
 created: '2026-05-15'
-modified: '2026-05-15'
-fingerprint: sha256:7638ec09a640
+modified: '2026-06-15'
+fingerprint: sha256:7c50360e6c6c
 ---
 
 # Make specflow status dashboard dynamic via category
@@ -32,10 +32,10 @@ fingerprint: sha256:7638ec09a640
 - Render order: spec, work, review, research
 - Render a row only if at least one artifact in that category has count > 0
 
-## Acceptance
+## Acceptance Criteria
 
-- Existing projects (no research artifacts) render the three core rows in spec → work → review order (the Reviews and Work rows are intentionally swapped vs. pre-066 output to match DDD-024's render-order rule)
-- A project with zero artifacts in a category renders no row for that category (no "always show core categories" exception — matches DDD-024 §rendering rule)
-- A project with a COMP/LOOP/EXPT/FIND shows a fourth "Research:" row
-- Removing the autoresearch pack (deleting research schemas) hides the Research row again
-- Status tests still pass
+1. Existing projects (no research artifacts) render the three core rows in spec → work → review order (the Reviews and Work rows are intentionally swapped vs. pre-066 output to match DDD-024's render-order rule)
+2. A project with zero artifacts in a category renders no row for that category (no "always show core categories" exception — matches DDD-024 §rendering rule)
+3. A project with a COMP/LOOP/EXPT/FIND shows a fourth "Research:" row
+4. Removing the autoresearch pack (deleting research schemas) hides the Research row again
+5. Status tests still pass

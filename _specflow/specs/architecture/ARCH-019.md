@@ -12,6 +12,7 @@ links:
 created: '2026-05-04'
 modified: '2026-05-05'
 fingerprint: sha256:c8d3e4d5924b
+thinking_techniques: [assumption-surfacing, devil's-advocate]
 ---
 
 # Reverse Impact Engine

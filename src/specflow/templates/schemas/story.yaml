@@ -11,5 +11,5 @@ allowed_status:
   verified: [implemented]
   deprecated: [approved, implemented, verified]
   cancelled: [draft, approved, implemented, verified]
-allowed_link_roles: [implements, guided_by, specified_by, derives_from, depends_on]
+allowed_link_roles: [implements, guided_by, specified_by, derives_from, depends_on, verified_by]
 directory: _specflow/work/stories/

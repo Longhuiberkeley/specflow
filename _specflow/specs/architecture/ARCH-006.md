@@ -20,6 +20,7 @@ links:
 created: '2026-04-21'
 modified: '2026-04-21'
 fingerprint: sha256:38704e647951
+thinking_techniques: [assumption-surfacing, devil's-advocate, worst-case-user]
 version: 2
 ---
 

@@ -18,6 +18,7 @@ links:
   role: derives_from
 created: '2026-04-22'
 fingerprint: sha256:683906d8a098
+thinking_techniques: [assumption-surfacing, devil's-advocate]
 version: 2
 ---
 

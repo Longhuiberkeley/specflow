@@ -10,6 +10,7 @@ links:
 created: '2026-05-04'
 modified: '2026-05-04'
 fingerprint: sha256:829c96b2d7ea
+thinking_techniques: [assumption-surfacing, devil's-advocate]
 ---
 
 # Init Upgrade Engine

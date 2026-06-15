@@ -7,6 +7,7 @@ artifacts:
     - traceability
     - impact
     - P4
+    - spidr-path
     title: Detect fingerprint changes and propagate suspect flags for downstream artifacts
   STORY-002:
     fingerprint: sha256:e6c357dd6dd6
@@ -188,6 +189,7 @@ artifacts:
     - intelligence
     - analysis
     - P8
+    - spidr-spike
     title: Implement dead code and code similarity detection for project hygiene
   STORY-021:
     fingerprint: sha256:6b583fbf7782
@@ -207,6 +209,7 @@ artifacts:
     - CLI
     - skills
     - M1-clarity
+    - spidr-interface
     title: Ship command rename and thin-skill wrappers for all Tier 2/3 CLI commands
   STORY-023:
     fingerprint: sha256:1f899b823f47
@@ -452,6 +455,7 @@ artifacts:
     tags:
     - lint
     - quality
+    - spidr-rules
     title: Add ARCH and DDD body quality lint checks
   STORY-050:
     fingerprint: sha256:67dac14c2536
@@ -468,6 +472,7 @@ artifacts:
     tags:
     - traceability
     - schema
+    - spidr-data
     title: Add output_files field to artifact schemas and lint
   STORY-052:
     fingerprint: sha256:57148d878b2c
@@ -573,7 +578,7 @@ artifacts:
     - handoff
     title: Improve discover-to-plan handoff with explicit approval instructions
   STORY-064:
-    fingerprint: sha256:49a55a0c309a
+    fingerprint: sha256:4f5d8d729f6c
     id: STORY-064
     status: implemented
     tags:
@@ -583,7 +588,7 @@ artifacts:
     - pack
     title: Extend apply_pack with skill installation step
   STORY-065:
-    fingerprint: sha256:3811045800b3
+    fingerprint: sha256:afd897eb39a8
     id: STORY-065
     status: implemented
     tags:
@@ -592,7 +597,7 @@ artifacts:
     - schemas
     title: Add category field to existing schema YAMLs
   STORY-066:
-    fingerprint: sha256:7638ec09a640
+    fingerprint: sha256:7c50360e6c6c
     id: STORY-066
     status: implemented
     tags:
@@ -601,7 +606,7 @@ artifacts:
     - status
     title: Make specflow status dashboard dynamic via category
   STORY-067:
-    fingerprint: sha256:00995fe102ba
+    fingerprint: sha256:b09436eed97b
     id: STORY-067
     status: implemented
     tags:
@@ -610,7 +615,7 @@ artifacts:
     - trace
     title: Extend specflow trace to render research chain
   STORY-068:
-    fingerprint: ''
+    fingerprint: sha256:062e77a573e6
     id: STORY-068
     status: implemented
     tags:

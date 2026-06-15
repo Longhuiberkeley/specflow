@@ -28,7 +28,7 @@ artifacts:
     - quality
     title: Review & Lint Pipeline
   DDD-004:
-    fingerprint: sha256:f158f9eb1eef
+    fingerprint: sha256:f4b06889eb75
     id: DDD-004
     status: implemented
     tags: []
@@ -50,61 +50,61 @@ artifacts:
     - skills
     title: Pack Extraction Protocol
   DDD-007:
-    fingerprint: sha256:beef2019cdfa
+    fingerprint: sha256:d3ed0151ee70
     id: DDD-007
     status: implemented
     tags: []
     title: Recovery Primitives Implementation
   DDD-008:
-    fingerprint: sha256:40a6cbfa032a
+    fingerprint: sha256:c1b4c09f16c8
     id: DDD-008
     status: implemented
     tags: []
     title: Skill Prompt Optimization
   DDD-009:
-    fingerprint: sha256:b3a415dd5bb4
+    fingerprint: sha256:0c7202d754ac
     id: DDD-009
     status: implemented
     tags: []
     title: Deterministic Analytics Engine
   DDD-010:
-    fingerprint: sha256:59532568cadc
+    fingerprint: sha256:28d29891bee0
     id: DDD-010
     status: implemented
     tags: []
     title: Convention Evaluation Logic
   DDD-011:
-    fingerprint: sha256:757c4b544f68
+    fingerprint: sha256:6e7148e48ad8
     id: DDD-011
     status: implemented
     tags: []
     title: CLI Core Detailed Design
   DDD-012:
-    fingerprint: sha256:57387c3ad45f
+    fingerprint: sha256:7b5ca1198d75
     id: DDD-012
     status: implemented
     tags: []
     title: Traceability Chain Detailed Design
   DDD-013:
-    fingerprint: sha256:99aa67edb57e
+    fingerprint: sha256:07b600d6cd6d
     id: DDD-013
     status: implemented
     tags: []
     title: Provider-Agnostic CI Gate Detailed Design
   DDD-014:
-    fingerprint: sha256:12d5c0f97d8b
+    fingerprint: sha256:44669784bc8a
     id: DDD-014
     status: implemented
     tags: []
     title: V-Model Test Scaffolding Detailed Design
   DDD-015:
-    fingerprint: sha256:3e34d9f79ca6
+    fingerprint: sha256:30d24a346f8a
     id: DDD-015
     status: implemented
     tags: []
     title: Test Engine DDD
   DDD-016:
-    fingerprint: sha256:c1a456fd9e83
+    fingerprint: sha256:8d5632fd7bea
     id: DDD-016
     status: implemented
     tags: []
@@ -140,7 +140,7 @@ artifacts:
     tags: []
     title: Discovery Persistence and Plan Domain Handoff
   DDD-022:
-    fingerprint: ''
+    fingerprint: sha256:fc7b6e223d0e
     id: DDD-022
     status: implemented
     tags:
@@ -149,7 +149,7 @@ artifacts:
     - ddd
     title: Schema definitions for COMP / LOOP / EXPT / FIND
   DDD-023:
-    fingerprint: sha256:0d5c48ec4acc
+    fingerprint: sha256:408956b3da00
     id: DDD-023
     status: implemented
     tags:
@@ -158,7 +158,7 @@ artifacts:
     - skills
     title: "pack.yaml adds_skills field \u2014 semantics and install behavior"
   DDD-024:
-    fingerprint: sha256:d2c9837b3079
+    fingerprint: sha256:14ab73af0d62
     id: DDD-024
     status: implemented
     tags:
@@ -167,7 +167,7 @@ artifacts:
     - dashboard
     title: Dynamic status dashboard via category field
   DDD-025:
-    fingerprint: sha256:4b574c0c8505
+    fingerprint: sha256:aac285e28d84
     id: DDD-025
     status: implemented
     tags:

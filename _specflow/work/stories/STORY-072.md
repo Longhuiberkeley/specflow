@@ -37,8 +37,8 @@ created: '2026-05-15'
   - Haven't validated in N loops → suggest validate
 - **Anti-patterns**: don't exploit a fragile result; don't explore when close to breakthrough
 
-## Acceptance
+## Acceptance Criteria
 
-- All 3 modes documented with concrete examples
-- Heuristic clearly labeled as documentation, not automation
-- File compiles when included in skill bundle
+1. All 3 modes documented with concrete examples
+2. Heuristic clearly labeled as documentation, not automation
+3. File compiles when included in skill bundle

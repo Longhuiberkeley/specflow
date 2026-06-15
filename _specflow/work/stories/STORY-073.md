@@ -34,8 +34,8 @@ created: '2026-05-15'
 - **When to supersede a FIND**: new evidence contradicts or refines it
 - **Cross-loop synthesis pattern**: a FIND with no `source_loop` summarizing patterns across multiple LOOPs by reading prior FINDs (not raw EXPTs)
 
-## Acceptance
+## Acceptance Criteria
 
-- Playbook covers all 4 lifecycle transitions (draft → confirmed → superseded/falsified)
-- Example invocations for `specflow create --type finding` and `specflow update FIND-NNN --status superseded`
-- Confidence assignment criteria are unambiguous
+1. Playbook covers all 4 lifecycle transitions (draft → confirmed → superseded/falsified)
+2. Example invocations for `specflow create --type finding` and `specflow update FIND-NNN --status superseded`
+3. Confidence assignment criteria are unambiguous

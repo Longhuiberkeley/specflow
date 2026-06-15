@@ -22,9 +22,13 @@ links:
 - target: REQ-031
   role: derives_from
 created: '2026-05-15'
+modified: '2026-06-15'
+fingerprint: sha256:4d3692a0394e
 ---
 
 # Four-tier research artifact hierarchy
+
+## Structure
 
 Research artifacts form a four-tier hierarchy:
 
@@ -37,7 +41,7 @@ COMP-NNN (scope: dataset + metric + verify_command)
   └── FIND-NNN (condensed knowledge, lives at COMP level)
 ```
 
-## Link roles
+## Interface
 
 | From | To | Role | Direction |
 |---|---|---|---|
@@ -49,10 +53,11 @@ COMP-NNN (scope: dataset + metric + verify_command)
 | FIND | FIND | supersedes | FIND replaces an older FIND |
 | FIND | COMP | validated_by | cross-competition validation |
 
-## Why FINDs live at COMP level (not LOOP)
+## Responsibility
 
-A FIND is the unit of *transferable* knowledge — a new LOOP starts by reading all confirmed FINDs for its COMP. If FINDs lived per-LOOP, the agent would have to walk all prior LOOPs each time. Competition-level FINDs collapse that walk into a single query.
+- **FINDs live at COMP level** (not LOOP): A FIND is the unit of transferable knowledge — a new LOOP starts by reading all confirmed FINDs for its COMP. If FINDs lived per-LOOP, the agent would have to walk all prior LOOPs each time. Competition-level FINDs collapse that walk into a single query.
+- **EXPTs are write-once**: An EXPT records one attempt with its final outcome. There is no re-running an EXPT (that would be a new EXPT). All four allowed_status values have empty prior-state lists.
 
-## Why EXPT is write-once
+## Data Flow
 
-An EXPT records one attempt with its final outcome. There is no "re-running" an EXPT (that would be a new EXPT). All four allowed_status values have empty prior-state lists — see DEC for rationale.
+COMP declares scope → LOOP declares session parameters and reads prior FINDs → EXPT records individual attempts with terminal status → after LOOP completes, FINDs condense what was learned → subsequent LOOPs read those FINDs before ideation.

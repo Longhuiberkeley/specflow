@@ -12,7 +12,10 @@ tags:
 - ai
 - progressive-disclosure
 suspect: false
-fingerprint: sha256:ee902ce1a49a
+fingerprint: sha256:cbf9400d206a
+thinking_techniques:
+- assumption-surfacing
+- devil's-advocate
 links:
 - target: REQ-004
   role: derives_from
@@ -24,7 +27,7 @@ checklists_applied:
   timestamp: '2026-04-11T13:45:49Z'
 - checklist: check-ARCH-003
   timestamp: '2026-04-14T17:03:22Z'
-modified: '2026-04-21'
+modified: '2026-06-15'
 version: 1
 ---
 
@@ -145,6 +148,30 @@ Files in `references/` loaded only when relevant:
 
 ### Zero-Token
 Scripts in `scripts/` executed directly — no tokens consumed.
+
+## Interface
+
+The skill system exposes a uniform interface through `/specflow-*` skill invocations in AI agent platforms and the `specflow` CLI backend.
+
+## Component
+
+Each skill is a self-contained directory (SKILL.md + references/ + scripts/) registered across 14 platforms via shared templates in `src/specflow/templates/skills/shared/`.
+
+## Responsibility
+
+- SKILL.md: workflow instructions and trigger conditions (under 500 lines)
+- references/: on-demand domain knowledge loaded only when relevant
+- scripts/: zero-token deterministic operations delegated to shell/Python
+
+## Data Flow
+
+User invokes skill → platform loads SKILL.md description (~50 tokens) → on invocation loads full SKILL.md body (~500 tokens) → on demand loads references/ → delegates deterministic work to scripts/.
+
+## Dependencies
+
+- `src/specflow/platforms.yaml` — platform registry
+- `lib/platform.py` — platform detection and skills directory resolution
+- `src/specflow/templates/skills/shared/` — unified skill content
 
 ## Skill Standards Compliance
 

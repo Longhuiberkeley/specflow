@@ -18,7 +18,7 @@ artifacts:
     - core
     title: Framework Machinery
   ARCH-003:
-    fingerprint: sha256:ee902ce1a49a
+    fingerprint: sha256:cbf9400d206a
     id: ARCH-003
     status: implemented
     tags:
@@ -78,37 +78,37 @@ artifacts:
     - adapters
     title: Provider-Agnostic CI Gate
   ARCH-010:
-    fingerprint: sha256:0455c507591d
+    fingerprint: sha256:f5769d8f0da2
     id: ARCH-010
     status: implemented
     tags: []
     title: Command Wrappers & Adapter Framework
   ARCH-011:
-    fingerprint: sha256:0d2a15807456
+    fingerprint: sha256:f2f3094481f0
     id: ARCH-011
     status: implemented
     tags: []
     title: Tier 1 Conversational Routing
   ARCH-012:
-    fingerprint: sha256:45b09e92e174
+    fingerprint: sha256:dd2fd3fceb73
     id: ARCH-012
     status: implemented
     tags: []
     title: Change-Audit & Pack-Author Pipelines
   ARCH-013:
-    fingerprint: sha256:7ae9158efda7
+    fingerprint: sha256:eaee17cccf0b
     id: ARCH-013
     status: implemented
     tags: []
     title: Structure Checklists & Doc Lifecycle
   ARCH-014:
-    fingerprint: sha256:95b48f049f8e
+    fingerprint: sha256:dae45f1d864e
     id: ARCH-014
     status: implemented
     tags: []
     title: Test Engine
   ARCH-015:
-    fingerprint: sha256:c1c760b44641
+    fingerprint: sha256:8bd625c65830
     id: ARCH-015
     status: implemented
     tags: []
@@ -150,7 +150,7 @@ artifacts:
     tags: []
     title: Skill Continuity Layer
   ARCH-022:
-    fingerprint: sha256:0b506123054f
+    fingerprint: sha256:13275b1aa6fc
     id: ARCH-022
     status: implemented
     tags:
@@ -159,7 +159,7 @@ artifacts:
     - pack
     title: Pack-as-integration-boundary for autoresearch
   ARCH-023:
-    fingerprint: ''
+    fingerprint: sha256:4d3692a0394e
     id: ARCH-023
     status: draft
     tags:
@@ -168,7 +168,7 @@ artifacts:
     - hierarchy
     title: Four-tier research artifact hierarchy
   ARCH-024:
-    fingerprint: ''
+    fingerprint: sha256:5eedd44d4af3
     id: ARCH-024
     status: implemented
     tags:
@@ -177,7 +177,7 @@ artifacts:
     - dashboard
     title: Dynamic status dashboard for research categories
   ARCH-025:
-    fingerprint: ''
+    fingerprint: sha256:667cabf7f862
     id: ARCH-025
     status: implemented
     tags:

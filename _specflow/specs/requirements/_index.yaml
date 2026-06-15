@@ -269,7 +269,7 @@ artifacts:
     - knowledge
     title: Knowledge condensation across loops
   REQ-031:
-    fingerprint: sha256:80943df95d8f
+    fingerprint: sha256:4f5eb5658314
     id: REQ-031
     status: implemented
     tags:

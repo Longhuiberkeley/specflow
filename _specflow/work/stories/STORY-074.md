@@ -36,9 +36,9 @@ created: '2026-05-15'
 - **Multi-competition setup**: screener + validator pattern (Track A fast / Track B walk-forward)
 - Common pitfalls: non-deterministic verify, metrics that randomly diverge, no split method documented
 
-## Acceptance
+## Acceptance Criteria
 
-- Walkthrough is followable in 5-10 minutes
-- Multi-competition pattern explained with example
-- Trust boundary called out
-- File compiles when included in skill bundle
+1. Walkthrough is followable in 5-10 minutes
+2. Multi-competition pattern explained with example
+3. Trust boundary called out
+4. File compiles when included in skill bundle

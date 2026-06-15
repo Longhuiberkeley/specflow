@@ -10,6 +10,7 @@ links:
 created: '2026-05-04'
 modified: '2026-05-05'
 fingerprint: sha256:c11a474075c1
+thinking_techniques: [assumption-surfacing, devil's-advocate]
 ---
 
 # Skill Continuity Layer
