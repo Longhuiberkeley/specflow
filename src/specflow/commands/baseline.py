@@ -5,6 +5,7 @@ from typing import Any
 
 from specflow.lib import baselines as baselines_lib
 from specflow.lib import evidence as evidence_lib
+from specflow.lib.display import RED, GREEN, BOLD, NC
 
 
 _SEPARATOR = "─" * 58
@@ -13,25 +14,25 @@ _SEPARATOR = "─" * 58
 def _run_create(root: Path, args: dict[str, Any]) -> int:
     name = args.get("baseline_name", "")
     if not name:
-        print("\033[0;31m✗ Baseline name is required\033[0m")
+        print(f"{RED}✗ Baseline name is required{NC}")
         print("Usage: specflow baseline create <name>")
         return 1
 
     result = baselines_lib.create_baseline(root, name)
     if not result["ok"]:
-        print(f"\033[0;31m✗ {result['error']}\033[0m")
+        print(f"{RED}✗ {result['error']}{NC}")
         return 1
 
     git_ref = result.get("git_ref") or "(no git ref)"
-    print(f"\033[0;32m✓ Baseline '{name}' created ({result['path']})\033[0m")
+    print(f"{GREEN}✓ Baseline '{name}' created ({result['path']}){NC}")
     print(f"  Artifacts: {result['artifact_count']} | Git ref: {git_ref}")
 
     if args.get("evidence"):
         ev_result = evidence_lib.generate_evidence_report(root, name)
         if ev_result["ok"]:
-            print(f"\033[0;32m✓ Evidence report generated ({ev_result['path']})\033[0m")
+            print(f"{GREEN}✓ Evidence report generated ({ev_result['path']}){NC}")
         else:
-            print(f"\033[0;31m✗ Evidence report failed: {ev_result['error']}\033[0m")
+            print(f"{RED}✗ Evidence report failed: {ev_result['error']}{NC}")
             return 1
 
     return 0
@@ -51,16 +52,16 @@ def _run_diff(root: Path, args: dict[str, Any]) -> int:
     name_a = args.get("baseline_a", "")
     name_b = args.get("baseline_b", "")
     if not name_a or not name_b:
-        print("\033[0;31m✗ Two baseline names are required\033[0m")
+        print(f"{RED}✗ Two baseline names are required{NC}")
         print("Usage: specflow baseline diff <name-a> <name-b>")
         return 1
 
     result = baselines_lib.diff_baselines(root, name_a, name_b)
     if not result["ok"]:
-        print(f"\033[0;31m✗ {result['error']}\033[0m")
+        print(f"{RED}✗ {result['error']}{NC}")
         return 1
 
-    print(f"\n\033[1mBaseline Diff: {name_a} → {name_b}\033[0m")
+    print(f"\n{BOLD}Baseline Diff: {name_a} → {name_b}{NC}")
     print(_SEPARATOR)
 
     added = result["added"]

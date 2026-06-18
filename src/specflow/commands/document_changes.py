@@ -5,6 +5,7 @@ from typing import Any
 
 from specflow.lib import artifacts as art_lib
 from specflow.lib import git_utils
+from specflow.lib.display import GREEN, NC, RED
 from specflow.lib.impact import load_impact_events
 
 
@@ -77,22 +78,22 @@ def run(root: Path, args: dict[str, Any]) -> int:
     """Run the document-changes command."""
     since_ref = args.get("since")
     if not since_ref:
-        print("\033[0;31m✗ --since <git-ref> is required\033[0m")
+        print(f"{RED}✗ --since <git-ref> is required{NC}")
         return 1
 
     if not git_utils.is_git_repo(root):
-        print("\033[0;31m✗ Not a git repository\033[0m")
+        print(f"{RED}✗ Not a git repository{NC}")
         return 1
     decision_schema = root / ".specflow" / "schema" / "decision.yaml"
     if not decision_schema.exists():
         print(
-            "\033[0;31m✗ Project not initialized "
-            "(missing .specflow/schema/decision.yaml). Run 'specflow init' first.\033[0m"
+            f"{RED}✗ Project not initialized "
+            f"(missing .specflow/schema/decision.yaml). Run 'specflow init' first.{NC}"
         )
         return 1
 
     if not git_utils.resolve_ref(root, since_ref):
-        print(f"\033[0;31m✗ Cannot resolve git ref '{since_ref}'\033[0m")
+        print(f"{RED}✗ Cannot resolve git ref '{since_ref}'{NC}")
         return 1
 
     commits = git_utils.get_commits_since(root, since_ref)
@@ -140,11 +141,11 @@ def run(root: Path, args: dict[str, Any]) -> int:
             review_status="unreviewed",
         )
         if not result.get("ok"):
-            print(f"  \033[0;31m✗ Failed to create DEC for {commit['sha'][:8]}: "
-                  f"{result.get('error', 'unknown error')}\033[0m")
+            print(f"  {RED}✗ Failed to create DEC for {commit['sha'][:8]}: "
+                  f"{result.get('error', 'unknown error')}{NC}")
             continue
 
-        print(f"  \033[0;32m✓\033[0m {result['id']} created — \"{title}\"")
+        print(f"  {GREEN}✓{NC} {result['id']} created — \"{title}\"")
         created_count += 1
 
     print()

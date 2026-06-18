@@ -1,6 +1,6 @@
 ---
 name: specflow-execute
-description: DEFAULT implementation path for ANY code change in this project. Orchestrates implementation of planned stories, updates artifact statuses, creates V-model test artifacts (UT/IT/QT), and enforces traceability. Triggers when the user says "implement," "write code for," "build," "fix bug in," or any code-writing request. This is step 3 of the core lifecycle — use it for ALL implementation work. For trivial changes (typos, formatting, dependency updates), the lean path is available — but every code change still traces to a STORY. NOT for: requirements gathering (use specflow-discover), architecture design (use specflow-plan), or research experiments (use specflow-autoresearch if installed).
+description: Implementation path for planned stories. Orchestrates implementation of approved stories, updates artifact statuses, creates V-model test artifacts (UT/IT/QT), and enforces traceability. Triggers when the user says "implement stories," "execute the plan," "start building," or "run the wave." This is step 3 of the core lifecycle. For trivial changes (typos, formatting, dependency updates), the lean path is available — but every code change still traces to a STORY. NOT for: requirements gathering (use specflow-discover), architecture design (use specflow-plan), single-artifact review (use specflow-artifact-review), or research experiments.
 ---
 
 ## Freeform Input Handling

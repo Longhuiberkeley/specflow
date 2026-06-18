@@ -2,7 +2,7 @@
 
 ## Overview
 
-Skills in SpecFlow are modular, self-contained packages that extend an AI agent's capabilities (like Claude Code or Gemini CLI) by providing specialized knowledge, workflows, and zero-token deterministic scripts. 
+Skills in SpecFlow are modular, self-contained packages that extend an AI agent's capabilities (like Claude Code or OpenCode) by providing specialized knowledge, workflows, and zero-token deterministic scripts. 
 
 SpecFlow skills follow the **Progressive Disclosure** design principle to fiercely protect the LLM's context window.
 

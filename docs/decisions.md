@@ -212,7 +212,7 @@ Each decision documents the context, options considered, the resolution, and rat
 
 **Context:** The architecture doc presented two parallel user-facing command surfaces: conversational skills (`/specflow-verify`) and programmatic CLI (`uv run specflow validate`). Users experienced confusion about which surface to use and when. The intended workflow is that skills orchestrate everything — calling CLI commands internally as needed.
 
-**Decision:** Users interact with SpecFlow exclusively through `/specflow-*` skill commands in their AI coding tool (Claude Code, OpenCode, Gemini CLI). The Python CLI (`specflow validate`, `specflow status`, etc.) is infrastructure — called by skills internally, by CI/CD pipelines, and by power users who know what they're doing. Documentation and onboarding teach skills first; CLI is referenced as "under the hood."
+**Decision:** Users interact with SpecFlow exclusively through `/specflow-*` skill commands in their AI coding tool (Claude Code or OpenCode). The Python CLI (`specflow validate`, `specflow status`, etc.) is infrastructure — called by skills internally, by CI/CD pipelines, and by power users who know what they're doing. Documentation and onboarding teach skills first; CLI is referenced as "under the hood."
 
 **Rationale:** The user's mental model should be: type a `/specflow-*` command, it just works. The skill decides whether to run the program silently or engage in conversation based on context. Presenting two parallel surfaces forces users to make meta-decisions about which tool to use, violating the modeless design philosophy (D-03).
 

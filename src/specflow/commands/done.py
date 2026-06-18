@@ -6,18 +6,19 @@ from pathlib import Path
 from typing import Any
 
 from specflow.lib.artifacts import discover_artifacts
+from specflow.lib.display import RED, GREEN, BOLD, NC
 from specflow.lib.learning import (
     close_phase,
     create_pattern_from_finding,
     list_learned_patterns,
+    max_patterns_per_session,
     suggest_next_phase,
-    _max_patterns_per_session,
 )
 
 
 def _auto_extract_patterns(root: Path, stories: list) -> int:
     count = 0
-    max_patterns = _max_patterns_per_session(root)
+    max_patterns = max_patterns_per_session(root)
     for story in stories:
         if count >= max_patterns:
             break
@@ -55,7 +56,7 @@ def run(root: Path, args: dict[str, Any]) -> int:
 
     implemented_stories = [s for s in stories if s.status == "implemented"]
 
-    print(f"\n\033[1mPhase Closure\033[0m")
+    print(f"\n{BOLD}Phase Closure{NC}")
     print(f"\n  Artifacts by status:")
     for status, count in sorted(status_counts.items()):
         print(f"    {status}: {count}")
@@ -80,10 +81,10 @@ def run(root: Path, args: dict[str, Any]) -> int:
 
     result = close_phase(root)
     if not result["ok"]:
-        print(f"\n\033[0;31m✗ {result.get('error', 'Phase closure failed')}\033[0m")
+        print(f"\n{RED}✗ {result.get('error', 'Phase closure failed')}{NC}")
         return 1
 
-    print(f"\n  \033[0;32m✓ Phase '{result['phase_closed']}' closed.\033[0m")
+    print(f"\n  {GREEN}✓ Phase '{result['phase_closed']}' closed.{NC}")
 
     suggestion = suggest_next_phase(root)
     print(f"  {suggestion}")

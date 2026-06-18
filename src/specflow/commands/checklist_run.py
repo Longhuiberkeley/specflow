@@ -12,6 +12,7 @@ from specflow.lib.checklists import (
 )
 from specflow.lib.challenge import extract_proactive_items, format_proactive_prompt
 from specflow.lib.dedup import find_duplicates, write_candidates_file
+from specflow.lib.display import RED, GREEN, YELLOW, BOLD, NC
 
 
 def _check_artifact(
@@ -23,14 +24,14 @@ def _check_artifact(
     """Run check on a single artifact. Returns 0 if no blocking failures."""
     assembled = assemble_checklist(root, artifact, phase_transition=gate)
 
-    print(f"\n\033[1m{artifact.id}\033[0m — {artifact.title}")
+    print(f"\n{BOLD}{artifact.id}{NC} — {artifact.title}")
     print(f"  Type: {artifact.type} | Tags: {artifact.tags}")
     print(f"  Sources: {', '.join(assembled.sources) if assembled.sources else '(none)'}")
     print(f"  Items: {len(assembled.items)} ({sum(1 for i in assembled.items if i.automated)} automated, "
           f"{sum(1 for i in assembled.items if not i.automated)} agent-judged)")
 
     if not assembled.items:
-        print("  \033[0;33mWarning: No checklists matched this artifact.\033[0m")
+        print(f"  {YELLOW}Warning: No checklists matched this artifact.{NC}")
         return 0
 
     # Pass 1: Automated
@@ -40,12 +41,12 @@ def _check_artifact(
     if auto_results:
         print("\n  Automated checks:")
         for r in auto_results:
-            symbol = "\033[0;32m✓\033[0m" if r.result == "passed" else "\033[0;31m✗\033[0m"
+            symbol = f"{GREEN}✓{NC}" if r.result == "passed" else f"{RED}✗{NC}"
             detail = f" — {r.detail}" if r.detail else ""
             print(f"    {symbol} {r.item_id}{detail}")
 
     if blocking_failed:
-        print("\n  \033[0;31mBlocking automated check failed — agent checks skipped.\033[0m")
+        print(f"\n  {RED}Blocking automated check failed — agent checks skipped.{NC}")
 
     # Agent-judged items (listed for the host agent to evaluate)
     llm_items = [i for i in assembled.items if not i.automated]
@@ -81,10 +82,10 @@ def _run_dedup(root: Path) -> int:
     out_path = write_candidates_file(root, candidates)
 
     rel = out_path.relative_to(root) if out_path.is_absolute() else out_path
-    print(f"\033[1mSpecFlow Dedup\033[0m — analyzed {len(artifacts)} artifact(s)")
+    print(f"{BOLD}SpecFlow Dedup{NC} — analyzed {len(artifacts)} artifact(s)")
 
     if not candidates:
-        print(f"  \033[0;32m✓\033[0m No duplicate candidates found")
+        print(f"  {GREEN}✓{NC} No duplicate candidates found")
         print(f"  Candidates file: {rel}")
         return 0
 
@@ -92,7 +93,7 @@ def _run_dedup(root: Path) -> int:
     for c in candidates:
         by_conf[c.confidence] = by_conf.get(c.confidence, 0) + 1
 
-    print(f"  \033[0;33m{len(candidates)} candidate pair(s)\033[0m — "
+    print(f"  {YELLOW}{len(candidates)} candidate pair(s){NC} — "
           f"{by_conf.get('high', 0)} high, {by_conf.get('medium', 0)} medium, {by_conf.get('low', 0)} low")
 
     for c in candidates[:10]:
@@ -124,18 +125,18 @@ def run(root: Path, args: dict[str, Any]) -> int:
     elif artifact_id:
         file_path = resolve_link_target(root, artifact_id)
         if file_path is None:
-            print(f"\033[0;31m✗ Artifact '{artifact_id}' not found\033[0m")
+            print(f"{RED}✗ Artifact '{artifact_id}' not found{NC}")
             return 1
         art = parse_artifact(file_path)
         if art is None:
-            print(f"\033[0;31m✗ Cannot parse artifact at {file_path}\033[0m")
+            print(f"{RED}✗ Cannot parse artifact at {file_path}{NC}")
             return 1
         artifacts_to_check = [art]
     else:
         print("Usage: specflow checklist-run <ARTIFACT_ID> or specflow checklist-run --all")
         return 1
 
-    print(f"\033[1mSpecFlow Checklist Run\033[0m — reviewing {len(artifacts_to_check)} artifact(s)")
+    print(f"{BOLD}SpecFlow Checklist Run{NC} — reviewing {len(artifacts_to_check)} artifact(s)")
 
     total_blocking = 0
     for art in artifacts_to_check:
@@ -143,8 +144,8 @@ def run(root: Path, args: dict[str, Any]) -> int:
         total_blocking += result
 
     if total_blocking:
-        print(f"\n\033[0;31m{total_blocking} artifact(s) have blocking failures.\033[0m")
+        print(f"\n{RED}{total_blocking} artifact(s) have blocking failures.{NC}")
         return 1
 
-    print(f"\n\033[0;32mAll automated checks passed.\033[0m")
+    print(f"\n{GREEN}All automated checks passed.{NC}")
     return 0

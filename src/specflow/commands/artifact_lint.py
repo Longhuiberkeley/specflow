@@ -17,6 +17,7 @@ from specflow.lib import files as files_lib
 from specflow.lib import standards as standards_lib
 from specflow.lib import lint as lint_lib
 from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC
+from specflow.lib.domain_constants import DOMAIN_RECOMMENDED
 
 CHECK_NAMES = ["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "thinking-techniques", "autoresearch-logging", "spike-lifecycle", "source-drift"]
 
@@ -1219,15 +1220,6 @@ def _check_thinking_techniques(
     }
 
 
-_DOMAIN_RECOMMENDED: dict[str, list[str]] = {
-    "quant": ["max_drawdown", "total_trades", "win_rate", "profit_factor", "oos_decay"],
-    "ml": ["val_loss", "learning_rate", "batch_size", "epochs", "architecture"],
-    "nlp": ["perplexity", "token_count", "rouge_l", "bertscore_f1"],
-    "systems": ["p50_latency_ms", "p99_latency_ms", "memory_mb", "throughput_rps"],
-    "safety_critical": ["false_positive_rate", "false_negative_rate", "precision", "recall"],
-}
-
-
 def _check_autoresearch_logging(
     artifacts: list[art_lib.Artifact],
     root: Path,
@@ -1270,7 +1262,7 @@ def _check_autoresearch_logging(
         cat = art.frontmatter.get("change_category", "")
 
         if status == "kept" and domain:
-            recs = _DOMAIN_RECOMMENDED.get(domain, [])
+            recs = DOMAIN_RECOMMENDED.get(domain, [])
             missing = [f for f in recs if f not in aux]
             if missing:
                 warnings += 1

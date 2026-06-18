@@ -62,7 +62,7 @@ platforms:
 
   opencode:
     name: "OpenCode"
-    preferred: false
+    preferred: true
     skills_dir: .opencode/skills
     instruction_file: AGENTS.md
     detection:

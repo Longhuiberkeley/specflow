@@ -9,7 +9,7 @@ A plain-language guide to what SpecFlow is, what it isn't, and how it relates to
 - **A filesystem-native ALM.** Requirements, architecture, tests, defects, and audit records live as Markdown+YAML in your git repo. No server, no database, no portal.
 - **A deterministic validation engine.** Schema checks, V-model traceability, coverage metrics, suspect flags, and baselines run as pure Python — zero LLM tokens spent on CI.
 - **A context-engineering system for AI agents.** Since v1.8.0, SpecFlow acts as structured, version-controlled memory that any AI assistant can read to reconstruct full project state. `specflow brief` gives a fresh agent everything it needs in one call.
-- **Host-agnostic.** SpecFlow ships no LLM client. It runs inside Claude Code, Cursor, Codex, Gemini CLI, OpenCode, and 9 other assistants. The intelligence comes from your host; the structure comes from SpecFlow.
+- **Host-agnostic.** SpecFlow ships no LLM client. First-class on Claude Code and OpenCode; other assistants with project file access can use the skills. The intelligence comes from your host; the structure comes from SpecFlow.
 - **A compliance-grade spec tracker.** V-model traceability (REQ → ARCH → DDD → UT/IT/QT), immutable baselines, standards packs, ReqIF interchange — the rigor of DOORS/Polarion without the portal tax.
 
 ## What SpecFlow Isn't

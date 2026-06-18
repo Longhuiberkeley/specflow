@@ -232,6 +232,20 @@ def _render_project_view(root: Path, artifacts: list[art_lib.Artifact]) -> int:
     print(f"{CYAN}{'─' * 50}{NC}")
     print(f"  Coverage: {BOLD}{coverage:.1f}%{NC}   "
           f"({ref_count}/{total} files under an artifact)")
+
+    # Surface how "source" was scoped so the denominator is never silently capped.
+    scope = files_lib.describe_source_scope(root)
+    scope_notes: list[str] = []
+    if scope["include"]:
+        scope_notes.append(f"include={scope['include']}")
+    if scope["exclude"]:
+        scope_notes.append(f"exclude={scope['exclude']}")
+    if scope["extensions"]:
+        scope_notes.append(f"+exts={scope['extensions']}")
+    if scope["gitignore_respected"] and not scope["include"]:
+        scope_notes.append("respecting .gitignore")
+    if scope_notes:
+        print(f"  {CYAN}Source scope:{NC} {'  '.join(scope_notes)}")
     if backfilled:
         parts = [f"{n} {p}" for p, n in sorted(by_prefix.items())]
         print(f"  Backfilled: {len(backfilled)} artifacts ({', '.join(parts)})")

@@ -5,10 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from specflow.lib import artifacts as art_lib
-from specflow.lib.display import RED, GREEN, CYAN, NC
-
-BOLD = "\033[1m"
-DIM = "\033[2m"
+from specflow.lib.display import RED, GREEN, CYAN, BOLD, DIM, NC
 
 
 def _format_type(art_type: str) -> str:
