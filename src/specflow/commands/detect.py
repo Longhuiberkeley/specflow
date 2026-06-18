@@ -24,9 +24,7 @@ from specflow.lib.analysis import (
 )
 from specflow.lib.orphans import find_orphan_code, retro_link
 
-from specflow.lib.display import YELLOW_DIM, GREEN, CYAN, NC, RED, YELLOW
-
-BOLD = "\033[1m"
+from specflow.lib.display import YELLOW_DIM, GREEN, CYAN, NC, RED, YELLOW, BOLD
 
 
 def _rel(root: Path, path: Path) -> str:
@@ -143,7 +141,7 @@ def _run_orphan_code(root: Path, args: dict[str, Any]) -> int:
         print(f"\n  {CYAN}Tip:{NC} Use --retro-link <ID> to retroactively link all orphan files to an existing artifact (STORY/ARCH/DDD/REQ).")
         print(f"  {YELLOW_DIM}Orphan code breaks SpecFlow traceability. Run with --retro-link to fix, or review manually.{NC}")
 
-    return 1
+    return 0
 
 
 def run(root: Path, args: dict[str, Any]) -> int:

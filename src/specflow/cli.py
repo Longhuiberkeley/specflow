@@ -333,7 +333,7 @@ def _add_go_parser(subparsers):
 def _add_done_parser(subparsers):
     p = subparsers.add_parser("done", help="Close current phase and extract prevention patterns")
     p.add_argument("--auto", action="store_true", default=True, help="Auto-extract prevention patterns (default)")
-    p.add_argument("--no-auto", action="store_false", dest="auto", help="Show pattern summary without extracting")
+    p.add_argument("--no-auto", action="store_false", dest="auto", help="Skip auto-extraction; show implemented stories only")
     p.add_argument("--no-patterns", action="store_true", dest="no_patterns", help="Skip pattern extraction entirely")
 
 

@@ -22,7 +22,19 @@ Release workflow: baseline, change records, and audit.
 
 ## Workflow
 
-### Step 1: Baseline Creation
+### Step 1: Load Best Practices and Thinking Techniques
+
+Before starting the release workflow, load domain-specific context:
+
+1. **Best practices:** Check `_specflow/specs/best-practices/` for active BP artifacts. If present, read the ones matching the project's domain tags. These define compliance requirements that the release gate should verify against.
+2. **Thinking techniques:** Apply ship-phase defaults from the adversarial lens catalog:
+   - **Temporal drift** — Are any assumptions, dependencies, or specs stale relative to when they were written?
+   - **Regulator** — If this project is compliance-bound, does the release satisfy the relevant standard's exit criteria?
+   - **Premortem** (optional) — Six months out, this release caused a production incident. What went wrong?
+
+Read `../specflow-references/references/adversarial-lenses.md` for the full catalog. Apply the relevant lenses to the release scope in Step 4.
+
+### Step 2: Baseline Creation
 
 1. Ask the user for the release tag/version: "What tag should we use for this release baseline? (e.g., v1.2.0)"
 2. Create an immutable baseline snapshot with compliance evidence:
@@ -30,7 +42,7 @@ Release workflow: baseline, change records, and audit.
 uv run specflow baseline create <tag> --evidence
 ```
 
-### Step 2: Document Changes (DEC Trail)
+### Step 3: Document Changes (DEC Trail)
 
 Generate the change records for this release:
 1. Ask the user for the previous tag/commit to compare against: "What was the previous release tag or commit? (e.g., v1.1.0)"
@@ -40,7 +52,7 @@ uv run specflow document-changes --since <prev>
 ```
 *Note: `document-changes` runs here so each release ships its own DEC trail.*
 
-### Step 3: Quick Audit
+### Step 4: Quick Audit
 
 **Verification-gate re-run (blocking).** A release is a one-way door, so confirm the gate is green *now* — not just that it was green at execute time. Re-run the test suite (the same gate execute baselined in Step 3 of `/specflow-execute`). A non-green gate is **`blocking`**: stop, report the failures verbatim, and do not proceed until green. If execute recorded a baseline + delta, surface it here. `project-audit --quick` below checks artifact health; it does *not* prove the suite passes — both must be green to ship.
 
@@ -49,7 +61,7 @@ Run a fast health check across the final state of the release:
 uv run specflow project-audit --quick
 ```
 
-### Step 4: Review and Advisory (Approval Gate)
+### Step 5: Review and Advisory (Approval Gate)
 
 Present the release summary following the **Approval Presentation Format** (see `../specflow-references/references/approval-presentation.md`):
 

@@ -170,7 +170,7 @@ class TestReviewFeedbackLoop:
             for i in range(10)
         ]
         count = artifact_review._create_learned_patterns(tmp_path, targets, findings)
-        assert count <= learn_lib._max_patterns_per_session(tmp_path)
+        assert count <= learn_lib.max_patterns_per_session(tmp_path)
 
     def test_configurable_max_patterns(self, tmp_path: Path):
         import yaml
@@ -183,7 +183,7 @@ class TestReviewFeedbackLoop:
             yaml.dump(cfg, default_flow_style=False), encoding="utf-8"
         )
 
-        max_val = learn_lib._max_patterns_per_session(tmp_path)
+        max_val = learn_lib.max_patterns_per_session(tmp_path)
         assert max_val == 1
 
     def test_skips_findings_without_matching_target(self, tmp_path: Path):
@@ -287,7 +287,7 @@ class TestLearnableTechniquesConfig:
             yaml.dump({"project": {"name": "test"}}, default_flow_style=False),
             encoding="utf-8",
         )
-        result = learn_lib._learnable_techniques(tmp_path)
+        result = learn_lib.learnable_techniques(tmp_path)
         assert "checklist-run" in result
         assert "devils_advocate" in result
         assert "premortem" in result
@@ -305,7 +305,7 @@ class TestLearnableTechniquesConfig:
             yaml.dump(cfg, default_flow_style=False),
             encoding="utf-8",
         )
-        result = learn_lib._learnable_techniques(tmp_path)
+        result = learn_lib.learnable_techniques(tmp_path)
         assert result == {"checklist-run"}
 
     def test_empty_config_uses_defaults(self, tmp_path: Path):
@@ -315,7 +315,7 @@ class TestLearnableTechniquesConfig:
             yaml.dump({"project": {"name": "test"}}, default_flow_style=False),
             encoding="utf-8",
         )
-        result = learn_lib._learnable_techniques(tmp_path)
+        result = learn_lib.learnable_techniques(tmp_path)
         assert "devils_advocate" in result
 
 

@@ -43,13 +43,18 @@ def find_orphan_code(root: Path) -> dict:
     root = Path(root).resolve()
     artifacts = art_lib.discover_artifacts(root)
     source_files = files_lib.scan_source_files(root)
+    source_set = {f.resolve() for f in source_files}
     referenced = _collect_referenced_files(artifacts, root)
 
     orphans = [f for f in source_files if f.resolve() not in referenced]
 
+    # Keep numerator on the same scope as the denominator: a declared output_file
+    # outside the scanned scope must not push coverage past 100%.
+    referenced_in_scope = referenced & source_set
+
     return {
         "orphan_files": orphans,
-        "referenced_count": len(referenced),
+        "referenced_count": len(referenced_in_scope),
         "total_count": len(source_files),
     }
 

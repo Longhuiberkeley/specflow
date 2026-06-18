@@ -9,7 +9,7 @@ from pathlib import Path
 from specflow.lib import artifacts as art_lib
 from specflow.lib import standards as std_lib
 from specflow.lib.dedup import find_similar_to
-from specflow.lib.display import RED, GREEN, YELLOW_DIM, CYAN, NC
+from specflow.lib.display import RED, GREEN, YELLOW, YELLOW_DIM, CYAN, NC
 
 
 def _parse_links(links_json: str) -> list[dict[str, str]]:
@@ -83,7 +83,11 @@ def run(root: Path, args: dict) -> int:
     tags = [t.strip() for t in tags_str.split(",") if t.strip()] if tags_str else None
 
     if not body and not sys.stdin.isatty():
-        body = sys.stdin.read()
+        import select
+        # Only read stdin if data is actually available (not a hanging pipe).
+        # select() with timeout=0 returns immediately; avoids blocking on empty pipes.
+        if select.select([sys.stdin], [], [], 0.0)[0]:
+            body = sys.stdin.read()
 
     if not args.get("skip_dedup_check", False):
         existing = art_lib.discover_artifacts(root)

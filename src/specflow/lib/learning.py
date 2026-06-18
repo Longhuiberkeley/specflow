@@ -42,8 +42,8 @@ def extract_prevention_pattern(
     }
 
 
-_LEARNABLE_SEVERITIES = {"blocking", "warning"}
-_DEFAULT_LEARNABLE_TECHNIQUES = {
+LEARNABLE_SEVERITIES = {"blocking", "warning"}
+DEFAULT_LEARNABLE_TECHNIQUES = {
     "checklist-run",
     "devils_advocate",
     "premortem",
@@ -67,20 +67,20 @@ _DEFAULT_LEARNABLE_TECHNIQUES = {
 }
 
 
-def _learnable_techniques(root: Path) -> set[str]:
+def learnable_techniques(root: Path) -> set[str]:
     cfg = read_config(root)
     if not isinstance(cfg, dict):
-        return _DEFAULT_LEARNABLE_TECHNIQUES
+        return DEFAULT_LEARNABLE_TECHNIQUES
     learning_cfg = cfg.get("learning", {})
     if not isinstance(learning_cfg, dict):
-        return _DEFAULT_LEARNABLE_TECHNIQUES
+        return DEFAULT_LEARNABLE_TECHNIQUES
     custom = learning_cfg.get("learnable_techniques")
     if isinstance(custom, list) and custom:
         return set(custom)
-    return _DEFAULT_LEARNABLE_TECHNIQUES
+    return DEFAULT_LEARNABLE_TECHNIQUES
 
 
-def _max_patterns_per_session(root: Path) -> int:
+def max_patterns_per_session(root: Path) -> int:
     """Return max patterns to create per review session (configurable)."""
     cfg = read_config(root)
     if not isinstance(cfg, dict):
@@ -106,7 +106,7 @@ def create_pattern_from_finding(
     Only creates patterns for severity in (blocking, warning).
     Returns the Path of the created file, or None if skipped.
     """
-    if severity not in _LEARNABLE_SEVERITIES:
+    if severity not in LEARNABLE_SEVERITIES:
         return None
 
     pattern = extract_prevention_pattern(

@@ -22,7 +22,11 @@ Full-project health review.
 
 ## Workflow
 
-### Step 1: Deterministic Core (Zero-Question)
+### Step 1: Load Best Practices (Zero Tokens)
+
+Before running the audit, check for active best-practice artifacts in `_specflow/specs/best-practices/`. If present, read the ones matching the project's domain tags. These BPs define domain-specific health criteria that the audit should cross-reference against artifact state. If no BPs exist, note this in the audit summary as a gap.
+
+### Step 2: Deterministic Core (Zero-Question)
 
 Run the automated audit pipeline silently. This covers horizontal, vertical, and cross-cutting checks — including an **orphan-code lens** that flags source files not traced to any STORY/REQ via `output_files`. (Skipped under `--quick`.)
 
@@ -44,22 +48,22 @@ Then, run the standards gap analysis to check compliance health against installe
 uv run specflow standards gaps
 ```
 
-Include the chain depth distribution and the standards compliance score in the audit summary (Step 4). The chain depth is informational data about how deep traceability chains run across the project — not a pass/fail indicator. The standards compliance score should be highlighted if it is below 100%.
+Include the chain depth distribution and the standards compliance score in the audit summary (Step 5). The chain depth is informational data about how deep traceability chains run across the project — not a pass/fail indicator. The standards compliance score should be highlighted if it is below 100%.
 
-### Step 2: Adversarial Wings (Optional)
+### Step 3: Adversarial Wings (Optional)
 
 After the core audit completes, offer to run deeper, AI-driven adversarial reviews:
 
 - "The deterministic audit is complete. Would you like me to run the adversarial wings to review qualitative alignment? (Recommended: Yes, if preparing for a release/milestone)"
 
 If accepted:
-1. Read `../specflow-references/references/adversarial-lenses.md` for the full 16-lens catalog. Select lenses relevant to the findings from Step 1 (e.g., if coverage gaps found → use `audit-vertical`; if dependency issues → use `dependency_shock`).
-2. For any artifact flagged during Step 1, run `uv run specflow trace <ARTIFACT_ID>` to understand its full upstream/downstream dependency context before evaluating lenses.
+1. Read `../specflow-references/references/adversarial-lenses.md` for the full 16-lens catalog. Select lenses relevant to the findings from Step 2 (e.g., if coverage gaps found → use `audit-vertical`; if dependency issues → use `dependency_shock`).
+2. For any artifact flagged during Step 2, run `uv run specflow trace <ARTIFACT_ID>` to understand its full upstream/downstream dependency context before evaluating lenses.
 
 3. **Parallel lens fan-out (error-driven scaling):**
-   - **Standard (0-2 errors in Step 1):** Create 2 parallel subagents (if your platform supports spawning subagents) each covering a subset of the selected lenses. Sequential fallback: run lens groups sequentially.
-   - **Elevated (3-7 errors in Step 1):** Create 3-4 parallel subagents (if supported), one lens per subagent. This gives each lens its own context window for deeper analysis. Sequential fallback: run lenses one at a time.
-   - **Critical (8+ errors in Step 1):** Create 4-5 parallel subagents, plus a dedicated cross-cutting subagent that reads ALL lens outputs and synthesizes systemic patterns (e.g., "4 of 5 lenses flagged the same coupling issue — this is architectural, not local"). Sequential fallback: run all lenses sequentially, then a dedicated synthesis pass.
+   - **Standard (0-2 errors in Step 2):** Create 2 parallel subagents (if your platform supports spawning subagents) each covering a subset of the selected lenses. Sequential fallback: run lens groups sequentially.
+   - **Elevated (3-7 errors in Step 2):** Create 3-4 parallel subagents (if supported), one lens per subagent. This gives each lens its own context window for deeper analysis. Sequential fallback: run lenses one at a time.
+   - **Critical (8+ errors in Step 2):** Create 4-5 parallel subagents, plus a dedicated cross-cutting subagent that reads ALL lens outputs and synthesizes systemic patterns (e.g., "4 of 5 lenses flagged the same coupling issue — this is architectural, not local"). Sequential fallback: run all lenses sequentially, then a dedicated synthesis pass.
 
 4. Consolidate the findings from the adversarial wings.
 5. When creating CHL artifacts, use specific technique names (e.g., `premortem`, `stress_scale`, `dependency_shock`) rather than the generic `project-audit` label. The deterministic core findings use `audit-horizontal`, `audit-vertical`, and `audit-cross-cutting`.
@@ -68,9 +72,9 @@ If accepted:
    uv run specflow update <ARTIFACT_ID> --thinking-techniques premortem,stress_scale
    ```
 
-### Step 3: Artifact Creation
+### Step 4: Artifact Creation
 
-For any significant findings or systemic gaps identified in Step 1 or Step 2:
+For any significant findings or systemic gaps identified in Step 2 or Step 3:
 
 1. Create a single AUD (Audit) artifact documenting the overall run, its scope, and high-level result.
 2. For each specific actionable finding, create a CHL (Challenge) artifact linked to the AUD artifact via `identified_by`.
@@ -88,7 +92,7 @@ uv run specflow create \
   --body "<details>"
 ```
 
-### Step 4: Summary
+### Step 5: Summary
 
 Present a concise summary to the user:
 - Total checks run.

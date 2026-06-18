@@ -14,17 +14,11 @@ from pathlib import Path
 
 from specflow.lib import artifacts as art_lib
 from specflow.lib.display import RED, GREEN, CYAN, YELLOW, NC, BOLD, DIM
+from specflow.lib.domain_constants import DOMAIN_RECOMMENDED
 
 
 def _domain_recommended_fields(domain: str) -> list[str]:
-    recs = {
-        "quant": ["max_drawdown", "total_trades", "win_rate", "profit_factor", "oos_decay"],
-        "ml": ["val_loss", "learning_rate", "batch_size", "epochs", "architecture"],
-        "nlp": ["perplexity", "token_count", "rouge_l", "bertscore_f1"],
-        "systems": ["p50_latency_ms", "p99_latency_ms", "memory_mb", "throughput_rps"],
-        "safety_critical": ["false_positive_rate", "false_negative_rate", "precision", "recall"],
-    }
-    return recs.get(domain, [])
+    return DOMAIN_RECOMMENDED.get(domain, [])
 
 
 def _find_competitions(root: Path) -> list[art_lib.Artifact]:

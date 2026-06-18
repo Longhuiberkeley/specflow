@@ -4,6 +4,45 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.9.5] - 2026-06-19
+
+### Highlights
+
+- **Source-scope engine** — `scan_source_files` now respects `.gitignore` inside git repos (via `ls-files`), with an opt-in `source_scope` config block (`include` allowlist that bypasses the extension heuristic, `exclude` denylist, additive `extensions`). The orphan-meter denominator is clamped to the scanned scope so coverage stays ≤100%. Folded in: v1.9.4's schema sync, verification-gate ordering, and discover thinking-technique recording.
+
+### Features
+
+- **`source_scope` config block** (`source_scope.include`, `exclude`, `extensions`) — declarative control over what SpecFlow treats as "source code" for coverage, orphan, and drift scans. `include` is an authoritative allowlist; `exclude` is a denylist subtracted last; `extensions` additively extends the built-in code-extension heuristic.
+- **Git-aware source scanning** — `scan_source_files` uses `git ls-files` (tracked ∪ untracked-not-ignored) inside work trees, automatically respecting `.gitignore`; falls back to `rglob` + `EXCLUDE_DIRS` pruning otherwise.
+- **`adopt status` scope line** — `specflow adopt status` now surfaces how "source" was scoped (include/exclude/extensions + `.gitignore` respected) so the denominator is never silently capped.
+- **`go --wave`** — `specflow go --wave <N>` filters execution to a specific wave, with range validation.
+- **Skill best-practices steps** — added a "Load Best Practices" step to artifact-review, audit, change-impact-review, and ship skills. Ship skill adds thinking-technique lenses (temporal-drift, regulator, premortem).
+
+### Fixes
+
+- **`create` stdin-hang guard** — `sys.stdin.read()` now guarded with `select.select(..., 0.0)` so a non-tty-but-idle stdin no longer blocks.
+- **`create` duplicate-warning crash fix** — the blocking-duplicate path referenced `YELLOW` without importing it (`NameError`); added to imports.
+- **`detect orphan-code` exit-code contract** — changed `return 1` to `return 0` when orphans found without `--retro-link`, matching the documented contract ("All return exit code 0 regardless of findings").
+- **`status` single discovery** — `discover_artifacts(root)` moved from four separate helper calls to a single call in `run()`, passed to all helpers (5× → 1× scan).
+- **Config defaults cleanup** — added missing keys (`learning.learnable_techniques`, `learning.max_patterns_per_session`, `lint.compliance_evidence_strict`, `source_scope`); removed unused keys (`impact_analysis.auto_flag`, `auto_resolve`, `remind_after`).
+- **Variable shadow in `config.py`** — renamed `specflow = root / ".specflow"` to `specflow_dir` to avoid shadowing the module import.
+- **`learning.py` public API** — `_LEARNABLE_SEVERITIES`, `_DEFAULT_LEARNABLE_TECHNIQUES`, `_learnable_techniques()`, `_max_patterns_per_session()` made public (removed underscore prefix). Updated all consumers (artifact_review, done, tests).
+- **ANSI escape standardization** — replaced raw escape sequences in `go.py`, `detect.py`, `done.py`, `baseline.py`, `checklist_run.py`, `document_changes.py`, `fingerprint_refresh.py`, `trace.py` with `specflow.lib.display` constants.
+- **`execute` trigger narrowing** — description changed from "DEFAULT implementation path for ANY code change" to "Implementation path for planned stories"; trigger keywords narrowed to "implement stories," "execute the plan," "start building," or "run the wave".
+- **Platform repositioning** — README and docs updated to position as first-class Claude Code + OpenCode support; OpenCode marked `preferred: true` in `platforms.yaml`.
+- **Domain constants deduplicated** — new `lib/domain_constants.py` (was duplicated in `autoresearch.py` and `artifact_lint.py`).
+- **`--no-auto` help fix** — changed from "Show pattern summary without extracting" to "Skip auto-extraction; show implemented stories only".
+
+### Internal
+
+- Schema sync: regenerated `.specflow/schema/` from templates so `id_format` is `\d{3,5}` project-wide.
+- Verification-gate step ordering: execute skill Step 6 (Validation) now runs the verification-gate delta before the exit/handoff message.
+- Discover skill: records thinking techniques actually applied to each REQ via `update --thinking-techniques`.
+- 11 new tests for source-scope engine (`test_source_scope.py`): gitignore respect, include allowlist, exclude denylist, extensions, orphan denominator clamping.
+- 1 new test for duplicate-warning crash regression (`test_blocking_duplicate_renders_warning`).
+- Skill templates synced to prevent drift (live ↔ ship parity confirmed for all 5 changed skills).
+- Total: **521 tests passing**.
+
 ## [1.9.3] - 2026-06-14
 
 ### Highlights

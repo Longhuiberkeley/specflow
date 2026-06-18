@@ -22,14 +22,18 @@ This skill implements the change-audit pipeline. It finds all unreviewed Change 
 
 ## Workflow
 
-### Step 1: Discovery
+### Step 1: Load Best Practices (Zero Tokens)
+
+Before starting the impact review, check for active best-practice artifacts in `_specflow/specs/best-practices/`. If present, read the ones matching the project's domain tags. These BPs define domain-specific constraints that the impact review should verify against — if a change violates a domain best practice, this step ensures it's caught.
+
+### Step 2: Discovery
 
 Find all Decision (DEC) artifacts representing change records that need review.
 Look in `_specflow/work/decisions/` for artifacts containing `review_status: unreviewed` in their YAML frontmatter.
 
 If no unreviewed DECs are found, announce that the pipeline is clean (idempotent behavior) and exit gracefully without doing any work.
 
-### Step 2: Scoping (Blast Radius)
+### Step 3: Scoping (Blast Radius)
 
 For each unreviewed DEC found:
 1. Identify the impacted artifacts. You can use the `specflow change-impact` command on the DEC's ID (or the artifacts it addresses) to compute the blast radius.
@@ -38,7 +42,7 @@ For each unreviewed DEC found:
    ```
 2. Note the "cone of impact". This limits the scope of the review to only the artifacts affected by the change, preventing unnecessary full-project reviews.
 
-### Step 3: Review
+### Step 4: Review
 
 For each DEC and its impact cone:
 1. Read the DEC artifact to understand the nature of the change (from its `body` and `rationale`).
@@ -59,7 +63,7 @@ For each DEC and its impact cone:
    | Long-lived assumption baked in (DEC pins a vendor, protocol version, schema format) | **Temporal drift** + **Dependency shock** |
    | None of the above | **Premortem** + **Composition** (default minimum) |
 
-   Apply the selected lenses to the cone artifacts only — never the full project. Each lens is one focused question; spend a few sentences per lens, not a deep audit. The output is one or more findings per lens, which feed Step 4.
+   Apply the selected lenses to the cone artifacts only — never the full project. Each lens is one focused question; spend a few sentences per lens, not a deep audit. The output is one or more findings per lens, which feed Step 5.
 
 6. **Parallel fan-out for large impact cones (if your platform supports spawning subagents):**
    - **Standard (1-5 impacted artifacts):** Review sequentially — context load is manageable.
@@ -70,7 +74,7 @@ For each DEC and its impact cone:
    **Subagent prompt template (per-artifact-group):**
    > "You are reviewing the impact of change [DEC-ID]: [summary]. Review artifact group [types] within the blast radius. Apply lenses: [lens list]. For each artifact: does the change introduce contradictions, unhandled edge cases, or missing updates? Return findings at blocking/warning/info severity with artifact references."
 
-### Step 4: Filing Findings
+### Step 5: Filing Findings
 
 If issues are discovered during the review of a DEC's impact cone:
 1. Create a Challenge (CHL) artifact for each distinct issue.
@@ -80,7 +84,7 @@ If issues are discovered during the review of a DEC's impact cone:
 2. Set the `severity` of the CHL (e.g., `warning`, `error`).
 3. Link the CHL to the DEC using the role `challenges`.
 
-### Step 5: Resolution
+### Step 6: Resolution
 
 After the review for a specific DEC is complete:
 1. Update the DEC's `review_status` in its YAML frontmatter.
@@ -92,7 +96,7 @@ After the review for a specific DEC is complete:
    ```
 3. Save the updated DEC artifact.
 
-Repeat Steps 2-5 for all unreviewed DECs discovered in Step 1.
+Repeat Steps 3-6 for all unreviewed DECs discovered in Step 2.
 
 ## Rules
 

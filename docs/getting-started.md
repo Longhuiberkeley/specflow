@@ -4,7 +4,7 @@ A walkthrough from cold install to a complete discover → plan → execute → 
 
 ## Prerequisites
 
-- An AI coding assistant that supports slash commands (Claude Code, Cursor, Cline, Windsurf, Gemini CLI, etc.)
+- An AI coding assistant that supports slash commands (Claude Code or OpenCode recommended; other assistants with project file access may work)
 - [uv](https://docs.astral.sh/uv/) installed (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
 - SpecFlow CLI installed:
   ```bash

@@ -11,7 +11,7 @@ SpecFlow is a cross-CLI spec-driven development framework that combines proactiv
 3. **Programmatic-first.** Python CLI for deterministic work (zero tokens). LLM for judgment only. See D-16, D-17.
 4. **Ceremony adapts to ambiguity.** Not to which command you typed. The readiness assessment detects scope automatically.
 5. **Bring-Your-Own-Standard.** Artifact types are schema-driven. Users author their own compliance packs via LLM-assisted `/specflow-pack-author` (from PDF/URL/text) or manually via YAML, documented in `docs/authoring-a-pack.md`.
-6. **Cross-platform.** AGENTS.md (universal) + SKILL.md (portable) + platform adapters. Works on Claude Code, OpenCode, Gemini CLI, and degrades gracefully on Cursor, Windsurf, Cline.
+6. **Cross-platform.** AGENTS.md (universal) + SKILL.md (portable) + platform adapters. First-class on Claude Code and OpenCode; other assistants with project file access can use the skills.
 
 ## Phase Overview (Bootstrapped Sequence)
 

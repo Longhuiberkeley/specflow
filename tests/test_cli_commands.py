@@ -95,6 +95,39 @@ class TestCreateCommand:
         files = list(story_dir.glob("STORY-*.md"))
         assert len(files) == 1
 
+    def test_blocking_duplicate_renders_warning(self, project_root: Path, capsys):
+        """Regression: the duplicate-warning header must not crash on a missing
+        YELLOW import. A title+tags identical to an existing REQ trips the
+        high-confidence dedup heuristic; with --force the create proceeds after
+        printing the warning header (which previously raised NameError: YELLOW)."""
+        common = {
+            "type": "requirement", "status": "draft", "priority": "high",
+            "rationale": "Testing", "links": None,
+            "body": "The system shall authenticate users.",
+            "from_standard": None, "nfr_category": None,
+        }
+        # Two distinct REQs first (IDF needs >1 doc with discriminating tokens).
+        create_cmd.run(project_root, {
+            **common, "title": "User login flow", "tags": "auth, login",
+            "force": False, "skip_dedup_check": True,
+        })
+        create_cmd.run(project_root, {
+            **common, "title": "Payment gateway integration", "tags": "billing",
+            "force": False, "skip_dedup_check": True,
+        })
+
+        # Third create duplicates the first: hits the blocking-duplicate display
+        # path that previously raised NameError: name 'YELLOW'.
+        rc = create_cmd.run(project_root, {
+            **common, "title": "User login flow", "tags": "auth, login",
+            "force": True, "skip_dedup_check": False,
+        })
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "Possible duplicate" in out
+        req_dir = project_root / "_specflow" / "specs" / "requirements"
+        assert len(list(req_dir.glob("REQ-*.md"))) == 3
+
     def test_missing_type_returns_error(self, project_root: Path):
         rc = create_cmd.run(project_root, {
             "type": "", "title": "No type",

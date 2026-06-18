@@ -20,9 +20,8 @@ CATEGORY_LABELS = {
 }
 
 
-def _count_by_type(root: Path) -> dict[str, int]:
+def _count_by_type(artifacts: list[art_lib.Artifact]) -> dict[str, int]:
     """Count artifacts by their type prefix."""
-    artifacts = art_lib.discover_artifacts(root)
     counts: dict[str, int] = {}
 
     for art in artifacts:
@@ -33,9 +32,8 @@ def _count_by_type(root: Path) -> dict[str, int]:
     return counts
 
 
-def _count_by_status(root: Path) -> dict[str, int]:
+def _count_by_status(artifacts: list[art_lib.Artifact]) -> dict[str, int]:
     """Count artifacts by their status."""
-    artifacts = art_lib.discover_artifacts(root)
     counts: dict[str, int] = {}
 
     for art in artifacts:
@@ -45,9 +43,8 @@ def _count_by_status(root: Path) -> dict[str, int]:
     return counts
 
 
-def _count_link_health(root: Path) -> dict[str, int]:
+def _count_link_health(artifacts: list[art_lib.Artifact]) -> dict[str, int]:
     """Count broken links and orphans."""
-    artifacts = art_lib.discover_artifacts(root)
     id_index = art_lib.build_id_index(artifacts)
 
     broken = 0
@@ -131,9 +128,8 @@ def _compute_coverage(artifacts: list[art_lib.Artifact]) -> dict[str, Any]:
     }
 
 
-def _count_issues(root: Path) -> int:
+def _count_issues(artifacts: list[art_lib.Artifact]) -> int:
     """Count artifacts with suspect=true."""
-    artifacts = art_lib.discover_artifacts(root)
     return sum(1 for a in artifacts if a.suspect)
 
 
@@ -217,21 +213,23 @@ def run(root: Path, args: dict) -> int:
     phase = state.get("current", "idle")
     created = config.get("project", {}).get("created", "unknown")
 
+    # Discover artifacts once
+    all_artifacts = art_lib.discover_artifacts(root)
+
     # Count artifacts
-    by_type = _count_by_type(root)
+    by_type = _count_by_type(all_artifacts)
     total = sum(by_type.values())
 
     # Count by status
-    by_status = _count_by_status(root)
+    by_status = _count_by_status(all_artifacts)
 
     # Link health
-    health = _count_link_health(root)
+    health = _count_link_health(all_artifacts)
 
     # Issues
-    issues = _count_issues(root)
+    issues = _count_issues(all_artifacts)
 
     # Coverage metrics
-    all_artifacts = art_lib.discover_artifacts(root)
     coverage = _compute_coverage(all_artifacts)
 
     # Print dashboard

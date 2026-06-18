@@ -54,9 +54,21 @@ uv run specflow trace <ARTIFACT_ID>
 
 This displays upstream (standards, parents) and downstream (implementation, tests) links as a tree, giving full context for the review.
 
-### Step 3: Run Context-Specific Checklists (DO THIS BEFORE LENSES)
+### Step 3: Load Best Practices (Zero Tokens)
 
-This step is **mandatory before Step 4**. Checklists are the curated coverage the project has already invested in; running lenses first would duplicate that work and waste tokens.
+Before running checklists, load any active best-practice artifacts that apply to the artifact under review. This provides domain-specific guidance that complements the generic checklists.
+
+```
+# Best practices are loaded automatically by the checklist-run command if BP artifacts
+# exist in _specflow/specs/best-practices/ with matching tags or applies_to links.
+# No separate command needed — just ensure BPs are present in the project.
+```
+
+If the project has best-practice artifacts in `_specflow/specs/best-practices/`, the `checklist-run` command in Step 4 will automatically include matching BPs in its assembled checklist. If no BPs exist, note this to the user: "No best-practice artifacts found. Consider running /specflow-discover to create domain-specific BPs."
+
+### Step 4: Run Context-Specific Checklists (DO THIS BEFORE LENSES)
+
+This step is **mandatory before Step 5**. Checklists are the curated coverage the project has already invested in; running lenses first would duplicate that work and waste tokens.
 
 Run:
 
@@ -82,7 +94,7 @@ Read `references/checklist-assembly.md` for the full assembly algorithm.
 
 **Read the full checklist output before continuing.** You will need to know what has already been covered so the agent and lens passes complement rather than re-ask.
 
-### Step 4: Agent-Judged Checklist Items
+### Step 5: Agent-Judged Checklist Items
 
 For each assembled checklist item that is **not** automated (`automated: false`):
 
@@ -90,9 +102,9 @@ For each assembled checklist item that is **not** automated (`automated: false`)
 2. Classify the finding: `blocking`, `warning`, or `info`.
 3. Read `references/severity-levels.md` for severity definitions.
 
-### Step 5: Apply Adversarial Lenses (Optional, Scoped)
+### Step 6: Apply Adversarial Lenses (Optional, Scoped)
 
-Lenses are adversarial "thinking techniques" that attack the artifact from angles the checklists do not cover. Only apply lenses **after** Steps 3 and 4 — the value of a lens is what it adds beyond existing checklist coverage.
+Lenses are adversarial "thinking techniques" that attack the artifact from angles the checklists do not cover. Only apply lenses **after** Steps 4 and 5 — the value of a lens is what it adds beyond existing checklist coverage.
 
 **Starter lenses** (use these by default for most artifacts):
 
@@ -111,9 +123,9 @@ This surfaces proactive challenge items ("what could go wrong? what's missing?")
 
 For the full 16-lens catalog (stress-scale, dependency shock, reversal, five-whys, outside view, worst-case user, regulator, temporal drift, composition, inversion, competitor, cost-scaling) and the lens-selection checklist UX, read `../specflow-references/references/adversarial-lenses.md`.
 
-**Rule:** never propose a lens whose finding would be a direct duplicate of a checklist item already run in Step 3. If a lens would only repeat the checklist, skip it.
+**Rule:** never propose a lens whose finding would be a direct duplicate of a checklist item already run in Step 4. If a lens would only repeat the checklist, skip it.
 
-### Step 5b: Deep Review with Parallel Lenses (Optional, for high-stakes artifacts)
+### Step 6b: Deep Review with Parallel Lenses (Optional, for high-stakes artifacts)
 
 For artifacts where quality is critical (safety, security, compliance, or user-facing contracts), fan out adversarial lenses as parallel subagents. Each lens gets its own context window, producing deeper analysis than sequential single-agent review.
 
@@ -125,7 +137,7 @@ For artifacts where quality is critical (safety, security, compliance, or user-f
 
 **Pattern** (if your platform supports spawning subagents):
 1. Select 3-5 lenses from the 16-lens catalog relevant to the artifact's domain and tags.
-2. Spawn one subagent per lens. Each subagent receives: the artifact content, the checklist results from Steps 3-4, and its assigned lens. Each returns findings at `blocking`/`warning`/`info` severity.
+2. Spawn one subagent per lens. Each subagent receives: the artifact content, the checklist results from Steps 4-5, and its assigned lens. Each returns findings at `blocking`/`warning`/`info` severity.
 3. The parent agent deduplicates across lens outputs (same finding from multiple lenses = stronger signal) and merges into the final report.
 
 **Fallback (no subagent support):** Apply lenses sequentially — 3-5 passes through the artifact, one lens per pass. Same result, higher context load.
@@ -133,7 +145,7 @@ For artifacts where quality is critical (safety, security, compliance, or user-f
 **Subagent prompt template:**
 > "You are an adversarial reviewer using the [LENS NAME] lens. Review artifact [ID]. Context: [checklist findings so far]. Question: [lens-specific question]. Return findings as: severity | finding | evidence from artifact. Be specific — cite line numbers or sections."
 
-### Step 6: Report Findings
+### Step 7: Report Findings
 
 Present results organized by severity:
 
@@ -157,7 +169,7 @@ Present results organized by severity:
 
 Each finding should note which layer produced it (`lint`, `checklist`, `agent`, or `lens:<name>`), so the user can tell curated coverage from adversarial probing.
 
-### Step 7: Review Summary (Approval Format)
+### Step 8: Review Summary (Approval Format)
 
 Present results following the **Approval Presentation Format** (see `../specflow-references/references/approval-presentation.md`):
 
@@ -166,7 +178,7 @@ Present results following the **Approval Presentation Format** (see `../specflow
 3. **Assessment lenses** — Which lenses were applied vs. skipped, and why. **Risk Profile** for any `blocking` or `warning` finding (reversibility, blast radius, confidence).
 4. **Action options** — Fix now / Defer / Discuss / Re-run with deeper lenses.
 
-### Step 8: "Improve Now?" Prompt
+### Step 9: "Improve Now?" Prompt
 
 After the summary, offer concrete remediation commands the user can run:
 
@@ -177,7 +189,7 @@ After the summary, offer concrete remediation commands the user can run:
 
 Ask: **"Improve now — or defer?"** Do not mutate target artifact statuses without an explicit user "yes" per finding.
 
-### Step 9: Phase Closure (Optional)
+### Step 10: Phase Closure (Optional)
 
 If this review concludes the phase's work, the user may run `uv run specflow done` to:
 1. Review completed work in the current phase

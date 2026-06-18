@@ -201,13 +201,13 @@ def _create_learned_patterns(
 ) -> int:
     count = 0
     art_map = {a.id: a for a in targets}
-    learnable_techs = learn_lib._learnable_techniques(root)
+    learnable_techs = learn_lib.learnable_techniques(root)
     for f in findings:
-        if f.severity not in learn_lib._LEARNABLE_SEVERITIES:
+        if f.severity not in learn_lib.LEARNABLE_SEVERITIES:
             continue
         if not f.technique or f.technique not in learnable_techs:
             continue
-        if count >= learn_lib._max_patterns_per_session(root):
+        if count >= learn_lib.max_patterns_per_session(root):
             break
         if not f.target_id or f.target_id not in art_map:
             continue
@@ -377,7 +377,7 @@ def run(root: Path, args: dict[str, Any]) -> int:
         # since their severity is 'info'.
 
     # 8. Create learned patterns from significant findings
-    learnable = [f for f in findings if f.severity in learn_lib._LEARNABLE_SEVERITIES]
+    learnable = [f for f in findings if f.severity in learn_lib.LEARNABLE_SEVERITIES]
     if learnable:
         print("\nCreating prevention patterns from findings...")
         _create_learned_patterns(root, targets, findings)

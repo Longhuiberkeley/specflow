@@ -19,10 +19,13 @@ def default_config(project_name: str = "") -> dict:
     return {
         "version": specflow.__version__,
         "project": {"name": project_name, "created": now, "domain": "", "domain_tags": []},
-        "impact_analysis": {
-            "auto_flag": True,
-            "auto_resolve": False,
-            "remind_after": "7d",
+        "impact_analysis": {},
+        "learning": {
+            "learnable_techniques": [],
+            "max_patterns_per_session": 3,
+        },
+        "lint": {
+            "compliance_evidence_strict": False,
         },
         "artifact_types": [
             "requirement",
@@ -37,6 +40,13 @@ def default_config(project_name: str = "") -> dict:
             "defect",
         ],
         "active_packs": [],
+        # What counts as "source" for coverage / orphan / drift scans. Empty =
+        # respect .gitignore (git repos) + the built-in extension heuristic.
+        #   include:    glob allowlist; if set, ONLY these count and they bypass
+        #               the extension heuristic (e.g. ["src/**/*.py", "tests/**/*.py"]).
+        #   exclude:    glob denylist, subtracted last (e.g. ["data/**"]).
+        #   extensions: extra suffixes treated as code (e.g. [".ipynb"]).
+        "source_scope": {"include": [], "exclude": [], "extensions": []},
         "team": {
             "roles": {
                 "reviewer": [],
@@ -169,15 +179,15 @@ def backup_specflow_internals(root: Path, backup_dir: Path) -> list[str]:
     import shutil
 
     backed_up: list[str] = []
-    specflow = root / ".specflow"
+    specflow_dir = root / ".specflow"
 
     for name in ("config.yaml", "state.yaml"):
-        src = specflow / name
+        src = specflow_dir / name
         if src.exists():
             shutil.copy2(str(src), str(backup_dir / name))
             backed_up.append(f".specflow/{name}")
 
-    schema_src = specflow / "schema"
+    schema_src = specflow_dir / "schema"
     schema_dst = backup_dir / "schema"
     if schema_src.exists():
         if schema_dst.exists():

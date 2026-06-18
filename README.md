@@ -22,7 +22,7 @@ Traditional ALM asks you to leave your editor, log into a website, and click thr
 
 Old-school ALM tools were built for a world where humans typed every line. They made sense when writing code was slow and ceremony was cheap. AI coding assistants flipped that: the code comes out fast, and the ritual is the bottleneck.
 
-SpecFlow keeps the rigor (V-model traceability, impact analysis, audit baselines, standards packs) and drops the parts that slow teams down (servers, licenses, portals, click-through workflows). It runs wherever your AI assistant runs — Claude Code, Cursor, Cline, and 11 others.
+SpecFlow keeps the rigor (V-model traceability, impact analysis, audit baselines, standards packs) and drops the parts that slow teams down (servers, licenses, portals, click-through workflows). First-class support for Claude Code and OpenCode; other assistants with file access to the project directory can use the skills, but those two are the primary targets.
 
 ## What SpecFlow expects you to bring
 
@@ -81,7 +81,7 @@ The whole workflow is a conversation, not a portal. Everything you see above is 
 
 ## Quick start
 
-**Prerequisites:** [uv](https://docs.astral.sh/uv/) + any supported AI coding assistant.
+**Prerequisites:** [uv](https://docs.astral.sh/uv/) + Claude Code or OpenCode.
 
 **Step 1 — Install the CLI** (one time):
 
@@ -116,7 +116,7 @@ Full walkthrough in the [getting-started guide](docs/getting-started.md).
 | **V-model traceability** | REQ → ARCH → DDD → UT/IT/QT, fully linked and linted |
 | **Bring-your-own-standard** | Drop a PDF, URL, or pasted text. SpecFlow extracts clauses into compliance schemas |
 | **Immutable baselines** | Snapshot, diff, and generate audit evidence between releases |
-| **Runs in 14 AI assistants** | Claude Code, Cursor, Windsurf, Cline, Gemini CLI, OpenCode, Copilot, Roo, QwenCoder, Kiro, KiloCoder, Codex, Trae, Junie |
+| **First-class Claude Code + OpenCode** | Skills install automatically; other assistants with project file access may work but are community-supported |
 | **Autoresearch loops** *(new)* | Define a competition + verify command, let your assistant iterate; every experiment becomes a tracked artifact |
 | **1 runtime dependency** | Just `pyyaml`. Everything else is stdlib. |
 
@@ -187,7 +187,7 @@ SpecFlow is for teams that want the rigor without the portal tax.
 | **Home** | Web server / desktop client | Your git repository |
 | **Interface** | Browser forms | `/specflow-*` in your AI assistant |
 | **CI** | External integration | Native — `artifact-lint` runs in your existing pipeline |
-| **AI** | Bolted on, if at all | 14 assistants, skill-first design |
+| **AI** | Bolted on, if at all | Claude Code + OpenCode first-class, skill-first design |
 | **Setup** | Servers, licenses, admins | `uv tool install` + `specflow init` — two commands |
 | **Lock-in** | Proprietary database | Markdown + YAML + git |
 
@@ -241,7 +241,7 @@ cd your-project
 specflow init
 ```
 
-This creates `_specflow/` and `.specflow/` in your repo, and copies skill files into the appropriate directory for your AI assistant (e.g. `.claude/skills/` for Claude Code, `.cursor/skills/` for Cursor). After this step, `/specflow-*` slash commands are available in your assistant.
+This creates `_specflow/` and `.specflow/` in your repo, and copies skill files into the appropriate directory for your AI assistant (`.claude/skills/` for Claude Code, `.opencode/skills/` for OpenCode). After this step, `/specflow-*` slash commands are available in your assistant.
 
 ## Docs
 

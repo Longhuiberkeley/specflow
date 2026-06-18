@@ -198,6 +198,24 @@ Focus: **autoresearch methodology depth, escalation/permanence test, and templat
 
 > Deferred: an audit/lint detector that flags long-lived SPIKEs / repeated ad-hoc work that should have been promoted (a work-side complement to the v1.8.0 *Stale Code Detection* item). Also deferred: optional structured multi-output schema (typed per-component fields on COMP/EXPT) if the `component_<name>` convention proves too loose.
 
+## v1.9.5
+
+Focus: **source-scope engine, `.gitignore` respect, and quality-of-life fixes.**
+
+- **Source-scope engine** — `scan_source_files` uses `git ls-files` (tracked ∪ untracked-not-ignored) inside work trees, with an opt-in `source_scope` config block (`include` allowlist bypassing the extension heuristic, `exclude` denylist, additive `extensions`). Orphan-meter denominator clamped to the scanned scope so coverage stays ≤100%. `adopt status` surfaces how "source" was scoped.
+- **`create` stdin-hang guard** — `select.select(..., 0.0)` prevents blocking on a non-tty-but-idle stdin pipe. Duplicate-warning crash fix (`NameError: YELLOW`).
+- **`detect` exit-code contract** — orphan findings now return 0 (informational), matching the documented promise.
+- **`status` single discovery** — `discover_artifacts()` called once and passed to all helpers (5× → 1× scan).
+- **Config cleanup** — removed unused `impact_analysis` keys, added `learning`/`lint`/`source_scope` defaults, fixed variable shadow.
+- **ANSI standardization** — raw escape sequences replaced with `specflow.lib.display` constants across 8 commands.
+- **`learning.py` public API** — internal helpers made public; all consumers updated.
+- **Domain constants deduplicated** — new `lib/domain_constants.py` replaces inline copies.
+- **`execute` trigger narrowing** — "DEFAULT for any code change" → "implementation path for planned stories".
+- **Platform repositioning** — first-class Claude Code + OpenCode; OpenCode marked `preferred: true`.
+- **Skill best-practices steps** — artifact-review, audit, change-impact-review, ship get a "Load Best Practices" step; ship adds thinking-technique lenses.
+- **Schema sync + verification-gate + discover TT recording** — folded from v1.9.4 (schema `id_format` widened project-wide, execute verification-gate delta moved inside Step 6, discover records thinking techniques on REQs).
+- **521 tests passing**, artifact-lint PASS (62 warnings), skill-template parity confirmed.
+
 ## v1.9.4
 
 Focus: **data safety and CI hardening.**

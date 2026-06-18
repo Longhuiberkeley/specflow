@@ -143,7 +143,8 @@ class TestStatusCountsReview:
         rc = status_cmd.run(project_root, {})
         assert rc == 0
 
-        counts = status_cmd._count_by_type(project_root)
+        artifacts = art_lib.discover_artifacts(project_root)
+        counts = status_cmd._count_by_type(artifacts)
         assert counts.get("REVIEW", 0) == 1
         assert counts.get("CHL", 0) == 1
 
