@@ -64,3 +64,9 @@ items:
     automated: false
     llm_prompt: "For each STORY, walk its links (specified_by, derives_from, depends_on). Confirm every referenced upstream artifact has status `approved` (or `implemented`). Flag any STORY whose readiness depends on a draft artifact."
     severity: warning
+
+  - id: CKL-GATE-004-11
+    check: "Approved ARCH/DDD artifacts record the thinking techniques applied (advisory — presence, not quality)"
+    automated: true
+    script: "uv run specflow artifact-lint --type thinking-techniques"
+    severity: warning

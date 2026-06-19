@@ -61,16 +61,27 @@ Run a fast health check across the final state of the release:
 uv run specflow project-audit --quick
 ```
 
+**Adversarial lens pass (default-on — the lenses loaded in Step 1).** Step 1 declared temporal-drift / regulator / (optional) premortem against the release scope; apply them here, default-on. Follow the standard fan-out convention (see `../specflow-references/references/adversarial-lenses.md` § Multi-Agent Strategy): one lens per subagent on Claude Code/OpenCode, sequential single-agent fallback elsewhere, context budget ~2000 tokens/lens. The user may opt out ("skip the lens pass") — but do not skip silently, since a release is a one-way door and Step 1 already committed to these lenses.
+
+For each lens, produce findings and record them as **CHL artifacts** (and `--thinking-techniques` on the touched artifacts):
+- **Temporal drift** — any spec, dependency, or assumption in this release that was true when written but is stale now?
+- **Regulator** — if compliance-bound, does the release satisfy the relevant standard's exit criteria?
+- **Premortem** (if run) — six months out this release caused an incident; what went wrong?
+
+Consolidate the lens findings and carry them into Step 5's Risk Profile. This is not a new gate — it executes what Step 1 already promised, and its findings inform (do not replace) the human release decision.
+
 ### Step 5: Review and Advisory (Approval Gate)
 
 Present the release summary following the **Approval Presentation Format** (see `../specflow-references/references/approval-presentation.md`):
 
 1. **TLDR** — What's being released, version tag, scope summary (1-3 sentences).
-2. **Changes inline** — Baseline snapshot details, DEC artifacts with key changes summarized (not just links), audit findings. The human should not need to open files.
-3. **Assessment lenses** — Apply staleness, coverage, and compliance lenses, then a **Risk Profile** for the release (a release is **irreversible** by default — a published tag is a one-way door; report blast radius and your confidence). Show ✅/⚠️/❌ results.
-4. **Risk-proportional gate** — A release is Tier 2 (irreversible): point at any specific concern and require targeted sign-off. Never auto-proceed a release.
-5. **Advisory Gate:** If the audit severity is >= `error`, present a clear warning. "The audit returned errors. Are you sure you want to proceed with this release? (Recommended: No, fix errors first)"
-6. Require explicit user confirmation to proceed if there are errors.
+2. **What this does (functional)** — What this release changes about the system's behavior, in plain terms (purpose · what's in · what's out). Plain language, not baseline/DEC references.
+3. **Changes inline** — Baseline snapshot details, DEC artifacts with key changes summarized (not just links), audit findings. The human should not need to open files.
+4. **Assessment lenses** — Apply staleness, coverage, and compliance lenses, then a **Risk Profile** for the release (a release is **irreversible** by default — a published tag is a one-way door; report blast radius and your confidence). Show ✅/⚠️/❌ results.
+5. **Key decisions (2–3)** — The decisions that determine whether this release is ready (what was chosen · alternative · tradeoff · what validates it): ship-with-known-findings vs hold, the previous-tag/commit comparison boundary, any irreversible migration included. Make it the approve-or-improve loop: proceed · discuss #N · revise and re-present.
+6. **Risk-proportional gate** — A release is Tier 2 (irreversible): point at any specific concern and require targeted sign-off. Never auto-proceed a release.
+7. **Advisory Gate:** If the audit severity is >= `error`, present a clear warning. "The audit returned errors. Are you sure you want to proceed with this release? (Recommended: No, fix errors first)"
+8. Require explicit user confirmation to proceed if there are errors.
 
 ## Rules
 - **Gate severity:**

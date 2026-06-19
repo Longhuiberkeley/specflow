@@ -12,6 +12,15 @@ This skill accepts freeform user input alongside the command. Interpret the user
 - **A request for depth** ("go deep", "be thorough", "all lenses") → run deterministic core + full agent-driven analysis
 - **A specific focus** ("focus on REQ-003", "check compliance only") → narrow scope to the request, still run deterministic core first
 
+## Disambiguation
+
+If the user's intent could match another review skill, confirm scope with **one** question before proceeding:
+- **Impact cone of recent DEC changes** → stay here (`specflow-change-impact-review`).
+- **One specific artifact** → `/specflow-artifact-review`.
+- **Whole-project health** → `/specflow-audit`.
+
+If still unclear, run `uv run specflow brief --next` (or `/specflow-start`) and let the user choose.
+
 Always run the deterministic core regardless of input. It costs zero tokens and provides the foundation for any analysis.
 
 ---
@@ -65,7 +74,7 @@ For each DEC and its impact cone:
 
    Apply the selected lenses to the cone artifacts only — never the full project. Each lens is one focused question; spend a few sentences per lens, not a deep audit. The output is one or more findings per lens, which feed Step 5.
 
-6. **Parallel fan-out for large impact cones (if your platform supports spawning subagents):**
+6. **Parallel fan-out for large impact cones** (DEFAULT on Claude Code/OpenCode; sequential single-agent fallback on hosts without native subagents — see `../specflow-references/references/adversarial-lenses.md` § Multi-Agent Strategy; context budget ~2500 tokens/group; identical output either way):
    - **Standard (1-5 impacted artifacts):** Review sequentially — context load is manageable.
    - **Elevated (6-15 impacted artifacts):** Spawn one subagent per artifact type group (e.g., REQs together, ARCHs together). Each subagent applies the selected lenses to its group and returns findings.
    - **Critical (16+ impacted artifacts):** Spawn one subagent per artifact + one synthesis subagent that reads all outputs and identifies cross-artifact patterns. This prevents missing systemic issues that only emerge when you see the whole cone.

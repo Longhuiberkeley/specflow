@@ -73,6 +73,18 @@ def cmd_done(args: argparse.Namespace) -> int:
     return done_cmd.run(root, vars(args))
 
 
+def cmd_approve(args: argparse.Namespace) -> int:
+    from specflow.commands import approve as approve_cmd
+    root = _find_project_root()
+    return approve_cmd.run(root, vars(args))
+
+
+def cmd_phase_status(args: argparse.Namespace) -> int:
+    from specflow.commands import phase_status as phase_status_cmd
+    root = _find_project_root()
+    return phase_status_cmd.run(root, vars(args))
+
+
 def cmd_cascade_status(args: argparse.Namespace) -> int:
     from specflow.commands import cascade_status as cmd
     root = _find_project_root()
@@ -260,6 +272,7 @@ def _add_status_parser(subparsers):
 def _add_brief_parser(subparsers):
     p = subparsers.add_parser("brief", help="One-call recall digest: phase, inventory, suspects, next wave, recent changes")
     p.add_argument("--since", help="Recent-changes window for git log (default: '7 days ago')")
+    p.add_argument("--next", action="store_true", help="Print only the deterministic next-skill recommendation and exit")
 
 
 def _add_create_parser(subparsers):
@@ -335,6 +348,19 @@ def _add_done_parser(subparsers):
     p.add_argument("--auto", action="store_true", default=True, help="Auto-extract prevention patterns (default)")
     p.add_argument("--no-auto", action="store_false", dest="auto", help="Skip auto-extraction; show implemented stories only")
     p.add_argument("--no-patterns", action="store_true", dest="no_patterns", help="Skip pattern extraction entirely")
+
+
+def _add_approve_parser(subparsers):
+    p = subparsers.add_parser("approve", help="Batch-approve artifacts by type/status (single explicit human act)")
+    p.add_argument("--type", required=True, help="ID prefix or type name to approve (e.g. REQ, STORY, requirement)")
+    p.add_argument("--status", default="draft", help="Only approve artifacts currently in this status (default: draft)")
+    p.add_argument("--target-status", dest="target_status", default="approved",
+                   help="Status to move them to (default: approved)")
+    p.add_argument("--yes", action="store_true", help="Skip the confirmation prompt (for CI / scripted use)")
+
+
+def _add_phase_status_parser(subparsers):
+    subparsers.add_parser("phase-status", help="Read-only advisory: is the current phase ready to close?")
 
 
 def _add_cascade_status_parser(subparsers):
@@ -578,8 +604,8 @@ def _add_autoresearch_parser(subparsers):
 _HELP_EPILOG = """\
 commands by workflow phase:
   Discover:   init, refresh, status, domain, patterns
-  Plan:       create, update
-  Execute:    go, done, cascade-status, reconcile, generate-tests
+  Plan:       create, update, approve
+  Execute:    go, done, phase-status, cascade-status, reconcile, generate-tests
   Review:     artifact-lint, checklist-run, artifact-review, project-audit, trace
   Release:    baseline, document-changes
   CI:         hook, renumber-drafts, import, export, detect, change-impact,
@@ -669,10 +695,12 @@ def main(argv: list[str] | None = None) -> int:
     # ── Plan ────────────────────────────────────────────────────
     _add_create_parser(subparsers)
     _add_update_parser(subparsers)
+    _add_approve_parser(subparsers)
 
     # ── Execute ─────────────────────────────────────────────────
     _add_go_parser(subparsers)
     _add_done_parser(subparsers)
+    _add_phase_status_parser(subparsers)
     _add_cascade_status_parser(subparsers)
     _add_reconcile_parser(subparsers)
     _add_generate_tests_parser(subparsers)
@@ -732,6 +760,8 @@ def main(argv: list[str] | None = None) -> int:
         "go": cmd_go,
         "checklist-run": cmd_checklist_run,
         "done": cmd_done,
+        "approve": cmd_approve,
+        "phase-status": cmd_phase_status,
         "cascade-status": cmd_cascade_status,
         "reconcile": cmd_reconcile,
         "change-impact": cmd_change_impact,

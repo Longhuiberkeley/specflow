@@ -2,10 +2,12 @@
 id: REQ-AUTORESE-d684
 title: 'Autoresearch pack v0.2.0: multi-criteria support, CLI subcommand, and harness-agnosticism'
 type: requirement
-status: draft
+status: approved
 suspect: false
 links: []
 created: '2026-05-16'
+modified: '2026-06-19'
+fingerprint: sha256:0fc93b56a8e8
 ---
 
 # Autoresearch pack v0.2.0: multi-criteria support, CLI subcommand, and harness-agnosticism

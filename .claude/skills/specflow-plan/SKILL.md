@@ -1,6 +1,6 @@
 ---
 name: specflow-plan
-description: REQUIRED after discover when REQs are approved. Breaks approved requirements into architecture (ARCH), detailed design (DDD), and stories (STORY). Triggers when the user says "design the architecture," "plan the implementation," "break this down," or when REQs are approved and the user is ready to move forward. This is step 2 of the core lifecycle — use it BEFORE any implementation begins. NOT for: quick bug fixes (use specflow-execute with lean path), research tasks, or infrastructure setup.
+description: REQUIRED after discover when REQs are approved. Breaks approved requirements into architecture (ARCH), detailed design (DDD), and stories (STORY). Triggers when the user says "design the architecture," "plan the implementation," "break this down," or when REQs are approved and the user is ready to move forward. Also triggers for reverse lifecycle: "rethink the architecture," "revise the plan," "go back to planning," or when the user wants to revisit architecture after executing. This is step 2 of the core lifecycle — use it BEFORE any implementation begins. NOT for: quick bug fixes (use specflow-execute with lean path), research tasks, or infrastructure setup.
 ---
 
 ## Freeform Input Handling
@@ -25,6 +25,8 @@ Break down approved requirements into architecture, detailed design, and user st
 ### Step 1: Phase Gate Check
 
 1. **Recall first:** run `uv run specflow brief` for a one-call digest of phase, inventory, suspects, and recent changes — then drill into specific `_index.yaml` files or full artifact bodies only as needed.
+
+2. **Reverse lifecycle check:** If the user said "rethink the architecture," "revise the plan," or "go back to planning" (or if you detect the user wants to revisit architecture after executing), ask: "Do you want to (a) revise existing ARCH/DDD artifacts in place, (b) re-decompose from the same REQs, or (c) go back to requirements first (run /specflow-discover)?" If revising, read the existing ARCH/DDDs and offer targeted edits. If re-decomposing, proceed with the existing approved REQs.
 2. Read all REQ artifacts from `_specflow/specs/requirements/`.
 3. Verify all REQs have `status: approved`. If any are still `draft`, tell the user which ones need approval before planning can proceed.
 4. Run the phase gate: `uv run specflow artifact-lint --type gate --gate specifying-to-planning`. Run it by default — only skip if the user explicitly declines.
@@ -65,7 +67,7 @@ For systems with 3+ REQs, multiple external integrations, or cross-cutting conce
 - Architecture will have 4+ components
 - User explicitly asks for alternatives or says "what are my options?"
 
-**Pattern** (if your platform supports spawning subagents):
+**Pattern** (DEFAULT on Claude Code/OpenCode; sequential single-agent fallback on hosts without native subagents — see `../specflow-references/references/adversarial-lenses.md` § Multi-Agent Strategy; context budget ~3000 tokens/arch candidate; identical output either way):
 1. Prepare a brief with: all approved REQ summaries, domain context, external system constraints, and NFRs.
 2. Spawn 2-3 subagents with different decomposition seeds:
    - **Seed A (domain-driven):** Decompose by business domain / bounded context
@@ -190,10 +192,12 @@ Report any issues. Fix broken links or schema violations.
 **You must follow the Approval Presentation Format** (see `../specflow-references/references/approval-presentation.md`). Present:
 
 1. **TLDR** — What was planned and why (1-3 sentences, no jargon).
-2. **Changes inline** — List every ARCH, DDD, STORY, and SPIKE with key content. The human should not need to open any file to understand the proposal.
-3. **Assessment lenses** — Apply traceability, completeness, linkage, coverage, and staleness lenses, then a **Risk Profile per change** (reversibility, blast radius via `specflow change-impact`, and your confidence + the reason it isn't higher). Show ✅/⚠️/❌ results.
-4. **Risk-proportional gate** — Assign a tier (0 light / 1 normal / 2 stop) from the risk profile and present accordingly; for Tier 2 changes, point at the specific concern. Do not calibrate the tier from past approvals.
-5. **Action options** — Approve / Request changes / Discuss / Reject.
+2. **What this does (functional)** — The system behavior being proposed, in plain terms (purpose · what's in · what's out · flow if multi-part). Plain language, not component IDs.
+3. **Changes inline** — List every ARCH, DDD, STORY, and SPIKE with key content. The human should not need to open any file to understand the proposal.
+4. **Assessment lenses** — Apply traceability, completeness, linkage, coverage, and staleness lenses, then a **Risk Profile per change** (reversibility, blast radius via `specflow change-impact`, and your confidence + the reason it isn't higher). Show ✅/⚠️/❌ results.
+5. **Key decisions (2–3)** — The decisions that determine whether this plan is right (what was chosen · alternative · tradeoff · what validates it). **Fold the coverage/assumption checks in here**, not after the gate: Is every approved REQ covered by ≥1 STORY? Any STORY that should be a SPIKE? Any ARCH whose public interface needs a DDD? Key assumptions needing validation (deployment model, story sizing, NFR targets)? Make it the approve-or-improve loop: proceed · discuss #N · revise and re-present.
+6. **Risk-proportional gate** — Assign a tier (0 light / 1 normal / 2 stop) from the risk profile and present accordingly; for Tier 2 changes, point at the specific concern. Do not calibrate the tier from past approvals.
+7. **Action options** — Approve / Request changes / Discuss / Reject.
 
 **CRITICAL: You must NOT self-approve.** All artifacts remain in `draft` until the human explicitly approves. The plan phase is conversational — the human may iterate, discuss, and request changes as many times as needed. Wait for explicit approval.
 
@@ -207,20 +211,21 @@ Only on explicit "approve" → run `specflow update <ID> --status approved` for 
 
 ### Step 7.5: Human-Review Summary
 
-Before the phase transition, ensure the user has explicitly acknowledged the assessment results. Key items to highlight if not already surfaced in Step 7:
-
-- Is every approved REQ covered by at least one STORY? (flag any REQ with no `implements` link)
-- Any STORY that should be a SPIKE because the answer is genuinely unknown?
-- Any ARCH with a public interface that has no corresponding DDD and probably needs one?
-- Key assumptions that need validation (deployment model, story sizing, NFR targets)
-
-Wait for user acknowledgement before the phase transition.
+The checks formerly listed here (REQ coverage, STORY→SPIKE, ARCH-needs-DDD, key assumptions) are now surfaced as **Key decisions (§5) *during* the gate** in Step 7, not after it. Before the phase transition, simply ensure the user has explicitly acknowledged those decisions. Wait for user acknowledgement before the phase transition.
 
 ### Step 8: Phase Transition
 
 Update `.specflow/state.yaml`: set `current: planning`, add history entry.
 
-**Exit message:** Report artifact counts (ARCH / DDD / STORY / SPIKE) and recommend the next skill — `/specflow-execute`.
+**Exit message:** Provide a handoff checkpoint (rides the artifact graph + "Recent decisions" in `specflow brief`):
+
+```
+## Handoff checkpoint
+**Accomplished:** ARCH ×N, DDD ×N, STORY ×N, SPIKE ×N (all draft).
+**Key decisions + rationale:** <the 2–3 architecture decisions from the approval gate, each with the why>
+**Pending / blocked:** Artifacts are draft — need human approval before execution. <any assumption/premortem DECs>
+**Exact next command:** `specflow approve --batch --type STORY` (and ARCH/DDD as needed), then `/specflow-execute`.
+```
 
 ## Rules
 

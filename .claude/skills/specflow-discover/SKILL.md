@@ -1,6 +1,6 @@
 ---
 name: specflow-discover
-description: Use to start the SpecFlow requirements discovery workflow — the entry point for any new feature, enhancement, or specification task. Triggers when the user says "add X," "build Y," "create Z," "I need requirements for," "capture specs for," or "what should the system do?" This is step 1 of the core lifecycle — use it FIRST for any new feature or change that needs specification, BEFORE specflow-plan and specflow-execute. NOT for: data exploration, data cleaning, researching technologies, prototyping, running experiments, or technical prep work unrelated to requirements authoring.
+description: Use to start the SpecFlow requirements discovery workflow — the entry point for any new feature, enhancement, or specification task. Triggers when the user says "add X," "build Y," "create Z," "I need requirements for," "capture specs for," or "what should the system do?" Also triggers for reverse lifecycle: "rethink the requirements," "revise the requirements," "go back to requirements," or when the user wants to revisit specs after planning or executing. This is step 1 of the core lifecycle — use it FIRST for any new feature or change that needs specification, BEFORE specflow-plan and specflow-execute. NOT for: data exploration, data cleaning, researching technologies, prototyping, running experiments, or technical prep work unrelated to requirements authoring.
 ---
 
 ## Freeform Input Handling
@@ -25,6 +25,8 @@ Conduct a structured discovery conversation to capture requirements as REQ artif
 ### Step 0: Initialize
 
 1. **Recall first:** run `uv run specflow brief` for a one-call digest — phase, inventory by category/status, open suspects, next wave, and recent changes. This replaces the manual ritual of scanning every `_index.yaml`; drill into specific `_index.yaml` files or `specflow trace <ID>` only for the artifacts you need to read in full.
+
+2. **Reverse lifecycle check:** If the user said "rethink the requirements," "revise the requirements," or "go back to requirements" (or if you detect the user wants to revisit specs after planning/executing), ask: "Do you want to (a) revise existing REQs in place, or (b) start a fresh discovery for new requirements?" If revising, read the existing REQs and offer targeted edits rather than starting from scratch. If starting fresh, proceed with the full discovery flow below.
 2. Confirm the project phase from the brief (or `.specflow/state.yaml`). If `current` is `idle` or `discovering`, proceed. Otherwise, warn the user that discovery may conflict with the current phase.
 3. If artifacts already exist, ask: "Do you want to add new requirements, or refine existing ones?"
 
@@ -167,20 +169,26 @@ After challenging the REQs, record which techniques you applied to each — even
 ```
 uv run specflow update <REQ-ID> --thinking-techniques <technique1,technique2>
 ```
-
-If the user requested specific techniques or said "go deep", expand the selection accordingly.
-
-After applying thinking techniques, record which techniques were applied to each artifact — even if they passed cleanly (no findings):
-
-```
-uv run specflow update <REQ-ID> --thinking-techniques <technique1,technique2>
-```
-
 For example, if devil's advocate and five-whys were applied to REQ-001:
-
 ```
 uv run specflow update REQ-001 --thinking-techniques devils_advocate,five_whys
 ```
+If the user requested specific techniques or said "go deep", expand the selection accordingly.
+
+**Optional parallel fan-out for challenge step** (recommended-default-on on Claude Code/OpenCode; sequential fallback on hosts without native subagents — see `../specflow-references/references/adversarial-lenses.md` § Multi-Agent Strategy):
+
+Each REQ's challenge can run as a subagent pass (all 4 techniques in one subagent, or one technique per subagent for maximum isolation). Isolation is especially valuable when a REQ has implicit constraints (assumption surfacing + regulator) and thin rationale (five-whys + devil's advocate) — prevents context bleed between adversarial angles.
+
+```
+Multi-actor (DEFAULT on Claude Code/OpenCode · sequential fallback on hosts without native subagents):
+  Pattern:        1 subagent per REQ (all 4 challenge techniques), or 4 subagents per REQ
+                  for maximum isolation (one technique each)
+  Fallback:       sequential — apply techniques one at a time (the reference implementation)
+  Context budget: ~1500 tokens/REQ subagent
+  Output:         identical — DEC artifacts for drops/assumptions/risks; thinking_techniques recorded
+```
+
+The sequential fallback is the reference implementation — fan-out deepens the challenge, not makes it "more correct."
 
 ### Step 6: Artifact Creation
 
@@ -230,9 +238,11 @@ Report results to user.
 Present the discovered requirements following the **Approval Presentation Format** (see `../specflow-references/references/approval-presentation.md`):
 
 1. **TLDR** — What was discovered and the path taken (lean vs. full), in 1-3 sentences.
-2. **Changes inline** — Each REQ with its key acceptance criteria and scope boundaries (IN/OUT). The human should not need to open a file.
-3. **Assessment lenses** — Apply completeness (happy path + error/edge cases covered?), and a brief **Risk Profile** per REQ (reversibility is high — these are specs — so the salient axes are *confidence* and any assumption that needs validation: stakeholders, success-criteria interpretation, domain-checklist defaults).
-4. **Action options** — Approve (you mark the REQs `approved` on the user's say-so) / Request changes / Discuss.
+2. **What this does (functional)** — The behavior each requirement asks of the system, in plain terms (purpose · what's in · what's out). Plain language, not REQ IDs.
+3. **Changes inline** — Each REQ with its key acceptance criteria and scope boundaries (IN/OUT). The human should not need to open a file.
+4. **Assessment lenses** — Apply completeness (happy path + error/edge cases covered?), and a brief **Risk Profile** per REQ (reversibility is high — these are specs — so the salient axes are *confidence* and any assumption that needs validation: stakeholders, success-criteria interpretation, domain-checklist defaults).
+5. **Key decisions (2–3)** — The decisions that determine whether these requirements are right (what was chosen · alternative · tradeoff · what validates it): which anti-requirements/negative constraints to lock in, which assumptions need stakeholder validation, scope IN/OUT boundary calls. Make it the approve-or-improve loop: proceed · discuss #N · revise and re-present.
+6. **Action options** — Approve (you mark the REQs `approved` on the user's say-so) / Request changes / Discuss.
 
 **You must NOT self-approve.** REQs stay `draft` until the user explicitly confirms; only then run `specflow update REQ-<id> --status approved`. Also flag if not already surfaced: any cross-cutting concern skipped (auth, observability, scalability) that should be a REQ, and any requirement that reads as HOW (implementation) rather than WHAT (behavior).
 
@@ -241,18 +251,17 @@ Present the discovered requirements following the **Approval Presentation Format
 If this was the first discovery and the project was in `idle` state, update state:
 - Edit `.specflow/state.yaml`: set `current: specifying`, add history entry.
 
-**Exit message (full path):** List created REQ IDs and provide explicit next steps:
+**Exit message (full path):** Provide a handoff checkpoint so the next session can resume deterministically — this rides the artifact graph + the "Recent decisions" slice in `specflow brief`, so there is no separate log to maintain:
 
 ```
-Created: REQ-<id-1>, REQ-<id-2>, ...
-
-**Next steps:**
-1. Review the requirements above.
-2. Approve them: `specflow update REQ-<id> --status approved` (repeat for each)
-3. Run `/specflow-plan` to decompose into architecture and stories.
+## Handoff checkpoint
+**Accomplished:** Created REQ-<id-1>, REQ-<id-2>, … (N requirements, draft).
+**Key decisions + rationale:** <the 2–3 decisions from the approval gate, each with the why — also persisted as DEC artifacts>
+**Pending / blocked:** REQs are draft — need human approval before planning. <any open assumption/risk DECs>
+**Exact next command:** `specflow approve --batch --type REQ` (approve them), then `/specflow-plan`.
+```
 
 Requirements are currently in **draft** status and must be approved before planning.
-```
 
 **Exit message (lean path):** after the user confirmed the Tier 0 approval, REQs and STORYs are approved:
 
