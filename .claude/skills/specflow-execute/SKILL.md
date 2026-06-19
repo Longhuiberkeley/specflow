@@ -1,6 +1,6 @@
 ---
 name: specflow-execute
-description: Implementation path for planned stories. Orchestrates implementation of approved stories, updates artifact statuses, creates V-model test artifacts (UT/IT/QT), and enforces traceability. Triggers when the user says "implement stories," "execute the plan," "start building," or "run the wave." This is step 3 of the core lifecycle. For trivial changes (typos, formatting, dependency updates), the lean path is available — but every code change still traces to a STORY. NOT for: requirements gathering (use specflow-discover), architecture design (use specflow-plan), single-artifact review (use specflow-artifact-review), or research experiments.
+description: Implementation path for planned stories. Orchestrates implementation of approved stories, updates artifact statuses, creates V-model test artifacts (UT/IT/QT), and enforces traceability. Triggers when the user says "implement stories," "execute the plan," "start building," or "run the wave." Also triggers for reverse lifecycle: "rethink the implementation," "this approach isn't working," "go back to architecture," or "go back to requirements." This is step 3 of the core lifecycle. For trivial changes (typos, formatting, dependency updates), the lean path is available — but every code change still traces to a STORY. NOT for: requirements gathering (use specflow-discover), architecture design (use specflow-plan), single-artifact review (use specflow-artifact-review), or research experiments.
 ---
 
 ## Freeform Input Handling
@@ -21,6 +21,10 @@ Always run the deterministic core regardless of input. It costs zero tokens and 
 Orchestrate the implementation of planned stories and update tracking artifacts.
 
 ## Workflow
+
+### Step 0: Reverse Lifecycle Check
+
+If the user said "rethink the implementation," "this approach isn't working," or "go back to architecture" (or if you detect the user wants to revisit architecture/requirements after executing), ask: "Do you want to (a) revise the current STORY's implementation, (b) go back to architecture (run /specflow-plan), or (c) go back to requirements (run /specflow-discover)?" If revising a STORY, read the existing STORY and DDD and offer targeted edits rather than starting from scratch. If going back to architecture or requirements, route the user to the appropriate skill.
 
 ### Step 1: Implementation-Readiness Gate
 
@@ -90,7 +94,11 @@ For each story (or wave of stories):
       - Ask the user: *"Does this flow and these checks look correct before I implement the code?"*
    c. **Implement the code** per the detailed design and your validated decomposition.
    d. **Follow the acceptance criteria** -- implement each criterion from the story.
-   e. **Quick thinking check** (from `references/thinking-techniques.md`): before writing each function, ask "what's the most unexpected input?" and "does this share state with another STORY in this wave?" After applying techniques to a STORY, record them: `uv run specflow update <STORY-ID> --thinking-techniques worst_case_user,composition`.
+   e. **Thinking during implementation** (from `references/thinking-techniques.md`):
+      - **Mental prompts (reflection only, not recorded):** before writing each function, ask "what's the most unexpected input?" and "does this share state with another STORY in this wave?" — these guide your coding but do not produce `thinking_techniques` records.
+      - **Catalog lenses (recorded):** apply `worst-case-user` and `composition` to the STORY. After applying, record them: `uv run specflow update <STORY-ID> --thinking-techniques worst_case_user,composition`.
+
+      **Optional fan-out for complex stories** (see `../specflow-references/references/adversarial-lenses.md` § Multi-Agent Strategy): for stories with 3+ linked DDDs or cross-cutting risk tags, spawn two subagents — one for worst-case-user analysis, one for composition analysis — each with its own context window. Fallback: sequential (the reference implementation).
 
 ### Step 4: Status Updates
 
@@ -145,16 +153,18 @@ Read `references/test-pairing.md` when you are unsure which test level a given c
 Before running full validation, present the implementation summary following the **Approval Presentation Format** (see `../specflow-references/references/approval-presentation.md`):
 
 1. **TLDR** — What was implemented and what changed (1-3 sentences).
-2. **Changes inline** — For each STORY implemented: what code was written, what tests were created, any deviations from ARCH/DDD. The human should not need to open files.
-3. **Assessment lenses** — Apply coverage, traceability, and staleness lenses, then a **Risk Profile per change** (reversibility, blast radius via `specflow change-impact`, confidence + why it isn't higher).
-4. **Risk-proportional gate** — Assign a tier (0 light / 1 normal / 2 stop) from the risk profile; for Tier 2, point at the specific concern. Tier comes from the change, not past approvals.
-5. **Action options** — Approve / Request changes / Discuss.
+2. **What this does (functional)** — The implemented behavior in plain terms (purpose · what's in · what's out), so the human grasps what changed before reading STORY IDs.
+3. **Changes inline** — For each STORY implemented: what code was written, what tests were created, any deviations from ARCH/DDD. The human should not need to open files.
+4. **Assessment lenses** — Apply coverage, traceability, and staleness lenses, then a **Risk Profile per change** (reversibility, blast radius via `specflow change-impact`, confidence + why it isn't higher).
+5. **Key decisions (2–3)** — The decisions that determine whether this implementation is right (what was chosen · alternative · tradeoff · what validates it). **Fold the coverage checks in here**, not after the gate:
+   - For each STORY: does every acceptance criterion map to at least one test (UT/IT/QT)?
+   - Any STORY marked `implemented` whose linked ARCH/DDD is still `approved`?
+   - Any code file NOT referenced by a test artifact?
+   - Implementation choices not pre-specified by DDD (library picks, file layout)
 
-Key items to surface if not already addressed:
-- For each STORY: does every acceptance criterion map to at least one test (UT/IT/QT)?
-- Any STORY marked `implemented` whose linked ARCH/DDD is still `approved`?
-- Any code file NOT referenced by a test artifact?
-- Implementation choices not pre-specified by DDD (library picks, file layout)
+   Make the gate the approve-or-improve loop: proceed · discuss #N · revise and re-present.
+6. **Risk-proportional gate** — Assign a tier (0 light / 1 normal / 2 stop) from the risk profile; for Tier 2, point at the specific concern. Tier comes from the change, not past approvals.
+7. **Action options** — Approve / Request changes / Discuss.
 
 Wait for user acknowledgement before proceeding.
 
@@ -175,7 +185,7 @@ Record the gate result (baseline + final + delta) in the STORY or its linked UT/
 
 ### Step 7: Phase Closure (Optional)
 
-1. After all stories are implemented and validated, offer phase closure: "All planned stories are implemented. Would you like to close this phase and extract prevention patterns?" (Recommended: Not yet, if more work remains, or Yes if the sprint/wave is complete).
+1. After all stories are implemented and validated, check readiness with `uv run specflow phase-status` — a read-only advisory that reports whether the phase is ready to close (suspects resolved, gate green). Then offer closure: "All planned stories are implemented and the phase is ready to close. Close it now and extract prevention patterns?" If `phase-status` reports blockers, address those first rather than offering closure.
 2. If the user declines ("not yet", "skip"), do not force closure.
 3. If accepted, run `uv run specflow done`. Options:
    - `--no-patterns` -- skip prevention-pattern extraction.

@@ -12,6 +12,15 @@ This skill accepts freeform user input alongside the command. Interpret the user
 - **A request for depth** ("go deep", "be thorough", "all lenses") → run deterministic core + full agent-driven analysis
 - **A specific focus** ("focus on REQ-003", "check compliance only") → narrow scope to the request, still run deterministic core first
 
+## Disambiguation
+
+If the user's intent could match another review skill, confirm scope with **one** question before proceeding:
+- **One specific artifact or a small named set** → stay here (`specflow-artifact-review`).
+- **Impact cone of recent DEC changes** → `/specflow-change-impact-review`.
+- **Whole-project health** → `/specflow-audit`.
+
+If still unclear, run `uv run specflow brief --next` (or `/specflow-start`) and let the user choose.
+
 Always run the deterministic core regardless of input. It costs zero tokens and provides the foundation for any analysis.
 
 ---
@@ -135,7 +144,7 @@ For artifacts where quality is critical (safety, security, compliance, or user-f
 - User explicitly requests "deep review," "thorough review," or "adversarial review"
 - The artifact is part of a release baseline
 
-**Pattern** (if your platform supports spawning subagents):
+**Pattern** (DEFAULT on Claude Code/OpenCode; sequential single-agent fallback on hosts without native subagents — see `../specflow-references/references/adversarial-lenses.md` § Multi-Agent Strategy; context budget ~1500 tokens/lens; identical output either way):
 1. Select 3-5 lenses from the 16-lens catalog relevant to the artifact's domain and tags.
 2. Spawn one subagent per lens. Each subagent receives: the artifact content, the checklist results from Steps 4-5, and its assigned lens. Each returns findings at `blocking`/`warning`/`info` severity.
 3. The parent agent deduplicates across lens outputs (same finding from multiple lenses = stronger signal) and merges into the final report.
@@ -174,9 +183,11 @@ Each finding should note which layer produced it (`lint`, `checklist`, `agent`, 
 Present results following the **Approval Presentation Format** (see `../specflow-references/references/approval-presentation.md`):
 
 1. **TLDR** — Review scope and overall result (1-3 sentences).
-2. **Findings inline** — Each finding with severity, artifact ID, and evidence. The human should not need to open files.
-3. **Assessment lenses** — Which lenses were applied vs. skipped, and why. **Risk Profile** for any `blocking` or `warning` finding (reversibility, blast radius, confidence).
-4. **Action options** — Fix now / Defer / Discuss / Re-run with deeper lenses.
+2. **What this does (functional)** — The artifact under review and the role it plays in the system (purpose · what's in scope of this review · what's out), so the human knows what they are signing off on.
+3. **Findings inline** — Each finding with severity, artifact ID, and evidence. The human should not need to open files.
+4. **Assessment lenses** — Which lenses were applied vs. skipped, and why. **Risk Profile** for any `blocking` or `warning` finding (reversibility, blast radius, confidence).
+5. **Key decisions (2–3)** — The decisions that determine the outcome (what was chosen · alternative · tradeoff · what validates it): fix each `blocking` now vs defer; re-run with deeper lenses vs accept current coverage; which findings are real spec defects vs out-of-scope. Make it the approve-or-improve loop: proceed · discuss #N · revise and re-present.
+6. **Action options** — Fix now / Defer / Discuss / Re-run with deeper lenses.
 
 ### Step 9: "Improve Now?" Prompt
 

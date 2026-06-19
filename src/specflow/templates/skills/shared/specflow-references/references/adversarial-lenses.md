@@ -4,6 +4,32 @@ Adversarial lenses are "thinking techniques" that probe artifacts from angles cu
 
 Each lens runs as a focused agent reasoning pass. Findings aggregate as items in the final severity report, tagged `lens:<name>` so the user can distinguish curated-checklist coverage from adversarial probes.
 
+## Multi-Agent Strategy
+
+A lens is a focused reasoning pass. It can run **two ways**, and both produce identical outputs (`lens:<name>` findings in the severity report; `thinking_techniques` records on the artifact):
+
+- **Sequential single-agent — the reference implementation.** The same agent applies each lens one at a time. This is the canonical path and the only path on hosts without native subagent support.
+- **Parallel fan-out — an accelerator.** On hosts that support spawning subagents, each lens gets its own subagent with an isolated context window — deeper analysis on high-stakes artifacts, no single context holding every lens at once.
+
+**Default posture:** fan-out is **recommended-and-default-on** on Claude Code and OpenCode (SpecFlow's primary targets, both of which support multi-agents), and falls back to the sequential single-agent path on hosts without native subagents (pi-agent, Codex, and others). **Fan-out is never a blocking gate** — a subagent the same agent spawned is not an independent approver, and a mandatory subagent step would drift toward policing (accounting-not-policing). The sequential fallback always produces equivalent artifact outputs.
+
+**Where fan-out is worth it:**
+- **Recommended-default-on:** review of high-stakes artifacts (release baselines; safety / security / compliance-tagged) and `ship` releases (one-way doors).
+- **Optional (depth, not required):** work-phase decomposition and review — `discover` (challenge lenses), `plan` (architecture candidate seeds), `execute` (worst-case-user / composition on complex stories).
+
+**Standard fan-out block** — every fan-out site in the skills uses this one shape:
+
+```
+Multi-actor (DEFAULT on Claude Code / OpenCode · sequential fallback on hosts without native subagents):
+  Pattern:        N subagents, one per lens (or per artifact group)
+  Fallback:       sequential single-agent — same lenses, one at a time (reference implementation)
+  Context budget: ~<tokens>/subagent  (guidance: review ~1500/lens, audit ~2000/lens,
+                  plan ~3000/arch, change-impact ~2500/group, ship ~2000/lens)
+  Output:         identical — lens findings tagged lens:<name>; thinking_techniques recorded
+```
+
+The fallback is not a lesser mode — it *is* the reference implementation. Fan-out exists to isolate context and deepen analysis on capable hosts, not to make the review "more correct."
+
 ## Full catalog
 
 1. **Devil's advocate** (`devils_advocate`) — Assume the artifact is wrong. Find evidence that the requirement, design, or story is mistaken, misguided, or unnecessary.

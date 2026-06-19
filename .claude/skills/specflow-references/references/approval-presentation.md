@@ -17,7 +17,23 @@ TLDR: Adding rate-limiting to the API. Three new artifacts (REQ + ARCH + STORY).
 One new infrastructure dependency (Redis for shared state).
 ```
 
-### 2. Changes (inline, not file references)
+### 2. What this does (functional)
+
+A short, plain-language description of the **behavior** being proposed — the "problem-set" framing: *purpose · what's in · what's out · flow (only if multi-part)*. Scale it to the change — one line for a single REQ, a few lines for a multi-component plan. It sits between the TLDR (the headline) and the Changes (artifact-level detail) so the human grasps **what the thing does** before reading IDs. Simplicity and directness are the goal, not a rigid form — if one line conveys it, use one line.
+
+```
+What this does (single behavior): When an API key exceeds 100 req/min the system
+returns 429 with rate-limit headers; /health and /metrics are exempt.
+IN: /api/v1. OUT: internal admin routes.
+```
+
+For a multi-part change, add a one-line flow:
+```
+What this does (multi-part): On upload → scan → quarantine infected → write audit
+log → notify user. IN: user uploads. OUT: system backups.
+```
+
+### 3. Changes (inline, not file references)
 
 List each artifact being created or modified. For each, show:
 - ID, title, type, current → proposed status
@@ -41,7 +57,7 @@ Changes:
   - Scope: middleware, config, tests
 ```
 
-### 3. Assessment Lenses
+### 4. Assessment Lenses
 
 Apply relevant lenses from existing checklists. Present results with emoji indicators:
 
@@ -89,7 +105,26 @@ Risk profile:
 - STORY-015: reversible · blast radius: 2 · confidence HIGH.
 ```
 
-### 4. Action Options
+### 5. Key decisions (2–3)
+
+The 2–3 decisions that actually determine whether this proposal is right. For each: **what was chosen · the alternative considered · the tradeoff · what would validate it**. Pull these from the work itself — they are the questions the human most needs to weigh, surfaced *before* the yes/no, not a generic checklist. If the skill already lists the key review questions (e.g. plan's coverage/assumption checks, execute's acceptance-criterion → test mapping), fold them in **here** rather than after the gate.
+
+```
+Key decisions:
+1. Token-bucket (chosen) vs fixed-window (alt). Tradeoff: permits bursts vs simpler/clamping.
+   Validated by: load test confirming burst behavior.
+2. Redis shared state (chosen) vs per-instance local (alt). Tradeoff: correct distributed
+   limits vs a new dependency + failover concern. Validated by: confirm Redis 7+ in infra;
+   decide failover policy (fail-open vs fail-closed).
+```
+
+Then make the gate an explicit **approve-or-improve loop** instead of present-and-wait:
+
+> Do you approve these decisions? **(a)** proceed · **(b)** discuss decision #N · **(c)** revise and re-present.
+
+The human engages decision-by-decision rather than rubber-stamping a summary.
+
+### 6. Action Options
 
 Present clear choices the human can make:
 
@@ -102,12 +137,12 @@ Present clear choices the human can make:
 
 A flat "present everything, wait for approval on everything" gate makes the human a bottleneck —
 that is *not* AI-first. Spend the human's attention where it is scarce. Derive a tier for the
-change set from the Risk Profile (§3) and adjust how loud the gate is. **Tiers are derived from
+change set from the Risk Profile (§4) and adjust how loud the gate is. **Tiers are derived from
 the intrinsic properties of the change, never from how the human responded last time.**
 
 | Tier | Condition | Gate behavior |
 |------|-----------|---------------|
-| **Tier 0 — light** | Reversible **AND** small blast radius **AND** high confidence (e.g. test-only changes, doc edits, formatting). | Present compactly (TLDR + one-line risk profile). Proceed on a single acknowledgement. |
+| **Tier 0 — light** | Reversible **AND** small blast radius **AND** high confidence (e.g. test-only changes, doc edits, formatting). | Present compactly: TLDR + a one-line "what this does" + one-line risk profile + the single decision that matters (skip full Changes/Key-decisions blocks). Proceed on a single acknowledgement. |
 | **Tier 1 — normal** | Moderate on any axis. | Full presentation per this format. Explicit "approve" required. |
 | **Tier 2 — stop** | Irreversible **OR** large blast radius **OR** low confidence. | The brief must **point at the specific concern** ("look here at change #3, because X") and refuse to proceed without targeted human sign-off on that concern. |
 

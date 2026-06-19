@@ -40,3 +40,9 @@ items:
     automated: false
     llm_prompt: "Review each REQ tagged 'nonfunctional'. Flag qualitative terms without measurable thresholds."
     severity: warning
+
+  - id: CKL-GATE-003-07
+    check: "Approved REQ artifacts record the thinking techniques applied (advisory — presence, not quality)"
+    automated: true
+    script: "uv run specflow artifact-lint --type thinking-techniques"
+    severity: warning

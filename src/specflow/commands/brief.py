@@ -106,6 +106,89 @@ def _recent_changes(root: Path, since: str) -> list[str]:
     return [ln for ln in result.stdout.splitlines() if ln.strip()]
 
 
+def _recent_decisions(artifacts: list[art_lib.Artifact], limit: int = 5) -> list[tuple[str, str, str]]:
+    """Most-recently-modified DEC artifacts as (id, title, rationale first line).
+
+    Deterministic read of the artifact graph — DEC bodies live in _specflow/work/decisions/.
+    Sorted by file mtime (most recent first). This IS the durable "why"; brief only
+    surfaces it, never writes a separate log.
+    """
+    decs = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "DEC"]
+
+    def _mtime(a: art_lib.Artifact) -> float:
+        try:
+            return a.path.stat().st_mtime
+        except Exception:
+            return 0.0
+
+    decs.sort(key=_mtime, reverse=True)
+    out: list[tuple[str, str, str]] = []
+    for a in decs[:limit]:
+        first = ""
+        for ln in (a.body or "").splitlines():
+            s = ln.strip()
+            if s and not s.startswith("#"):
+                first = s
+                break
+        out.append((a.id, a.title or "(untitled)", first[:140]))
+    return out
+
+
+def _next_skill_recommendation(
+    phase: str,
+    artifacts: list[art_lib.Artifact],
+    suspects: list[art_lib.Artifact],
+    next_wave: list[str],
+) -> str:
+    """Deterministic next-skill recommendation from phase + inventory.
+
+    Pure read of state — no heuristics, no LLM. Returns one human-actionable line.
+    """
+    def _count(prefix: str, status: str | None = None) -> int:
+        n = 0
+        for a in artifacts:
+            if art_lib.get_prefix_from_id(a.id) == prefix and (status is None or a.status == status):
+                n += 1
+        return n
+
+    if suspects:
+        return (f"{len(suspects)} suspect(s) open — resolve first: "
+                f"`specflow change-impact` to review, "
+                f"`specflow defect-from-suspect <ID> --req <REQ>` to file.")
+
+    reqs = _count("REQ")
+    reqs_draft = _count("REQ", "draft")
+    archs = _count("ARCH")
+    stories = _count("STORY")
+
+    if phase in ("idle", "discovering"):
+        if reqs == 0:
+            return "No REQs yet → /specflow-discover (capture requirements)."
+        if reqs_draft:
+            return (f"{reqs_draft} REQ(s) in draft → review & approve "
+                    f"(`specflow approve --batch --type REQ`), then /specflow-plan.")
+        return "REQs approved, no ARCH yet → /specflow-plan (decompose into architecture & stories)."
+    if phase == "specifying":
+        if reqs_draft:
+            return f"{reqs_draft} REQ(s) still draft → approve before planning."
+        return "REQs approved → /specflow-plan."
+    if phase == "planning":
+        if not archs:
+            return "No ARCH yet → continue /specflow-plan (architecture decomposition)."
+        if _count("STORY", "draft") or not stories:
+            return "Stories not approved yet → finish /specflow-plan and approve STORYs."
+        return "ARCH + STORY approved → /specflow-execute (run the waves)."
+    if phase == "executing":
+        if next_wave:
+            return f"Next wave ready ({len(next_wave)} stories) → /specflow-execute (or `specflow go`)."
+        if stories and _count("STORY", "implemented") >= stories:
+            return "All stories implemented → /specflow-ship (release)."
+        return "Continue /specflow-execute."
+    if phase in ("verifying", "complete"):
+        return "Ready to release → /specflow-ship (or /specflow-audit for a health check first)."
+    return f"Phase '{phase}' — run `specflow brief` for the full digest."
+
+
 def run(root: Path, args: dict[str, Any]) -> int:
     root = root.resolve()
     since = args.get("since") or "7 days ago"
@@ -155,6 +238,11 @@ def run(root: Path, args: dict[str, Any]) -> int:
     recent = _recent_changes(root, since)
     adoption = _adoption_summary(root, artifacts)
 
+    # --next: emit only the deterministic next-skill recommendation and stop.
+    if args.get("next"):
+        print(_next_skill_recommendation(phase, artifacts, suspects, next_wave))
+        return 0
+
     # ── Render ──────────────────────────────────────────────────
     print(f"\n{CYAN}SpecFlow Brief{NC} — {BOLD}{project_name}{NC}")
     print(f"{CYAN}{'─' * 50}{NC}")
@@ -201,6 +289,16 @@ def run(root: Path, args: dict[str, Any]) -> int:
         print(f"    {', '.join(next_wave)}")
     else:
         print(f"    (no approved stories ready to execute)")
+
+    decs = _recent_decisions(artifacts)
+    print(f"\n  {BOLD}Recent decisions{NC} (DEC — the durable 'why')")
+    if decs:
+        for did, title, rationale in decs:
+            print(f"    {did} — {title}")
+            if rationale:
+                print(f"        {rationale}")
+    else:
+        print(f"    (none)")
 
     print(f"\n  {BOLD}Recent _specflow/ changes{NC} (since {since})")
     if recent:

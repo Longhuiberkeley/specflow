@@ -42,6 +42,8 @@ Each story receives only:
 
 Total budget: <4000 tokens per subagent.
 
+This is the standard fan-out pattern (see `../../specflow-references/references/adversarial-lenses.md` § Multi-Agent Strategy): on Claude Code/OpenCode, stories within a wave run as parallel subagents (each <4000 tokens); on hosts without native subagents, `specflow go` executes stories sequentially within a wave. Output is identical either way — the wave topology is deterministic (computed by the algorithm above); only the execution parallelism differs.
+
 ## Lock Handling
 
 - Locked artifacts cause the story to be deferred to the next wave

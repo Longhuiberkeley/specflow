@@ -305,9 +305,9 @@ artifacts:
     - traceability
     title: Traceability covers research chain
   REQ-035:
-    fingerprint: ''
+    fingerprint: sha256:0f9d7963f357
     id: REQ-035
-    status: draft
+    status: approved
     tags:
     - autoresearch
     - logging
@@ -316,9 +316,9 @@ artifacts:
     - safety
     title: Enhanced autoresearch logging, objectives, and domain-aware checks
   REQ-AUTORESE-d684:
-    fingerprint: ''
+    fingerprint: sha256:0fc93b56a8e8
     id: REQ-AUTORESE-d684
-    status: draft
+    status: approved
     tags: []
     title: 'Autoresearch pack v0.2.0: multi-criteria support, CLI subcommand, and
       harness-agnosticism'

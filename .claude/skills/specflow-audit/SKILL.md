@@ -12,6 +12,15 @@ This skill accepts freeform user input alongside the command. Interpret the user
 - **A request for depth** ("go deep", "be thorough", "all lenses") → run deterministic core + full agent-driven analysis
 - **A specific focus** ("focus on REQ-003", "check compliance only") → narrow scope to the request, still run deterministic core first
 
+## Disambiguation
+
+If the user's intent could match another review skill, confirm scope with **one** question before proceeding:
+- **Whole-project health** → stay here (`specflow-audit`).
+- **One specific artifact** → `/specflow-artifact-review`.
+- **Impact cone of recent changes** → `/specflow-change-impact-review`.
+
+If still unclear, run `uv run specflow brief --next` (or `/specflow-start`) and let the user choose.
+
 Always run the deterministic core regardless of input. It costs zero tokens and provides the foundation for any analysis.
 
 ---
@@ -60,7 +69,7 @@ If accepted:
 1. Read `../specflow-references/references/adversarial-lenses.md` for the full 16-lens catalog. Select lenses relevant to the findings from Step 2 (e.g., if coverage gaps found → use `audit-vertical`; if dependency issues → use `dependency_shock`).
 2. For any artifact flagged during Step 2, run `uv run specflow trace <ARTIFACT_ID>` to understand its full upstream/downstream dependency context before evaluating lenses.
 
-3. **Parallel lens fan-out (error-driven scaling):**
+3. **Parallel lens fan-out (error-driven scaling).** DEFAULT on Claude Code/OpenCode; sequential single-agent fallback on hosts without native subagents (see `../specflow-references/references/adversarial-lenses.md` § Multi-Agent Strategy). Context budget ~2000 tokens/lens; output is identical either way (CHL findings tagged per lens + `thinking_techniques` records). The per-scale subagent counts below are for capable hosts:
    - **Standard (0-2 errors in Step 2):** Create 2 parallel subagents (if your platform supports spawning subagents) each covering a subset of the selected lenses. Sequential fallback: run lens groups sequentially.
    - **Elevated (3-7 errors in Step 2):** Create 3-4 parallel subagents (if supported), one lens per subagent. This gives each lens its own context window for deeper analysis. Sequential fallback: run lenses one at a time.
    - **Critical (8+ errors in Step 2):** Create 4-5 parallel subagents, plus a dedicated cross-cutting subagent that reads ALL lens outputs and synthesizes systemic patterns (e.g., "4 of 5 lenses flagged the same coupling issue — this is architectural, not local"). Sequential fallback: run all lenses sequentially, then a dedicated synthesis pass.
