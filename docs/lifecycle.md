@@ -17,6 +17,7 @@ Two lanes, one engine. AI-first is the default; ALM/direct stands alone.
 flowchart TB
     classDef engine fill:#eef2ff,stroke:#7c83db,color:#111;
     classDef gate fill:#fff0f0,stroke:#cc7a7a,color:#111;
+    classDef pack fill:#f0fff4,stroke:#5aa56a,color:#111;
 
     subgraph AI["AI-first lane — default driver (conversational · agent-driven · zero external API calls)"]
         direction TB
@@ -50,8 +51,17 @@ flowchart TB
     REV ==> NEXT["/specflow-change-impact-review/<br/>· /specflow-audit · /specflow-adapter/"]
     NEXT ==> SHIP["/specflow-ship/<br/>baseline + DECs + quick audit"]
 
+    %% Optional pack-activated extensions — not mandatory lanes; the engine works without them.
+    RES["autoresearch pack (optional) · offline experiments<br/>COMP → LOOP → EXPT → FIND (frozen, reproducible)"]
+    OPS["ops pack (optional) · live operations<br/>RUN (deploy-time freeze) → MONITOR (observation journal)<br/>references your MLflow / W&amp;B / ArgoCD via deployed_ref"]
+    ENG -. "measurable metric" .-> RES
+    ENG -. "deployed live" .-> OPS
+    RES -. "promote (derives_from)" .-> OPS
+    OPS -. "breach informs → retrain LOOP / rollback DEC" .-> ENG
+
     class ENG engine
     class AG1,AG2 gate
+    class RES,OPS pack
 ```
 
 <details>
@@ -103,6 +113,14 @@ flowchart TB
                                     ▼
                             /specflow-ship
                             (baseline + DECs + quick audit)
+
+   ── Optional pack-activated extensions (the engine runs without them) ──────────
+   autoresearch (offline):  COMP → LOOP → EXPT → FIND       (frozen, reproducible)
+   ops (live ops):          RUN  → MONITOR                  (deploy freeze + journal)
+         EXPT ──promote (derives_from)──▶ RUN               (offline result → live)
+         MONITOR breach ──informs──▶ retrain LOOP / rollback DEC   (back to engine)
+   RUN.deployed_ref points AT your MLflow / W&B / ArgoCD — SpecFlow is the
+   governance ledger over them, not a replacement for the dashboard.
 ```
 </details>
 

@@ -1,0 +1,12 @@
+type: monitor
+category: ops
+prefix: MON
+id_format: "^MON-\\d{3,5}$"
+required_fields: [id, title, type, status, created, run, observed_at, summary]
+optional_fields: [description, metrics, signals, health, captures, breaches, tags, suspect, fingerprint, links, modified, thinking_techniques]
+allowed_status:
+  logged: []
+  flagged: [logged]
+  resolved: [flagged]
+allowed_link_roles: [belongs_to, informs, derives_from]
+directory: _specflow/ops/monitors/

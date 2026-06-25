@@ -246,10 +246,10 @@ def cmd_autoresearch(args: argparse.Namespace) -> int:
 def _add_init_parser(subparsers):
     p = subparsers.add_parser("init", help="Scaffold a SpecFlow project")
     p.add_argument("--platform", help="AI platform code (e.g., claude-code, cursor, windsurf)")
-    p.add_argument("--preset", help="Comma-separated industry packs (e.g., autoresearch,tldr-communication)")
+    p.add_argument("--preset", help="Comma-separated packs (e.g., autoresearch, ops, tldr-communication)")
     p.add_argument("--with-types", dest="with_types", help="Comma-separated optional artifact types to enable (e.g., hazard,risk,control)")
     p.add_argument("--no-ci", action="store_true", dest="no_ci", help="Skip CI workflow installation")
-    p.add_argument("--domain", help="Project domain (e.g., embedded, api-service, web-app)")
+    p.add_argument("--domain", help="Project domain (e.g., embedded, api-service, web-app, quant, ml)")
     p.add_argument("--domain-tags", dest="domain_tags", help="Comma-separated domain tags (e.g., real-time,safety-critical)")
     p.add_argument("--force", action="store_true", help="Force clean re-initialization (backs up existing config/state/schemas)")
 
@@ -307,10 +307,11 @@ def _add_domain_parser(subparsers):
     p = subparsers.add_parser("domain", help="Get or set the project's domain (drives domain-aware checklists and review synthesis)")
     sub = p.add_subparsers(dest="domain_subcommand")
     set_p = sub.add_parser("set", help="Set the project domain")
-    set_p.add_argument("name", help="Domain identifier (e.g., embedded, api-service, web-app, healthcare, fintech)")
+    set_p.add_argument("name", help="Domain identifier (e.g., embedded, api-service, web-app, quant, ml, data-science). Freeform — a matching domain-checklist (quant/ml/…) is surfaced when set.")
     set_p.add_argument("--tag", action="append", default=[], dest="tags",
                        help="Domain tag (repeatable, e.g., --tag real-time --tag phi)")
     sub.add_parser("show", help="Show the current project domain")
+    sub.add_parser("suggest", help="Detect a likely domain from dependency signals (does not set it)")
 
 
 def _add_patterns_parser(subparsers):
@@ -660,6 +661,15 @@ def cmd_domain(args: argparse.Namespace) -> int:
         tags = list(getattr(args, "tags", None) or [])
         set_domain(root, name, tags)
         print(f"✓ domain set to '{name}'" + (f" with tags {tags}" if tags else ""))
+        return 0
+    if sub == "suggest":
+        from specflow.lib.domain_detect import suggest_domain
+        domain, reason = suggest_domain(root)
+        if domain:
+            print(f"suggested domain: {domain}  ({reason})")
+            print(f"  confirm with: specflow domain set {domain}")
+        else:
+            print(f"no domain detected — {reason}")
         return 0
     if sub == "show":
         domain, tags = get_domain(root)

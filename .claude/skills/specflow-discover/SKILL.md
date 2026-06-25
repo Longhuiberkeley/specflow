@@ -95,16 +95,24 @@ After each answer, update your readiness assessment silently.
    - `library` — Reusable package / SDK
    - `embedded` — Firmware / hardware-adjacent
    - `mobile` — iOS / Android application
+   - `quant` — Systematic trading / backtesting / prediction markets & sports betting
+   - `ml` — Model training / fine-tuning / ML features
+   - `data-science` — Analysis / notebooks (freeform; no bundled checklist)
+   - Any freeform value — domain is open; a matching `references/domain-checklists/<name>.md` is surfaced when one exists.
+
+   If unsure, run `uv run specflow domain suggest` — it scans dependency manifests (quant/ml first) and proposes a domain. **Confirm with the user before setting**; never silently classify.
 
 3. Read `references/domain-checklists/<project-type>.md` for the domain-specific question set.
 
-4. **Persist the classification** so downstream skills can use it:
+4. **Surface the concept→artifact map.** Several domain checklists (e.g., `quant.md`, `ml.md`) open with a **Concept → Artifact Map** — a table mapping domain concepts to the right artifact type (e.g., *profit/edge → autoresearch metric, not a REQ*; *no-lookahead → REQ*; *live data → RUN/MONITOR*). Read it and use it when classifying each elicited concept: it resolves the "is this a REQ, a STORY, a SPIKE, an autoresearch goal, or a RUN?" question at the moment it arises, with the *why*. This map is the core of SpecFlow's auto-adaptive guidance — apply it instead of guessing artifact type.
+
+5. **Persist the classification** so downstream skills can use it:
    ```
    uv run specflow domain set <project-type> [--tag <relevant-tag>]
    ```
    Add tags that further qualify the project (e.g., `--tag real-time --tag safety-critical` for embedded; `--tag phi --tag hipaa` for healthcare; `--tag pii` for fintech). These drive domain-aware checklist items at plan / review time.
 
-5. **Generate project-level best practices** as BP artifacts. Based on the classified domain, create domain-specific best practices:
+6. **Generate project-level best practices** as BP artifacts. Based on the classified domain, create domain-specific best practices:
    ```
    uv run specflow create --type best-practice --title "<practice>" --status approved --tags "<domain>" --body "## Practice\n...\n## Rationale\n...\n## Verification\n..."
    ```

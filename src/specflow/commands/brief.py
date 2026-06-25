@@ -19,7 +19,7 @@ from specflow.lib.waves import compute_waves, filter_executable_stories
 from specflow.lib.display import RED, GREEN, YELLOW, CYAN, BOLD, NC
 
 # Category → the prefixes that belong to it, in lifecycle order.
-_CATEGORY_ORDER = ["spec", "work", "review", "research"]
+_CATEGORY_ORDER = ["spec", "work", "review", "research", "ops"]
 
 
 def _adoption_summary(root: Path, artifacts: list[art_lib.Artifact]) -> dict | None:
@@ -134,16 +134,54 @@ def _recent_decisions(artifacts: list[art_lib.Artifact], limit: int = 5) -> list
     return out
 
 
+def _pack_state_note(artifacts: list[art_lib.Artifact], active_packs: list[str]) -> str:
+    """Optional second line: an actionable state in an active subsystem (pack).
+
+    Only fires when the relevant pack is active, so projects without it see no
+    noise. Pure read of the artifact inventory.
+    """
+    if "autoresearch" in active_packs:
+        running_loops = sum(
+            1 for a in artifacts
+            if art_lib.get_prefix_from_id(a.id) == "LOOP" and a.status == "running"
+        )
+        if running_loops:
+            return (f"{running_loops} LOOP(s) running (autoresearch) → log/review EXPTs "
+                    f"or close the loop (`/specflow-autoresearch`).")
+    if "ops" in active_packs:
+        live_runs = sum(
+            1 for a in artifacts
+            if art_lib.get_prefix_from_id(a.id) == "RUN" and a.status == "live"
+        )
+        monitors = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "MON"]
+        breached = sum(
+            1 for a in monitors
+            if a.status == "flagged" or (a.frontmatter or {}).get("health") == "breached"
+        )
+        if breached:
+            return (f"{breached} breached MONITOR(s) (ops) → check drift / retrain "
+                    f"(`/specflow-ops`, `specflow trace <RUN>`).")
+        if live_runs and not monitors:
+            return (f"{live_runs} live RUN(s) unobserved (ops) → record a MONITOR "
+                    f"(`/specflow-ops`).")
+    return ""
+
+
 def _next_skill_recommendation(
     phase: str,
     artifacts: list[art_lib.Artifact],
     suspects: list[art_lib.Artifact],
     next_wave: list[str],
+    active_packs: list[str] | None = None,
 ) -> str:
     """Deterministic next-skill recommendation from phase + inventory.
 
-    Pure read of state — no heuristics, no LLM. Returns one human-actionable line.
+    Pure read of state — no heuristics, no LLM. Returns one human-actionable line,
+    plus an optional second line when an active subsystem (pack) has an
+    actionable state (a running LOOP, a breached/stale MONITOR).
     """
+    active_packs = active_packs or []
+
     def _count(prefix: str, status: str | None = None) -> int:
         n = 0
         for a in artifacts:
@@ -163,30 +201,36 @@ def _next_skill_recommendation(
 
     if phase in ("idle", "discovering"):
         if reqs == 0:
-            return "No REQs yet → /specflow-discover (capture requirements)."
-        if reqs_draft:
-            return (f"{reqs_draft} REQ(s) in draft → review & approve "
+            core = "No REQs yet → /specflow-discover (capture requirements)."
+        elif reqs_draft:
+            core = (f"{reqs_draft} REQ(s) in draft → review & approve "
                     f"(`specflow approve --batch --type REQ`), then /specflow-plan.")
-        return "REQs approved, no ARCH yet → /specflow-plan (decompose into architecture & stories)."
-    if phase == "specifying":
-        if reqs_draft:
-            return f"{reqs_draft} REQ(s) still draft → approve before planning."
-        return "REQs approved → /specflow-plan."
-    if phase == "planning":
+        else:
+            core = "REQs approved, no ARCH yet → /specflow-plan (decompose into architecture & stories)."
+    elif phase == "specifying":
+        core = (f"{reqs_draft} REQ(s) still draft → approve before planning."
+                if reqs_draft else "REQs approved → /specflow-plan.")
+    elif phase == "planning":
         if not archs:
-            return "No ARCH yet → continue /specflow-plan (architecture decomposition)."
-        if _count("STORY", "draft") or not stories:
-            return "Stories not approved yet → finish /specflow-plan and approve STORYs."
-        return "ARCH + STORY approved → /specflow-execute (run the waves)."
-    if phase == "executing":
+            core = "No ARCH yet → continue /specflow-plan (architecture decomposition)."
+        elif _count("STORY", "draft") or not stories:
+            core = "Stories not approved yet → finish /specflow-plan and approve STORYs."
+        else:
+            core = "ARCH + STORY approved → /specflow-execute (run the waves)."
+    elif phase == "executing":
         if next_wave:
-            return f"Next wave ready ({len(next_wave)} stories) → /specflow-execute (or `specflow go`)."
-        if stories and _count("STORY", "implemented") >= stories:
-            return "All stories implemented → /specflow-ship (release)."
-        return "Continue /specflow-execute."
-    if phase in ("verifying", "complete"):
-        return "Ready to release → /specflow-ship (or /specflow-audit for a health check first)."
-    return f"Phase '{phase}' — run `specflow brief` for the full digest."
+            core = f"Next wave ready ({len(next_wave)} stories) → /specflow-execute (or `specflow go`)."
+        elif stories and _count("STORY", "implemented") >= stories:
+            core = "All stories implemented → /specflow-ship (release)."
+        else:
+            core = "Continue /specflow-execute."
+    elif phase in ("verifying", "complete"):
+        core = "Ready to release → /specflow-ship (or /specflow-audit for a health check first)."
+    else:
+        core = f"Phase '{phase}' — run `specflow brief` for the full digest."
+
+    note = _pack_state_note(artifacts, active_packs)
+    return core + (f"\n{note}" if note else "")
 
 
 def run(root: Path, args: dict[str, Any]) -> int:
@@ -240,7 +284,8 @@ def run(root: Path, args: dict[str, Any]) -> int:
 
     # --next: emit only the deterministic next-skill recommendation and stop.
     if args.get("next"):
-        print(_next_skill_recommendation(phase, artifacts, suspects, next_wave))
+        active_packs = config.get("active_packs", []) or []
+        print(_next_skill_recommendation(phase, artifacts, suspects, next_wave, active_packs))
         return 0
 
     # ── Render ──────────────────────────────────────────────────

@@ -39,6 +39,7 @@ Break down approved requirements into architecture, detailed design, and user st
    - Read `project.domain` (set during discover via `specflow domain set`).
    - Read `project.domain_tags` list.
    - If domain is set: prefix the summary with "This is a \<domain\> project with focus on \<tags\>. Domain-specific decomposition considerations apply."
+   - **Apply the concept→artifact map** (`../specflow-discover/references/domain-checklists/<domain>.md` when it has one). Not every concept becomes a STORY: in quant/ml, measured outcomes are autoresearch goals (COMP.metric), offline runs are EXPT, and live deployments/drift are RUN/MONITOR (ops pack). Decompose into the artifact type the map says, with the *why* — this is the auto-adaptive core.
 3. **Load decision artifacts** created during discovery. Read any DEC artifacts from `_specflow/work/decisions/` that were produced by the discover skill's challenge step. These contain assumptions, risks, and dropped requirements that inform architectural choices.
 4. Identify:
    - Core domain concepts and entities

@@ -1,6 +1,6 @@
 ---
 name: specflow-artifact-review
-description: Use to review, validate, or verify SPECIFIC SpecFlow artifacts — one artifact or a small named set. Triggers context-specific checks using automated scripts and checklist review. Triggers when the user says "review this REQ," "validate the ARCH," "check this story," or asks about a specific artifact's quality. NOT for: full-project health checks (use specflow-audit), reviewing blast radius of recent DEC changes (use specflow-change-impact-review), or general code review outside SpecFlow artifacts.
+description: SCOPE = one artifact or a small named set. Use to review, validate, or verify SPECIFIC SpecFlow artifacts. Triggers context-specific checks using automated scripts and checklist review. Triggers when the user says "review this REQ," "validate the ARCH," "check this story," or asks about a specific artifact's quality. NOT for: full-project health checks (use specflow-audit), reviewing blast radius of recent DEC changes (use specflow-change-impact-review), or general code review outside SpecFlow artifacts.
 ---
 
 ## Freeform Input Handling
