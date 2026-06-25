@@ -1,0 +1,22 @@
+name: ops
+version: "0.1.0"
+description: >
+  Live-operations pack: tracks deployed systems (RUN) and their observations
+  over time (MONITOR) — a "deployed-and-observed" memory class alongside spec,
+  work, review, and research. Domain-neutral by design: drift / latency / sensor
+  specifics live in per-domain concept→artifact maps, not in these schemas.
+adds_artifact_types:
+  - run
+  - monitor
+adds_directories:
+  - ops/runs
+  - ops/monitors
+adds_skills:
+  - specflow-ops
+context_snippet: |
+  ### Ops Pack (optional)
+  This project has the **ops** pack installed — a separate subsystem from core SpecFlow engineering.
+  **Artifact types:** RUN (a deployment frozen at deploy-time), MONITOR (an append-only timestamped observation of a RUN).
+  **Trigger only when** the user deploys/runs something live, monitors a live system, captures ephemeral data, or investigates drift/health.
+  **Never use for:** offline experiments (use autoresearch EXPT), writing app code (use STORY), or requirements authoring (use discover).
+  For the deploy/observe workflow, invoke `/specflow-ops`.

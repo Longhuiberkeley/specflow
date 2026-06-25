@@ -198,6 +198,23 @@ Focus: **autoresearch methodology depth, escalation/permanence test, and templat
 
 > Deferred: an audit/lint detector that flags long-lived SPIKEs / repeated ad-hoc work that should have been promoted (a work-side complement to the v1.8.0 *Stale Code Detection* item). Also deferred: optional structured multi-output schema (typed per-component fields on COMP/EXPT) if the `component_<name>` convention proves too loose.
 
+## v1.10.0
+
+Focus: **a "deployed-and-observed" memory class (ops pack) and auto-adaptive artifact guidance.**
+
+- **Ops pack (RUN/MONITOR)** — a fifth memory class for live operations, alongside spec/work/review/research. **RUN** freezes a deployment at deploy-time (`deployed_ref`, `environment`, satisfying which REQ/ARCH/EXPT); **MONITOR** is an append-only timestamped observation journal (`metrics`, `signals`, `health`, `captures`). Domain-neutral schemas (`category: ops`) — drift/latency/sensor specifics live in per-domain maps, never the core. Reuses frozen link roles (`derives_from`/`belongs_to`/`informs`); no new roles. New `specflow-ops` skill (deploy + observe flows). See **D-21**.
+- **Positioning — complement, not replacement.** RUN/MONITOR are a governance ledger / chain of custody that sits *above* the MLOps/GitOps toolchain: `deployed_ref` points at an MLflow / W&B / ArgoCD identifier; MONITOR records decision-grade observations, not the raw telemetry firehose. SpecFlow adds the *why-it's-live* and *what-we-did-about-it* those tools are weak on.
+- **Auto-adaptive concept→artifact maps** — per-domain checklists (`quant.md`, `ml.md`) open with a Concept→Artifact Map; `discover`/`plan` surface it so "REQ vs STORY vs autoresearch goal vs RUN" is answered at decision time with the *why*. Packs contribute their own rows (autoresearch→COMP/EXPT; ops→RUN/MONITOR).
+- **`specflow domain suggest`** — extensible signal→domain detection from dependency manifests (quant/ml seeded); pure read, never silently sets.
+- **Pack-state-aware `brief --next`** — an optional second advisory line when an active subsystem has an actionable state (a running LOOP; a breached or unobserved live RUN).
+- **Communication pack enriched** — `tldr-communication` 1.0.0→1.1.0: action-first directive (reader-model + constraints + rules + pre-send check), behaviourally framed, source credited; opt-in only, baseline context untouched.
+- **Flowchart + discoverability** — `docs/lifecycle.md` flowchart (mermaid + ASCII) now shows the optional autoresearch/ops extensions and the EXPT→RUN→MONITOR→retrain loop; README gains an Ops section; `ops` added to `--preset` help.
+- **+32 tests (553 total)**, live↔ship skill/checklist parity confirmed.
+
+## v1.9.6
+
+Focus: **functional briefing, multi-agent framing, routing, and batch approval** (shipped; CHANGELOG/ROADMAP backfilled in v1.10.0).
+
 ## v1.9.5
 
 Focus: **source-scope engine, `.gitignore` respect, and quality-of-life fixes.**
@@ -326,6 +343,12 @@ These may ship someday, but are not committed:
   2. **`specflow sync-schema` (medium)** — explicit re-copy of templates into `.specflow/schema/` with `--dry-run`/diff preview. **Must preserve intentional per-project customizations** (e.g. custom `allowed_status`, extra fields) — a project owning/editing its own schema is a deliberate feature, so this cannot be a blind overwrite. Likely a field-level merge or a confirm-per-file flow.
   3. **Runtime read (large, maybe never)** — load schemas from the package at runtime and keep `.specflow/schema/` for overrides only. Most correct long-term, but an architectural shift.
   - *Related:* the same "duplicated value, no sync" shape caused the `pyproject.toml`↔`__init__.py` version drift fixed in v1.9.4; consider single-sourcing the version via `importlib.metadata` so it can't recur.
+- **Ops adapter — monitoring → MONITOR ingestion** *(from v1.10.0 review)* — a webhook/CLI bridge that turns a monitoring-tool breach (Evidently / Arize / Prometheus alert / ArgoCD OutOfSync) into a `flagged` MONITOR via `specflow create --type monitor`. The CLI already *is* the API; this is the missing glue that plugs SpecFlow into a real MLOps/GitOps loop without manual entry. Belongs with the `specflow-adapter` family.
+- **RUN deployment bill-of-materials** *(from v1.10.0 review)* — `deployed_ref` is single-valued; real deployments are a bundle (model + feature pipeline + config + infra revision). Handled today via multiple `derives_from` links, but a first-class multi-component reference (or a typed `components` list) would make "what exactly is live?" lossless.
+- **RUN rollback / supersede link role** *(from v1.10.0 review)* — promotion/rollback is modelled today as a new RUN `derives_from` the prior + `retired` status, which can't distinguish a forward step from a rollback. Add a `supersedes`/`rolls_back_to` role only if `specflow trace` proves the ambiguity is real (per the D-18 frozen-vocabulary discipline).
+- **`specflow packs` discovery command** *(from v1.10.0 review)* — list available + installed packs from the CLI (and a parallel mention in the init skill), so packs are discoverable without grepping docs or `--preset` help. Replaces hardcoding example pack names in help strings.
+- **`brief --next` deployed-but-unobserved RUN** *(from v1.10.0 review)* — the unobserved-RUN note only fires for `status: live`; a RUN sitting in the `deployed` entry-state with no MONITOR is silently ignored. Fine today (the skill creates `--status live`), but a latent blind spot worth closing when ops sees real use.
+- **Getting-started ops walkthrough** *(from v1.10.0 review)* — `docs/getting-started.md` has no hands-on ops/`domain suggest` path; the lifecycle flowchart now shows the loop but there's no tutorial for it.
 - **Product variant management** — tag-based product line engineering for multi-trim / multi-variant projects
 - **FMEA / risk analysis** — hazard, safety-goal, and risk-control artifact types via industry packs
 - **REST API** — programmatic access for custom toolchain integration

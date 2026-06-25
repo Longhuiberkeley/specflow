@@ -167,6 +167,24 @@ What you get out of the box:
 
 Adapted from [Karpathy's autoresearch](https://github.com/karpathy/autoresearch) via [autoresearch_fork](https://github.com/Longhuiberkeley/autoresearch_fork) and [Claude Autoresearch](https://github.com/uditgoenka/autoresearch), then folded into SpecFlow's artifact/V-model model.
 
+## Ops — live deployments & observations (new in v1.10.0)
+
+Most of SpecFlow records what you *build*. The optional **ops pack** records what you *run*: a "deployed-and-observed" memory class with two domain-neutral artifact types.
+
+- **RUN** — a deployment frozen at deploy-time: *what* is live (`deployed_ref`), *where* (`environment`), *when*, and *which REQ/ARCH/EXPT it satisfies*. Immutable, like a baseline for a live system — a change is a new RUN, never an edit.
+- **MONITOR** — an append-only, timestamped observation of a RUN (`metrics`, `signals`, `health`, `captures`). Over time the MONITOR chain *is* the drift/performance/freshness ledger; a breached MONITOR `informs` the next action (a retrain LOOP, a rollback DEC).
+
+```bash
+specflow init --preset ops
+> /specflow-ops          # deploy (RUN) + observe (MONITOR) workflows
+specflow trace RUN-001   # REQ/ARCH/EXPT lineage + every MONITOR under this run
+specflow brief --next    # flags a breached or unobserved live RUN when ops is active
+```
+
+**It complements your MLOps/GitOps stack — it doesn't replace it.** SpecFlow is the *governance ledger and chain of custody*, not a metrics store or a reconciliation controller. `RUN.deployed_ref` points **at** your MLflow model version, W&B artifact, or ArgoCD synced revision; `MONITOR` records the decision-grade observations (the breach, the snapshot, the freshness) and threads them back to the requirement they serve and forward to the action they trigger. The raw telemetry firehose stays in your dashboard; the *why this is live, and what we did about it* lives in SpecFlow — the layer MLflow/W&B/ArgoCD don't give you.
+
+The framework also **adapts artifact guidance to your domain**: `specflow domain suggest` proposes a domain from your dependency manifests (quant/ml seeded), and `discover`/`plan` surface a per-domain **concept→artifact map** so "is this a REQ, a STORY, an autoresearch goal, or a RUN?" is answered at decision time — with the *why* — instead of requiring you to know the boundaries.
+
 ## Philosophy
 
 - **Your git repo is the database.** No SQLite, no PostgreSQL, no server. The filesystem is authoritative.

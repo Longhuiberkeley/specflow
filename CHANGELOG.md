@@ -4,6 +4,38 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.10.0] - 2026-06-26
+
+### Highlights
+
+- **Ops pack (RUN/MONITOR) — a 5th "deployed-and-observed" memory class** (alongside spec/work/review/research). **RUN** freezes a deployment at deploy-time (what's deployed, where, when, satisfying which REQ); **MONITOR** is an append-only timestamped observation/metric journal (drift, latency, sensor values, ephemeral-data captures). Closes two regimes with no prior home: live/ephemeral data capture and MLOps (deploy / drift / retrain). Domain-neutral by design — see D-21. **Complements, not replaces, your MLOps/GitOps stack:** it's a governance ledger over MLflow / W&B / ArgoCD (`deployed_ref` points at them), not a metrics store or a reconciler.
+- **Auto-adaptive artifact guidance.** Per-domain **concept→artifact maps** are surfaced in discover/plan; packs contribute their own rows (autoresearch→COMP/EXPT, ops→RUN/MONITOR), so a project's full "which artifact fits this concept?" mapping assembles from domain + installed packs. `specflow domain suggest` detects a domain from dependency manifests (quant/ml seeded, extensible), and `brief --next` is pack-state-aware (a running LOOP, a breached/stale MONITOR). The framework adapts to the use-case instead of requiring the user to know artifact-type boundaries.
+- **Communication pack enriched.** `tldr-communication` distilled from a 2-line stub into a concise action-first directive (reader-model + cognitive constraints + rules + pre-send check), adapted from `github.com/ayghri/i-have-adhd`. Behaviourally framed (no diagnosis claim); opt-in only; baseline `agent-context.md` untouched.
+- **Quant/ML domain surfacing.** New `quant.md` + `ml.md` domain checklists (each opening with a concept→artifact map); `quant`/`ml`/`data-science` added to `domain set` help.
+
+### Features
+
+- `src/specflow/packs/ops/` — new pack: `pack.yaml`, `schemas/run.yaml` + `monitor.yaml` (`category: ops`, domain-neutral fields), `specflow-ops` skill (deploy + observe workflows, link via `derives_from`/`belongs_to`/`informs`).
+- `lib/domain_detect.py` + `specflow domain suggest` — extensible signal→domain table; pure read, never silently sets.
+- `commands/brief.py` — `_CATEGORY_ORDER` gains `ops`; `_next_skill_recommendation` accepts `active_packs` and appends an optional second advisory line for actionable subsystem states (running LOOP / breached or unobserved MONITOR).
+- discover + plan skills surface the concept→artifact map for the set domain; discover lists `quant`/`ml`/`data-science` and offers `domain suggest`.
+- Review-skill trigger tightening: leading `SCOPE =` discriminator on `specflow-audit` / `-artifact-review` / `-change-impact-review` so "review X" routes correctly.
+- Flowchart + discoverability: `docs/lifecycle.md` flowchart (mermaid + ASCII) now shows the optional autoresearch/ops extensions and the EXPT→RUN→MONITOR→retrain loop; README gains an Ops section; `ops` added to `init --preset` help.
+
+### Decisions / Docs
+
+- **D-21** (ops pack as a deployed-and-observed memory class; domain-neutral core with auto-adaptive concept→artifact maps). Runtime guidance stays native (pack `context_snippet`, `SKILL.md`, `references/`); `docs/decisions.md` holds the design rationale only, consistent with D-18/D-20. Extended with a **positioning** note (complement-not-replacement: governance ledger above MLflow/W&B/ArgoCD) and the known limits tracked as deferred roadmap items (ops ingestion adapter, multi-component `deployed_ref`, rollback link role).
+
+### Tests
+
+- +32 tests: `test_ops_pack.py` (schema lifecycle, pack install, domain-neutrality, link roles, pack-state routing), `test_tldr_pack.py` (injection idempotency + conciseness cap), `test_domain_detect.py` (quant/ml detection, word boundaries, extensibility). Skill templates synced (live ↔ ship parity confirmed). Total: **553 passing**.
+
+## [1.9.6] - 2026-06-24
+
+### Highlights
+
+- **Functional briefing, multi-agent framing, routing, and batch approval.** Shipped in commit `94f0413`; this entry backfills the gap between the tagged `v1.9.6` release and the CHANGELOG, which previously topped out at 1.9.5.
+
 ## [1.9.5] - 2026-06-19
 
 ### Highlights
