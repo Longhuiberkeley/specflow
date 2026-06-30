@@ -443,7 +443,7 @@ def _add_export_parser(subparsers):
 
 
 def _add_detect_parser(subparsers):
-    p = subparsers.add_parser("detect", help="Project-hygiene scans (dead code, similarity, orphans)")
+    p = subparsers.add_parser("detect", help="Project-hygiene scans (dead code, similarity, orphans, stale docs)")
     sub = p.add_subparsers(dest="detect_subcommand")
     dp = sub.add_parser("dead-code", help="Report unreferenced functions/classes")
     dp.add_argument("--src-dir", dest="src_dir", default="src", help="Source root (default: src)")
@@ -454,6 +454,7 @@ def _add_detect_parser(subparsers):
     op = sub.add_parser("orphan-code", help="Report source files not referenced by any STORY/REQ/ARCH/DDD")
     op.add_argument("--retro-link", dest="retro_link_target",
                     help="Artifact ID (STORY/ARCH/DDD/REQ) to retroactively link all orphan files to")
+    sub.add_parser("stale-docs", help="Report docs citing superseded/cancelled/deprecated artifacts")
 
 
 def _add_adopt_parser(subparsers):

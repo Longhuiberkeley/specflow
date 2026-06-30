@@ -68,6 +68,11 @@ SpecFlow IS your persistent memory. You do not have reliable conversation memory
 - `impact-log/` = **temporal memory** (causality — what changed, why, what it affected). Suspect propagation tracks downstream impact.
 - `links` = **relational memory** (how artifacts connect). `specflow trace <ID>` walks the graph.
 
+**Docs — the knowledge surface (not an artifact):**
+- `docs/` + root markdown (README, AGENTS, CHANGELOG, …) is recognized prose, indexed and shown in `specflow brief`. It is NOT an artifact type — no status, no lifecycle, no `_index.yaml` entry.
+- Cite specs from a doc with inline `@ID` markers (e.g. `@ARCH-007`, `@DEC-018`). `specflow detect stale-docs` and `/specflow-audit` warn (never block) if a doc cites a superseded/cancelled/deprecated artifact.
+- Editing a doc is git-history-only — it never creates a REQ/ARCH/DEC. Use `/specflow-doc`.
+
 **Recall before you act:**
 - Run `specflow status` for a project-wide overview (phase, counts, stale items).
 - Scan `_index.yaml` files in relevant directories — they give you title + status + tags for every artifact without reading full bodies.
@@ -102,6 +107,7 @@ SpecFlow IS your persistent memory. You do not have reliable conversation memory
 
 ### Routing
 - Use core `/specflow-*` skills for ALL engineering work: requirements, architecture, stories, implementation, review, release.
+- `/specflow-doc` for writing/citing/syncing docs and checking doc staleness. Docs are a knowledge surface, not artifacts — a decision is still a DEC, a requirement is still a REQ; `/specflow-doc` is only for the prose that explains and cites them.
 - Packs (e.g., autoresearch) are **separate subsystems**. Only use pack skills when the user explicitly asks for that pack's domain. Never invoke pack skills for codebase exploration, bug investigation, feature implementation, or general engineering — those are core engineering.
 - **By default**, new features go through the full pipeline. Typo fixes and trivial changes may use the lean path — but still trace to a STORY.
 - **Escape hatch:** The user can always override. When the user says "skip," "proceed anyway," or "move on," do exactly that. But before proceeding past a blocking check, articulate: "Proceeding past [specific item]. Risk: [what could go wrong]. Noted."
@@ -121,7 +127,7 @@ To promote, create the REQ/ARCH/DDD (or hand-author a new COMP) and link `derive
 Follow these steps when releasing a new version:
 
 1. **Update `CHANGELOG.md`** — add a version entry with date and highlights (grouped by category: features, fixes, docs)
-2. **Update `pyproject.toml`** — bump the `version` field
+2. **Bump the version in both sources of truth** — `pyproject.toml` (`version`) and `src/specflow/__init__.py` (`__version__`). `config.py` reads `specflow.__version__`, so both must match.
 3. **Update `ROADMAP.md`** — move shipped items from "Planned" to the released section
 4. **Run the test suite:** `pytest tests/`
 5. **Run self-audit:** `uv run specflow artifact-lint` and `uv run specflow project-audit`
@@ -133,18 +139,24 @@ Follow these steps when releasing a new version:
 
 ### CHANGELOG Format
 
+The CHANGELOG follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — a bracketed
+version and ISO date heading, and a `Total: N tests passing` line closing the entry:
+
 ```markdown
-## v1.x.x (YYYY-MM-DD)
+## [1.x.x] - YYYY-MM-DD
 
 ### Highlights
 - One-line summary of the biggest change
 
 ### Features
-- Description of new feature (#PR)
+- Description of new feature
 
 ### Fixes
-- Description of bug fix (#PR)
+- Description of bug fix
 
-### Documentation
-- Description of doc update
+### Decisions / Docs
+- D-NN (decision summary) / doc update
+
+### Tests
+- What was added; Total: N tests passing
 ```

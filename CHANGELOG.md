@@ -4,6 +4,37 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.11.0] - 2026-07-01
+
+### Highlights
+
+- **Docs as a knowledge surface (D-22).** `docs/` + root markdown (README, AGENTS, CHANGELOG, …) is now a recognized **knowledge surface** — indexed, citable, and staleness-checked — but **never** a lifecycle artifact (no `DOC` prefix, no status, no `_index.yaml` entry, no DEC on edit; git stays the change log). Docs cite spec artifacts with inline `@ID` markers (`@ARCH-007`, `@DEC-018.2`); `specflow brief` shows a Docs surface block; `specflow detect stale-docs` and `project-audit` warn (never block) when a doc cites a superseded/cancelled/deprecated artifact. New `/specflow-doc` skill is the authoring/citing/syncing UX.
+- **Coverage-metric fix: markdown is no longer counted as orphan code.** `.md`/`.mdc` were in `SOURCE_EXTENSIONS`, so `docs/*.md`, root markdown, *and* nested prose (skill files, per-package READMEs) were silently counted as uncovered source — deflating coverage. Markdown is prose, never code: the orphan-code denominator now excludes it everywhere (this repo's dogfood scan drops 271→189).
+
+### Features
+
+- `lib/docs.py` — discovers the surface (reusing `compute_fingerprint`), extracts `@ID` citations (schema-driven prefixes so pack types count; code-fence/inline/indented stripping to avoid example false-positives), builds the artifact→doc reverse index, and checks citation staleness (warn-only).
+- `lib/files.py:docs_surface_paths` — the configurable surface (a `docs:` block in `config.yaml`: `roots` default `docs/`, root-level `*.md` always recognized, `extra_files`, `exclude`); `scan_source_files` subtracts it.
+- `specflow detect stale-docs` — new informational subcommand (exit 0; never blocks).
+- `docs:` config block, `doc_refs` optional frontmatter field on REQ/ARCH/DDD/DEC (author-facing metadata, not a link role), Docs surface in `brief` / `adopt status`, a non-blocking `docs-staleness` audit concern, and a derived `_specflow/docs-index.yaml` reverse-index cache materialized by `rebuild-index`.
+- `/specflow-doc` skill (SKILL.md + 4 reference files), mirrored ship ↔ live.
+
+### Fixes
+
+- Markdown removed from `SOURCE_EXTENSIONS` so no prose is ever miscounted as orphan code (the headline D-22 miscount, now fixed for nested docs too, not just root + `docs/`).
+- Citation stripping now handles double-backtick spans and indented code blocks, eliminating phantom `@ID` citations from syntax examples.
+- Staleness messages show the cited token (`@DEC-018.2`), not just the resolved parent.
+- `describe_source_scope` and `docs_surface_paths` now treat an explicit `docs.roots: []` consistently; docstring corrections in `lib/docs.py` / `lib/files.py`.
+- Release-process docs (`AGENTS.md`): bump both `pyproject.toml` and `src/specflow/__init__.py`; CHANGELOG-format example corrected to Keep a Changelog.
+
+### Decisions / Docs
+
+- **D-22** (docs as a recognized-but-non-artifact knowledge surface; accounting-not-policing extended to prose). Runtime guidance lives in the `/specflow-doc` SKILL + references; `docs/decisions.md` holds the design rationale only, consistent with D-18/D-20/D-21.
+
+### Tests
+
+- +27 tests: `test_docs.py` (citation extraction incl. backtick/fenced/indented guards, surface enumeration, the markdown-not-orphan regression guard, discovery, reverse index, staleness, derived cache, config robustness). Total: **580 passing**.
+
 ## [1.10.0] - 2026-06-26
 
 ### Highlights

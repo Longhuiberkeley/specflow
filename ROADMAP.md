@@ -198,6 +198,15 @@ Focus: **autoresearch methodology depth, escalation/permanence test, and templat
 
 > Deferred: an audit/lint detector that flags long-lived SPIKEs / repeated ad-hoc work that should have been promoted (a work-side complement to the v1.8.0 *Stale Code Detection* item). Also deferred: optional structured multi-output schema (typed per-component fields on COMP/EXPT) if the `component_<name>` convention proves too loose.
 
+## v1.11.0
+
+Focus: **docs as a recognized knowledge surface, and a coverage-metric fix.**
+
+- **Docs knowledge surface (D-22)** — `docs/` + root markdown is now recognized, indexed, citable, and staleness-checked, but **never** a lifecycle artifact (no status, no `_index.yaml` entry, no DEC on edit; git stays the change log). Docs cite specs with inline `@ID` markers; `brief` shows a Docs surface block; `detect stale-docs` / `project-audit` warn (never block) on citations to superseded/cancelled/deprecated artifacts. New `/specflow-doc` skill is the authoring/citing UX. Accounting-not-policing extended to prose.
+- **Coverage-metric fix** — markdown was in `SOURCE_EXTENSIONS`, so docs and nested prose were silently counted as orphan *code*, deflating coverage. Markdown is prose, never code: the orphan denominator now excludes it everywhere (dogfood scan 271→189).
+- **Review fixes** — citation stripping handles double-backtick/indented examples (no phantom citations); pack prefixes in the fallback set; staleness messages show the cited token; honest framing of the derived `docs-index.yaml` cache; release-process docs corrected (`__init__.py` bump + Keep-a-Changelog format).
+- **+27 tests (580 total)**, live↔ship skill parity confirmed.
+
 ## v1.10.0
 
 Focus: **a "deployed-and-observed" memory class (ops pack) and auto-adaptive artifact guidance.**

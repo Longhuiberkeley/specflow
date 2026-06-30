@@ -139,6 +139,17 @@ Adoption is **incremental and resumable**: one subsystem boundary per pass, `spe
 
 > Greenfield projects (started with `/specflow-init`) do **not** need the adoption pack — go straight to `/specflow-discover`.
 
+## Docs — the knowledge surface
+
+`docs/` (and root markdown — README, AGENTS, CHANGELOG, …) is a **recognized knowledge surface**: indexed, citable, and flagged when stale — but **never** a lifecycle artifact type. No `DOC` prefix, no status, no `_index.yaml` lifecycle entry, no DEC when you edit. Git history is the doc change log.
+
+- **Recognized, not counted as code.** Docs are pulled *out* of the orphan-code scan, so coverage metrics reflect real code rather than prose. `specflow brief` shows a Docs surface block (count, areas, how many cite an artifact).
+- **Citable both ways.** A doc cites a spec with an inline `@ID` marker (`@ARCH-007`, `@DEC-018`); `specflow rebuild-index` builds a reverse index (artifact → citing docs). Citations use no new link role (frozen vocabulary D-18 respected).
+- **Staleness is accounting, not policing.** `specflow detect stale-docs` and `/specflow-audit` warn when a doc cites a superseded/cancelled/deprecated artifact. Warnings never block a commit or fail an audit.
+- **Absorbed on adoption.** `/specflow-adopt` registers the docs surface at `adoption-v0`, so a mid-project start doesn't leave existing docs as a blind spot of outdated info.
+
+**Dual-mode framing.** AI-first: docs are recall context the agent reads to understand the project (cited back to the spec graph, so prose and specs stay consistent). ALM/standalone: docs are the human-readable mirror of the spec graph, kept honest by staleness warnings. Use `/specflow-doc` for authoring, citing, syncing, and staleness checks.
+
 ## Tier 1 — Slash Commands (the AI-first product)
 
 These are what a user learns and uses day-to-day in the AI-first lane. Each is documented in [commands.md](commands.md) with a full interface spec.

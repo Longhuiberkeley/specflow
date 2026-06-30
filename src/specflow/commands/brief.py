@@ -91,6 +91,41 @@ def _adoption_summary(root: Path, artifacts: list[art_lib.Artifact]) -> dict | N
     }
 
 
+def _docs_summary(root: Path) -> dict | None:
+    """Recognized docs surface — visibility, not lifecycle.
+
+    Returns None when no docs exist so docless projects see no noise. Counts the
+    surface, how many docs cite an artifact, the areas it spans, and the
+    most-cited docs. Pure read of the filesystem via lib/docs.discover_docs.
+    """
+    from specflow.lib import docs as docs_lib
+
+    rroot = Path(root).resolve()
+    docs = docs_lib.discover_docs(root)
+    if not docs:
+        return None
+    areas: set[str] = set()
+    root_count = 0
+    for d in docs:
+        try:
+            rel = d.path.relative_to(rroot)
+        except ValueError:
+            continue
+        if len(rel.parts) <= 1:
+            root_count += 1
+        else:
+            areas.add(rel.parts[0])
+    citing = [d for d in docs if d.cites]
+    top = sorted(citing, key=lambda d: len(d.cites), reverse=True)[:3]
+    where = ", ".join(sorted(areas) + ([f"+{root_count} at root"] if root_count else []))
+    return {
+        "count": len(docs),
+        "citing_count": len(citing),
+        "where": where,
+        "top_cited": [(str(d.path.relative_to(rroot)), len(d.cites)) for d in top],
+    }
+
+
 def _recent_changes(root: Path, since: str) -> list[str]:
     """One-line-per-commit log of changes touching _specflow/ since `since`."""
     try:
@@ -288,6 +323,8 @@ def run(root: Path, args: dict[str, Any]) -> int:
         print(_next_skill_recommendation(phase, artifacts, suspects, next_wave, active_packs))
         return 0
 
+    docs_sum = _docs_summary(root)
+
     # ── Render ──────────────────────────────────────────────────
     print(f"\n{CYAN}SpecFlow Brief{NC} — {BOLD}{project_name}{NC}")
     print(f"{CYAN}{'─' * 50}{NC}")
@@ -301,6 +338,15 @@ def run(root: Path, args: dict[str, Any]) -> int:
         parts = [f"{n} {s}" for s, n in sorted(statuses.items())]
         total = sum(statuses.values())
         print(f"    {cat:<9} {total:>3}  ({', '.join(parts)})")
+
+    if docs_sum is not None:
+        print(f"\n  {BOLD}Docs surface{NC}")
+        print(f"    {docs_sum['count']} docs ({docs_sum['where']})   "
+              f"{docs_sum['citing_count']} cite an artifact")
+        if docs_sum["top_cited"]:
+            tc = ", ".join(f"{p} ({n})" for p, n in docs_sum["top_cited"])
+            print(f"    Top cited: {tc}")
+        print(f"    {CYAN}specflow detect stale-docs{NC} to flag docs citing superseded artifacts")
 
     if adoption is not None:
         type_parts = [f"{n} {t}" for t, n in sorted(adoption["by_type"].items())]

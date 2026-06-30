@@ -342,6 +342,7 @@ specflow detect dead-code                                  # Report unreferenced
 specflow detect similarity                                 # Report near-identical function pairs
 specflow detect orphan-code                                # Coverage % + unreferenced source files (globs honored)
 specflow detect orphan-code --retro-link ARCH-003          # Adopt orphans into an ARCH's output_files (STORY/ARCH/DDD/REQ)
+specflow detect stale-docs                                 # Docs citing superseded/cancelled/deprecated artifacts (warning, never blocks)
 ```
 
 `output_files` on STORY/REQ/ARCH/DDD may be literal paths or glob patterns (`**/*.java`).

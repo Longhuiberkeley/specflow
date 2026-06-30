@@ -246,6 +246,18 @@ def _render_project_view(root: Path, artifacts: list[art_lib.Artifact]) -> int:
         scope_notes.append("respecting .gitignore")
     if scope_notes:
         print(f"  {CYAN}Source scope:{NC} {'  '.join(scope_notes)}")
+
+    # Docs surface: recognized prose (README/docs/…), excluded from the code-orphan
+    # denominator. Surfaced so adopters see their docs are acknowledged, not orphaned.
+    try:
+        from specflow.lib import docs as docs_lib
+        dcount = len(docs_lib.discover_docs(root))
+        if dcount:
+            print(f"  {CYAN}Docs surface:{NC} {dcount} doc(s) recognized "
+                  f"(excluded from code orphan count)")
+    except Exception:
+        pass
+
     if backfilled:
         parts = [f"{n} {p}" for p, n in sorted(by_prefix.items())]
         print(f"  Backfilled: {len(backfilled)} artifacts ({', '.join(parts)})")
