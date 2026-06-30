@@ -1,11 +1,13 @@
 """CLI handler for 'specflow detect' — project hygiene scans.
 
-Three informational subcommands that never block:
+Four informational subcommands that never block:
 - `specflow detect dead-code` — declared-but-unreferenced top-level symbols.
 - `specflow detect similarity` — near-duplicate function bodies.
 - `specflow detect orphan-code` — source files not referenced by any
   STORY/REQ/ARCH/DDD. Use `--retro-link <ID>` to retroactively link all orphan
   files to an artifact (any of STORY/ARCH/DDD/REQ).
+- `specflow detect stale-docs` — docs that cite a superseded/cancelled/deprecated
+  artifact. Docs are prose; staleness is surfaced (warning), never enforced.
 
 All return exit code 0 regardless of findings (informational only).
 """
@@ -22,6 +24,7 @@ from specflow.lib.analysis import (
     find_dead_code,
     find_similar_functions,
 )
+from specflow.lib import artifacts as art_lib
 from specflow.lib.orphans import find_orphan_code, retro_link
 
 from specflow.lib.display import YELLOW_DIM, GREEN, CYAN, NC, RED, YELLOW, BOLD
@@ -144,6 +147,26 @@ def _run_orphan_code(root: Path, args: dict[str, Any]) -> int:
     return 0
 
 
+def _run_stale_docs(root: Path, args: dict[str, Any]) -> int:
+    from specflow.lib import docs as docs_lib
+
+    docs = docs_lib.discover_docs(root)
+    artifacts = art_lib.discover_artifacts(root)
+    stale = docs_lib.check_stale(root, docs, artifacts)
+
+    print(f"{BOLD}SpecFlow Detect — Stale Docs{NC}")
+    print(f"  Docs scanned: {len(docs)}")
+    if not stale:
+        print(f"  {GREEN}✓{NC} All doc citations reference current artifacts")
+        return 0
+
+    print(f"  {YELLOW_DIM}{len(stale)} stale citation(s):{NC}")
+    for s in sorted(stale, key=lambda x: (x["doc"], x["artifact_id"])):
+        print(f"    {s['message']}")
+    print(f"  {CYAN}Informational only — update the citation or re-confirm the reference.{NC}")
+    return 0
+
+
 def run(root: Path, args: dict[str, Any]) -> int:
     subcommand = args.get("detect_subcommand")
     if subcommand == "dead-code":
@@ -152,6 +175,8 @@ def run(root: Path, args: dict[str, Any]) -> int:
         return _run_similarity(root, args)
     if subcommand == "orphan-code":
         return _run_orphan_code(root, args)
+    if subcommand == "stale-docs":
+        return _run_stale_docs(root, args)
 
-    print("Usage: specflow detect {dead-code|similarity|orphan-code}")
+    print("Usage: specflow detect {dead-code|similarity|orphan-code|stale-docs}")
     return 1

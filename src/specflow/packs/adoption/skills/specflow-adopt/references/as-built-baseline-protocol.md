@@ -54,3 +54,13 @@ Baselines are immutable; the **orphan-code count** is the live progress signal b
 ## What "done enough" means
 
 Adoption never has to reach 100% of the codebase before forward work resumes. A pragmatic stopping point: every actively-changing subsystem is backfilled and baselined; legacy code that's frozen and rarely touched can stay `backfilled`-lite or even remain orphan (the orphan-code count flags it). The team decides the threshold — adoption is accounting, and you account for what matters.
+
+## Docs surface at adoption-v0
+
+Pre-existing `docs/` (and root markdown — README, AGENTS, etc.) is a **recognized knowledge surface**, not code and not artifacts. Adoption acknowledges it so a mid-project start doesn't leave docs as a blind spot of outdated info:
+
+- **Register, don't convert.** Note the docs root + a few notable docs in the baseline `--rationale`. Docs get no `_index.yaml` lifecycle entry, no status, no `output_files`. They are prose; git history is their change log.
+- **Fingerprint for drift.** The derived `_specflow/docs-index.yaml` fingerprints each doc (same `compute_fingerprint` primitive artifacts use), so post-adoption doc drift is measurable — purely informational.
+- **Citations stay honest.** If a doc cites an artifact via an `@ID` marker (e.g. `@ARCH-007`) and that artifact is later superseded/cancelled, `specflow detect stale-docs` and `/specflow-audit` warn (never block). See the `/specflow-doc` skill.
+
+This mirrors the code-linking model's philosophy: record reality at the baseline, then govern drift from there. Docs are accounted for, not policed.

@@ -49,7 +49,7 @@ SOURCE_EXTENSIONS: set[str] = {
     ".py", ".js", ".ts", ".tsx", ".jsx", ".go", ".rs", ".java",
     ".c", ".cpp", ".h", ".hpp", ".rb", ".php", ".swift", ".kt",
     ".scala", ".r", ".R", ".sql", ".sh", ".bash", ".zsh",
-    ".yaml", ".yml", ".toml", ".json", ".xml", ".md", ".mdc",
+    ".yaml", ".yml", ".toml", ".json", ".xml",
     ".css", ".scss", ".less", ".html", ".vue", ".svelte",
     ".tf", ".dockerfile", ".proto", ".graphql",
 }
@@ -205,6 +205,9 @@ def scan_source_files(root: Path) -> list[Path]:
 
     include_set = _scope_glob_set(root, include) if include else None
     exclude_set = _scope_glob_set(root, exclude)
+    # The docs surface is prose, not code — exclude it so coverage/orphan metrics
+    # don't count README/docs/*.md as uncovered source (the historical miscount).
+    docs_set = docs_surface_paths(root)
 
     source_files: list[Path] = []
     for entry in candidates:
@@ -223,7 +226,7 @@ def scan_source_files(root: Path) -> list[Path]:
             # allowlist match: authoritative, skip extension heuristic
         elif not is_source_file(entry, extra_exts):
             continue
-        if resolved in exclude_set:
+        if resolved in exclude_set or resolved in docs_set:
             continue
         source_files.append(entry)
     return source_files
@@ -232,18 +235,94 @@ def scan_source_files(root: Path) -> list[Path]:
 def describe_source_scope(root: Path) -> dict:
     """Summarize the active source scope for display (see `adopt status`).
 
-    Returns {include, exclude, extensions, gitignore_respected}.
+    Returns {include, exclude, extensions, gitignore_respected, docs}.
     """
     from specflow.lib import git_utils
     from specflow.lib.config import read_config
 
     scope = (read_config(root).get("source_scope") or {})
+    docs_cfg = read_config(root).get("docs") or {}
+    # Mirror docs_surface_paths' precedence: only an *absent* `roots` key defaults
+    # to ["docs/"]; an explicit [] means "no roots" (root markdown still counts).
+    docs_roots = docs_cfg.get("roots")
+    if docs_roots is None:
+        docs_roots = ["docs/"]
     return {
         "include": scope.get("include") or [],
         "exclude": scope.get("exclude") or [],
         "extensions": scope.get("extensions") or [],
         "gitignore_respected": git_utils.is_git_repo(root),
+        "docs": {
+            "roots": docs_roots,
+            "extra_files": docs_cfg.get("extra_files") or [],
+            "count": len(docs_surface_paths(root)),
+        },
     }
+
+
+def docs_surface_paths(root: Path) -> set[Path]:
+    """The recognized documentation surface (configurable). NOT counted as code.
+
+    Driven by the ``docs:`` block in ``.specflow/config.yaml``:
+
+      roots       directories (or single files) treated as docs (default ``docs/``).
+      extra_files loose files outside roots and the project root (default ``[]``);
+                  root markdown is always recognized via the root glob below.
+      exclude     glob denylist subtracted from the surface last.
+
+    Markdown files (``*.md``) under directory roots are enumerated recursively;
+    files whose name starts with ``_`` are skipped (derived caches/indices).
+    Source of truth is the filesystem — this is recomputed on every call, so it
+    never desynchronizes from disk.
+    """
+    from specflow.lib.config import read_config
+
+    root = Path(root).resolve()
+    cfg = read_config(root).get("docs") or {}
+    roots = cfg.get("roots")
+    if roots is None:
+        roots = ["docs/"]
+    extra = cfg.get("extra_files") or []
+    exclude = cfg.get("exclude") or []
+
+    out: set[Path] = set()
+
+    def _add_md_dir(d: Path) -> None:
+        if not d.is_dir():
+            return
+        for md in d.rglob("*.md"):
+            if md.name.startswith("_"):
+                continue
+            out.add(md.resolve())
+
+    # Project front-door docs: any markdown sitting directly at the root is
+    # documentation (README, AGENTS, CHANGELOG, ROADMAP, CONTRIBUTING, …), not
+    # code. Use `exclude` to opt specific files out.
+    for md in root.glob("*.md"):
+        if md.name.startswith("_"):
+            continue
+        out.add(md.resolve())
+
+    for r in roots:
+        if not isinstance(r, str) or not r.strip():
+            continue
+        p = (root / r).resolve()
+        if p.is_dir():
+            _add_md_dir(p)
+        elif p.is_file():
+            out.add(p)
+
+    for f in extra:
+        if not isinstance(f, str) or not f.strip():
+            continue
+        p = (root / f).resolve()
+        if p.is_file():
+            out.add(p)
+
+    if exclude:
+        excl = _scope_glob_set(root, exclude)
+        out -= {x for x in out if x in excl}
+    return out
 
 
 def expand_output_files(root: Path, entries: list[str] | None) -> set[Path]:

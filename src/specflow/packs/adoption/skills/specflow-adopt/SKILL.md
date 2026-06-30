@@ -62,6 +62,7 @@ Bring an existing codebase into SpecFlow by **recording its current state**, the
   - `git ls-files` grouped by top-level dir (and module markers: npm/pnpm workspaces, `go.mod`, `Cargo.toml` workspaces, monorepo packages) → candidate boundaries / component structure.
   - `specflow detect orphan-code` → source files not yet referenced by any STORY/REQ/ARCH/DDD, with coverage %. *(Pre-backfill, everything is "orphan" — use this as the post-pass gap check and the progress meter; use `git ls-files` for the initial map.)*
   - Existing docs: `README.md`, `docs/**/*.md`, any `adr/` or `decisions/` dir, `REQUIREMENTS*.md`, `CONTRIBUTING.md` → candidate REQ/DEC source.
+  - **Register the docs surface:** note the `docs/` root + 3-5 notable docs (architecture, decisions, getting-started, README) for the as-built baseline. These are a **recognized knowledge surface**, not code orphans — SpecFlow indexes them, and `specflow brief`/`specflow adopt status` will show a Docs surface line. They are NOT artifacts and need no `output_files` coverage.
   - Existing tests (`**/test_*.py`, `*.test.ts`, `*_test.go`, …) → evidence for `verified` + candidate UT/IT/QT. A common conflict source when tests disagree with docs.
   - Commit ticket refs: `git log --oneline | grep -oE '[A-Z][A-Z0-9]+-[0-9]+'` → candidate DEF/DEC + provenance.
   Present a structured inventory summary and the proposed artifacts to backfill for this boundary.
@@ -77,7 +78,7 @@ Bring an existing codebase into SpecFlow by **recording its current state**, the
   - **Set status honestly** — `create` accepts any valid status directly: `implemented` for code that exists, `verified` where a test confirms it, `approved` for specs that match shipped reality. This is accounting, not policing.
   - **Do NOT create STORYs.** STORY is forward action (D-20). If you catch yourself creating a STORY for existing code, stop — that's an ARCH.
 
-- **4 · As-built baseline.** `specflow baseline create adoption-v0 --evidence` (or `adoption-<boundary>-v0` for an interim checkpoint in a multi-pass adoption). State plainly: this is the handshake — from here, drift is measured against this snapshot.
+- **4 · As-built baseline.** `specflow baseline create adoption-v0 --evidence` (or `adoption-<boundary>-v0` for an interim checkpoint in a multi-pass adoption). State plainly: this is the handshake — from here, drift is measured against this snapshot. Record the docs surface in the baseline `--rationale` (e.g. `"...; docs surface registered: docs/ (N files), README.md"`) so the knowledge baseline is acknowledged at adoption — pre-existing docs aren't orphaned or silently stale.
 
 - **5 · Retro-link & completeness check.**
   - `specflow detect orphan-code --retro-link ARCH-NNN` to wire any remaining unreferenced files (in this boundary) to their backfilled ARCH. (Accepts STORY/ARCH/DDD/REQ; ARCH is the usual target.)
@@ -88,7 +89,7 @@ Bring an existing codebase into SpecFlow by **recording its current state**, the
   - `specflow artifact-lint` on the backfilled graph; optionally `/specflow-audit`.
   - Close resolved AUDs: after an audit, run `specflow update AUD-NNN --status closed` for any AUD whose findings are provably resolved. Don't leave resolved audits as `status: open` — they accumulate and lose signal.
   - Report from `specflow adopt status`: coverage %, what was adopted this pass, the biggest un-adopted cluster (what's left). Recommend the next boundary, or declare adoption "done enough."
-  - Tell the user: forward work uses `/specflow-discover` → plan → execute; the as-built baseline is the reference for `/specflow-change-impact-review` and `/specflow-ship`. Any future change to an adopted component creates a real (non-`backfilled`) STORY `specified_by` that component's ARCH.
+  - Tell the user: forward work uses `/specflow-discover` → plan → execute; the as-built baseline is the reference for `/specflow-change-impact-review` and `/specflow-ship`. Any future change to an adopted component creates a real (non-`backfilled`) STORY `specified_by` that component's ARCH. `specflow brief` now shows a **Docs surface** block, and `specflow detect stale-docs` / `/specflow-audit` will warn if a doc cites a superseded artifact — so the adopted docs stay honest going forward.
 
 ## Scaling to large codebases — skeleton-first, incremental, resumable
 

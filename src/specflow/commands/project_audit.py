@@ -340,6 +340,27 @@ def _cross_cutting_analysis(
     if orphan_findings:
         results["orphan-code"] = orphan_findings
 
+    # Docs-staleness lens: docs that cite a superseded/cancelled/deprecated
+    # artifact. Warning only — never escalates the audit exit code. Accounting,
+    # not policing: docs are prose, staleness is surfaced, never enforced.
+    docs_findings: list[dict[str, str]] = []
+    try:
+        from specflow.lib import docs as docs_lib
+
+        docs = docs_lib.discover_docs(root)
+        stale = docs_lib.check_stale(root, docs, artifacts)
+        for s in stale:
+            docs_findings.append({"severity": "warn", "message": s["message"]})
+        if docs and not stale:
+            docs_findings.append({
+                "severity": "info",
+                "message": f"{len(docs)} doc(s) scanned; all citations current.",
+            })
+    except Exception:
+        pass
+    if docs_findings:
+        results["docs-staleness"] = docs_findings
+
     return results
 
 

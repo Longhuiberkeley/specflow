@@ -19,3 +19,10 @@ artifact_types:
 - decision
 - defect
 active_packs: []
+docs:
+  roots:
+  - docs/
+  extra_files: []
+  exclude:
+  - docs/.archive/**
+

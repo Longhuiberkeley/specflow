@@ -1,0 +1,115 @@
+version: 1.11.0
+rebuilt_at: '2026-06-30T16:14:39+00:00'
+docs:
+  AGENTS.md:
+    title: AGENTS.md
+    fingerprint: sha256:dccb4fe7eb50
+    cites: []
+    last_reviewed: ''
+    audience: ''
+  CHANGELOG.md:
+    title: Changelog
+    fingerprint: sha256:48139ed11bbb
+    cites: []
+    last_reviewed: ''
+    audience: ''
+  README.md:
+    title: SpecFlow
+    fingerprint: sha256:8bfe2abff1f4
+    cites: []
+    last_reviewed: ''
+    audience: ''
+  ROADMAP.md:
+    title: SpecFlow Roadmap
+    fingerprint: sha256:375d5ac62b39
+    cites: []
+    last_reviewed: ''
+    audience: ''
+  docs/architecture.md:
+    title: "SpecFlow \u2014 Architecture"
+    fingerprint: sha256:03e253464cbc
+    cites: []
+    last_reviewed: ''
+    audience: ''
+  docs/authoring-a-pack.md:
+    title: Authoring a Standards Pack (Manual)
+    fingerprint: sha256:a65ca11e0554
+    cites: []
+    last_reviewed: ''
+    audience: ''
+  docs/authoring-an-adapter.md:
+    title: Authoring a SpecFlow Adapter
+    fingerprint: sha256:a4cb4b326d32
+    cites: []
+    last_reviewed: ''
+    audience: ''
+  docs/autoresearch-fork-adaptation.md:
+    title: "Autoresearch Fork Adaptation \u2014 Diff Plan for Wave 3"
+    fingerprint: sha256:00dbc0d5c971
+    cites: []
+    last_reviewed: ''
+    audience: ''
+  docs/cli-reference.md:
+    title: SpecFlow CLI Reference
+    fingerprint: sha256:ae1633da5518
+    cites: []
+    last_reviewed: ''
+    audience: ''
+  docs/commands.md:
+    title: SpecFlow Command Reference
+    fingerprint: sha256:d40e1fb8b59f
+    cites: []
+    last_reviewed: ''
+    audience: ''
+  docs/comparison.md:
+    title: "SpecFlow \u2014 Where It Fits"
+    fingerprint: sha256:3880c65d5e8b
+    cites: []
+    last_reviewed: ''
+    audience: ''
+  docs/decisions.md:
+    title: "SpecFlow \u2014 Design Decisions"
+    fingerprint: sha256:2df9e967d80a
+    cites:
+    - DEC-018
+    last_reviewed: ''
+    audience: ''
+  docs/getting-started.md:
+    title: Getting Started with SpecFlow
+    fingerprint: sha256:7fc096c62c30
+    cites: []
+    last_reviewed: ''
+    audience: ''
+  docs/lifecycle.md:
+    title: SpecFlow Lifecycle
+    fingerprint: sha256:22cb9d5c7897
+    cites: []
+    last_reviewed: ''
+    audience: ''
+  docs/plan-autoresearch-integration.md:
+    title: 'Plan: Autoresearch Integration into SpecFlow'
+    fingerprint: sha256:f0e65610746a
+    cites: []
+    last_reviewed: ''
+    audience: ''
+  docs/plan.md:
+    title: "SpecFlow \u2014 Implementation Plan"
+    fingerprint: sha256:74ff55d44f0b
+    cites: []
+    last_reviewed: ''
+    audience: ''
+  docs/skill-standards.md:
+    title: SpecFlow Skill Standards
+    fingerprint: sha256:7796df469794
+    cites: []
+    last_reviewed: ''
+    audience: ''
+  docs/team-setup.md:
+    title: Team Setup Guide (RBAC)
+    fingerprint: sha256:cfab7c0fa2e1
+    cites: []
+    last_reviewed: ''
+    audience: ''
+reverse:
+  DEC-018:
+  - docs/decisions.md

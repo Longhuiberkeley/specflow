@@ -47,6 +47,21 @@ def default_config(project_name: str = "") -> dict:
         #   exclude:    glob denylist, subtracted last (e.g. ["data/**"]).
         #   extensions: extra suffixes treated as code (e.g. [".ipynb"]).
         "source_scope": {"include": [], "exclude": [], "extensions": []},
+        # The recognized documentation surface — prose docs that SpecFlow indexes
+        # and surfaces but does NOT treat as lifecycle artifacts. Markdown sitting
+        # directly at the project root is always recognized (README, AGENTS,
+        # CHANGELOG, ROADMAP, …). Docs cite artifacts with inline @ID markers;
+        # audit warns (never blocks) when a doc cites a superseded artifact.
+        # Editing a doc is git-history-only. See lib/docs.py and
+        # lib/files.py:docs_surface_paths.
+        #   roots:       dirs/files treated as docs (default docs/).
+        #   extra_files: loose files outside roots + root (e.g. examples/guide.md).
+        #   exclude:     glob denylist subtracted from the surface.
+        "docs": {
+            "roots": ["docs/"],
+            "extra_files": [],
+            "exclude": [],
+        },
         "team": {
             "roles": {
                 "reviewer": [],
