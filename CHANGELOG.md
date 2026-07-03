@@ -4,6 +4,12 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.11.1] - 2026-07-04
+
+### Docs
+
+- Synced the docs-surface (D-22) entry points that v1.11.0 skipped: README (`/specflow-doc` added to the slash-command table + a new "Docs — the knowledge surface" section, install pin bumped to `v1.11.0`), the `docs/lifecycle.md` flowchart and Tier-1 table (docs-surface node + `/specflow-doc` row), and the router/audit/init/change-impact skills now reference the docs surface and `specflow detect stale-docs`. Qualified the pack-only `/specflow-autoresearch` references in `specflow-doc` and `specflow-execute` so they read as "if installed".
+
 ## [1.11.0] - 2026-07-01
 
 ### Highlights

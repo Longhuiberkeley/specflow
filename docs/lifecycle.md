@@ -51,6 +51,9 @@ flowchart TB
     REV ==> NEXT["/specflow-change-impact-review/<br/>· /specflow-audit · /specflow-adapter/"]
     NEXT ==> SHIP["/specflow-ship/<br/>baseline + DECs + quick audit"]
 
+    DOCS["docs knowledge surface (core) · README / docs / AGENTS<br/>@ID-cited · staleness-warned · never an artifact type"]
+    ENG -. "explained / cited via @ID" .-> DOCS
+
     %% Optional pack-activated extensions — not mandatory lanes; the engine works without them.
     RES["autoresearch pack (optional) · offline experiments<br/>COMP → LOOP → EXPT → FIND (frozen, reproducible)"]
     OPS["ops pack (optional) · live operations<br/>RUN (deploy-time freeze) → MONITOR (observation journal)<br/>references your MLflow / W&amp;B / ArgoCD via deployed_ref"]
@@ -59,7 +62,7 @@ flowchart TB
     RES -. "promote (derives_from)" .-> OPS
     OPS -. "breach informs → retrain LOOP / rollback DEC" .-> ENG
 
-    class ENG engine
+    class ENG,DOCS engine
     class AG1,AG2 gate
     class RES,OPS pack
 ```
@@ -114,6 +117,9 @@ flowchart TB
                             /specflow-ship
                             (baseline + DECs + quick audit)
 
+   docs (knowledge surface, core):  README / docs / AGENTS · @ID-cited · staleness-warned
+       · never an artifact type · git history is the change log · /specflow-doc
+
    ── Optional pack-activated extensions (the engine runs without them) ──────────
    autoresearch (offline):  COMP → LOOP → EXPT → FIND       (frozen, reproducible)
    ops (live ops):          RUN  → MONITOR                  (deploy freeze + journal)
@@ -166,6 +172,7 @@ These are what a user learns and uses day-to-day in the AI-first lane. Each is d
 | 8 | `/specflow-ship` | Cutting a release: baseline + change records + quick audit |
 | 9 | `/specflow-adapter` | Configuring CI workflows, roles/RBAC, and adapters (any time) |
 | 10 | `/specflow-pack-author` | Authoring a standards compliance pack |
+| 11 | `/specflow-doc` | Authoring/citing docs (`@ID`), syncing the docs index, staleness checks |
 
 ## Tier 2 — The CLI = a standalone ALM (no agent required)
 

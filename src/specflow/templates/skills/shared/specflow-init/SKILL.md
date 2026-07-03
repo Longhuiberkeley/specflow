@@ -128,10 +128,11 @@ Summarize what was done:
 - Pre-commit hook installed
 - CI workflow generated (if applicable)
 - Packs applied (if any)
+- Docs knowledge surface recognized (root `*.md` + `docs/`); `docs:` config block written
 
 Then recommend:
 
-> "Your project is ready. Run `/specflow-discover` to start capturing requirements, or `/specflow-adapter` if you want to configure CI or exchange integrations first."
+> "Your project is ready. Run `/specflow-discover` to start capturing requirements, `/specflow-adapter` to configure CI or exchange integrations first, or `/specflow-doc` to cite your spec from existing docs or your README."
 
 ## Rules
 

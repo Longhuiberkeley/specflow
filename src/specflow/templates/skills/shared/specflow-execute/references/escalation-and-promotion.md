@@ -48,7 +48,7 @@ Copy the spike's findings into the new artifact's `rationale`/body so the knowle
 
 ### Research scope → COMP
 
-When the *research* scope shifts (different dataset, metric, or target), the durable artifact is a **COMP**, authored by hand. Do **not** keep spiking inside an old COMP or mutate its `verify_command` — that orphans its EXPTs/FINDs. Full recipe (builds-on vs new-thing) lives in `specflow-autoresearch/SKILL.md` → "Evolving a COMP".
+When the *research* scope shifts (different dataset, metric, or target), the durable artifact is a **COMP**, authored by hand. Do **not** keep spiking inside an old COMP or mutate its `verify_command` — that orphans its EXPTs/FINDs. Full recipe (builds-on vs new-thing) lives in the **autoresearch pack**'s `specflow-autoresearch/SKILL.md` → "Evolving a COMP" (if installed).
 
 ## Worked example: COMP-001 → COMP-002
 
