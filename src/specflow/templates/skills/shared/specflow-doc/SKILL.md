@@ -1,6 +1,6 @@
 ---
 name: specflow-doc
-description: SCOPE = the docs/ knowledge surface (README, docs/, adr/, CONTRIBUTING, root markdown). Use to write or revise project documentation, cite spec artifacts from a doc via inline @ID markers (e.g. @ARCH-007, @DEC-018), sync the docs index, and check whether docs still cite current (non-superseded) artifacts. Triggers when the user says "write the docs," "document this," "update the README," "explain the architecture in the docs," "cite the spec from the docs," "link this doc to the spec," "sync the docs index," or "are the docs stale / out of date." NOT for recording a decision (use /specflow-plan → DEC), capturing a requirement (use /specflow-discover → REQ), throwaway research (use a SPIKE), reproducible experiments (use /specflow-autoresearch EXPT), or authoring/reviewing a SpecFlow artifact itself (use create commands or /specflow-artifact-review). Docs are a knowledge SURFACE, not an artifact type — editing a doc never creates a REQ/ARCH/DEC; git history is the change log.
+description: SCOPE = the docs/ knowledge surface (README, docs/, adr/, CONTRIBUTING, root markdown). Use to write or revise project documentation, cite spec artifacts from a doc via inline @ID markers (e.g. @ARCH-007, @DEC-018), sync the docs index, and check whether docs still cite current (non-superseded) artifacts. Triggers when the user says "write the docs," "document this," "update the README," "explain the architecture in the docs," "cite the spec from the docs," "link this doc to the spec," "sync the docs index," or "are the docs stale / out of date." NOT for recording a decision (use /specflow-plan → DEC), capturing a requirement (use /specflow-discover → REQ), throwaway research (use a SPIKE), reproducible experiments (use the **autoresearch pack**'s `/specflow-autoresearch EXPT`, if installed), or authoring/reviewing a SpecFlow artifact itself (use create commands or /specflow-artifact-review). Docs are a knowledge SURFACE, not an artifact type — editing a doc never creates a REQ/ARCH/DEC; git history is the change log.
 ---
 
 ## Freeform Input Handling
@@ -20,7 +20,7 @@ If the user's intent is really one of these, redirect (one question if unsure):
 - **A decision / "why we chose X"** → `/specflow-plan` and a **DEC** (a doc can *cite* `@DEC-018`, but the decision itself is a DEC).
 - **A requirement / "the system must do X"** → `/specflow-discover` and a **REQ**.
 - **Throwaway research / a spike** → a **SPIKE**.
-- **A reproducible experiment** → `/specflow-autoresearch` (EXPT/LOOP/FIND).
+- **A reproducible experiment** → the **autoresearch pack** (`/specflow-autoresearch`, if installed — EXPT/LOOP/FIND).
 - **Reviewing an artifact** → `/specflow-artifact-review`.
 
 Docs are prose that *explains and cites* the spec graph; they are not part of it.

@@ -37,7 +37,7 @@ Before running the audit, check for active best-practice artifacts in `_specflow
 
 ### Step 2: Deterministic Core (Zero-Question)
 
-Run the automated audit pipeline silently. This covers horizontal, vertical, and cross-cutting checks — including an **orphan-code lens** that flags source files not traced to any STORY/REQ via `output_files`. (Skipped under `--quick`.)
+Run the automated audit pipeline silently. This covers horizontal, vertical, and cross-cutting checks — including an **orphan-code lens** that flags source files not traced to any STORY/REQ via `output_files`, and a **docs-staleness** check that flags docs citing superseded/cancelled/deprecated artifacts via inline `@ID` markers (warning only — never escalates the exit code). (Skipped under `--quick`.)
 
 ```
 uv run specflow project-audit

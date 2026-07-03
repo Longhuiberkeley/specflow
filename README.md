@@ -117,10 +117,11 @@ Full walkthrough in the [getting-started guide](docs/getting-started.md).
 | **Bring-your-own-standard** | Drop a PDF, URL, or pasted text. SpecFlow extracts clauses into compliance schemas |
 | **Immutable baselines** | Snapshot, diff, and generate audit evidence between releases |
 | **First-class Claude Code + OpenCode** | Skills install automatically; other assistants with project file access may work but are community-supported |
-| **Autoresearch loops** *(new)* | Define a competition + verify command, let your assistant iterate; every experiment becomes a tracked artifact |
+| **Autoresearch loops** | Define a competition + verify command, let your assistant iterate; every experiment becomes a tracked artifact |
+| **Docs knowledge surface** *(new)* | `docs/` + root markdown is a recognized surface — `@ID`-cited, shown in `specflow brief`, staleness-warned, never an artifact type |
 | **1 runtime dependency** | Just `pyyaml`. Everything else is stdlib. |
 
-## The 10 slash commands
+## Slash commands
 
 | Command | What it does |
 |---------|---------|
@@ -134,8 +135,9 @@ Full walkthrough in the [getting-started guide](docs/getting-started.md).
 | `/specflow-ship` | Release: baseline + change records + audit |
 | `/specflow-pack-author` | Author a standards compliance pack |
 | `/specflow-adapter` | CI, exchange (ReqIF), standards, team RBAC |
+| `/specflow-doc` | Author/cite docs (`@ID`), sync the docs index, check staleness |
 
-All 10 skills accept freeform context. `/specflow-audit I'm worried about REQ coverage` scopes the audit to your concern.
+All core skills accept freeform context. `/specflow-audit I'm worried about REQ coverage` scopes the audit to your concern.
 
 ## Autoresearch — autonomous research loops (new in v1.6.0)
 
@@ -184,6 +186,16 @@ specflow brief --next    # flags a breached or unobserved live RUN when ops is a
 **It complements your MLOps/GitOps stack — it doesn't replace it.** SpecFlow is the *governance ledger and chain of custody*, not a metrics store or a reconciliation controller. `RUN.deployed_ref` points **at** your MLflow model version, W&B artifact, or ArgoCD synced revision; `MONITOR` records the decision-grade observations (the breach, the snapshot, the freshness) and threads them back to the requirement they serve and forward to the action they trigger. The raw telemetry firehose stays in your dashboard; the *why this is live, and what we did about it* lives in SpecFlow — the layer MLflow/W&B/ArgoCD don't give you.
 
 The framework also **adapts artifact guidance to your domain**: `specflow domain suggest` proposes a domain from your dependency manifests (quant/ml seeded), and `discover`/`plan` surface a per-domain **concept→artifact map** so "is this a REQ, a STORY, an autoresearch goal, or a RUN?" is answered at decision time — with the *why* — instead of requiring you to know the boundaries.
+
+## Docs — the knowledge surface (new in v1.11.0)
+
+`docs/` and root markdown (README, AGENTS, CHANGELOG, …) is a **recognized knowledge surface** — indexed, citable, and flagged when stale — but **never a lifecycle artifact type**. There's no `DOC` prefix, no status field, no change record when you edit a doc; git history is the change log.
+
+- **Recognized, not counted as code.** Docs are pulled *out* of the orphan-code scan, so coverage metrics reflect real code rather than prose. `specflow brief` shows a Docs surface block.
+- **Citable both ways.** A doc cites a spec with an inline `@ID` marker (`@ARCH-007`, `@DEC-018`); `specflow rebuild-index` builds the reverse index (artifact → citing docs).
+- **Staleness is accounting, not policing.** `specflow detect stale-docs` and `/specflow-audit` warn when a doc cites a superseded/cancelled/deprecated artifact. Warnings never block a commit or fail an audit.
+
+Use `/specflow-doc` to author, cite, sync the docs index, and check staleness.
 
 ## Philosophy
 
@@ -244,7 +256,7 @@ Everything is Markdown with YAML frontmatter. Your repo is the database.
 uv tool install git+https://github.com/Longhuiberkeley/specflow
 
 # Pin to a release
-uv tool install git+https://github.com/Longhuiberkeley/specflow@v1.6.0
+uv tool install git+https://github.com/Longhuiberkeley/specflow@v1.11.1
 
 # Run without installing (ephemeral)
 uvx --from git+https://github.com/Longhuiberkeley/specflow specflow init

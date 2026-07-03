@@ -60,7 +60,12 @@ For each DEC and its impact cone:
 4. Look for:
    - Contradictions with existing REQs.
    - Unhandled edge cases introduced by the change.
-   - Missing updates to related tests or documentation.
+   - Missing updates to related tests.
+   - **Docs whose `@ID` citations now point at superseded/cancelled/deprecated artifacts** in the cone. Run the deterministic signal:
+     ```bash
+     uv run specflow detect stale-docs
+     ```
+     Each hit is a doc citing a stale artifact — resolve by updating the citation or re-confirming the reference. Warning only; never blocks.
 
 5. **Auto-select adversarial lenses based on cone signals.** Pure pattern-matching misses risks that need an explicit frame. Inspect the tags and types in the impact cone and pick 2-3 lenses from `../specflow-references/references/adversarial-lenses.md` to apply to the impacted artifacts. Selection rules:
 
