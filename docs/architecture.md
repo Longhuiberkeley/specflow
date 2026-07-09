@@ -23,6 +23,8 @@ V-model pairing:
 - `ARCH-001` <-> `IT-001` (verified_by)
 - `DDD-001` <-> `UT-001` (verified_by)
 
+> **Coverage is measured two ways, by design (REQ-012).** `find_missing_v_pairs` checks the SPEC-anchored pair above (every REQ/ARCH/DDD has its QT/IT/UT). `check_coverage` checks STORY test coverage (every implemented STORY has UT+IT+QT linked). These are two distinct metrics — not a contradiction; do not "merge" them.
+
 ### Level boundary rules
 
 | Level | Answers | Boundary test | Forbidden content |
@@ -145,7 +147,7 @@ The **framework** (Python package) ships scripts, templates, and checklists. Dur
 | `src/specflow/templates/schemas/` | `.specflow/schema/` |
 | `src/specflow/templates/checklists/` | `.specflow/checklists/` (phase-gates, in-process, review, readiness) |
 | `src/specflow/templates/skills/<platform>/` | `.claude/skills/` (or `.gemini/`, `.opencode/`) |
-| `scripts/` (thin CI/CD wrappers) | — (delegate to `specflow validate`, not copied) |
+| `scripts/` (thin CI/CD wrappers) | — (delegate to `specflow artifact-lint`, not copied) |
 
 After init, per-project checklists grow:
 - `.specflow/checklists/shared/` — user-defined, auto-matched by tags
@@ -310,7 +312,7 @@ items:
   - id: CKL-GATE-002-01
     check: "All REQ-* artifacts have status: approved"
     automated: true
-    script: "uv run specflow validate --type status"
+    script: "uv run specflow artifact-lint --type status"
     severity: blocking
 
   - id: CKL-GATE-002-02
@@ -383,7 +385,7 @@ All programmatic commands are `specflow <subcommand>` subcommands of the Python 
 idle -> discovering -> specifying -> planning -> executing -> verifying -> complete
 ```
 
-State persists in `.specflow/state.yaml` with history. Phase transitions are driven by workflow commands (`specflow go`, `specflow done`).
+State persists in `.specflow/state.yaml` with history. `current` advances along this chain as work progresses: `specflow go` enters `executing`, the discover/plan skills record `specifying`/`planning`, and `specflow done` closes the current phase and advances `current` to the next (e.g. `planning` → `executing` → `verifying` → `complete`). Phase-gate checklists are consulted *advisory*-only (`specflow phase-status`) — they surface readiness, they do not block (accounting, not policing).
 
 ## Cross-Platform Strategy
 
@@ -411,7 +413,7 @@ Each artifact stores a SHA256 fingerprint of its normative content (title + body
 ### Typo cascade defense (3-tier)
 
 1. **Explicit intent** — User adds `update_type: minor` in frontmatter for cosmetic edits. Framework skips cascade.
-2. **`specflow tweak` command** — Convenience wrapper that recomputes fingerprint and logs as minor.
+2. **`specflow fingerprint-refresh` command** — Convenience wrapper that recomputes an artifact's fingerprint (and logs the change as minor so it skips the suspect cascade).
 3. **Magnitude heuristic** — Git-based fallback: if change ratio < 5% AND only frontmatter changed, auto-classify minor. Otherwise: always cascade.
 
 Design principle: when in doubt, cascade.

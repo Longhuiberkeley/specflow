@@ -1,6 +1,6 @@
 ---
 name: specflow-pack-author
-description: Use when the user wants to author a new standards compliance pack — from a PDF file, URL, or pasted text. Generates a complete pack directory with pack.yaml, standards clauses, and optional schemas. This is a specialized authoring tool — NOT for general SpecFlow usage or project setup.
+description: Use when the user wants to author a new standards compliance pack — from a PDF file, URL, or pasted text. Triggers when the user says "make a compliance pack from this PDF/URL," or "author a standards pack." Generates a complete pack directory with pack.yaml, standards clauses, and optional schemas. This is a specialized authoring tool — NOT for general SpecFlow usage or project setup.
 ---
 
 ## Freeform Input Handling

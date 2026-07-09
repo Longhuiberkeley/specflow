@@ -74,4 +74,6 @@ def get_skill_names() -> list[str]:
         "specflow-ship",
         "specflow-pack-author",
         "specflow-adapter",
+        "specflow-doc",
+        "specflow-start",
     ]

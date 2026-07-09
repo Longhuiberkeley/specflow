@@ -19,8 +19,11 @@ Three kinds of near-miss are recognized:
   deprecation are statuses, not links (e.g. ``cancels`` -> set ``status: cancelled``).
 
 Adding a new *canonical* role is a deliberate, behavior-paired decision — this
-module only maps near-misses onto roles that already exist and are consumed by
-queries/validation.
+module only maps near-misses onto roles that already exist in the schemas. Not
+every canonical role has a bespoke consumer: roles are also normalization targets
+and remain traversable by ``specflow trace``'s generic walk, so a role with no
+dedicated query is not automatically "dead vocabulary" (``executes`` is the one
+known-inert role — a cleanup candidate, not a design flaw).
 """
 
 from __future__ import annotations

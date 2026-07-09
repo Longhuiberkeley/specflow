@@ -1,6 +1,6 @@
 ---
 name: specflow-audit
-description: SCOPE = the whole project. Use for a FULL-PROJECT health review — runs a zero-question deterministic core with optional adversarial wings. Creates AUD and CHL artifacts. Triggers when the user says "audit the project," "health check," "how healthy is the project," or asks for a comprehensive project-wide assessment. NOT for: single-artifact review (use specflow-artifact-review), reviewing blast radius of recent changes (use specflow-change-impact-review), or quick spot-checks of one file.
+description: SCOPE = the whole project. Use for a FULL-PROJECT health review — runs a zero-question deterministic core with optional adversarial wings. Creates AUD and CHL artifacts. Triggers when the user says "audit the project," "health check," "how healthy is the project," "review the whole project," "review overall spec quality," or asks for a comprehensive project-wide assessment. NOT for: single-artifact review (use specflow-artifact-review), reviewing blast radius of recent changes (use specflow-change-impact-review), or quick spot-checks of one file.
 ---
 
 ## Freeform Input Handling

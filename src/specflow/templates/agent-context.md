@@ -1,12 +1,13 @@
 ## SpecFlow
 
-**Stop.** This is a SpecFlow project. All engineering work flows through `/specflow-*` skills.
+**Stop.** This is a SpecFlow project. Describe what you want in plain language and the matching `/specflow-*` skill engages automatically — the slash is optional shorthand. The raw `specflow` CLI is for CI and power users, not the primary interface.
 
 You are working in a **SpecFlow** project (spec-driven development). 
 Specs and work items are Markdown + YAML files. Do not edit `.specflow/` manually.
 
 ### Interfaces
 **Primary:** Use `/specflow-*` skills (e.g., `/specflow-discover`, `/specflow-plan`, `/specflow-execute`).
+**Intent-first (no slash required):** The user may describe intent in plain language ("add SSO," "review REQ-003," "are the docs stale?"); match it to the right skill and run it — the slash form is optional. When intent is vague, `/specflow-start` (the router) fires and points at the right skill.
 **CLI:** Use `specflow <cmd>` (e.g. `specflow trace <ID>`, `specflow update <ID>`) for automation and CI — not as a substitute for the skill workflow.
 
 ### Core Lifecycle

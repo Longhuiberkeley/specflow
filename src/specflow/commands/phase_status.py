@@ -19,10 +19,16 @@ from specflow.lib.learning import suggest_next_phase
 from specflow.lib.waves import compute_waves, filter_executable_stories
 from specflow.lib.display import RED, GREEN, YELLOW, CYAN, BOLD, NC
 
-# phase → the gate that must be green to leave that phase
+# phase → the gate consulted when leaving that phase (advisory — accounting, not
+# policing). All six REQ-004 §6 transitions are mapped so every phase-gate
+# checklist template is reachable; `phase-status` advises, it never blocks.
 _GATE_FOR_PHASE = {
+    "idle": "idle-to-discovering",
+    "discovering": "discovering-to-specifying",
     "specifying": "specifying-to-planning",
     "planning": "planning-to-executing",
+    "executing": "executing-to-verifying",
+    "verifying": "verifying-to-complete",
 }
 
 

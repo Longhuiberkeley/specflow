@@ -30,7 +30,7 @@ artifacts:
     - core
     title: Trace & Suspect Propagation
   REQ-004:
-    fingerprint: sha256:7dba50c26b8b
+    fingerprint: sha256:61ffca42745d
     id: REQ-004
     status: implemented
     tags:

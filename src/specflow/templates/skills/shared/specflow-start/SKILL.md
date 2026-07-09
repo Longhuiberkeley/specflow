@@ -1,6 +1,6 @@
 ---
 name: specflow-start
-description: Use when unsure which SpecFlow step to run next, or for a quick "where am I / what's next" orientation. Runs `specflow brief --next` for a deterministic next-step recommendation, asks ONE disambiguating question only if intent is ambiguous, and points at the right /specflow-* skill. Triggers on "what now", "what next", "where do I start", "continue", "resume", or general uncertainty about the next lifecycle step. NOT a replacement for the lifecycle skills (discover/plan/execute/ship) or the review skills — it only routes you to the correct one. Prefer this over guessing when the user's intent is vague.
+description: Use when unsure which SpecFlow step to run next, or for a quick "where am I / what's next" orientation. Runs `specflow brief --next` for a deterministic next-step recommendation, asks ONE disambiguating question only if intent is ambiguous, and points at the right /specflow-* skill. Triggers on "what should I do," "what's next," "what now," "where do I start," "where are we," "what's the status," "continue," "resume," "remind me where we are," "help me get started," "I'm stuck," "point me in the right direction," or any request that doesn't clearly match a specific lifecycle or review skill. This is the safe default when no other skill clearly fits — prefer routing over guessing. NOT a replacement for the lifecycle skills (discover/plan/execute/ship) or the review skills — it only routes you to the correct one. Prefer this over guessing when the user's intent is vague.
 ---
 
 # SpecFlow Start

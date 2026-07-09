@@ -1,6 +1,6 @@
 ---
 name: specflow-adapter
-description: Use to manage CI workflows, import/export artifacts, configure standards ingestion, or set up team roles and RBAC. Covers adapter configuration, hook management, and CODEOWNERS generation. This is infrastructure/ops configuration — NOT for requirements, architecture, implementation, or review workflows.
+description: Use to manage CI workflows, import/export artifacts, configure standards ingestion, or set up team roles and RBAC. Triggers when the user says "set up CI," "configure GitHub Actions for spec validation," "set up team roles / RBAC / CODEOWNERS," "import from DOORS / Polarion / ReqIF," or "export artifacts." Covers adapter configuration, hook management, and CODEOWNERS generation. This is infrastructure/ops configuration — NOT for requirements, architecture, implementation, or review workflows.
 ---
 
 ## Freeform Input Handling

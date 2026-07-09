@@ -4,6 +4,8 @@ import argparse
 import sys
 from pathlib import Path
 
+from specflow import __version__
+
 
 
 def _find_project_root() -> Path:
@@ -691,6 +693,10 @@ def main(argv: list[str] | None = None) -> int:
         description="SpecFlow — Spec-Driven Development Framework",
         epilog=_HELP_EPILOG,
         formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "--version", action="version", version=f"specflow {__version__}",
+        help="Print the SpecFlow version and exit.",
     )
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 

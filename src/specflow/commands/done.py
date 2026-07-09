@@ -84,7 +84,11 @@ def run(root: Path, args: dict[str, Any]) -> int:
         print(f"\n{RED}✗ {result.get('error', 'Phase closure failed')}{NC}")
         return 1
 
-    print(f"\n  {GREEN}✓ Phase '{result['phase_closed']}' closed.{NC}")
+    entered = result.get("phase_entered")
+    if entered and entered != result["phase_closed"]:
+        print(f"\n  {GREEN}✓ Phase '{result['phase_closed']}' closed → now in '{entered}'.{NC}")
+    else:
+        print(f"\n  {GREEN}✓ Phase '{result['phase_closed']}' closed.{NC}")
 
     suggestion = suggest_next_phase(root)
     print(f"  {suggestion}")

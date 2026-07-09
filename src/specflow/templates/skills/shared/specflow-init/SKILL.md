@@ -1,6 +1,6 @@
 ---
 name: specflow-init
-description: Use when setting up SpecFlow in a new or existing project for the FIRST TIME. Conversational bootstrap that scaffolds directories, installs hooks, generates CI workflows, and recommends next steps. NOT for: re-initializing an already-configured project, adding packs to an existing setup (use specflow-adapter), or routine configuration changes.
+description: Use when setting up SpecFlow in a new or existing project for the FIRST TIME. Triggers when the user says "set up SpecFlow," "initialize the project," or "get started with SpecFlow." Conversational bootstrap that scaffolds directories, installs hooks, generates CI workflows, and recommends next steps. NOT for: re-initializing an already-configured project, adding packs to an existing setup (use specflow-adapter), or routine configuration changes.
 ---
 
 ## Freeform Input Handling

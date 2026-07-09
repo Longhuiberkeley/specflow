@@ -12,6 +12,36 @@ from specflow.lib.artifacts import Artifact, discover_artifacts
 from specflow.lib.config import read_config, read_state, write_state
 
 
+# Canonical lifecycle phase order (REQ-004 §6 / ARCH-002). Single source of
+# truth: close_phase() advances `current` along this list and suggest_next_phase()
+# reads the next entry. Accounting only — nothing here gates or blocks a transition
+# (frozen accounting-not-policing); advisory readiness is `specflow phase-status`.
+PHASE_ORDER: list[str] = [
+    "idle",
+    "discovering",
+    "specifying",
+    "planning",
+    "executing",
+    "verifying",
+    "complete",
+]
+
+
+def next_phase(current: str) -> str:
+    """Return the phase that follows ``current`` in PHASE_ORDER.
+
+    Returns ``current`` unchanged if it is the terminal phase (``complete``) or
+    not in PHASE_ORDER, so the machine never invents a phase — it records only.
+    """
+    try:
+        idx = PHASE_ORDER.index(current)
+    except ValueError:
+        return current
+    if idx < len(PHASE_ORDER) - 1:
+        return PHASE_ORDER[idx + 1]
+    return current
+
+
 def extract_prevention_pattern(
     story: Artifact,
     pattern_description: str,
@@ -212,6 +242,17 @@ def close_phase(root: Path) -> dict[str, Any]:
     if "execution" in state:
         del state["execution"]
 
+    # Advance the phase (accounting — record progression; never a gate/block).
+    # Closing the current phase moves `current` to the next phase so the machine
+    # honestly tracks where the project is (REQ-004 §6 / ARCH-002). Advisory
+    # readiness is `specflow phase-status`'s job; `done` only records the advance.
+    new_phase = next_phase(current_phase)
+    if new_phase != current_phase:
+        state["current"] = new_phase
+        # Record entry into the new phase (ARCH-002 entered/exited history model).
+        history.append({"phase": new_phase, "entered": now})
+        state["history"] = history
+
     write_state(root, state)
 
     # Count artifacts by status
@@ -223,6 +264,7 @@ def close_phase(root: Path) -> dict[str, Any]:
     return {
         "ok": True,
         "phase_closed": current_phase,
+        "phase_entered": new_phase,
         "artifact_counts": status_counts,
         "history_entries": len(history),
     }
@@ -233,21 +275,9 @@ def suggest_next_phase(root: Path) -> str:
     state = read_state(root)
     current = state.get("current", "idle")
 
-    phase_order = [
-        "idle",
-        "discovering",
-        "specifying",
-        "planning",
-        "executing",
-        "verifying",
-        "complete",
-    ]
-
-    try:
-        idx = phase_order.index(current)
-        if idx < len(phase_order) - 1:
-            next_phase = phase_order[idx + 1]
-            return f"Suggested next phase: {next_phase}"
+    nxt = next_phase(current)
+    if nxt == current and current == "complete":
         return "Project is complete."
-    except ValueError:
+    if nxt == current:
         return f"Unknown current phase: {current}"
+    return f"Suggested next phase: {nxt}"

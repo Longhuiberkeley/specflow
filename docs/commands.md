@@ -6,6 +6,21 @@ Interface specs for each `/specflow-*` slash command. For a lifecycle overview, 
 
 ---
 
+## /specflow-start
+
+**One-line:** Orient on project state and route to the right next skill — the safe default when intent is vague.
+
+**Composes:** `specflow brief --next`
+
+**Flow:**
+1. Run `specflow brief --next` (free, deterministic) for a next-step recommendation.
+2. If unambiguous, tell the user exactly which skill to run next (e.g. *"REQs approved, no ARCH yet → `/specflow-plan`"*).
+3. If intent is ambiguous, ask **one** disambiguating question (e.g. review one artifact vs. change-impact vs. whole-project audit), then route.
+
+**Note:** This skill is a thin, host-neutral router — it never creates or modifies artifacts and never calls the Skill tool itself (it points you at the right `/specflow-*` skill). Prefer it over guessing. For a brand-new project, start with `/specflow-init` instead.
+
+---
+
 ## /specflow-init
 
 **One-line:** Bootstrap a SpecFlow project — scaffolds directories, installs skills, optional CI and standards packs.
@@ -22,7 +37,7 @@ Interface specs for each `/specflow-*` slash command. For a lifecycle overview, 
 **Writes:**
 - `.specflow/` internals (config, schemas, checklists, adapters)
 - `_specflow/` artifact directories (specs/, work/)
-- `.claude/skills/` (or `.opencode/`, `.gemini/`) — 10 skill directories
+- `.claude/skills/` (or `.opencode/`, `.gemini/`) — 13 skill directories (incl. the `specflow-start` router, `specflow-doc`, `specflow-references`)
 - SpecFlow section appended to `AGENTS.md` (or `CLAUDE.md`)
 - `.github/workflows/specflow.yml` (if CI requested)
 

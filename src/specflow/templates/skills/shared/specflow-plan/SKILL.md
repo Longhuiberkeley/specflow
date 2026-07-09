@@ -225,7 +225,7 @@ Update `.specflow/state.yaml`: set `current: planning`, add history entry.
 **Accomplished:** ARCH ×N, DDD ×N, STORY ×N, SPIKE ×N (all draft).
 **Key decisions + rationale:** <the 2–3 architecture decisions from the approval gate, each with the why>
 **Pending / blocked:** Artifacts are draft — need human approval before execution. <any assumption/premortem DECs>
-**Exact next command:** `specflow approve --batch --type STORY` (and ARCH/DDD as needed), then `/specflow-execute`.
+**Exact next command:** `specflow approve --type STORY` (and ARCH/DDD as needed), then `/specflow-execute`.
 ```
 
 ## Rules

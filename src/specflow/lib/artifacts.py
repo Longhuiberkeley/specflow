@@ -349,6 +349,12 @@ def find_orphans(artifacts: list[Artifact]) -> list[Artifact]:
 def find_missing_v_pairs(artifacts: list[Artifact]) -> list[tuple[Artifact, str]]:
     """Find spec artifacts missing their verification test pair.
 
+    SPEC-anchored V-model metric (REQ-013 / ARCH-008): a test verifies its source
+    SPEC (REQ↔QT, ARCH↔IT, DDD↔UT) via 'verified_by'. This is one of REQ-012's TWO
+    distinct coverage metrics; ``check_coverage()`` implements the other
+    (STORY-anchored). They intentionally coexist — do not "merge" or "fix" the
+    apparent difference between them.
+
     Returns list of (spec_artifact, missing_test_prefix) tuples.
     """
     id_index = build_id_index(artifacts)

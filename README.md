@@ -121,7 +121,9 @@ Full walkthrough in the [getting-started guide](docs/getting-started.md).
 | **Docs knowledge surface** *(new)* | `docs/` + root markdown is a recognized surface — `@ID`-cited, shown in `specflow brief`, staleness-warned, never an artifact type |
 | **1 runtime dependency** | Just `pyyaml`. Everything else is stdlib. |
 
-## Slash commands
+## Skills (auto-trigger from chat; slash optional)
+
+You can invoke a skill by typing its `/specflow-*` slash **or** by just describing what you want in chat — the matching skill fires automatically. The slash is shorthand for pinning a specific skill; it's never required. When intent is vague, the `specflow-start` router points you at the right one.
 
 | Command | What it does |
 |---------|---------|

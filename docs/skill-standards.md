@@ -26,7 +26,12 @@ specflow-discover/
 - Contains Markdown files with detailed constraints, large checklists, or schema examples.
 - **Rule:** The agent only reads a file in `references/` if the `SKILL.md` instructs it to do so based on the current context (e.g., "If the user is building a web app, read `references/web-app-checklist.md`").
 
-### 3. `scripts/` (Zero-Token Operations)
-- Contains executable shell or Python scripts.
-- **Rule:** If a task is deterministic (e.g., validating links, computing SHA256 fingerprints, formatting an ID), the AI MUST delegate it to a script rather than doing it via LLM tokens.
-- Scripts must output clear, LLM-friendly stdout (e.g., `Success: Validated 45 links`).
+### 3. Deterministic Operations (Zero-Token)
+
+SpecFlow is **Python-primary** (D-16/D-17): all deterministic logic lives in the `specflow` Python CLI (`src/specflow/lib/`). Skills do **not** bundle their own shell scripts for validation — they delegate to `specflow <cmd>` (e.g., `uv run specflow artifact-lint`, `specflow trace`, `specflow brief`).
+
+- **Rule:** If a task is deterministic (validating links, computing SHA256 fingerprints, formatting an ID, computing waves), the AI MUST delegate it to a `specflow` CLI command rather than doing it via LLM tokens.
+- CLI output is LLM-friendly (e.g., `Success: Validated 45 links`).
+- A skill may carry a `scripts/` dir only for genuine per-skill tooling (today only `specflow-pack-author` does); the norm is delegation to the CLI.
+
+> **Template layering:** what ships is `src/specflow/templates/skills/shared/<skill>/`; the live dogfood copy is `.claude/skills/<skill>/`. The two are kept byte-identical (mirror with rsync when editing); `specflow init`/`refresh` copy templates → each host's skill dir.

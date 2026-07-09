@@ -1,6 +1,6 @@
 # Getting Started with SpecFlow
 
-A walkthrough from cold install to a complete discover → plan → execute → ship cycle, using the `/specflow-*` slash command surface.
+A walkthrough from cold install to a complete discover → plan → execute → ship cycle. Skills auto-trigger from plain chat (the `/specflow-*` slash is optional shorthand); this walkthrough shows the slash form for clarity.
 
 ## Prerequisites
 
@@ -46,7 +46,7 @@ _specflow/
     ├── spikes/               # SPIKE artifacts
     └── decisions/            # DEC artifacts
 .specflow/                    # Framework internals (don't edit manually)
-.claude/skills/               # 10 slash command skill files
+.claude/skills/               # 13 skill directories (incl. the specflow-start router, specflow-doc, specflow-references)
 ```
 
 ### Already have a codebase? (Brownfield adoption)

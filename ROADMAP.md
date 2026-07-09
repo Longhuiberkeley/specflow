@@ -2,7 +2,7 @@
 
 SpecFlow ships incrementally. This document tracks what shipped in each release, what's next, and the longer-term direction.
 
-For the implementation plan (phase breakdown, dependency graph), see [docs/plan.md](docs/plan.md).
+For the original implementation plan (phase breakdown, dependency graph — now historical, superseded by the release history below), see [docs/.archive/plan.md](docs/.archive/plan.md).
 
 ## v0.2.0
 

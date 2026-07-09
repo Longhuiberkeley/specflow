@@ -1,6 +1,6 @@
 ---
 name: specflow-discover
-description: Use to start the SpecFlow requirements discovery workflow — the entry point for any new feature, enhancement, or specification task. Triggers when the user says "add X," "build Y," "create Z," "I need requirements for," "capture specs for," or "what should the system do?" Also triggers for reverse lifecycle: "rethink the requirements," "revise the requirements," "go back to requirements," or when the user wants to revisit specs after planning or executing. This is step 1 of the core lifecycle — use it FIRST for any new feature or change that needs specification, BEFORE specflow-plan and specflow-execute. NOT for: data exploration, data cleaning, researching technologies, prototyping, running experiments, or technical prep work unrelated to requirements authoring.
+description: Use to start the SpecFlow requirements discovery workflow — the entry point for any new feature, enhancement, or specification task. Triggers when the user wants to start something NEW — "add a feature," "build a NEW [X]," "I want to create [Z]," "we need [capability]," "capture requirements for," or "what should the system do?" Use this FIRST when the idea is new and no REQ exists yet (if REQs are already approved and stories are queued for coding, use specflow-execute). Also triggers for reverse lifecycle: "rethink the requirements," "revise the requirements," "go back to requirements," or when the user wants to revisit specs after planning or executing. This is step 1 of the core lifecycle — use it FIRST for any new feature or change that needs specification, BEFORE specflow-plan and specflow-execute. NOT for: data exploration, data cleaning, researching technologies, prototyping, running experiments, or technical prep work unrelated to requirements authoring.
 ---
 
 ## Freeform Input Handling
@@ -266,7 +266,7 @@ If this was the first discovery and the project was in `idle` state, update stat
 **Accomplished:** Created REQ-<id-1>, REQ-<id-2>, … (N requirements, draft).
 **Key decisions + rationale:** <the 2–3 decisions from the approval gate, each with the why — also persisted as DEC artifacts>
 **Pending / blocked:** REQs are draft — need human approval before planning. <any open assumption/risk DECs>
-**Exact next command:** `specflow approve --batch --type REQ` (approve them), then `/specflow-plan`.
+**Exact next command:** `specflow approve --type REQ` (approve them), then `/specflow-plan`.
 ```
 
 Requirements are currently in **draft** status and must be approved before planning.

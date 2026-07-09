@@ -239,7 +239,7 @@ def _next_skill_recommendation(
             core = "No REQs yet → /specflow-discover (capture requirements)."
         elif reqs_draft:
             core = (f"{reqs_draft} REQ(s) in draft → review & approve "
-                    f"(`specflow approve --batch --type REQ`), then /specflow-plan.")
+                    f"(`specflow approve --type REQ`), then /specflow-plan.")
         else:
             core = "REQs approved, no ARCH yet → /specflow-plan (decompose into architecture & stories)."
     elif phase == "specifying":

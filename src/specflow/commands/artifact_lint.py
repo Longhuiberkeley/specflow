@@ -581,6 +581,11 @@ def check_coverage(
 ) -> dict[str, str | int]:
     """Check REQ→ARCH→STORY→test coverage completeness at all V-model levels.
 
+    STORY-anchored coverage metric (REQ-012 #2: 'STORY test coverage' = implemented
+    stories with UT/IT/QT linked via ``verified_by``). This coexists BY DESIGN with
+    ``find_missing_v_pairs()`` (the SPEC-anchored metric, REQ-013 / ARCH-008) —
+    REQ-012 defines both; the two functions are not contradictory.
+
     For each approved REQ, verifies:
       - At least one ARCH links to it via 'derives_from'
       - At least one STORY links to it via 'implements'
