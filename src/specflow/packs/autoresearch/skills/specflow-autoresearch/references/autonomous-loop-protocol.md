@@ -135,6 +135,8 @@ These checks operationalize **BP-01** (EDA), **BP-10/11/12** (validation integri
 
 If a prior LOOP on the same COMP has `eda_completed: true` AND the data has not changed (same COMP `data_source`, same git hash of data files), skip this phase. The prior LOOP's `eda_summary` is valid. If data has changed, re-run EDA — stale data quality assumptions are dangerous.
 
+**Quick / smoke tier (LOOP `budget` ≤ 5).** When the LOOP budget is ≤ 5 (a "kick the tires" sanity check, not a real exploration), defer full EDA to the first fatal signal: run only check #1 (target distribution) and check #4 (scale/range) now, and defer the rest until a verify failure or anomaly forces them. The agent MUST announce *"quick mode: skipping full EDA — rerun without it before trusting results."* At budget > 5 the full EDA above is mandatory (BP-01).
+
 **Logging pre-check results (Phase 0.5):**
 
 ```bash
@@ -206,6 +208,8 @@ specflow update LOOP-NNN \
 ### Skip Rule
 
 If a prior LOOP on the same COMP has `research_agenda` recorded AND the agenda is still valid (same COMP goals, same constraints, same data), the agent may inherit it — but MUST re-rank based on new FINDs and add any directions that emerged from the prior LOOP's `unexplored_directions` field.
+
+**Quick / smoke tier (LOOP `budget` ≤ 5).** When the LOOP budget is ≤ 5, the mandatory 5-direction first-principles agenda is reduced to a **minimal 2-direction agenda** (the highest-impact direction + one orthogonal alternative) so one iteration can actually run. This is NOT a real first-principles decomposition — the agent MUST announce *"quick mode: minimal agenda — rerun without it for the full 5-direction gate before trusting the search."* At budget > 5 the full Phase 0.7 gate above is mandatory and the loop does not start without a recorded 5-direction agenda.
 
 ## Phase 1: Review (before each iteration)
 

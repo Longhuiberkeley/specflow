@@ -566,7 +566,10 @@ def _check_conflicts(
                             )
 
     icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
-    detail_msg = "; ".join(details) if details else "No conflicting REQ constraints detected"
+    detail_msg = "; ".join(details) if details else (
+        "No numeric-range REQ conflicts detected "
+        "(semantic/logical conflicts need a REQ review: CKL-REV-REQ-03)"
+    )
 
     return {
         "status_icon": icon,

@@ -238,7 +238,7 @@ def _next_skill_recommendation(
         if reqs == 0:
             core = "No REQs yet → /specflow-discover (capture requirements)."
         elif reqs_draft:
-            core = (f"{reqs_draft} REQ(s) in draft → review & approve "
+            core = (f"{reqs_draft} REQ(s) in draft → confirm with the user, then approve "
                     f"(`specflow approve --type REQ`), then /specflow-plan.")
         else:
             core = "REQs approved, no ARCH yet → /specflow-plan (decompose into architecture & stories)."
@@ -256,7 +256,17 @@ def _next_skill_recommendation(
         if next_wave:
             core = f"Next wave ready ({len(next_wave)} stories) → /specflow-execute (or `specflow go`)."
         elif stories and _count("STORY", "implemented") >= stories:
-            core = "All stories implemented → /specflow-ship (release)."
+            # Lifecycle is execute → artifact-review → ship. The router used to jump
+            # straight to ship here, silently dropping the artifact-review step that
+            # /specflow-execute's own exit message and AGENTS.md both document. If the
+            # stories are already verified or V-model tests (UT/IT/QT) exist, review has
+            # happened — otherwise insert /specflow-artifact-review before ship.
+            reviewed = _count("STORY", "verified") or (_count("UT") + _count("IT") + _count("QT"))
+            if reviewed:
+                core = "All stories implemented & reviewed → /specflow-ship (release)."
+            else:
+                core = ("All stories implemented → /specflow-artifact-review "
+                        "(review + V-model tests UT/IT/QT), then /specflow-ship.")
         else:
             core = "Continue /specflow-execute."
     elif phase in ("verifying", "complete"):

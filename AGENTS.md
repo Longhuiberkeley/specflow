@@ -75,9 +75,9 @@ SpecFlow IS your persistent memory. You do not have reliable conversation memory
 - Editing a doc is git-history-only — it never creates a REQ/ARCH/DEC. Use `/specflow-doc`.
 
 **Recall before you act:**
-- Run `specflow status` for a project-wide overview (phase, counts, stale items).
-- Scan `_index.yaml` files in relevant directories — they give you title + status + tags for every artifact without reading full bodies.
-- Read `.specflow/state.yaml` for current phase; `.specflow/config.yaml` for domain context.
+- Run `specflow brief` for a one-call deterministic digest (phase, inventory by status, suspects, next wave, recent changes); use `brief --next` when you only need the next step. This is the default first move on any vague or fresh prompt — cheaper and more complete than scanning files by hand.
+- For a wider dashboard view, run `specflow status` (phase, counts, stale items).
+- Drill down only when brief points at something specific: scan `_index.yaml` files in relevant directories (title + status + tags for every artifact without reading full bodies), and read `.specflow/state.yaml` for the current phase / `.specflow/config.yaml` for domain context.
 - Use `specflow trace <ID>` to walk the link chain and understand context.
 - Use `git log --since=<date> -- _specflow/` for temporal recall — "what changed recently."
 - Check `.specflow/impact-log/` for causality — what changed and why.
@@ -108,7 +108,9 @@ SpecFlow IS your persistent memory. You do not have reliable conversation memory
 
 ### Routing
 - Use core `/specflow-*` skills for ALL engineering work: requirements, architecture, stories, implementation, review, release.
+- **Orient first on a vague or fresh prompt:** run `specflow brief --next` (or `/specflow-start`) to get the deterministic next-step recommendation, then route to the matching skill. Do not guess the phase from memory — read it.
 - `/specflow-doc` for writing/citing/syncing docs and checking doc staleness. Docs are a knowledge surface, not artifacts — a decision is still a DEC, a requirement is still a REQ; `/specflow-doc` is only for the prose that explains and cites them.
+- **Research / experiment routing:** bare "research whether X" / "prototype Y" / a quick throwaway spike → create a **SPIKE** (`specflow create --type spike`) — it is a work artifact, not a routable skill. Reproducible / overnight / competition-scoped experimentation → the **autoresearch** pack (`/specflow-autoresearch`, needs a COMP with a verify command). A multi-source fact-checked report → the host's `deep-research` skill. Do not route any of these to `/specflow-discover` (it authors requirements, not research).
 - Packs (e.g., autoresearch) are **separate subsystems**. Only use pack skills when the user explicitly asks for that pack's domain. Never invoke pack skills for codebase exploration, bug investigation, feature implementation, or general engineering — those are core engineering.
 - **By default**, new features go through the full pipeline. Typo fixes and trivial changes may use the lean path — but still trace to a STORY.
 - **Escape hatch:** The user can always override. When the user says "skip," "proceed anyway," or "move on," do exactly that. But before proceeding past a blocking check, articulate: "Proceeding past [specific item]. Risk: [what could go wrong]. Noted."

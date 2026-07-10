@@ -1,6 +1,6 @@
 ---
 name: specflow-execute
-description: Implementation path for planned stories. Orchestrates implementation of approved stories, updates artifact statuses, creates V-model test artifacts (UT/IT/QT), and enforces traceability. Triggers when the user is ready to CODE approved, planned work — "implement the stories," "execute the plan," "start coding," "build out the approved stories," or "run the next wave." Also triggers for reverse lifecycle: "rethink the implementation," or "this approach isn't working." (To go BACK to architecture use specflow-plan; to go back to requirements use specflow-discover.) This is step 3 of the core lifecycle. For trivial changes (typos, formatting, dependency updates), the lean path is available — but every code change still traces to a STORY. NOT for: requirements gathering (use specflow-discover), architecture design (use specflow-plan), single-artifact review (use specflow-artifact-review), or research experiments.
+description: Implementation path for planned stories. Orchestrates implementation of approved stories, updates artifact statuses, creates V-model test artifacts (UT/IT/QT), and enforces traceability. Triggers when the user is ready to CODE approved, planned work — "implement the stories," "execute the plan," "start coding," "build out the approved stories," or "run the next wave" — or for a trivial one-line fix — "fix the typo," "bump the dep / update the dependency," "rename X to Y," "fix the formatting." Also triggers for reverse lifecycle: "rethink the implementation," or "this approach isn't working." (To go BACK to architecture use specflow-plan; to go back to requirements use specflow-discover.) This is step 3 of the core lifecycle. For trivial changes (typos, formatting, dependency updates), the lean path (Step 1L) is available — but every code change still traces to a STORY. NOT for: requirements gathering (use specflow-discover), architecture design (use specflow-plan), single-artifact review (use specflow-artifact-review), or research experiments.
 ---
 
 ## Freeform Input Handling
@@ -64,13 +64,28 @@ The planning-to-executing phase gate IS the readiness check. Run it before any i
 
 5. Run `uv run specflow status` silently for the state overview.
 
-6. **RBAC pre-check (if `.specflow/adapters.yaml` has team config):** Verify the current user is authorized to implement the in-scope stories. Run `uv run specflow hook pre-commit` as a dry-run — it checks RBAC on staged artifact changes. If the project has no team configuration, skip this step. If RBAC check fails, surface the failure as a `warning` — the user can proceed but the commit hook will catch it.
+6. **Authorization note (if `.specflow/adapters.yaml` has team config):** Authorization is enforced at commit time by the pre-commit hook (advisory) and by branch protection on the hosting platform (the real enforcement). There is **no meaningful pre-code authorization check** — `specflow hook pre-commit` inspects `git diff --cached`, which is empty before any code is written, so a dry-run here always passes vacuously. If you are on a team project and unsure whether you hold the implementer role, inspect `.specflow/config.yaml` team roles now; otherwise skip and let the commit hook enforce at commit time.
 
- **Why the gate is mandatory:** the gate verifies the task is sufficiently specified to start coding (ARCH exists, links resolve, AC are clear, interfaces defined, test strategy specified, dependencies approved, RBAC allows implementation). Skipping it lets implementation start against draft specs and produces rework.
+ **Why the gate is mandatory:** the gate verifies the task is sufficiently specified to start coding (ARCH exists, links resolve, AC are clear, interfaces defined, test strategy specified, dependencies approved). Skipping it lets implementation start against draft specs and produces rework.
 
 7. **Load best practices** as context for implementation. Read BP artifacts from `_specflow/specs/best-practices/`. If execution-phase BPs don't exist yet, generate them covering implementation patterns relevant to the project domain.
 
 **Proactive Enforcement Loop:** Actively audit your implementation strategy against these BPs before writing code. If a BP suggests a specific pattern (e.g., defensive copies for data pipelines, dependency injection for web apps), ensure your code uses it, and briefly tell the user that you applied it.
+
+### Step 1L: Trivial-change lean path (typo / formatting / dependency bump / rename)
+
+For an unplanned trivial fix that arrives mid-chat ("fix the typo in the README", "bump requests", "rename foo → bar"), the full wave flow is overkill — but the change still must trace to a STORY. When no STORY exists yet for the change:
+
+1. **Materialize one backfilled STORY** linked to an existing maintenance/generic REQ (create a generic maintenance REQ first if none exists):
+   ```
+   uv run specflow create --type story --title "<change>" --status approved \
+     --links '[{"target":"<maintenance-REQ>","role":"implements"}]' --tags backfilled
+   ```
+2. The readiness gate is **advisory** for this change type — state the skip reason (per the table above) and proceed; do not block on missing DDD or test strategy.
+3. Make the change. **Skip wave planning and V-model (UT/IT/QT) generation** — a typo/formatting/rename has no behavioral surface; for a dependency bump, run the existing suite only if the bump could change behavior.
+4. Update the STORY to `implemented` and run `uv run specflow artifact-lint` so traceability stays clean.
+
+This owns the trivial case end-to-end instead of stranding it between `/specflow-discover` (which excludes it) and execute (which previously had no way to create the required STORY).
 
 ### Step 2: Wave Planning
 

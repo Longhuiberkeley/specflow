@@ -11,6 +11,18 @@ Maps every producer-consumer relationship across SpecFlow's autoresearch protoco
 | `specflow-plan` (ARCH/DDD artifacts) | COMP infrastructure design | During competition setup | Architecture for the verify pipeline, data storage, and experiment infrastructure |
 | `specflow-adapter` (CI, hooks) | LOOP execution environment | Before first LOOP | Pre-commit hooks, CI validation of EXPT artifacts |
 
+## Autoresearch → Core SpecFlow
+
+Research outputs are **not** a dead end — the pipeline's most valuable results promote back into core spec artifacts so they carry traceability and survive the next session. This is the research-side mirror of the Permanence Test.
+
+| Autoresearch produces | Core SpecFlow consumes | When | How |
+|----------------------|------------------------|------|-----|
+| `FIND` (`deployability=deployable`, `confidence` ≥ medium) | `/specflow-discover` → new **REQ** | When the user says "ship this finding", "productionize", "promote the winning approach" | Create the REQ with `--links '[{"target":"FIND-NNN","role":"derives_from"}]'`; copy `FIND.what_worked` / `best_metric` into the REQ rationale so the evidence chain carries forward |
+| `EXPT` (winning, `post_check` pass) | ops **RUN** (if the ops pack is installed) | When a winning experiment is deployed live | Create RUN with `derives_from` the EXPT (and the FIND that generalized it); see the ops pack |
+| `FIND` (confirmed, but `deployability=exploratory`) | nothing — stays as accumulated knowledge | Default | No promotion; the FIND feeds the next LOOP's `knowledge_input` |
+
+The promotion is the explicit "research outgrew a one-off answer" trigger from the Permanence Test — see `SKILL.md` § "Promote Research Output" for the recipe.
+
 ## Autoresearch Internal
 
 ### COMP → LOOP

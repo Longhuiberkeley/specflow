@@ -1,6 +1,6 @@
 ---
 name: specflow-ops
-description: Live-operations workflow for the ops pack (RUN + MONITOR). Use when the user deploys or runs something live, monitors a live system's health/metrics, captures ephemeral/live data that won't be reproducible, or investigates drift. Creates a RUN (deployment frozen at deploy-time) and appends MONITOR observations (timestamped metric/signal journal). Triggers on "deploy", "go live", "monitor this run", "capture live odds/data", "is it drifting", "check health". NOT for offline experiments (use /specflow-autoresearch EXPT), writing app code (use /specflow-execute STORY), or requirements authoring (use /specflow-discover).
+description: Live-operations workflow for the ops pack (RUN + MONITOR). Use when the user deploys or runs something live, monitors a live system's health/metrics, captures ephemeral/live data that won't be reproducible, or investigates drift. Creates a RUN (deployment frozen at deploy-time) and appends MONITOR observations (timestamped metric/signal journal). Triggers on "deploy", "go live", "monitor this run", "capture live odds/data", "is it drifting", "check LIVE health / is the deployed run drifting". NOT for offline experiments (use /specflow-autoresearch EXPT), writing app code (use /specflow-execute STORY), requirements authoring (use /specflow-discover), or a project-wide spec/health audit (use /specflow-audit — "health check" means project health there, not live-system health here).
 ---
 
 # SpecFlow Ops

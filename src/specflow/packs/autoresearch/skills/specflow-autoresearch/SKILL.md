@@ -3,8 +3,9 @@ name: specflow-autoresearch
 description: >
   Use when the user wants to run autonomous research loops, set up competitions,
   review experiment findings, explore competitions, run experiments overnight,
-  or set up a benchmark. Activates the autoresearch pack's competition-scoped
-  experimentation with knowledge condensation.
+  set up a benchmark, or promote a deployable finding / productionize a winning
+  experiment back into core requirements. Activates the autoresearch pack's
+  competition-scoped experimentation with knowledge condensation.
 ---
 
 ## Freeform Input Handling
@@ -54,6 +55,7 @@ For multi-competition repos, all commands accept `--competition COMP-NNN`. Omit 
 - User says "set up a competition", "create a benchmark" → walk through COMP creation
 - User says "review findings", "what did we learn", "show me what worked" → review FINDs
 - User says "leaderboard", "best experiments", "top results" → show leaderboard
+- User says "promote this finding", "productionize", "ship the winning experiment", "turn this into a requirement" → promote a deployable FIND to a core REQ (see Promote Research Output below)
 
 ## Safety Posture
 
@@ -67,6 +69,8 @@ The autoresearch skill grants the agent broad iterative authority — read, edit
 - **LOOP artifact is the source of truth.** Running totals, best metric, iteration counts all live on the LOOP. Never modify `.specflow/` internals directly.
 
 ## Setup Gate
+
+> **Quick / smoke tier (LOOP `budget` ≤ 5).** For a fast "just try 3 variants" sanity check, the setup ceremony below collapses: skip the Step 2 noise probe (already the run-path default) and collapse the Step 3 Goal → Thesis → RQ ladder walk to a single `LOOP.goal` (no forced multi-RQ elicitation). In `autonomous-loop-protocol.md`, Phase 0.6 EDA and Phase 0.7's 5-direction agenda are likewise reduced at budget ≤ 5 (see their skip-rules). When you take this path, you MUST announce: *"quick mode: reduced rigor — rerun without it before trusting these results."* Full rigor stays mandatory for the pack's real target (>10-iteration overnight loops).
 
 Before running any loop, run the plan checklist and complete these steps:
 
@@ -178,7 +182,7 @@ A COMP is **durable** — it pins a dataset, metric, and verify command. When th
   ```bash
   specflow create --type competition --title "Track A v2: + cross-asset features" \
     --set verify_command="..." --set metric_name="Sharpe" --set metric_direction=higher_is_better \
-    --set links='[{"target":"COMP-001","role":"derives_from"}]'
+    --links '[{"target":"COMP-001","role":"derives_from"}]'
   # then the first LOOP on COMP-002 loads confirmed FINDs from COMP-001:
   specflow create --type loop --title "..." --set competition=COMP-002 \
     --set mode=explore --set budget=40 --set knowledge_input='["FIND-003","FIND-007"]'
@@ -258,6 +262,21 @@ The CLI shows all FINDs, top EXPTs (with auxiliary metrics), and loop history. A
 1. Confirm draft FINDs? Supersede outdated ones?
 2. Suggest next LOOP mode based on results (see `references/explore-exploit-protocol.md`)
 3. Review auxiliary metrics trends across kept EXPTs (drawdown increasing? trade count declining?)
+
+## Promote Research Output (Autoresearch → Core)
+
+A confirmed `FIND` with `deployability: deployable` (and `confidence` ≥ medium) is the pipeline's production-ready output — don't let it die on the research island. Promote it back into a core REQ so it carries traceability and survives the next session:
+
+1. **Run `/specflow-discover`** and create a REQ capturing the productionized behavior, linked back to the FIND:
+   ```bash
+   specflow create --type requirement --title "<what the finding delivers>" \
+     --links '[{"target":"FIND-NNN","role":"derives_from"}]' \
+     --body "## Rationale\nProductionizes FIND-NNN: <what_worked>. Best metric: <best_metric>.\n\n## Acceptance Criteria\n1. ..."
+   ```
+2. Copy the FIND's `what_worked` / `best_metric` / `summary` into the REQ rationale and acceptance criteria so the evidence chain survives.
+3. A **winning EXPT** that goes live → create an ops **RUN** (`derives_from` the EXPT) via the ops pack, if installed.
+
+The `:review` step should proactively ask *"This FIND is deployable — promote to a REQ?"* whenever a reviewed FIND has `deployability: deployable`. See `references/protocol-integrations.md` § "Autoresearch → Core SpecFlow" for the full mapping.
 
 ## Leaderboard Subcommand
 

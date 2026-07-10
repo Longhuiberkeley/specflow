@@ -59,12 +59,24 @@ If **no** marker is found, ask:
 > - Kiro
 > - Other
 
+### 1b. New project, or bringing an existing codebase?
+
+Ask (bounded):
+
+> "Is this a NEW project, or are you bringing an EXISTING codebase into SpecFlow?"
+> - New project (Recommended)
+> - Existing codebase
+
+If **Existing codebase** (brownfield): remember a `brownfield` flag and prefer the **adoption** preset (see Step 2) — it installs the `/specflow-adopt` skill, which inventories your code and backfills an as-built baseline instead of authoring requirements from scratch. Greenfield projects do not need it.
+
+*Freeform input:* if the user's message already implies an existing codebase ("set up SpecFlow for my project", "add SpecFlow to this repo") and the repo has existing source files, set the `brownfield` flag without asking.
+
 ### 2. Gather project context
 
 Ask the user:
 
 - "What type of project is this?" -- bounded options: Web App, CLI Tool, Library, Firmware/Embedded, Data Pipeline, Mobile, Other
-- "Do you want to apply an industry standards preset?" -- bounded options: `iso26262-demo`, `default`, or None (Recommended)
+- "Do you want to apply an industry standards preset?" -- bounded options: `iso26262-demo`, `default`, `adoption` (existing codebase — installs `/specflow-adopt`), or None (Recommended)
 - "Do you want to install optional artifact types (hazard, risk, control)?" -- bounded options: Yes, No (Recommended)
 - "Which CI provider do you use?" -- bounded options: GitHub Actions (Recommended), GitLab CI, None
 - "Do you have any specific compliance standard packs you want to install?" -- free text, or None (Recommended)
@@ -132,7 +144,11 @@ Summarize what was done:
 
 Then recommend:
 
-> "Your project is ready. Run `/specflow-discover` to start capturing requirements, `/specflow-adapter` to configure CI or exchange integrations first, or `/specflow-doc` to cite your spec from existing docs or your README."
+> If **greenfield**: "Your project is ready. Run `/specflow-discover` to start capturing requirements, `/specflow-adapter` to configure CI or exchange integrations first, or `/specflow-doc` to cite your spec from existing docs or your README."
+>
+> If **brownfield** (adoption preset): "Your project is ready. Run `/specflow-adopt` to inventory your existing code and backfill an as-built baseline (forward work for new features then resumes through `/specflow-discover`). Or `/specflow-adapter` to configure CI."
+
+**Upgrade note.** After upgrading SpecFlow (`uv tool upgrade specflow`), remind the user to run `uv run specflow refresh` — it updates the copied skills, agent-context block, and templates in this repo without a full re-init.
 
 ## Rules
 

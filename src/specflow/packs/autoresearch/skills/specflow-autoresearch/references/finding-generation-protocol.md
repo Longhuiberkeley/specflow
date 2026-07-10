@@ -125,6 +125,8 @@ Not all "what worked" findings are deployable. A high-Sharpe strategy with 1,000
 | **conditional** | Promising but needs additional guard (e.g., "deployable only with <0.1% slippage") |
 | **not_deployable** | Metric looks good but post-checks fail; too fragile; not cost-effective |
 
+> **Promote deployable findings back to core.** A `deployable` FIND (with `confidence` ≥ medium) should be promoted to a core REQ via `/specflow-discover`, linked `derives_from` the FIND so the evidence chain carries forward — see `SKILL.md` § "Promote Research Output" and `protocol-integrations.md` § "Autoresearch → Core SpecFlow". A deployable finding that stays on the research island is a lost production result.
+
 ### safety_assessment
 
 For `safety_critical` domains (medical, automotive, aerospace). A finding is not "confirmed" unless its safety impact is understood.
