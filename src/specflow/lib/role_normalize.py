@@ -67,11 +67,14 @@ _SYNONYMS: dict[str, str] = {
     "guides": "guided_by",
     "specifies": "specified_by",
     "applies": "applies_to",
+    "replaces": "supersedes",
+    "supersede": "supersedes",
 }
 
 # Inverse roles: alias -> canonical role to author on the OTHER artifact.
 _INVERSES: dict[str, str] = {
     "superseded_by": "supersedes",
+    "superceded_by": "supersedes",
     "derives": "derives_from",
     "derived_into": "derives_from",
     "produces": "derives_from",

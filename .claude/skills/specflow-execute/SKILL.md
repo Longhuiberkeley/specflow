@@ -24,7 +24,7 @@ Orchestrate the implementation of planned stories and update tracking artifacts.
 
 ### Step 0: Reverse Lifecycle Check
 
-If the user said "rethink the implementation," "this approach isn't working," or "go back to architecture" (or if you detect the user wants to revisit architecture/requirements after executing), ask: "Do you want to (a) revise the current STORY's implementation, (b) go back to architecture (run /specflow-plan), or (c) go back to requirements (run /specflow-discover)?" If revising a STORY, read the existing STORY and DDD and offer targeted edits rather than starting from scratch. If going back to architecture or requirements, route the user to the appropriate skill.
+If the user said "rethink the implementation," "this approach isn't working," or "go back to architecture" (or if you detect the user wants to revisit architecture/requirements after executing), ask: "Do you want to (a) revise the current STORY's implementation, (b) go back to architecture (run /specflow-plan), or (c) go back to requirements (run /specflow-discover)?" If revising a STORY, read the existing STORY and DDD and offer targeted edits rather than starting from scratch, and record the rewind: `uv run specflow phase-set executing --reason "<why>"` so `brief --next` stays honest. If going back to architecture or requirements, route the user to the appropriate skill — it records its own phase-set.
 
 ### Step 1: Implementation-Readiness Gate
 
@@ -64,7 +64,7 @@ The planning-to-executing phase gate IS the readiness check. Run it before any i
 
 5. Run `uv run specflow status` silently for the state overview.
 
-6. **Authorization note (if `.specflow/adapters.yaml` has team config):** Authorization is enforced at commit time by the pre-commit hook (advisory) and by branch protection on the hosting platform (the real enforcement). There is **no meaningful pre-code authorization check** — `specflow hook pre-commit` inspects `git diff --cached`, which is empty before any code is written, so a dry-run here always passes vacuously. If you are on a team project and unsure whether you hold the implementer role, inspect `.specflow/config.yaml` team roles now; otherwise skip and let the commit hook enforce at commit time.
+6. **Authorization note (if `.specflow/adapters.yaml` has team config):** Authorization is enforced at commit time by the pre-commit hook (advisory) and by branch protection on the hosting platform (the real enforcement). There is **no meaningful pre-code authorization check** — `specflow hook pre-commit` inspects `git diff --cached`, which is empty before any code is written, so a dry-run here always passes vacuously. If you are on a team project and unsure whether you hold the implementer role, run `uv run specflow rbac check` now to resolve your roles (add `--type <type> --to-status <status>` to test a specific transition); otherwise skip and let the commit hook enforce at commit time.
 
  **Why the gate is mandatory:** the gate verifies the task is sufficiently specified to start coding (ARCH exists, links resolve, AC are clear, interfaces defined, test strategy specified, dependencies approved). Skipping it lets implementation start against draft specs and produces rework.
 

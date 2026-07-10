@@ -432,10 +432,23 @@ def _check_fingerprints(
     }
 
 
+# Leading list/numbering markers ("- ", "* ", "+ ", "1. ", "2) ") stripped
+# before the NFR measurable-threshold digit scan, so an item's own ordinal
+# doesn't get mistaken for a measurable value.
+_AC_LIST_MARKER_RE = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s+", re.MULTILINE)
+
+
 def _check_acceptance(
     artifacts: list[art_lib.Artifact],
 ) -> dict[str, str | int]:
-    """Check that every REQ has acceptance criteria."""
+    """Check that every REQ has non-empty acceptance criteria.
+
+    Also warns (non-blocking) when an NFR-tagged REQ (frontmatter
+    `non_functional_category` set) has acceptance criteria with no
+    measurable threshold — this is a deterministic digit-presence check
+    only; genuine semantic quality ("is this actually measurable?") needs
+    a REQ review (CKL-REV-REQ-02), never a blocking lint gate.
+    """
     blocking = 0
     warnings = 0
     details: list[str] = []
@@ -446,8 +459,36 @@ def _check_acceptance(
         if not lint_lib.has_acceptance_criteria(art):
             blocking += 1
             details.append(f"  ✗ [{art.id}] no acceptance criteria found")
+            continue
 
-    icon = GREEN + "✓" + NC if blocking == 0 else RED + "✗" + NC
+        item_count = lint_lib.count_acceptance_criteria_items(art)
+        if item_count == 0:
+            blocking += 1
+            details.append(f"  ✗ [{art.id}] empty Acceptance Criteria section (header only)")
+            continue
+
+        category = art.frontmatter.get("non_functional_category")
+        # "functional" is not a non-functional category — some projects use the
+        # field as triage bookkeeping for functional REQs; those get no NFR gate.
+        if category and str(category).lower() != "functional":
+            ac_text = lint_lib.acceptance_criteria_text(art)
+            # Strip list/numbering markers first so "1. respond quickly" isn't
+            # mistaken for a measurable threshold via its own item number.
+            ac_text_stripped = _AC_LIST_MARKER_RE.sub("", ac_text)
+            if not re.search(r"\d", ac_text_stripped):
+                warnings += 1
+                details.append(
+                    f"  ⚠ [{art.id}] NFR ({category}) has no measurable threshold "
+                    f"(no numeric value in AC) — deterministic check only; semantic "
+                    f"quality needs a REQ review (CKL-REV-REQ-02)"
+                )
+
+    if blocking > 0:
+        icon = RED + "✗" + NC
+    elif warnings > 0:
+        icon = YELLOW + "⚠" + NC
+    else:
+        icon = GREEN + "✓" + NC
     detail_msg = "; ".join(details) if details else f"All {len(reqs)} requirement(s) have acceptance criteria"
 
     return {

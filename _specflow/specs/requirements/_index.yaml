@@ -322,4 +322,12 @@ artifacts:
     tags: []
     title: 'Autoresearch pack v0.2.0: multi-criteria support, CLI subcommand, and
       harness-agnosticism'
+  REQ-DEFERRED-5cea:
+    id: REQ-DEFERRED-5cea
+    title: 'Deferred lifecycle capabilities: rewind accounting, RTM, RBAC check, supersession,
+      quality gates, multi-host'
+    status: implemented
+    tags: []
+    fingerprint: sha256:d512b2374ca6
+    children: []
 next_id: 37

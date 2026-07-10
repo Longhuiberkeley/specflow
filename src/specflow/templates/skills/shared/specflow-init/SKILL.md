@@ -43,7 +43,7 @@ Check the project root for platform detection markers (from `platforms.yaml`):
 | `.trae/` | `trae` | Trae |
 | `.junie/` | `junie` | Junie |
 
-Scan markers in order. If a marker exists, use that platform code. If multiple markers are found, prefer the first match (table order).
+Scan markers in order. If a marker exists, use that platform code. If multiple markers are found, prefer the first match (table order). `specflow init` also warns when multiple AI-host platform dirs are detected, since skills are only installed to the one you targeted — run `uv run specflow refresh --all-platforms` afterward to bring the others current.
 
 If **no** marker is found, ask:
 

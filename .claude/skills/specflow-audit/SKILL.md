@@ -51,6 +51,8 @@ After the project audit, run the chain depth survey to show traceability coverag
 uv run specflow artifact-lint --type chain-report
 ```
 
+For the full bidirectional traceability matrix (REQ → ARCH → STORY → verifying tests, gap markers per row), run `uv run specflow rtm --gaps`.
+
 Then, run the standards gap analysis to check compliance health against installed packs:
 
 ```

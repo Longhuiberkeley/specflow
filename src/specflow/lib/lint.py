@@ -17,6 +17,8 @@ __all__ = [
     "validate_status_hierarchy",
     "validate_fingerprint",
     "has_acceptance_criteria",
+    "acceptance_criteria_text",
+    "count_acceptance_criteria_items",
     "recompute_fingerprint",
     "discover_checklists",
     "run_automated_checklist",
@@ -231,6 +233,23 @@ def recompute_fingerprint(artifact: art_lib.Artifact) -> str:
 # Acceptance criteria check
 # ---------------------------------------------------------------------------
 
+_AC_MARKERS = (
+    "## acceptance criteria",
+    "##acceptance criteria",
+    "### acceptance criteria",
+    "###acceptance criteria",
+    "acceptance criteria:",
+    "acceptance criteria\n",
+)
+
+_AC_GIVEN_PATTERN = re.compile(r"^\d+\.\s+given", re.MULTILINE | re.IGNORECASE)
+
+# Section boundary: the next ##-level heading after the Acceptance Criteria
+# marker. Mirrors the convention already used by _check_story_size in
+# artifact_lint.py for locating the end of an AC section.
+_NEXT_HEADING_RE = re.compile(r"^##\s", re.MULTILINE)
+
+
 def has_acceptance_criteria(artifact: art_lib.Artifact) -> bool:
     """Check if a REQ artifact has acceptance criteria in its body."""
     if artifact.type != "requirement":
@@ -238,23 +257,69 @@ def has_acceptance_criteria(artifact: art_lib.Artifact) -> bool:
 
     body_lower = artifact.body.lower()
     # Check for common acceptance criteria headers
-    markers = [
-        "## acceptance criteria",
-        "##acceptance criteria",
-        "### acceptance criteria",
-        "###acceptance criteria",
-        "acceptance criteria:",
-        "acceptance criteria\n",
-    ]
-    for marker in markers:
+    for marker in _AC_MARKERS:
         if marker in body_lower:
             return True
 
     # Also check for numbered criteria patterns
-    if re.search(r"^\d+\.\s+given", artifact.body, re.MULTILINE | re.IGNORECASE):
+    if _AC_GIVEN_PATTERN.search(artifact.body):
         return True
 
     return False
+
+
+def acceptance_criteria_text(artifact: art_lib.Artifact) -> str:
+    """Return the raw text of the Acceptance Criteria section, or "" if absent.
+
+    Locates the earliest Acceptance Criteria marker (same markers as
+    ``has_acceptance_criteria``) and returns everything up to the next
+    ##-level heading. Used to detect empty sections (header with no content
+    below it) and to inspect NFR criteria for measurable thresholds.
+    """
+    body = artifact.body
+    body_lower = body.lower()
+
+    start = -1
+    for marker in _AC_MARKERS:
+        idx = body_lower.find(marker)
+        if idx != -1 and (start == -1 or idx < start):
+            start = idx
+
+    if start == -1:
+        return ""
+
+    # Skip past the rest of the marker's own line.
+    line_end = body.find("\n", start)
+    rest = body[line_end + 1:] if line_end != -1 else ""
+
+    next_heading = _NEXT_HEADING_RE.search(rest)
+    return rest[:next_heading.start()] if next_heading else rest
+
+
+def count_acceptance_criteria_items(artifact: art_lib.Artifact) -> int:
+    """Count content items under the Acceptance Criteria section.
+
+    An item is any non-empty, non-heading line under the section — a
+    markdown list entry (``- ``, ``* ``, ``+ ``), a numbered entry
+    (``1.`` etc.), or a plain non-empty paragraph line. Deterministic and
+    simple by design: this is a presence/emptiness check, not a semantic
+    quality judgement (that belongs to a REQ review checklist).
+
+    Falls back to counting numbered "Given ..." lines anywhere in the body
+    when no explicit header marker is found, matching the fallback already
+    used by ``has_acceptance_criteria``.
+    """
+    section = acceptance_criteria_text(artifact)
+    if not section:
+        return len(_AC_GIVEN_PATTERN.findall(artifact.body))
+
+    count = 0
+    for line in section.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        count += 1
+    return count
 
 
 # ---------------------------------------------------------------------------

@@ -243,6 +243,28 @@ def cmd_autoresearch(args: argparse.Namespace) -> int:
     return autoresearch_cmd.run(root, vars(args))
 
 
+def cmd_phase_set(args: argparse.Namespace) -> int:
+    from specflow.commands import phase_set as cmd
+    root = _find_project_root()
+    return cmd.run(root, vars(args))
+
+
+def cmd_rtm(args: argparse.Namespace) -> int:
+    from specflow.commands import rtm as cmd
+    root = _find_project_root()
+    return cmd.run(root, vars(args))
+
+
+def cmd_rbac(args: argparse.Namespace) -> int:
+    sub = getattr(args, "rbac_subcommand", None)
+    if sub == "check":
+        from specflow.commands import rbac_check as cmd
+        root = _find_project_root()
+        return cmd.run(root, vars(args))
+    print("error: subcommand required (check)", file=sys.stderr)
+    return 1
+
+
 # ── Parser builders ───────────────────────────────────────────────
 
 def _add_init_parser(subparsers):
@@ -265,6 +287,7 @@ def _add_refresh_parser(subparsers):
     p.add_argument("--checklists", action="store_true", help="Also update checklist templates (new only)")
     p.add_argument("--force", action="store_true", help="Overwrite schemas even if they already exist")
     p.add_argument("--dry-run", action="store_true", dest="dry_run", help="Show what would change without writing")
+    p.add_argument("--all-platforms", action="store_true", dest="all_platforms", help="Refresh skills for every detected platform, not just one")
 
 
 def _add_status_parser(subparsers):
@@ -366,6 +389,12 @@ def _add_phase_status_parser(subparsers):
     subparsers.add_parser("phase-status", help="Read-only advisory: is the current phase ready to close?")
 
 
+def _add_phase_set_parser(subparsers):
+    p = subparsers.add_parser("phase-set", help="Record a phase transition (forward or rewind) — accounting, never a gate")
+    p.add_argument("phase", help="Target phase (idle, discovering, specifying, planning, executing, verifying, complete)")
+    p.add_argument("--reason", help="Why the phase is being set (recorded in history)")
+
+
 def _add_cascade_status_parser(subparsers):
     p = subparsers.add_parser("cascade-status", help="Cascade STORY status to linked ARCH/DDD/REQ specs")
     p.add_argument("artifact_id", help="STORY artifact ID (e.g. STORY-001)")
@@ -417,6 +446,15 @@ def _add_hook_parser(subparsers):
     sub = p.add_subparsers(dest="hook_subcommand")
     sub.add_parser("install", help="Install .git/hooks/pre-commit")
     sub.add_parser("pre-commit", help="Run the pre-commit check")
+
+
+def _add_rbac_parser(subparsers):
+    p = subparsers.add_parser("rbac", help="RBAC introspection: resolved roles and transition authorization")
+    sub = p.add_subparsers(dest="rbac_subcommand")
+    check_p = sub.add_parser("check", help="Show resolved roles for an author; optionally test a status-transition authorization")
+    check_p.add_argument("--email", help="Author email to resolve (default: git config user.email)")
+    check_p.add_argument("--type", help="Artifact type/ID to check (used with --to-status)")
+    check_p.add_argument("--to-status", dest="to_status", help="Target status to check authorization for (used with --type)")
 
 
 def _add_renumber_drafts_parser(subparsers):
@@ -542,6 +580,13 @@ def _add_trace_parser(subparsers):
     p.add_argument("artifact_id", help="Artifact ID to trace")
 
 
+def _add_rtm_parser(subparsers):
+    p = subparsers.add_parser("rtm", help="Requirements traceability matrix (REQ -> ARCH/STORY -> tests, bidirectional)")
+    p.add_argument("--req", help="Filter to a single REQ ID")
+    p.add_argument("--format", choices=["table", "markdown", "csv"], default="table", help="Output format (default: table)")
+    p.add_argument("--gaps", action="store_true", help="Only show rows with at least one empty column")
+
+
 def _add_ci_gate_parser(subparsers):
     p = subparsers.add_parser("ci-gate", help="Run RBAC checks on a PR diff (server-side)")
     p.add_argument("--base", required=True, help="Base git ref (e.g., main)")
@@ -609,10 +654,10 @@ _HELP_EPILOG = """\
 commands by workflow phase:
   Discover:   init, refresh, status, domain, patterns
   Plan:       create, update, approve
-  Execute:    go, done, phase-status, cascade-status, reconcile, generate-tests
-  Review:     artifact-lint, checklist-run, artifact-review, project-audit, trace
+  Execute:    go, done, phase-status, phase-set, cascade-status, reconcile, generate-tests
+  Review:     artifact-lint, checklist-run, artifact-review, project-audit, trace, rtm
   Release:    baseline, document-changes
-  CI:         hook, renumber-drafts, import, export, detect, change-impact,
+  CI:         hook, rbac, renumber-drafts, import, export, detect, change-impact,
               fingerprint-refresh, ci, ci-gate
   Recovery:   unlock, locks, rebuild-index, split, merge
   Research:   autoresearch
@@ -718,6 +763,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_go_parser(subparsers)
     _add_done_parser(subparsers)
     _add_phase_status_parser(subparsers)
+    _add_phase_set_parser(subparsers)
     _add_cascade_status_parser(subparsers)
     _add_reconcile_parser(subparsers)
     _add_generate_tests_parser(subparsers)
@@ -727,6 +773,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_checklist_run_parser(subparsers)
     _add_artifact_review_parser(subparsers)
     _add_project_audit_parser(subparsers)
+    _add_rtm_parser(subparsers)
 
     # ── Release ─────────────────────────────────────────────────
     _add_baseline_parser(subparsers)
@@ -734,6 +781,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     # ── CI ──────────────────────────────────────────────────────
     _add_hook_parser(subparsers)
+    _add_rbac_parser(subparsers)
     _add_renumber_drafts_parser(subparsers)
     _add_import_parser(subparsers)
     _add_export_parser(subparsers)
@@ -785,6 +833,9 @@ def main(argv: list[str] | None = None) -> int:
         "done": cmd_done,
         "approve": cmd_approve,
         "phase-status": cmd_phase_status,
+        "phase-set": cmd_phase_set,
+        "rtm": cmd_rtm,
+        "rbac": cmd_rbac,
         "cascade-status": cmd_cascade_status,
         "reconcile": cmd_reconcile,
         "change-impact": cmd_change_impact,

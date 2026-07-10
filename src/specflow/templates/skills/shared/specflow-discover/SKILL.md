@@ -26,9 +26,16 @@ Conduct a structured discovery conversation to capture requirements as REQ artif
 
 1. **Recall first:** run `uv run specflow brief` for a one-call digest — phase, inventory by category/status, open suspects, next wave, and recent changes. This replaces the manual ritual of scanning every `_index.yaml`; drill into specific `_index.yaml` files or `specflow trace <ID>` only for the artifacts you need to read in full.
 
-2. **Reverse lifecycle check:** If the user said "rethink the requirements," "revise the requirements," or "go back to requirements" (or if you detect the user wants to revisit specs after planning/executing), ask: "Do you want to (a) revise existing REQs in place, or (b) start a fresh discovery for new requirements?" If revising, read the existing REQs and offer targeted edits rather than starting from scratch. If starting fresh, proceed with the full discovery flow below.
+2. **Reverse lifecycle check:** If the user said "rethink the requirements," "revise the requirements," or "go back to requirements" (or if you detect the user wants to revisit specs after planning/executing), ask: "Do you want to (a) revise existing REQs in place, or (b) start a fresh discovery for new requirements?" If revising, read the existing REQs and offer targeted edits rather than starting from scratch. If starting fresh, proceed with the full discovery flow below. Either way, record the rewind so `brief --next` routes correctly afterward: `uv run specflow phase-set specifying --reason "<why>"` if revising in place, or `uv run specflow phase-set discovering --reason "<why>"` if starting a fresh REQ set.
 2. Confirm the project phase from the brief (or `.specflow/state.yaml`). If `current` is `idle` or `discovering`, proceed. Otherwise, warn the user that discovery may conflict with the current phase.
 3. If artifacts already exist, ask: "Do you want to add new requirements, or refine existing ones?"
+
+**Superseding a requirement** (when a replacement changes meaning rather than refining wording, prefer this over editing in place): create the replacement REQ with a `supersedes` link to the old one, then mark the old REQ `superseded`:
+```
+uv run specflow create --type requirement --title "<new REQ title>" --links '[{"target":"<OLD-REQ-ID>","role":"supersedes"}]' --body "..."
+uv run specflow update <OLD-REQ-ID> --status superseded
+```
+`superseded` is allowed from `approved`/`implemented`/`verified` (not `draft`). Docs citing the old REQ pick up a staleness warning automatically.
 
 ### Step 1: Readiness Assessment (Silent, After Every Exchange)
 

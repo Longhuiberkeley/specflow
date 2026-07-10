@@ -113,12 +113,14 @@ Full walkthrough in the [getting-started guide](docs/getting-started.md).
 | Feature | How |
 |---------|-----|
 | **Zero-token CI validation** | Schema, links, status, fingerprints, coverage — deterministic Python, no LLM required |
-| **V-model traceability** | REQ → ARCH → DDD → UT/IT/QT, fully linked and linted |
+| **V-model traceability** | REQ → ARCH → DDD → UT/IT/QT, fully linked and linted; `specflow rtm --gaps` renders the bidirectional matrix with per-row gap markers |
 | **Bring-your-own-standard** | Drop a PDF, URL, or pasted text. SpecFlow extracts clauses into compliance schemas |
 | **Immutable baselines** | Snapshot, diff, and generate audit evidence between releases |
-| **First-class Claude Code + OpenCode** | Skills install automatically; other assistants with project file access may work but are community-supported |
+| **First-class Claude Code + OpenCode** | Skills install automatically; other assistants with project file access may work but are community-supported. `specflow init` warns if multiple AI-host dirs are detected; `specflow refresh --all-platforms` keeps every detected host in sync |
 | **Autoresearch loops** | Define a competition + verify command, let your assistant iterate; every experiment becomes a tracked artifact |
 | **Docs knowledge surface** *(new)* | `docs/` + root markdown is a recognized surface — `@ID`-cited, shown in `specflow brief`, staleness-warned, never an artifact type |
+| **Accounting-only phase rewinds** *(new)* | `specflow phase-set <phase> --reason "..."` records a forward or reverse phase move (e.g. "go back to requirements") — never blocks, keeps `brief --next` honest |
+| **RBAC check** *(new)* | `specflow rbac check` resolves your git-author team roles and can test a status-transition authorization; reports "single-user mode" cleanly when no team config exists |
 | **1 runtime dependency** | Just `pyyaml`. Everything else is stdlib. |
 
 ## Skills (auto-trigger from chat; slash optional)
@@ -258,7 +260,7 @@ Everything is Markdown with YAML frontmatter. Your repo is the database.
 uv tool install git+https://github.com/Longhuiberkeley/specflow
 
 # Pin to a release
-uv tool install git+https://github.com/Longhuiberkeley/specflow@v1.11.2
+uv tool install git+https://github.com/Longhuiberkeley/specflow@v1.12.0
 
 # Run without installing (ephemeral)
 uvx --from git+https://github.com/Longhuiberkeley/specflow specflow init
