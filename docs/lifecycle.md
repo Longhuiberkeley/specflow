@@ -143,6 +143,8 @@ Everything above assumes you **start** with SpecFlow. If you have an **existing*
 
 Adoption is **incremental and resumable**: one subsystem boundary per pass, `specflow detect orphan-code` as the progress meter, interleaved with ongoing development. It reuses the core artifact model (no new types/statuses) and surfaces conflicting sources to you rather than guessing. See the adoption pack's README and the `/specflow-adopt` skill for detail.
 
+**Rewinding the lifecycle.** The phases above are the forward path, but real work loops back — "go back to requirements," "rethink the architecture," "this approach isn't working." `specflow phase-set <phase> --reason "..."` records that move (forward or reverse) as pure accounting: it never blocks and never validates readiness (that's `phase-status`'s job), it just keeps `specflow brief --next` honest after the rewind. The `/specflow-discover`, `/specflow-plan`, and `/specflow-execute` skills call it automatically when they detect a reverse-lifecycle trigger.
+
 > Greenfield projects (started with `/specflow-init`) do **not** need the adoption pack — go straight to `/specflow-discover`.
 
 ## Docs — the knowledge surface
@@ -178,7 +180,7 @@ These are what a user learns and uses day-to-day in the AI-first lane. Each is d
 
 Every slash command above composes underlying `uv run specflow …` commands. Those commands **are the product** for the ALM / direct lane — power users, teams, and CI pipelines invoke them directly with no API key:
 
-- **Recall & navigation:** `specflow brief` (one-call digest), `specflow status`, `specflow trace <ID>`
+- **Recall & navigation:** `specflow brief` (one-call digest), `specflow status`, `specflow trace <ID>`, `specflow rtm [--gaps]` (project-wide REQ→ARCH→STORY→test matrix)
 - **Authoring:** `specflow create`, `specflow update --status <status>`
 - **Gates & validation:** `specflow artifact-lint [--type … | --gate <name>]`
 - **Defects:** `specflow defect-from-suspect <ID> --req <REQ>` (suspect → DEF with traceability)

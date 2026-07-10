@@ -79,6 +79,7 @@ SpecFlow IS your persistent memory. You do not have reliable conversation memory
 - For a wider dashboard view, run `specflow status` (phase, counts, stale items).
 - Drill down only when brief points at something specific: scan `_index.yaml` files in relevant directories (title + status + tags for every artifact without reading full bodies), and read `.specflow/state.yaml` for the current phase / `.specflow/config.yaml` for domain context.
 - Use `specflow trace <ID>` to walk the link chain and understand context.
+- Use `specflow rtm --gaps` for the project-wide requirements-traceability matrix (REQ → ARCH → STORY → verifying tests, gaps flagged per row).
 - Use `git log --since=<date> -- _specflow/` for temporal recall — "what changed recently."
 - Check `.specflow/impact-log/` for causality — what changed and why.
 - For research: read FIND artifacts first — they are accumulated knowledge that survives context rot.
@@ -113,6 +114,7 @@ SpecFlow IS your persistent memory. You do not have reliable conversation memory
 - **Research / experiment routing:** bare "research whether X" / "prototype Y" / a quick throwaway spike → create a **SPIKE** (`specflow create --type spike`) — it is a work artifact, not a routable skill. Reproducible / overnight / competition-scoped experimentation → the **autoresearch** pack (`/specflow-autoresearch`, needs a COMP with a verify command). A multi-source fact-checked report → the host's `deep-research` skill. Do not route any of these to `/specflow-discover` (it authors requirements, not research).
 - Packs (e.g., autoresearch) are **separate subsystems**. Only use pack skills when the user explicitly asks for that pack's domain. Never invoke pack skills for codebase exploration, bug investigation, feature implementation, or general engineering — those are core engineering.
 - **By default**, new features go through the full pipeline. Typo fixes and trivial changes may use the lean path — but still trace to a STORY.
+- **Reverse lifecycle (rewinds):** When the user says "go back to requirements," "rethink the architecture," "this approach isn't working," or similar, run `specflow phase-set <phase> --reason "<why>"` before or alongside routing to the matching skill (`discovering`/`specifying` for discover, `planning` for plan, `executing` for execute) — this keeps recorded phase state honest so `brief --next` doesn't route off a stale forward-only assumption.
 - **Escape hatch:** The user can always override. When the user says "skip," "proceed anyway," or "move on," do exactly that. But before proceeding past a blocking check, articulate: "Proceeding past [specific item]. Risk: [what could go wrong]. Noted."
 
 ### When to Escalate (Permanence Test)

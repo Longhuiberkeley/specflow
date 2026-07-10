@@ -38,13 +38,27 @@ def detect_platform(root: Path) -> tuple[str | None, dict | None]:
 
     Returns (platform_code, platform_config) or (None, None) if not detected.
     """
+    detected = detect_platforms(root)
+    if detected:
+        return detected[0]
+    return None, None
+
+
+def detect_platforms(root: Path) -> list[tuple[str, dict]]:
+    """Detect ALL AI code platforms in use, in registry order.
+
+    Returns a list of (platform_code, platform_config) for every platform
+    whose detection marker(s) exist under `root`. Empty list if none detected.
+    """
     platforms = _load_registry()
+    detected: list[tuple[str, dict]] = []
     for code, cfg in platforms.items():
         markers = cfg.get("detection", [])
         for marker in markers:
             if (root / marker).exists():
-                return code, cfg
-    return None, None
+                detected.append((code, cfg))
+                break
+    return detected
 
 
 def get_skills_dir(root: Path, platform_code: str) -> Path:

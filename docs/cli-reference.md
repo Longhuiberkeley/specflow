@@ -34,6 +34,7 @@ specflow refresh [--platform <code>]
 | Flag | Purpose |
 |------|---------|
 | `--platform` | Target a specific platform's skill dir (e.g., `opencode`, `codex`). Defaults to the detected/installed platform. |
+| `--all-platforms` | Refresh skills for every detected AI-host platform dir, not just one |
 
 ### `specflow status`
 
@@ -131,6 +132,19 @@ specflow done [--auto] [--no-auto] [--no-patterns]
 | `--auto` | Auto-extract prevention patterns from implemented stories (default) |
 | `--no-auto` | Show pattern summary without extracting |
 | `--no-patterns` | Skip pattern extraction entirely |
+
+### `specflow phase-set`
+
+Record a phase transition — forward, or a REWIND (e.g. "go back to requirements", "rethink the architecture"). Accounting-only: it never blocks and never validates readiness (that's `phase-status`'s job). Keeps `specflow brief --next` honest after a reverse-lifecycle move. Leaving `executing` clears in-progress execution state.
+
+```bash
+specflow phase-set PHASE [--reason TEXT]
+```
+
+| Flag | Purpose |
+|------|---------|
+| `PHASE` | Target phase: `idle`, `discovering`, `specifying`, `planning`, `executing`, `verifying`, `complete` |
+| `--reason` | Why the phase is being set (recorded in history) |
 
 ---
 
@@ -248,6 +262,20 @@ specflow project-audit [--standard STANDARD] [--baseline BASELINE] [--quick] [--
 | `--quick` | Skip cross-cutting analysis (horizontal + vertical only) |
 | `--sample-pct` | Sample percentage for STORYs (default: 100) |
 
+### `specflow rtm`
+
+Bidirectional requirements-traceability matrix: one row per REQ, with columns for linked ARCH, STORY, and verifying tests (UT/IT/QT). Gap markers flag empty columns per row; a footer lists orphan tests (tests with no REQ lineage).
+
+```bash
+specflow rtm [--req ID] [--format table|markdown|csv] [--gaps]
+```
+
+| Flag | Purpose |
+|------|---------|
+| `--req` | Filter to a single REQ ID |
+| `--format` | `table` (default), `markdown`, or `csv` |
+| `--gaps` | Only show rows with at least one empty column |
+
 ---
 
 ## Release Phase
@@ -304,6 +332,20 @@ Generate CI workflow files from `adapters.yaml` configuration.
 ```bash
 specflow ci generate
 ```
+
+### `specflow rbac check`
+
+Resolve the current git author's team roles (from `.specflow/config.yaml`), and optionally check whether a status transition is authorized for those roles. Prints "RBAC not active (single-user mode)" when no team config exists. Nested under `rbac` so a future `rbac doctor` can share the namespace.
+
+```bash
+specflow rbac check [--email EMAIL] [--type TYPE --to-status STATUS]
+```
+
+| Flag | Purpose |
+|------|---------|
+| `--email` | Author email to resolve (default: git config `user.email`) |
+| `--type` | Artifact type/ID to check (used with `--to-status`) |
+| `--to-status` | Target status to check authorization for (used with `--type`) |
 
 ### `specflow hook install`
 

@@ -270,6 +270,83 @@ def close_phase(root: Path) -> dict[str, Any]:
     }
 
 
+def set_phase(root: Path, target: str, reason: str | None = None) -> dict[str, Any]:
+    """Record a phase transition to ``target`` — forward or reverse.
+
+    Accounting-not-policing (frozen philosophy): this RECORDS a transition, it
+    never gates one. Unlike ``close_phase`` (which always advances to
+    ``next_phase(current)``), this lets the machine be pointed at any phase in
+    PHASE_ORDER, including one earlier than the current phase (a "rewind" —
+    e.g. "go back to requirements"), so `state.current` stays honest and
+    `brief --next` routes correctly after a reverse-lifecycle move.
+
+    Mirrors close_phase()'s history bookkeeping: the current phase's open
+    history entry gets an "exited" stamp, and a new entry for `target` is
+    appended with "entered". When `reason` is given it is recorded on that new
+    entry; when `target` is earlier than the current phase in PHASE_ORDER, the
+    entry is also stamped "rewind": true.
+
+    Returns {"ok": False, "error": ...} for an unrecognized phase or unreadable
+    state, else {"ok": True, "old_phase", "new_phase", "rewind"}.
+    """
+    if target not in PHASE_ORDER:
+        return {
+            "ok": False,
+            "error": f"Unknown phase '{target}'. Valid phases: {', '.join(PHASE_ORDER)}",
+        }
+
+    state = read_state(root)
+    if not state:
+        return {"ok": False, "error": "Cannot read state.yaml"}
+
+    current_phase = state.get("current", "idle")
+
+    if target == current_phase:
+        return {"ok": True, "old_phase": current_phase, "new_phase": target, "rewind": False}
+
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    history = state.get("history", [])
+    if not isinstance(history, list):
+        history = []
+
+    # Stamp "exited" on the current phase's open history entry (mirrors close_phase).
+    updated = False
+    for entry in history:
+        if isinstance(entry, dict) and entry.get("phase") == current_phase and "exited" not in entry:
+            entry["exited"] = now
+            updated = True
+            break
+    if not updated:
+        history.append({"phase": current_phase, "entered": now, "exited": now})
+
+    try:
+        cur_idx = PHASE_ORDER.index(current_phase)
+        target_idx = PHASE_ORDER.index(target)
+        rewind = target_idx < cur_idx
+    except ValueError:
+        # current_phase isn't a recognized phase — can't tell direction; not a rewind.
+        rewind = False
+
+    new_entry: dict[str, Any] = {"phase": target, "entered": now}
+    if reason:
+        new_entry["reason"] = reason
+    if rewind:
+        new_entry["rewind"] = True
+    history.append(new_entry)
+
+    state["history"] = history
+    state["current"] = target
+
+    # Leaving `executing` (in either direction) invalidates any in-flight execution state.
+    if current_phase == "executing" and "execution" in state:
+        del state["execution"]
+
+    write_state(root, state)
+
+    return {"ok": True, "old_phase": current_phase, "new_phase": target, "rewind": rewind}
+
+
 def suggest_next_phase(root: Path) -> str:
     """Suggest the next phase based on current state."""
     state = read_state(root)

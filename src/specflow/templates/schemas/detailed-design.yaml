@@ -10,6 +10,9 @@ allowed_status:
   implemented: [approved]
   verified: [implemented]
   deprecated: [approved, implemented, verified]
+  # supersession pairing: the new artifact links `supersedes` -> this one first,
+  # then this artifact's status moves to superseded (not from draft; use cancelled instead).
+  superseded: [approved, implemented, verified]
   cancelled: [draft, approved, implemented, verified]
-allowed_link_roles: [refined_by, verified_by, derives_from, specified_by, complies_with]
+allowed_link_roles: [refined_by, verified_by, derives_from, specified_by, complies_with, supersedes]
 directory: _specflow/specs/detailed-design/

@@ -731,4 +731,52 @@ artifacts:
     status: draft
     tags: []
     title: Update SKILL.md to thin CLI wrapper and add pack context injection
+  STORY-PHASESET-d470:
+    id: STORY-PHASESET-d470
+    title: 'phase-set command: reverse-lifecycle phase accounting'
+    status: implemented
+    tags:
+    - v1.12.0
+    fingerprint: sha256:be7f291787f3
+    children: []
+  STORY-RTMCOMMA-1d6f:
+    id: STORY-RTMCOMMA-1d6f
+    title: 'rtm command: bidirectional requirements traceability matrix'
+    status: implemented
+    tags:
+    - v1.12.0
+    fingerprint: sha256:a72a3ec06af0
+    children: []
+  STORY-RBACCHEC-e356:
+    id: STORY-RBACCHEC-e356
+    title: 'rbac check command: author role resolution and transition authorization'
+    status: implemented
+    tags:
+    - v1.12.0
+    fingerprint: sha256:52d7c708196c
+    children: []
+  STORY-SUPERSES-c408:
+    id: STORY-SUPERSES-c408
+    title: supersession status and supersedes role for REQ/ARCH/DDD schemas
+    status: implemented
+    tags:
+    - v1.12.0
+    fingerprint: sha256:8dd2644969f0
+    children: []
+  STORY-ARTIFACT-a39a:
+    id: STORY-ARTIFACT-a39a
+    title: 'artifact-lint quality gates: empty-AC error and NFR threshold warning'
+    status: implemented
+    tags:
+    - v1.12.0
+    fingerprint: sha256:e45e9f28f9d1
+    children: []
+  STORY-MULTIHOS-63a5:
+    id: STORY-MULTIHOS-63a5
+    title: multi-host platform detection warning and refresh --all-platforms
+    status: implemented
+    tags:
+    - v1.12.0
+    fingerprint: sha256:2647c67c8626
+    children: []
 next_id: 82

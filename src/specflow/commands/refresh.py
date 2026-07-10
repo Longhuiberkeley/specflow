@@ -113,40 +113,19 @@ def _update_schemas(root: Path, template_dir: Path, *, force: bool = False) -> i
     return count
 
 
-def run(root: Path, args: dict) -> int:
-    """Refresh skills, agent-context, schemas, and checklists."""
-    root = root.resolve()
+def _refresh_platform_specific(
+    root: Path,
+    platform_code: str,
+    template_dir: Path,
+    *,
+    dry_run: bool,
+    do_skills: bool,
+    do_context: bool,
+) -> list[tuple[str, str]]:
+    """Run the per-platform refresh steps (skills + agent-context) for one platform.
 
-    specflow_dir = root / ".specflow"
-    if not specflow_dir.is_dir():
-        print("  x No .specflow/ directory found. Run 'specflow init' first.")
-        return 1
-
-    # Detect platform
-    platform_code = args.get("platform")
-    if platform_code:
-        cfg = plat_lib.get_platform(platform_code)
-        if cfg is None:
-            print(f"  x Unknown platform '{platform_code}'.")
-            print(f"    Available: {', '.join(plat_lib.get_all_platforms().keys())}")
-            return 1
-        platform_name = cfg["name"]
-    else:
-        platform_code, cfg = plat_lib.detect_platform(root)
-        if platform_code is None:
-            platform_code = "claude-code"
-            platform_name = "Claude Code"
-        else:
-            platform_name = cfg["name"]
-
-    dry_run = args.get("dry_run", False)
-    do_skills = not args.get("no_skills", False)
-    do_context = not args.get("no_context", False)
-    do_schemas = args.get("schemas", False)
-    do_checklists = args.get("checklists", False)
-    force_schemas = args.get("force", False)
-
-    template_dir = _get_package_templates()
+    Returns a summary list of (label, detail) tuples.
+    """
     summary: list[tuple[str, str]] = []
 
     # ── Skills ──────────────────────────────────────────────────
@@ -176,11 +155,32 @@ def run(root: Path, args: dict) -> int:
             else:
                 summary.append(("context", "template not found"))
         else:
+            # Ensure the instruction file's parent dir exists (some platforms
+            # nest it, e.g. .cursor/rules/specflow.md) before injecting.
+            inst_cfg = plat_lib.get_platform(platform_code)
+            inst_file = inst_cfg.get("instruction_file") if inst_cfg else None
+            if inst_file:
+                (root / inst_file).parent.mkdir(parents=True, exist_ok=True)
             changed = scaffold_lib.inject_base_context(root, template_dir, platform_code)
             if changed:
                 summary.append(("context", "updated"))
             else:
                 summary.append(("context", "up to date"))
+
+    return summary
+
+
+def _refresh_shared(
+    root: Path,
+    template_dir: Path,
+    *,
+    dry_run: bool,
+    do_schemas: bool,
+    do_checklists: bool,
+    force_schemas: bool,
+) -> list[tuple[str, str]]:
+    """Run the refresh steps that are not platform-scoped (schemas, checklists)."""
+    summary: list[tuple[str, str]] = []
 
     # ── Schemas ─────────────────────────────────────────────────
     if do_schemas:
@@ -204,6 +204,108 @@ def run(root: Path, args: dict) -> int:
         else:
             scaffold_lib.copy_checklists(root, template_dir)
             summary.append(("checklists", "copied (new only)"))
+
+    return summary
+
+
+def _run_all_platforms(root: Path, detected: list[tuple[str, dict]], args: dict) -> int:
+    """Refresh skills + agent-context for every detected platform, plus shared
+    (non-platform-scoped) steps once.
+    """
+    dry_run = args.get("dry_run", False)
+    do_skills = not args.get("no_skills", False)
+    do_context = not args.get("no_context", False)
+    do_schemas = args.get("schemas", False)
+    do_checklists = args.get("checklists", False)
+    force_schemas = args.get("force", False)
+
+    template_dir = _get_package_templates()
+
+    if dry_run:
+        print(f"  [dry-run] Refresh preview for {len(detected)} platform(s):")
+    else:
+        print(f"  Refresh complete for {len(detected)} platform(s):")
+
+    for platform_code, cfg in detected:
+        platform_summary = _refresh_platform_specific(
+            root, platform_code, template_dir,
+            dry_run=dry_run, do_skills=do_skills, do_context=do_context,
+        )
+        print(f"    [{platform_code}] {cfg.get('name', platform_code)}:")
+        for label, detail in platform_summary:
+            print(f"      {label}: {detail}")
+
+    shared_summary = _refresh_shared(
+        root, template_dir,
+        dry_run=dry_run, do_schemas=do_schemas, do_checklists=do_checklists,
+        force_schemas=force_schemas,
+    )
+    if shared_summary:
+        print("    shared:")
+        for label, detail in shared_summary:
+            print(f"      {label}: {detail}")
+
+    if dry_run:
+        print("\n  Run without --dry-run to apply changes.")
+
+    return 0
+
+
+def run(root: Path, args: dict) -> int:
+    """Refresh skills, agent-context, schemas, and checklists."""
+    root = root.resolve()
+
+    specflow_dir = root / ".specflow"
+    if not specflow_dir.is_dir():
+        print("  x No .specflow/ directory found. Run 'specflow init' first.")
+        return 1
+
+    # Detect platform(s)
+    all_platforms = args.get("all_platforms", False)
+    platform_code = args.get("platform")
+
+    if all_platforms:
+        if platform_code:
+            print(f"  ! --all-platforms overrides --platform '{platform_code}'.")
+        detected = plat_lib.detect_platforms(root)
+        if not detected:
+            print("  x No AI platform detected. Nothing to refresh for --all-platforms.")
+            return 1
+        return _run_all_platforms(root, detected, args)
+
+    if platform_code:
+        cfg = plat_lib.get_platform(platform_code)
+        if cfg is None:
+            print(f"  x Unknown platform '{platform_code}'.")
+            print(f"    Available: {', '.join(plat_lib.get_all_platforms().keys())}")
+            return 1
+        platform_name = cfg["name"]
+    else:
+        platform_code, cfg = plat_lib.detect_platform(root)
+        if platform_code is None:
+            platform_code = "claude-code"
+            platform_name = "Claude Code"
+        else:
+            platform_name = cfg["name"]
+
+    dry_run = args.get("dry_run", False)
+    do_skills = not args.get("no_skills", False)
+    do_context = not args.get("no_context", False)
+    do_schemas = args.get("schemas", False)
+    do_checklists = args.get("checklists", False)
+    force_schemas = args.get("force", False)
+
+    template_dir = _get_package_templates()
+
+    summary = _refresh_platform_specific(
+        root, platform_code, template_dir,
+        dry_run=dry_run, do_skills=do_skills, do_context=do_context,
+    )
+    summary.extend(_refresh_shared(
+        root, template_dir,
+        dry_run=dry_run, do_schemas=do_schemas, do_checklists=do_checklists,
+        force_schemas=force_schemas,
+    ))
 
     # ── Summary ─────────────────────────────────────────────────
     if dry_run:

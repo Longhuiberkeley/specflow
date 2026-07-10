@@ -142,9 +142,34 @@ def _install_skills(root: Path, platform_code: str) -> None:
             shutil.copytree(str(skill_dir), str(dst))
 
 
+def _multi_platform_warning(root: Path, installed_code: str, explicit_platform: bool) -> str | None:
+    """Return a warning string if multiple AI-host platforms are detected but skills
+    were only installed for one, or None if no warning is warranted.
+
+    No warning is issued when the platform was explicitly requested via --platform;
+    the user made a deliberate choice in that case.
+    """
+    if explicit_platform:
+        return None
+    detected = plat_lib.detect_platforms(root)
+    if len(detected) <= 1:
+        return None
+    other_codes = [code for code, _ in detected if code != installed_code]
+    if not other_codes:
+        return None
+    others_str = ", ".join(other_codes)
+    return (
+        f"⚠ Multiple AI-host platforms detected: {installed_code} (installed), {others_str}. "
+        f"Skills were installed only for {installed_code}. "
+        f"Run 'specflow refresh --platform <code>' for each other host, "
+        f"or 'specflow refresh --all-platforms'."
+    )
+
+
 def run(root: Path, args: dict) -> int:
     root = root.resolve()
 
+    explicit_platform = bool(args.get("platform"))
     platform_code = args.get("platform")
     if platform_code:
         cfg = plat_lib.get_platform(platform_code)
@@ -271,6 +296,10 @@ def run(root: Path, args: dict) -> int:
     want_ci = not args.get("no_ci", False)
     if want_ci:
         _install_ci_workflow(root)
+
+    warning = _multi_platform_warning(root, platform_code, explicit_platform)
+    if warning:
+        print(f"\n  {warning}")
 
     print(f"\n+ SpecFlow initialized in {root}")
     print(f"  Platform: {platform_name}")
