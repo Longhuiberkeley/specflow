@@ -4,6 +4,21 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.12.0] - 2026-07-10
+
+### Features
+
+- **`specflow phase-set <phase> [--reason TEXT]`.** Records a phase transition, forward or a REWIND (e.g. "go back to requirements"); accounting-only — never blocks — and keeps `brief --next` honest after reverse-lifecycle moves. Clears execution state when leaving `executing`. `/specflow-discover`, `/specflow-plan`, and `/specflow-execute` now call it automatically on a detected rewind.
+- **`specflow rtm [--req ID] [--format table|markdown|csv] [--gaps]`.** Bidirectional requirements-traceability matrix: REQ → ARCH → STORY → verifying tests per row, gap markers per column, orphan-tests footer.
+- **`specflow rbac check [--email E] [--type T --to-status S]`.** Resolves the current git author's team roles and optionally checks a status-transition authorization; reports "RBAC not active (single-user mode)" when no team config exists. Nested under `rbac` so a future `rbac doctor` can share the namespace.
+- **Supersession for REQ/ARCH/DDD.** New `superseded` status (allowed from `approved`/`implemented`/`verified`, not `draft`) plus a `supersedes` link role, closing the D-18 gap where only DEC/BP had a supersession path. Docs-staleness checks already warn on citations of superseded artifacts.
+- **Quality gates in `artifact-lint`'s acceptance check.** An empty `## Acceptance Criteria` section (header only, no content) is now a blocking error. An NFR-tagged REQ (`non_functional_category` set to a value other than `functional`) whose acceptance criteria contain no numeric threshold gets a scope-honest warning (never blocking, cites `CKL-REV-REQ-02`) — functional-category REQs are exempt from this check.
+- **Multi-host awareness.** `specflow init` warns when multiple AI-host platform dirs are detected (skills installed to one host only); `specflow refresh --all-platforms` refreshes every detected host in one pass.
+
+### Fixes
+
+- `specflow refresh`'s agent-context injection crashed for platforms whose instruction file lives in a nested directory that didn't exist yet — the parent directory is now created (`mkdir -p`-equivalent) before injection.
+
 ## [1.11.2] - 2026-07-10
 
 ### Features
