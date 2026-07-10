@@ -4,6 +4,32 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.11.2] - 2026-07-10
+
+### Features
+
+- **Phase machine.** `close_phase` now advances `state.current` along `PHASE_ORDER`; `phase_status` wires all 6 advisory gates; REQ-004 §6/AC5 softened to advisory.
+- **Intent-first routing.** AGENTS.md / `agent-context.md` updated with plain-language trigger support; expanded skill trigger utterances; `/specflow-start` added to the command reference.
+- **Autoresearch: FIND→REQ promotion bridge.** Deployable findings promote to core REQs with `derives_from` links; quick/smoke tier skip-rules added for LOOP budget ≤ 5.
+
+### Fixes
+
+- `specflow brief --next` now routes execute → `/specflow-artifact-review` → ship instead of jumping straight to ship when all stories are implemented but no review or V-model tests (UT/IT/QT) exist; `/specflow-start` router example updated to match.
+- `specflow autoresearch plan` printed a `specflow create` hint with flags that don't exist (`--competition`/`--mode`/`--budget`); now prints the real `--set KEY=VALUE` form.
+- `specflow create --set links='[…]'` crashed with a `TypeError` (duplicate keyword); `--set links` now merges into `--links`, and other reserved keys (`--set status=…` etc.) get a clear error pointing at the dedicated flag. Repo docs normalized to `--links`; a new doc-example lint test guards documented commands against argparse rot.
+- Stale-command cleanup: removed phantom `approve --batch` references, dead `validate`/`tweak`/`new` command aliases; added a `--version` flag; V-model two-metric docstrings and `role_normalize` docstring correction.
+- Ops pack: "check LIVE health" trigger disambiguated from full project audit.
+- Artifact-lint conflict message made scope-honest (numeric-range only), pointing at `CKL-REV-REQ-03`.
+
+### Docs
+
+- Docs pruning: deleted the completed `docs/autoresearch-fork-adaptation.md`; archived `docs/plan.md` and `docs/plan-autoresearch-integration.md` to `docs/.archive/`.
+- `specflow refresh` documented in `docs/cli-reference.md`.
+- `/specflow-execute`: trivial-change lean path (Step 1L) that backfills a STORY for typo/dep-bump/rename fixes; honest rewording of the vacuous pre-code RBAC check.
+- `/specflow-init`: brownfield detection routes to the adoption preset; post-upgrade `specflow refresh` reminder.
+- `/specflow-ship`: release tag derived from `git describe` with a single confirm instead of two open questions.
+- AGENTS.md / agent-context: recall leads with `specflow brief`; orient-first routing rule; research/spike/autoresearch routing disambiguation.
+
 ## [1.11.1] - 2026-07-04
 
 ### Docs

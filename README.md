@@ -258,7 +258,7 @@ Everything is Markdown with YAML frontmatter. Your repo is the database.
 uv tool install git+https://github.com/Longhuiberkeley/specflow
 
 # Pin to a release
-uv tool install git+https://github.com/Longhuiberkeley/specflow@v1.11.1
+uv tool install git+https://github.com/Longhuiberkeley/specflow@v1.11.2
 
 # Run without installing (ephemeral)
 uvx --from git+https://github.com/Longhuiberkeley/specflow specflow init
