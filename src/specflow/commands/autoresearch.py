@@ -160,8 +160,8 @@ def _run_plan(root: Path, args: dict) -> int:
 
     if not draft and not running:
         print(f"{DIM}No LOOP artifact yet. Create one:{NC}")
-        print(f"  specflow create --type loop --title \"Initial exploration\" "
-              f"--competition {comp.id} --mode explore --budget 50")
+        print(f"  specflow create --type loop --title \"Initial exploration\" --status draft "
+              f"--set competition={comp.id} --set mode=explore --set budget=50")
         print()
 
     return 0

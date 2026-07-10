@@ -686,8 +686,8 @@ def cmd_domain(args: argparse.Namespace) -> int:
     print("error: subcommand required (set | show)", file=sys.stderr)
     return 1
 
-def main(argv: list[str] | None = None) -> int:
-    """Main CLI entry point."""
+def build_parser() -> argparse.ArgumentParser:
+    """Construct the full ``specflow`` argparse parser (all subcommands)."""
     parser = argparse.ArgumentParser(
         prog="specflow",
         description="SpecFlow — Spec-Driven Development Framework",
@@ -756,6 +756,12 @@ def main(argv: list[str] | None = None) -> int:
     # ── Research ────────────────────────────────────────────────
     _add_autoresearch_parser(subparsers)
 
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Main CLI entry point."""
+    parser = build_parser()
     args = parser.parse_args(argv)
 
     if args.command is None:

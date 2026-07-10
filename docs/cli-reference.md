@@ -20,8 +20,20 @@ specflow init [--preset PRESET] [--no-ci]
 
 | Flag | Purpose |
 |------|---------|
-| `--preset` | Industry pack preset (e.g., `iso26262-demo`) |
+| `--preset` | Industry pack preset (e.g., `iso26262-demo`, `adoption` for existing codebases) |
 | `--no-ci` | Skip CI workflow installation (CI workflow is installed by default) |
+
+### `specflow refresh`
+
+Update the copied skills, agent-context block, and templates in this repo to match the installed SpecFlow version — without a full re-init. Run this after upgrading SpecFlow (`uv tool upgrade specflow`) so new routing triggers, lifecycle fixes, and reference docs land in `.claude/skills/` (and the other platform skill dirs). It is the only way installed skills stay current after an upgrade.
+
+```bash
+specflow refresh [--platform <code>]
+```
+
+| Flag | Purpose |
+|------|---------|
+| `--platform` | Target a specific platform's skill dir (e.g., `opencode`, `codex`). Defaults to the detected/installed platform. |
 
 ### `specflow status`
 

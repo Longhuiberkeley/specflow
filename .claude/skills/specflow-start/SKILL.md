@@ -13,7 +13,7 @@ A thin, host-neutral router: orient on project state, then point at the right ne
 
 2. **If the recommendation is unambiguous:** tell the user exactly which slash-command to run next, and stop. Examples:
    - *"You have approved REQs but no architecture yet → run `/specflow-plan`."*
-   - *"All stories are implemented → run `/specflow-ship`."*
+   - *"All stories are implemented → run `/specflow-artifact-review` (review + V-model tests UT/IT/QT), then `/specflow-ship`."*
    - *"3 suspects are open → run `specflow change-impact` (or `specflow defect-from-suspect <ID> --req <REQ>`), then continue."*
 
 3. **If intent is ambiguous, ask ONE disambiguating question, then route.** The common ambiguity is the three review skills:

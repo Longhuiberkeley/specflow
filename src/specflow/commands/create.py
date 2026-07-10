@@ -29,6 +29,46 @@ def _parse_links(links_json: str) -> list[dict[str, str]]:
     return results
 
 
+# Keys in --set KEY=VALUE that collide with a dedicated create_artifact()
+# keyword argument. Mapped to the dedicated flag to use instead, when one
+# exists; None means the key is reserved with no dedicated flag.
+_RESERVED_SET_KEYS: dict[str, str | None] = {
+    "title": "--title",
+    "status": "--status",
+    "priority": "--priority",
+    "rationale": "--rationale",
+    "tags": "--tags",
+    "body": "--body",
+    "artifact_type": "--type",
+    "type": "--type",
+    "non_functional_category": "--nfr-category",
+    "root": None,
+    "artifact_id": None,
+}
+
+
+def _merge_set_links(links: list[dict[str, str]], extra_fields: dict) -> str | None:
+    """Pop a ``links`` key out of ``extra_fields`` (from --set links=...) and
+    merge its entries into ``links`` in place. Returns an error message string
+    on failure, or None on success.
+    """
+    if "links" not in extra_fields:
+        return None
+    raw = extra_fields.pop("links")
+    if isinstance(raw, str):
+        parsed = _parse_links(raw)
+    elif isinstance(raw, list):
+        parsed = raw
+    else:
+        return '--set links must be a JSON array of {"target","role"} objects'
+
+    for entry in parsed:
+        if not isinstance(entry, dict) or not entry.get("target") or not entry.get("role"):
+            return '--set links must be a JSON array of {"target","role"} objects'
+        links.append(entry)
+    return None
+
+
 def _lookup_standard_clause(root: Path, clause_id: str) -> dict | None:
     standards = std_lib.load_standards(root)
     for std in standards:
@@ -59,6 +99,20 @@ def run(root: Path, args: dict) -> int:
     except ValueError as exc:
         print(f"{RED}✗ {exc}{NC}")
         return 1
+
+    links_error = _merge_set_links(links, extra_fields)
+    if links_error:
+        print(f"{RED}✗ {links_error}{NC}")
+        return 1
+
+    for key in list(extra_fields):
+        if key in _RESERVED_SET_KEYS:
+            flag = _RESERVED_SET_KEYS[key]
+            if flag:
+                print(f"{RED}✗ Use {flag} … instead of --set {key}=…{NC}")
+            else:
+                print(f"{RED}✗ --set {key}=… is reserved and cannot be set this way{NC}")
+            return 1
 
     if from_standard:
         clause = _lookup_standard_clause(root, from_standard)

@@ -36,7 +36,7 @@ Read `../specflow-references/references/adversarial-lenses.md` for the full cata
 
 ### Step 2: Baseline Creation
 
-1. Ask the user for the release tag/version: "What tag should we use for this release baseline? (e.g., v1.2.0)"
+1. Derive the release tag and confirm it. Run `git describe --tags --abbrev=0` to find the last tag, then propose the next version (patch bump by default; minor if the user's release message implies new features). Present a single confirm: "Tag this release **v1.2.0** (Recommended, last was v1.1.0)? Confirm or correct." Only fall back to an open question if `git describe --tags --abbrev=0` finds no prior tag.
 2. Create an immutable baseline snapshot with compliance evidence:
 ```
 uv run specflow baseline create <tag> --evidence
@@ -45,7 +45,7 @@ uv run specflow baseline create <tag> --evidence
 ### Step 3: Document Changes (DEC Trail)
 
 Generate the change records for this release:
-1. Ask the user for the previous tag/commit to compare against: "What was the previous release tag or commit? (e.g., v1.1.0)"
+1. Reuse the prior tag from Step 2 (`git describe --tags --abbrev=0`) for `--since` automatically — no second question unless the user overrode the tag in Step 2.
 2. Run document-changes:
 ```
 uv run specflow document-changes --since <prev>

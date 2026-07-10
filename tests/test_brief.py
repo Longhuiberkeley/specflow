@@ -50,3 +50,40 @@ def test_brief_runs_and_reports_phase_and_inventory(project_root: Path, capsys):
     assert "planning" in out
     assert "Inventory" in out
     assert "No unresolved suspects" in out
+
+
+# --- next-skill recommendation: execute → artifact-review → ship (not execute → ship) ---
+
+from types import SimpleNamespace
+
+
+def _art(artifact_id: str, status: str) -> SimpleNamespace:
+    """Minimal artifact stub for the pure recommendation function."""
+    return SimpleNamespace(id=artifact_id, status=status, suspect=False)
+
+
+def test_next_skill_routes_through_artifact_review_before_ship():
+    """All stories implemented, not yet reviewed → insert /specflow-artifact-review before ship.
+
+    Guards the rank-1 fix: the deterministic router used to jump from 'all implemented'
+    straight to /specflow-ship, silently dropping the artifact-review lifecycle step.
+    """
+    artifacts = [_art("STORY-001", "implemented"), _art("STORY-002", "implemented")]
+    out = brief_cmd._next_skill_recommendation("executing", artifacts, [], [])
+    assert "/specflow-artifact-review" in out
+    assert "/specflow-ship" in out
+
+
+def test_next_skill_skips_to_ship_when_reviewed():
+    """All stories implemented AND V-model tests already exist → go straight to ship."""
+    artifacts = [_art("STORY-001", "implemented"), _art("UT-001", "approved")]
+    out = brief_cmd._next_skill_recommendation("executing", artifacts, [], [])
+    assert "/specflow-ship" in out
+    assert "/specflow-artifact-review" not in out
+
+
+def test_next_skill_still_points_at_execute_when_wave_ready():
+    """A pending next wave still routes to /specflow-execute (regression guard)."""
+    artifacts = [_art("STORY-001", "approved")]
+    out = brief_cmd._next_skill_recommendation("executing", artifacts, [], ["STORY-001"])
+    assert "/specflow-execute" in out
