@@ -27,11 +27,11 @@ When writing AI skills for SpecFlow's internal agents (e.g., inside `.claude/ski
 - Store domain knowledge in `references/`.
 - Store deterministic operations in `scripts/`.
 
-### 6. Ephemeral Local Execution (Like npx)
-We do not install SpecFlow globally for users. Users will install it directly into their repository ephemerally using `uv run specflow init` to scaffold directories. Ensure scripts and instructions respect this local execution paradigm to avoid system-level pollution.
+### 6. Invocation Model — bare `specflow` (Git source, not PyPI)
+Users obtain SpecFlow from its Git source — `uv tool install git+https://github.com/Longhuiberkeley/specflow` (puts `specflow` on PATH) or `uvx --from git+... specflow ...` (ephemeral). The public PyPI `specflow` name is an unrelated JSON-Schema package, so SpecFlow is never resolved from PyPI. Once available, SpecFlow is invoked as **bare `specflow`** in skills, checklists, hooks, and hints — NOT `uv run specflow`, which only works where specflow is a declared project dependency (true in this repo only) and is the root cause of the consuming-project bootstrap bug. Clean CI runners are the one exception and bootstrap via `uvx --from git+...@v<ver>` (no specflow preinstalled). Dogfooding skill-driven flows in this repo assumes `specflow` on PATH (`uv tool install --from . specflow`).
 
 ### 7. The User Interface Is CLI Skills
-The user's primary interface to SpecFlow is **`/specflow-*` conversational skills** invoked inside their AI coding assistant (Claude, Cursor, Cline, etc.). Raw CLI commands like `specflow create` or `uv run specflow artifact-lint` are the deterministic backend that skills call under the hood — they are implementation details, not the user-facing product.
+The user's primary interface to SpecFlow is **`/specflow-*` conversational skills** invoked inside their AI coding assistant (Claude, Cursor, Cline, etc.). Raw CLI commands like `specflow create` or `specflow artifact-lint` are the deterministic backend that skills call under the hood — they are implementation details, not the user-facing product.
 
 When writing documentation, tutorials, or onboarding material, emphasize skill-based workflows (`/specflow-discover`, `/specflow-plan`, `/specflow-execute`, `/specflow-audit`). Only mention raw CLI commands when explaining what a skill does internally or when providing CI/automation examples.
 
@@ -135,7 +135,7 @@ Follow these steps when releasing a new version:
 2. **Bump the version in both sources of truth** — `pyproject.toml` (`version`) and `src/specflow/__init__.py` (`__version__`). `config.py` reads `specflow.__version__`, so both must match.
 3. **Update `ROADMAP.md`** — move shipped items from "Planned" to the released section
 4. **Run the test suite:** `pytest tests/`
-5. **Run self-audit:** `uv run specflow artifact-lint` and `uv run specflow project-audit`
+5. **Run self-audit:** `specflow artifact-lint` and `specflow project-audit`
 6. **Commit:** `git commit -m "chore: release v1.x.x"`
 7. **Tag:** `git tag -a v1.x.x -m "v1.x.x"`
 8. **Push:** `git push --follow-tags`

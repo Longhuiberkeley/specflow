@@ -9,7 +9,7 @@ A thin, host-neutral router: orient on project state, then point at the right ne
 
 ## Workflow
 
-1. **Recall state (deterministic, zero tokens):** run `uv run specflow brief --next`. It reads `state.yaml` + the artifact graph and prints a single next-step recommendation (e.g. *"REQs approved, no ARCH yet → /specflow-plan"*).
+1. **Recall state (deterministic, zero tokens):** run `specflow brief --next`. It reads `state.yaml` + the artifact graph and prints a single next-step recommendation (e.g. *"REQs approved, no ARCH yet → /specflow-plan"*).
 
 2. **If the recommendation is unambiguous:** tell the user exactly which slash-command to run next, and stop. Examples:
    - *"You have approved REQs but no architecture yet → run `/specflow-plan`."*

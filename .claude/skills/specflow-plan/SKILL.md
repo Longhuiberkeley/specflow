@@ -24,12 +24,12 @@ Break down approved requirements into architecture, detailed design, and user st
 
 ### Step 1: Phase Gate Check
 
-1. **Recall first:** run `uv run specflow brief` for a one-call digest of phase, inventory, suspects, and recent changes — then drill into specific `_index.yaml` files or full artifact bodies only as needed.
+1. **Recall first:** run `specflow brief` for a one-call digest of phase, inventory, suspects, and recent changes — then drill into specific `_index.yaml` files or full artifact bodies only as needed.
 
-2. **Reverse lifecycle check:** If the user said "rethink the architecture," "revise the plan," or "go back to planning" (or if you detect the user wants to revisit architecture after executing), ask: "Do you want to (a) revise existing ARCH/DDD artifacts in place, (b) re-decompose from the same REQs, or (c) go back to requirements first (run /specflow-discover)?" If revising, read the existing ARCH/DDDs and offer targeted edits. If re-decomposing, proceed with the existing approved REQs. For (a) or (b), record the rewind so `brief --next` routes correctly: `uv run specflow phase-set planning --reason "<why>"`. For (c), route to `/specflow-discover` — it records its own phase-set.
+2. **Reverse lifecycle check:** If the user said "rethink the architecture," "revise the plan," or "go back to planning" (or if you detect the user wants to revisit architecture after executing), ask: "Do you want to (a) revise existing ARCH/DDD artifacts in place, (b) re-decompose from the same REQs, or (c) go back to requirements first (run /specflow-discover)?" If revising, read the existing ARCH/DDDs and offer targeted edits. If re-decomposing, proceed with the existing approved REQs. For (a) or (b), record the rewind so `brief --next` routes correctly: `specflow phase-set planning --reason "<why>"`. For (c), route to `/specflow-discover` — it records its own phase-set.
 2. Read all REQ artifacts from `_specflow/specs/requirements/`.
 3. Verify all REQs have `status: approved`. If any are still `draft`, tell the user which ones need approval before planning can proceed.
-4. Run the phase gate: `uv run specflow artifact-lint --type gate --gate specifying-to-planning`. Run it by default — only skip if the user explicitly declines.
+4. Run the phase gate: `specflow artifact-lint --type gate --gate specifying-to-planning`. Run it by default — only skip if the user explicitly declines.
 5. If gate fails, report blockers and stop.
 
 ### Step 2: Read & Understand Requirements
@@ -99,7 +99,7 @@ Present the architecture as a discussion, not a fait accompli. Ask:
 For each agreed component, create an ARCH artifact:
 
 ```
-uv run specflow create \
+specflow create \
   --type architecture \
   --title "<component name>" \
   --priority "<high|medium|low>" \
@@ -119,7 +119,7 @@ For each DDD:
 4. Note preconditions and invariants
 
 ```
-uv run specflow create \
+specflow create \
   --type detailed-design \
   --title "<design name>" \
   --links "[{\"target\": \"ARCH-001\", \"role\": \"refined_by\"}]" \
@@ -147,8 +147,8 @@ If the user requested specific techniques or said "go deep", expand the selectio
 After applying thinking techniques, record which techniques were applied to each artifact — even if they passed cleanly:
 
 ```
-uv run specflow update <ARCH-ID> --thinking-techniques <technique1,technique2>
-uv run specflow update <DDD-ID> --thinking-techniques <technique1,technique2>
+specflow update <ARCH-ID> --thinking-techniques <technique1,technique2>
+specflow update <DDD-ID> --thinking-techniques <technique1,technique2>
 ```
 
 ### Step 5: Story Breakdown (SPIDR)
@@ -171,7 +171,7 @@ Read `references/spidr-decomposition.md` for the full SPIDR framework. Decompose
 For each story:
 
 ```
-uv run specflow create \
+specflow create \
   --type story \
   --title "<story title>" \
   --priority "<high|medium|low>" \
@@ -183,7 +183,7 @@ uv run specflow create \
 
 Run full validation:
 ```
-uv run specflow artifact-lint
+specflow artifact-lint
 ```
 
 Report any issues. Fix broken links or schema violations.

@@ -12,6 +12,7 @@ from specflow.lib import rbac as rbac_lib
 from specflow.lib import scaffold as scaffold_lib
 from specflow.lib import config as config_lib
 from specflow.lib.adapters import load_adapters_config, get_adapter
+from specflow.lib.adapters.github_actions import _DEFAULT_HOOK_SCRIPT
 
 
 def _get_packs_dir() -> Path:
@@ -317,12 +318,7 @@ def _install_pre_commit_hook(root: Path) -> None:
     if hook_path.exists() and "specflow hook pre-commit" not in hook_path.read_text(encoding="utf-8", errors="ignore"):
         print(f"  ! .git/hooks/pre-commit exists and is not specflow-owned -- leaving as-is")
         return
-    hook_path.write_text(
-        "#!/usr/bin/env bash\n"
-        "# specflow pre-commit hook -- installed by `specflow init`\n"
-        "exec uv run specflow hook pre-commit \"$@\"\n",
-        encoding="utf-8",
-    )
+    hook_path.write_text(_DEFAULT_HOOK_SCRIPT, encoding="utf-8")
     mode = hook_path.stat().st_mode
     hook_path.chmod(mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
     print(f"  + Installed .git/hooks/pre-commit")

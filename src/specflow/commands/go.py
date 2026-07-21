@@ -21,7 +21,7 @@ def run(root: Path, args: dict[str, Any]) -> int:
 
     if not stories:
         print(f"{YELLOW}No approved stories found for execution.{NC}")
-        print("Approve stories first: uv run specflow update STORY-XXX --status approved")
+        print("Approve stories first: specflow update STORY-XXX --status approved")
         return 1
 
     wave_result = compute_waves(stories)

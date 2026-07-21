@@ -25,7 +25,7 @@ specflow init [--preset PRESET] [--no-ci]
 
 ### `specflow refresh`
 
-Update the copied skills, agent-context block, and templates in this repo to match the installed SpecFlow version — without a full re-init. Run this after upgrading SpecFlow (`uv tool upgrade specflow`) so new routing triggers, lifecycle fixes, and reference docs land in `.claude/skills/` (and the other platform skill dirs). It is the only way installed skills stay current after an upgrade.
+Update the copied skills, agent-context block, and templates in this repo to match the installed SpecFlow version — without a full re-init. Run this after upgrading SpecFlow (`uv tool install --force git+https://github.com/Longhuiberkeley/specflow`) so new routing triggers, lifecycle fixes, and reference docs land in `.claude/skills/` (and the other platform skill dirs). It is the only way installed skills stay current after an upgrade. (SpecFlow is distributed from Git only — not on PyPI — so install and upgrade always use the Git source.)
 
 ```bash
 specflow refresh [--platform <code>]

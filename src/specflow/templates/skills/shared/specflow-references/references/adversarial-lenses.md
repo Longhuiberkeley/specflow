@@ -85,7 +85,7 @@ Each lifecycle phase has a default set of lenses applied automatically. Users ca
 After applying thinking techniques to an artifact, record which techniques were applied — even if they passed cleanly (no findings):
 
 ```
-uv run specflow update <ARTIFACT_ID> --thinking-techniques <technique1,technique2>
+specflow update <ARTIFACT_ID> --thinking-techniques <technique1,technique2>
 ```
 
 This updates the artifact's `thinking_techniques` frontmatter field, enabling:

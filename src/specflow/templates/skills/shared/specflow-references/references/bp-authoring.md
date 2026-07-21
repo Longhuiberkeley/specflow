@@ -29,7 +29,7 @@ Every BP artifact must follow this three-section body format:
 ## Creation Command
 
 ```
-uv run specflow create \
+specflow create \
   --type best-practice \
   --title "<practice title>" \
   --status approved \

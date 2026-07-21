@@ -23,13 +23,13 @@
 
 ```bash
 # Preview the wave plan
-uv run specflow go --dry-run
+specflow go --dry-run
 
 # Execute all waves
-uv run specflow go
+specflow go
 
 # Execute with custom timeout
-uv run specflow go --timeout 300
+specflow go --timeout 300
 ```
 
 ## Context Isolation

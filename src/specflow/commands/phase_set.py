@@ -20,7 +20,7 @@ def run(root: Path, args: dict[str, Any]) -> int:
     root = root.resolve()
     config = config_lib.read_config(root)
     if not config:
-        print(f"{RED}✗ SpecFlow is not initialized here. Run 'uv run specflow init'.{NC}")
+        print(f"{RED}✗ SpecFlow is not initialized here. Run 'specflow init'.{NC}")
         return 1
 
     target = (args.get("phase") or "").strip()

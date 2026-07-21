@@ -8,25 +8,25 @@ items:
   - id: CKL-GATE-003-01
     check: "All REQ artifacts have status: approved"
     automated: true
-    script: "uv run specflow artifact-lint --type status"
+    script: "specflow artifact-lint --type status"
     severity: blocking
 
   - id: CKL-GATE-003-02
     check: "Every REQ has at least one acceptance criterion"
     automated: true
-    script: "uv run specflow artifact-lint --type acceptance"
+    script: "specflow artifact-lint --type acceptance"
     severity: blocking
 
   - id: CKL-GATE-003-03
     check: "No broken links in REQ artifacts"
     automated: true
-    script: "uv run specflow artifact-lint --type links"
+    script: "specflow artifact-lint --type links"
     severity: blocking
 
   - id: CKL-GATE-003-04
     check: "All REQ IDs are unique and well-formed"
     automated: true
-    script: "uv run specflow artifact-lint --type ids"
+    script: "specflow artifact-lint --type ids"
     severity: blocking
 
   - id: CKL-GATE-003-05

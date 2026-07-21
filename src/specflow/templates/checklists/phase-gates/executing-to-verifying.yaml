@@ -8,7 +8,7 @@ items:
   - id: CKL-GATE-005-01
     check: "All STORY artifacts have status: implemented or verified"
     automated: true
-    script: "uv run specflow artifact-lint --type status"
+    script: "specflow artifact-lint --type status"
     severity: blocking
 
   - id: CKL-GATE-005-02
@@ -20,13 +20,13 @@ items:
   - id: CKL-GATE-005-03
     check: "SPEC artifacts are updated to status: implemented"
     automated: true
-    script: "uv run specflow artifact-lint --type status"
+    script: "specflow artifact-lint --type status"
     severity: warning
 
   - id: CKL-GATE-005-04
     check: "No suspect flags unresolved on implemented artifacts"
     automated: true
-    script: "uv run specflow artifact-lint --type fingerprints"
+    script: "specflow artifact-lint --type fingerprints"
     severity: warning
 
   - id: CKL-GATE-005-05

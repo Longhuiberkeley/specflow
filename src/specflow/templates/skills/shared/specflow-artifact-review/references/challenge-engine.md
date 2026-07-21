@@ -59,11 +59,11 @@ When `specflow checklist-run` reviews an artifact:
 
 ```bash
 # Run check with proactive challenges
-uv run specflow checklist-run --proactive STORY-001
+specflow checklist-run --proactive STORY-001
 
 # Close phase and extract patterns
-uv run specflow done
+specflow done
 
 # Skip pattern extraction
-uv run specflow done --no-patterns
+specflow done --no-patterns
 ```

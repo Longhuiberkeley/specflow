@@ -19,7 +19,7 @@ If the user's intent could match another review skill, confirm scope with **one*
 - **One specific artifact** → `/specflow-artifact-review`.
 - **Impact cone of recent changes** → `/specflow-change-impact-review`.
 
-If still unclear, run `uv run specflow brief --next` (or `/specflow-start`) and let the user choose.
+If still unclear, run `specflow brief --next` (or `/specflow-start`) and let the user choose.
 
 Always run the deterministic core regardless of input. It costs zero tokens and provides the foundation for any analysis.
 
@@ -40,23 +40,23 @@ Before running the audit, check for active best-practice artifacts in `_specflow
 Run the automated audit pipeline silently. This covers horizontal, vertical, and cross-cutting checks — including an **orphan-code lens** that flags source files not traced to any STORY/REQ via `output_files`, and a **docs-staleness** check that flags docs citing superseded/cancelled/deprecated artifacts via inline `@ID` markers (warning only — never escalates the exit code). (Skipped under `--quick`.)
 
 ```
-uv run specflow project-audit
+specflow project-audit
 ```
 
-If the audit reports orphaned source code, list the specific files with `uv run specflow detect orphan-code` and offer to adopt them (`--retro-link STORY-NNN`) so every file traces back to a spec.
+If the audit reports orphaned source code, list the specific files with `specflow detect orphan-code` and offer to adopt them (`--retro-link STORY-NNN`) so every file traces back to a spec.
 
 After the project audit, run the chain depth survey to show traceability coverage distribution:
 
 ```
-uv run specflow artifact-lint --type chain-report
+specflow artifact-lint --type chain-report
 ```
 
-For the full bidirectional traceability matrix (REQ → ARCH → STORY → verifying tests, gap markers per row), run `uv run specflow rtm --gaps`.
+For the full bidirectional traceability matrix (REQ → ARCH → STORY → verifying tests, gap markers per row), run `specflow rtm --gaps`.
 
 Then, run the standards gap analysis to check compliance health against installed packs:
 
 ```
-uv run specflow standards gaps
+specflow standards gaps
 ```
 
 Include the chain depth distribution and the standards compliance score in the audit summary (Step 5). The chain depth is informational data about how deep traceability chains run across the project — not a pass/fail indicator. The standards compliance score should be highlighted if it is below 100%.
@@ -69,7 +69,7 @@ After the core audit completes, offer to run deeper, AI-driven adversarial revie
 
 If accepted:
 1. Read `../specflow-references/references/adversarial-lenses.md` for the full 16-lens catalog. Select lenses relevant to the findings from Step 2 (e.g., if coverage gaps found → use `audit-vertical`; if dependency issues → use `dependency_shock`).
-2. For any artifact flagged during Step 2, run `uv run specflow trace <ARTIFACT_ID>` to understand its full upstream/downstream dependency context before evaluating lenses.
+2. For any artifact flagged during Step 2, run `specflow trace <ARTIFACT_ID>` to understand its full upstream/downstream dependency context before evaluating lenses.
 
 3. **Parallel lens fan-out (error-driven scaling).** DEFAULT on Claude Code/OpenCode; sequential single-agent fallback on hosts without native subagents (see `../specflow-references/references/adversarial-lenses.md` § Multi-Agent Strategy). Context budget ~2000 tokens/lens; output is identical either way (CHL findings tagged per lens + `thinking_techniques` records). The per-scale subagent counts below are for capable hosts:
    - **Standard (0-2 errors in Step 2):** Create 2 parallel subagents (if your platform supports spawning subagents) each covering a subset of the selected lenses. Sequential fallback: run lens groups sequentially.
@@ -80,7 +80,7 @@ If accepted:
 5. When creating CHL artifacts, use specific technique names (e.g., `premortem`, `stress_scale`, `dependency_shock`) rather than the generic `project-audit` label. The deterministic core findings use `audit-horizontal`, `audit-vertical`, and `audit-cross-cutting`.
 6. After running lenses on sampled artifacts, record which techniques were applied:
    ```
-   uv run specflow update <ARTIFACT_ID> --thinking-techniques premortem,stress_scale
+   specflow update <ARTIFACT_ID> --thinking-techniques premortem,stress_scale
    ```
 
 ### Step 4: Artifact Creation
@@ -91,12 +91,12 @@ For any significant findings or systemic gaps identified in Step 2 or Step 3:
 2. For each specific actionable finding, create a CHL (Challenge) artifact linked to the AUD artifact via `identified_by`.
 
 ```
-uv run specflow create \
+specflow create \
   --type audit \
   --title "Pre-Release Audit" \
   --body "<summary of findings>"
 
-uv run specflow create \
+specflow create \
   --type challenge \
   --title "Missing error handling in Payment API" \
   --links "[{\"target\": \"AUD-xxx\", \"role\": \"identified_by\"}]" \

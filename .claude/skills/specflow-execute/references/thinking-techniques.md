@@ -14,7 +14,7 @@ These two adversarial lenses from the catalog are applied during implementation 
 
 Record after applying:
 ```
-uv run specflow update <STORY-ID> --thinking-techniques worst_case_user,composition
+specflow update <STORY-ID> --thinking-techniques worst_case_user,composition
 ```
 
 ## Lightweight mental prompts

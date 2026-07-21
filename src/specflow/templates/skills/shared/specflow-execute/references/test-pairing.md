@@ -22,7 +22,7 @@ When a spec artifact reaches `status: implemented`, its verification test should
 
 ### Unit Test (verifies DDD)
 ```
-uv run specflow create \
+specflow create \
   --type unit-test \
   --title "UT for <DDD component>" \
   --links "[{\"target\": \"DDD-001\", \"role\": \"verified_by\"}]" \
@@ -31,7 +31,7 @@ uv run specflow create \
 
 ### Integration Test (verifies ARCH)
 ```
-uv run specflow create \
+specflow create \
   --type integration-test \
   --title "IT for <ARCH component>" \
   --links "[{\"target\": \"ARCH-001\", \"role\": \"verified_by\"}]" \
@@ -40,7 +40,7 @@ uv run specflow create \
 
 ### Qualification Test (verifies REQ)
 ```
-uv run specflow create \
+specflow create \
   --type qualification-test \
   --title "QT for <REQ>" \
   --links "[{\"target\": \"REQ-001\", \"role\": \"verified_by\"}]" \

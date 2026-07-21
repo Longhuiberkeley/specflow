@@ -42,18 +42,18 @@ Docs are prose that *explains and cites* the spec graph; they are not part of it
 2. **(Optional) metadata.** A doc may carry a tiny `specflow-doc:` frontmatter block (`title`, `audience`, `last_reviewed`) — purely metadata, no status/lifecycle. Plain docs work fully without it. See `references/docs-frontmatter.md`.
 3. **Sync the index.**
    ```bash
-   uv run specflow rebuild-index
+   specflow rebuild-index
    ```
    Writes the derived `_specflow/docs-index.yaml` (doc → citations reverse index) — an inspectable, greppable, git-diffable materialization. Every command recomputes live from disk, so files on disk remain the source of truth.
 4. **Check recall.**
    ```bash
-   uv run specflow brief
+   specflow brief
    ```
    Shows a **Docs surface** block: count, areas, how many cite an artifact, top-cited docs.
 5. **Check staleness.**
    ```bash
-   uv run specflow detect stale-docs      # names docs citing superseded artifacts
-   uv run specflow project-audit          # same, as a non-blocking audit concern
+   specflow detect stale-docs      # names docs citing superseded artifacts
+   specflow project-audit          # same, as a non-blocking audit concern
    ```
    Resolve by updating the citation or re-confirming the reference. See `references/staleness-rules.md`.
 

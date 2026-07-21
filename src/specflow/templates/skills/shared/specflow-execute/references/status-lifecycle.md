@@ -55,16 +55,16 @@ open → investigating → fixing → verified → closed
 
 To approve multiple artifacts:
 ```bash
-uv run specflow update REQ-001 --status approved
-uv run specflow update REQ-002 --status approved
+specflow update REQ-001 --status approved
+specflow update REQ-002 --status approved
 ```
 
 To check status of all artifacts:
 ```bash
-uv run specflow status
+specflow status
 ```
 
 To validate status consistency:
 ```bash
-uv run specflow artifact-lint --type status
+specflow artifact-lint --type status
 ```

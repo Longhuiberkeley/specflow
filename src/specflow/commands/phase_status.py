@@ -57,7 +57,7 @@ def run(root: Path, args: dict[str, Any]) -> int:
     config = config_lib.read_config(root)
     state = config_lib.read_state(root)
     if not config or not state:
-        print(f"{RED}✗ SpecFlow is not initialized here. Run 'uv run specflow init'.{NC}")
+        print(f"{RED}✗ SpecFlow is not initialized here. Run 'specflow init'.{NC}")
         return 1
 
     phase = state.get("current", "idle")

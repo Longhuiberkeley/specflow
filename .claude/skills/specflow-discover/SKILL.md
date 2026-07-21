@@ -24,16 +24,16 @@ Conduct a structured discovery conversation to capture requirements as REQ artif
 
 ### Step 0: Initialize
 
-1. **Recall first:** run `uv run specflow brief` for a one-call digest — phase, inventory by category/status, open suspects, next wave, and recent changes. This replaces the manual ritual of scanning every `_index.yaml`; drill into specific `_index.yaml` files or `specflow trace <ID>` only for the artifacts you need to read in full.
+1. **Recall first:** run `specflow brief` for a one-call digest — phase, inventory by category/status, open suspects, next wave, and recent changes. This replaces the manual ritual of scanning every `_index.yaml`; drill into specific `_index.yaml` files or `specflow trace <ID>` only for the artifacts you need to read in full.
 
-2. **Reverse lifecycle check:** If the user said "rethink the requirements," "revise the requirements," or "go back to requirements" (or if you detect the user wants to revisit specs after planning/executing), ask: "Do you want to (a) revise existing REQs in place, or (b) start a fresh discovery for new requirements?" If revising, read the existing REQs and offer targeted edits rather than starting from scratch. If starting fresh, proceed with the full discovery flow below. Either way, record the rewind so `brief --next` routes correctly afterward: `uv run specflow phase-set specifying --reason "<why>"` if revising in place, or `uv run specflow phase-set discovering --reason "<why>"` if starting a fresh REQ set.
+2. **Reverse lifecycle check:** If the user said "rethink the requirements," "revise the requirements," or "go back to requirements" (or if you detect the user wants to revisit specs after planning/executing), ask: "Do you want to (a) revise existing REQs in place, or (b) start a fresh discovery for new requirements?" If revising, read the existing REQs and offer targeted edits rather than starting from scratch. If starting fresh, proceed with the full discovery flow below. Either way, record the rewind so `brief --next` routes correctly afterward: `specflow phase-set specifying --reason "<why>"` if revising in place, or `specflow phase-set discovering --reason "<why>"` if starting a fresh REQ set.
 2. Confirm the project phase from the brief (or `.specflow/state.yaml`). If `current` is `idle` or `discovering`, proceed. Otherwise, warn the user that discovery may conflict with the current phase.
 3. If artifacts already exist, ask: "Do you want to add new requirements, or refine existing ones?"
 
 **Superseding a requirement** (when a replacement changes meaning rather than refining wording, prefer this over editing in place): create the replacement REQ with a `supersedes` link to the old one, then mark the old REQ `superseded`:
 ```
-uv run specflow create --type requirement --title "<new REQ title>" --links '[{"target":"<OLD-REQ-ID>","role":"supersedes"}]' --body "..."
-uv run specflow update <OLD-REQ-ID> --status superseded
+specflow create --type requirement --title "<new REQ title>" --links '[{"target":"<OLD-REQ-ID>","role":"supersedes"}]' --body "..."
+specflow update <OLD-REQ-ID> --status superseded
 ```
 `superseded` is allowed from `approved`/`implemented`/`verified` (not `draft`). Docs citing the old REQ pick up a staleness warning automatically.
 
@@ -58,11 +58,11 @@ After each user response, silently evaluate readiness dimensions:
 
 ### Step 1.5: Standards Gap Check (Silent, Auto-Run)
 
-1. After the initial readiness assessment, silently run `uv run specflow standards gaps`.
+1. After the initial readiness assessment, silently run `specflow standards gaps`.
 2. If the command returns uncovered standard clauses:
    - Present: "You have N uncovered standard clauses (e.g., ISO26262-3.7: Hazard analysis). Want me to scaffold REQs for them? (Recommended: Yes)"
    - Allow the user to accept all, pick specific clauses, or skip.
-   - For each accepted clause, run `uv run specflow create --from-standard <clause-id>` to create a draft REQ pre-populated with the clause's title, description, and a `complies_with` link.
+   - For each accepted clause, run `specflow create --from-standard <clause-id>` to create a draft REQ pre-populated with the clause's title, description, and a `complies_with` link.
    - The user then adapts these draft REQs during the normal discovery flow.
 3. If no uncovered clauses are found, proceed normally without mentioning standard gaps.
 
@@ -73,7 +73,7 @@ For bounded changes like "add dark mode" or "fix the login redirect":
 1. Generate a single REQ artifact (status `draft`) with minimal metadata.
 2. Generate a single STORY artifact (status `draft`) linked to the REQ via `implements`.
 3. **Tier 0 approval (still a gate).** Present a compact summary — TLDR + the REQ and STORY in 2-3 lines — and approve **only on the user's confirmation** (`specflow update <ID> --status approved` for each). Do not silently auto-approve: a lean change lowers how much the human must read, not whether they confirm (see `../specflow-references/references/approval-presentation.md`).
-4. Record the lean assessment on the REQ: `uv run specflow update <REQ-ID> --thinking-techniques lean_assessment`
+4. Record the lean assessment on the REQ: `specflow update <REQ-ID> --thinking-techniques lean_assessment`
 5. Skip to Step 5 (Artifact Creation).
 
 ### Step 2F: Full Discovery — Phase 1: Context-Free Questions
@@ -107,7 +107,7 @@ After each answer, update your readiness assessment silently.
    - `data-science` — Analysis / notebooks (freeform; no bundled checklist)
    - Any freeform value — domain is open; a matching `references/domain-checklists/<name>.md` is surfaced when one exists.
 
-   If unsure, run `uv run specflow domain suggest` — it scans dependency manifests (quant/ml first) and proposes a domain. **Confirm with the user before setting**; never silently classify.
+   If unsure, run `specflow domain suggest` — it scans dependency manifests (quant/ml first) and proposes a domain. **Confirm with the user before setting**; never silently classify.
 
 3. Read `references/domain-checklists/<project-type>.md` for the domain-specific question set.
 
@@ -115,13 +115,13 @@ After each answer, update your readiness assessment silently.
 
 5. **Persist the classification** so downstream skills can use it:
    ```
-   uv run specflow domain set <project-type> [--tag <relevant-tag>]
+   specflow domain set <project-type> [--tag <relevant-tag>]
    ```
    Add tags that further qualify the project (e.g., `--tag real-time --tag safety-critical` for embedded; `--tag phi --tag hipaa` for healthcare; `--tag pii` for fintech). These drive domain-aware checklist items at plan / review time.
 
 6. **Generate project-level best practices** as BP artifacts. Based on the classified domain, create domain-specific best practices:
    ```
-   uv run specflow create --type best-practice --title "<practice>" --status approved --tags "<domain>" --body "## Practice\n...\n## Rationale\n...\n## Verification\n..."
+   specflow create --type best-practice --title "<practice>" --status approved --tags "<domain>" --body "## Practice\n...\n## Rationale\n...\n## Verification\n..."
    ```
    Generate 3-5 BPs covering the most impactful domain practices (e.g., for embedded: memory safety, interrupt handling; for web-app: input validation, CSRF protection). Link each to the domain standard if applicable via `--links`. These BPs guide all downstream plan, execute, and review skills. The agent reads them from `_specflow/specs/best-practices/` — no external API calls needed.
 
@@ -146,7 +146,7 @@ After each answer, update your readiness assessment silently.
 2. Ask: "Does this capture everything? Anything missing or incorrect?"
 3. Iterate until user approves.
 4. **Inter-REQ dependency prompting**: Ask: "Do any of these requirements depend on others being implemented first? For example, 'user authentication' might need to be done before 'password reset'."
-5. For each dependency the user identifies, record it: `uv run specflow update <dependent-REQ> --links "[{\"target\": \"<prerequisite-REQ>\", \"role\": \"derives_from\"}]"`. These dependency links influence story wave ordering during planning.
+5. For each dependency the user identifies, record it: `specflow update <dependent-REQ> --links "[{\"target\": \"<prerequisite-REQ>\", \"role\": \"derives_from\"}]"`. These dependency links influence story wave ordering during planning.
 
 ### Step 5: Challenge Requirements
 
@@ -167,26 +167,26 @@ Present concerns as a quick summary. Let the user confirm, revise, or drop requi
 
 - **Dropped requirement**: Create a DEC artifact with title "Dropped: \<summary\>", status `approved`, body explaining the rationale for dropping.
   ```
-  uv run specflow create --type decision --title "Dropped: <summary>" --status approved --body "<rationale>"
+  specflow create --type decision --title "Dropped: <summary>" --status approved --body "<rationale>"
   ```
 - **Assumption surfaced**: Create a DEC artifact with title "Assumption: \<text\>", status `draft`, body containing the assumption, what happens if wrong, and what validates it.
   ```
-  uv run specflow create --type decision --title "Assumption: <text>" --status draft --body "<assumption, consequence if wrong, validation>"
+  specflow create --type decision --title "Assumption: <text>" --status draft --body "<assumption, consequence if wrong, validation>"
   ```
 - **Risk identified**: Create a DEC artifact with title "Risk: \<text\>", status `draft`, body containing the risk, likelihood, impact, and mitigation.
   ```
-  uv run specflow create --type decision --title "Risk: <text>" --status draft --body "<risk, likelihood, impact, mitigation>"
+  specflow create --type decision --title "Risk: <text>" --status draft --body "<risk, likelihood, impact, mitigation>"
   ```
 
 Only create DEC artifacts for significant findings. If no challenges produce actionable results, skip DEC creation to avoid noise.
 
 After challenging the REQs, record which techniques you applied to each — even if it passed cleanly — so the `thinking_techniques` field reflects reasoning that actually happened here, not a label added later to satisfy lint (technique names come from `references/thinking-techniques.md`):
 ```
-uv run specflow update <REQ-ID> --thinking-techniques <technique1,technique2>
+specflow update <REQ-ID> --thinking-techniques <technique1,technique2>
 ```
 For example, if devil's advocate and five-whys were applied to REQ-001:
 ```
-uv run specflow update REQ-001 --thinking-techniques devils_advocate,five_whys
+specflow update REQ-001 --thinking-techniques devils_advocate,five_whys
 ```
 If the user requested specific techniques or said "go deep", expand the selection accordingly.
 
@@ -210,7 +210,7 @@ The sequential fallback is the reference implementation — fan-out deepens the 
 For each approved requirement, create a REQ artifact:
 
 ```
-uv run specflow create \
+specflow create \
   --type requirement \
   --title "<requirement title>" \
   --priority "<high|medium|low>" \
@@ -243,7 +243,7 @@ Every REQ must have **at least 2 acceptance criteria** (happy path + at least on
 
 After creating all REQs, run validation:
 ```
-uv run specflow artifact-lint
+specflow artifact-lint
 ```
 
 Report results to user.

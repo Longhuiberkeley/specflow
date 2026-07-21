@@ -19,7 +19,7 @@ If the user's intent could match another review skill, confirm scope with **one*
 - **One specific artifact** → `/specflow-artifact-review`.
 - **Whole-project health** → `/specflow-audit`.
 
-If still unclear, run `uv run specflow brief --next` (or `/specflow-start`) and let the user choose.
+If still unclear, run `specflow brief --next` (or `/specflow-start`) and let the user choose.
 
 Always run the deterministic core regardless of input. It costs zero tokens and provides the foundation for any analysis.
 
@@ -47,7 +47,7 @@ If no unreviewed DECs are found, announce that the pipeline is clean (idempotent
 For each unreviewed DEC found:
 1. Identify the impacted artifacts. You can use the `specflow change-impact` command on the DEC's ID (or the artifacts it addresses) to compute the blast radius.
    ```bash
-   uv run specflow change-impact <DEC_ID>
+   specflow change-impact <DEC_ID>
    ```
 2. Note the "cone of impact". This limits the scope of the review to only the artifacts affected by the change, preventing unnecessary full-project reviews.
 
@@ -63,7 +63,7 @@ For each DEC and its impact cone:
    - Missing updates to related tests.
    - **Docs whose `@ID` citations now point at superseded/cancelled/deprecated artifacts** in the cone. Run the deterministic signal:
      ```bash
-     uv run specflow detect stale-docs
+     specflow detect stale-docs
      ```
      Each hit is a doc citing a stale artifact — resolve by updating the citation or re-confirming the reference. Warning only; never blocks.
 
@@ -93,7 +93,7 @@ For each DEC and its impact cone:
 If issues are discovered during the review of a DEC's impact cone:
 1. Create a Challenge (CHL) artifact for each distinct issue.
    ```bash
-   uv run specflow create --type challenge --title "<Summary of issue>"
+   specflow create --type challenge --title "<Summary of issue>"
    ```
 2. Set the `severity` of the CHL (e.g., `warning`, `error`).
 3. Link the CHL to the DEC using the role `challenges`.
@@ -106,7 +106,7 @@ After the review for a specific DEC is complete:
    - If the change is clean and no issues were found, set `review_status: reviewed`.
 2. Record which lenses were applied to each impacted artifact:
    ```bash
-   uv run specflow update <ARTIFACT-ID> --thinking-techniques <lens1,lens2>
+   specflow update <ARTIFACT-ID> --thinking-techniques <lens1,lens2>
    ```
 3. Save the updated DEC artifact.
 

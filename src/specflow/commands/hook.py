@@ -16,6 +16,7 @@ import yaml
 
 from specflow.lib import rbac as rbac_lib
 from specflow.lib.adapters import load_adapters_config, get_adapter
+from specflow.lib.adapters.github_actions import _DEFAULT_HOOK_SCRIPT
 from specflow.lib.display import RED, GREEN, YELLOW, NC
 
 
@@ -32,12 +33,7 @@ def _hook_template(root: Path) -> str:
         except ValueError:
             pass
 
-    return (
-        "#!/usr/bin/env bash\n"
-        "# specflow pre-commit hook — installed by `specflow hook install`\n"
-        "# Delegates to the Python CLI so the logic stays version-controlled.\n"
-        "exec uv run specflow hook pre-commit \"$@\"\n"
-    )
+    return _DEFAULT_HOOK_SCRIPT
 
 
 def _install(root: Path) -> int:
@@ -95,7 +91,7 @@ def _pre_commit(root: Path) -> int:
 
     # Link integrity check (blocking — broken links are corrupted accounting)
     link_result = subprocess.run(
-        ["uv", "run", "specflow", "artifact-lint", "--type", "links"],
+        ["specflow", "artifact-lint", "--type", "links"],
         capture_output=True, text=True, cwd=str(root), check=False,
     )
     if link_result.returncode != 0:
@@ -106,7 +102,7 @@ def _pre_commit(root: Path) -> int:
 
     # Schema validation (blocking — schema violations produce invalid artifacts)
     schema_result = subprocess.run(
-        ["uv", "run", "specflow", "artifact-lint", "--type", "schema"],
+        ["specflow", "artifact-lint", "--type", "schema"],
         capture_output=True, text=True, cwd=str(root), check=False,
     )
     if schema_result.returncode != 0:
@@ -119,7 +115,7 @@ def _pre_commit(root: Path) -> int:
     for change in changes:
         artifact_id = Path(change["path"]).stem
         suspect_result = subprocess.run(
-            ["uv", "run", "specflow", "status", "--artifact", artifact_id],
+            ["specflow", "status", "--artifact", artifact_id],
             capture_output=True, text=True, cwd=str(root), check=False,
         )
         if "suspect" in suspect_result.stdout.lower():

@@ -1650,7 +1650,7 @@ def run(root: Path, args: dict) -> int:
     specflow_dir = root / "_specflow"
     if not specflow_dir.exists():
         print(f"{YELLOW}⚠ No _specflow/ directory found{NC}")
-        print("   Run 'uv run specflow init' first.")
+        print("   Run 'specflow init' first.")
         return 1
 
     # --method llm is deprecated: all checks are now self-contained and deterministic.

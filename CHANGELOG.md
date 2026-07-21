@@ -4,6 +4,62 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.12.2] - 2026-07-21
+
+### Fixes
+
+- **Generated CI now bootstraps SpecFlow from its Git source.** The GitHub
+  Actions workflow `specflow init` / `specflow ci generate` writes for consuming
+  projects ran `uv sync` then `uv run specflow …`, but consuming projects don't
+  declare specflow as a dependency and specflow is not on PyPI (the `specflow`
+  name there is an unrelated JSON-Schema library) — so the blocking
+  `specflow-pass-1` job failed with "command not found" on every consuming
+  project out of the box. SpecFlow-only jobs now run
+  `uvx --from git+https://github.com/Longhuiberkeley/specflow@v<ver> specflow …`,
+  pinned to the generating version for reproducible CI. SpecFlow's own repo was
+  unaffected (there specflow is the project itself). The `pytest` job still uses
+  `uv sync`, since it needs the consuming project's own dependencies.
+- **`change-impact` CI job no longer passes a non-existent `--all` flag.** The
+  generated step ran `specflow change-impact --all`, but the CLI defines no
+  `--all`; argparse exited 2 and was silently swallowed by `|| true`, so the job
+  was a no-op. It now uses bare `specflow change-impact` (matching SpecFlow's own
+  dogfood workflow).
+- **`specflow init` no longer offers "GitLab CI" as a provider.** No GitLab
+  adapter is registered (only `github-actions` ships), so selecting it made
+  `specflow ci generate` fail. Non-GitHub CI remains build-it-yourself via
+  `docs/authoring-an-adapter.md`.
+- **Install/upgrade instructions point at the Git source.** The init skill and
+  `docs/cli-reference.md` said `uv tool upgrade specflow` (bare), which resolves
+  the unrelated PyPI package. Replaced with
+  `uv tool install --force git+https://github.com/Longhuiberkeley/specflow`.
+- **Removed the orphaned, divergent `templates/ci/github-actions.yml`.** Nothing
+  referenced it; the runtime generator (`lib/adapters/github_actions.py`) is the
+  source of truth for shipped workflows.
+- **Added test coverage for CI workflow generation** (`tests/test_ci_generation.py`),
+  which is why the bootstrap and `--all` bugs went undetected.
+- **The bootstrap fix is now applied everywhere, not just generated CI.** The
+  `uvx --from git+…` fix only covered CI workflows; the identical `uv run specflow`
+  bootstrap (which fails in consuming projects for the same reason) survived in
+  every sibling surface that runs in a consuming project. All now invoke bare
+  `specflow` (on PATH via the documented `uv tool install git+…`):
+  - the **pre-commit hook** (`specflow init` auto-installs it) — previously blocked
+    every commit in a consuming project. The three divergent copies of the hook
+    script (the adapter default, `specflow hook install`'s fallback, and `specflow
+    init`'s inline copy) are consolidated into one source of truth
+    (`_DEFAULT_HOOK_SCRIPT`), and its subprocess checks no longer shell out through
+    `uv run`;
+  - the **8 shipped checklist templates** whose `script:` items ran
+    `uv run specflow artifact-lint …` via `bash -c` (phase-gates, readiness,
+    in-process, domain);
+  - the **~12 skill-doc templates** and **7 user-facing CLI hints** that told the
+    consumer's AI / the user to run `uv run specflow …`.
+  Clean CI runners are the one exception and keep `uvx --from git+…@v<ver>`.
+- **The release-gate CI job now actually runs.** Its `if: startsWith(github.ref,
+  'refs/tags/')` guard was unreachable because the workflow trigger had no `tags:`
+  filter — tag pushes never started the workflow. Added `tags: ['v*']` to the
+  `push:` trigger. (Consumers that push version tags will now see the release-gate
+  job run, which is its intent.)
+
 ## [1.12.1] - 2026-07-21
 
 ### Highlights

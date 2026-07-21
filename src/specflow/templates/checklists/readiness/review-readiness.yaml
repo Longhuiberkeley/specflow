@@ -13,17 +13,17 @@ items:
   - id: CKL-RD-004-02
     check: "Artifact passes schema validation"
     automated: true
-    script: "uv run specflow artifact-lint --type schema"
+    script: "specflow artifact-lint --type schema"
     severity: blocking
 
   - id: CKL-RD-004-03
     check: "All links in artifact resolve to existing targets"
     automated: true
-    script: "uv run specflow artifact-lint --type links"
+    script: "specflow artifact-lint --type links"
     severity: blocking
 
   - id: CKL-RD-004-04
     check: "Artifact fingerprint is current (if previously reviewed)"
     automated: true
-    script: "uv run specflow artifact-lint --type fingerprints"
+    script: "specflow artifact-lint --type fingerprints"
     severity: info

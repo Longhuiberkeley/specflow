@@ -206,7 +206,7 @@ def run(root: Path, args: dict) -> int:
 
     if not config or not state:
         print(f"{RED}✗ SpecFlow is not initialized in this project. "
-              f"Run 'uv run specflow init' to scaffold the project.{NC}")
+              f"Run 'specflow init' to scaffold the project.{NC}")
         return 1
 
     project_name = config.get("project", {}).get("name", "unknown")

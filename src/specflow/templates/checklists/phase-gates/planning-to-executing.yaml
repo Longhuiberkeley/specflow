@@ -14,7 +14,7 @@ items:
   - id: CKL-GATE-004-02
     check: "All ARCH artifacts pass schema validation"
     automated: true
-    script: "uv run specflow artifact-lint --type schema"
+    script: "specflow artifact-lint --type schema"
     severity: blocking
 
   - id: CKL-GATE-004-03
@@ -26,19 +26,19 @@ items:
   - id: CKL-GATE-004-04
     check: "No broken links in architecture or stories"
     automated: true
-    script: "uv run specflow artifact-lint --type links"
+    script: "specflow artifact-lint --type links"
     severity: blocking
 
   - id: CKL-GATE-004-09
     check: "Every STORY links to a spec artifact (REQ/ARCH/DDD); research is a SPIKE"
     automated: true
-    script: "uv run specflow artifact-lint --type story-linkage"
+    script: "specflow artifact-lint --type story-linkage"
     severity: blocking
 
   - id: CKL-GATE-004-10
     check: "No STORY beyond draft links to a spec still in draft (no implementing against unapproved specs)"
     automated: true
-    script: "uv run specflow artifact-lint --type status-cascade"
+    script: "specflow artifact-lint --type status-cascade"
     severity: blocking
 
   - id: CKL-GATE-004-05

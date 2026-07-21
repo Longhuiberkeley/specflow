@@ -19,7 +19,7 @@ If the user's intent could match another review skill, confirm scope with **one*
 - **Impact cone of recent DEC changes** → `/specflow-change-impact-review`.
 - **Whole-project health** → `/specflow-audit`.
 
-If still unclear, run `uv run specflow brief --next` (or `/specflow-start`) and let the user choose.
+If still unclear, run `specflow brief --next` (or `/specflow-start`) and let the user choose.
 
 Always run the deterministic core regardless of input. It costs zero tokens and provides the foundation for any analysis.
 
@@ -36,7 +36,7 @@ Review artifacts by composing deterministic lint → context-specific checklists
 Always start with deterministic checks:
 
 ```
-uv run specflow artifact-lint
+specflow artifact-lint
 ```
 
 This runs schema, link, status, ID, fingerprint, and acceptance-criteria checks.
@@ -46,7 +46,7 @@ If any **blocking** issues are found, report them and stop. The user must fix bl
 ### Step 2: Review Dashboard
 
 ```
-uv run specflow status
+specflow status
 ```
 
 Present the status summary to the user. Note any:
@@ -58,7 +58,7 @@ Present the status summary to the user. Note any:
 If reviewing a specific artifact, also show its traceability chain:
 
 ```
-uv run specflow trace <ARTIFACT_ID>
+specflow trace <ARTIFACT_ID>
 ```
 
 This displays upstream (standards, parents) and downstream (implementation, tests) links as a tree, giving full context for the review.
@@ -82,13 +82,13 @@ This step is **mandatory before Step 5**. Checklists are the curated coverage th
 Run:
 
 ```
-uv run specflow checklist-run <ARTIFACT_ID>
+specflow checklist-run <ARTIFACT_ID>
 ```
 
 or, for the full set:
 
 ```
-uv run specflow checklist-run --all
+specflow checklist-run --all
 ```
 
 The `checklist-run` command automatically assembles:
@@ -125,7 +125,7 @@ Lenses are adversarial "thinking techniques" that attack the artifact from angle
 Run with:
 
 ```
-uv run specflow checklist-run --proactive <ARTIFACT_ID>
+specflow checklist-run --proactive <ARTIFACT_ID>
 ```
 
 This surfaces proactive challenge items ("what could go wrong? what's missing?") alongside the assembled checklist.
@@ -193,16 +193,16 @@ Present results following the **Approval Presentation Format** (see `../specflow
 
 After the summary, offer concrete remediation commands the user can run:
 
-- For a status change: `uv run specflow update <ID> --status <newstatus>`
-- For a fingerprint refresh after manual edits: `uv run specflow fingerprint-refresh <ID>`
-- For renumbering draft IDs before merge: `uv run specflow renumber-drafts`
-- For re-running a deeper review on one artifact: `uv run specflow checklist-run --proactive <ID>`
+- For a status change: `specflow update <ID> --status <newstatus>`
+- For a fingerprint refresh after manual edits: `specflow fingerprint-refresh <ID>`
+- For renumbering draft IDs before merge: `specflow renumber-drafts`
+- For re-running a deeper review on one artifact: `specflow checklist-run --proactive <ID>`
 
 Ask: **"Improve now — or defer?"** Do not mutate target artifact statuses without an explicit user "yes" per finding.
 
 ### Step 10: Phase Closure (Optional)
 
-If this review concludes the phase's work, the user may run `uv run specflow done` to:
+If this review concludes the phase's work, the user may run `specflow done` to:
 1. Review completed work in the current phase
 2. Extract prevention patterns into `.specflow/checklists/learned/`
 3. Close the phase and archive in `state.yaml`

@@ -106,7 +106,7 @@ def run(root: Path, args: dict) -> int:
     id_index = art_lib.build_id_index(artifacts)
 
     if not artifacts:
-        print(f"{YELLOW}⚠ No artifacts found. Run 'uv run specflow init' to initialize "
+        print(f"{YELLOW}⚠ No artifacts found. Run 'specflow init' to initialize "
               f"the project, then create spec artifacts.{NC}")
         return 0
 

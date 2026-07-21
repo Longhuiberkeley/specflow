@@ -99,6 +99,6 @@ items:
   - id: CKL-REQ-001-03
     check: "Has acceptance criteria section"
     automated: true
-    script: "uv run specflow artifact-lint --type acceptance"
+    script: "specflow artifact-lint --type acceptance"
     severity: blocking
 ```

@@ -43,7 +43,7 @@ Check the project root for platform detection markers (from `platforms.yaml`):
 | `.trae/` | `trae` | Trae |
 | `.junie/` | `junie` | Junie |
 
-Scan markers in order. If a marker exists, use that platform code. If multiple markers are found, prefer the first match (table order). `specflow init` also warns when multiple AI-host platform dirs are detected, since skills are only installed to the one you targeted — run `uv run specflow refresh --all-platforms` afterward to bring the others current.
+Scan markers in order. If a marker exists, use that platform code. If multiple markers are found, prefer the first match (table order). `specflow init` also warns when multiple AI-host platform dirs are detected, since skills are only installed to the one you targeted — run `specflow refresh --all-platforms` afterward to bring the others current.
 
 If **no** marker is found, ask:
 
@@ -78,13 +78,13 @@ Ask the user:
 - "What type of project is this?" -- bounded options: Web App, CLI Tool, Library, Firmware/Embedded, Data Pipeline, Mobile, Other
 - "Do you want to apply an industry standards preset?" -- bounded options: `iso26262-demo`, `default`, `adoption` (existing codebase — installs `/specflow-adopt`), or None (Recommended)
 - "Do you want to install optional artifact types (hazard, risk, control)?" -- bounded options: Yes, No (Recommended)
-- "Which CI provider do you use?" -- bounded options: GitHub Actions (Recommended), GitLab CI, None
+- "Which CI provider do you use?" -- bounded options: GitHub Actions (Recommended), None. (Only GitHub Actions ships a built-in adapter; GitLab/other CI is build-it-yourself via `docs/authoring-an-adapter.md` — do not offer it as a choice.)
 - "Do you have any specific compliance standard packs you want to install?" -- free text, or None (Recommended)
 
 ### 3. Run the init command
 
 ```sh
-uv run specflow init --platform <platform_code>
+specflow init --platform <platform_code>
 ```
 
 Append flags as needed:
@@ -119,14 +119,14 @@ The `specflow init` command installs a pre-commit hook automatically when `.git/
 + Installed .git/hooks/pre-commit
 ```
 
-If the project has no `.git/` directory yet, inform the user they can run `uv run specflow hook install` after initializing git.
+If the project has no `.git/` directory yet, inform the user they can run `specflow hook install` after initializing git.
 
 ### 6. Generate CI workflow (if requested)
 
 If a CI provider was specified and the adapters config was generated, the init command may have already created the workflow file. Verify from the output. If not, run:
 
 ```sh
-uv run specflow ci generate
+specflow ci generate
 ```
 
 ### 7. Report and recommend next steps
@@ -148,13 +148,13 @@ Then recommend:
 >
 > If **brownfield** (adoption preset): "Your project is ready. Run `/specflow-adopt` to inventory your existing code and backfill an as-built baseline (forward work for new features then resumes through `/specflow-discover`). Or `/specflow-adapter` to configure CI."
 
-**Upgrade note.** After upgrading SpecFlow (`uv tool upgrade specflow`), remind the user to run `uv run specflow refresh` — it updates the copied skills, agent-context block, and templates in this repo without a full re-init.
+**Upgrade note.** After upgrading SpecFlow (`uv tool install --force git+https://github.com/Longhuiberkeley/specflow`), remind the user to run `specflow refresh` — it updates the copied skills, agent-context block, and templates in this repo without a full re-init. (SpecFlow is distributed from Git only — it is not on PyPI, where the `specflow` name belongs to an unrelated package — so install and upgrade always use the Git source.)
 
 ## Rules
 
 - When offering the user choices for project type, presets, or CI, provide clear, bounded options.
 - The preset option should default to "None" unless the user indicates a regulated industry.
-- The CI option should default to "None" unless the user mentions "GitHub" or "GitLab".
+- The CI option should default to "None" unless the user mentions "GitHub". (No GitLab/other adapter ships — if the user asks for non-GitHub CI, point them at `docs/authoring-an-adapter.md` instead of offering it.)
 - Every choice offered to the user includes "(Recommended)" on the suggested default.
 - Platform detection should be automatic when possible. Only ask when no marker is found.
 - If the user says "skip" or "move on", accept all defaults and continue without further questions.

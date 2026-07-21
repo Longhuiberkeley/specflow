@@ -8,7 +8,7 @@ items:
   - id: CKL-DOM-EMB-01
     check: "Safety standard linkage is explicit when applicable"
     automated: true
-    script: "uv run specflow artifact-lint --type links"
+    script: "specflow artifact-lint --type links"
     severity: blocking
     llm_prompt: "If the system targets ISO 26262 / IEC 62304 / IEC 61508 / DO-178C, confirm any safety-relevant artifact carries a `complies_with` link or tag identifying the relevant clause / ASIL / SIL / DAL. Flag bare assertions of compliance."
 

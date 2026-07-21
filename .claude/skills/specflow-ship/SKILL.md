@@ -39,7 +39,7 @@ Read `../specflow-references/references/adversarial-lenses.md` for the full cata
 1. Derive the release tag and confirm it. Run `git describe --tags --abbrev=0` to find the last tag, then propose the next version (patch bump by default; minor if the user's release message implies new features). Present a single confirm: "Tag this release **v1.2.0** (Recommended, last was v1.1.0)? Confirm or correct." Only fall back to an open question if `git describe --tags --abbrev=0` finds no prior tag.
 2. Create an immutable baseline snapshot with compliance evidence:
 ```
-uv run specflow baseline create <tag> --evidence
+specflow baseline create <tag> --evidence
 ```
 
 ### Step 3: Document Changes (DEC Trail)
@@ -48,7 +48,7 @@ Generate the change records for this release:
 1. Reuse the prior tag from Step 2 (`git describe --tags --abbrev=0`) for `--since` automatically — no second question unless the user overrode the tag in Step 2.
 2. Run document-changes:
 ```
-uv run specflow document-changes --since <prev>
+specflow document-changes --since <prev>
 ```
 *Note: `document-changes` runs here so each release ships its own DEC trail.*
 
@@ -58,7 +58,7 @@ uv run specflow document-changes --since <prev>
 
 Run a fast health check across the final state of the release:
 ```
-uv run specflow project-audit --quick
+specflow project-audit --quick
 ```
 
 **Adversarial lens pass (default-on — the lenses loaded in Step 1).** Step 1 declared temporal-drift / regulator / (optional) premortem against the release scope; apply them here, default-on. Follow the standard fan-out convention (see `../specflow-references/references/adversarial-lenses.md` § Multi-Agent Strategy): one lens per subagent on Claude Code/OpenCode, sequential single-agent fallback elsewhere, context budget ~2000 tokens/lens. The user may opt out ("skip the lens pass") — but do not skip silently, since a release is a one-way door and Step 1 already committed to these lenses.
