@@ -198,6 +198,42 @@ Focus: **autoresearch methodology depth, escalation/permanence test, and templat
 
 > Deferred: an audit/lint detector that flags long-lived SPIKEs / repeated ad-hoc work that should have been promoted (a work-side complement to the v1.8.0 *Stale Code Detection* item). Also deferred: optional structured multi-output schema (typed per-component fields on COMP/EXPT) if the `component_<name>` convention proves too loose.
 
+## v1.12.1
+
+Focus: **restore deterministic-signal credibility and make core accounting pack-aware** (the retrospective theme: `artifact-lint`/`status`/`audit`/docs-citation crying wolf). No new blocking gates, no D-18 vocabulary expansion.
+
+- **Signal de-noise (A1–A5)** — docs-citation recognizes draft/coded-family IDs (the D-22 surface was silently dead on every modern project); the AC counter matches bullets/checkboxes, not just numbered; a link role canonical on *some* type is never mislabeled "Unknown" and repeated same-role warnings collapse to one summary line; coverage/rtm/status/cascade honor STORY→REQ `derives_from`; the orphan-code heuristic matches inline backtick paths.
+- **Pack-aware accounting (B1–B4)** — orphan/"no links" counts recognize autoresearch frontmatter provenance (EXPT/LOOP/FIND/COMP); `project-audit` batches findings into one table-bodied CHL per axis/category (stable count-free title → dedup works) instead of ~75 empty one-liners; `leaderboard --group-by loop` + `iteration` field; hypothesis lint gated to non-draft EXPTs and the FIND-promotion recipe reads `best_metric` from the LOOP.
+- **Fingerprint truth (C1)** — baselines recompute the fingerprint from the body instead of snapshotting a possibly-empty stored value.
+- **`brief` truthfulness (D1–D2)** — `--next` surfaces an implemented backlog left after a rewind (routing an all-verified backlog to artifact-review); a Health block nags unset `domain`, stale fingerprints, and an incomplete adoption handshake — zero noise when healthy.
+- **+19 tests (701 total)**; B2 batching verified live (3 grouped CHLs vs ~75 one-liners on the dogfood repo).
+
+## v1.12.0
+
+Focus: **deferred-lifecycle capabilities — reverse lifecycle, traceability matrix, authorization checks, supersession, quality gates, multi-host.**
+
+- **`specflow phase-set <phase> [--reason]`** — records a phase transition forward or a REWIND; accounting-only (never blocks), keeps `brief --next` honest after reverse-lifecycle moves, clears execution state when leaving `executing`; discover/plan/execute call it on a detected rewind.
+- **`specflow rtm`** — bidirectional requirements-traceability matrix (REQ → ARCH → STORY → verifying tests per row, gap markers, orphan-tests footer; table/markdown/csv).
+- **`specflow rbac check`** — resolves the git author's team roles and optionally checks a status-transition authorization; reports single-user mode when no team config.
+- **Supersession for REQ/ARCH/DDD** — new `superseded` status + `supersedes` link role, closing the D-18 gap where only DEC/BP had a supersession path.
+- **Acceptance quality gates** — empty `## Acceptance Criteria` is a blocking error; NFR-tagged REQs with no numeric threshold get a scope-honest warning (CKL-REV-REQ-02); functional REQs exempt.
+- **Multi-host awareness** — `init` warns on multiple AI-host platform dirs; `refresh --all-platforms` refreshes every detected host.
+
+## v1.11.2
+
+Focus: **phase machine, intent-first routing, and the autoresearch FIND→REQ promotion bridge.**
+
+- **Phase machine** — `close_phase` advances `state.current` along `PHASE_ORDER`; `phase_status` wires all 6 advisory gates; REQ-004 §6/AC5 softened to advisory.
+- **Intent-first routing** — AGENTS.md / `agent-context.md` plain-language triggers; expanded skill trigger utterances; `/specflow-start` added to the command reference.
+- **FIND→REQ promotion bridge** — deployable findings promote to core REQs with `derives_from` links; quick/smoke tier skip-rules for LOOP budget ≤ 5.
+- **Fixes** — `brief --next` routes execute → `/specflow-artifact-review` → ship (not straight to ship); `autoresearch plan` prints the real `--set KEY=VALUE` hint; `create --set links='[…]'` TypeError fixed; stale-command cleanup (`--version` added, phantom aliases removed); conflict message made scope-honest (CKL-REV-REQ-03).
+
+## v1.11.1
+
+Focus: **docs-surface entry-point sync** (the release-entry-point gap v1.11.0 skipped).
+
+- Synced the D-22 docs-surface entry points: README (`/specflow-doc` in the slash-command table + a "Docs — the knowledge surface" section), the `docs/lifecycle.md` flowchart and Tier-1 table, and the router/audit/init/change-impact skills now reference the docs surface and `specflow detect stale-docs`. Pack-only `/specflow-autoresearch` references qualified as "if installed". (Codified the release-entrypoint-sync lesson: ship code + downstream entry points together.)
+
 ## v1.11.0
 
 Focus: **docs as a recognized knowledge surface, and a coverage-metric fix.**

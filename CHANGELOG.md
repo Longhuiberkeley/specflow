@@ -4,6 +4,86 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.12.1] - 2026-07-21
+
+### Highlights
+
+- **Deterministic signals stop crying wolf.** A read-only retrospective of three
+  real projects found `artifact-lint`/`status`/`audit`/docs-citation burying real
+  issues under hundreds-to-thousands of false positives, training users to ignore
+  them. This release makes those load-bearing signals *truthful* and *pack-aware* —
+  no new blocking gates, no new link-role vocabulary (D-18 stays frozen).
+
+### Features
+
+- **`autoresearch leaderboard --group-by loop`.** Slices a multi-loop competition
+  by `EXPT.loop` so per-loop-ordinal EXPT IDs (reused every loop) are told apart;
+  new `iteration` optional field on `experiment.yaml` records the per-loop ordinal
+  machine-readably. Also revives the previously-dead `--group-by change_category`
+  and `strategy_family` paths.
+- **`brief` health nags.** A compact Health block surfaces one-time-setup and
+  subsystem-decay that otherwise fail silently: unset `domain` (disables
+  domain-aware checklists/review), stale fingerprints, and an adoption handshake
+  that never cut a baseline. Zero noise on a healthy project.
+- **`brief --next` is backlog-aware.** After a strategic rewind to
+  specifying/planning, an advisory notes implemented/verified stories left in the
+  backlog (and routes an all-verified backlog to `/specflow-artifact-review`), so
+  the phase-based primary line no longer looks like it forgot the backlog.
+- **`project-audit` batches findings into actionable CHLs.** Findings group by
+  axis/category into ONE table-bodied CHL per group (stable, count-free title so
+  dedup suppresses repeats) instead of one empty-body one-liner per finding — a
+  run that once spewed ~75 unactioned CHLs now produces ~3–8 engagable ones.
+
+### Fixes
+
+- **Docs citation recognizes draft/coded-family IDs (A1).** The D-22 "docs as
+  knowledge surface" scanner only matched numeric IDs, so every modern project
+  (draft IDs like `STORY-VPSPROB-0a17`) reported "0 cite an artifact" — the feature
+  was silently dead. The regex now accepts both shapes (with a trailing boundary so
+  a longer token can't match a truncated ID).
+- **Acceptance-criteria counter matches bullets/checkboxes (A2).** The STORY-size
+  check counted only numbered ACs, so bulleted / `- [x]` / Given-When-Then sections
+  read "0 acceptance criteria". It now reuses the canonical counter shared with REQ.
+- **Link-role validation de-noised (A3).** A role canonical on *some* type but
+  absent from *this* type's whitelist (e.g. `derives_from` on a CHL/REVIEW/AUD) is
+  accepted as legitimate cross-type usage — never mislabeled "Unknown". Recognized
+  near-misses still read "Non-canonical" with a hint; genuine typos still warn;
+  repeated same-role warnings collapse to one summary line per role.
+- **Coverage honors STORY→REQ `derives_from` (A4).** `check_coverage`, `rtm`,
+  `status`, and the status-cascade nudge all count `derives_from` alongside
+  `implements`, so legacy-story projects no longer read falsely uncovered.
+- **Orphan-code heuristic matches inline backtick paths (A5).** The body scan only
+  matched a backtick-quoted path at the *start* of a line, missing the dominant
+  inline style `Code: \`src/…\`` and marking genuinely-traced files as orphans.
+- **Accounting is autoresearch-pack-aware (B1).** EXPT/LOOP/FIND/COMP carry
+  provenance in frontmatter (`loop`, `competition`, `source_loop`, `knowledge_input`),
+  not `links[]`; orphan and "no links" counts now recognize it, so headline numbers
+  on research-heavy projects are no longer ~90% noise.
+- **Autoresearch structured-field nudges (B4).** `artifact-lint` warns on a
+  non-draft EXPT missing `hypothesis` (and a kept one missing `hypothesis_outcome`)
+  so FIND→REQ promotion can fire; the SKILL.md promotion recipe now reads
+  `best_metric` from the parent LOOP (where `autoresearch log` writes it).
+- **Baseline recomputes the fingerprint from the body (C1).** Baselines snapshotted
+  the *stored* frontmatter fingerprint, which a stale index can leave empty —
+  recording the empty-string hash and making drift detection useless. They now
+  derive it from the body (identical when the stored value was already correct).
+
+### Decisions / Docs
+
+- **D-18 held.** The frozen relationship vocabulary is *not* expanded — canonical
+  roles are de-noised (recognized cross-type), never blessed as new per-type roles;
+  no blocking status gates, no `doctor` command, no audit exit-code escalation.
+- Autoresearch `SKILL.md`: EXPT titling guidance steered away from collision-prone
+  per-loop ordinals toward descriptive titles (+ `iteration`); FIND-promotion
+  recipe corrected to source `best_metric` from the LOOP.
+
+### Tests
+
+- +19 tests: canonical-role-union (A3), `derives_from` coverage across rtm/status/
+  cascade (A4), audit CHL grouping + dedup-stable titles (B2), leaderboard
+  loop/category grouping + `iteration` round-trip (B3), backlog advisory (D1), and
+  the adoption-handshake health nag (D2). Total: 701 tests passing.
+
 ## [1.12.0] - 2026-07-10
 
 ### Features
