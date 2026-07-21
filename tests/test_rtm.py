@@ -239,6 +239,27 @@ def test_unknown_req_filter_exits_zero(project_root: Path, capsys):
     assert rc == 0
 
 
+def test_story_derives_from_fills_story_column(project_root: Path):
+    # A4: a STORY reaching a REQ via derives_from (the legacy-story pattern)
+    # fills the STORY column exactly like `implements` — it is not a gap.
+    from specflow.lib import artifacts as art_lib
+
+    req = art_lib.Artifact(
+        path=Path("REQ-009.md"),
+        frontmatter={"id": "REQ-009", "title": "Legacy req", "type": "requirement", "status": "approved"},
+        body="Body.", links=[],
+    )
+    story = art_lib.Artifact(
+        path=Path("STORY-009.md"),
+        frontmatter={"id": "STORY-009", "title": "Legacy story", "type": "story", "status": "approved"},
+        body="Body.",
+        links=[art_lib.Link(target="REQ-009", role="derives_from")],
+    )
+    row = rtm_cmd._row_for_req(req, [req, story])
+    assert [s.id for s in row["stories"]] == ["STORY-009"]
+    assert "STORY" not in row["gaps"]
+
+
 # ── helpers that reach into the module's row builder for structural assertions ──
 
 def _rows(root: Path, args: dict):

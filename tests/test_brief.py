@@ -87,3 +87,90 @@ def test_next_skill_still_points_at_execute_when_wave_ready():
     artifacts = [_art("STORY-001", "approved")]
     out = brief_cmd._next_skill_recommendation("executing", artifacts, [], ["STORY-001"])
     assert "/specflow-execute" in out
+
+
+def test_next_skill_backlog_advisory_on_rewind():
+    """A rewind to 'specifying' that leaves implemented stories in the backlog
+    appends an advisory pointing at /specflow-execute — the primary /specflow-plan
+    line alone looks nonsensical when 61 stories are already implemented."""
+    artifacts = [_art(f"STORY-00{i}", "implemented") for i in range(1, 5)]
+    out = brief_cmd._next_skill_recommendation("specifying", artifacts, [], ["STORY-001"])
+    assert "/specflow-plan" in out  # primary line unchanged
+    assert "remain implemented after rewind" in out
+    assert "/specflow-execute" in out
+
+
+def test_next_skill_no_backlog_advisory_when_clean():
+    """specifying with no implemented backlog → no rewind advisory noise."""
+    artifacts = [_art("REQ-001", "approved")]
+    out = brief_cmd._next_skill_recommendation("specifying", artifacts, [], ["STORY-001"])
+    assert "remain implemented after rewind" not in out
+
+
+def test_next_skill_backlog_advisory_fires_without_next_wave():
+    """The advisory keys off backlog presence, NOT next_wave. The motivating
+    case — a rewound project with a deep implemented backlog and nothing newly
+    queued — has an empty next_wave and must still fire (next_wave only ever
+    holds *approved* stories, so gating on it silenced exactly this case)."""
+    artifacts = [_art(f"STORY-00{i}", "implemented") for i in range(1, 5)]
+    out = brief_cmd._next_skill_recommendation("specifying", artifacts, [], [])  # empty next_wave
+    assert "remain implemented after rewind" in out
+    assert "/specflow-execute" in out
+
+
+def test_next_skill_backlog_all_verified_points_at_review():
+    """An all-verified backlog wants artifact-review/ship, not more execute."""
+    artifacts = [_art(f"STORY-00{i}", "verified") for i in range(1, 5)]
+    out = brief_cmd._next_skill_recommendation("planning", artifacts, [], [])
+    assert "remain implemented after rewind" in out
+    assert "/specflow-artifact-review" in out
+
+
+# --- health nags (D2) ---
+
+def test_health_nags_domain_unset(tmp_path: Path):
+    nags = brief_cmd._health_nags(tmp_path, {"project": {}}, [], None)
+    assert any("domain not set" in n for n in nags)
+
+
+def test_health_nags_clean_when_healthy(tmp_path: Path):
+    nags = brief_cmd._health_nags(tmp_path, {"project": {"domain": "quant"}}, [], None)
+    assert nags == []
+
+
+def test_health_nags_stale_fingerprint(tmp_path: Path):
+    art = art_lib.Artifact(
+        path=Path("REQ-001.md"),
+        frontmatter={"id": "REQ-001", "fingerprint": "sha256:deadbeefdead"},
+        body="real body content that hashes differently",
+    )
+    nags = brief_cmd._health_nags(tmp_path, {"project": {"domain": "quant"}}, [art], None)
+    assert any("fingerprint(s) stale" in n for n in nags)
+
+
+def test_health_nags_adoption_handshake_incomplete(tmp_path: Path):
+    """Adoption started (backfilled artifacts) but no baseline was ever cut —
+    the one _health_nags branch that touches the filesystem."""
+    nags = brief_cmd._health_nags(
+        tmp_path, {"project": {"domain": "quant"}}, [],
+        adoption={"backfilled_count": 5},
+    )
+    assert any("adoption handshake incomplete" in n for n in nags)
+
+
+def test_health_nags_adoption_complete_with_baseline(tmp_path: Path):
+    """Once a baseline exists, the adoption nag stays silent."""
+    baselines = tmp_path / ".specflow" / "baselines"
+    baselines.mkdir(parents=True)
+    (baselines / "adoption-v0.yaml").write_text("entries: []\n", encoding="utf-8")
+    nags = brief_cmd._health_nags(
+        tmp_path, {"project": {"domain": "quant"}}, [],
+        adoption={"backfilled_count": 5},
+    )
+    assert not any("adoption handshake" in n for n in nags)
+
+
+def test_health_nags_no_adoption_nag_when_not_adopting(tmp_path: Path):
+    """adoption=None (not an adopt project) → no adoption nag even with no baseline."""
+    nags = brief_cmd._health_nags(tmp_path, {"project": {"domain": "quant"}}, [], None)
+    assert not any("adoption handshake" in n for n in nags)

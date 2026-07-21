@@ -395,6 +395,31 @@ class TestExptTerminalStatus:
         assert result["blocking_count"] == 0, "EXPT with auxiliary_metrics should pass lint"
 
 
+class TestAutoresearchHypothesisLogging:
+    def _expt(self, **extra):
+        fm = {
+            "metric_value": 1.0, "change_category": "features",
+            "summary": "x", "loop": "LOOP-001",
+        }
+        fm.update(extra)
+        return _make_art("EXPT-050", "experiment", status=extra.pop("status", "kept"), extra_fm=fm)
+
+    def test_kept_expt_without_hypothesis_warns(self, project_root: Path):
+        result = lint_cmd._check_autoresearch_logging([self._expt()], project_root)
+        assert "no `hypothesis`" in result["detail"]
+
+    def test_kept_expt_with_hypothesis_but_no_outcome_warns(self, project_root: Path):
+        art = self._expt(hypothesis="adding feature X lifts metric")
+        result = lint_cmd._check_autoresearch_logging([art], project_root)
+        assert "no `hypothesis_outcome`" in result["detail"]
+        assert "no `hypothesis`" not in result["detail"]
+
+    def test_kept_expt_with_hypothesis_and_outcome_clean(self, project_root: Path):
+        art = self._expt(hypothesis="X lifts metric", hypothesis_outcome="supported")
+        result = lint_cmd._check_autoresearch_logging([art], project_root)
+        assert "hypothesis" not in result["detail"]
+
+
 # ── 4. End-to-end chain ─────────────────────────────────────────────────────
 
 class TestEndToEndChain:
@@ -1112,6 +1137,132 @@ class TestLeaderboardGrouping:
         out = capsys.readouterr().out
         assert "pretrained:" in out
         assert "trained_from_scratch:" in out
+
+    def test_leaderboard_groups_by_loop(self, project_root: Path, capsys):
+        # B3: --group-by loop slices a multi-loop competition by EXPT.loop so
+        # per-loop-ordinal EXPT IDs (EXPT-EXPT001 reused every loop) are told
+        # apart at the leaderboard level.
+        _write_artifact(
+            project_root, "COMP-040", "competition", "Multi-loop Comp",
+            status="active",
+            extra_fm={
+                "created": "2026-05-15", "verify_command": "pytest",
+                "metric_name": "accuracy", "metric_direction": "higher_is_better",
+            },
+        )
+        for loop_id in ("LOOP-040", "LOOP-041"):
+            _write_artifact(
+                project_root, loop_id, "loop", f"Loop {loop_id}",
+                status="completed",
+                extra_fm={
+                    "created": "2026-05-15", "competition": "COMP-040",
+                    "mode": "explore", "budget": 10,
+                },
+            )
+        for i, (eid, loop_id, mv) in enumerate([
+            ("EXPT-040", "LOOP-040", 0.90),
+            ("EXPT-041", "LOOP-040", 0.85),
+            ("EXPT-042", "LOOP-041", 0.95),
+        ]):
+            _write_artifact(
+                project_root, eid, "experiment", f"Expt {i+1}",
+                status="kept",
+                extra_fm={
+                    "created": "2026-05-15", "loop": loop_id,
+                    "metric_value": mv, "change_category": "features",
+                    "summary": f"Test {i+1}",
+                },
+            )
+        rc = autoresearch_cmd.run(
+            project_root,
+            {
+                "autoresearch_subcommand": "leaderboard",
+                "competition": "COMP-040",
+                "group_by": "loop",
+                "top": 10,
+            },
+        )
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "LOOP-040:" in out
+        assert "LOOP-041:" in out
+        # Each EXPT is listed under its own loop group header.
+        assert out.index("LOOP-040:") < out.index("EXPT-040")
+        assert out.index("LOOP-041:") < out.index("EXPT-042")
+
+    def test_leaderboard_group_by_change_category(self, project_root: Path, capsys):
+        # B3 side-effect: generalizing the guard to `if show_family or group_by:`
+        # revives the previously-dead --group-by change_category path (it used to
+        # fall through to flat ranking and silently ignore the flag).
+        _write_artifact(
+            project_root, "COMP-050", "competition", "Cat Comp",
+            status="active",
+            extra_fm={
+                "created": "2026-05-15", "verify_command": "pytest",
+                "metric_name": "accuracy", "metric_direction": "higher_is_better",
+            },
+        )
+        _write_artifact(
+            project_root, "LOOP-050", "loop", "Cat Loop",
+            status="completed",
+            extra_fm={
+                "created": "2026-05-15", "competition": "COMP-050",
+                "mode": "explore", "budget": 10,
+            },
+        )
+        for i, (eid, cat, mv) in enumerate([
+            ("EXPT-050", "features", 0.91),
+            ("EXPT-051", "params", 0.80),
+        ]):
+            _write_artifact(
+                project_root, eid, "experiment", f"Cat Expt {i+1}",
+                status="kept",
+                extra_fm={
+                    "created": "2026-05-15", "loop": "LOOP-050",
+                    "metric_value": mv, "change_category": cat,
+                    "summary": f"Test {i+1}",
+                },
+            )
+        rc = autoresearch_cmd.run(
+            project_root,
+            {
+                "autoresearch_subcommand": "leaderboard",
+                "competition": "COMP-050",
+                "group_by": "change_category",
+                "top": 10,
+            },
+        )
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "features:" in out
+        assert "params:" in out
+
+    def test_iteration_field_round_trips(self, project_root: Path, monkeypatch):
+        # B3: `iteration` (per-loop ordinal) is a schema-blessed optional field
+        # that round-trips through `create --set`, so EXPT position is
+        # machine-readable without relying on the collision-prone title slug.
+        from specflow import cli
+
+        schema = yaml.safe_load(
+            (project_root / ".specflow" / "schema" / "experiment.yaml").read_text()
+        )
+        assert "iteration" in schema.get("optional_fields", [])
+
+        monkeypatch.chdir(project_root)
+        rc = cli.main([
+            "create", "--type", "experiment", "--title", "Iteration EXPT",
+            "--status", "kept", "--skip-dedup-check", "--body", "b",
+            "--set", "loop=LOOP-900",
+            "--set", "iteration=3",
+            "--set", "metric_value=0.9",
+            "--set", "change_category=features",
+            "--set", "summary=iteration round-trip",
+        ])
+        assert rc == 0
+        expts = [a for a in art_lib.discover_artifacts(project_root)
+                 if art_lib.get_prefix_from_id(a.id) == "EXPT"]
+        assert len(expts) == 1
+        assert expts[0].frontmatter["iteration"] == 3  # JSON-parsed to int
 
 
 # ── 12. Generic --set CLI flag (v1.6.1) ────────────────────────────────────

@@ -12,6 +12,7 @@ meter credits all four. Glob patterns in `output_files` are expanded via
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import yaml
@@ -71,13 +72,15 @@ def _collect_referenced_files(artifacts, root: Path) -> set[Path]:
             continue
         expanded = files_lib.expand_output_files(root, art.frontmatter.get("output_files"))
         referenced.update(expanded)
-        # Body heuristic: backtick-quoted paths at line start. Best-effort; the
-        # primary mechanism is the frontmatter output_files field above.
+        # Body heuristic: backtick-quoted paths anywhere on a line. Best-effort;
+        # the primary mechanism is the frontmatter output_files field above.
+        # This previously only matched paths at the START of a line, missing the
+        # dominant inline-prose citation style ("Code: `src/foo.py`"), which
+        # marked genuinely-traced files as orphans. The exists()+is_file() guard
+        # filters backtick tokens that are not real file paths.
         body = art.body or ""
         for line in body.splitlines():
-            line = line.strip()
-            if line.startswith("`") and "`" in line[1:]:
-                fname = line.split("`")[1]
+            for fname in re.findall(r"`([^`]+)`", line):
                 candidate = (root / fname).resolve()
                 if candidate.exists() and candidate.is_file():
                     referenced.add(candidate)

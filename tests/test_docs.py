@@ -90,6 +90,23 @@ class TestExtractCitations:
         out = docs_lib.extract_citations(tmp_path, "@REQ-002 then @REQ-001 then @REQ-002")
         assert out == ["REQ-001", "REQ-002"]
 
+    def test_draft_id_is_cited(self, tmp_path: Path):
+        # v1.9+ draft/coded-family IDs (PREFIX-SLUG-hex4) must match — previously
+        # the numeric-only regex silently dropped every citation on modern
+        # projects, leaving the D-22 docs surface reporting zero citations.
+        assert docs_lib.extract_citations(tmp_path, "see @STORY-VPSPROB-0a17") == [
+            "STORY-VPSPROB-0a17",
+        ]
+
+    def test_draft_and_numeric_mixed(self, tmp_path: Path):
+        assert docs_lib.extract_citations(
+            tmp_path, "@REQ-001 @DEC-018.2 @STORY-P5GATED-05f0"
+        ) == ["DEC-018.2", "REQ-001", "STORY-P5GATED-05f0"]
+
+    def test_draft_id_in_backticks_not_cited(self, tmp_path: Path):
+        # The code-strip guard still applies to draft IDs.
+        assert docs_lib.extract_citations(tmp_path, "example `@STORY-VPSPROB-0a17`") == []
+
 
 # ---------------------------------------------------------------------------
 # Surface enumeration + orphan-code regression guard

@@ -115,11 +115,15 @@ def _horizontal_analysis(artifacts: list[art_lib.Artifact]) -> dict[str, list[di
                 "message": f"All {len(arts)} {type_name} artifacts are in draft",
             })
 
-        orphan_count = sum(1 for a in arts if not a.links)
+        # "No links" counts artifacts with no provenance at all. Research types
+        # (EXPT/LOOP/FIND/COMP) carry provenance in frontmatter fields, not
+        # links[]; has_provenance recognizes both so autoresearch-heavy projects
+        # don't get a headline "97/104 EXPT have no links" that is just noise.
+        orphan_count = sum(1 for a in arts if not art_lib.has_provenance(a))
         if orphan_count > len(arts) // 2 and len(arts) > 2:
             items.append({
                 "severity": "warn",
-                "message": f"{orphan_count}/{len(arts)} {type_name} artifacts have no links",
+                "message": f"{orphan_count}/{len(arts)} {type_name} artifacts have no links/provenance",
             })
 
         tags_used: set[str] = set()
@@ -466,6 +470,80 @@ def _collect_all_findings(
     return all_f
 
 
+def _artifact_scope(f: dict[str, str]) -> str:
+    """Best-effort scope label for a finding's CHL-table row: its artifact type
+    (horizontal) or concern (cross-cutting), else a dash. Findings carry no
+    per-artifact id — horizontal findings are per-type aggregates, so type or
+    concern is the finest honest scope available."""
+    return f.get("type") or f.get("concern") or "—"
+
+
+# Maps each audit axis to the thinking-technique tag stamped on its CHLs.
+_AXIS_TECHNIQUE_MAP = {
+    "horizontal": "audit-horizontal",
+    "vertical": "audit-vertical",
+    "cross-cutting": "audit-cross-cutting",
+}
+
+
+def _finding_category(f: dict[str, str]) -> str:
+    """Sub-category of a finding within its axis: artifact type for horizontal,
+    concern for cross-cutting; vertical findings have no finer category."""
+    axis = f.get("axis", "")
+    if axis == "horizontal":
+        return f.get("type", "unknown")
+    if axis == "cross-cutting":
+        return f.get("concern", "unknown")
+    return "vertical"
+
+
+def _severity_rank(s: str) -> int:
+    return {"error": 2, "warn": 1}.get(s, 0)
+
+
+def _group_findings_to_chls(findings: list[dict[str, str]]) -> list[TechniqueFinding]:
+    """Group warn/error audit findings by (axis, category) into ONE CHL finding
+    per group with a markdown-table body, instead of one empty-body CHL per
+    finding. A run that once spewed 75 truncated-title one-liners (never
+    actioned) produces ~5-8 engagable CHLs.
+
+    The title is count-free and STABLE (``Audit {axis}/{category} findings``) so
+    ``create_chl_artifacts``' title-based dedup suppresses repeats across runs
+    for the same group — embedding the count in the title would mint a new CHL
+    every time a group's size changed and leave the old one open forever. Count
+    and severity live in the body/rationale instead.
+    """
+    groups: dict[tuple[str, str], list[dict[str, str]]] = {}
+    for f in findings:
+        axis = f.get("axis", "vertical")
+        groups.setdefault((axis, _finding_category(f)), []).append(f)
+
+    out: list[TechniqueFinding] = []
+    for (axis, category), items in sorted(groups.items()):
+        sev = max((it["severity"] for it in items), key=_severity_rank)
+        table_rows = "\n".join(
+            f"| {_artifact_scope(it)} | {it['severity']} | {it['message']} |"
+            for it in items
+        )
+        # Vertical findings have no sub-category — avoid a "vertical/vertical"
+        # stutter; horizontal/cross-cutting name their type/concern.
+        scope_label = "vertical" if axis == "vertical" else f"{axis}/{category}"
+        title = f"Audit {scope_label} findings"
+        body = (
+            f"**{len(items)} finding(s)** across `{scope_label}` "
+            f"(severity: {sev}).\n\n"
+            f"| Scope | Severity | Finding |\n|---|---|---|\n{table_rows}\n"
+        )
+        out.append(TechniqueFinding(
+            title=title[:100],
+            rationale=f"{len(items)} {sev} finding(s) under {scope_label} "
+                      f"(see body table)",
+            severity=sev,
+            technique=_AXIS_TECHNIQUE_MAP.get(axis, "project-audit"),
+            body=body,
+        ))
+    return out
+
 
 def run(root: Path, args: dict[str, Any]) -> int:
     root = root.resolve()
@@ -568,6 +646,12 @@ def run(root: Path, args: dict[str, Any]) -> int:
                 item["concern"] = concern
                 all_findings_raw.append(item)
         proj_fp = _project_fingerprint(artifacts)
+        # Cache caps at 20 findings to keep the cache artifact small. Known
+        # limitation: on a cache hit, CHL grouping works from the truncated set, so
+        # group counts/titles can differ between fresh and cached runs (which also
+        # re-mints a CHL the first time a cache hit follows a fresh run). The
+        # stable count-free title above bounds that to at most one extra CHL per
+        # group; re-architecting the cache is out of scope here.
         _save_cached_findings(cache_dir, proj_fp, all_findings_raw[:20])
 
     report = _render_report(ts, horizontal, vertical, cross_cutting, cached_count, len(artifacts), scope_info)
@@ -630,20 +714,7 @@ def run(root: Path, args: dict[str, Any]) -> int:
     if errors + warns > 0:
         warn_error_findings = [f for f in all_findings if f["severity"] in ("error", "warn")]
         target_id = aud_result.get("id", "project") if aud_result.get("ok") else "project"
-        axis_technique_map = {
-            "horizontal": "audit-horizontal",
-            "vertical": "audit-vertical",
-            "cross-cutting": "audit-cross-cutting",
-        }
-        findings_typed = [
-            TechniqueFinding(
-                title=f["message"][:100],
-                rationale=f["message"],
-                severity=f["severity"],
-                technique=axis_technique_map.get(f.get("axis", ""), "project-audit"),
-            )
-            for f in warn_error_findings
-        ]
+        findings_typed = _group_findings_to_chls(warn_error_findings)
         chl_results = chl_lib.create_chl_artifacts(
             root, findings_typed, target_id,
             link_role="refers_to", dedup=True,

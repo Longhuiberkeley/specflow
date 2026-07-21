@@ -15,6 +15,7 @@ from typing import Any
 
 from specflow.lib import artifacts as art_lib
 from specflow.lib import config as config_lib
+from specflow.lib import lint as lint_lib
 from specflow.lib.waves import compute_waves, filter_executable_stories
 from specflow.lib.display import RED, GREEN, YELLOW, CYAN, BOLD, NC
 
@@ -274,8 +275,84 @@ def _next_skill_recommendation(
     else:
         core = f"Phase '{phase}' — run `specflow brief` for the full digest."
 
-    note = _pack_state_note(artifacts, active_packs)
-    return core + (f"\n{note}" if note else "")
+    notes: list[str] = []
+    pack_note = _pack_state_note(artifacts, active_packs)
+    if pack_note:
+        notes.append(pack_note)
+
+    # Backlog-aware advisory: a strategic rewind to specifying/planning can leave
+    # implemented/verified stories in the backlog. The phase-based primary line
+    # still points at plan/discover; this note reminds the user the backlog still
+    # has work, so the router doesn't look like it forgot. Fires on backlog
+    # presence (>=3 done stories), NOT on next_wave — next_wave only holds
+    # *approved* stories, so the motivating case (a rewound project with a deep
+    # implemented backlog and nothing newly queued) would never fire otherwise.
+    if phase in ("specifying", "planning"):
+        implemented = _count("STORY", "implemented")
+        verified = _count("STORY", "verified")
+        done = implemented + verified
+        if done >= 3:
+            noun = "story" if done == 1 else "stories"
+            if verified and not implemented:
+                # Backlog is all verified — it wants review/ship, not more execute.
+                action = "/specflow-artifact-review (then /specflow-ship) for the backlog"
+            else:
+                action = "/specflow-execute for the backlog"
+            notes.append(
+                f"Note: {done} {noun} remain implemented after rewind — "
+                f"{action}, or /specflow-plan for the pivot scope."
+            )
+
+    return core + "".join(f"\n{n}" for n in notes)
+
+
+def _health_nags(
+    root: Path,
+    config: dict,
+    artifacts: list[art_lib.Artifact],
+    adoption: dict | None,
+) -> list[str]:
+    """One-time-setup and subsystem-decay nags for the session-entry digest.
+
+    Returns an empty list for a healthy project (zero noise). Pointer-style —
+    accounting, not policing: each line names the problem and the command that
+    fixes it. Surfaces things that otherwise fail silently: an unset domain
+    disabling domain-aware checklists/review, stale fingerprints undermining the
+    impact-log/suspect baseline, and an adoption handshake that never cut a
+    baseline.
+    """
+    nags: list[str] = []
+
+    # domain unset silently disables domain-aware checklists + review synthesis.
+    if not config.get("project", {}).get("domain"):
+        nags.append(
+            "domain not set — domain-aware checklists/review disabled "
+            "→ `specflow domain suggest`"
+        )
+
+    # Stale stored fingerprints make future suspect classification unreliable;
+    # reuse the same check artifact-lint runs, do not recompute ad hoc.
+    stale = sum(
+        1 for a in artifacts
+        if a.fingerprint and not lint_lib.validate_fingerprint(a)["match"]
+    )
+    if stale:
+        nags.append(
+            f"{stale} fingerprint(s) stale — recompute with "
+            f"`specflow fingerprint-refresh <FILE>` or `specflow rebuild-index`"
+        )
+
+    # Adoption started (backfilled artifacts exist) but no baseline was ever cut.
+    if adoption is not None and adoption.get("backfilled_count", 0) > 0:
+        baselines_dir = root / ".specflow" / "baselines"
+        has_baseline = baselines_dir.exists() and any(baselines_dir.iterdir())
+        if not has_baseline:
+            nags.append(
+                "adoption handshake incomplete: no baseline cut → "
+                "`specflow baseline create` / `specflow adopt status`"
+            )
+
+    return nags
 
 
 def run(root: Path, args: dict[str, Any]) -> int:
@@ -348,6 +425,12 @@ def run(root: Path, args: dict[str, Any]) -> int:
         parts = [f"{n} {s}" for s, n in sorted(statuses.items())]
         total = sum(statuses.values())
         print(f"    {cat:<9} {total:>3}  ({', '.join(parts)})")
+
+    health = _health_nags(root, config, artifacts, adoption)
+    if health:
+        print(f"\n  {YELLOW}⚠ Health{NC}")
+        for n in health:
+            print(f"    {n}")
 
     if docs_sum is not None:
         print(f"\n  {BOLD}Docs surface{NC}")

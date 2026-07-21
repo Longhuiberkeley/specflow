@@ -620,8 +620,9 @@ def _add_autoresearch_parser(subparsers):
     lb_p.add_argument("--all", action="store_true", help="Show leaderboard across all competitions")
     lb_p.add_argument("--top", type=int, default=10, help="Number of EXPTs per competition (default: 10)")
     lb_p.add_argument("--group-by", dest="group_by",
-                      choices=["model_origin", "change_category", "strategy_family"],
-                      help="Group kept EXPTs by a field instead of one flat ranking (swarm/ensemble view)")
+                      choices=["model_origin", "change_category", "strategy_family", "loop"],
+                      help="Group kept EXPTs by a field instead of one flat ranking "
+                           "(model_origin/change_category/strategy_family/loop)")
     lb_p.add_argument("--show-family", action="store_true", dest="show_family",
                       help="Group by family for family_of_good competitions (shows diversity metrics per group)")
 

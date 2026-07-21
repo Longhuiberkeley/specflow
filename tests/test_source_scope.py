@@ -18,6 +18,7 @@ from pathlib import Path
 import yaml
 import pytest
 
+from specflow.lib import artifacts as art_lib
 from specflow.lib import files as files_lib
 from specflow.lib import orphans as orphans_lib
 
@@ -157,3 +158,30 @@ class TestOrphanScopeConsistency:
         assert result["total_count"] == 1
         assert result["referenced_count"] == 1  # clamped: out_of_scope dropped
         assert result["referenced_count"] <= result["total_count"]
+
+
+class TestCollectReferencedFilesBodyHeuristic:
+    def test_inline_backtick_path_collected(self, tmp_path: Path):
+        # Inline-prose citation "Code: `src/foo.py`" must count as a reference.
+        # Previously only line-start backticks matched, so genuinely-traced
+        # files were reported as orphans on real projects.
+        src = _write(tmp_path, "src/foo.py").resolve()
+        art = art_lib.Artifact(
+            path=tmp_path / "_specflow/work/stories/STORY-001.md",
+            frontmatter={"id": "STORY-001", "type": "story", "status": "approved"},
+            body="Implementation lives in Code: `src/foo.py` — see there.",
+        )
+        referenced = orphans_lib._collect_referenced_files([art], tmp_path)
+        assert src in referenced
+
+    def test_nonexistent_backtick_token_ignored(self, tmp_path: Path):
+        # A backtick token that is not a real file path is filtered by the
+        # exists()+is_file() guard.
+        _write(tmp_path, "src/real.py")
+        art = art_lib.Artifact(
+            path=tmp_path / "_specflow/work/stories/STORY-001.md",
+            frontmatter={"id": "STORY-001", "type": "story", "status": "approved"},
+            body="Set the `flag` then call `do_thing()`.",
+        )
+        referenced = orphans_lib._collect_referenced_files([art], tmp_path)
+        assert referenced == set()

@@ -214,6 +214,8 @@ LOOP (budget iterations):
   Phase 8: Repeat or Complete — Check budget, update FINDs on completion
 ```
 
+**Phase 7 titling — descriptive, not ordinal.** Title each EXPT by *what the change was* (e.g. `"add cross-asset volatility ratio feature"`), and record its per-loop position in the `iteration` field (`specflow create --type experiment --set iteration=<n> ...`), not in the title. Per-loop ordinals like `"EXPT-001: ..."` collide across loops (every LOOP reuses EXPT-001/002/…), producing visually-identical draft IDs that are distinguishable only by hash and outright ID collisions across sessions. The `iteration` field plus the EXPT's `loop` field give the machine-readable position; the title carries the human-readable content. `specflow autoresearch leaderboard --group-by loop` then slices a multi-loop competition cleanly.
+
 **New structural gates (not advisory):**
 
 | Gate | Phase | What it enforces |
@@ -271,9 +273,9 @@ A confirmed `FIND` with `deployability: deployable` (and `confidence` ≥ medium
    ```bash
    specflow create --type requirement --title "<what the finding delivers>" \
      --links '[{"target":"FIND-NNN","role":"derives_from"}]' \
-     --body "## Rationale\nProductionizes FIND-NNN: <what_worked>. Best metric: <best_metric>.\n\n## Acceptance Criteria\n1. ..."
+     --body "## Rationale\nProductionizes FIND-NNN: <what_worked>. Best metric: <LOOP.best_metric>.\n\n## Acceptance Criteria\n1. ..."
    ```
-2. Copy the FIND's `what_worked` / `best_metric` / `summary` into the REQ rationale and acceptance criteria so the evidence chain survives.
+2. Copy the FIND's `what_worked` / `summary` and the **parent LOOP's** `best_metric` into the REQ rationale and acceptance criteria so the evidence chain survives. (`autoresearch log` writes `best_metric` to the LOOP, not the FIND — the FIND-level field is usually empty, so read the metric from the LOOP.)
 3. A **winning EXPT** that goes live → create an ops **RUN** (`derives_from` the EXPT) via the ops pack, if installed.
 
 The `:review` step should proactively ask *"This FIND is deployable — promote to a REQ?"* whenever a reviewed FIND has `deployability: deployable`. See `references/protocol-integrations.md` § "Autoresearch → Core SpecFlow" for the full mapping.
@@ -283,6 +285,7 @@ The `:review` step should proactively ask *"This FIND is deployable — promote 
 ```bash
 specflow autoresearch leaderboard --competition COMP-NNN
 specflow autoresearch leaderboard --all     # cross-COMP view
+specflow autoresearch leaderboard --group-by loop   # slice a multi-loop COMP by LOOP
 ```
 
 The CLI renders the ranked leaderboard with auxiliary metrics. No additional skill logic needed — the output is self-service.

@@ -100,14 +100,27 @@ def _known_prefixes(root: Path) -> list[str]:
 
 
 def _citation_regex(root: Path) -> re.Pattern:
-    """Match @REQ-001 / @ARCH-007 / @DEC-018.2 against known prefixes.
+    """Match @REQ-001 / @ARCH-007 / @DEC-018.2 / @STORY-VPSPROB-0a17 against prefixes.
 
     The negative lookbehind ``(?<![\\w@])`` prevents matches inside email-style
-    or identifier text (``user@host``); the prefix+numeric shape rejects plain
+    or identifier text (``user@host``); the prefix shape rejects plain
     ``@mentions``.
+
+    The ID body accepts both the legacy numeric shape (``REQ-001``,
+    ``DEC-018.2``) and the v1.9+ draft/coded-family shape
+    (``STORY-VPSPROB-0a17``) — ``SLUG-hex4`` mirrors
+    :func:`specflow.lib.draft_ids._DRAFT_RE`. Without this, the docs
+    knowledge surface (D-22) reports zero citations on every modern project,
+    because draft IDs never match a numeric-only regex.
+
+    The trailing ``(?!\\w)`` boundary stops a longer token from matching a
+    truncated ID (``@STORY-VPSPROB-0a1789`` must not cite ``VPSPROB-0a17``);
+    it hardens both the draft and numeric branches symmetrically.
     """
     alt = "|".join(re.escape(p) for p in _known_prefixes(root))
-    return re.compile(rf"(?<![\w@])@({alt})-(\d{{3,5}})(\.\d{{1,3}})?")
+    return re.compile(
+        rf"(?<![\w@])@({alt})-([A-Z0-9]+-[a-f0-9]{{4}}|\d{{3,5}}(?:\.\d{{1,3}})?)(?!\w)"
+    )
 
 
 def _strip_code(text: str) -> str:
@@ -133,8 +146,9 @@ def extract_citations(root: Path, text: str) -> list[str]:
     regex = _citation_regex(root)
     ids: set[str] = set()
     for m in regex.finditer(_strip_code(text)):
-        sub = m.group(3) or ""
-        ids.add(f"{m.group(1)}-{m.group(2)}{sub}")
+        # group(2) is the full ID body — numeric ("001", "018.2") or draft
+        # ("VPSPROB-0a17") — so the ID is prefix + body in one piece.
+        ids.add(f"{m.group(1)}-{m.group(2)}")
     return sorted(ids)
 
 

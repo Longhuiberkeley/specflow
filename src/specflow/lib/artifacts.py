@@ -324,10 +324,65 @@ def build_id_index(artifacts: list[Artifact]) -> dict[str, Artifact]:
     return {art.id: art for art in artifacts}
 
 
+# Autoresearch-pack artifact types store their provenance graph in frontmatter
+# fields (loop, competition, source_loop, knowledge_input) rather than in the
+# standard links[] graph. Map type -> the fields that hold parent artifact IDs.
+_RESEARCH_PROVENANCE_FIELDS: dict[str, tuple[str, ...]] = {
+    "experiment": ("loop",),
+    "loop": ("competition", "knowledge_input"),
+    "finding": ("competition", "source_loop"),
+}
+
+
+def research_provenance_edges(art: Artifact) -> list[str]:
+    """Return target artifact IDs this research artifact points to via its
+    pack frontmatter provenance fields (not via ``links[]``).
+
+    Empty for non-research types. This lets :func:`find_orphans` and the audit
+    recognize the autoresearch subgraph (``EXPT.loop``, ``LOOP.competition``,
+    ``FIND.competition``/``source_loop``) so research artifacts are not miscounted
+    as linkless orphans on autoresearch-heavy projects.
+    """
+    fields = _RESEARCH_PROVENANCE_FIELDS.get(art.type)
+    if not fields:
+        return []
+    targets: list[str] = []
+    for f in fields:
+        val = art.frontmatter.get(f)
+        if isinstance(val, str) and val:
+            targets.append(val)
+        elif isinstance(val, list):
+            targets.extend(v for v in val if isinstance(v, str) and v)
+    return targets
+
+
+def has_provenance(art: Artifact) -> bool:
+    """True if an artifact has any traceability — a ``links[]`` entry, research
+    frontmatter provenance, or is a competition root (the top of a research
+    graph, which has no parent by design).
+
+    Note the deliberate difference from :func:`find_orphans`: a *bare* competition
+    (no loops referencing it, no links) returns True here — it is a legitimate
+    root for the audit's per-type noise count — yet ``find_orphans`` still reports
+    it as an orphan, because there it is genuinely a disconnected node. The two
+    answer different questions (any provenance vs. graph-connected) and should not
+    be "reconciled" by special-casing competitions in ``find_orphans``.
+    """
+    if art.links:
+        return True
+    if art.type == "competition":
+        return True
+    return bool(research_provenance_edges(art))
+
+
 def find_orphans(artifacts: list[Artifact]) -> list[Artifact]:
     """Find artifacts with no incoming or outgoing links.
 
     An orphan has no links at all (neither referencing nor referenced by others).
+
+    Research artifacts (EXPT/LOOP/FIND/COMP from the autoresearch pack) carry
+    their provenance in frontmatter fields rather than ``links[]``; those edges
+    are counted too, so a properly-traced experiment is not miscounted as orphan.
     """
     referenced_ids: set[str] = set()
     linking_ids: set[str] = set()
@@ -337,6 +392,9 @@ def find_orphans(artifacts: list[Artifact]) -> list[Artifact]:
             linking_ids.add(art.id)
             for link in art.links:
                 referenced_ids.add(link.target)
+        for target in research_provenance_edges(art):
+            linking_ids.add(art.id)
+            referenced_ids.add(target)
 
     orphans = []
     for art in artifacts:

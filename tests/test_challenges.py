@@ -84,6 +84,33 @@ class TestCreateChlArtifacts:
         assert len(created) == 2
         assert {c["severity"] for c in created} == {"warn", "error"}
 
+    def test_body_table_written_to_chl(self, project_root: Path):
+        # The audit batches grouped findings into one CHL whose body is a
+        # markdown table (was previously an empty body with a truncated title).
+        target = _make_target_req(project_root)
+        table = (
+            "| Scope | Severity | Finding |\n|---|---|---|\n"
+            "| story | warn | no acceptance criteria |\n"
+        )
+        findings = [
+            TechniqueFinding(
+                title="3 horizontal/story audit finding(s)",
+                rationale="3 warn finding(s) under horizontal/story",
+                severity="warn",
+                technique="audit-horizontal",
+                target_id=target.id,
+                body=table,
+            ),
+        ]
+        created = chl_lib.create_chl_artifacts(project_root, findings, target.id)
+        assert len(created) == 1
+        chl = next(
+            a for a in art_lib.discover_artifacts(project_root, artifact_type="challenge")
+            if a.id == created[0]["id"]
+        )
+        assert "| Scope |" in chl.body
+        assert "no acceptance criteria" in chl.body
+
     def test_skips_info_findings(self, project_root: Path):
         target = _make_target_req(project_root)
         findings = [

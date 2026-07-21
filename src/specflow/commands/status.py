@@ -68,7 +68,7 @@ def _compute_coverage(artifacts: list[art_lib.Artifact]) -> dict[str, Any]:
     for req in reqs:
         for other in artifacts:
             for link in other.links:
-                if link.target == req.id and link.role == "implements":
+                if link.target == req.id and link.role in ("implements", "derives_from"):
                     req_with_stories += 1
                     break
             else:

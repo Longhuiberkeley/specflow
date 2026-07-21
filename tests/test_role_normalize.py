@@ -98,7 +98,10 @@ class TestLintEnrichedWarning:
         warnings = [i for i in issues if i["severity"] == "warning"]
         assert len(warnings) == 1
         msg = warnings[0]["message"]
-        assert 'Unknown link role "superseded_by"' in msg
+        # Recognized aliases (synonym/inverse/lifecycle) are "Non-canonical", not
+        # "Unknown" — the tool itself recognizes them, so the old "Unknown" label
+        # was self-contradicting.
+        assert 'Non-canonical link role "superseded_by"' in msg
         assert "supersedes" in msg and "trace" in msg
 
     def test_lifecycle_alias_warns_with_status_hint(self):

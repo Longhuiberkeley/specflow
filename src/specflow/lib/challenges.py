@@ -59,7 +59,7 @@ def create_chl_artifacts(
                 status="open",
                 rationale=f.rationale,
                 links=links,
-                body="",
+                body=f.body,
             )
             if not art.get("ok"):
                 print(f"  {YELLOW_DIM}⚠ Failed to create CHL: {art.get('error', 'Unknown error')}{NC}")

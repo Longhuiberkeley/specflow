@@ -66,6 +66,18 @@ class TestReqCoverage:
         assert result["req_covered"] == 1
         assert result["req_pct"] == 50.0
 
+    def test_req_with_story_via_derives_from(self):
+        # A4: derives_from (the legacy-story pattern) counts as coverage exactly
+        # like implements — status coverage must agree with trace/check_coverage.
+        arts = [
+            _make_art("REQ-001", "requirement"),
+            _make_art("STORY-001", "story", links=[art_lib.Link(target="REQ-001", role="derives_from")]),
+        ]
+        result = _compute_coverage(arts)
+        assert result["req_total"] == 1
+        assert result["req_covered"] == 1
+        assert result["req_pct"] == 100.0
+
 
 class TestStoryTestCoverage:
     def test_no_stories(self):

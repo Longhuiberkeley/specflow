@@ -16,6 +16,7 @@ from specflow.lib import draft_ids as draft_lib
 from specflow.lib import files as files_lib
 from specflow.lib import standards as standards_lib
 from specflow.lib import lint as lint_lib
+from specflow.lib import role_normalize
 from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC
 from specflow.lib.domain_constants import DOMAIN_RECOMMENDED
 
@@ -88,9 +89,22 @@ def check_schema(
 ) -> dict[str, str | int]:
     """Validate all artifacts against their schemas."""
     schemas = lint_lib.load_schemas(schema_dir)
+    # The global canonical-role union (D-18 frozen vocabulary): every role that
+    # is whitelisted on ANY type. Passed into per-artifact validation so a role
+    # used legitimately across types (e.g. derives_from on a CHL) is accepted
+    # rather than mislabeled "Unknown".
+    all_canonical_roles: set[str] = set()
+    for s in schemas.values():
+        all_canonical_roles.update(s.get("allowed_link_roles", []))
     blocking = 0
     warnings = 0
     details: list[str] = []
+    # Cross-artifact collapse for non-canonical link roles: collect every role
+    # flagged on any artifact, then emit ONE summary line per distinct role
+    # (with the affected artifact count) instead of one-per-artifact. A role like
+    # ``relates_to`` used project-wide should surface as a single normalization
+    # task, not 160 identical warnings that train users to ignore lint output.
+    role_groups: dict[str, set[str]] = {}
 
     for art in artifacts:
         schema = schemas.get(art.type)
@@ -99,14 +113,30 @@ def check_schema(
             details.append(f"  ⚠ Unknown type '{art.type}': {art.id}")
             continue
 
-        issues = lint_lib.validate_artifact_schema(art, schema)
+        issues = lint_lib.validate_artifact_schema(art, schema, all_canonical_roles)
         for issue in issues:
+            if issue.get("code") == "link_role":
+                role_groups.setdefault(issue["role"], set()).add(art.id)
+                continue
             if issue["severity"] == "blocking":
                 blocking += 1
                 details.append(f"  ✗ [{art.id}] {issue['message']}")
             elif issue["severity"] == "warning":
                 warnings += 1
                 details.append(f"  ⚠ [{art.id}] {issue['message']}")
+
+    for role, art_ids in sorted(role_groups.items()):
+        warnings += 1
+        suggestion = role_normalize.suggest_canonical(role)
+        label = "Non-canonical" if suggestion else "Unknown"
+        hint = f" — {suggestion.hint}" if suggestion else ""
+        sample_ids = sorted(art_ids)[:3]
+        sample = ", ".join(sample_ids)
+        more = f" (+{len(art_ids) - len(sample_ids)} more)" if len(art_ids) > len(sample_ids) else ""
+        details.append(
+            f'  ⚠ {label} link role "{role}" on {len(art_ids)} artifact(s) '
+            f"({sample}{more}){hint}"
+        )
 
     return {
         "status_icon": GREEN + "✓" + NC if blocking == 0 else RED + "✗" + NC,
@@ -274,7 +304,7 @@ def _check_status_cascade(
                 target = id_index.get(link.target)
                 if target is None:
                     continue
-                if link.role == "implements" and art_lib.get_prefix_from_id(target.id) == "REQ":
+                if link.role in ("implements", "derives_from") and art_lib.get_prefix_from_id(target.id) == "REQ":
                     if target.status == "approved":
                         warnings += 1
                         details.append(
@@ -661,7 +691,7 @@ def check_coverage(
     req_to_stories: dict[str, list[art_lib.Artifact]] = {}
     for story in stories:
         for link in story.links:
-            if link.role == "implements" and art_lib.get_prefix_from_id(link.target) == "REQ":
+            if link.role in ("implements", "derives_from") and art_lib.get_prefix_from_id(link.target) == "REQ":
                 req_to_stories.setdefault(link.target, []).append(story)
 
     for req in reqs:
@@ -673,7 +703,7 @@ def check_coverage(
         linked_stories = req_to_stories.get(req.id, [])
         if not linked_stories:
             warnings += 1
-            details.append(f"  ⚠ [{req.id}] no STORY implements this approved requirement")
+            details.append(f"  ⚠ [{req.id}] no STORY implements/derives_from this approved requirement")
             continue
 
         for story in linked_stories:
@@ -730,12 +760,12 @@ def _check_story_size(
             re.IGNORECASE | re.DOTALL,
         )
         if ac_section:
-            ac_text = ac_section.group(1)
-            next_header = re.search(r"^##\s", ac_text, re.MULTILINE)
-            if next_header:
-                ac_text = ac_text[:next_header.start()]
-            ac_items = re.findall(r"^\d+\.\s+", ac_text, re.MULTILINE)
-            ac_count = len(ac_items)
+            # Reuse the canonical AC counter (counts bullets, checkboxes,
+            # numbered, and Given/When/Then lines) so STORY and REQ agree on one
+            # definition. The previous numbered-only regex flagged well-formed
+            # bulleted / `- [x]` AC sections as "0 acceptance criteria", training
+            # users to ignore this check.
+            ac_count = lint_lib.count_acceptance_criteria_items(art)
             if ac_count > 8:
                 warnings += 1
                 details.append(f"  ⚠ [{art.id}] has {ac_count} acceptance criteria (max 8 recommended)")
@@ -1329,6 +1359,26 @@ def _check_autoresearch_logging(
             warnings += 1
             details.append(
                 f"  ⚠ [{art.id}] ({status}) has no `failure_analysis` logged"
+            )
+
+        # Structured reasoning fields: the protocol mandates a falsifiable
+        # hypothesis per EXPT, and a kept result should record whether it held.
+        # Without these, FIND→REQ promotion and cross-EXPT synthesis can't fire
+        # (the documented recipe and suggest-finds both read them). Gated to
+        # non-draft EXPTs so a mid-authoring draft isn't nagged — consistent with
+        # every neighboring status-gated check and with the cry-wolf theme this
+        # workstream exists to serve (ungated, this alone adds ~84 warnings on a
+        # heavy autoresearch project).
+        if status != "draft" and not art.frontmatter.get("hypothesis"):
+            warnings += 1
+            details.append(
+                f"  ⚠ [{art.id}] has no `hypothesis` logged (state the falsifiable hypothesis)"
+            )
+        elif status == "kept" and not art.frontmatter.get("hypothesis_outcome"):
+            warnings += 1
+            details.append(
+                f"  ⚠ [{art.id}] (kept) has no `hypothesis_outcome` logged "
+                f"(supported/not_supported/inconclusive)"
             )
 
     icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC

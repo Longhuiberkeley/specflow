@@ -57,11 +57,18 @@ def load_schemas(schema_dir: Path) -> dict[str, dict[str, Any]]:
 def validate_artifact_schema(
     artifact: art_lib.Artifact,
     schema: dict[str, Any],
+    all_canonical_roles: set[str] | None = None,
 ) -> list[dict[str, str]]:
     """Validate a single artifact against its schema.
 
     Returns a list of issue dicts with keys: severity, message.
     severity is one of: 'blocking', 'warning', 'info'
+
+    ``all_canonical_roles`` (optional) is the union of every type's
+    ``allowed_link_roles``. When provided, a link role that is canonical on
+    *some* type but absent from *this* type's whitelist is treated as
+    legitimate cross-type usage and accepted silently — never mislabeled
+    "Unknown" (see the link-role block below).
     """
     issues: list[dict[str, str]] = []
     fm = artifact.frontmatter
@@ -96,22 +103,45 @@ def validate_artifact_schema(
             "message": f'Invalid status "{status}" (allowed: {", ".join(allowed)})',
         })
 
-    # Link role validation. Unknown roles are a warning, never a blocker
-    # (accounting, not policing) — but we enrich the message with a direction-aware
-    # suggestion so the canonical vocabulary stays self-reinforcing.
+    # Link role validation. Non-canonical/unknown roles are a warning, never a
+    # blocker (accounting, not policing). Three cases for a role outside this
+    # type's ``allowed_link_roles``:
+    #   - canonical on SOME other type (in ``all_canonical_roles``) → accepted
+    #     silently. It's legitimate cross-type usage; warning here is itself a
+    #     cry-wolf. D-18 stays frozen — we recognize existing canonical roles,
+    #     never bless new ones (e.g. ``derives_from`` on a CHL/REVIEW/AUD).
+    #   - recognized near-miss (role_normalize maps it) → "Non-canonical" with
+    #     an actionable hint, so the message stops self-contradicting.
+    #   - everything else → truly "Unknown".
+    # Repeated same-role links on one artifact collapse into a single counted
+    # warning; the cross-artifact collapse happens in check_schema().
     allowed_roles = schema.get("allowed_link_roles", [])
     if allowed_roles:
         from specflow.lib import role_normalize
+        noncanonical: dict[str, list[str]] = {}
         for link in artifact.links:
-            if link.role and link.role not in allowed_roles:
-                message = f'Unknown link role "{link.role}" on link to {link.target}'
-                suggestion = role_normalize.suggest_canonical(link.role)
-                if suggestion:
-                    message += f" — {suggestion.hint}"
-                issues.append({
-                    "severity": "warning",
-                    "message": message,
-                })
+            if not link.role or link.role in allowed_roles:
+                continue
+            if all_canonical_roles and link.role in all_canonical_roles:
+                continue
+            noncanonical.setdefault(link.role, []).append(link.target)
+        for role, targets in noncanonical.items():
+            suggestion = role_normalize.suggest_canonical(role)
+            if suggestion:
+                label = "Non-canonical"
+                hint = f" — {suggestion.hint}"
+            else:
+                label = "Unknown"
+                hint = ""
+            issues.append({
+                "severity": "warning",
+                "message": (
+                    f'{label} link role "{role}" on {len(targets)} link(s) '
+                    f'(e.g. {targets[0]}){hint}'
+                ),
+                "code": "link_role",
+                "role": role,
+            })
 
     # review_status validation
     review_status = fm.get("review_status")

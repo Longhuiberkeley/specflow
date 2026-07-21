@@ -333,6 +333,20 @@ def _run_review(root: Path, args: dict) -> int:
     return 0
 
 
+# Maps `leaderboard --group-by <choice>` (and --show-family) to the EXPT
+# frontmatter field it groups on. EXPT.loop lets a multi-loop competition be
+# sliced by loop so per-loop-ordinal EXPT IDs (EXPT-EXPT001 reused every loop)
+# are told apart at the leaderboard level. `strategy_family` groups on the
+# `strategy_used` field. Module-level constant — it carries no per-competition
+# state, so there is no reason to rebuild it inside the loop.
+_LEADERBOARD_GROUP_FIELD = {
+    "model_origin": "model_origin",
+    "change_category": "change_category",
+    "loop": "loop",
+    "strategy_family": "strategy_used",
+}
+
+
 def _run_leaderboard(root: Path, args: dict) -> int:
     show_all = args.get("all", False)
     comp_filter = args.get("competition")
@@ -374,12 +388,18 @@ def _run_leaderboard(root: Path, args: dict) -> int:
             print()
             continue
 
-        # Family-of-good grouping
-        if show_family or (group_by == "model_origin"):
+        # Grouping: --group-by <field> (or --show-family, which forces model_origin
+        # with a change_category fallback). Field mapping lives in the module-level
+        # _LEADERBOARD_GROUP_FIELD.
+        if show_family or group_by:
+            group_field = "model_origin" if show_family else _LEADERBOARD_GROUP_FIELD.get(group_by, group_by)
             groups: dict[str, list[art_lib.Artifact]] = {}
             for e in kept:
-                key = e.frontmatter.get("model_origin") or e.frontmatter.get("change_category", "unspecified")
-                groups.setdefault(str(key), []).append(e)
+                val = e.frontmatter.get(group_field)
+                if val is None and group_field == "model_origin":
+                    val = e.frontmatter.get("change_category", "unspecified")
+                key = str(val) if val is not None else "unspecified"
+                groups.setdefault(key, []).append(e)
             for key, g_expts in sorted(groups.items()):
                 g_expts.sort(key=lambda e: float(e.frontmatter.get("metric_value", 0)), reverse=reverse)
                 print(f"  {BOLD}{key}:{NC}")

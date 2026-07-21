@@ -60,7 +60,7 @@ def _dedupe(arts: list[art_lib.Artifact]) -> list[art_lib.Artifact]:
 
 def _row_for_req(req: art_lib.Artifact, artifacts: list[art_lib.Artifact]) -> dict[str, Any]:
     archs = _children_of(req.id, "architecture", _DECOMPOSE_ROLES, artifacts)
-    stories = _children_of(req.id, "story", {"implements"}, artifacts)
+    stories = _children_of(req.id, "story", {"implements", "derives_from"}, artifacts)
     qts = _children_of(req.id, "qualification-test", {"verified_by"}, artifacts)
 
     tests = list(qts)

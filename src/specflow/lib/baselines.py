@@ -77,7 +77,11 @@ def create_baseline(root: Path, name: str) -> dict[str, Any]:
             continue
         snapshot[art.id] = {
             "status": art.status,
-            "fingerprint": art.fingerprint,
+            # Recompute from the body rather than trusting the stored frontmatter
+            # value: a generator or stale index can leave the stored fingerprint
+            # empty/wrong (the deferred rebuild-index gap), which would make this
+            # baseline useless for drift detection. Identical when already correct.
+            "fingerprint": art_lib.compute_fingerprint(art.body),
             "title": art.title,
             "type": art.type,
         }

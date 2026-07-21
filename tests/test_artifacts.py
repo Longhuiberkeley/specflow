@@ -150,6 +150,51 @@ class TestFindOrphans:
         orphans = art_lib.find_orphans([a1, a2])
         assert len(orphans) == 0
 
+    def test_research_provenance_not_orphan(self):
+        # EXPT/LOOP/FIND store provenance in frontmatter (loop, competition,
+        # source_loop), not links[]. A properly-traced research subgraph must
+        # not be miscounted as orphan on autoresearch-heavy projects.
+        comp = art_lib.Artifact(
+            path=Path("comp.md"),
+            frontmatter={"id": "COMP-001", "type": "competition"},
+            body="", links=[],
+        )
+        loop = art_lib.Artifact(
+            path=Path("loop.md"),
+            frontmatter={"id": "LOOP-001", "type": "loop", "competition": "COMP-001"},
+            body="", links=[],
+        )
+        expt = art_lib.Artifact(
+            path=Path("expt.md"),
+            frontmatter={"id": "EXPT-001", "type": "experiment", "loop": "LOOP-001"},
+            body="", links=[],
+        )
+        find = art_lib.Artifact(
+            path=Path("find.md"),
+            frontmatter={
+                "id": "FIND-001", "type": "finding",
+                "competition": "COMP-001", "source_loop": "LOOP-001",
+            },
+            body="", links=[],
+        )
+        orphans = art_lib.find_orphans([comp, loop, expt, find])
+        assert orphans == []
+        # Provenance is recognized even though none of these have links[].
+        assert art_lib.has_provenance(expt)
+        assert art_lib.has_provenance(loop)
+        assert art_lib.has_provenance(find)
+        assert art_lib.has_provenance(comp)  # competition root
+
+    def test_research_artifact_without_provenance_is_orphan(self):
+        # An EXPT with neither links nor a loop field is genuinely orphan.
+        expt = art_lib.Artifact(
+            path=Path("expt.md"),
+            frontmatter={"id": "EXPT-009", "type": "experiment"},
+            body="", links=[],
+        )
+        assert not art_lib.has_provenance(expt)
+        assert art_lib.find_orphans([expt]) == [expt]
+
 
 class TestFindMissingVPairs:
     def test_missing_verification(self):

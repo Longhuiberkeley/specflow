@@ -170,6 +170,107 @@ class TestCheckSchema:
         assert result["warning_count"] >= 1
         assert "Unknown type" in result["detail"]
 
+    def test_noncanonical_role_collapsed_per_artifact(self, project_root: Path):
+        # Per-artifact: one issue per distinct non-canonical role, not per link.
+        schema = {"allowed_link_roles": ["implements", "specified_by"]}
+        art = _make_art(
+            "STORY-001", "story",
+            links=[
+                art_lib.Link(target="REQ-001", role="relates_to"),
+                art_lib.Link(target="REQ-002", role="relates_to"),
+                art_lib.Link(target="REQ-003", role="produces"),
+            ],
+        )
+        issues = lint_lib.validate_artifact_schema(art, schema)
+        role_issues = [i for i in issues if i.get("code") == "link_role"]
+        assert {i["role"] for i in role_issues} == {"relates_to", "produces"}
+        # `produces` is a recognized inverse → "Non-canonical", not "Unknown".
+        produces = next(i for i in role_issues if i["role"] == "produces")
+        assert "Non-canonical" in produces["message"]
+        # `relates_to` is not in the vocabulary → "Unknown", and collapsed.
+        relates = next(i for i in role_issues if i["role"] == "relates_to")
+        assert "Unknown" in relates["message"]
+        assert "2 link(s)" in relates["message"]
+
+    def test_role_warnings_collapsed_across_artifacts(self, project_root: Path):
+        # Cross-artifact: a role fanned out across many artifacts collapses to a
+        # single summary line (the de-noise that stops users ignoring lint).
+        schema_dir = project_root / ".specflow" / "schema"
+        story_schema = yaml.safe_load((schema_dir / "story.yaml").read_text())
+        story_schema["allowed_link_roles"] = ["implements", "specified_by"]
+        (schema_dir / "story.yaml").write_text(yaml.dump(story_schema), encoding="utf-8")
+        arts = [
+            _make_art(
+                "STORY-001", "story",
+                links=[art_lib.Link(target="REQ-001", role="relates_to")],
+            ),
+            _make_art(
+                "STORY-002", "story",
+                links=[art_lib.Link(target="REQ-001", role="relates_to")],
+            ),
+        ]
+        result = lint_cmd.check_schema(arts, schema_dir)
+        assert result["detail"].count('"relates_to"') == 1
+        assert "2 artifact(s)" in result["detail"]
+
+    def test_canonical_role_on_wrong_type_is_not_unknown(self, project_root: Path):
+        # A3: a role canonical on SOME type (in the global union) but absent from
+        # THIS type's whitelist is legitimate cross-type usage — accepted silently,
+        # never mislabeled "Unknown". derives_from is canonical for requirements;
+        # a STORY using it must not cry "Unknown" (the bug on CHL/REVIEW/AUD).
+        schema_dir = project_root / ".specflow" / "schema"
+        req_schema = yaml.safe_load((schema_dir / "requirement.yaml").read_text())
+        req_schema["allowed_link_roles"] = ["derives_from", "refined_by"]
+        (schema_dir / "requirement.yaml").write_text(yaml.dump(req_schema), encoding="utf-8")
+        story_schema = yaml.safe_load((schema_dir / "story.yaml").read_text())
+        story_schema["allowed_link_roles"] = ["implements", "specified_by"]  # no derives_from
+        (schema_dir / "story.yaml").write_text(yaml.dump(story_schema), encoding="utf-8")
+
+        arts = [
+            _make_art(
+                "STORY-001", "story",
+                links=[art_lib.Link(target="REQ-001", role="derives_from")],
+            ),
+        ]
+        result = lint_cmd.check_schema(arts, schema_dir)
+        assert '"derives_from"' not in result["detail"]
+        assert "Unknown" not in result["detail"]
+
+    def test_genuine_unknown_role_still_warns(self, project_root: Path):
+        # A3: the de-noise must not swallow genuine typos — a role canonical
+        # nowhere and with no near-miss still warns "Unknown".
+        schema_dir = project_root / ".specflow" / "schema"
+        story_schema = yaml.safe_load((schema_dir / "story.yaml").read_text())
+        story_schema["allowed_link_roles"] = ["implements", "specified_by"]
+        (schema_dir / "story.yaml").write_text(yaml.dump(story_schema), encoding="utf-8")
+        arts = [
+            _make_art(
+                "STORY-001", "story",
+                links=[art_lib.Link(target="REQ-001", role="totally_bogus")],
+            ),
+        ]
+        result = lint_cmd.check_schema(arts, schema_dir)
+        assert "Unknown" in result["detail"]
+        assert '"totally_bogus"' in result["detail"]
+
+    def test_canonical_union_passed_to_per_artifact_validation(self, project_root: Path):
+        # Direct-call path: passing all_canonical_roles suppresses the
+        # canonical-elsewhere role; omitting it preserves legacy behavior (the
+        # role reads "Unknown" when the union isn't supplied).
+        schema = {"allowed_link_roles": ["refers_to"]}
+        art = _make_art(
+            "CHL-001", "decision",
+            links=[art_lib.Link(target="REQ-001", role="derives_from")],
+        )
+        canonical = {"derives_from", "implements", "refers_to"}
+        issues_with = lint_lib.validate_artifact_schema(art, schema, canonical)
+        assert not [i for i in issues_with if i.get("code") == "link_role"]
+        issues_without = lint_lib.validate_artifact_schema(art, schema)
+        assert any(
+            i.get("code") == "link_role" and "Unknown" in i["message"]
+            for i in issues_without
+        )
+
 
 # ── _check_links ────────────────────────────────────────────────────────────
 
@@ -356,6 +457,55 @@ class TestCheckCoverage:
         ]
         result = lint_cmd.check_coverage(arts)
         assert result["warning_count"] == 0
+
+    def test_req_with_derives_from_story_counts_as_covered(self):
+        # Legacy stories link to REQ via derives_from (not implements); coverage
+        # must honor both so REQ coverage is not falsely low.
+        arts = [
+            _make_art("REQ-001", "requirement", status="approved"),
+            _make_art(
+                "ARCH-001", "architecture", status="draft",
+                links=[art_lib.Link(target="REQ-001", role="derives_from")],
+            ),
+            _make_art(
+                "STORY-001", "story", status="approved",
+                links=[art_lib.Link(target="REQ-001", role="derives_from")],
+            ),
+            _make_art(
+                "UT-001", "unit-test",
+                links=[art_lib.Link(target="STORY-001", role="verified_by")],
+            ),
+            _make_art(
+                "IT-001", "integration-test",
+                links=[art_lib.Link(target="STORY-001", role="verified_by")],
+            ),
+            _make_art(
+                "QT-001", "qualification-test",
+                links=[art_lib.Link(target="STORY-001", role="verified_by")],
+            ),
+        ]
+        result = lint_cmd.check_coverage(arts)
+        assert "no STORY" not in result["detail"]
+        assert result["warning_count"] == 0
+
+
+# ── _check_story_size ───────────────────────────────────────────────────────
+
+class TestCheckStorySize:
+    def test_bullet_acceptance_criteria_counted(self):
+        # Bulleted ACs must count — previously only numbered items matched,
+        # flagging well-formed bullet sections as "0 acceptance criteria".
+        body = "## Acceptance Criteria\n- first\n- second\n- third\n- fourth\n"
+        arts = [_make_art("STORY-001", "story", status="approved", body=body)]
+        result = lint_cmd._check_story_size(arts)
+        assert "0 acceptance criteria" not in result["detail"]
+        assert result["warning_count"] == 0
+
+    def test_checkbox_acceptance_criteria_counted(self):
+        body = "## Acceptance Criteria\n- [x] one\n- [ ] two\n- [x] three\n"
+        arts = [_make_art("STORY-001", "story", status="approved", body=body)]
+        result = lint_cmd._check_story_size(arts)
+        assert "0 acceptance criteria" not in result["detail"]
 
 
 # ── trace.run ───────────────────────────────────────────────────────────────
@@ -683,6 +833,19 @@ class TestCheckStatusCascadeDraftSpec:
         arts = art_lib.discover_artifacts(project_root)
         result = lint_cmd._check_status_cascade(arts)
         assert result["blocking_count"] == 0
+
+    def test_verified_story_derives_from_prompts_req_cascade(self, project_root: Path):
+        # A4 (4th site): a verified STORY deriving from an approved REQ nudges
+        # REQ promotion exactly like an `implements` link.
+        _write_artifact(project_root, "REQ-001", "requirement", "Approved REQ", status="approved")
+        _write_artifact(
+            project_root, "STORY-001", "story", "Verified Story", status="verified",
+            links=[{"target": "REQ-001", "role": "derives_from"}],
+        )
+        arts = art_lib.discover_artifacts(project_root)
+        result = lint_cmd._check_status_cascade(arts)
+        assert result["warning_count"] >= 1
+        assert "update REQ status" in result["detail"]
 
 
 # ── SPIKE orphan exemption ───────────────────────────────────────────────────

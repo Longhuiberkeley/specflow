@@ -198,6 +198,7 @@ class TechniqueFinding:
     severity: str  # info | warn | error
     technique: str
     target_id: str | None = None
+    body: str = ""
 
 
 @dataclass
