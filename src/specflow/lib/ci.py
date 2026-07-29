@@ -17,31 +17,33 @@ from pathlib import Path
 from specflow.lib import artifacts as art_lib
 
 
-def load_active_bp_context(root: Path, artifact: art_lib.Artifact) -> str:
-    """Load active best-practice artifacts as review context.
-
-    Reads BP artifacts from _specflow/specs/best-practices/ and formats
-    them as a context prefix for review prompts. Filters to active BPs
-    whose tags overlap with the artifact's tags or whose applies_to links
-    reference the artifact.
-    """
+def load_active_best_practices(
+    root: Path,
+    artifact: art_lib.Artifact,
+) -> list[art_lib.Artifact]:
+    """Return active/approved BPs matching by tag or ``applies_to`` link."""
     bp_dir = root / "_specflow" / "specs" / "best-practices"
     if not bp_dir.exists():
-        return ""
+        return []
+
     artifact_tags = set(artifact.tags)
-    artifact_id = artifact.id
-    relevant_bps: list[str] = []
+    relevant_bps: list[art_lib.Artifact] = []
     for bp_file in sorted(bp_dir.glob("*.md")):
         bp = art_lib.parse_artifact(bp_file)
         if not bp or bp.status not in ("active", "approved"):
             continue
-        # Match by applies_to link or tag overlap
-        applies_to_ids = {lnk.target for lnk in bp.links if lnk.role == "applies_to"}
-        if artifact_id in applies_to_ids:
-            relevant_bps.append(f"[{bp.id}] {bp.title}:\n{bp.body[:500]}")
-            continue
-        if artifact_tags & set(bp.tags):
-            relevant_bps.append(f"[{bp.id}] {bp.title}:\n{bp.body[:500]}")
+        applies_to_ids = {link.target for link in bp.links if link.role == "applies_to"}
+        if artifact.id in applies_to_ids or artifact_tags & set(bp.tags):
+            relevant_bps.append(bp)
+    return relevant_bps
+
+
+def load_active_bp_context(root: Path, artifact: art_lib.Artifact) -> str:
+    """Format matching best-practice artifacts as review-prompt context."""
+    relevant_bps = [
+        f"[{bp.id}] {bp.title}:\n{bp.body[:500]}"
+        for bp in load_active_best_practices(root, artifact)
+    ]
     if not relevant_bps:
         return ""
     return "Applicable best practices:\n" + "\n---\n".join(relevant_bps)

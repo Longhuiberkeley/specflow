@@ -263,7 +263,7 @@ artifacts:
     - compliance
     - BYOC
     - M2-extensible
-    title: "Compliance rework \u2014 BYOC with /specflow-pack-author"
+    title: Compliance rework — BYOC with /specflow-pack-author
   STORY-029:
     fingerprint: sha256:e2e291118dad
     id: STORY-029
@@ -289,7 +289,7 @@ artifacts:
     - UX
     - documentation
     - M3-depth
-    title: "Install UX \u2014 one-line install path and getting-started tutorial"
+    title: Install UX — one-line install path and getting-started tutorial
   STORY-032:
     fingerprint: sha256:84a65b667115
     id: STORY-032
@@ -298,8 +298,7 @@ artifacts:
     - UX
     - skills
     - M4-ux
-    title: "Delete over-exposed skill directories \u2014 collapse 22 skills to 8 Tier\
-      \ 1"
+    title: Delete over-exposed skill directories — collapse 22 skills to 8 Tier 1
   STORY-033:
     fingerprint: sha256:e150f32f8b00
     id: STORY-033
@@ -308,7 +307,7 @@ artifacts:
     - UX
     - skills
     - M4-ux
-    title: "Build the 9 Tier 1 conversational skills \u2014 init, audit, ship + modifications"
+    title: Build the 9 Tier 1 conversational skills — init, audit, ship + modifications
   STORY-034:
     fingerprint: sha256:55db9741b5bd
     id: STORY-034
@@ -317,8 +316,8 @@ artifacts:
     - UX
     - documentation
     - M4-ux
-    title: "Documentation overhaul \u2014 rewrite lifecycle, commands, and README\
-      \ for 9-command surface"
+    title: Documentation overhaul — rewrite lifecycle, commands, and README for 9-command
+      surface
   STORY-035:
     fingerprint: sha256:5d458c39e8b8
     id: STORY-035
@@ -327,7 +326,7 @@ artifacts:
     - UX
     - conventions
     - checklists
-    title: "Project convention checklists \u2014 scaffold and enforce project structure"
+    title: Project convention checklists — scaffold and enforce project structure
   STORY-036:
     fingerprint: sha256:6a7a4f1483c8
     id: STORY-036
@@ -779,4 +778,17 @@ artifacts:
     - v1.12.0
     fingerprint: sha256:2647c67c8626
     children: []
-next_id: 82
+  STORY-082:
+    id: STORY-082
+    title: Revive BP and PREV knowledge-surface visibility and consumption
+    status: implemented
+    tags:
+    - learnings
+    - bp
+    - prev
+    - brief
+    - checklists
+    - backfilled
+    fingerprint: sha256:d35eee78fc50
+    children: []
+next_id: 83

@@ -492,4 +492,18 @@ artifacts:
     status: approved
     fingerprint: sha256:93fa18075af9
     children: []
-next_id: 58
+  DEC-058:
+    id: DEC-058
+    title: Revive the dormant BP/PREV learnings system (visibility + real consumption
+      + dogfood)
+    status: approved
+    tags:
+    - learnings
+    - bp
+    - prev
+    - brief
+    - context
+    - core
+    fingerprint: sha256:aebefd5d5a59
+    children: []
+next_id: 59

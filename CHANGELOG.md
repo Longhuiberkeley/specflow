@@ -4,6 +4,32 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.12.3] - 2026-07-30
+
+### Highlights
+
+- **The existing BP/PREV learning loops are now visible and actually consumed.**
+  `specflow brief` reports BP, PREV, FIND, and CHL health even when every surface
+  is empty, so a dormant learning system no longer fails silently. Matching active
+  or approved BP artifacts now join the local `checklist-run` pipeline alongside
+  learned PREV patterns.
+
+### Fixes
+
+- Centralized BP selection in one canonical matcher shared by CI context and local
+  checklist assembly, using tag overlap or explicit `applies_to` links.
+- Prevented normal artifact review from injecting the same BP both as prose context
+  and as a checklist item; each applicable practice is judged once.
+- Reused `brief`'s parsed artifact inventory when computing executable stories,
+  eliminating a second repository scan and YAML parse pass.
+- Corrected checklist assembly documentation to describe all seven ordered sources.
+- Added dogfood BP-003..007 and PREV-001..002 examples, generated-agent guidance,
+  STORY/REQ traceability, and focused regression coverage.
+- Reviewed the implementation with independent Sonnet and Opus passes; fixed all
+  verified findings.
+
+**Verification:** 723 tests passing (baseline 718; +5 tests, 0 regressions).
+
 ## [1.12.2] - 2026-07-21
 
 ### Fixes

@@ -1,0 +1,9 @@
+STORY-082:
+  AGENTS.md: f4ca22bbb35d0ae9
+  src/specflow/commands/artifact_review.py: c5c5199fe8e3032c
+  src/specflow/commands/brief.py: 888160c2e6151ef1
+  src/specflow/lib/checklists.py: cb6567237cc74af0
+  src/specflow/lib/ci.py: d3ff7ea047cd5c8e
+  src/specflow/templates/agent-context.md: 0d9fd78aeefa3a33
+  tests/test_brief.py: a6592ca1c0607485
+  tests/test_knowledge_lifecycle.py: 76ad27caedf815a9

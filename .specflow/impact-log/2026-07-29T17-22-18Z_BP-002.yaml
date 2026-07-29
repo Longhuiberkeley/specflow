@@ -1,0 +1,8 @@
+changed: BP-002
+change_type: content_modified
+fingerprint_old: sha256:c7f72a73c3a8
+fingerprint_new: sha256:ce47ee6eed0e
+update_type: minor
+flagged_suspects: []
+resolved: false
+timestamp: '2026-07-29T17:22:18Z'

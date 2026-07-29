@@ -52,6 +52,86 @@ def test_brief_runs_and_reports_phase_and_inventory(project_root: Path, capsys):
     assert "No unresolved suspects" in out
 
 
+# --- Knowledge-surfaces block: makes BP/PREV dormancy visible ---
+
+def _bp_art(bp_id: str, status: str = "approved") -> art_lib.Artifact:
+    return art_lib.Artifact(
+        path=Path(f"/fake/{bp_id}.md"),
+        frontmatter={"id": bp_id, "title": f"BP {bp_id}", "type": "best-practice",
+                      "status": status, "tags": ["core"]},
+        body="## Verification\nDo the thing",
+    )
+
+
+def test_knowledge_summary_reports_all_empty_surfaces(tmp_path: Path):
+    summary = brief_cmd._knowledge_summary(tmp_path, [])
+    assert summary["bp_total"] == 0
+    assert summary["prev_count"] == 0
+    assert summary["find_count"] == 0
+    assert summary["chl_open"] == 0
+    assert any("no active/approved BPs" in hint for hint in summary["hints"])
+    assert any("0 PREV" in hint for hint in summary["hints"])
+
+
+def test_brief_renders_empty_knowledge_surfaces(project_root: Path, capsys):
+    assert brief_cmd.run(project_root, {}) == 0
+    out = capsys.readouterr().out
+    assert "Knowledge surfaces" in out
+    assert "BP 0 (none)" in out
+    assert "PREV 0" in out
+    assert "FIND 0" in out
+    assert "CHL 0 open / 0 done" in out
+
+
+def test_brief_discovers_artifacts_once(project_root: Path, monkeypatch):
+    original = art_lib.discover_artifacts
+    calls = 0
+
+    def counted(root: Path, artifact_type: str | None = None):
+        nonlocal calls
+        calls += 1
+        return original(root, artifact_type)
+
+    monkeypatch.setattr(art_lib, "discover_artifacts", counted)
+    assert brief_cmd.run(project_root, {}) == 0
+    assert calls == 1
+
+
+def test_knowledge_summary_reports_bp_and_prev_dormancy(tmp_path: Path):
+    from specflow.lib import learning as learn_lib
+
+    arts = [_bp_art("BP-001")]
+    # No PREV yet -> dormancy hint for PREV fires; approved BP means no BP-dormancy hint.
+    s = brief_cmd._knowledge_summary(tmp_path, arts)
+    assert s is not None
+    assert s["bp_total"] == 1
+    assert s["prev_count"] == 0
+    assert any("PREV" in h for h in s["hints"])
+    assert not any("no active/approved BPs" in h for h in s["hints"])
+
+    # Add a PREV via the blessed path -> prev_count rises, PREV hint clears.
+    story = art_lib.Artifact(
+        path=Path("/fake/STORY-1.md"),
+        frontmatter={"id": "STORY-001", "type": "story", "tags": ["core"]},
+        body="",
+    )
+    learn_lib.persist_prevention_pattern(
+        tmp_path,
+        learn_lib.extract_prevention_pattern(story, "Prevent X", "Verify that X holds"),
+    )
+    s2 = brief_cmd._knowledge_summary(tmp_path, arts)
+    assert s2["prev_count"] == 1
+    assert not any("PREV" in h for h in s2["hints"])
+
+
+def test_brief_knowledge_bp_dormancy_hint_when_no_active_bp(tmp_path: Path):
+    # Only a draft BP -> "no active/approved BPs" hint fires.
+    s = brief_cmd._knowledge_summary(tmp_path, [_bp_art("BP-009", status="draft")])
+    assert s is not None
+    assert any("no active/approved BPs" in h for h in s["hints"])
+
+
+
 # --- next-skill recommendation: execute → artifact-review → ship (not execute → ship) ---
 
 from types import SimpleNamespace

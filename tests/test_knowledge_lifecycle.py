@@ -224,6 +224,104 @@ class TestReviewFeedbackLoop:
         assert patterns[0]["items"][0]["check"].startswith("Verify that")
 
 
+class TestBestPracticeChecklistLoading:
+    """BPs must flow into the local checklist-run review loop (not just CI context).
+
+    Previously only lib/ci.py read BPs; checklist-run loaded PREVs but not BPs, so the
+    artifact-review skill's claim that checklist-run 'automatically includes matching BPs'
+    was aspirational. _load_best_practices closes that gap.
+    """
+
+    def _write_bp(
+        self,
+        root: Path,
+        bp_id: str,
+        status: str,
+        tags: list[str],
+        links: list[dict[str, str]] | None = None,
+    ) -> Path:
+        bp_dir = root / "_specflow" / "specs" / "best-practices"
+        bp_dir.mkdir(parents=True, exist_ok=True)
+        path = bp_dir / f"{bp_id}.md"
+        path.write_text(
+            "---\n"
+            f"id: {bp_id}\ntitle: Test BP\ntype: best-practice\nstatus: {status}\n"
+            f"tags: [{', '.join(tags)}]\n"
+            f"links: {links or []}\n"
+            "---\n\n"
+            f"# Test BP {bp_id}\n\n## Verification\nDo the {bp_id} thing\n",
+            encoding="utf-8",
+        )
+        return path
+
+    def test_loads_bp_matching_by_tag(self, tmp_path: Path):
+        from specflow.lib.checklists import _load_best_practices
+
+        self._write_bp(tmp_path, "BP-001", "approved", ["api"])
+        art = _make_artifact("REQ-001", "X", ["api"])
+        items = _load_best_practices(tmp_path, art)
+        assert len(items) == 1
+        assert items[0].mode == "proactive"
+        assert items[0].severity == "warning"
+        assert "BP-001" in items[0].check
+
+    def test_loads_bp_matching_by_applies_to(self, tmp_path: Path):
+        from specflow.lib.checklists import _load_best_practices
+
+        self._write_bp(
+            tmp_path,
+            "BP-001",
+            "approved",
+            ["api"],
+            [{"target": "REQ-002", "role": "applies_to"}],
+        )
+        art = _make_artifact("REQ-002", "Y", ["web"])
+        assert [item.id for item in _load_best_practices(tmp_path, art)] == ["BP-001-bp"]
+
+    def test_skips_bp_with_non_overlapping_tags(self, tmp_path: Path):
+        from specflow.lib.checklists import _load_best_practices
+
+        self._write_bp(tmp_path, "BP-001", "approved", ["api"])
+        art = _make_artifact("REQ-002", "Y", ["web"])
+        assert _load_best_practices(tmp_path, art) == []
+
+    def test_skips_non_active_bp(self, tmp_path: Path):
+        from specflow.lib.checklists import _load_best_practices
+
+        self._write_bp(tmp_path, "BP-001", "draft", ["api"])
+        art = _make_artifact("REQ-001", "X", ["api"])
+        assert _load_best_practices(tmp_path, art) == []
+
+    def test_uses_verification_section_as_check(self, tmp_path: Path):
+        from specflow.lib.checklists import _load_best_practices
+
+        self._write_bp(tmp_path, "BP-001", "active", ["api"])
+        art = _make_artifact("REQ-001", "X", ["api"])
+        items = _load_best_practices(tmp_path, art)
+        assert items and "Do the BP-001 thing" in items[0].check
+
+    def test_checklist_and_context_share_canonical_matches(self, tmp_path: Path):
+        from specflow.lib import ci
+        from specflow.lib.checklists import _load_best_practices
+
+        self._write_bp(tmp_path, "BP-001", "approved", ["api"])
+        self._write_bp(tmp_path, "BP-002", "draft", ["api"])
+        art = _make_artifact("REQ-001", "X", ["api"])
+        bp_ids = [bp.id for bp in ci.load_active_best_practices(tmp_path, art)]
+        item_ids = [item.id.removesuffix("-bp") for item in _load_best_practices(tmp_path, art)]
+        assert item_ids == bp_ids == ["BP-001"]
+
+    def test_review_prompt_does_not_duplicate_assembled_bp(self, tmp_path: Path):
+        from specflow.commands.artifact_review import _format_prompt
+        from specflow.lib.checklists import _load_best_practices
+
+        self._write_bp(tmp_path, "BP-001", "approved", ["api"])
+        art = _make_artifact("REQ-001", "X", ["api"])
+        prompt = _format_prompt(art, _load_best_practices(tmp_path, art), tmp_path)
+        assert prompt.count("[BP-001]") == 1
+        assert "Applicable best practices:" not in prompt
+
+
 class TestInitDomainFlags:
     def _run_init(self, root: Path, domain: str | None, domain_tags: str = "") -> int:
         from specflow.commands import init as init_cmd

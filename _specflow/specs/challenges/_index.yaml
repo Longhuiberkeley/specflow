@@ -643,4 +643,18 @@ artifacts:
     status: open
     tags: []
     title: 'REQ-034: ARCH exists but no DDD refinement'
-next_id: 108
+  CHL-108:
+    id: CHL-108
+    title: Audit vertical findings
+    status: open
+    tags: []
+    fingerprint: sha256:ed7c58280c82
+    children: []
+  CHL-109:
+    id: CHL-109
+    title: Audit horizontal/best-practice findings
+    status: open
+    tags: []
+    fingerprint: sha256:48af2204ce1b
+    children: []
+next_id: 110

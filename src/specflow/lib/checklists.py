@@ -10,7 +10,7 @@ from typing import Any
 
 import yaml
 
-from specflow.lib.artifacts import Artifact, parse_artifact
+from specflow.lib.artifacts import Artifact
 
 
 @dataclass
@@ -239,6 +239,48 @@ def _load_learned_patterns(root: Path, artifact: Artifact) -> list[ChecklistItem
     return items
 
 
+def _extract_bp_check(body: str, title: str, bp_id: str) -> str:
+    """Turn a BP body into a verifiable checklist check.
+
+    Prefers the `## Verification` section (how to confirm the practice is followed);
+    falls back to the title. BPs are prose (Practice/Rationale/Verification), so each
+    becomes one proactive item rather than a parse of structured checks.
+    """
+    capturing = False
+    out: list[str] = []
+    for ln in (body or "").splitlines():
+        s = ln.strip()
+        if s.lower().startswith("## verification"):
+            capturing = True
+            continue
+        if capturing and s.startswith("## "):
+            break
+        if capturing and s:
+            out.append(s)
+    text = " ".join(out).strip()
+    return text or title or bp_id
+
+
+def _load_best_practices(root: Path, artifact: Artifact) -> list[ChecklistItem]:
+    """Convert matching best-practice artifacts into proactive checklist items."""
+    from specflow.lib.ci import load_active_best_practices
+
+    items: list[ChecklistItem] = []
+    for bp in load_active_best_practices(root, artifact):
+        check = _extract_bp_check(bp.body or "", bp.title or "", bp.id)
+        items.append(
+            ChecklistItem(
+                id=f"{bp.id}-bp",
+                check=f"[{bp.id}] {check}",
+                automated=False,
+                severity="warning",
+                mode="proactive",
+                source_checklist=f"best-practices/{bp.id}",
+            )
+        )
+    return items
+
+
 def _deduplicate_items(items: list[ChecklistItem]) -> list[ChecklistItem]:
     """Deduplicate checklist items by check text, keeping higher severity."""
     severity_rank = {"blocking": 3, "warning": 2, "info": 1}
@@ -272,14 +314,16 @@ def assemble_checklist(
     artifact: Artifact,
     phase_transition: str | None = None,
 ) -> AssembledChecklist:
-    """Assemble unique review criteria for an artifact from all 4 sources.
+    """Assemble unique review criteria from seven ordered sources.
 
     Sources loaded in order:
     1. Artifact-type checklist (in-process/)
     2. Review checklist (review/)
     3. Shared checklists matching tags (shared/)
     4. Phase-gate checklist (if transition specified)
-    5. Learned prevention patterns (learned/)
+    5. Best-practice artifacts matching tags/applies_to (best-practices/)
+    6. Learned prevention patterns (learned/)
+    7. Project-domain checklist (domain/)
     """
     all_items: list[ChecklistItem] = []
     sources: list[str] = []
@@ -309,13 +353,19 @@ def assemble_checklist(
             all_items.extend(gate_items)
             sources.append(f"phase-gates/{phase_transition}")
 
-    # 5. Learned patterns
+    # 5. Best-practice artifacts (proactive domain guidance; mirrors ci.py matching)
+    bp_items = _load_best_practices(root, artifact)
+    if bp_items:
+        all_items.extend(bp_items)
+        sources.append("best-practices/BP-*")
+
+    # 6. Learned patterns
     learned_items = _load_learned_patterns(root, artifact)
     if learned_items:
         all_items.extend(learned_items)
         sources.append("learned/PREV-*")
 
-    # 6. Domain checklist (project-level domain set via `specflow domain set`)
+    # 7. Domain checklist (project-level domain set via `specflow domain set`)
     from specflow.lib.config import get_domain
     domain, _ = get_domain(root)
     domain_items = _load_domain_checklist(root, domain, artifact.type)

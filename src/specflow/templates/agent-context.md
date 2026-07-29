@@ -28,6 +28,12 @@ SpecFlow IS your persistent memory. You do not have reliable conversation memory
 - `impact-log/` = **temporal memory** (causality — what changed, why, what it affected). Suspect propagation tracks downstream impact.
 - `links` = **relational memory** (how artifacts connect). `specflow trace <ID>` walks the graph.
 
+**Knowledge surfaces (learnings) — `specflow brief` shows their counts + dormancy:**
+- **BP** (`_specflow/specs/best-practices/`) = **proactive / domain** guidance. Seeded at `/specflow-discover`; contribute one whenever you apply a reusable practice (`specflow create --type best-practice --status approved --tags …`). Consumed by plan/execute/review/audit and auto-loaded into `checklist-run` for artifacts whose tags or `applies_to` match.
+- **PREV** (`.specflow/checklists/learned/`) = **reactive / incident** patterns. Auto-captured from review findings (blocking/warning from learnable techniques) and from `specflow done`; recalled via `specflow patterns` and auto-loaded into `checklist-run` for matching tags.
+- **FIND** (autoresearch) = accumulated research knowledge. **CHL** (challenges) = review findings awaiting resolution.
+- A wired-but-empty surface is the silent failure mode of this system. If `brief` shows `0 PREV` or no active BPs, the loop isn't firing — capture one rather than let it stay dormant.
+
 **Docs — the knowledge surface (not an artifact):**
 - `docs/` + root markdown (README, AGENTS, CHANGELOG, …) is recognized prose, indexed and shown in `specflow brief`. It is NOT an artifact type — no status, no lifecycle, no `_index.yaml` entry.
 - Cite specs from a doc with inline `@ID` markers (e.g. `@ARCH-007`, `@DEC-018`). `specflow detect stale-docs` and `/specflow-audit` warn (never block) if a doc cites a superseded/cancelled/deprecated artifact.

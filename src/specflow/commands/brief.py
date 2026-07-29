@@ -127,6 +127,61 @@ def _docs_summary(root: Path) -> dict | None:
     }
 
 
+def _knowledge_summary(root: Path, artifacts: list[art_lib.Artifact]) -> dict:
+    """Knowledge-surface health: proactive BP best-practices, reactive PREV patterns,
+    research FINDs, review CHLs.
+
+    Makes dormancy visible (accounting, not policing): a wired-but-empty surface is the
+    silent failure mode of SpecFlow's learnings system. Always returns a summary because
+    an entirely empty cupboard is the most important dormant state to expose. Pure read —
+    artifacts for BP/FIND/CHL, and lib/learning.list_learned_patterns for PREV. NOTE: PREV files live in
+    .specflow/checklists/learned/, NOT under _specflow/, so they are invisible to
+    discover_artifacts unless surfaced here — this is the one place they become countable.
+    """
+    from specflow.lib import learning as learn_lib
+
+    def _by_prefix(prefix: str) -> list[art_lib.Artifact]:
+        return [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == prefix]
+
+    bps = _by_prefix("BP")
+    finds = _by_prefix("FIND")
+    chls = _by_prefix("CHL")
+    prevs = learn_lib.list_learned_patterns(root)
+
+    bp_by_status: dict[str, int] = {}
+    for b in bps:
+        s = b.status or "draft"
+        bp_by_status[s] = bp_by_status.get(s, 0) + 1
+
+    # CHL "done" = addressed or accepted; open = open/stale (still actionable).
+    chl_done = sum(1 for c in chls if c.status in ("addressed", "accepted"))
+    chl_open = len(chls) - chl_done
+
+    hints: list[str] = []
+    active_bps = bp_by_status.get("active", 0) + bp_by_status.get("approved", 0)
+    if active_bps == 0:
+        hints.append(
+            "no active/approved BPs — domain best-practices not captured; generate at "
+            "/specflow-discover, or add one (`specflow create --type best-practice`) when "
+            "you apply a reusable practice."
+        )
+    if not prevs:
+        hints.append(
+            "0 PREV — reactive learning never fired; patterns auto-capture from review "
+            "findings (blocking/warning, learnable techniques) and `specflow done`."
+        )
+
+    return {
+        "bp_total": len(bps),
+        "bp_by_status": bp_by_status,
+        "prev_count": len(prevs),
+        "find_count": len(finds),
+        "chl_open": chl_open,
+        "chl_done": chl_done,
+        "hints": hints,
+    }
+
+
 def _recent_changes(root: Path, since: str) -> list[str]:
     """One-line-per-commit log of changes touching _specflow/ since `since`."""
     try:
@@ -393,8 +448,13 @@ def run(root: Path, args: dict[str, Any]) -> int:
 
     suspects = [a for a in artifacts if a.suspect]
 
-    # In-scope wave (next executable wave), best-effort.
-    stories = filter_executable_stories(art_lib.discover_artifacts(root, "story"))
+    # In-scope wave (next executable wave), best-effort. Reuse the parsed inventory.
+    story_artifacts = [
+        artifact
+        for artifact in artifacts
+        if art_lib.get_prefix_from_id(artifact.id) == "STORY"
+    ]
+    stories = filter_executable_stories(story_artifacts)
     next_wave: list[str] = []
     if stories:
         wave_result = compute_waves(stories)
@@ -411,6 +471,7 @@ def run(root: Path, args: dict[str, Any]) -> int:
         return 0
 
     docs_sum = _docs_summary(root)
+    knowledge = _knowledge_summary(root, artifacts)
 
     # ── Render ──────────────────────────────────────────────────
     print(f"\n{CYAN}SpecFlow Brief{NC} — {BOLD}{project_name}{NC}")
@@ -440,6 +501,15 @@ def run(root: Path, args: dict[str, Any]) -> int:
             tc = ", ".join(f"{p} ({n})" for p, n in docs_sum["top_cited"])
             print(f"    Top cited: {tc}")
         print(f"    {CYAN}specflow detect stale-docs{NC} to flag docs citing superseded artifacts")
+
+    bp_parts = [f"{n} {s}" for s, n in sorted(knowledge["bp_by_status"].items())] or ["none"]
+    print(f"\n  {BOLD}Knowledge surfaces{NC}")
+    print(f"    BP {knowledge['bp_total']} ({', '.join(bp_parts)})   "
+          f"PREV {knowledge['prev_count']}   "
+          f"FIND {knowledge['find_count']}   "
+          f"CHL {knowledge['chl_open']} open / {knowledge['chl_done']} done")
+    for h in knowledge["hints"]:
+        print(f"    {YELLOW}⚠ {h}{NC}")
 
     if adoption is not None:
         type_parts = [f"{n} {t}" for t, n in sorted(adoption["by_type"].items())]

@@ -182,4 +182,15 @@ artifacts:
     status: verified
     tags: []
     title: 'Unit Test for STORY-075: Autoresearch CLI Hardening and --set Flag'
-next_id: 32
+  UT-032:
+    id: UT-032
+    title: Knowledge lifecycle regression tests for STORY-082
+    status: verified
+    tags:
+    - learnings
+    - bp
+    - prev
+    - brief
+    fingerprint: sha256:aae828ea32c0
+    children: []
+next_id: 33

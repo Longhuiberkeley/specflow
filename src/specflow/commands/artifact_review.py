@@ -59,7 +59,8 @@ def _format_prompt(
 ) -> str:
     lines: list[str] = []
 
-    if root is not None:
+    bp_items_present = any(item.source_checklist.startswith("best-practices/") for item in items)
+    if root is not None and not bp_items_present:
         from specflow.lib import ci as ci_mod
 
         prefix = ci_mod.load_active_bp_context(root, artifact)

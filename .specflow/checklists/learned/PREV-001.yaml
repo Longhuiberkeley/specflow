@@ -1,0 +1,17 @@
+id: PREV-001
+name: 'Prevent recurrence: implemented STORYs must record test verification'
+discovered_from: CHL-003
+mode: reactive
+pattern: 'Prevent recurrence: implemented STORYs must record test verification'
+applies_to:
+  tags:
+  - execute
+  - core
+  - review
+items:
+- id: PREV-001-01
+  check: Verify that the STORY records how it was verified (test command + pass/fail
+    result), not just status=implemented
+  severity: warning
+  automated: false
+  mode: reactive

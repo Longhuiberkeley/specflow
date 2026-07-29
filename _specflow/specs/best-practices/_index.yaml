@@ -15,6 +15,65 @@ artifacts:
     - approval-gate
     - briefing
     - review
-    fingerprint: sha256:c7f72a73c3a8
+    fingerprint: sha256:ce47ee6eed0e
     children: []
-next_id: 3
+  BP-003:
+    id: BP-003
+    title: Every code change traces to a STORY or REQ
+    status: approved
+    tags:
+    - traceability
+    - core
+    - execute
+    - context
+    fingerprint: sha256:285439828443
+    children: []
+  BP-004:
+    id: BP-004
+    title: Capture an evidence baseline before changing; re-run the same gate after;
+      report the delta
+    status: approved
+    tags:
+    - evidence
+    - execute
+    - review
+    - core
+    fingerprint: sha256:3b29fbb56d91
+    children: []
+  BP-005:
+    id: BP-005
+    title: Deterministic checks are zero-token shell or Python; never LLM inference
+      for a pass/fail signal
+    status: approved
+    tags:
+    - deterministic
+    - compliance
+    - core
+    - review
+    fingerprint: sha256:b055e312fa7a
+    children: []
+  BP-006:
+    id: BP-006
+    title: 'Accounting not policing: surface, never block; warnings never fail a commit
+      or audit'
+    status: approved
+    tags:
+    - philosophy
+    - core
+    - review
+    - compliance
+    fingerprint: sha256:e5bc07a3b0ae
+    children: []
+  BP-007:
+    id: BP-007
+    title: 'Recall before you act: run specflow brief first on any fresh or vague
+      prompt'
+    status: approved
+    tags:
+    - recall
+    - context
+    - core
+    - review
+    fingerprint: sha256:3de8fdad0f7a
+    children: []
+next_id: 8

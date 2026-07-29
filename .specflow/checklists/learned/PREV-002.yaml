@@ -1,0 +1,19 @@
+id: PREV-002
+name: 'Prevent recurrence: new artifact types ship schema to templates and register
+  in the type map'
+discovered_from: DEC-056
+mode: reactive
+pattern: 'Prevent recurrence: new artifact types ship schema to templates and register
+  in the type map'
+applies_to:
+  tags:
+  - core
+  - review
+  - compliance
+items:
+- id: PREV-002-01
+  check: Verify that any new artifact type has its schema in src/specflow/templates/schemas/
+    AND is registered in the prefix-to-category map, not only in .specflow/schema/
+  severity: warning
+  automated: false
+  mode: reactive
