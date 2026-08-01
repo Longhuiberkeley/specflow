@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import difflib
 import hashlib
 import json
 import logging
@@ -73,6 +74,72 @@ PREFIX_TO_TYPE: dict[str, str] = {
 }
 
 TYPE_TO_PREFIX: dict[str, str] = {v: k for k, v in PREFIX_TO_TYPE.items()}
+
+# Short lowercase aliases -> canonical artifact type. Only canonical types that
+# exist in the core TYPE_TO_DIR are listed here; pack-added types (experiment,
+# finding, competition, loop, run, monitor) are resolved via their PREFIX in
+# normalize_type() once the pack registers them, and "prevention" has no schema
+# at all. Self-mapping entries (story/spike/review) are kept for documentation
+# — they are already returned unchanged by normalize_type's first check.
+TYPE_ALIASES: dict[str, str] = {
+    "dec": "decision",
+    "req": "requirement",
+    "qt": "qualification-test",
+    "ut": "unit-test",
+    "it": "integration-test",
+    "ddd": "detailed-design",
+    "def": "defect",
+    "arch": "architecture",
+    "story": "story",
+    "spike": "spike",
+    "aud": "audit",
+    "chl": "challenge",
+    "bp": "best-practice",
+    "review": "review",
+}
+
+
+def normalize_type(s: str) -> str:
+    """Normalize an artifact type string to its canonical form.
+
+    Resolution order:
+      1. Already-canonical (``s in TYPE_TO_DIR``) -> returned unchanged.
+      2. A known prefix, case-insensitively (``"req"``, ``"REQ"``) -> the type
+         that prefix maps to. This also resolves pack abbreviations (``expt``,
+         ``loop``, ``comp`` ...) once the owning pack has registered its prefix.
+      3. A lowercase alias in :data:`TYPE_ALIASES` -> the canonical type.
+      4. Otherwise returned unchanged, so pack-added types and freeform values
+         pass through untouched.
+    """
+    if s in TYPE_TO_DIR:
+        return s
+    up = s.upper()
+    if up in PREFIX_TO_TYPE:
+        return PREFIX_TO_TYPE[up]
+    low = s.lower()
+    if low in TYPE_ALIASES:
+        return TYPE_ALIASES[low]
+    return s
+
+
+def initial_status(schema: dict) -> str | None:
+    """Return the unique root status for a schema, or None if not unique.
+
+    A "root" status is one whose allowed_status predecessor list is empty
+    (``status: []`` in the schema). Most core schemas have exactly one root
+    (e.g. defect -> ``open``, requirement -> ``draft``); ``experiment.yaml`` is
+    the exception with four outcome-roots (kept/discarded/crashed/no_op). When
+    there is not exactly one root, this returns None so the caller can require
+    an explicit ``--status``.
+    """
+    allowed = schema.get("allowed_status", {})
+    if not isinstance(allowed, dict):
+        return None
+    roots = [name for name, preds in allowed.items() if not preds]
+    if len(roots) == 1:
+        return roots[0]
+    return None
+
 
 V_MODEL_PAIRS: dict[str, str] = {
     "requirement": "qualification-test",
@@ -640,13 +707,25 @@ def create_artifact(
     specflow_dir = root / "_specflow"
     schema_dir = root / ".specflow" / "schema"
 
+    artifact_type = normalize_type(artifact_type)
+
     schema = _read_schema(schema_dir, artifact_type)
     if not schema:
-        return {"ok": False, "error": f"No schema found for type '{artifact_type}'"}
+        valid = sorted(TYPE_TO_DIR.keys())
+        msg = f"No schema found for type '{artifact_type}'. Valid types: {', '.join(valid)}."
+        matches = difflib.get_close_matches(artifact_type, valid, n=3, cutoff=0.5)
+        if matches:
+            msg += f" Did you mean {', '.join(matches)}?"
+        return {"ok": False, "error": msg}
 
     allowed_status = schema.get("allowed_status", {})
     if status not in allowed_status:
-        return {"ok": False, "error": f"Invalid status '{status}' for type '{artifact_type}'. Allowed: {', '.join(allowed_status)}"}
+        msg = f"Invalid status '{status}' for type '{artifact_type}'. Allowed: {', '.join(allowed_status)}."
+        matches = difflib.get_close_matches(status, list(allowed_status.keys()), n=1, cutoff=0.5)
+        if matches:
+            msg += f" Did you mean '{matches[0]}'?"
+        msg += f" Hint: run 'specflow schema {artifact_type}' to see statuses and the transition map."
+        return {"ok": False, "error": msg}
 
     prefix = TYPE_TO_PREFIX.get(artifact_type, "")
     if not prefix:
@@ -751,7 +830,8 @@ def update_artifact(
                 if current not in allowed_from:
                     return {
                         "ok": False,
-                        "error": f"Cannot transition '{artifact_id}' from '{current}' to '{new_status}'. Allowed from: {', '.join(allowed_from) if allowed_from else '(none)'}",
+                        "error": f"Cannot transition '{artifact_id}' from '{current}' to '{new_status}'. Allowed from: {', '.join(allowed_from) if allowed_from else '(none)'}"
+                                f" Hint: run 'specflow transitions {artifact_id}' to see the full transition map.",
                     }
 
     from datetime import date

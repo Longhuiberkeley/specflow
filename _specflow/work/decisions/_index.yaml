@@ -488,7 +488,8 @@ artifacts:
     children: []
   DEC-057:
     id: DEC-057
-    title: 'D-19/D-20: Adoption Pack — brownfield adoption via ARCH-per-component code-linking'
+    title: "D-19/D-20: Adoption Pack \u2014 brownfield adoption via ARCH-per-component\
+      \ code-linking"
     status: approved
     fingerprint: sha256:93fa18075af9
     children: []
@@ -506,4 +507,11 @@ artifacts:
     - core
     fingerprint: sha256:aebefd5d5a59
     children: []
-next_id: 59
+  DEC-059:
+    id: DEC-059
+    title: 'v1.12.4: transcript-driven CLI ergonomics + enforcement truthfulness'
+    status: approved
+    tags: []
+    fingerprint: sha256:e3b0c44298fc
+    children: []
+next_id: 60

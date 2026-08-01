@@ -441,6 +441,81 @@ class TestIdUtilities:
         assert art_lib.check_dot_notation_depth("REQ-001.1.1") == 3
 
 
+class TestNormalizeType:
+    def test_canonical_passthrough(self):
+        assert art_lib.normalize_type("requirement") == "requirement"
+        assert art_lib.normalize_type("defect") == "defect"
+
+    def test_prefix_case_insensitive(self):
+        assert art_lib.normalize_type("REQ") == "requirement"
+        assert art_lib.normalize_type("req") == "requirement"
+        assert art_lib.normalize_type("Req") == "requirement"
+        assert art_lib.normalize_type("DEF") == "defect"
+
+    def test_every_alias_resolves_to_canonical(self):
+        for alias, canonical in art_lib.TYPE_ALIASES.items():
+            assert art_lib.normalize_type(alias) == canonical, alias
+
+    def test_aliases_are_case_insensitive(self):
+        # Aliases route through the prefix check (every core alias's uppercase
+        # is a registered prefix), but the function must be case-insensitive
+        # regardless of which branch resolves it.
+        assert art_lib.normalize_type("DEC") == "decision"
+        assert art_lib.normalize_type("Dec") == "decision"
+        assert art_lib.normalize_type("BP") == "best-practice"
+        assert art_lib.normalize_type("CHL") == "challenge"
+
+    def test_unknown_passthrough_untouched(self):
+        # Pack-added and freeform types must pass through unchanged.
+        assert art_lib.normalize_type("bogus") == "bogus"
+        assert art_lib.normalize_type("some-pack-type") == "some-pack-type"
+
+    def test_alias_dict_values_are_real_core_types(self):
+        # Integrity: every alias target is a real core type. (Pack-only targets
+        # like experiment/finding/competition/loop/run/monitor and the
+        # non-existent "prevention" are deliberately excluded.)
+        for canonical in art_lib.TYPE_ALIASES.values():
+            assert canonical in art_lib.TYPE_TO_DIR, canonical
+
+
+class TestInitialStatus:
+    def test_single_root_returned(self):
+        # defect -> open (the real bug: 'draft' was wrong here)
+        defect_schema = {
+            "allowed_status": {
+                "open": [], "investigating": ["open"],
+                "fixing": ["investigating"], "closed": ["fixing"],
+            }
+        }
+        assert art_lib.initial_status(defect_schema) == "open"
+
+    def test_requirement_root_is_draft(self):
+        req_schema = {
+            "allowed_status": {
+                "draft": [], "approved": ["draft"], "implemented": ["approved"],
+            }
+        }
+        assert art_lib.initial_status(req_schema) == "draft"
+
+    def test_multiple_roots_returns_none(self):
+        # experiment.yaml: four outcome-roots (kept/discarded/crashed/no_op)
+        expt_schema = {
+            "allowed_status": {"kept": [], "discarded": [], "crashed": [], "no_op": []}
+        }
+        assert art_lib.initial_status(expt_schema) is None
+
+    def test_no_roots_returns_none(self):
+        # Every status has a predecessor -> no root.
+        schema = {"allowed_status": {"b": ["a"], "c": ["b"]}}
+        assert art_lib.initial_status(schema) is None
+
+    def test_missing_allowed_status_returns_none(self):
+        assert art_lib.initial_status({}) is None
+
+    def test_non_dict_allowed_status_returns_none(self):
+        assert art_lib.initial_status({"allowed_status": ["open", "closed"]}) is None
+
+
 _STD_FLOW = {"draft": [], "approved": ["draft"], "implemented": ["approved"], "verified": ["implemented"]}
 
 

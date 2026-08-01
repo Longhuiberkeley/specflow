@@ -111,6 +111,20 @@ def _pre_commit(root: Path) -> int:
         print(f"\n{YELLOW}Fix schema violations before committing, or use --no-verify to bypass.{NC}")
         return 1
 
+    # Advisory lint checks (YELLOW warnings — print on failure but NEVER block).
+    # CI Pass 1 (artifact-lint) remains the authoritative blocker; blocking
+    # locally on these would train --no-verify, which BP-006 forbids. These are
+    # status-cascade and story-linkage: real signals worth surfacing early, but
+    # not worth aborting a commit over.
+    for check_type in ("status-cascade", "story-linkage"):
+        advisory = subprocess.run(
+            ["specflow", "artifact-lint", "--type", check_type],
+            capture_output=True, text=True, cwd=str(root), check=False,
+        )
+        if advisory.returncode != 0:
+            print(f"{YELLOW}⚠ specflow pre-commit: {check_type} check has findings{NC}")
+            print(advisory.stdout[-1500:] if len(advisory.stdout) > 1500 else advisory.stdout)
+
     # Suspect flag check (warning — committing against suspect specs risks rework)
     for change in changes:
         artifact_id = Path(change["path"]).stem

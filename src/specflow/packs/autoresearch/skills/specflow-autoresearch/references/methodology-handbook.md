@@ -1,6 +1,6 @@
 # ML Methodology Handbook
 
-Best practices for ML/experimental work. BP-01 and BP-02 are mandatory (enforced by structural gates). BP-05 and BP-07 are gated (enforced by Phase 2c diversity gate and research agenda alignment). BP-03, BP-04, BP-06, BP-08, BP-09 are advisory but strongly recommended.
+Best practices for ML/experimental work. BP-01 and BP-02 are mandatory (enforced by the agent via the loop protocol). BP-05 and BP-07 are gated (enforced by the agent at the Phase 2c diversity gate and research agenda alignment). BP-03, BP-04, BP-06, BP-08, BP-09 are advisory but strongly recommended.
 
 These are grouped: **BP-01–09** (foundations), **BP-10–12** (validation integrity), **BP-13–16** (statistical traps), **BP-17–19** (optimize the real objective), **BP-20–22** (finishing moves), plus a **Bias Catalog**. Phase 2 ideation should pull the groups relevant to the current hypothesis — they are meant to be consulted live, not read once.
 

@@ -4,6 +4,7 @@ on:
   pull_request:
   push:
     branches: [main, master]
+    tags: ['v*']
 
 jobs:
   specflow-pass-1:
@@ -74,3 +75,45 @@ jobs:
         run: uv sync
       - name: Change-impact review
         run: uv run specflow change-impact || true
+  specflow-ci-gate:
+    # Server-side RBAC gate: validates artifact status transitions in the PR
+    # diff against the team-role model. Pull-request only (no base/head refs on
+    # a push). Mirrors the job lib/adapters/github_actions.py emits for consumers,
+    # adapted to this repo's uv-sync bootstrap.
+    name: CI gate (RBAC)
+    runs-on: ubuntu-latest
+    needs: specflow-pass-1
+    if: ${{ github.event_name == 'pull_request' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install uv
+        run: pip install uv
+      - name: Install SpecFlow
+        run: uv sync
+      - name: RBAC gate check
+        run: uv run specflow ci-gate --base ${{ github.base_ref }} --head ${{ github.head_ref }}
+  specflow-release-gate:
+    # Authoritative release gate on tag pushes. Runs project-audit WITHOUT
+    # continue-on-error: safe because accounting-not-policing lenses
+    # (docs-staleness) are excluded from the exit-2 count, so only structural
+    # signals can block a release. The informational project-audit job above
+    # still runs on every branch push.
+    name: Release gate
+    runs-on: ubuntu-latest
+    if: ${{ startsWith(github.ref, 'refs/tags/') }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install uv
+        run: pip install uv
+      - name: Install SpecFlow
+        run: uv sync
+      - name: Release gate check
+        run: uv run specflow project-audit && echo "Release gate passed"

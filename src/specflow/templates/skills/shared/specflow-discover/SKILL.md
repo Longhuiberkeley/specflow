@@ -146,7 +146,7 @@ After each answer, update your readiness assessment silently.
 2. Ask: "Does this capture everything? Anything missing or incorrect?"
 3. Iterate until user approves.
 4. **Inter-REQ dependency prompting**: Ask: "Do any of these requirements depend on others being implemented first? For example, 'user authentication' might need to be done before 'password reset'."
-5. For each dependency the user identifies, record it: `specflow update <dependent-REQ> --links "[{\"target\": \"<prerequisite-REQ>\", \"role\": \"derives_from\"}]"`. These dependency links influence story wave ordering during planning.
+5. For each dependency the user identifies, record it: `specflow update <dependent-REQ> --add-link <prerequisite-REQ>:derives_from`. These dependency links influence story wave ordering during planning.
 
 ### Step 5: Challenge Requirements
 

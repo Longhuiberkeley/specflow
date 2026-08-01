@@ -10,6 +10,8 @@ regression and the ``pytest`` job's legitimate use of ``uv sync``.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import yaml
 
 from specflow import __version__
@@ -117,3 +119,53 @@ def test_release_gate_fires_on_tags():
     text = _generate(["release-gate"])
     assert "tags: ['v*']" in text
     assert "specflow-release-gate" in _job_runs(text)
+
+
+# ── Repo's own dogfood workflow (.github/workflows/specflow.yml) ──────────────
+# The generator emits consumer jobs (uvx --from git+...). The repo itself is the
+# specflow project, so it bootstraps with `uv sync` + `uv run specflow` instead.
+# These tests pin the two dogfood jobs the generator emits for consumers
+# (ci-gate, release-gate), adapted to the repo's own bootstrap.
+
+_REPO_WORKFLOW = Path(__file__).resolve().parent.parent / ".github" / "workflows" / "specflow.yml"
+
+
+def test_repo_workflow_has_ci_and_release_gates():
+    assert _REPO_WORKFLOW.exists(), f"missing {_REPO_WORKFLOW}"
+    data = yaml.safe_load(_REPO_WORKFLOW.read_text(encoding="utf-8"))
+    jobs = data["jobs"]
+    assert "specflow-ci-gate" in jobs
+    assert "specflow-release-gate" in jobs
+
+
+def test_repo_workflow_triggers_on_tags():
+    data = yaml.safe_load(_REPO_WORKFLOW.read_text(encoding="utf-8"))
+    # PyYAML 1.1 parses the bare `on:` key as boolean True.
+    triggers = data.get("on", data.get(True))
+    push_cfg = triggers["push"]
+    assert "v*" in push_cfg.get("tags", [])
+
+
+def test_repo_ci_gate_pr_only_and_uses_github_refs():
+    data = yaml.safe_load(_REPO_WORKFLOW.read_text(encoding="utf-8"))
+    job = data["jobs"]["specflow-ci-gate"]
+    assert "pull_request" in job["if"]
+    runs = [s["run"] for s in job["steps"] if "run" in s]
+    flat = "\n".join(runs)
+    # Bootstraps from the repo itself (uv sync), not uvx.
+    assert "uv sync" in flat
+    assert "uv run specflow ci-gate" in flat
+    assert "${{ github.base_ref }}" in flat
+    assert "${{ github.head_ref }}" in flat
+
+
+def test_repo_release_gate_no_continue_on_error():
+    # The release gate is the authoritative gate on tags — it must NOT carry
+    # continue-on-error (safe now that accounting warns are excluded from exit 2).
+    data = yaml.safe_load(_REPO_WORKFLOW.read_text(encoding="utf-8"))
+    job = data["jobs"]["specflow-release-gate"]
+    assert "refs/tags/" in job["if"]
+    assert not job.get("continue-on-error", False)
+    runs = [s["run"] for s in job["steps"] if "run" in s]
+    flat = "\n".join(runs)
+    assert "uv run specflow project-audit" in flat

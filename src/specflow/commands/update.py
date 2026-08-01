@@ -2,13 +2,21 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
+from specflow.commands import create as create_cmd
 from specflow.lib import artifacts as art_lib
 from specflow.lib import defects as defects_lib
 from specflow.lib.display import RED, GREEN, YELLOW, NC
 
 _SENTINEL_NAMES = {"lean_assessment"}
+
+# Artifact-ID-shaped tokens (e.g. ARCH-007, DEF-3). A target gets a "not
+# found" warning ONLY when it both matches this shape AND its prefix is a
+# registered artifact-type prefix — standards clauses (ISO-14971, ISO26262-CL-3)
+# and freeform references pass through silently.
+_ART_ID_RE = re.compile(r"^[A-Z]+-\d+")
 
 
 def run(root: Path, args: dict) -> int:
@@ -57,6 +65,65 @@ def run(root: Path, args: dict) -> int:
 
     has_output_files_update = output_files_str is not None
 
+    # ── Link management (A1) ──────────────────────────────────────────
+    # --links replaces the whole list; --add-link/--remove-link mutate the
+    # existing list in place. Combining --links with the mutators is ambiguous,
+    # so we reject it up front rather than guessing an order of operations.
+    links_replace = args.get("links")
+    add_links_raw = args.get("add_link") or []
+    remove_links_raw = args.get("remove_link") or []
+
+    if links_replace is not None and (add_links_raw or remove_links_raw):
+        print(f"{RED}✗ --links cannot be combined with --add-link/--remove-link "
+              f"(ambiguous: full replace vs. mutate). Use one or the other.{NC}")
+        return 1
+
+    if links_replace is not None:
+        try:
+            parsed_links = create_cmd._parse_links(links_replace)
+        except ValueError as exc:
+            print(f"{RED}✗ --links: {exc}{NC}")
+            return 1
+        for entry in parsed_links:
+            if not isinstance(entry, dict) or not entry.get("target") or not entry.get("role"):
+                print(f"{RED}✗ Each link needs both a target and a role. "
+                      f"Use TARGET:ROLE pairs or a JSON array of "
+                      f'{{"target","role"}} objects.{NC}')
+                return 1
+            _warn_if_target_missing(root, entry["target"])
+        updates["links"] = parsed_links
+    elif add_links_raw or remove_links_raw:
+        existing_links = _load_existing_links(root, artifact_id)
+        # Remove first (idempotent: a missing target is a clean no-op).
+        if remove_links_raw:
+            remove_set = {t.strip() for t in remove_links_raw if t.strip()}
+            existing_links = [
+                lk for lk in existing_links if lk["target"] not in remove_set
+            ]
+        # Then append, deduplicating on (target, role).
+        if add_links_raw:
+            seen = {(lk["target"], lk["role"]) for lk in existing_links}
+            for raw in add_links_raw:
+                try:
+                    parsed_entries = create_cmd._parse_links(raw)
+                except ValueError:
+                    print(f"{RED}✗ --add-link expects TARGET:ROLE "
+                          f"(got '{raw}').{NC}")
+                    return 1
+                for entry in parsed_entries:
+                    if not isinstance(entry, dict) or not entry.get("target") or not entry.get("role"):
+                        print(f"{RED}✗ --add-link expects TARGET:ROLE "
+                              f"(got '{raw}').{NC}")
+                        return 1
+                    key = (entry["target"], entry["role"])
+                    if key not in seen:
+                        _warn_if_target_missing(root, entry["target"])
+                        existing_links.append(
+                            {"target": entry["target"], "role": entry["role"]}
+                        )
+                        seen.add(key)
+        updates["links"] = existing_links
+
     thinking_techniques_str = args.get("thinking_techniques")
     if thinking_techniques_str:
         new_techniques = [t.strip() for t in thinking_techniques_str.split(",") if t.strip()]
@@ -77,7 +144,8 @@ def run(root: Path, args: dict) -> int:
 
     if not updates and not has_output_files_update:
         print(f"{RED}✗ No fields to update. Provide at least one of: "
-              f"--status, --title, --priority, --rationale, --tags, --output-files, or --thinking-techniques.{NC}")
+              f"--status, --title, --priority, --rationale, --tags, --links, "
+              f"--add-link, --remove-link, --output-files, or --thinking-techniques.{NC}")
         return 1
 
     result = art_lib.update_artifact(root=root, artifact_id=artifact_id, **updates)
@@ -106,3 +174,42 @@ def run(root: Path, args: dict) -> int:
     else:
         print(f"{RED}✗ {result['error']}{NC}")
         return 1
+
+
+# ── Link-management helpers (A1) ──────────────────────────────────────
+
+def _load_existing_links(root: Path, artifact_id: str) -> list[dict[str, str]]:
+    """Load the artifact's current ``links`` list as a list of plain dicts.
+
+    Returns an empty list when the artifact or its links are missing so that
+    --add-link/--remove-link degrade gracefully on a fresh artifact.
+    """
+    existing_path = art_lib.resolve_link_target(root, artifact_id)
+    if not existing_path:
+        return []
+    parsed = art_lib.parse_artifact(existing_path)
+    if not parsed:
+        return []
+    links: list[dict[str, str]] = []
+    for link_data in parsed.frontmatter.get("links", []) or []:
+        if isinstance(link_data, dict) and "target" in link_data:
+            links.append({"target": link_data["target"], "role": link_data.get("role", "")})
+    return links
+
+
+def _warn_if_target_missing(root: Path, target: str) -> None:
+    """Warn (never block) when a plausible artifact-ID target cannot be resolved.
+
+    Standards clauses (``ISO-14971``, ``ISO26262-CL-3``) and freeform
+    references pass through silently: the warning fires only when the token
+    both matches ``PREFIX-NNN`` shape AND its prefix is a registered artifact
+    prefix — that is the common-typo case worth surfacing, and nothing else.
+    """
+    if not _ART_ID_RE.match(target):
+        return
+    prefix = target.split("-", 1)[0].upper()
+    if prefix not in art_lib.PREFIX_TO_TYPE and prefix.lower() not in art_lib.TYPE_TO_DIR:
+        return
+    if art_lib.resolve_link_target(root, target) is None:
+        print(f"{YELLOW}⚠ Link target '{target}' does not match an existing "
+              f"artifact.{NC}")

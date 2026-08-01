@@ -2,13 +2,19 @@
 
 **Stop.** This is a SpecFlow project. Describe what you want in plain language and the matching `/specflow-*` skill engages automatically — the slash is optional shorthand. The raw `specflow` CLI is for CI and power users, not the primary interface.
 
-You are working in a **SpecFlow** project (spec-driven development). 
-Specs and work items are Markdown + YAML files. Do not edit `.specflow/` manually.
+You are working in a **SpecFlow** project (spec-driven development).
+Specs and work items are Markdown + YAML files. **Never edit `.specflow/` manually** — it holds config (`config.yaml`), state (`state.yaml`), schemas, and indexes that the CLI owns. The artifact YAML in `_specflow/` is also CLI-managed: use `specflow update <ID>` for frontmatter/status/link changes. If you truly must hand-edit an artifact file, run `specflow artifact-lint` afterward so indexes and fingerprints stay consistent.
 
 ### Interfaces
 **Primary:** Use `/specflow-*` skills (e.g., `/specflow-discover`, `/specflow-plan`, `/specflow-execute`).
 **Intent-first (no slash required):** The user may describe intent in plain language ("add SSO," "review REQ-003," "are the docs stale?"); match it to the right skill and run it — the slash form is optional. When intent is vague, `/specflow-start` (the router) fires and points at the right skill.
 **CLI:** Use `specflow <cmd>` (e.g. `specflow trace <ID>`, `specflow update <ID>`) for automation and CI — not as a substitute for the skill workflow.
+
+### CLI cheat-sheet
+- **Canonical types:** requirement, architecture, detailed-design, unit-test, integration-test, qualification-test, review, story, spike, decision, defect, best-practice, audit, challenge (+ pack types like experiment/finding/competition/loop/run/monitor when installed). Abbreviations like `dec`, `req`, `qt`, `ut`, `ddd`, `def` are accepted everywhere a type is taken.
+- **Inspect a type:** `specflow schema <type>` — shows settable fields (`--set` keys) and the full status-transition map.
+- **Query artifacts:** `specflow list [--type T] [--status S] [--tags x,y] [--json]`.
+- **Legal next statuses:** `specflow transitions <ID>` — status transitions are type-specific; run this before any `--status` change you're unsure about.
 
 ### Core Lifecycle
 `init → discover → plan → execute → artifact-review → ship` (Audit & impact-review as needed).
@@ -65,8 +71,8 @@ SpecFlow IS your persistent memory. You do not have reliable conversation memory
 - **Traceability:** Every code change must trace to a STORY or REQ. No orphan work.
 - **STORY linkage:** Every STORY must link to at least one spec artifact (REQ, ARCH, or DDD). Unlinked work is research — use SPIKE for that.
 - **No self-approval:** Agents may NEVER move an artifact from `draft` to `approved` without human confirmation. Plan phase is conversational — the human iterates as long as needed. The agent presents, the human approves.
-- **Status Flow:** `draft` → `approved` → `implemented` → `verified`.
-- **Updates:** Use `specflow update <ID> --status <status>` for all YAML/status changes.
+- **Status Flow:** Status transitions are TYPE-SPECIFIC — run `specflow transitions <ID>` for legal next states (e.g. a DEF goes `open → investigating → closed`, a REQ goes `draft → approved → implemented → verified`). Do not assume a single linear flow across types.
+- **Updates:** Use `specflow update <ID> --status <status>` for all YAML/status changes. Use `specflow update <ID> --add-link TARGET:ROLE` / `--remove-link TARGET` to manage links; `--links '...'` replaces the whole list.
 - **Cascading:** When STORY code lands: `specflow update STORY-NNN --status implemented` then `specflow cascade-status STORY-NNN`.
 - **Evidence:** Don't assume "verified" — prove it. Capture the gate baseline *before* you change (test pass/fail counts, or `artifact-lint` counts if there's no test runner yet), then re-run the *same* gate after and report the delta. Never claim "no regressions" without a captured baseline to diff against.
 - **Validation:** Run `specflow artifact-lint` after manual artifact edits.

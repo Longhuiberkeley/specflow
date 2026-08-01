@@ -4,6 +4,99 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.12.4] - 2026-08-02
+
+This release was designed by mining ~2,300 real agent CLI invocations from
+conversation transcripts across five dogfood projects. The dominant friction
+classes — unlearnable status transitions (~500 errors, agents brute-forcing
+with for-loops), hand-edited frontmatter (697 events), rejected type
+abbreviations (80+), and repeated `--help` re-reads (174) — drove every item
+below. No new blocking gates (accounting-not-policing); the deterministic
+core is unchanged.
+
+### Added
+
+- **Self-explaining CLI.** A central did-you-mean hook: every misspelled
+  subcommand and unrecognized flag now suggests the closest valid one
+  (scoped per-subcommand so unrelated flags never leak into suggestions).
+  Exit codes and usage output are unchanged.
+- **`specflow transitions <ID>`** — read-only legal-next-states for an
+  artifact, plus the full type-specific transition table. Both status
+  rejection messages ("Cannot transition", "Invalid status") now hint at it.
+- **`specflow list [--type] [--status] [--tags] [--json]`** — first-class
+  artifact query, replacing hand-parsed `_index.yaml`. Unknown types error
+  with the valid list instead of silently listing everything.
+- **`specflow schema <type>`** — prints a type's required/optional fields
+  (the valid `--set` keys), its status transition map, and allowed link
+  roles, so keys are discoverable without trial and error.
+- **Link management on `update`** — `--links` (replace), `--add-link
+  TARGET:ROLE` (repeatable, dedups), `--remove-link TARGET` (idempotent).
+  Closes the gap that drove agents to hand-edit frontmatter; the
+  specflow-discover skill now teaches `--add-link` instead of a flag that
+  never existed.
+- **Type abbreviations everywhere** — `create`/`list`/`schema` accept
+  case-insensitive canonical abbreviations (`dec`, `req`, `qt`, `ut`, `it`,
+  `ddd`, `def`, …) via one `normalize_type()` resolver; unknown types get the
+  valid list plus a closest-match suggestion.
+- **Per-type initial status on `create`** — omitting `--status` now uses the
+  type's natural root status (`open` for defects, `draft` for specs). Fixes
+  a real bug: `specflow create --type defect` failed outright on the
+  hardcoded `draft` default. Multi-root types (e.g. `experiment`) require an
+  explicit `--status` and list the allowed values.
+- **`fingerprint-refresh` accepts artifact IDs and multiple targets** (file
+  paths still work); per-target result lines, non-zero exit only when every
+  target fails.
+- **Repo dogfoods its own gates** — this repo's CI now runs the `ci-gate`
+  (RBAC, PR-only) and `release-gate` (tag-only) jobs the generator emits for
+  consumers; the pre-commit hook additionally reports status-cascade and
+  story-linkage issues as non-blocking advisory warnings (CI Pass 1 remains
+  the authoritative blocker).
+- **Opt-in `lint.autoresearch_logging_strict`** — escalates the warn-only
+  autoresearch-logging findings (missing hypothesis/failure_analysis on kept
+  EXPTs) to blocking errors, mirroring `compliance_evidence_strict`. Default
+  off.
+
+### Fixed
+
+- **Link inputs fail loudly, never silently.** `_parse_links` no longer
+  drops unparseable input on the floor: a JSON object (vs. array), malformed
+  JSON, or a bare target without a role is an explicit error that leaves the
+  artifact untouched — previously these could write garbage links, wipe the
+  whole link list with a success message, or crash with a traceback.
+- **Audit exit-code truthfulness** — accounting lenses (docs-staleness) are
+  printed but excluded from the warn count that drives `project-audit`'s
+  exit code 2, matching the documented "surfaced, never enforced" doctrine;
+  structural warns still escalate.
+- **Skill/context guidance accuracy** — the agent-context cheat-sheet now
+  lists exactly the real core types (drops schemaless `prevention`, moves
+  ops-pack `run`/`monitor` to the pack parenthetical, adds the missing test
+  types); `.specflow/` (config — never edit) vs. `_specflow/` (artifacts —
+  use `specflow update`) is now distinguished; the linear "draft → approved
+  → implemented → verified" arrow is replaced with type-specific transition
+  guidance.
+- **Link-target warnings no longer fire on standards-clause-shaped targets**
+  (`ISO-14971`) — only tokens whose prefix is a registered artifact prefix
+  warn.
+
+### Changed
+
+- **Autoresearch enforcement claims are now honest** — the pack's
+  SKILL/protocol/handbook docs describe the Category Diversity Gate, Stuck
+  Detector, etc. as "protocol gates enforced by the agent" instead of
+  "structural gates (not advisory)" — they always had zero code backing.
+  Protocol substance unchanged. (A warn-only deterministic diversity lint
+  was prototyped and dropped after false-positiving on legitimate
+  single-category exploration in the cs2-bet corpus — cry-wolf, per BP-005.)
+- **ROADMAP** — the SPIKE-lifecycle detector moved from Deferred to
+  Delivered (it shipped; `artifact-lint --type spike-lifecycle`).
+- **Docs** — `docs/cli-reference.md` documents the full new surface
+  (transitions/list/schema, update link flags, fingerprint-refresh targets,
+  type abbreviations, did-you-mean).
+
+**Verification:** 807 tests passing (baseline 723; +84), artifact-lint PASS,
+installed↔shipped skill parity confirmed, and the mined failure corpus
+replayed as regression tests (`tests/test_v124_ergonomics.py`).
+
 ## [1.12.3] - 2026-07-30
 
 ### Highlights

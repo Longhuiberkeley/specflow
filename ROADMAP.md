@@ -196,7 +196,7 @@ Focus: **autoresearch methodology depth, escalation/permanence test, and templat
 - **Escalation / Permanence Test** — added a "when to escalate" heuristic to the always-loaded base context (`agent-context.md` + injected instruction block) with situational trigger wording ("when work outgrows a one-off answer"). New `specflow-execute/references/escalation-and-promotion.md` recipe (SPIKE→spec, COMP→COMP) with `derives_from` lineage; cross-linked from execute and discover; COMP-evolution guidance added to the autoresearch skill.
 - **Skill template freshness fix** — synced the shipping skill templates (`src/specflow/templates/skills/shared/`) from the live dogfood layer, resolving pre-existing drift across all 10 core skills (stale descriptions, missing `ddd-selection.md`, the relocated shared `specflow-references/adversarial-lenses.md`). New `specflow init`s now ship current skills/BPs/thinking-techniques rather than stale copies.
 
-> Deferred: an audit/lint detector that flags long-lived SPIKEs / repeated ad-hoc work that should have been promoted (a work-side complement to the v1.8.0 *Stale Code Detection* item). Also deferred: optional structured multi-output schema (typed per-component fields on COMP/EXPT) if the `component_<name>` convention proves too loose.
+> Delivered: the `spike-lifecycle` lint detector (stale / zombie / repeated-topic SPIKEs) shipped as a first-class `artifact-lint --type spike-lifecycle` check — the work-side complement to the v1.8.0 *Stale Code Detection* item. Still deferred: optional structured multi-output schema (typed per-component fields on COMP/EXPT) if the `component_<name>` convention proves too loose.
 
 ## v1.12.1
 

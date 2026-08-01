@@ -1,6 +1,8 @@
 """CLI entry point for SpecFlow."""
 
 import argparse
+import difflib
+import re
 import sys
 from pathlib import Path
 
@@ -265,6 +267,24 @@ def cmd_rbac(args: argparse.Namespace) -> int:
     return 1
 
 
+def cmd_transitions(args: argparse.Namespace) -> int:
+    from specflow.commands import transitions as cmd
+    root = _find_project_root()
+    return cmd.run(root, vars(args))
+
+
+def cmd_list(args: argparse.Namespace) -> int:
+    from specflow.commands import list_cmd as cmd
+    root = _find_project_root()
+    return cmd.run(root, vars(args))
+
+
+def cmd_schema(args: argparse.Namespace) -> int:
+    from specflow.commands import schema_cmd as cmd
+    root = _find_project_root()
+    return cmd.run(root, vars(args))
+
+
 # ── Parser builders ───────────────────────────────────────────────
 
 def _add_init_parser(subparsers):
@@ -305,7 +325,7 @@ def _add_create_parser(subparsers):
     p.add_argument("--type", help="Artifact type (required unless --from-standard is used)")
     p.add_argument("--title", help="Artifact title (required unless --from-standard is used)")
     p.add_argument("--from-standard", dest="from_standard", help="Create a REQ from a standard clause ID")
-    p.add_argument("--status", default="draft", help="Initial status (default: draft)")
+    p.add_argument("--status", default=None, help="Initial status (default: per-type root status, e.g. draft/open)")
     p.add_argument("--priority", help="Priority level")
     p.add_argument("--rationale", help="Rationale for this artifact")
     p.add_argument("--tags", help="Comma-separated tags")
@@ -355,6 +375,11 @@ def _add_update_parser(subparsers):
     p.add_argument("--priority", help="New priority")
     p.add_argument("--rationale", help="New rationale")
     p.add_argument("--tags", help="Comma-separated tags (replaces existing)")
+    p.add_argument("--links", help="Replace the full link list (JSON array or comma-separated target:role pairs)")
+    p.add_argument("--add-link", action="append", dest="add_link", metavar="TARGET:ROLE",
+                   help="Append a link (repeatable). Deduplicates on target+role.")
+    p.add_argument("--remove-link", action="append", dest="remove_link", metavar="TARGET",
+                   help="Remove all links to this target (repeatable). No-op if the target is not linked.")
     p.add_argument("--output-files", dest="output_files", help="Comma-separated output file paths (replaces existing; empty string removes)")
     p.add_argument("--thinking-techniques", dest="thinking_techniques", help="Comma-separated technique names to append (e.g., premortem,devils_advocate)")
     p.add_argument("--set", action="append", dest="set_fields", metavar="KEY=VALUE",
@@ -528,7 +553,7 @@ def _add_defect_from_suspect_parser(subparsers):
 
 def _add_fingerprint_refresh_parser(subparsers):
     p = subparsers.add_parser("fingerprint-refresh", help="Update fingerprint without suspect cascade")
-    p.add_argument("filepath", help="Path to the artifact file")
+    p.add_argument("targets", nargs="+", help="Artifact IDs (preferred) or file paths")
 
 
 def _add_artifact_review_parser(subparsers):
@@ -585,6 +610,24 @@ def _add_rtm_parser(subparsers):
     p.add_argument("--req", help="Filter to a single REQ ID")
     p.add_argument("--format", choices=["table", "markdown", "csv"], default="table", help="Output format (default: table)")
     p.add_argument("--gaps", action="store_true", help="Only show rows with at least one empty column")
+
+
+def _add_transitions_parser(subparsers):
+    p = subparsers.add_parser("transitions", help="Show legal next statuses and the transition map for an artifact")
+    p.add_argument("artifact_id", help="Artifact ID to inspect")
+
+
+def _add_list_parser(subparsers):
+    p = subparsers.add_parser("list", help="List artifacts with optional filters")
+    p.add_argument("--type", help="Filter by artifact type or prefix (e.g. requirement, defect, REQ)")
+    p.add_argument("--status", help="Filter by status")
+    p.add_argument("--tags", help="Filter by tags (comma-separated; any-overlap)")
+    p.add_argument("--json", action="store_true", dest="json", help="Emit a JSON array of {id, type, status, title, path}")
+
+
+def _add_schema_parser(subparsers):
+    p = subparsers.add_parser("schema", help="Show the schema (fields + transition map) for an artifact type")
+    p.add_argument("type", help="Artifact type or alias (e.g. requirement, dec, DEF)")
 
 
 def _add_ci_gate_parser(subparsers):
@@ -653,7 +696,7 @@ def _add_autoresearch_parser(subparsers):
 # so `specflow --help` actually shows the phase headers, not just the source.
 _HELP_EPILOG = """\
 commands by workflow phase:
-  Discover:   init, refresh, status, domain, patterns
+  Discover:   init, refresh, status, brief, domain, patterns, list, schema, transitions
   Plan:       create, update, approve
   Execute:    go, done, phase-status, phase-set, cascade-status, reconcile, generate-tests
   Review:     artifact-lint, checklist-run, artifact-review, project-audit, trace, rtm
@@ -732,9 +775,107 @@ def cmd_domain(args: argparse.Namespace) -> int:
     print("error: subcommand required (set | show)", file=sys.stderr)
     return 1
 
+class _HintParser(argparse.ArgumentParser):
+    """ArgumentParser that surfaces a "did you mean" suggestion on the two most
+    common agent-CLI typos — a misspelled subcommand and an unrecognized flag —
+    before delegating to argparse's normal error handling.
+
+    The exit code and usage text are left untouched (we call ``super().error``),
+    matching the house doctrine of accounting-not-policing: this is an ergonomics
+    hint, not a new gate. Tone follows lib/role_normalize.py: name the likely
+    intent in one short line.
+    """
+
+    def parse_args(self, args=None, namespace=None):  # type: ignore[override]
+        # Snapshot the invoked argv so error() can scope flag hints to the
+        # subcommand that was actually used. Subparsers are driven through
+        # parse_known_args internally, so only the top-level snapshot is set.
+        self._argv_snapshot = list(args) if args is not None else sys.argv[1:]
+        return super().parse_args(args, namespace)
+
+    def error(self, message: str) -> None:  # type: ignore[override]
+        hint = self._hint_for(message)
+        if hint:
+            print(hint, file=sys.stderr)
+        super().error(message)
+
+    def _hint_for(self, message: str) -> str | None:
+        # Misspelled subcommand: "argument command: invalid choice: 'shema' (choose from ...)"
+        m = re.search(r"invalid choice: '([^']+)'", message)
+        if m:
+            token = m.group(1)
+            matches = difflib.get_close_matches(
+                token, self._subcommand_names(), n=2, cutoff=0.5
+            )
+            if matches:
+                return f'did you mean: {", ".join(matches)}?'
+            return None
+        # Unrecognized flag: "unrecognized arguments: --confidence medium"
+        m = re.search(r"unrecognized arguments: (-{1,2}[A-Za-z][\w-]*)", message)
+        if m:
+            token = m.group(1)
+            matches = difflib.get_close_matches(
+                token, self._scoped_option_strings(), n=2, cutoff=0.5
+            )
+            if matches:
+                return f'did you mean: {", ".join(matches)}?'
+            return None
+        return None
+
+    def _subcommand_names(self) -> list[str]:
+        names: list[str] = []
+        for action in self._actions:
+            if isinstance(action, argparse._SubParsersAction):
+                names.extend(action.choices.keys())
+        return names
+
+    def _scoped_option_strings(self) -> list[str]:
+        """Option strings scoped to the invoked subcommand when identifiable.
+
+        Unrecognized-flag errors for a subcommand surface on the parent parser
+        (argparse propagates leftover args upward), so the full option tree
+        would otherwise pollute suggestions with unrelated commands' flags.
+        Scoping to the invoked subcommand keeps ``--rationel`` -> ``--rationale``
+        while leaving truly unrelated tokens hint-free.
+        """
+        invoked = self._invoked_subparser()
+        root = invoked if invoked is not None else self
+        return self._collect_option_strings(root)
+
+    def _invoked_subparser(self) -> argparse.ArgumentParser | None:
+        argv = getattr(self, "_argv_snapshot", None) or []
+        top_names = set(self._subcommand_names())
+        for tok in argv:
+            if tok in top_names:
+                for action in self._actions:
+                    if isinstance(action, argparse._SubParsersAction):
+                        return action.choices.get(tok)
+                break
+        return None
+
+    @staticmethod
+    def _collect_option_strings(parser: argparse.ArgumentParser) -> list[str]:
+        opts: list[str] = []
+        seen: set[str] = set()
+
+        def collect(p: argparse.ArgumentParser) -> None:
+            for action in p._actions:
+                if action.option_strings:
+                    for o in action.option_strings:
+                        if o not in seen:
+                            seen.add(o)
+                            opts.append(o)
+                if isinstance(action, argparse._SubParsersAction):
+                    for sub in action.choices.values():
+                        collect(sub)
+
+        collect(parser)
+        return opts
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Construct the full ``specflow`` argparse parser (all subcommands)."""
-    parser = argparse.ArgumentParser(
+    parser = _HintParser(
         prog="specflow",
         description="SpecFlow — Spec-Driven Development Framework",
         epilog=_HELP_EPILOG,
@@ -744,7 +885,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--version", action="version", version=f"specflow {__version__}",
         help="Print the SpecFlow version and exit.",
     )
-    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+    # parser_class propagates: each subparser becomes a _HintParser too, and
+    # their own add_subparsers() calls default parser_class to type(self).
+    subparsers = parser.add_subparsers(
+        dest="command", help="Available commands", parser_class=_HintParser
+    )
 
     # ── Discover ────────────────────────────────────────────────
     _add_init_parser(subparsers)
@@ -775,6 +920,9 @@ def build_parser() -> argparse.ArgumentParser:
     _add_artifact_review_parser(subparsers)
     _add_project_audit_parser(subparsers)
     _add_rtm_parser(subparsers)
+    _add_transitions_parser(subparsers)
+    _add_list_parser(subparsers)
+    _add_schema_parser(subparsers)
 
     # ── Release ─────────────────────────────────────────────────
     _add_baseline_parser(subparsers)
@@ -836,6 +984,9 @@ def main(argv: list[str] | None = None) -> int:
         "phase-status": cmd_phase_status,
         "phase-set": cmd_phase_set,
         "rtm": cmd_rtm,
+        "transitions": cmd_transitions,
+        "list": cmd_list,
+        "schema": cmd_schema,
         "rbac": cmd_rbac,
         "cascade-status": cmd_cascade_status,
         "reconcile": cmd_reconcile,

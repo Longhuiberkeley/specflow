@@ -1309,9 +1309,29 @@ def _check_autoresearch_logging(
       - Kept EXPTs under a COMP with `domain` should have recommended auxiliary_metrics
       - Discarded/crashed EXPTs should have failure_analysis
       - Kept EXPTs with change_category in (model, params) should have parameters logged
+      - Non-draft EXPTs should record a falsifiable hypothesis; kept ones its outcome
+
+    Strict mode (config: lint.autoresearch_logging_strict=true) escalates these
+    to blocking errors; default is warning-only so existing repos don't break on
+    upgrade. Mirrors the compliance_evidence_strict pattern.
     """
+    from specflow.lib import config as config_lib
+
+    cfg = config_lib.read_config(root) or {}
+    strict = bool(cfg.get("lint", {}).get("autoresearch_logging_strict", False))
+
+    blocking = 0
     warnings = 0
     details: list[str] = []
+
+    def _bump(msg: str) -> None:
+        nonlocal blocking, warnings
+        if strict:
+            blocking += 1
+            details.append(f"  ✗ {msg}")
+        else:
+            warnings += 1
+            details.append(f"  ⚠ {msg}")
 
     # Build COMP domain index
     comp_domains: dict[str, str] = {}
@@ -1344,21 +1364,18 @@ def _check_autoresearch_logging(
             recs = DOMAIN_RECOMMENDED.get(domain, [])
             missing = [f for f in recs if f not in aux]
             if missing:
-                warnings += 1
-                details.append(
-                    f"  ⚠ [{art.id}] missing recommended aux metrics for domain '{domain}': {', '.join(missing[:3])}"
+                _bump(
+                    f"[{art.id}] missing recommended aux metrics for domain '{domain}': {', '.join(missing[:3])}"
                 )
 
         if status == "kept" and cat in ("model", "params") and not art.frontmatter.get("parameters"):
-            warnings += 1
-            details.append(
-                f"  ⚠ [{art.id}] (kept, change_category={cat}) has no `parameters` logged"
+            _bump(
+                f"[{art.id}] (kept, change_category={cat}) has no `parameters` logged"
             )
 
         if status in ("discarded", "crashed", "pre_check_failed") and not art.frontmatter.get("failure_analysis"):
-            warnings += 1
-            details.append(
-                f"  ⚠ [{art.id}] ({status}) has no `failure_analysis` logged"
+            _bump(
+                f"[{art.id}] ({status}) has no `failure_analysis` logged"
             )
 
         # Structured reasoning fields: the protocol mandates a falsifiable
@@ -1370,24 +1387,29 @@ def _check_autoresearch_logging(
         # workstream exists to serve (ungated, this alone adds ~84 warnings on a
         # heavy autoresearch project).
         if status != "draft" and not art.frontmatter.get("hypothesis"):
-            warnings += 1
-            details.append(
-                f"  ⚠ [{art.id}] has no `hypothesis` logged (state the falsifiable hypothesis)"
+            _bump(
+                f"[{art.id}] has no `hypothesis` logged (state the falsifiable hypothesis)"
             )
         elif status == "kept" and not art.frontmatter.get("hypothesis_outcome"):
-            warnings += 1
-            details.append(
-                f"  ⚠ [{art.id}] (kept) has no `hypothesis_outcome` logged "
+            _bump(
+                f"[{art.id}] (kept) has no `hypothesis_outcome` logged "
                 f"(supported/not_supported/inconclusive)"
             )
 
-    icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
-    detail_msg = "\n".join(details) if details else "All autoresearch EXPTs have recommended logging fields"
+    if blocking == 0 and warnings == 0:
+        icon = GREEN + "✓" + NC
+        detail_msg = "All autoresearch EXPTs have recommended logging fields"
+    elif blocking > 0:
+        icon = RED + "✗" + NC
+        detail_msg = "\n".join(details)
+    else:
+        icon = YELLOW + "⚠" + NC
+        detail_msg = "\n".join(details)
 
     return {
         "status_icon": icon,
         "detail": detail_msg,
-        "blocking_count": 0,
+        "blocking_count": blocking,
         "warning_count": warnings,
     }
 

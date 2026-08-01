@@ -81,17 +81,19 @@ specflow create --from-standard CLAUSE_ID
 
 | Flag | Purpose |
 |------|---------|
-| `--type` | Artifact type (requirement, architecture, detailed-design, story, etc.) |
+| `--type` | Artifact type (requirement, architecture, detailed-design, story, etc.). Case-insensitive; common abbreviations accepted (`dec`, `req`, `ddd`, `ut`, `it`, `qt`, `def`, …). On a miss, the error lists valid types and suggests the closest match. |
 | `--title` | Artifact title (required unless `--from-standard`) |
 | `--from-standard` | Create a draft REQ pre-populated from a standard clause ID |
-| `--status` | Initial status (default: `draft`) |
+| `--status` | Initial status. Omit to use the type's natural root status (e.g. `draft` for requirements, `open` for defects). Types with no single root (e.g. `experiment`, whose statuses are outcomes) require an explicit `--status` and list the allowed values if omitted. |
 | `--priority` | Priority level |
 | `--rationale` | Rationale text |
 | `--tags` | Comma-separated tags |
-| `--links` | Links as JSON array or `target:role` pairs |
+| `--links` | Links as JSON array of `{"target","role"}` objects or comma-separated `TARGET:ROLE` pairs |
 | `--body` | Markdown body content |
 | `--force` | Skip duplicate-check prompt |
 | `--nfr-category` | NFR category (performance, security, reliability, etc.) |
+
+Run `specflow schema <type>` to see a type's settable fields, statuses, and transition map.
 
 ### `specflow update`
 
@@ -99,7 +101,22 @@ Update an artifact's frontmatter fields.
 
 ```bash
 specflow update ARTIFACT_ID [--status STATUS] [--title TITLE] [--priority PRIORITY] [--tags TAGS]
+specflow update ARTIFACT_ID --add-link TARGET:ROLE [--add-link TARGET:ROLE ...]
+specflow update ARTIFACT_ID --remove-link TARGET
+specflow update ARTIFACT_ID --links '[{"target": "ARCH-007", "role": "implements"}]'
 ```
+
+| Flag | Purpose |
+|------|---------|
+| `--status` / `--title` / `--priority` / `--rationale` / `--tags` | Replace the corresponding field |
+| `--links` | Replace the whole link list (JSON array or `TARGET:ROLE` pairs) |
+| `--add-link` | Append one `TARGET:ROLE` link (repeatable; dedups on target+role). Nonexistent targets warn, never block. |
+| `--remove-link` | Remove links by target (repeatable; idempotent) |
+| `--output-files` | Replace declared output files (empty string removes) |
+| `--thinking-techniques` | Append thinking-technique names (e.g. `premortem,devils_advocate`) |
+| `--set KEY=VALUE` | Set an arbitrary frontmatter field (repeatable, JSON-aware) |
+
+`--links` cannot be combined with `--add-link`/`--remove-link` (ambiguous). Malformed link input fails with an error and leaves the artifact untouched.
 
 ---
 
@@ -196,6 +213,45 @@ learning:
     - checklist-run
     - devils_advocate
     - premortem
+```
+
+---
+
+## Introspection
+
+Read-only commands for discovering what the engine knows — cheaper than re-reading `--help` or parsing `_index.yaml` by hand. Every command that rejects a bad token (subcommand, flag, type, status) also suggests the closest valid one.
+
+### `specflow transitions`
+
+Show the legal next statuses for an artifact — status transitions are type-specific, so never guess them.
+
+```bash
+specflow transitions ARTIFACT_ID
+```
+
+Prints the artifact's current type/status, its legal next states, and the full transition table for the type. The same hint is printed whenever `update --status` is rejected.
+
+### `specflow list`
+
+Query artifacts without hand-parsing `_index.yaml`.
+
+```bash
+specflow list [--type TYPE] [--status STATUS] [--tags TAGS] [--json]
+```
+
+| Flag | Purpose |
+|------|---------|
+| `--type` | Filter by artifact type (abbreviations accepted; unknown types error with the valid list) |
+| `--status` | Filter by status |
+| `--tags` | Comma-separated tags (any-overlap match) |
+| `--json` | Machine-readable output: `[{id, type, status, title, path}, ...]` |
+
+### `specflow schema`
+
+Show a type's schema — the settable fields, the status transition map, and allowed link roles. Run this instead of probing `--set` keys by trial and error.
+
+```bash
+specflow schema TYPE
 ```
 
 ---
@@ -436,8 +492,10 @@ specflow renumber-drafts [--dry-run]
 Update content fingerprint without triggering suspect cascade.
 
 ```bash
-specflow fingerprint-refresh FILEPATH
+specflow fingerprint-refresh TARGET [TARGET ...]
 ```
+
+Targets are artifact IDs (preferred, like every other command) or file paths; both may be mixed and multiple targets may be given in one invocation. Each target reports its own result line; the exit code is non-zero only if *all* targets fail.
 
 ---
 

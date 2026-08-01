@@ -13,19 +13,44 @@ from specflow.lib.display import RED, GREEN, YELLOW, YELLOW_DIM, CYAN, NC
 
 
 def _parse_links(links_json: str) -> list[dict[str, str]]:
+    """Parse a links value: a JSON array of ``{"target","role"}`` objects, or
+    comma-separated ``TARGET:ROLE`` pairs.
+
+    Raises ``ValueError`` on non-empty input that cannot be parsed into at
+    least one link entry. Silently returning ``[]`` here used to cause silent
+    data loss (``update --links`` wiping the list on garbage input), silent
+    no-ops (``--add-link`` without a role), and garbage writes (a JSON
+    *object* falling through to comma-splitting). Entry-level validation
+    (dict shape, target/role presence) stays with the callers.
+    """
+    text = links_json.strip()
+    if not text:
+        return []
+
     try:
-        parsed = json.loads(links_json)
-        if isinstance(parsed, list):
-            return parsed
+        parsed = json.loads(text)
     except json.JSONDecodeError:
-        pass
+        parsed = None
+    if parsed is not None:
+        if not isinstance(parsed, list):
+            raise ValueError(
+                "links must be a JSON array of {\"target\",\"role\"} objects "
+                "or comma-separated TARGET:ROLE pairs"
+            )
+        return parsed
 
     results = []
-    for part in links_json.split(","):
+    for part in text.split(","):
         part = part.strip()
         if ":" in part:
             target, role = part.split(":", 1)
             results.append({"target": target.strip(), "role": role.strip()})
+    if not results:
+        raise ValueError(
+            f"could not parse links value '{links_json}' — expected a JSON "
+            "array of {\"target\",\"role\"} objects or comma-separated "
+            "TARGET:ROLE pairs"
+        )
     return results
 
 
@@ -56,7 +81,10 @@ def _merge_set_links(links: list[dict[str, str]], extra_fields: dict) -> str | N
         return None
     raw = extra_fields.pop("links")
     if isinstance(raw, str):
-        parsed = _parse_links(raw)
+        try:
+            parsed = _parse_links(raw)
+        except ValueError as exc:
+            return f"--set links: {exc}"
     elif isinstance(raw, list):
         parsed = raw
     else:
@@ -84,7 +112,7 @@ def run(root: Path, args: dict) -> int:
     from_standard = args.get("from_standard")
     artifact_type = args.get("type", "")
     title = args.get("title", "")
-    status = args.get("status", "draft")
+    status = args.get("status")
     priority = args.get("priority")
     rationale = args.get("rationale")
     tags_str = args.get("tags", "")
@@ -92,7 +120,11 @@ def run(root: Path, args: dict) -> int:
     body = args.get("body", "")
     nfr_category = args.get("nfr_category")
 
-    links = _parse_links(links_str) if links_str else []
+    try:
+        links = _parse_links(links_str) if links_str else []
+    except ValueError as exc:
+        print(f"{RED}✗ --links: {exc}{NC}")
+        return 1
 
     try:
         extra_fields = art_lib.parse_set_fields(args.get("set_fields"))
@@ -133,6 +165,23 @@ def run(root: Path, args: dict) -> int:
         print(f"{RED}✗ Missing required argument: --title. "
               f"Usage: specflow create --type <type> --title <title>{NC}")
         return 1
+
+    # Resolve the per-type initial status when --status is omitted (A7). Each
+    # schema's root status (empty predecessor list) is the natural entry point;
+    # when a type has no unique root (e.g. experiment's four outcomes), require
+    # an explicit --status rather than guessing. When no schema exists at all,
+    # leave status as None and let create_artifact emit the enriched no-schema
+    # error (its schema check runs before status validation).
+    if status is None:
+        norm_type = art_lib.normalize_type(artifact_type)
+        schema = art_lib._read_schema(root / ".specflow" / "schema", norm_type)
+        if schema is not None:
+            status = art_lib.initial_status(schema)
+            if status is None:
+                allowed = sorted(schema.get("allowed_status", {}).keys())
+                print(f"{RED}✗ Type '{artifact_type}' has no unambiguous initial status. "
+                      f"Specify --status explicitly. Allowed: {', '.join(allowed)}{NC}")
+                return 1
 
     tags = [t.strip() for t in tags_str.split(",") if t.strip()] if tags_str else None
 

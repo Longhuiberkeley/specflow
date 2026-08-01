@@ -203,9 +203,9 @@ The CLI prints the 8-phase protocol checklist with current progress. Read `refer
 LOOP (budget iterations):
   Phase 1: Review — Read FINDs + current EXPTs + git history
   Phase 2: Ideate — Pick next change based on mode, knowledge, and history. You MUST form and record a hypothesis and research question before modifying.
-             Phase 2a: Goal-mindful hypothesis + HIGHEST-IMPACT FORCING (mandatory gate)
-             Phase 2c: Pick change + CATEGORY DIVERSITY GATE (mandatory — blocks 3+ consecutive same-category)
-             Phase 2d: Premise check + IDEA DIVERSITY CHECK (mandatory — blocks narrow-lens thinking)
+             Phase 2a: Goal-mindful hypothesis + HIGHEST-IMPACT FORCING (mandatory protocol step)
+             Phase 2c: Pick change + CATEGORY DIVERSITY GATE (protocol — agent must not run 3+ consecutive same-category)
+             Phase 2d: Premise check + IDEA DIVERSITY CHECK (protocol — agent must avoid narrow-lens thinking)
   Phase 3: Modify — Make ONE focused change to in-scope files
   Phase 4: Commit — Git commit with experiment(<scope>): prefix
   Phase 5: Verify — Run COMP.verify_command, extract metric number
@@ -214,19 +214,19 @@ LOOP (budget iterations):
   Phase 8: Repeat or Complete — Check budget, update FINDs on completion
 ```
 
-**Phase 7 titling — descriptive, not ordinal.** Title each EXPT by *what the change was* (e.g. `"add cross-asset volatility ratio feature"`), and record its per-loop position in the `iteration` field (`specflow create --type experiment --set iteration=<n> ...`), not in the title. Per-loop ordinals like `"EXPT-001: ..."` collide across loops (every LOOP reuses EXPT-001/002/…), producing visually-identical draft IDs that are distinguishable only by hash and outright ID collisions across sessions. The `iteration` field plus the EXPT's `loop` field give the machine-readable position; the title carries the human-readable content. `specflow autoresearch leaderboard --group-by loop` then slices a multi-loop competition cleanly.
+**Phase 7 titling — descriptive, not ordinal.** Title each EXPT by *what the change was* (e.g. `"add cross-asset volatility ratio feature"`), and record its per-loop position in the `iteration` field (`specflow create --type experiment --status kept --set iteration=<n> ...` — `experiment` has no default status, so `--status` is mandatory), not in the title. Per-loop ordinals like `"EXPT-001: ..."` collide across loops (every LOOP reuses EXPT-001/002/…), producing visually-identical draft IDs that are distinguishable only by hash and outright ID collisions across sessions. The `iteration` field plus the EXPT's `loop` field give the machine-readable position; the title carries the human-readable content. `specflow autoresearch leaderboard --group-by loop` then slices a multi-loop competition cleanly.
 
-**New structural gates (not advisory):**
+**Protocol gates (enforced by the agent following the loop protocol; the CLI prints the protocol and offers deterministic detection where noted, but does not hard-block iterations):**
 
-| Gate | Phase | What it enforces |
-|------|-------|-----------------|
-| First-Principles Decomposition | 0.7 | Agent articulates diverse research directions before any iteration; surprise budget reserves ~10% for long shots |
-| Highest-Impact Forcing | 2a | Agent names the highest-impact thing; justifies if not doing it; calibration check against agenda ranking |
-| Category Diversity Gate | 2c | Blocks 3+ consecutive EXPTs in same change_category (2 in explore mode); uses canonical category set |
-| Idea Diversity Check | 2d | Catches same-approach repetition even within a category |
-| Stuck Detector (hard) | 8 | Mandatory category switch after 5+ consecutive discards |
-| Domain Research Checklist | 0.7 | Loads domain-specific research checklists with common traps per domain |
-| Direction Status Tracking | 6.6 | Updates research agenda direction status (unexplored/in_progress/exhausted/promising) after each EXPT |
+| Gate | Phase | What the agent must do |
+|------|-------|------------------------|
+| First-Principles Decomposition | 0.7 | Articulate diverse research directions before any iteration; surprise budget reserves ~10% for long shots |
+| Highest-Impact Forcing | 2a | Name the highest-impact thing; justify if not doing it; calibration check against agenda ranking |
+| Category Diversity Gate | 2c | Do not run 3+ consecutive EXPTs in the same change_category (2 in explore mode); uses canonical category set |
+| Idea Diversity Check | 2d | Avoid same-approach repetition even within a category |
+| Stuck Detector | 8 | Switch category after 5+ consecutive discards |
+| Domain Research Checklist | 0.7 | Load domain-specific research checklists with common traps per domain |
+| Direction Status Tracking | 6.6 | Update research agenda direction status (unexplored/in_progress/exhausted/promising) after each EXPT |
 ## Post-Loop: Delegate Review
 
 After a LOOP completes, **delegate review to a subagent** via `/specflow-autoresearch:delegate-review`. The subagent reads all EXPTs, synthesizes them into FIND artifacts, and finalizes the LOOP status. This keeps the main loop's context clean.

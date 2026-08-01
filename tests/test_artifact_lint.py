@@ -747,6 +747,51 @@ class TestCheckThinkingTechniques:
         assert result["warning_count"] == 0
 
 
+# ── _check_autoresearch_logging ──────────────────────────────────────────────
+
+
+class TestCheckAutoresearchLogging:
+    """autoresearch-logging is warn-only by default; opt-in
+    lint.autoresearch_logging_strict=true escalates to blocking (mirrors
+    compliance_evidence_strict). C12 truthfulness fix."""
+
+    def test_kept_expt_without_hypothesis_warns_default(self, project_root: Path):
+        art = _make_art("EXPT-001", "experiment", status="kept")
+        result = lint_cmd._check_autoresearch_logging([art], project_root)
+        assert result["blocking_count"] == 0
+        assert result["warning_count"] >= 1
+        assert "hypothesis" in result["detail"]
+
+    def test_kept_expt_with_full_logging_passes_default(self, project_root: Path):
+        art = _make_art(
+            "EXPT-001", "experiment", status="kept",
+            extra_fm={"hypothesis": "X improves Y", "hypothesis_outcome": "supported"},
+        )
+        result = lint_cmd._check_autoresearch_logging([art], project_root)
+        assert result["blocking_count"] == 0
+        assert result["warning_count"] == 0
+
+    def test_strict_mode_escalates_to_blocking(self, project_root: Path):
+        cfg_path = project_root / ".specflow" / "config.yaml"
+        cfg = yaml.safe_load(cfg_path.read_text())
+        cfg["lint"] = {"autoresearch_logging_strict": True}
+        cfg_path.write_text(yaml.dump(cfg), encoding="utf-8")
+
+        art = _make_art("EXPT-001", "experiment", status="kept")
+        result = lint_cmd._check_autoresearch_logging([art], project_root)
+        assert result["blocking_count"] >= 1
+        assert result["warning_count"] == 0
+
+    def test_discarded_expt_without_failure_analysis_warns(self, project_root: Path):
+        # Discarded EXPT needs both a hypothesis and failure_analysis; missing
+        # both yields >=2 warns in default mode.
+        art = _make_art("EXPT-002", "experiment", status="discarded")
+        result = lint_cmd._check_autoresearch_logging([art], project_root)
+        assert result["blocking_count"] == 0
+        assert result["warning_count"] >= 1
+        assert "failure_analysis" in result["detail"]
+
+
 # ── _check_story_linkage ─────────────────────────────────────────────────────
 
 class TestCheckStoryLinkage:

@@ -150,11 +150,11 @@ specflow create --type experiment \
   --set failure_analysis="Pair ADA/ETH showed p=0.12 on cointegration test. Skipped verify."
 ```
 
-## Phase 0.7: First-Principles Decomposition (MANDATORY, before first iteration)
+## Phase 0.7: First-Principles Decomposition (required protocol step, before first iteration)
 
 **This phase runs ONCE at loop start, after Phase 0.6 EDA.** It forces the agent to think from first principles — articulating what could actually improve the metric, not just what code is easiest to write. This is the structural fix for the agent's tendency to default to narrow parameter tweaking instead of genuinely creative research.
 
-**You MUST complete ALL steps. This is a hard gate — the loop does not start without a recorded research agenda.**
+**You MUST complete ALL steps. This is a protocol gate enforced by you (the agent): do not begin iterating without a recorded research agenda. The CLI prints this protocol; it does not deterministically block you.**
 
 ### Step 1: Load Domain Research Checklist
 
@@ -209,7 +209,7 @@ specflow update LOOP-NNN \
 
 If a prior LOOP on the same COMP has `research_agenda` recorded AND the agenda is still valid (same COMP goals, same constraints, same data), the agent may inherit it — but MUST re-rank based on new FINDs and add any directions that emerged from the prior LOOP's `unexplored_directions` field.
 
-**Quick / smoke tier (LOOP `budget` ≤ 5).** When the LOOP budget is ≤ 5, the mandatory 5-direction first-principles agenda is reduced to a **minimal 2-direction agenda** (the highest-impact direction + one orthogonal alternative) so one iteration can actually run. This is NOT a real first-principles decomposition — the agent MUST announce *"quick mode: minimal agenda — rerun without it for the full 5-direction gate before trusting the search."* At budget > 5 the full Phase 0.7 gate above is mandatory and the loop does not start without a recorded 5-direction agenda.
+**Quick / smoke tier (LOOP `budget` ≤ 5).** When the LOOP budget is ≤ 5, the mandatory 5-direction first-principles agenda is reduced to a **minimal 2-direction agenda** (the highest-impact direction + one orthogonal alternative) so one iteration can actually run. This is NOT a real first-principles decomposition — the agent MUST announce *"quick mode: minimal agenda — rerun without it for the full 5-direction gate before trusting the search."* At budget > 5 the full Phase 0.7 step above is required and you must not begin iterating without a recorded 5-direction agenda.
 
 ## Phase 1: Review (before each iteration)
 
@@ -268,7 +268,7 @@ IF LOOP.iteration_count >= LOOP.budget:
 
 This is the **research** half of autoresearch — not metric hill-climbing. Before picking a change, form a hypothesis driven by what the project is actually trying to achieve. Consult the [ML Methodology Handbook](methodology-handbook.md) for best practices relevant to your ideation direction — pull the group that matches the change you're considering: **validation integrity (BP-10–12)** before trusting any score, **statistical traps (BP-13–16)** when a result looks too good or you've tried many variants, **optimize-the-objective (BP-17–19)** when tuning toward the metric, and **finishing moves (BP-20–22)** only once a single strong model exists. Respect the **transfer filter** at the top of the handbook: never import a leaderboard-gaming tactic that raises the metric without raising the goal.
 
-**Structural gates in this phase:** Phase 2a includes a mandatory highest-impact forcing question. Phase 2c includes a mandatory category diversity gate. Phase 2d includes an idea diversity check. These are not advisory — they are enforced. The research agenda from Phase 0.7 is the reference for all gates.
+**Protocol gates in this phase:** Phase 2a includes a highest-impact forcing question. Phase 2c includes a category diversity gate. Phase 2d includes an idea diversity check. These are protocol gates — you (the agent) enforce them by following this protocol. The CLI prints the protocol and offers deterministic detection where a lint supports it, but it does not hard-block your iterations. The research agenda from Phase 0.7 is the reference for all gates.
 
 ### 2a. Goal-mindful hypothesis (light check, every iteration)
 
@@ -278,12 +278,12 @@ Read `LOOP.active_research_questions`, `COMP.constraints`, the open FINDs, and t
 
 > *"If I add cross-asset rolling-correlation features, walk-forward Sharpe should rise toward the >2.0 goal, because the current model has no regime signal."*
 
-Before committing to it, answer **four** questions in working context (no artifacts — speed matters). The first three are quick; the fourth is the structural gate:
+Before committing to it, answer **four** questions in working context (no artifacts — speed matters). The first three are quick; the fourth is the forcing step:
 
 1. **Which active RQ does this EXPT serve?** Name it. If none — pause. Either pick a different change or deliberately update `LOOP.active_research_questions` (don't drift silently into off-agenda work).
 2. **Am I just wiggling parameters under the same RQ + hypothesis shape as last iteration?** If yes → only continue if the last EXPT taught you something specific that justifies *this* next point. Otherwise **escalate up the ladder**: try a different hypothesis under the same RQ, or reconsider whether the RQ itself is the right one this loop. Don't sink-cost into parameter drift.
 3. **If this EXPT succeeds, what does it tell me about my RQ/thesis?** If you can't name it, the hypothesis isn't goal-driven yet — rework it.
-4. **Highest-impact forcing (MANDATORY GATE):** "The highest-impact thing I could try right now is **X**. I am about to do **Y**." Write both explicitly.
+4. **Highest-impact forcing (mandatory protocol step):** "The highest-impact thing I could try right now is **X**. I am about to do **Y**." Write both explicitly.
    - If X == Y → proceed. You're doing the highest-impact thing.
    - If X != Y → you must justify why Y is better *right now* (e.g., "X requires a script I need to write first, Y is a quick test to rule out a confound"). If you cannot justify, do X instead.
    - If you cannot name an X that differs from Y, that itself is a signal — you may be stuck in a local optimum of idea space. Re-read the research agenda.
@@ -310,7 +310,7 @@ If the aggregate improved only by trading one component off against another, tha
 
 **MUST consult git history, EXPTs, FINDs, AND the research agenda before deciding.**
 
-### 2c-i. Category Diversity Gate (MANDATORY)
+### 2c-i. Category Diversity Gate (mandatory protocol step)
 
 Before selecting a change, check the LOOP's `category_coverage` and the last N EXPTs' `change_category` values:
 
@@ -403,9 +403,9 @@ This is not a blocker — but the agent must articulate the answer. If the agent
 - Don't chase marginal gains with ugly complexity
 - Don't ignore git history — it's the primary learning mechanism between iterations
 
-### 2d. Pre-EXPT premise check (mandatory gate)
+### 2d. Pre-EXPT premise check (mandatory protocol step)
 
-**This is a blocking gate. Do not skip it. Every EXPT must pass this check before entering Phase 3.**
+**Do not skip it. Every EXPT must pass this check before entering Phase 3 — this is a protocol gate you enforce, not a code block.**
 
 The premise check prevents running experiments whose core assumptions are untested — a single premise violation can waste a full iteration (or many, if the violation is systematic).
 
@@ -974,11 +974,11 @@ IF LOOP.iteration_count > 0 AND LOOP.iteration_count % 10 == 0:
 
 The brief replaces raw EXPT details. It should be concise (~20 lines for 10 iterations). If the agent needs specific EXPT details later, it can re-read individual artifacts via `specflow trace LOOP-NNN`.
 
-**When stuck (>5 consecutive discards) — HARD GATE, not advisory:**
+**When stuck (>5 consecutive discards) — mandatory protocol response:**
 
-When 5+ consecutive EXPTs are discarded, the following steps are **mandatory**, not suggestions. The agent MUST execute them before the next iteration:
+When 5+ consecutive EXPTs are discarded, the following steps are mandatory protocol steps, not suggestions. The agent MUST execute them before the next iteration (a protocol gate the agent enforces; the CLI does not hard-block iterations):
 
-1. **Category switch (MANDATORY).** Check `category_coverage`. If the current `change_category` has 5+ more EXPTs than any other category, the agent is **blocked** from that category until at least one EXPT in an under-explored category is attempted. This is the structural enforcement — the agent cannot continue tweaking the same category.
+1. **Category switch (mandatory).** Check `category_coverage`. If the current `change_category` has 5+ more EXPTs than any other category, the agent must not run another EXPT in that category until at least one EXPT in an under-explored category is attempted. This is the protocol enforcement — the agent does not continue tweaking the same category.
 2. **Re-read ALL in-scope files from scratch** — not summaries, the actual code
 3. **Re-read the research agenda** from Phase 0.7 — which high-impact directions haven't been tried?
 4. **Re-read the competition's FINDs and the original goal**
