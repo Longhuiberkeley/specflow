@@ -87,9 +87,16 @@ this is what lets the human delegate safely instead of re-deriving everything:
 
 | Dimension | What to state |
 |-----------|---------------|
-| **Reversibility** | One-way door? Mark **irreversible** for state/data migrations, deletions, releases/tags, and anything sent to an external service; **reversible** for code/doc/test edits a revert undoes cleanly. |
-| **Blast radius** | Run `specflow change-impact <ID>` (it computes the downstream cone). Report the count + notable downstream artifacts. "Touches 1 file" vs "touches 14 artifacts across 3 components" is the signal. |
-| **Confidence** | The agent's own confidence (high / medium / low) **and the reason it isn't higher**. Low confidence is not a failure — it is a pointer that says *"human, look here specifically."* |
+| **Reversibility** | One-way door? Determined by `specflow risk-tier` from the change set's intrinsic properties (a status moving to `verified`/`released`, a `supersedes` link, a deletion, a `destructive`/`data-migration` tag, or a release/baseline action all floor **irreversible**). |
+| **Blast radius** | `specflow risk-tier <IDs>` prints the downstream-cone count (reusing the same deterministic cone as `specflow change-impact`). Report the count + notable downstream artifacts. "Touches 1 file" vs "touches 14 artifacts across 3 components" is the signal; a cone ≥ 8 is "large". |
+| **Confidence** | The agent's own confidence (high / medium / low) **and the reason it isn't higher**. This is YOUR judgment — SpecFlow never calls an LLM to produce it. Low confidence is not a failure — it is a pointer that says *"human, look here specifically."* |
+
+The tier, reversibility, and blast-radius count come from the CLI and are **persisted to the
+DEC's `risk_profile`**; `confidence` (and `confidence_reason`) are the host agent's own and are
+filled via `specflow update <DEC> --set risk_profile='{"tier":...,"confidence":"..."}'`.
+`--set risk_profile=` is a **full-field replace** — always pass the complete JSON (all five
+keys). The dotted form `risk_profile.confidence=...` is NOT supported and silently writes a
+junk top-level key, leaving the real field empty.
 
 ```
 Assessment:
@@ -136,19 +143,22 @@ Present clear choices the human can make:
 ## Risk-Proportional Gates
 
 A flat "present everything, wait for approval on everything" gate makes the human a bottleneck —
-that is *not* AI-first. Spend the human's attention where it is scarce. Derive a tier for the
-change set from the Risk Profile (§4) and adjust how loud the gate is. **Tiers are derived from
-the intrinsic properties of the change, never from how the human responded last time.**
+that is *not* AI-first. Spend the human's attention where it is scarce. Run
+`specflow risk-tier <IDs>` for the change set; the computed tier is the **minimum** — adjust how
+loud the gate is from there. **The tier is computed from the intrinsic properties of the change
+(status transitions, links, tags, blast radius), never from how the human responded last time.
+The computed tier is a floor: you may escalate freely; downgrading below it requires a recorded
+justification in the DEC's `risk_profile.confidence_reason`.**
 
 | Tier | Condition | Gate behavior |
 |------|-----------|---------------|
 | **Tier 0 — light** | Reversible **AND** small blast radius **AND** high confidence (e.g. test-only changes, doc edits, formatting). | Present compactly: TLDR + a one-line "what this does" + one-line risk profile + the single decision that matters (skip full Changes/Key-decisions blocks). Proceed on a single acknowledgement. |
 | **Tier 1 — normal** | Moderate on any axis. | Full presentation per this format. Explicit "approve" required. |
-| **Tier 2 — stop** | Irreversible **OR** large blast radius **OR** low confidence. | The brief must **point at the specific concern** ("look here at change #3, because X") and refuse to proceed without targeted human sign-off on that concern. |
+| **Tier 2 — stop** | Irreversible **OR** large blast radius **OR** low confidence. | The brief must **point at the specific concern** ("look here at change #3, because X") and proceed only with targeted human sign-off on that concern. |
 
-When in doubt, escalate a tier — under-asking on a one-way door is the expensive mistake.
-The "no self-approval" rule (§Anti-Patterns) still holds at every tier; Tier 0 lowers *how much
-the human must read*, not *whether they confirm*.
+The deterministic floor never blocks — it records. When in doubt, escalate a tier — under-asking
+on a one-way door is the expensive mistake. The "no self-approval" rule (§Anti-Patterns) still
+holds at every tier; Tier 0 lowers *how much the human must read*, not *whether they confirm*.
 
 ### We do NOT calibrate gates from approval history
 

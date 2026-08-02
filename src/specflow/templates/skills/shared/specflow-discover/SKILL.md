@@ -255,7 +255,7 @@ Present the discovered requirements following the **Approval Presentation Format
 1. **TLDR** — What was discovered and the path taken (lean vs. full), in 1-3 sentences.
 2. **What this does (functional)** — The behavior each requirement asks of the system, in plain terms (purpose · what's in · what's out). Plain language, not REQ IDs.
 3. **Changes inline** — Each REQ with its key acceptance criteria and scope boundaries (IN/OUT). The human should not need to open a file.
-4. **Assessment lenses** — Apply completeness (happy path + error/edge cases covered?), and a brief **Risk Profile** per REQ (reversibility is high — these are specs — so the salient axes are *confidence* and any assumption that needs validation: stakeholders, success-criteria interpretation, domain-checklist defaults).
+4. **Assessment lenses** — Apply completeness (happy path + error/edge cases covered?), and a brief **Risk Profile** per REQ (run `specflow risk-tier <REQ-IDs>` for the computed tier + blast radius; reversibility is high — these are specs — so the salient axes are *confidence* and any assumption that needs validation: stakeholders, success-criteria interpretation, domain-checklist defaults).
 5. **Key decisions (2–3)** — The decisions that determine whether these requirements are right (what was chosen · alternative · tradeoff · what validates it): which anti-requirements/negative constraints to lock in, which assumptions need stakeholder validation, scope IN/OUT boundary calls. Make it the approve-or-improve loop: proceed · discuss #N · revise and re-present.
 6. **Action options** — Approve (you mark the REQs `approved` on the user's say-so) / Request changes / Discuss.
 

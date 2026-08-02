@@ -115,6 +115,7 @@ Full walkthrough in the [getting-started guide](docs/getting-started.md).
 | **Zero-token CI validation** | Schema, links, status, fingerprints, coverage — deterministic Python, no LLM required |
 | **V-model traceability** | REQ → ARCH → DDD → UT/IT/QT, fully linked and linted; `specflow rtm --gaps` renders the bidirectional matrix with per-row gap markers |
 | **Verification contracts** *(new)* | UT/IT/QT/STORY declare a `verify_command`; `specflow verify <ID> | --all` runs it and records `verify_run_*` evidence so `verified` is machine-checked, not asserted. A failing run is **recorded, never blocking** — accounting, not policing |
+| **Computed risk tiers** *(new)* | `specflow risk-tier <IDs>` derives a minimum approval tier (0 light / 1 normal / 2 stop) from the change set's intrinsic properties and persists it to the DEC's `risk_profile`. The tier **gates nothing** — it is a recorded floor; downgrade below it only with a recorded justification |
 | **Bring-your-own-standard** | Drop a PDF, URL, or pasted text. SpecFlow extracts clauses into compliance schemas |
 | **Immutable baselines** | Snapshot, diff, and generate audit evidence between releases |
 | **First-class Claude Code + OpenCode** | Skills install automatically; other assistants with project file access may work but are community-supported. `specflow init` warns if multiple AI-host dirs are detected; `specflow refresh --all-platforms` keeps every detected host in sync |

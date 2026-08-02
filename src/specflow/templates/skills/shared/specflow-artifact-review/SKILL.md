@@ -185,7 +185,7 @@ Present results following the **Approval Presentation Format** (see `../specflow
 1. **TLDR** — Review scope and overall result (1-3 sentences).
 2. **What this does (functional)** — The artifact under review and the role it plays in the system (purpose · what's in scope of this review · what's out), so the human knows what they are signing off on.
 3. **Findings inline** — Each finding with severity, artifact ID, and evidence. The human should not need to open files.
-4. **Assessment lenses** — Which lenses were applied vs. skipped, and why. **Risk Profile** for any `blocking` or `warning` finding (reversibility, blast radius, confidence).
+4. **Assessment lenses** — Which lenses were applied vs. skipped, and why. **Risk Profile** for any `blocking` or `warning` finding (run `specflow risk-tier <IDs>` for the computed tier + reversibility + blast-radius count, then add your confidence).
 5. **Key decisions (2–3)** — The decisions that determine the outcome (what was chosen · alternative · tradeoff · what validates it): fix each `blocking` now vs defer; re-run with deeper lenses vs accept current coverage; which findings are real spec defects vs out-of-scope. Make it the approve-or-improve loop: proceed · discuss #N · revise and re-present.
 6. **Action options** — Fix now / Defer / Discuss / Re-run with deeper lenses.
 

@@ -277,6 +277,16 @@ Show a type's schema — the settable fields, the status transition map, and all
 specflow schema TYPE
 ```
 
+### `specflow risk-tier`
+
+Print the computed minimum risk tier for a change set. READ-ONLY — computes the tier from the change set's intrinsic properties and prints it; **gates nothing** (accounting, not policing). The tier is a floor: escalate freely, downgrade only with a recorded justification on the DEC's `risk_profile`.
+
+```bash
+specflow risk-tier ID [ID ...]
+```
+
+The deterministic floor is Tier 2 when the change is **irreversible** (a status moving to `verified`/`released`, a `supersedes` link, a deletion, a `destructive`/`data-migration` tag, or — when run via `document-changes` — a release/baseline commit) **or** the downstream blast-radius cone is large (≥ 8 artifacts); Tier 0 only when the change is reversible, small, and touches zero downstream artifacts; otherwise Tier 1. Unclassifiable change sets default **up** to Tier 1. The command also prints a verification-evidence line aggregating the `verify_run_*` evidence across linked UT/IT/QT (`ran (N green)` | `not-run` | `unknown (no contracts declared)`). The tier, reversibility, and blast-radius count are persisted to a DEC's `risk_profile` by `document-changes`; `confidence` is left for a human to fill.
+
 ---
 
 ## Review Phase
@@ -300,6 +310,8 @@ specflow artifact-lint [--type CHECK] [--fix] [--gate GATE] [--method {programma
 | `conflicts` | Cross-REQ constraint contradictions |
 | `coverage` | REQ→STORY→test completeness |
 | `story-size` | Story decomposition heuristics |
+| `dec-risk-profile` | Advisory: approved DEC has no persisted `risk_profile` (warn-only, never in `--type gate`) |
+| `ac-observable` | Advisory: REQ-level count of aspirational acceptance criteria (observable vs aspirational vs unclassified; warn-only, never in `--type gate`) |
 | `gate` | Phase-gate checklist validation |
 
 ### `specflow checklist-run`

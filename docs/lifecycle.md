@@ -8,6 +8,8 @@ SpecFlow is **one engine driven two ways**:
 Both lanes operate on the **same substrate and the same gates**, so you can mix them: an agent drafts in the AI-first lane, a reviewer approves in the ALM lane via CLI or CI. The skills never do anything you couldn't do by hand — they just compose the same `specflow …` commands.
 
 > **Approval, in each lane.** "No self-approval" restrains the *agent*: it may never move an artifact from `draft` to `approved` on its own. In the ALM lane the human *is* the operator and approves directly by running `specflow update <ID> --status approved` (or via a reviewer / CI gate). Approval is always a human act — the lanes only differ in who surfaces the decision.
+>
+> **Risk tiers are computed, not asserted.** `specflow risk-tier <IDs>` derives a minimum tier (0 light / 1 normal / 2 stop) from the change set's intrinsic properties (status transitions, `supersedes` links, deletions, destructive/data-migration tags, release/baseline actions, and the downstream blast-radius cone). The tier is **recorded** onto the DEC's `risk_profile` and **gates nothing** in code — it is a floor the agent may escalate above freely; downgrading below it requires a recorded justification. Unclassifiable change sets default *up* to Tier 1.
 
 ## Lifecycle Flowchart
 
@@ -22,7 +24,7 @@ flowchart TB
     subgraph AI["AI-first lane — default driver (conversational · agent-driven · zero external API calls)"]
         direction TB
         BR["specflow brief<br/>recall / orient (resume any session)"] --> AID["/specflow-discover/"]
-        AID --> AG1{{"human approval gate<br/>agent presents · no self-approval · risk tiers"}}
+        AID --> AG1{{"human approval gate<br/>agent presents · no self-approval · risk tiers via specflow risk-tier"}}
         AG1 --> AIP["/specflow-plan/"]
         AIP --> AG2{{"human approval gate"}}
         AG2 --> AIE["/specflow-execute/<br/>waves; gate blocks draft specs"]
@@ -95,7 +97,8 @@ flowchart TB
             │                                                       │
    ╔════════▼════════╗  human approves                              ▼
    ║ APPROVAL GATE   ║  (agent presents,                   human runs update
-   ║ REQ → approved  ║   no self-approval, tiers)          --status approved
+   ║ REQ → approved  ║   no self-approval,                --status approved
+   ║                 ║   tiers via specflow risk-tier)     (reviewer / CI / operator)
    ╚════════┬════════╝                                     (reviewer / CI / operator)
             ▼                                                       │
    /specflow-plan                                                   ▼

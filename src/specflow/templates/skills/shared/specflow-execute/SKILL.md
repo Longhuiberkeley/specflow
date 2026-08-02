@@ -170,7 +170,7 @@ Before running full validation, present the implementation summary following the
 1. **TLDR** — What was implemented and what changed (1-3 sentences).
 2. **What this does (functional)** — The implemented behavior in plain terms (purpose · what's in · what's out), so the human grasps what changed before reading STORY IDs.
 3. **Changes inline** — For each STORY implemented: what code was written, what tests were created, any deviations from ARCH/DDD. The human should not need to open files.
-4. **Assessment lenses** — Apply coverage, traceability, and staleness lenses, then a **Risk Profile per change** (reversibility, blast radius via `specflow change-impact`, confidence + why it isn't higher).
+4. **Assessment lenses** — Apply coverage, traceability, and staleness lenses, then a **Risk Profile per change** (run `specflow risk-tier <IDs>` for the computed tier + reversibility + blast-radius count, then add your confidence + why it isn't higher).
 5. **Key decisions (2–3)** — The decisions that determine whether this implementation is right (what was chosen · alternative · tradeoff · what validates it). **Fold the coverage checks in here**, not after the gate:
    - For each STORY: does every acceptance criterion map to at least one test (UT/IT/QT)?
    - Any STORY marked `implemented` whose linked ARCH/DDD is still `approved`?
@@ -178,7 +178,7 @@ Before running full validation, present the implementation summary following the
    - Implementation choices not pre-specified by DDD (library picks, file layout)
 
    Make the gate the approve-or-improve loop: proceed · discuss #N · revise and re-present.
-6. **Risk-proportional gate** — Assign a tier (0 light / 1 normal / 2 stop) from the risk profile; for Tier 2, point at the specific concern. Tier comes from the change, not past approvals.
+6. **Risk-proportional gate** — Run `specflow risk-tier <IDs>` to get the computed minimum tier (0 light / 1 normal / 2 stop); you may escalate above the floor freely, but downgrading below it requires a recorded justification in the DEC's `risk_profile`. For Tier 2, point at the specific concern. Tier comes from the change, not past approvals.
 7. **Action options** — Approve / Request changes / Discuss.
 
 Wait for user acknowledgement before proceeding.
