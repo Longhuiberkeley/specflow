@@ -14,6 +14,7 @@ from specflow.lib.learning import (
     max_patterns_per_session,
     suggest_next_phase,
 )
+from specflow.lib.orphans import capture_phase_output_files
 
 
 def _auto_extract_patterns(root: Path, stories: list) -> int:
@@ -64,6 +65,22 @@ def run(root: Path, args: dict[str, Any]) -> int:
     print(f"\n  Implemented stories: {len(implemented_stories)}")
     for s in implemented_stories:
         print(f"    • {s.id} — {s.title}")
+
+    # Best-effort output_files auto-capture: walk git history since the phase
+    # started, parse STORY ids from wave-commit messages, and retro_link each
+    # new/modified source file to its owning STORY. Never fails done (mirrors
+    # the audit orphan-lens defensiveness; accounting-not-policing BP-006).
+    capture = capture_phase_output_files(root)
+    captured = int(capture.get("captured", 0))
+    stories_n = int(capture.get("stories", 0))
+    unattr_n = int(capture.get("unattributed", 0))
+    if captured or unattr_n:
+        print(
+            f"\n  captured {captured} output_file link(s) across {stories_n} "
+            f"stor{'y' if stories_n == 1 else 'ies'}; {unattr_n} unattributed"
+        )
+        for rel in capture.get("unattributed_files", [])[:10]:
+            print(f"    · {rel} (no wave-commit STORY)")
 
     if not no_patterns and implemented_stories:
         existing = list_learned_patterns(root)
