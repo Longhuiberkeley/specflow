@@ -4,6 +4,61 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.13.1] - 2026-08-03
+
+Decision & objective quality: approval tiers are computed from the change's
+own properties instead of asserted in prose, the reasoning is persisted into
+the durable record, and acceptance-criterion falsifiability is accounted.
+Everything is advisory — the release gate stays green (0 escalating warns).
+
+### Added
+
+- **`specflow risk-tier ID [ID...]` — computed approval-tier floor.** Tier is
+  derived deterministically from intrinsic change-set properties: an
+  irreversibility lexicon (status moving to `verified`/`released`, a
+  `supersedes` link, a deletion, `destructive`/`data-migration` tags,
+  baseline/release actions floor Tier 2) plus blast radius from the existing
+  impact cone (≥ 8 downstream artifacts = large). Unclassifiable changes
+  default UP. The command is strictly read-only and gates nothing — the
+  agent may escalate freely; downgrading below the floor requires a recorded
+  justification in the DEC. Output includes a verification-evidence line
+  (ran / not-run / unknown) computed from real `verify_run_*` data — never
+  fabricated green.
+- **`risk_profile` on DEC artifacts** (additive optional field): tier,
+  reversibility, and blast-radius count are auto-populated on auto
+  change-records at commit time with `confidence` honestly empty; human
+  authors fill confidence via `--set` (full-field replace — documented
+  footgun warning included). Advisory `dec-risk-profile` lint check warns on
+  approved DECs lacking a profile; warn-only, never in `--type gate`.
+  `brief` shows a tier marker on recent decisions.
+- **AC-observability accounting.** `classify_ac_observability` classifies
+  each acceptance-criterion item with a cry-wolf-proof conjunction: an item
+  is aspirational ONLY IF it has no observable outcome marker AND carries an
+  ambiguity word or bare vague verb — domain observables ("the relay
+  energizes") stay unclassified, never smeared. Surfaced as a `brief`
+  REQ-quality line, an info-only `ac-observability` audit lens (registered
+  in `_ACCOUNTING_CONCERNS`, never escalates), and an advisory
+  `ac-observable` lint check (REQ-level, never per-AC, never in the gate).
+
+### Changed
+
+- Approval-gate skill guidance (approval-presentation + plan/execute/
+  discover/artifact-review skills, shipped and live mirrors): "derive a
+  tier" prose replaced with "run `specflow risk-tier`; computed tier is the
+  minimum; downgrading requires a recorded justification."
+
+### Verification
+
+- 971 tests passing (baseline 895; +76, no regressions).
+- `specflow project-audit --dry-run`: 0 escalating warns, exit 0 — gate
+  stays honestly green; 24 accounting warns surfaced advisory-only.
+- Dogfood over the repo's own REQs: 242 AC items → 82 observable,
+  3 aspirational (all genuinely vague), 157 unclassified; zero domain ACs
+  smeared.
+- Adversarial review: no-gate invariant grep-proven (the tier is consulted
+  by exactly two modules, neither on any transition path); tier floor
+  withstood false-floor attacks; classifier withstood cry-wolf attacks.
+
 ## [1.13.0] - 2026-08-03
 
 The false-confidence reduction cycle. Green signals must reflect reality: this
