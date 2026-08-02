@@ -932,4 +932,12 @@ artifacts:
     - accounting-not-policing
     fingerprint: sha256:773374d157a7
     children: []
-next_id: 626
+  STORY-626:
+    id: STORY-626
+    title: "Decision & objective quality \u2014 computed risk tiers + AC observability\
+      \ (v1.13.1)"
+    status: implemented
+    tags: []
+    fingerprint: sha256:354f29fa9053
+    children: []
+next_id: 627
