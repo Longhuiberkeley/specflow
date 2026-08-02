@@ -4,6 +4,21 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.12.6] - 2026-08-03
+
+### Fixed
+
+- **RC1 cry-wolf kill (foundational-doctrine provenance).** The horizontal analysis no longer emits "N/N best-practice (or decision) artifacts have no links/provenance": BP/DEC are foundational doctrine, upstream-less by design (other artifacts derive from them), so absent `links[]` is not orphan-provenance. `has_provenance` now exempts `best-practice` and `decision` the same way it already exempted the autoresearch competition root. Genuine orphan-provenance detection for every other type stays intact. Drops the `specflow-release-gate` audit from 17 to 16 escalating structural warns.
+
+### Added
+
+- **`specflow project-audit --dry-run`.** Prints the full findings/report with the identical exit code (errors→3, escalating warns→2, else 0) but skips all four write side-effects: the `.specflow/audits/<ts>/` snapshot directory, the AUD artifact, the CHL artifacts, and the `.specflow/audits/.cache` + index mutations. Enables local pre-push verification of the gate's exit code without dirtying the tree.
+
+### Verification
+
+- 825 tests passing (baseline 820; +5, no regressions).
+- `specflow project-audit --dry-run` exits 2 with 16 escalating warns, tree stays clean.
+
 ## [1.12.5] - 2026-08-02
 
 ### Added
