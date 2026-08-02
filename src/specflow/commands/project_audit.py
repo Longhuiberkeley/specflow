@@ -43,7 +43,20 @@ _SEP = "─" * 58
 # release. STRUCTURAL warns (coverage gaps, schema issues, orphan code, …) still
 # escalate. Add a concern here only when its lens comment explicitly declares
 # "accounting, not policing" / "never escalates".
-_ACCOUNTING_CONCERNS: frozenset[str] = frozenset({"docs-staleness"})
+_ACCOUNTING_CONCERNS: frozenset[str] = frozenset({
+    "docs-staleness",
+    # verification: test-linkage / verify-runner-contract gaps. Accounting, not
+    # policing — never escalates: a STORY missing a UT link is a traceability
+    # bookkeeping gap (the tests usually exist, unlinked), not a V-model hole.
+    # The genuine structural gaps (missing ARCH/missing STORY) stay concern=
+    # "completeness" and still escalate.
+    "verification",
+    # ac-coverage: REQ acceptance-criteria vs linked-test count. Accounting, not
+    # policing — never escalates: an AC/test count mismatch is review-worthy
+    # coverage prose, not a release blocker. The 3 no-ARCH warns and the
+    # orphan-code warn remain structural either way.
+    "ac-coverage",
+})
 
 
 def _ts() -> str:
@@ -220,6 +233,12 @@ def _vertical_analysis(artifacts: list[art_lib.Artifact]) -> list[dict[str, str]
             if not has_verification:
                 findings.append({
                     "severity": "warn",
+                    # Accounting, not policing — never escalates: a STORY with no
+                    # verified_by test link is a traceability bookkeeping gap
+                    # (the tests usually exist, unlinked), not a V-model hole.
+                    # Real V-model gaps (no ARCH / no STORY) have NO concern and
+                    # still escalate above.
+                    "concern": "verification",
                     "message": f"{story_id} (implements {req.id}): no test verification",
                 })
 
@@ -231,15 +250,34 @@ def _cross_cutting_analysis(
 ) -> dict[str, list[dict[str, str]]]:
     results: dict[str, list[dict[str, str]]] = {}
 
+    # Coverage split (BP-005/006 accounting carve-out): check_coverage now
+    # separates STRUCTURAL gaps (missing ARCH / missing STORY — genuine V-model
+    # holes, stay escalating under concern="completeness") from TEST-VERIFICATION
+    # gaps (a STORY implemented with no UT/IT/QT linked via verified_by — a
+    # linkage bookkeeping gap, accounting under concern="verification"). The two
+    # rolled warns land in different concern buckets so the exit gate can keep
+    # the structural ones blocking while the test-linkage ones never drive exit-2.
     lint_result = artifact_lint.check_coverage(artifacts)
-    coverage_findings: list[dict[str, str]] = []
-    if lint_result["warning_count"] > 0:
-        coverage_findings.append({
+    struct_n = int(lint_result.get("structural_warning_count", 0))
+    verif_n = int(lint_result.get("verification_warning_count", 0))
+    if struct_n > 0:
+        results.setdefault("completeness", []).append({
             "severity": "warn",
-            "message": f"{lint_result['warning_count']} coverage gap(s): {lint_result['detail'][:200]}",
+            "concern": "completeness",
+            "message": (
+                f"{struct_n} structural coverage gap(s): "
+                f"{lint_result.get('structural_detail', '')[:200]}"
+            ),
         })
-    if coverage_findings:
-        results["completeness"] = coverage_findings
+    if verif_n > 0:
+        results.setdefault("verification", []).append({
+            "severity": "warn",
+            "concern": "verification",
+            "message": (
+                f"{verif_n} test-verification coverage gap(s): "
+                f"{lint_result.get('verification_detail', '')[:200]}"
+            ),
+        })
 
     baseline_findings: list[dict[str, str]] = []
     baselines = baseline_lib.list_baselines(root)
@@ -378,7 +416,175 @@ def _cross_cutting_analysis(
     if docs_findings:
         results["docs-staleness"] = docs_findings
 
+    # Verification-contract lens (accounting, not policing — see
+    # _verification_lens). Pure helper so the lens buckets are unit-testable
+    # without running the full cross-cutting pipeline.
+    verify_findings = _verification_lens(artifacts)
+    if verify_findings:
+        results.setdefault("verification", []).extend(verify_findings)
+
+    # AC-coverage lens (accounting, not policing — see _ac_coverage_lens).
+    ac_findings = _ac_coverage_lens(artifacts)
+    if ac_findings:
+        results.setdefault("ac-coverage", []).extend(ac_findings)
+
     return results
+
+
+def _verification_lens(artifacts: list[art_lib.Artifact]) -> list[dict[str, str]]:
+    """Declared verify_command vs recorded verify_run_* results.
+
+    Modeled on the orphan-code shape: not-adopted → info / declared-never-run /
+    failed / drifted → warn / clean → info. Accounting, not policing — never
+    escalates: "verification" is registered in ``_ACCOUNTING_CONCERNS``, so its
+    warns never drive exit-2. The lens surfaces honest run-state signals
+    (declared but never run, last run failed, command drifted since last run)
+    for review without holding up a release on a contract/traceability
+    bookkeeping gap (BP-005/006). Degrades gracefully — a project with zero
+    verify_command anywhere → ONE info, never a warn.
+
+    Reads implementer B's pinned fields (verify_command, verify_exit_code,
+    verify_run_at, verify_run_exit_code, verify_run_command_hash) and never
+    writes them.
+    """
+    findings: list[dict[str, str]] = []
+    candidate_types = {"unit-test", "integration-test", "qualification-test", "story"}
+    try:
+        any_contract = any(art.frontmatter.get("verify_command") for art in artifacts)
+        if not any_contract:
+            findings.append({
+                "severity": "info",
+                "message": (
+                    "Verification contracts not adopted: no artifact declares a "
+                    "verify_command. Run `specflow verify` to record test-run evidence."
+                ),
+            })
+            return findings
+        declared = 0
+        clean = 0
+        for art in artifacts:
+            if (art.type not in candidate_types
+                    or art.status not in ("implemented", "verified")):
+                continue
+            cmd = art.frontmatter.get("verify_command")
+            if not cmd:
+                continue
+            declared += 1
+            run_at = art.frontmatter.get("verify_run_at")
+            run_exit = art.frontmatter.get("verify_run_exit_code")
+            expected_exit = art.frontmatter.get("verify_exit_code", 0)
+            run_cmd_hash = art.frontmatter.get("verify_run_command_hash")
+            # compute_fingerprint-style hash of the current command so a changed
+            # verify_command is detectable against the stored run-command hash.
+            current_hash = "sha256:" + hashlib.sha256(
+                str(cmd).encode("utf-8")
+            ).hexdigest()[:12]
+            if not run_at:
+                findings.append({
+                    "severity": "warn",
+                    "message": f"{art.id}: verify_command declared but never run",
+                })
+            elif run_exit is not None and str(run_exit) != str(expected_exit):
+                findings.append({
+                    "severity": "warn",
+                    "message": f"{art.id}: last verify run failed (exit {run_exit})",
+                })
+            elif run_cmd_hash and run_cmd_hash != current_hash:
+                findings.append({
+                    "severity": "warn",
+                    "message": f"{art.id}: verify_command drifted since last run",
+                })
+            else:
+                clean += 1
+        if declared and clean == declared:
+            findings.append({
+                "severity": "info",
+                "message": (
+                    f"{clean} artifact(s) declare verify_command; all have "
+                    f"current, green verify runs."
+                ),
+            })
+    except Exception:
+        pass
+    # Self-describing: stamp the accounting concern so _count_warns classifies
+    # the lens output correctly even before run()'s bucket-level stamping.
+    for f in findings:
+        f["concern"] = "verification"
+    return findings
+
+
+def _ac_coverage_lens(artifacts: list[art_lib.Artifact]) -> list[dict[str, str]]:
+    """REQ acceptance-criteria count vs linked-test count.
+
+    Per implemented/verified REQ, count AC items (lint parsers) vs linked tests
+    (QT direct; IT via ARCH; UT via ARCH→DDD — the rtm._children_of walk) and
+    how many linked tests carry a green verify_run. Accounting, not policing —
+    never escalates: "ac-coverage" is registered in ``_ACCOUNTING_CONCERNS``, so
+    its warns never drive exit-2: a REQ whose AC count exceeds its linked-test
+    count is a review-worthy coverage signal, not a release blocker (BP-005/006).
+
+    Signals: REQ with ACs but ZERO linked tests → warn; linked-test-count <
+    AC-count → info "count mismatch, review"; else clean.
+    """
+    findings: list[dict[str, str]] = []
+    try:
+        from specflow.commands.rtm import _children_of as _rtm_children
+        from specflow.lib import lint as _lint
+
+        decompose = {"derives_from", "refined_by"}
+        ac_reqs = [
+            a for a in artifacts
+            if art_lib.get_prefix_from_id(a.id) == "REQ"
+            and a.status in ("implemented", "verified")
+        ]
+        for req in ac_reqs:
+            ac_count = _lint.count_acceptance_criteria_items(req)
+            if ac_count == 0:
+                continue
+            # Linked-test walk: QT direct + IT via ARCH + UT via ARCH→DDD.
+            qts = _rtm_children(req.id, "qualification-test", {"verified_by"}, artifacts)
+            archs = _rtm_children(req.id, "architecture", decompose, artifacts)
+            linked: list[art_lib.Artifact] = list(qts)
+            for arch in archs:
+                linked.extend(_rtm_children(arch.id, "integration-test", {"verified_by"}, artifacts))
+                for ddd in _rtm_children(arch.id, "detailed-design", decompose, artifacts):
+                    linked.extend(_rtm_children(ddd.id, "unit-test", {"verified_by"}, artifacts))
+            # dedupe by id
+            seen_ids: set[str] = set()
+            uniq: list[art_lib.Artifact] = []
+            for t in linked:
+                if t.id not in seen_ids:
+                    seen_ids.add(t.id)
+                    uniq.append(t)
+            test_count = len(uniq)
+            green = 0
+            for t in uniq:
+                r_exit = t.frontmatter.get("verify_run_exit_code")
+                e_exit = t.frontmatter.get("verify_exit_code", 0)
+                if r_exit is not None and str(r_exit) == str(e_exit):
+                    green += 1
+            if test_count == 0:
+                findings.append({
+                    "severity": "warn",
+                    "message": (
+                        f"{req.id}: {ac_count} AC item(s) but no linked tests "
+                        f"(QT/IT/UT via verified_by)"
+                    ),
+                })
+            elif test_count < ac_count:
+                findings.append({
+                    "severity": "info",
+                    "message": (
+                        f"{req.id}: {test_count} linked test(s) < {ac_count} AC "
+                        f"item(s) ({green} green) — review coverage"
+                    ),
+                })
+    except Exception:
+        pass
+    # Self-describing: stamp the accounting concern (see _verification_lens).
+    for f in findings:
+        f["concern"] = "ac-coverage"
+    return findings
 
 
 def _sample_artifacts(

@@ -669,6 +669,18 @@ def check_coverage(
     blocking = 0
     warnings = 0
     details: list[str] = []
+    # Coverage-gap split for the project-audit exit-code gate (BP-005/006
+    # accounting carve-out). Missing ARCH / missing STORY are STRUCTURAL V-model
+    # gaps → stay escalating (concern="completeness" in project_audit). A STORY
+    # implemented with no UT/IT/QT linked via verified_by is a TEST-VERIFICATION
+    # linkage gap → accounting (concern="verification"). The combined
+    # warning_count/detail below are unchanged so the `artifact-lint` CLI still
+    # reports the full picture; the two *_warning_count keys let project_audit
+    # route each bucket to the right concern.
+    structural_warnings = 0
+    structural_details: list[str] = []
+    verification_warnings = 0
+    verification_details: list[str] = []
 
     id_index = art_lib.build_id_index(artifacts)
 
@@ -697,13 +709,19 @@ def check_coverage(
     for req in reqs:
         linked_archs = req_to_archs.get(req.id, [])
         if not linked_archs:
+            msg = f"  ⚠ [{req.id}] no ARCH derives_from this approved requirement"
             warnings += 1
-            details.append(f"  ⚠ [{req.id}] no ARCH derives_from this approved requirement")
+            structural_warnings += 1
+            details.append(msg)
+            structural_details.append(msg)
 
         linked_stories = req_to_stories.get(req.id, [])
         if not linked_stories:
+            msg = f"  ⚠ [{req.id}] no STORY implements/derives_from this approved requirement"
             warnings += 1
-            details.append(f"  ⚠ [{req.id}] no STORY implements/derives_from this approved requirement")
+            structural_warnings += 1
+            details.append(msg)
+            structural_details.append(msg)
             continue
 
         for story in linked_stories:
@@ -723,11 +741,14 @@ def check_coverage(
             for t_type in ("unit-test", "integration-test", "qualification-test"):
                 prefix = art_lib.TYPE_TO_PREFIX.get(t_type, "")
                 if not test_links_by_type[t_type]:
-                    warnings += 1
-                    details.append(
+                    msg = (
                         f"  ⚠ [{story.id}] no {prefix} linked via 'verified_by' "
                         f"(covers REQ {req.id})"
                     )
+                    warnings += 1
+                    verification_warnings += 1
+                    details.append(msg)
+                    verification_details.append(msg)
 
     icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
     detail_msg = "; ".join(details) if details else "All approved REQs have STORY and test coverage"
@@ -737,6 +758,12 @@ def check_coverage(
         "detail": detail_msg,
         "blocking_count": blocking,
         "warning_count": warnings,
+        # Split buckets consumed by project_audit's _cross_cutting_analysis to
+        # route structural vs test-verification gaps into separate concerns.
+        "structural_warning_count": structural_warnings,
+        "structural_detail": "; ".join(structural_details) if structural_details else "",
+        "verification_warning_count": verification_warnings,
+        "verification_detail": "; ".join(verification_details) if verification_details else "",
     }
 
 

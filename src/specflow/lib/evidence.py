@@ -111,7 +111,17 @@ def _test_results_section(artifacts: list[art_lib.Artifact]) -> list[str]:
     lines.append(f"|---------|------|-------|--------|")
 
     for t in sorted(tests, key=lambda a: a.id):
-        lines.append(f"| {t.id} | {t.type} | {t.title} | {t.status} |")
+        # When a machine verify run recorded its exit code (pinned
+        # verify_run_exit_code field written by `specflow verify`), annotate the
+        # status cell so the compliance report never presents a bare `verified`
+        # as machine-backed. No field → no annotation (status unchanged).
+        run_exit = t.frontmatter.get("verify_run_exit_code")
+        if run_exit is not None:
+            suffix = "" if str(run_exit) == "0" else " — see audit"
+            status_cell = f"{t.status} (verify_run exit={run_exit}{suffix})"
+        else:
+            status_cell = t.status
+        lines.append(f"| {t.id} | {t.type} | {t.title} | {status_cell} |")
 
     verified = sum(1 for t in tests if t.status == "verified")
     implemented = sum(1 for t in tests if t.status == "implemented")

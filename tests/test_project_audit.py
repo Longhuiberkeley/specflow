@@ -7,10 +7,13 @@ so it can be exercised directly without running the full audit pipeline.
 
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 
+from specflow.commands import artifact_lint
 from specflow.commands import project_audit as audit_cmd
 from specflow.lib import artifacts as art_lib
+from specflow.lib import evidence
 
 
 def _f(axis: str, severity: str, message: str, **extra) -> dict:
@@ -286,3 +289,335 @@ class TestDryRun:
         # silently no-ops on a minimal fixture, so the snapshot dir is the
         # reliable witness that the writing path actually executed.
         assert (root / ".specflow" / "audits").exists()
+
+
+# ── v1.13 verification arc: accounting demotion of cry-wolf test warns ───────
+#
+# Shared helpers for the new lenses' tests. Builds in-memory Artifact objects so
+# the pure lens helpers (_verification_lens, _ac_coverage_lens, check_coverage,
+# _vertical_analysis, _test_results_section) can be exercised without a disk
+# fixture.
+
+
+def _art(
+    aid: str,
+    type_name: str,
+    status: str = "implemented",
+    body: str = "",
+    links: list[art_lib.Link] | None = None,
+    **frontmatter,
+) -> art_lib.Artifact:
+    fm = {"id": aid, "type": type_name, "status": status}
+    fm.update(frontmatter)
+    return art_lib.Artifact(
+        path=Path(f"{aid}.md"),
+        frontmatter=fm,
+        body=body,
+        links=links or [],
+    )
+
+
+def _write_art(root: Path, rel: str, text: str) -> None:
+    p = root / rel
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(text, encoding="utf-8")
+
+
+class TestVerificationAcCoverageRegistered:
+    """Both new concerns must be registered accounting (BP-005/006)."""
+
+    def test_verification_registered(self):
+        assert "verification" in audit_cmd._ACCOUNTING_CONCERNS
+
+    def test_ac_coverage_registered(self):
+        assert "ac-coverage" in audit_cmd._ACCOUNTING_CONCERNS
+
+    def test_docs_staleness_still_registered(self):
+        # Regression guard: the pre-existing carve-out is untouched.
+        assert "docs-staleness" in audit_cmd._ACCOUNTING_CONCERNS
+
+
+# (c) vertical "no test verification" carries concern="verification".
+
+
+class TestVerticalVerificationConcern:
+    def test_no_test_verification_gets_verification_concern(self):
+        req = _art("REQ-001", "requirement", status="approved")
+        story = _art(
+            "STORY-001", "story", status="implemented",
+            links=[art_lib.Link(target="REQ-001", role="implements")],
+        )
+        findings = audit_cmd._vertical_analysis([req, story])
+        no_test = [f for f in findings if "no test verification" in f["message"]]
+        assert no_test, "expected a no-test-verification finding"
+        assert no_test[0].get("concern") == "verification"
+
+    def test_no_arch_vertical_has_no_concern_and_keeps_escalating(self):
+        # Real V-model gaps (no ARCH / no STORY) carry NO concern → escalate.
+        req = _art("REQ-001", "requirement", status="approved")
+        findings = audit_cmd._vertical_analysis([req])
+        no_arch = [f for f in findings if "no ARCH" in f["message"]]
+        assert no_arch
+        assert "concern" not in no_arch[0]
+        escalating, _ = audit_cmd._count_warns(no_arch)
+        assert escalating == 1
+
+
+# (b) completeness split: missing-ARCH escalates; test-verification does not.
+
+
+class TestCompletenessSplit:
+    def test_check_coverage_separates_structural_and_verification(self):
+        # REQ-A: approved, no ARCH/STORY → STRUCTURAL gaps.
+        req_a = _art("REQ-001", "requirement", status="approved")
+        # REQ-B: approved, ARCH + implemented STORY, no tests → VERIFICATION gap.
+        req_b = _art("REQ-002", "requirement", status="approved")
+        arch = _art(
+            "ARCH-002", "architecture", status="approved",
+            links=[art_lib.Link(target="REQ-002", role="derives_from")],
+        )
+        story = _art(
+            "STORY-002", "story", status="implemented",
+            links=[art_lib.Link(target="REQ-002", role="implements")],
+        )
+        r = artifact_lint.check_coverage([req_a, req_b, arch, story])
+        assert r["structural_warning_count"] >= 1
+        assert r["verification_warning_count"] >= 1
+        # Combined keys preserved for the artifact-lint CLI.
+        assert r["warning_count"] == r["structural_warning_count"] + r["verification_warning_count"]
+
+    def test_structural_gap_escalates_test_verification_does_not(self):
+        # After routing in project_audit: structural → concern="completeness"
+        # (escalating); test-verification → concern="verification" (accounting).
+        findings = [
+            {"severity": "warn", "concern": "completeness",
+             "message": "structural coverage gap (no ARCH)"},
+            {"severity": "warn", "concern": "verification",
+             "message": "test-verification coverage gap (no UT)"},
+        ]
+        escalating, accounting = audit_cmd._count_warns(findings)
+        assert escalating == 1   # the missing-ARCH gap
+        assert accounting == 1   # the test-linkage gap
+
+
+# (d) verification lens buckets: not-adopted→info; declared-not-run / failed /
+# drifted → warn; clean → info.
+
+
+class TestVerificationLensBuckets:
+    def test_not_adopted_is_info_never_warn(self):
+        # A project with zero verify_command anywhere → ONE info, never a warn.
+        arts = [_art("STORY-001", "story", status="implemented")]  # no verify_command
+        findings = audit_cmd._verification_lens(arts)
+        assert any(f["severity"] == "info" and "not adopted" in f["message"] for f in findings)
+        assert not any(f["severity"] == "warn" for f in findings)
+
+    def test_declared_never_run_warns(self):
+        arts = [_art("STORY-001", "story", status="implemented", verify_command="pytest")]
+        findings = audit_cmd._verification_lens(arts)
+        assert any(f["severity"] == "warn" and "never run" in f["message"] for f in findings)
+
+    def test_failed_run_warns(self):
+        arts = [_art(
+            "STORY-001", "story", status="implemented", verify_command="pytest",
+            verify_run_at="2026-01-01T00:00:00Z", verify_run_exit_code=1, verify_exit_code=0,
+        )]
+        findings = audit_cmd._verification_lens(arts)
+        failed = [f for f in findings if f["severity"] == "warn" and "failed" in f["message"]]
+        assert failed and "exit 1" in failed[0]["message"]
+
+    def test_command_drift_warns(self):
+        arts = [_art(
+            "STORY-001", "story", status="implemented", verify_command="pytest",
+            verify_run_at="2026-01-01T00:00:00Z",
+            verify_run_exit_code=0, verify_exit_code=0,
+            # A stored hash that cannot match the current command.
+            verify_run_command_hash="sha256:deadbeefdead",
+        )]
+        findings = audit_cmd._verification_lens(arts)
+        assert any(f["severity"] == "warn" and "drifted" in f["message"] for f in findings)
+
+    def test_clean_emits_info_no_warn(self):
+        cmd = "pytest -x"
+        current_hash = "sha256:" + hashlib.sha256(cmd.encode()).hexdigest()[:12]
+        arts = [_art(
+            "STORY-001", "story", status="implemented", verify_command=cmd,
+            verify_run_at="2026-01-01T00:00:00Z",
+            verify_run_exit_code=0, verify_exit_code=0,
+            verify_run_command_hash=current_hash,
+        )]
+        findings = audit_cmd._verification_lens(arts)
+        assert any(f["severity"] == "info" and "green" in f["message"] for f in findings)
+        assert not any(f["severity"] == "warn" for f in findings)
+
+    def test_lens_findings_are_accounting(self):
+        # Every warn this lens can emit is concern="verification" → accounting.
+        arts = [_art("STORY-001", "story", status="implemented", verify_command="pytest")]
+        findings = audit_cmd._verification_lens(arts)
+        warns = [f for f in findings if f["severity"] == "warn"]
+        assert warns
+        for w in warns:
+            assert w.get("concern") == "verification"
+        escalating, accounting = audit_cmd._count_warns(warns)
+        assert escalating == 0 and accounting == len(warns)
+
+
+# (e) ac-coverage lens: zero-tests REQ → warn; mismatch → info.
+
+
+class TestAcCoverageLens:
+    @staticmethod
+    def _req_with_acs(aid: str, n: int) -> art_lib.Artifact:
+        items = "\n".join(f"- AC {i}" for i in range(1, n + 1))
+        return _art(
+            aid, "requirement", status="implemented",
+            body=f"## Acceptance Criteria\n{items}\n",
+        )
+
+    def test_zero_linked_tests_warns(self):
+        req = self._req_with_acs("REQ-001", 3)
+        findings = audit_cmd._ac_coverage_lens([req])
+        warn = [f for f in findings if f["severity"] == "warn" and "no linked tests" in f["message"]]
+        assert warn and "3 AC item(s)" in warn[0]["message"]
+
+    def test_count_mismatch_emits_info(self):
+        req = self._req_with_acs("REQ-001", 3)  # 3 ACs
+        qt = _art(
+            "QT-001", "qualification-test", status="verified",
+            links=[art_lib.Link(target="REQ-001", role="verified_by")],
+        )
+        findings = audit_cmd._ac_coverage_lens([req, qt])
+        assert any(f["severity"] == "info" and "review" in f["message"] for f in findings)
+        assert not any(f["severity"] == "warn" for f in findings)
+
+    def test_ac_coverage_warns_are_accounting(self):
+        req = self._req_with_acs("REQ-001", 2)
+        findings = audit_cmd._ac_coverage_lens([req])
+        warns = [f for f in findings if f["severity"] == "warn"]
+        assert warns
+        escalating, accounting = audit_cmd._count_warns(warns)
+        assert escalating == 0 and accounting == len(warns)
+
+
+# (a) EXIT-CODE PARITY: accounting warns never drive exit-2.
+
+
+class TestExitCodeParity:
+    """A fixture project full of verification + AC-coverage gaps (but NO
+    structural gaps) exits CLEAN: every warn it produces is accounting. The
+    exit code is identical to the same project with those warns stripped —
+    proving the lenses add signal without changing the exit gate. Disabling the
+    carve-out makes the same warns escalate (the 'before' state), confirming
+    the carve-out is the sole mechanism."""
+
+    @staticmethod
+    def _gap_fixture(root: Path) -> None:
+        # REQ (implemented) + ARCH + DDD + implemented STORY that declares a
+        # verify_command but was never run. Triggers, all accounting:
+        #   - vertical "STORY no test verification"        (concern=verification)
+        #   - completeness test-verification split          (concern=verification)
+        #   - verification lens "declared, never run"       (concern=verification)
+        #   - ac-coverage "ACs but no linked tests"         (concern=ac-coverage)
+        # No structural gaps: ARCH, DDD, STORY all present.
+        _write_art(root, "_specflow/specs/requirements/REQ-001.md",
+                   "---\nid: REQ-001\ntitle: T\ntype: requirement\nstatus: implemented\n"
+                   "non_functional_category: functional\n"
+                   "tags: []\nsuspect: false\nlinks: []\nfingerprint: x\n---\n\n# T\n\n"
+                   "## Acceptance Criteria\n- AC one\n- AC two\n- AC three\n")
+        _write_art(root, "_specflow/specs/architecture/ARCH-001.md",
+                   "---\nid: ARCH-001\ntitle: A\ntype: architecture\nstatus: approved\n"
+                   "tags: []\nsuspect: false\n"
+                   "links:\n  - {target: REQ-001, role: derives_from}\n"
+                   "fingerprint: x\n---\n\n# A\n\n## Component\narch component detail.\n")
+        _write_art(root, "_specflow/specs/detailed-design/DDD-001.md",
+                   "---\nid: DDD-001\ntitle: D\ntype: detailed-design\nstatus: approved\n"
+                   "tags: []\nsuspect: false\n"
+                   "links:\n  - {target: ARCH-001, role: derives_from}\n"
+                   "fingerprint: x\n---\n\n# D\n\n## Function\nddd function detail.\n")
+        _write_art(root, "_specflow/work/stories/STORY-001.md",
+                   "---\nid: STORY-001\ntitle: S\ntype: story\nstatus: implemented\n"
+                   "verify_command: \"pytest -x\"\n"
+                   "tags: []\nsuspect: false\n"
+                   "links:\n  - {target: REQ-001, role: implements}\n"
+                   "fingerprint: x\n---\n\n# S\n\n## Acceptance Criteria\n- it works\n")
+
+    @staticmethod
+    def _assemble_findings(arts, root):
+        h = audit_cmd._horizontal_analysis(arts)
+        v = audit_cmd._vertical_analysis(arts)
+        cc = audit_cmd._cross_cutting_analysis(arts, root)
+        raw = []
+        for tname, items in h.items():
+            for it in items:
+                it["axis"] = "horizontal"; it["type"] = tname; raw.append(it)
+        for it in v:
+            it["axis"] = "vertical"; raw.append(it)
+        for con, items in cc.items():
+            for it in items:
+                it["axis"] = "cross-cutting"; it["concern"] = con; raw.append(it)
+        return raw
+
+    def test_gap_fixture_exits_clean_accounting_warns_present(self, tmp_path, monkeypatch, capsys):
+        root = tmp_path / "project"
+        self._gap_fixture(root)
+        # Silence the schema lens (no schema dir in the fixture) and AUD/CHL
+        # side effects — the new lenses themselves must run real.
+        monkeypatch.setattr(artifact_lint, "check_schema",
+                            lambda arts, sd: {"blocking_count": 0, "warning_count": 0})
+        monkeypatch.setattr(audit_cmd.art_lib, "create_artifact", lambda *a, **k: {"ok": False})
+        monkeypatch.setattr(audit_cmd.chl_lib, "create_chl_artifacts", lambda *a, **k: [])
+
+        rc = audit_cmd.run(root, {"quick": False})
+        out = capsys.readouterr().out
+        assert rc == 0, f"expected CLEAN (exit 0), got {rc}\n{out}"
+        assert "accounting" in out.lower()  # the summary surfaces the carve-out
+
+    def test_parity_accounting_warns_do_not_change_exit_code(self, tmp_path, monkeypatch):
+        root = tmp_path / "project"
+        self._gap_fixture(root)
+        # Silence the schema lens (no schema dir in the fixture) so the only
+        # warns are the accounting ones the new lenses emit.
+        monkeypatch.setattr(artifact_lint, "check_schema",
+                            lambda arts, sd: {"blocking_count": 0, "warning_count": 0})
+        arts = art_lib.discover_artifacts(root)
+        findings = self._assemble_findings(arts, root)
+
+        escalating, accounting = audit_cmd._count_warns(findings)
+        assert escalating == 0          # no structural gaps on this fixture
+        assert accounting > 0           # the verification/ac-coverage lenses fired
+
+        # Parity: with accounting warns STRIPPED, the escalating count is
+        # identical (the lenses add signal, not exit pressure).
+        non_accounting = [
+            f for f in findings
+            if not (f.get("severity") == "warn"
+                    and f.get("concern") in audit_cmd._ACCOUNTING_CONCERNS)
+        ]
+        esc_stripped, _ = audit_cmd._count_warns(non_accounting)
+        assert esc_stripped == escalating
+
+        # The carve-out is the SOLE mechanism: disable it and the same warns
+        # escalate (this is the "before the lenses existed" exit pressure).
+        monkeypatch.setattr(audit_cmd, "_ACCOUNTING_CONCERNS", frozenset())
+        esc_disabled, _ = audit_cmd._count_warns(findings)
+        assert esc_disabled == accounting + escalating
+
+
+# (f) evidence _test_results_section annotates verify_run_exit_code.
+
+
+class TestEvidenceVerifyRunAnnotation:
+    def test_annotation_present_when_verify_run_exit_set(self):
+        arts = [
+            _art("QT-001", "qualification-test", status="verified", verify_run_exit_code=0),
+            _art("QT-002", "qualification-test", status="verified", verify_run_exit_code=1),
+        ]
+        text = "\n".join(evidence._test_results_section(arts))
+        assert "verify_run exit=0" in text           # green run, no 'see audit'
+        assert "verify_run exit=1 — see audit" in text  # failed run flagged
+
+    def test_annotation_absent_when_field_missing(self):
+        arts = [_art("QT-001", "qualification-test", status="verified")]
+        text = "\n".join(evidence._test_results_section(arts))
+        assert "verify_run" not in text
+        assert "| verified |" in text  # bare status, no annotation
