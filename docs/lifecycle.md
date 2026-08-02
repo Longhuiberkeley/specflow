@@ -62,6 +62,7 @@ flowchart TB
     ENG -. "deployed live" .-> OPS
     RES -. "promote (derives_from)" .-> OPS
     OPS -. "breach informs → retrain LOOP / rollback DEC" .-> ENG
+    OPS -. "breach?" .-> DFM["specflow defect-from-monitor"]
 
     class ENG,DOCS engine
     class AG1,AG2 gate
@@ -130,6 +131,7 @@ flowchart TB
    ops (live ops):          RUN  → MONITOR                  (deploy freeze + journal)
          EXPT ──promote (derives_from)──▶ RUN               (offline result → live)
          MONITOR breach ──informs──▶ retrain LOOP / rollback DEC   (back to engine)
+         MONITOR breach ──▶ specflow defect-from-monitor          (freeze → DEF → PREV on close)
    RUN.deployed_ref points AT your MLflow / W&B / ArgoCD — SpecFlow is the
    governance ledger over them, not a replacement for the dashboard.
 ```
@@ -188,7 +190,7 @@ Every slash command above composes underlying `uv run specflow …` commands. Th
 - **Recall & navigation:** `specflow brief` (one-call digest), `specflow status`, `specflow trace <ID>`, `specflow rtm [--gaps]` (project-wide REQ→ARCH→STORY→test matrix)
 - **Authoring:** `specflow create`, `specflow update --status <status>`
 - **Gates & validation:** `specflow artifact-lint [--type … | --gate <name>]`, `specflow verify <ID> | --all` (records `verify_run_*` evidence — accounting, never blocks)
-- **Defects:** `specflow defect-from-suspect <ID> --req <REQ>` (suspect → DEF with traceability)
+- **Defects:** `specflow defect-from-suspect <ID> --req <REQ>` (suspect → DEF with traceability); `specflow defect-from-monitor <MON> --req <REQ>` (ops MONITOR breach → DEF, freezing `observed_at`/`health`/`metrics`/`signals`/`captures` into the body; closing the DEF fires prevention-pattern capture)
 - **Release & change:** `specflow baseline`, `specflow document-changes`, `specflow project-audit`
 
 See the [CLI Reference](cli-reference.md) for the full catalog organized by workflow phase.

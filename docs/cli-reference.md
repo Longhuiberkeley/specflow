@@ -400,6 +400,25 @@ specflow defect-from-suspect SUSPECT_ID --req REQ_ID [--severity LEVEL] [--impac
 | `--impact-event` | Path to the impact-log YAML event (recorded in the DEF body) |
 | `--title` | Override the auto-generated defect title |
 
+### `specflow defect-from-monitor`
+
+Materialize the ops MONITOR → DEF pipeline: when a human decides a breached MONITOR (ops pack) genuinely indicates an upstream requirement is no longer satisfied, freeze the MONITOR's ephemeral evidence into a DEF with full traceability (`fails_to_meet` → REQ, `exposed_by` → the MONITOR). Closing the DEF fires the existing on_closure → prevention-pattern capture path.
+
+Accounting, not policing: if the source MONITOR was healthy at capture the command warns and still creates the DEF, and it never mutates the MONITOR.
+
+```bash
+specflow defect-from-monitor MON-NNN --req REQ-NNN [--severity LEVEL] [--title TITLE]
+```
+
+| Flag | Purpose |
+|------|---------|
+| `MON-NNN` | The MONITOR artifact whose breach indicates the unsatisfied REQ |
+| `--req` | Upstream REQ the breach indicates is unsatisfied (required) |
+| `--severity` | `low` \| `medium` \| `high` \| `critical` (default: `medium`) |
+| `--title` | Override the auto-generated defect title |
+
+The MONITOR's `observed_at` / `health` / `metrics` / `signals` / `captures` are frozen verbatim into a `## Observed at breach` body block so the ephemeral live-ops snapshot is preserved on the DEF.
+
 ---
 
 ## CI and Hooks
