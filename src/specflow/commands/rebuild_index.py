@@ -12,8 +12,14 @@ def run(root: Path, args: dict[str, Any]) -> int:
     artifact_type = args.get("type")
     result = artifacts_lib.rebuild_index(root, artifact_type)
     rebuilt = result.get("rebuilt", 0)
+    repaired = result.get("repaired", 0)
+    quarantined = result.get("quarantined", 0)
     scope = f"type={artifact_type}" if artifact_type else "all types"
     print(f"{GREEN}✓ Rebuilt index ({scope}): {rebuilt} artifact(s){NC}")
+    print(
+        f"{GREEN}  repaired {repaired} fingerprint(s), "
+        f"quarantined {quarantined} fileless entr(ies){NC}"
+    )
 
     # The docs knowledge surface is rebuilt alongside the artifact index when no
     # specific artifact type is requested. Docs are NOT artifacts — this cache is

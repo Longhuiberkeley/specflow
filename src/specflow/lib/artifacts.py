@@ -293,6 +293,18 @@ def compute_fingerprint(body: str) -> str:
     return f"sha256:{hashlib.sha256(content.encode('utf-8')).hexdigest()[:12]}"
 
 
+# Doctrine: the fingerprint of an empty body. A pre-v1.13 creation bug stored
+# this exact value for some auto-generated artifacts whose bodies were in fact
+# non-empty (live case: DEC-059). This signature is deterministic and
+# unambiguous — it can NEVER be a legitimate fingerprint of real content (any
+# non-empty body hashes to something else), so recomputing on sight is always
+# correct and cannot mask genuine drift. This is the ONLY mismatched-but-present
+# value that rebuild_index repairs: present-but-wrong fingerprints with any
+# other value stay untouched, because those are suspect detection's job —
+# silently "fixing" them would destroy the drift signal.
+_EMPTY_BODY_FINGERPRINT = compute_fingerprint("")
+
+
 def parse_artifact(path: Path) -> Artifact | None:
     """Parse a Markdown artifact file and return an Artifact object.
 
@@ -725,6 +737,74 @@ read_index = _read_index
 write_index = _write_index
 
 
+def _quarantine_entries(
+    target_dir: Path,
+    old_artifacts: dict[str, Any],
+    fileless_ids: set[str],
+) -> int:
+    """Preserve fileless index entries in ``_index.quarantine.yaml``.
+
+    A fileless entry exists in the old ``_index.yaml`` but has no ``.md`` on
+    disk. Rather than dropping it into the void (the pre-v1.13 behavior, which
+    lost the last-known id/title/status/fingerprint/tags entirely), each is
+    appended to a per-type quarantine file with an ISO-8601 UTC
+    ``quarantined_at`` timestamp. Appending is idempotent: an ID already present
+    in the quarantine file is never overwritten or duplicated, so repeated
+    rebuilds are safe. Returns the number of NEWLY quarantined entries.
+
+    The quarantine file is ``.yaml`` and ``_``-prefixed, so artifact discovery
+    (which globs ``*.md`` and skips ``_``-prefixed names) never picks it up.
+    """
+    from datetime import datetime, timezone
+
+    quarantine_path = target_dir / "_index.quarantine.yaml"
+    existing: dict[str, Any] = {}
+    if quarantine_path.exists():
+        try:
+            data = yaml.safe_load(quarantine_path.read_text(encoding="utf-8"))
+            if isinstance(data, dict):
+                existing = data
+        except Exception:
+            existing = {}
+
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    added = 0
+    for art_id in sorted(fileless_ids):
+        if art_id in existing:
+            continue
+        old = old_artifacts.get(art_id, {})
+        existing[art_id] = {
+            "id": art_id,
+            "title": old.get("title", ""),
+            "status": old.get("status", ""),
+            "fingerprint": old.get("fingerprint", ""),
+            "tags": old.get("tags", []) or [],
+            "quarantined_at": ts,
+        }
+        added += 1
+
+    if added:
+        target_dir.mkdir(parents=True, exist_ok=True)
+        quarantine_path.write_text(
+            yaml.dump(existing, default_flow_style=False, sort_keys=True),
+            encoding="utf-8",
+        )
+    return added
+
+
+def _rewrite_frontmatter(path: Path, frontmatter: dict[str, Any], body: str) -> None:
+    """Rewrite an artifact file's frontmatter in place, preserving the body.
+
+    Used by rebuild_index to persist a repaired fingerprint back into the .md
+    frontmatter. The body is written back unchanged, so the fingerprint (the
+    body hash) stays correct after the write. This makes drift/suspect detection
+    — which reads the frontmatter fingerprint — see the repaired value and keeps
+    the repair idempotent across repeated rebuilds.
+    """
+    fm_yaml = yaml.dump(frontmatter, default_flow_style=False, sort_keys=False)
+    path.write_text(f"---\n{fm_yaml}---\n\n{body}\n", encoding="utf-8")
+
+
 def _read_schema(schema_dir: Path, artifact_type: str) -> dict[str, Any] | None:
     schema_path = schema_dir / f"{artifact_type}.yaml"
     if not schema_path.exists():
@@ -748,9 +828,18 @@ def _render_artifact_file(
     tags: list[str] | None = None,
     links: list[dict[str, str]] | None = None,
     body: str = "",
-    fingerprint: str = "",
     **kwargs: Any,
-) -> str:
+) -> tuple[str, str]:
+    """Render the artifact file content; return ``(content, fingerprint)``.
+
+    The fingerprint is computed from the RENDERED body — the exact bytes that
+    land after the frontmatter, including the auto-prepended ``# {title}``
+    heading — so it matches what ``parse_artifact`` returns as ``body`` and what
+    every drift/suspect recomputation (``compute_fingerprint(art.body)``) uses.
+    Computing it from the raw ``body`` parameter (pre-v1.13) produced a
+    fingerprint that never matched the file body whenever the heading was
+    auto-prepended, so freshly-created artifacts always read as drifted.
+    """
     from datetime import date
 
     today = date.today().isoformat()
@@ -769,17 +858,26 @@ def _render_artifact_file(
     fm["suspect"] = False
     fm["links"] = links or []
     fm["created"] = today
-    if fingerprint:
-        fm["fingerprint"] = fingerprint
     for k, v in kwargs.items():
         if v is not None:
             fm[k] = v
 
-    fm_yaml = yaml.dump(fm, default_flow_style=False, sort_keys=False)
     body_stripped = body.strip()
     if body_stripped.startswith(f"# {title}"):
-        return f"---\n{fm_yaml}---\n\n{body_stripped}\n"
-    return f"---\n{fm_yaml}---\n\n# {title}\n\n{body_stripped}\n" if body_stripped else f"---\n{fm_yaml}---\n\n# {title}\n\n"
+        rendered_body = body_stripped
+    elif body_stripped:
+        rendered_body = f"# {title}\n\n{body_stripped}"
+    else:
+        rendered_body = f"# {title}"
+
+    # Fingerprint is authoritative: set after kwargs so it can't be clobbered,
+    # and computed from the rendered body (the on-disk truth).
+    fingerprint = compute_fingerprint(rendered_body)
+    fm["fingerprint"] = fingerprint
+
+    fm_yaml = yaml.dump(fm, default_flow_style=False, sort_keys=False)
+    content = f"---\n{fm_yaml}---\n\n{rendered_body}\n"
+    return content, fingerprint
 
 
 def create_artifact(
@@ -849,9 +947,7 @@ def create_artifact(
         if existing_id == new_id:
             return {"ok": False, "error": f"Artifact ID '{new_id}' already exists in {rel_dir}"}
 
-    fingerprint = compute_fingerprint(body)
-
-    content = _render_artifact_file(
+    content, fingerprint = _render_artifact_file(
         artifact_id=new_id,
         title=title,
         artifact_type=artifact_type,
@@ -861,7 +957,6 @@ def create_artifact(
         tags=tags,
         links=links,
         body=body,
-        fingerprint=fingerprint,
         **kwargs,
     )
 
@@ -963,11 +1058,13 @@ def update_artifact(
 def rebuild_index(root: Path, artifact_type: str | None = None) -> dict[str, Any]:
     specflow_dir = root / "_specflow"
     if not specflow_dir.exists():
-        return {"rebuilt": 0}
+        return {"rebuilt": 0, "repaired": 0, "quarantined": 0}
 
     _load_active_packs(root)
     types_to_rebuild = [artifact_type] if artifact_type else list(TYPE_TO_DIR.keys())
     total_rebuilt = 0
+    total_repaired = 0
+    total_quarantined = 0
 
     for atype in types_to_rebuild:
         rel_dir = TYPE_TO_DIR.get(atype)
@@ -998,20 +1095,49 @@ def rebuild_index(root: Path, artifact_type: str | None = None) -> dict[str, Any
                 if num > max_num:
                     max_num = num
 
+            # Correct-by-definition: the fingerprint IS the body hash. When the
+            # parsed frontmatter carries an empty/missing fingerprint — or the
+            # exact empty-body hash signature (_EMPTY_BODY_FINGERPRINT, a
+            # pre-v1.13 bug's tell-tale for non-empty bodies like DEC-059) — but
+            # the body is non-empty, recompute it rather than propagating the
+            # gap. This is the root-cause repair for the auto-generated
+            # artifacts whose creation path predated the frontmatter write
+            # (AUD-022..045, DEC-043..056, and peer UT/IT/QT/STORY artifacts) and
+            # any future drift of the same shape. The value is persisted back
+            # into the .md frontmatter (not just the index) so drift/suspect
+            # detection reads the correct value and the repair is idempotent
+            # across rebuilds. Any OTHER present-but-wrong value is left in place
+            # for suspect detection — see the _EMPTY_BODY_FINGERPRINT doctrine.
+            fingerprint = art.fingerprint
+            if art.body.strip() and (not fingerprint or fingerprint == _EMPTY_BODY_FINGERPRINT):
+                fingerprint = compute_fingerprint(art.body)
+                art.frontmatter["fingerprint"] = fingerprint
+                _rewrite_frontmatter(md_file, art.frontmatter, art.body)
+                logger.warning(
+                    "rebuild_index: %s repaired empty fingerprint for %s -> %s",
+                    atype, art.id, fingerprint,
+                )
+                total_repaired += 1
+
             artifacts_data[art.id] = {
                 "id": art.id,
                 "title": art.title,
                 "status": art.status,
                 "tags": art.tags,
-                "fingerprint": art.fingerprint,
+                "fingerprint": fingerprint,
                 "children": [],
             }
 
-        dropped = set(old_artifacts.keys()) - set(artifacts_data.keys())
-        if dropped:
+        # Fileless index entries (in the old index but no .md on disk) are
+        # quarantined rather than dropped into the void: their last-known entry
+        # is preserved in _index.quarantine.yaml with a timestamp. Never delete
+        # data; append idempotently.
+        fileless = set(old_artifacts.keys()) - set(artifacts_data.keys())
+        if fileless:
+            total_quarantined += _quarantine_entries(target_dir, old_artifacts, fileless)
             logger.warning(
-                "rebuild_index: %s dropped %d artifact(s) from index: %s",
-                atype, len(dropped), ", ".join(sorted(dropped)),
+                "rebuild_index: %s dropped %d fileless artifact(s) from index (quarantined): %s",
+                atype, len(fileless), ", ".join(sorted(fileless)),
             )
 
         for art_id, new_entry in artifacts_data.items():
@@ -1029,4 +1155,8 @@ def rebuild_index(root: Path, artifact_type: str | None = None) -> dict[str, Any
         _write_index(index_path, index_data)
         total_rebuilt += len(artifacts_data)
 
-    return {"rebuilt": total_rebuilt}
+    return {
+        "rebuilt": total_rebuilt,
+        "repaired": total_repaired,
+        "quarantined": total_quarantined,
+    }

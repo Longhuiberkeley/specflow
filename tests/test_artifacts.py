@@ -611,7 +611,11 @@ class TestRebuildIndexSafety:
         assert art_id in caplog.text
         assert "dropped" in caplog.text
 
-    def test_warns_on_erased_fingerprint(self, tmp_path: Path, caplog):
+    def test_warns_and_repairs_empty_fingerprint(self, tmp_path: Path, caplog):
+        # When the frontmatter fingerprint is empty but the body is non-empty,
+        # rebuild recomputes it (correct-by-definition — the fingerprint IS the
+        # body hash) and warns naming the repaired ID. The pre-v1.13 behavior
+        # propagated the empty fingerprint and only warned about "erased".
         import logging
         root = _scaffold_full_project(tmp_path)
         result = art_lib.create_artifact(root, "requirement", title="Has FP", body="body")
@@ -626,5 +630,7 @@ class TestRebuildIndexSafety:
         with caplog.at_level(logging.WARNING):
             art_lib.rebuild_index(root)
 
-        assert "fingerprint erased" in caplog.text
+        assert "repaired" in caplog.text
         assert art_id in caplog.text
+        index = art_lib._read_index(root / "_specflow" / "specs" / "requirements" / "_index.yaml")
+        assert index["artifacts"][art_id]["fingerprint"] == original_fp
