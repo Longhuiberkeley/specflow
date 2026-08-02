@@ -5,7 +5,6 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from specflow.commands import create as create_cmd
 from specflow.lib import artifacts as art_lib
 from specflow.lib import defects as defects_lib
 from specflow.lib.display import RED, GREEN, YELLOW, NC
@@ -35,6 +34,31 @@ def run(root: Path, args: dict) -> int:
     except ValueError as exc:
         print(f"{RED}✗ {exc}{NC}")
         return 1
+
+    # Validate a --set links= payload the same way as an explicit --links flag,
+    # so malformed entries fail loudly here instead of being written raw by
+    # update_artifact. Remember whether --set supplied links for the conflict
+    # guard below (--set links= is a full-replace form, like --links).
+    set_provided_links = "links" in updates
+    if set_provided_links:
+        raw_links = updates["links"]
+        if isinstance(raw_links, str):
+            try:
+                updates["links"] = art_lib.parse_and_validate_links(raw_links)
+            except ValueError as exc:
+                print(f"{RED}✗ --set links: {exc}{NC}")
+                return 1
+        elif isinstance(raw_links, list):
+            try:
+                updates["links"] = art_lib.validate_link_entries(raw_links)
+            except ValueError:
+                print(f'{RED}✗ --set links must be a JSON array of '
+                      f'{{"target","role"}} objects{NC}')
+                return 1
+        else:
+            print(f'{RED}✗ --set links must be a JSON array of '
+                  f'{{"target","role"}} objects{NC}')
+            return 1
 
     status = args.get("status")
     if status:
@@ -66,63 +90,63 @@ def run(root: Path, args: dict) -> int:
     has_output_files_update = output_files_str is not None
 
     # ── Link management (A1) ──────────────────────────────────────────
-    # --links replaces the whole list; --add-link/--remove-link mutate the
-    # existing list in place. Combining --links with the mutators is ambiguous,
-    # so we reject it up front rather than guessing an order of operations.
+    # --links / --set links= replace the whole list; --add-link/--remove-link
+    # mutate the existing list in place. Combining a replace form with a
+    # mutator is ambiguous, so we reject it up front rather than guessing an
+    # order of operations.
     links_replace = args.get("links")
     add_links_raw = args.get("add_link") or []
     remove_links_raw = args.get("remove_link") or []
 
-    if links_replace is not None and (add_links_raw or remove_links_raw):
-        print(f"{RED}✗ --links cannot be combined with --add-link/--remove-link "
-              f"(ambiguous: full replace vs. mutate). Use one or the other.{NC}")
+    if (links_replace is not None or set_provided_links) and (add_links_raw or remove_links_raw):
+        print(f"{RED}✗ --links/--set links= cannot be combined with "
+              f"--add-link/--remove-link (ambiguous: full replace vs. mutate). "
+              f"Use one or the other.{NC}")
         return 1
 
     if links_replace is not None:
         try:
-            parsed_links = create_cmd._parse_links(links_replace)
+            parsed_links = art_lib.parse_and_validate_links(links_replace)
         except ValueError as exc:
             print(f"{RED}✗ --links: {exc}{NC}")
             return 1
         for entry in parsed_links:
-            if not isinstance(entry, dict) or not entry.get("target") or not entry.get("role"):
-                print(f"{RED}✗ Each link needs both a target and a role. "
-                      f"Use TARGET:ROLE pairs or a JSON array of "
-                      f'{{"target","role"}} objects.{NC}')
-                return 1
             _warn_if_target_missing(root, entry["target"])
         updates["links"] = parsed_links
     elif add_links_raw or remove_links_raw:
-        existing_links = _load_existing_links(root, artifact_id)
+        original_links = _load_existing_links(root, artifact_id)
+        new_links = [lk for lk in original_links]
         # Remove first (idempotent: a missing target is a clean no-op).
         if remove_links_raw:
             remove_set = {t.strip() for t in remove_links_raw if t.strip()}
-            existing_links = [
-                lk for lk in existing_links if lk["target"] not in remove_set
-            ]
+            new_links = [lk for lk in new_links if lk["target"] not in remove_set]
         # Then append, deduplicating on (target, role).
         if add_links_raw:
-            seen = {(lk["target"], lk["role"]) for lk in existing_links}
+            seen = {(lk["target"], lk["role"]) for lk in new_links}
             for raw in add_links_raw:
                 try:
-                    parsed_entries = create_cmd._parse_links(raw)
+                    parsed_entries = art_lib.parse_and_validate_links(raw)
                 except ValueError:
                     print(f"{RED}✗ --add-link expects TARGET:ROLE "
                           f"(got '{raw}').{NC}")
                     return 1
                 for entry in parsed_entries:
-                    if not isinstance(entry, dict) or not entry.get("target") or not entry.get("role"):
-                        print(f"{RED}✗ --add-link expects TARGET:ROLE "
-                              f"(got '{raw}').{NC}")
-                        return 1
                     key = (entry["target"], entry["role"])
                     if key not in seen:
                         _warn_if_target_missing(root, entry["target"])
-                        existing_links.append(
+                        new_links.append(
                             {"target": entry["target"], "role": entry["role"]}
                         )
                         seen.add(key)
-        updates["links"] = existing_links
+        # A no-op mutation (nothing actually added or removed) must not rewrite
+        # the file or report "Updated" — that misleads scripts and needlessly
+        # bumps `modified`. Only stage the links when they genuinely changed;
+        # if links were the only intent, say so and stop without writing.
+        if new_links != original_links:
+            updates["links"] = new_links
+        elif not updates and not has_output_files_update:
+            print(f"{GREEN}✓ No link changes to apply to {artifact_id}.{NC}")
+            return 0
 
     thinking_techniques_str = args.get("thinking_techniques")
     if thinking_techniques_str:

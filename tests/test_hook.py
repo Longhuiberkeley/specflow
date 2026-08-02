@@ -81,3 +81,43 @@ def test_pre_commit_still_blocks_on_broken_links(tmp_path, monkeypatch, capsys):
 
     rc = hook_cmd._pre_commit(root)
     assert rc == 1
+
+
+def test_pre_commit_advisory_surfaces_warning_only_findings(tmp_path, monkeypatch, capsys):
+    # T2.6: artifact-lint exits 0 for warning-only output (the common cascade
+    # case, e.g. "STORY verified but its REQ still approved"). The advisory
+    # must surface that warning, not stay silent just because returncode == 0.
+    root = tmp_path / "repo"
+    (root / ".git").mkdir(parents=True)
+    (root / "_specflow").mkdir()
+
+    change = {
+        "path": "_specflow/work/stories/STORY-001.md",
+        "old_status": "draft",
+        "new_status": "approved",
+    }
+    monkeypatch.setattr(hook_cmd.rbac_lib, "staged_artifact_changes", lambda r: [change])
+    monkeypatch.setattr(hook_cmd.rbac_lib, "current_git_author_email", lambda r: "a@b.com")
+    monkeypatch.setattr(hook_cmd.rbac_lib, "authorize_status_transition", lambda *a, **k: (True, ""))
+    monkeypatch.setattr(hook_cmd.rbac_lib, "check_independence", lambda *a, **k: (True, ""))
+
+    def fake_run(cmd, **kw):
+        check_type = cmd[cmd.index("--type") + 1] if "--type" in cmd else None
+        if check_type == "status-cascade":
+            # returncode 0 (warning-only) BUT stdout carries findings — exactly
+            # the case that was silently dropped before the fix.
+            return _completed(
+                0,
+                "STORY-001 verified but REQ-001 still approved\n"
+                "  Result: PASS (1 warnings)",
+            )
+        return _completed(0)  # links, schema, story-linkage, status all clean
+
+    monkeypatch.setattr(hook_cmd.subprocess, "run", fake_run)
+
+    rc = hook_cmd._pre_commit(root)
+    out = capsys.readouterr().out
+    assert rc == 0
+    # The warning-only finding is now surfaced (was silent before T2.6).
+    assert "status-cascade" in out
+    assert "REQ-001" in out

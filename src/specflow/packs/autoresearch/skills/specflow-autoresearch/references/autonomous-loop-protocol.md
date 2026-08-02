@@ -84,13 +84,13 @@ If the COMP artifact defines a `pre_check_command`, run it **before** entering t
 **Rules:**
 
 - Pre-check runs **after** Phase 3 (Modify) and **before** Phase 5 (Verify), on every iteration
-- If pre-check fails, do NOT run verify — log as `status: pre_check_failed` and proceed to next iteration
+- If pre-check fails, do NOT run verify — log as `status: discarded` with `failure_stage: pre_check` and proceed to next iteration
 - Pre-check failures are themselves learning signals — populate `failure_analysis` with the root cause
 - If no `pre_check_command` is defined on the COMP, skip this static phase entirely — but Phase 0.6 (mandatory EDA) still applies.
 
 ## Phase 0.6: Mandatory Initial EDA (before first iteration)
 
-**This phase runs ONCE at loop start.** It provides a data-quality foundation for ALL subsequent iterations. Unlike Phase 0.5 (which is per-iteration and COMP-specific), this is a universal baseline that every domain needs. This phase implements BP-01 (EDA Before Modeling) from the [ML Methodology Handbook](methodology-handbook.md) — the handbook provides the rationale and anti-patterns; this phase provides the enforcement mechanism.
+**This phase runs ONCE at loop start.** It provides a data-quality foundation for ALL subsequent iterations. Unlike Phase 0.5 (which is per-iteration and COMP-specific), this is a universal baseline that every domain needs. This phase implements ML-01 (EDA Before Modeling) from the [ML Methodology Handbook](methodology-handbook.md) — the handbook provides the rationale and anti-patterns; this phase provides the enforcement mechanism.
 
 **You MUST complete ALL checks.** Fatal problems cause an immediate hard stop — do not enter the iteration loop. Non-fatal findings are recorded on the LOOP for reference.
 
@@ -102,8 +102,8 @@ If the COMP artifact defines a `pre_check_command`, run it **before** entering t
 | 2 | **Missingness pattern** | % missing per feature, MNAR vs MCAR | >50% of features have >30% missing |
 | 3 | **Cardinality** | Unique values per categorical, constant columns | All features are constant (no signal) |
 | 4 | **Scale and range** | Min/max/mean/std per numeric feature | Features differ by >1e6 in scale without normalization path |
-| 5 | **Dimensionality** | n_features vs n_samples ratio; multicollinearity (pairwise correlation / VIF) — see BP-14 | n_features > n_samples with no regularization or reduction plan |
-| 6 | **Train/test distribution** | Adversarial-validation AUC of a train-vs-test classifier — see BP-11 | Not fatal; AUC → 1.0 means CV is untrustworthy (shift/leak) — record it and treat CV scores with suspicion |
+| 5 | **Dimensionality** | n_features vs n_samples ratio; multicollinearity (pairwise correlation / VIF) — see ML-14 | n_features > n_samples with no regularization or reduction plan |
+| 6 | **Train/test distribution** | Adversarial-validation AUC of a train-vs-test classifier — see ML-11 | Not fatal; AUC → 1.0 means CV is untrustworthy (shift/leak) — record it and treat CV scores with suspicion |
 
 ### Domain-Specific Checks
 
@@ -114,7 +114,7 @@ If the COMP artifact defines a `pre_check_command`, run it **before** entering t
 | **vision** | Image dimension consistency, corrupt file detection, label quality (random sample manual check) |
 | **nlp** | Text length distribution, language detection, encoding consistency, token count outliers |
 
-These checks operationalize **BP-01** (EDA), **BP-10/11/12** (validation integrity), and **BP-14** (dimensionality) from the handbook — read those BPs for rationale and fixes when a check fires.
+These checks operationalize **ML-01** (EDA), **ML-10/11/12** (validation integrity), and **ML-14** (dimensionality) from the handbook — read those BPs for rationale and fixes when a check fires.
 
 ### EDA Workflow
 
@@ -135,7 +135,7 @@ These checks operationalize **BP-01** (EDA), **BP-10/11/12** (validation integri
 
 If a prior LOOP on the same COMP has `eda_completed: true` AND the data has not changed (same COMP `data_source`, same git hash of data files), skip this phase. The prior LOOP's `eda_summary` is valid. If data has changed, re-run EDA — stale data quality assumptions are dangerous.
 
-**Quick / smoke tier (LOOP `budget` ≤ 5).** When the LOOP budget is ≤ 5 (a "kick the tires" sanity check, not a real exploration), defer full EDA to the first fatal signal: run only check #1 (target distribution) and check #4 (scale/range) now, and defer the rest until a verify failure or anomaly forces them. The agent MUST announce *"quick mode: skipping full EDA — rerun without it before trusting results."* At budget > 5 the full EDA above is mandatory (BP-01).
+**Quick / smoke tier (LOOP `budget` ≤ 5).** When the LOOP budget is ≤ 5 (a "kick the tires" sanity check, not a real exploration), defer full EDA to the first fatal signal: run only check #1 (target distribution) and check #4 (scale/range) now, and defer the rest until a verify failure or anomaly forces them. The agent MUST announce *"quick mode: skipping full EDA — rerun without it before trusting results."* At budget > 5 the full EDA above is mandatory (ML-01).
 
 **Logging pre-check results (Phase 0.5):**
 
@@ -266,7 +266,7 @@ IF LOOP.iteration_count >= LOOP.budget:
 
 ## Phase 2: Ideate (Strategic)
 
-This is the **research** half of autoresearch — not metric hill-climbing. Before picking a change, form a hypothesis driven by what the project is actually trying to achieve. Consult the [ML Methodology Handbook](methodology-handbook.md) for best practices relevant to your ideation direction — pull the group that matches the change you're considering: **validation integrity (BP-10–12)** before trusting any score, **statistical traps (BP-13–16)** when a result looks too good or you've tried many variants, **optimize-the-objective (BP-17–19)** when tuning toward the metric, and **finishing moves (BP-20–22)** only once a single strong model exists. Respect the **transfer filter** at the top of the handbook: never import a leaderboard-gaming tactic that raises the metric without raising the goal.
+This is the **research** half of autoresearch — not metric hill-climbing. Before picking a change, form a hypothesis driven by what the project is actually trying to achieve. Consult the [ML Methodology Handbook](methodology-handbook.md) for best practices relevant to your ideation direction — pull the group that matches the change you're considering: **validation integrity (ML-10–12)** before trusting any score, **statistical traps (ML-13–16)** when a result looks too good or you've tried many variants, **optimize-the-objective (ML-17–19)** when tuning toward the metric, and **finishing moves (ML-20–22)** only once a single strong model exists. Respect the **transfer filter** at the top of the handbook: never import a leaderboard-gaming tactic that raises the metric without raising the goal.
 
 **Protocol gates in this phase:** Phase 2a includes a highest-impact forcing question. Phase 2c includes a category diversity gate. Phase 2d includes an idea diversity check. These are protocol gates — you (the agent) enforce them by following this protocol. The CLI prints the protocol and offers deterministic detection where a lint supports it, but it does not hard-block your iterations. The research agenda from Phase 0.7 is the reference for all gates.
 
@@ -297,7 +297,7 @@ A good hypothesis is falsifiable in principle and tied to a goal — not "try le
 
 Every ~10 iterations (and at each condense point), pause and ask: **does the primary metric still reflect `COMP.goals`?** If the agent is gaming the metric without serving the goal (e.g. Sharpe climbing on 3 curve-fit trades, accuracy rising while calibration rots), that is itself a finding — log it and adjust: add an auxiliary metric, tighten `success_criteria`, or switch `objective_type`. A metric that has drifted from intent is worse than no metric.
 
-**Multi-output / vector targets (BP-19).** When the goal is a vector `[x, y, z]` or the primary metric is an aggregate over components, the single scalar can rise while a component regresses (Simpson's paradox, BP-16). Record each component as its own auxiliary metric using the convention `component_<name>` and check **every** component, not just the aggregate:
+**Multi-output / vector targets (ML-19).** When the goal is a vector `[x, y, z]` or the primary metric is an aggregate over components, the single scalar can rise while a component regresses (Simpson's paradox, ML-16). Record each component as its own auxiliary metric using the convention `component_<name>` and check **every** component, not just the aggregate:
 
 ```bash
 specflow update EXPT-NNNNN \
@@ -805,7 +805,7 @@ Field mapping from iteration data:
 |---------------|------------|
 | Git commit hash | `commit` (optional) |
 | Metric number | `metric_value` (required) |
-| Kept/discarded/crashed/no_op/pre_check_failed | `status` (required, terminal) |
+| Kept/discarded/crashed/no_op | `status` (required, terminal); pre-check failure uses `discarded` + `failure_stage: pre_check` |
 | What was changed | `summary` (required) |
 | Category of change | `change_category` (required) |
 | Goal-driven hypothesis tested (Phase 2a) | `hypothesis` (optional, text) |
@@ -892,7 +892,7 @@ The agent decides what "diversity" means per domain. In quant: correlation betwe
 
 ### Logging Failure Analysis
 
-When `status` is `discarded`, `crashed`, or `pre_check_failed`, populate `failure_analysis` with a one-sentence root cause before creating the EXPT artifact:
+When `status` is `discarded` or `crashed` (including a discard with `failure_stage: pre_check`), populate `failure_analysis` with a one-sentence root cause before creating the EXPT artifact:
 
 ```yaml
 failure_analysis: "Kalman Q=0.0001 caused over-aggressive reversion; 12 whipsaw trades in 3 days"

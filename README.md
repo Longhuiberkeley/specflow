@@ -197,7 +197,7 @@ The framework also **adapts artifact guidance to your domain**: `specflow domain
 
 - **Recognized, not counted as code.** Docs are pulled *out* of the orphan-code scan, so coverage metrics reflect real code rather than prose. `specflow brief` shows a Docs surface block.
 - **Citable both ways.** A doc cites a spec with an inline `@ID` marker (`@ARCH-007`, `@DEC-018`); `specflow rebuild-index` builds the reverse index (artifact → citing docs).
-- **Staleness is accounting, not policing.** `specflow detect stale-docs` and `/specflow-audit` warn when a doc cites a superseded/cancelled/deprecated artifact. Warnings never block a commit or fail an audit.
+- **Staleness is accounting, not policing.** `specflow detect stale-docs` and `/specflow-audit` warn when a doc cites a superseded/cancelled/deprecated artifact. Staleness warnings never block a commit and never escalate an audit exit code (structural signals like coverage gaps do escalate; see BP-006).
 
 Use `/specflow-doc` to author, cite, sync the docs index, and check staleness.
 

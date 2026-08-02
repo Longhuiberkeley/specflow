@@ -132,4 +132,12 @@ artifacts:
     tags: []
     title: "Integration Test for STORY-067: End-to-End COMP\u2192LOOP\u2192EXPT\u2192\
       FIND Trace Chain"
-next_id: 25
+  IT-025:
+    fingerprint: sha256:e66ee07e82dd
+    id: IT-025
+    status: verified
+    tags:
+    - autoresearch
+    - v1.12.5
+    title: Autoresearch accounting and pack refresh integration
+next_id: 24

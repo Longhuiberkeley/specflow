@@ -59,7 +59,7 @@ During Phase 0.7, the agent:
 - [ ] Execution: Can the signals actually be implemented given latency and infrastructure constraints?
 
 ### Common Traps
-- [ ] **Data snooping from multiple hypothesis testing:** Testing 50 strategies on the same data → at least one will look good by luck. Confirm top results on a fresh seed or held-out slice (BP-13).
+- [ ] **Data snooping from multiple hypothesis testing:** Testing 50 strategies on the same data → at least one will look good by luck. Confirm top results on a fresh seed or held-out slice (ML-13).
 - [ ] **Regime-dependent backtesting:** A strategy that works in a low-vol regime may blow up in high-vol. Walk-forward across regime boundaries, not just calendar time.
 - [ ] **Ignoring transaction costs in early stages:** "Promising" strategies that trade frequently may be net-negative after slippage and fees. Model costs from the start.
 - [ ] **Overfitting to recent data:** The last 6 months of data is the most "interesting" but also the smallest sample. Don't overweight it.
@@ -105,9 +105,9 @@ During Phase 0.7, the agent:
 
 ### Common Traps
 - [ ] **Target leakage through temporal features:** Features that encode future information (e.g., "days since last purchase" computed on the full dataset instead of train-only). Audit every feature's computation window.
-- [ ] **CV score inflation from non-temporal splits:** Random splits on time-series data give inflated scores. Always use temporal splits if the data has a time dimension (BP-04).
-- [ ] **High-cardinality overfitting:** Target encoding without OOF (BP-12) or high-cardinality categoricals with few samples per category. Check cardinality vs sample count.
-- [ ] **Winner's curse in model selection:** Best of N cross-validated models is upward-biased. Confirm the winning model on a truly held-out set (BP-13).
+- [ ] **CV score inflation from non-temporal splits:** Random splits on time-series data give inflated scores. Always use temporal splits if the data has a time dimension (ML-04).
+- [ ] **High-cardinality overfitting:** Target encoding without OOF (ML-12) or high-cardinality categoricals with few samples per category. Check cardinality vs sample count.
+- [ ] **Winner's curse in model selection:** Best of N cross-validated models is upward-biased. Confirm the winning model on a truly held-out set (ML-13).
 
 ---
 

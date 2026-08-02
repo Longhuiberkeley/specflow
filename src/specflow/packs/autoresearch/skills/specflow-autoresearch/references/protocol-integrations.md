@@ -122,12 +122,12 @@ The promotion is the explicit "research outgrew a one-off answer" trigger from t
 
 | BP | Enforced by | Protocol file |
 |----|------------|---------------|
-| BP-01 (EDA Before Modeling) | Phase 0.6 (mandatory) | `autonomous-loop-protocol.md` |
-| BP-02 (Strong Baseline First) | Phase 0.7 (mandatory — baseline must be in research agenda top-2) | `autonomous-loop-protocol.md` |
-| BP-02..BP-09 (advisory) | Phase 2 (consulted during ideation) | `autonomous-loop-protocol.md` |
-| BP-05 (Feature Engineering Over Architecture) | Phase 2c diversity gate (gated — `features` must be explored before heavy `model`/`params`) | `autonomous-loop-protocol.md` |
-| BP-07 (Advanced Techniques Late) | Phase 0.7 research agenda (gated — advanced techniques must not be top-3 without strong base) | `autonomous-loop-protocol.md` |
-| BP-08 (Characterize Noise) | COMP setup noise probe, Phase 5 noise strategy | `noise-handling-protocol.md`, `competition-setup-protocol.md` |
+| ML-01 (EDA Before Modeling) | Phase 0.6 (mandatory) | `autonomous-loop-protocol.md` |
+| ML-02 (Strong Baseline First) | Phase 0.7 (mandatory — baseline must be in research agenda top-2) | `autonomous-loop-protocol.md` |
+| ML-02..ML-09 (advisory) | Phase 2 (consulted during ideation) | `autonomous-loop-protocol.md` |
+| ML-05 (Feature Engineering Over Architecture) | Phase 2c diversity gate (gated — `features` must be explored before heavy `model`/`params`) | `autonomous-loop-protocol.md` |
+| ML-07 (Advanced Techniques Late) | Phase 0.7 research agenda (gated — advanced techniques must not be top-3 without strong base) | `autonomous-loop-protocol.md` |
+| ML-08 (Characterize Noise) | COMP setup noise probe, Phase 5 noise strategy | `noise-handling-protocol.md`, `competition-setup-protocol.md` |
 
 ## Skill-to-Protocol Mapping
 

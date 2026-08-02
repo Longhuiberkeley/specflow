@@ -1,8 +1,8 @@
 # ML Methodology Handbook
 
-Best practices for ML/experimental work. BP-01 and BP-02 are mandatory (enforced by the agent via the loop protocol). BP-05 and BP-07 are gated (enforced by the agent at the Phase 2c diversity gate and research agenda alignment). BP-03, BP-04, BP-06, BP-08, BP-09 are advisory but strongly recommended.
+Best practices for ML/experimental work. ML-01 and ML-02 are mandatory (enforced by the agent via the loop protocol). ML-05 and ML-07 are gated (enforced by the agent at the Phase 2c diversity gate and research agenda alignment). ML-03, ML-04, ML-06, ML-08, ML-09 are advisory but strongly recommended.
 
-These are grouped: **BP-01–09** (foundations), **BP-10–12** (validation integrity), **BP-13–16** (statistical traps), **BP-17–19** (optimize the real objective), **BP-20–22** (finishing moves), plus a **Bias Catalog**. Phase 2 ideation should pull the groups relevant to the current hypothesis — they are meant to be consulted live, not read once.
+These are grouped: **ML-01–09** (foundations), **ML-10–12** (validation integrity), **ML-13–16** (statistical traps), **ML-17–19** (optimize the real objective), **ML-20–22** (finishing moves), plus a **Bias Catalog**. Phase 2 ideation should pull the groups relevant to the current hypothesis — they are meant to be consulted live, not read once.
 
 ## Goal: Generalization, Not the Leaderboard
 
@@ -10,11 +10,11 @@ A COMP's `verify_command` is a *proxy* for a real-world goal (live trading P&L, 
 
 | Transfers to deployed research (keep) | Leaderboard-gaming (avoid here) |
 |---|---|
-| Robust CV matched to data structure (BP-04) | Probing / overfitting a public leaderboard |
-| Leakage hygiene (BP-10, BP-12) | Exploiting unintended data leaks in the eval set |
-| Adversarial validation (BP-11) | Post-processing tuned to one specific test split |
-| Feature engineering, calibration (BP-05, BP-18) | Ensembles too heavy/slow to run live |
-| Ensembling diverse models, seed averaging (BP-20, BP-21) | Any move that raises the metric but not the goal |
+| Robust CV matched to data structure (ML-04) | Probing / overfitting a public leaderboard |
+| Leakage hygiene (ML-10, ML-12) | Exploiting unintended data leaks in the eval set |
+| Adversarial validation (ML-11) | Post-processing tuned to one specific test split |
+| Feature engineering, calibration (ML-05, ML-18) | Ensembles too heavy/slow to run live |
+| Ensembling diverse models, seed averaging (ML-20, ML-21) | Any move that raises the metric but not the goal |
 
 **Rule:** if a tactic would raise `metric_value` without raising the underlying goal, it is metric-gaming (premise-check 2d), not progress. Importing leaderboard tricks blindly *increases* the overfitting this pack exists to prevent.
 
@@ -31,7 +31,7 @@ Each practice lists `applies_to` domains. Only apply practices tagged for your `
 
 ---
 
-## BP-01: EDA Before Modeling [MANDATORY]
+## ML-01: EDA Before Modeling [MANDATORY]
 
 **applies_to:** all
 **enforcement:** Mandatory. Enforced by Phase 0.6 of `autonomous-loop-protocol.md`. A COMP that skips EDA runs blind — the LOOP is stopped before the first iteration.
@@ -40,7 +40,7 @@ Understand your data before touching a model. Distribution shapes, missingness p
 
 **Anti-pattern:** Jumping to a neural net on day one without checking if the target has 95% class imbalance.
 
-## BP-02: Strong Baseline First [MANDATORY]
+## ML-02: Strong Baseline First [MANDATORY]
 
 **applies_to:** all
 **enforcement:** Mandatory. Enforced by Phase 0.7 (First-Principles Decomposition). The research agenda MUST include "establish baseline" as a top-priority direction if no baseline exists. The agent may NOT skip to sophisticated approaches until the simplest reasonable baseline has been tested and its metric recorded.
@@ -49,7 +49,7 @@ Implement the simplest reasonable baseline before anything fancy. Buy-and-hold (
 
 **Anti-pattern:** Training a transformer for 3 days before checking that logistic regression gets 94% accuracy.
 
-## BP-03: Trust Your CV, Not the Leaderboard
+## ML-03: Trust Your CV, Not the Leaderboard
 
 **applies_to:** all
 
@@ -57,7 +57,7 @@ Your cross-validation score is your honest signal. Public leaderboard is a small
 
 **Anti-pattern:** Chasing leaderboard score improvements that fall outside your CV error bars.
 
-## BP-04: Match CV Scheme to Data Structure
+## ML-04: Match CV Scheme to Data Structure
 
 **applies_to:** `quant`, `tabular_ml`
 
@@ -65,7 +65,7 @@ Time-series data needs walk-forward or embargoed splits, not k-fold. Group-struc
 
 **Anti-pattern:** Using StratifiedKFold on stock returns with temporal autocorrelation.
 
-## BP-05: Feature Engineering Over Architecture [GATED]
+## ML-05: Feature Engineering Over Architecture [GATED]
 
 **applies_to:** `tabular_ml`, `quant`
 **enforcement:** Gated by Phase 2c diversity gate. If the category_coverage shows `model` or `params` has significantly more EXPTs than `features`, the diversity gate forces the agent to try feature engineering before more model/params iterations. The research agenda must rank feature engineering direction above model architecture direction unless prior FINDs show features are exhausted.
@@ -74,7 +74,7 @@ On tabular data, handcrafted features with domain knowledge dominate architectur
 
 **Anti-pattern:** Trying 15 neural architectures before encoding basic domain signals (e.g., rolling z-scores, interaction terms).
 
-## BP-06: Model Family by Modality
+## ML-06: Model Family by Modality
 
 **applies_to:** all
 
@@ -87,7 +87,7 @@ Deviating is fine but justify it. Don't use a transformer on tabular data becaus
 
 **Anti-pattern:** Using BERT to encode a 50-column numeric dataset.
 
-## BP-07: Advanced Techniques Late [GATED]
+## ML-07: Advanced Techniques Late [GATED]
 
 **applies_to:** all
 **enforcement:** Gated by Phase 0.7 research agenda. Ensembling, stacking, pseudo-labeling, and TTA must NOT appear in the top-3 research agenda directions unless the agent can articulate why a single strong model already exists. The research agenda's ranking must reflect: fundamentals → feature engineering → modeling → advanced techniques. If the agent attempts advanced techniques without evidence of a strong base model, Phase 2d (premise check) should flag it as premature optimization.
@@ -96,7 +96,7 @@ Ensembling, stacking, pseudo-labeling, and TTA are finishing moves, not opening 
 
 **Anti-pattern:** Building a 5-model ensemble when no individual model beats baseline.
 
-## BP-08: Characterize Noise Before Trusting a Delta
+## ML-08: Characterize Noise Before Trusting a Delta
 
 **applies_to:** all
 
@@ -104,7 +104,7 @@ Run your verify command 3-5 times with different seeds. If the standard deviatio
 
 **Anti-pattern:** Declaring victory on a 0.2% improvement when run-to-run variance is 0.5%.
 
-## BP-09: Never Tune on the Test Split
+## ML-09: Never Tune on the Test Split
 
 **applies_to:** all
 
@@ -114,11 +114,11 @@ The test set is a one-time honesty check. Any decision informed by test performa
 
 ---
 
-# Validation Integrity (BP-10–12)
+# Validation Integrity (ML-10–12)
 
 The single largest source of results that look great offline and collapse live. If validation is wrong, every downstream BP is wasted.
 
-## BP-10: Split First, Preprocess Second
+## ML-10: Split First, Preprocess Second
 
 **applies_to:** all
 
@@ -126,7 +126,7 @@ Fit *every* transform — scaler, imputer, target encoder, resampling (SMOTE), o
 
 **Anti-pattern:** `StandardScaler().fit(X)` or `SMOTE().fit_resample(X, y)` before splitting.
 
-## BP-11: Adversarial Validation
+## ML-11: Adversarial Validation
 
 **applies_to:** all
 
@@ -134,7 +134,7 @@ Train a binary classifier to distinguish train rows from test/holdout rows (labe
 
 **Anti-pattern:** Trusting a glowing CV score when the test period is a different market regime than training.
 
-## BP-12: Out-of-Fold for Any Meta-Step
+## ML-12: Out-of-Fold for Any Meta-Step
 
 **applies_to:** `tabular_ml`, `quant`
 
@@ -144,17 +144,17 @@ Target encoding, stacking inputs, and model selection must consume **out-of-fold
 
 ---
 
-# Statistical Traps (BP-13–16)
+# Statistical Traps (ML-13–16)
 
-## BP-13: Correct for Multiple Comparisons
+## ML-13: Correct for Multiple Comparisons
 
 **applies_to:** all
 
-The best of N tried things is upward-biased by roughly (noise spread × the order statistic of N) — try enough variants and one will look good by luck alone. Before declaring a LOOP's top EXPT a real win, **confirm it on a fresh seed or a held-out slice**. The more hypotheses you tested, the harder you discount a marginal winner. This is the LOOP-level counterpart to BP-08's per-EXPT noise check.
+The best of N tried things is upward-biased by roughly (noise spread × the order statistic of N) — try enough variants and one will look good by luck alone. Before declaring a LOOP's top EXPT a real win, **confirm it on a fresh seed or a held-out slice**. The more hypotheses you tested, the harder you discount a marginal winner. This is the LOOP-level counterpart to ML-08's per-EXPT noise check.
 
 **Anti-pattern:** Declaring the top of 50 EXPTs a win on a delta smaller than the run-to-run spread, with no confirmation run.
 
-## BP-14: Mind Dimensionality — Not Just at EDA
+## ML-14: Mind Dimensionality — Not Just at EDA
 
 **applies_to:** `tabular_ml`, `quant`
 
@@ -162,35 +162,35 @@ p ≫ n (more features than samples) and multicollinearity cause spurious fits, 
 
 **Anti-pattern:** Engineering 2,000 features on 800 samples and reading the top-20 importances as truth.
 
-## BP-15: Distribution Shift & Non-Stationarity
+## ML-15: Distribution Shift & Non-Stationarity
 
 **applies_to:** `quant`, `tabular_ml`
 
-Covariate shift (inputs drift) and concept drift (the input→target relationship drifts) break the assumption that train resembles serve. Quant data is rarely stationary. Pair walk-forward validation (BP-04) with adversarial validation (BP-11) to detect it, and prefer features/models robust across regimes over ones tuned to one window.
+Covariate shift (inputs drift) and concept drift (the input→target relationship drifts) break the assumption that train resembles serve. Quant data is rarely stationary. Pair walk-forward validation (ML-04) with adversarial validation (ML-11) to detect it, and prefer features/models robust across regimes over ones tuned to one window.
 
 **Anti-pattern:** Training on a low-volatility regime and deploying into a high-volatility one without re-checking.
 
-## BP-16: Simpson's Paradox & Confounding
+## ML-16: Simpson's Paradox & Confounding
 
 **applies_to:** all
 
-An effect measured in aggregate can reverse within subgroups, and a confounder can manufacture or hide a relationship. Always check key results **per segment** (per asset, per time bucket, per class), not just globally. This is the statistical root of the multi-output discipline (BP-19): a global score can move the opposite direction of its components.
+An effect measured in aggregate can reverse within subgroups, and a confounder can manufacture or hide a relationship. Always check key results **per segment** (per asset, per time bucket, per class), not just globally. This is the statistical root of the multi-output discipline (ML-19): a global score can move the opposite direction of its components.
 
 **Anti-pattern:** Concluding a feature helps because aggregate accuracy rose, when it helped one class and hurt three.
 
 ---
 
-# Optimize the Real Objective (BP-17–19)
+# Optimize the Real Objective (ML-17–19)
 
-## BP-17: Optimize the Actual Eval Metric, Then Post-Process for It
+## ML-17: Optimize the Actual Eval Metric, Then Post-Process for It
 
 **applies_to:** all
 
-Training loss is usually not the scoring metric. Optimize a surrogate that tracks the metric, then post-process for the metric itself: tune the decision threshold for F1, rank-average for AUC, calibrate for log-loss, round/clip for bounded targets. Choose all such post-processing on validation, never on test (BP-09).
+Training loss is usually not the scoring metric. Optimize a surrogate that tracks the metric, then post-process for the metric itself: tune the decision threshold for F1, rank-average for AUC, calibrate for log-loss, round/clip for bounded targets. Choose all such post-processing on validation, never on test (ML-09).
 
 **Anti-pattern:** Reporting accuracy at a 0.5 threshold when the metric is F1 and the optimal threshold is 0.2.
 
-## BP-18: Calibrate Probabilities When Decisions Depend on Them
+## ML-18: Calibrate Probabilities When Decisions Depend on Them
 
 **applies_to:** `quant`, `tabular_ml`
 
@@ -198,7 +198,7 @@ A model can rank well (good AUC) yet output badly miscalibrated probabilities. A
 
 **Anti-pattern:** Sizing positions by a model's raw softmax outputs that systematically overstate confidence.
 
-## BP-19: Decompose Multi-Output Targets
+## ML-19: Decompose Multi-Output Targets
 
 **applies_to:** all
 
@@ -208,11 +208,11 @@ When the target is a vector `[x, y, z]` (or the metric is an aggregate over comp
 
 ---
 
-# Finishing Moves (BP-20–22)
+# Finishing Moves (ML-20–22)
 
-Apply these **only after** a single strong model with good features (BP-07). They amplify signal — and mistakes.
+Apply these **only after** a single strong model with good features (ML-07). They amplify signal — and mistakes.
 
-## BP-20: Ensemble Diverse Models; Diversity Beats Individual Strength
+## ML-20: Ensemble Diverse Models; Diversity Beats Individual Strength
 
 **applies_to:** all
 
@@ -220,7 +220,7 @@ Averaging, hill-climbing, or stacking helps in proportion to how **uncorrelated*
 
 **Anti-pattern:** Averaging five LightGBM runs with the same features and expecting an ensemble lift.
 
-## BP-21: Seed Averaging / Bagging
+## ML-21: Seed Averaging / Bagging
 
 **applies_to:** all
 
@@ -228,7 +228,7 @@ Retrain the same pipeline under several random seeds and average the predictions
 
 **Anti-pattern:** Shipping a single-seed model whose result sits inside its own seed-to-seed spread.
 
-## BP-22: Pseudo-Labeling / Semi-Supervised
+## ML-22: Pseudo-Labeling / Semi-Supervised
 
 **applies_to:** `tabular_ml`, `vision`, `nlp`
 
@@ -240,12 +240,12 @@ When abundant unlabeled data exists, use a strong model to label it and fold hig
 
 # Bias Catalog
 
-Quick reference — the *tell* (how it shows up) and the *fix*. These are cross-cutting; look-ahead/data-snooping overlaps with leakage (BP-10/12) and the premise check (Phase 2d).
+Quick reference — the *tell* (how it shows up) and the *fix*. These are cross-cutting; look-ahead/data-snooping overlaps with leakage (ML-10/12) and the premise check (Phase 2d).
 
 | Bias | Tell | Fix |
 |------|------|-----|
 | **Selection bias** | Sample isn't representative of where the model will run (e.g. only liquid assets, only complete rows). | Define the target population first; sample/weight to match it. |
 | **Survivorship bias** | Dead/delisted/failed cases are missing from the data. | Use point-in-time data that includes entities as they existed then. |
-| **Look-ahead / data-snooping** | Metric improbably high; a feature uses information not available at decision time. | Strict temporal cutoffs; build features from the past only (ties to BP-10/12). |
-| **Confirmation bias (in ideation)** | Only testing variants of the hypothesis you already like; ignoring `what_failed`. | In `explore` mode deliberately test the opposite; read prior FIND `what_failed`. **Structural enforcement:** Phase 2c diversity gate blocks 3+ consecutive same-category EXPTs, preventing the agent from staying in a comfortable local optimum. Phase 2d check 4 (idea diversity) catches same-approach repetition even within a category. |
+| **Look-ahead / data-snooping** | Metric improbably high; a feature uses information not available at decision time. | Strict temporal cutoffs; build features from the past only (ties to ML-10/12). |
+| **Confirmation bias (in ideation)** | Only testing variants of the hypothesis you already like; ignoring `what_failed`. | In `explore` mode deliberately test the opposite; read prior FIND `what_failed`. **Agent-enforced protocol:** the Phase 2c diversity gate (enforced by you via the loop protocol — the CLI prints it but does not hard-block) flags 3+ consecutive same-category EXPTs, preventing the agent from staying in a comfortable local optimum. Phase 2d check 4 (idea diversity) catches same-approach repetition even within a category. |
 | **Label leakage** | A feature is a proxy for, or computed from, the target. | Audit each feature's provenance; drop anything that wouldn't exist at prediction time. |

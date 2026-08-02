@@ -4,6 +4,29 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.12.5] - 2026-08-02
+
+### Added
+
+- **Deterministic autoresearch status.** `specflow autoresearch status` reports LOOP readiness, budget, prior knowledge, EDA/agenda completeness, repeated-category exploration, and stuck streaks with exact next actions. Research-quality findings remain advisory; conflicting running LOOPs and exhausted budgets stop continuation as structural hazards.
+- **Active-pack refresh.** `specflow refresh --packs` previews and refreshes schemas, checklists, skills, and context for configured packs. Existing differing files are preserved unless `--force` is explicit, and `_specflow/` artifacts are never refresh targets.
+- **Protocol-state schemas.** LOOP and EXPT schemas now document the EDA, agenda, coverage, condensation, hypothesis, lesson, and failure-stage fields used by the autoresearch protocol.
+
+### Fixed
+
+- Pre-check failures now use the existing terminal outcome `discarded` plus `failure_stage: pre_check`, preserving the four-status EXPT contract.
+- ML handbook practices use the unambiguous `ML-01`…`ML-22` namespace instead of colliding with SpecFlow `BP-NNN` artifacts.
+- Centralized link parsing/validation across `create`, `update`, and `--set links`; malformed entries fail loudly and no-op link mutations no longer rewrite artifacts.
+- Commit-hook advisory checks now surface warning-only findings while remaining non-blocking.
+- Schema/transition rendering tolerates a scalar predecessor in hand-authored pack schemas; CLI help now includes previously hidden commands.
+- Clarified BP-006: accounting warnings stay advisory while structural audit findings may block the release gate.
+
+### Verification
+
+- 820 tests passing (baseline 813; +7, no regressions).
+- Artifact schema lint passes for all 489 artifacts.
+- Quick project audit: 0 errors; remaining warnings are pre-existing traceability/accounting debt plus release-added verification links now resolved for STORY-076/STORY-083.
+
 ## [1.12.4] - 2026-08-02
 
 This release was designed by mining ~2,300 real agent CLI invocations from

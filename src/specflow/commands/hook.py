@@ -121,7 +121,14 @@ def _pre_commit(root: Path) -> int:
             ["specflow", "artifact-lint", "--type", check_type],
             capture_output=True, text=True, cwd=str(root), check=False,
         )
-        if advisory.returncode != 0:
+        # Surface findings whether blocking OR warning-only. artifact-lint
+        # exits 0 for warning-only output, so gating on returncode alone left
+        # the common cascade signals (e.g. "STORY verified but its REQ is still
+        # approved" — a warning) silently deferred to CI instead of surfaced
+        # early as the comment above promises. A clean run prints
+        # "(all checks clean)"; anything else is worth showing.
+        out = advisory.stdout.strip()
+        if out and "all checks clean" not in out:
             print(f"{YELLOW}⚠ specflow pre-commit: {check_type} check has findings{NC}")
             print(advisory.stdout[-1500:] if len(advisory.stdout) > 1500 else advisory.stdout)
 

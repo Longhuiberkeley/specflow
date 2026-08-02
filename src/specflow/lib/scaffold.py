@@ -116,6 +116,69 @@ def copy_checklists(root: Path, template_dir: Path) -> None:
                 shutil.copy2(str(yaml_file), str(dst_file))
 
 
+def inspect_pack_refresh(
+    root: Path,
+    pack_name: str,
+    packs_dir: Path,
+    platform_codes: list[str],
+) -> dict[str, Any]:
+    """Describe managed active-pack files that differ from shipped assets."""
+    pack_root = packs_dir / pack_name
+    manifest_path = pack_root / "pack.yaml"
+    if not manifest_path.exists():
+        return {"ok": False, "error": f"Pack '{pack_name}' not found"}
+    manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8")) or {}
+    changes: list[tuple[Path, Path, str]] = []
+
+    def compare_tree(src_root: Path, dst_root: Path, kind: str) -> None:
+        if not src_root.is_dir():
+            return
+        for src in sorted(path for path in src_root.rglob("*") if path.is_file()):
+            dst = dst_root / src.relative_to(src_root)
+            if not dst.exists() or src.read_bytes() != dst.read_bytes():
+                changes.append((src, dst, kind))
+
+    compare_tree(pack_root / "schemas", root / ".specflow" / "schema", "schema")
+    compare_tree(pack_root / "checklists", root / ".specflow" / "checklists", "checklist")
+    for platform_code in platform_codes:
+        skills_root = platform.get_skills_dir(root, platform_code)
+        for skill_name in manifest.get("adds_skills", []) or []:
+            compare_tree(pack_root / "skills" / skill_name, skills_root / skill_name, "skill")
+    return {"ok": True, "manifest": manifest, "changes": changes}
+
+
+def refresh_pack(
+    root: Path,
+    pack_name: str,
+    packs_dir: Path,
+    platform_codes: list[str],
+    *,
+    force: bool = False,
+) -> dict[str, Any]:
+    """Refresh generated files for an installed pack.
+
+    Existing differing files are treated as ambiguous user edits and preserved
+    unless ``force`` is explicit. Files below ``_specflow/`` are never targets.
+    """
+    preview = inspect_pack_refresh(root, pack_name, packs_dir, platform_codes)
+    if not preview.get("ok"):
+        return preview
+    written: list[str] = []
+    preserved: list[str] = []
+    for src, dst, _kind in preview["changes"]:
+        if dst.exists() and not force:
+            preserved.append(str(dst.relative_to(root)))
+            continue
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(str(src), str(dst))
+        written.append(str(dst.relative_to(root)))
+
+    manifest = preview["manifest"]
+    for platform_code in platform_codes:
+        inject_pack_context(root, pack_name, manifest.get("context_snippet", ""), platform_code)
+    return {"ok": True, "written": written, "preserved": preserved}
+
+
 def apply_pack(root: Path, pack_name: str, packs_dir: Path) -> dict[str, Any]:
     """Apply a standards pack from packs_dir/<pack_name>/ to the project.
 

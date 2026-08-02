@@ -263,7 +263,7 @@ artifacts:
     - compliance
     - BYOC
     - M2-extensible
-    title: Compliance rework — BYOC with /specflow-pack-author
+    title: "Compliance rework \u2014 BYOC with /specflow-pack-author"
   STORY-029:
     fingerprint: sha256:e2e291118dad
     id: STORY-029
@@ -289,7 +289,7 @@ artifacts:
     - UX
     - documentation
     - M3-depth
-    title: Install UX — one-line install path and getting-started tutorial
+    title: "Install UX \u2014 one-line install path and getting-started tutorial"
   STORY-032:
     fingerprint: sha256:84a65b667115
     id: STORY-032
@@ -298,7 +298,8 @@ artifacts:
     - UX
     - skills
     - M4-ux
-    title: Delete over-exposed skill directories — collapse 22 skills to 8 Tier 1
+    title: "Delete over-exposed skill directories \u2014 collapse 22 skills to 8 Tier\
+      \ 1"
   STORY-033:
     fingerprint: sha256:e150f32f8b00
     id: STORY-033
@@ -307,7 +308,7 @@ artifacts:
     - UX
     - skills
     - M4-ux
-    title: Build the 9 Tier 1 conversational skills — init, audit, ship + modifications
+    title: "Build the 9 Tier 1 conversational skills \u2014 init, audit, ship + modifications"
   STORY-034:
     fingerprint: sha256:55db9741b5bd
     id: STORY-034
@@ -316,8 +317,8 @@ artifacts:
     - UX
     - documentation
     - M4-ux
-    title: Documentation overhaul — rewrite lifecycle, commands, and README for 9-command
-      surface
+    title: "Documentation overhaul \u2014 rewrite lifecycle, commands, and README\
+      \ for 9-command surface"
   STORY-035:
     fingerprint: sha256:5d458c39e8b8
     id: STORY-035
@@ -326,7 +327,7 @@ artifacts:
     - UX
     - conventions
     - checklists
-    title: Project convention checklists — scaffold and enforce project structure
+    title: "Project convention checklists \u2014 scaffold and enforce project structure"
   STORY-036:
     fingerprint: sha256:6a7a4f1483c8
     id: STORY-036
@@ -689,9 +690,9 @@ artifacts:
     - pilot
     title: Test autoresearch pack end-to-end and pilot with quant_trade_rnd
   STORY-076:
-    fingerprint: ''
+    fingerprint: sha256:d2b2d7aaeebb
     id: STORY-076
-    status: draft
+    status: verified
     tags:
     - autoresearch
     - wave-4
@@ -700,6 +701,28 @@ artifacts:
     - logging
     - domain-awareness
     title: Improve autoresearch EXPT logging, COMP objectives, and domain-aware checks
+  STORY-082:
+    fingerprint: sha256:d35eee78fc50
+    id: STORY-082
+    status: implemented
+    tags:
+    - learnings
+    - bp
+    - prev
+    - brief
+    - checklists
+    - backfilled
+    title: Revive BP and PREV knowledge-surface visibility and consumption
+  STORY-083:
+    fingerprint: sha256:b6acee5be483
+    id: STORY-083
+    status: verified
+    tags:
+    - autoresearch
+    - pack-system
+    - refresh
+    - v1.12.5
+    title: Refresh active pack assets safely
   STORY-ADDAUXIL-c7bd:
     fingerprint: ''
     id: STORY-ADDAUXIL-c7bd
@@ -718,77 +741,58 @@ artifacts:
     status: draft
     tags: []
     title: Add multi-criteria and anti-leakage documentation to competition-setup-protocol
+  STORY-ARTIFACT-a39a:
+    fingerprint: sha256:e45e9f28f9d1
+    id: STORY-ARTIFACT-a39a
+    status: implemented
+    tags:
+    - v1.12.0
+    title: 'artifact-lint quality gates: empty-AC error and NFR threshold warning'
+  STORY-MULTIHOS-63a5:
+    fingerprint: sha256:2647c67c8626
+    id: STORY-MULTIHOS-63a5
+    status: implemented
+    tags:
+    - v1.12.0
+    title: multi-host platform detection warning and refresh --all-platforms
+  STORY-PHASESET-d470:
+    fingerprint: sha256:be7f291787f3
+    id: STORY-PHASESET-d470
+    status: implemented
+    tags:
+    - v1.12.0
+    title: 'phase-set command: reverse-lifecycle phase accounting'
+  STORY-RBACCHEC-e356:
+    fingerprint: sha256:52d7c708196c
+    id: STORY-RBACCHEC-e356
+    status: implemented
+    tags:
+    - v1.12.0
+    title: 'rbac check command: author role resolution and transition authorization'
+  STORY-RTMCOMMA-1d6f:
+    fingerprint: sha256:a72a3ec06af0
+    id: STORY-RTMCOMMA-1d6f
+    status: implemented
+    tags:
+    - v1.12.0
+    title: 'rtm command: bidirectional requirements traceability matrix'
   STORY-SMALLFIX-621b:
     fingerprint: ''
     id: STORY-SMALLFIX-621b
     status: draft
     tags: []
     title: Small fixes - concurrent-LOOP gate, noise probe, test cleanup
+  STORY-SUPERSES-c408:
+    fingerprint: sha256:8dd2644969f0
+    id: STORY-SUPERSES-c408
+    status: implemented
+    tags:
+    - v1.12.0
+    title: supersession status and supersedes role for REQ/ARCH/DDD schemas
   STORY-UPDATESK-86fb:
     fingerprint: ''
     id: STORY-UPDATESK-86fb
     status: draft
     tags: []
     title: Update SKILL.md to thin CLI wrapper and add pack context injection
-  STORY-PHASESET-d470:
-    id: STORY-PHASESET-d470
-    title: 'phase-set command: reverse-lifecycle phase accounting'
-    status: implemented
-    tags:
-    - v1.12.0
-    fingerprint: sha256:be7f291787f3
-    children: []
-  STORY-RTMCOMMA-1d6f:
-    id: STORY-RTMCOMMA-1d6f
-    title: 'rtm command: bidirectional requirements traceability matrix'
-    status: implemented
-    tags:
-    - v1.12.0
-    fingerprint: sha256:a72a3ec06af0
-    children: []
-  STORY-RBACCHEC-e356:
-    id: STORY-RBACCHEC-e356
-    title: 'rbac check command: author role resolution and transition authorization'
-    status: implemented
-    tags:
-    - v1.12.0
-    fingerprint: sha256:52d7c708196c
-    children: []
-  STORY-SUPERSES-c408:
-    id: STORY-SUPERSES-c408
-    title: supersession status and supersedes role for REQ/ARCH/DDD schemas
-    status: implemented
-    tags:
-    - v1.12.0
-    fingerprint: sha256:8dd2644969f0
-    children: []
-  STORY-ARTIFACT-a39a:
-    id: STORY-ARTIFACT-a39a
-    title: 'artifact-lint quality gates: empty-AC error and NFR threshold warning'
-    status: implemented
-    tags:
-    - v1.12.0
-    fingerprint: sha256:e45e9f28f9d1
-    children: []
-  STORY-MULTIHOS-63a5:
-    id: STORY-MULTIHOS-63a5
-    title: multi-host platform detection warning and refresh --all-platforms
-    status: implemented
-    tags:
-    - v1.12.0
-    fingerprint: sha256:2647c67c8626
-    children: []
-  STORY-082:
-    id: STORY-082
-    title: Revive BP and PREV knowledge-surface visibility and consumption
-    status: implemented
-    tags:
-    - learnings
-    - bp
-    - prev
-    - brief
-    - checklists
-    - backfilled
-    fingerprint: sha256:d35eee78fc50
-    children: []
-next_id: 83
+next_id: 90

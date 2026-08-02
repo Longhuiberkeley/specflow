@@ -22,6 +22,11 @@ def run(root: Path, args: dict) -> int:
               f"Usage: specflow schema <type>{NC}")
         return 1
 
+    # Register pack-added types (experiment, finding, …) so they appear in the
+    # valid-type list and did-you-mean — mirrors list_cmd. Without this, a typo
+    # of a pack type can never be suggested, undermining the release's theme.
+    art_lib._load_active_packs(root)
+
     norm_type = art_lib.normalize_type(raw_type)
 
     schema_dir = root / ".specflow" / "schema"
@@ -58,7 +63,9 @@ def run(root: Path, args: dict) -> int:
         ]
         for tgt in sorted(allowed_status.keys()):
             preds = allowed_status[tgt]
-            pred_str = ", ".join(preds) if preds else "(root)"
+            if not isinstance(preds, list):
+                preds = [preds] if preds else []
+            pred_str = ", ".join(str(p) for p in preds) if preds else "(root)"
             print(f"  {tgt} <- {pred_str}")
         if roots:
             print()

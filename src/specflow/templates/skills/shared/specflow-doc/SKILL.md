@@ -34,7 +34,7 @@ Docs are prose that *explains and cites* the spec graph; they are not part of it
 ## Two rules
 
 1. **Doc edits are git-history-only.** Editing a doc never creates a REQ/ARCH/DEC, never writes an artifact `_index.yaml` entry, and never emits a change record. You just edit and commit. Git is the change log.
-2. **Staleness is surfaced, never enforced.** `specflow detect stale-docs` and `/specflow-audit` warn when a doc cites a superseded/cancelled/deprecated artifact. Warnings never block a commit or fail an audit.
+2. **Staleness is surfaced, never enforced.** `specflow detect stale-docs` and `/specflow-audit` warn when a doc cites a superseded/cancelled/deprecated artifact. Staleness is an *accounting* lens — those warnings never block a commit and never escalate an audit exit code. (Structural signals like coverage gaps or orphan code do escalate to exit 2; see BP-006.)
 
 ## Workflow
 

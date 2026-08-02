@@ -715,6 +715,62 @@ class TestAutoresearchCLI:
         rc = autoresearch_cmd.run(project_root, {})
         assert rc == 1
 
+    def test_status_surfaces_readiness_advisories(self, project_root: Path, capsys):
+        self._setup_comp_and_loop(project_root)
+        rc = autoresearch_cmd.run(project_root, {
+            "autoresearch_subcommand": "status",
+            "competition": "COMP-001",
+        })
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "Deterministic accounting" in out
+        assert "No completed EDA" in out
+        assert "Research agenda" in out
+        assert "consecutive 'features' experiments" in out
+
+    def test_run_blocks_when_budget_is_exhausted(self, project_root: Path, capsys):
+        self._setup_comp_and_loop(project_root)
+        loop_path = art_lib.resolve_link_target(project_root, "LOOP-001")
+        art_lib.update_artifact(project_root, "LOOP-001", iteration_count=50)
+        assert loop_path is not None
+        rc = autoresearch_cmd.run(project_root, {
+            "autoresearch_subcommand": "run",
+            "competition": "COMP-001",
+        })
+        assert rc == 2
+        assert "Budget exhausted" in capsys.readouterr().out
+
+    def test_status_blocks_multiple_running_loops(self, project_root: Path, capsys):
+        self._setup_comp_and_loop(project_root)
+        _write_artifact(
+            project_root, "LOOP-002", "loop", "Concurrent Loop",
+            status="running",
+            extra_fm={
+                "created": "2026-05-16", "competition": "COMP-001",
+                "mode": "explore", "budget": 10,
+            },
+        )
+        rc = autoresearch_cmd.run(project_root, {
+            "autoresearch_subcommand": "status",
+            "competition": "COMP-001",
+            "loop": "LOOP-001",
+        })
+        assert rc == 2
+        assert "Multiple running LOOPs" in capsys.readouterr().out
+
+    def test_log_updates_category_coverage(self, project_root: Path):
+        self._setup_comp_and_loop(project_root)
+        rc = autoresearch_cmd.run(project_root, {
+            "autoresearch_subcommand": "log", "loop": "LOOP-001",
+            "status": "discarded", "metric_value": 0.4,
+            "change_category": "params", "summary": "try params",
+        })
+        assert rc == 0
+        loop = art_lib.parse_artifact(
+            art_lib.resolve_link_target(project_root, "LOOP-001")
+        )
+        assert loop.frontmatter["category_coverage"]["params"] == 1
+
 
 # ── 7. Pack context injection ────────────────────────────────────────────
 
@@ -1430,8 +1486,9 @@ class TestResearchThinkingLenses:
         )
         assert handbook.exists(), f"methodology-handbook.md not found at {handbook}"
         content = handbook.read_text()
-        assert "BP-01" in content
-        assert "BP-09" in content
+        assert "ML-01" in content
+        assert "ML-09" in content
+        assert "BP-01" not in content  # Avoid collision with BP-NNN artifacts.
         assert "applies_to" in content
 
     def test_setup_protocol_references_handbook(self):

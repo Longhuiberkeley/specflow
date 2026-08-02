@@ -61,8 +61,13 @@ def run(root: Path, args: dict) -> int:
     # Render as "target <- predecessor1, predecessor2".
     for tgt in sorted(allowed_status.keys()):
         preds = allowed_status[tgt]
+        # Defensive: a hand-edited or pack schema may declare a single
+        # predecessor as a bare string (e.g. `approved: reviewed`) rather than
+        # a list. Coerce so we don't char-split it into `r, e, v, i, …`.
+        if not isinstance(preds, list):
+            preds = [preds] if preds else []
         marker = " *" if tgt == current_status else "  "
-        pred_str = ", ".join(preds) if preds else "(root)"
+        pred_str = ", ".join(str(p) for p in preds) if preds else "(root)"
         print(f"{marker}{tgt} <- {pred_str}")
     print()
     print(f"{YELLOW_DIM}* = current status. A target's predecessors are the "

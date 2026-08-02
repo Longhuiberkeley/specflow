@@ -37,6 +37,86 @@ def parse_set_fields(set_list: list[str] | None) -> dict[str, Any]:
             fields[key] = raw
     return fields
 
+def validate_link_entries(entries: Any) -> list[dict[str, str]]:
+    """Validate a list of link entries into normalized ``{"target","role"}`` dicts.
+
+    Raises ``ValueError`` if the input is not a list, or if any entry is not a
+    dict with a non-empty ``target`` and ``role``. Empty/whitespace target or
+    role (e.g. ``ARCH-1:``) is rejected so a malformed entry can never be
+    written. This never returns a partial list — it either validates every
+    entry or raises.
+    """
+    if not isinstance(entries, list):
+        raise ValueError(
+            'links must be a JSON array of {"target","role"} objects '
+            "or comma-separated TARGET:ROLE pairs"
+        )
+    validated: list[dict[str, str]] = []
+    for entry in entries:
+        if (not isinstance(entry, dict)
+                or not str(entry.get("target", "")).strip()
+                or not str(entry.get("role", "")).strip()):
+            raise ValueError(
+                "each link needs both a target and a role — use "
+                'TARGET:ROLE pairs or a JSON array of {"target","role"} objects'
+            )
+        validated.append({
+            "target": str(entry["target"]).strip(),
+            "role": str(entry["role"]).strip(),
+        })
+    return validated
+
+
+def parse_and_validate_links(links_json: str) -> list[dict[str, str]]:
+    """Parse and validate a ``--links`` value into ``{"target","role"}`` dicts.
+
+    Accepts a JSON array of ``{"target","role"}`` objects or comma-separated
+    ``TARGET:ROLE`` pairs. Every entry must have a non-empty target and role.
+    Raises ``ValueError`` on anything that cannot be parsed into valid entries
+    — never returns a partial or garbage list. This is the single chokepoint
+    for ``create --links``, ``update --links``/``--add-link``, and ``--set
+    links=``, so link inputs fail loudly and consistently everywhere (the
+    v1.12.4 "fail loudly, never silently" hardening — extended to ``create``
+    which previously wrote malformed JSON-array entries unvalidated).
+    """
+    text = (links_json or "").strip()
+    if not text:
+        return []
+
+    parsed: Any = None
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError:
+        parsed = None
+
+    if parsed is None:
+        # Comma-separated TARGET:ROLE pairs. A part without a colon is
+        # malformed (not silently dropped) so a bare target fails loudly.
+        entries: list[dict[str, str]] = []
+        for part in text.split(","):
+            part = part.strip()
+            if not part:
+                continue
+            if ":" not in part:
+                raise ValueError(
+                    f"could not parse links value '{links_json}' — expected "
+                    "TARGET:ROLE pairs or a JSON array of "
+                    '{"target","role"} objects'
+                )
+            target, role = part.split(":", 1)
+            entries.append({"target": target.strip(), "role": role.strip()})
+        if not entries:
+            raise ValueError(
+                f"could not parse links value '{links_json}' — expected "
+                "TARGET:ROLE pairs or a JSON array of "
+                '{"target","role"} objects'
+            )
+    else:
+        entries = parsed
+
+    return validate_link_entries(entries)
+
+
 # Mapping of artifact type prefix to spec directory
 TYPE_TO_DIR: dict[str, str] = {
     "requirement": "specs/requirements",

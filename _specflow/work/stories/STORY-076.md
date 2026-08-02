@@ -2,7 +2,7 @@
 id: STORY-076
 title: Improve autoresearch EXPT logging, COMP objectives, and domain-aware checks
 type: story
-status: draft
+status: verified
 priority: high
 tags:
 - autoresearch
@@ -16,6 +16,11 @@ links:
 - target: REQ-035
   role: implements
 created: '2026-05-22'
+modified: '2026-08-02'
+fingerprint: sha256:d2b2d7aaeebb
+thinking_techniques:
+- worst_case_user
+- composition
 ---
 
 # Improve autoresearch EXPT logging, COMP objectives, and domain-aware checks

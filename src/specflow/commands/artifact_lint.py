@@ -1373,7 +1373,7 @@ def _check_autoresearch_logging(
                 f"[{art.id}] (kept, change_category={cat}) has no `parameters` logged"
             )
 
-        if status in ("discarded", "crashed", "pre_check_failed") and not art.frontmatter.get("failure_analysis"):
+        if status in ("discarded", "crashed") and not art.frontmatter.get("failure_analysis"):
             _bump(
                 f"[{art.id}] ({status}) has no `failure_analysis` logged"
             )

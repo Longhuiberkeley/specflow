@@ -710,3 +710,84 @@ class TestNewCommandWiring:
         with pytest.raises(SystemExit) as exc:
             cli.main(["schema", "--help"])
         assert exc.value.code == 0
+
+
+# ── Post-release review fixes, exercised through the real CLI (cli.main) ─
+# Unlike the classes above (which call ``*_cmd.run`` with hand-built dicts),
+# these pass real argv through ``cli.main`` so argparse wiring is covered too.
+# They guard the v1.12.4 follow-up fixes (T1.2, T2.1, T2.2, T2.3, T2.5).
+
+class TestReviewFixesViaCli:
+    def test_create_malformed_links_rejected(self, project_root, monkeypatch, capsys):
+        # T1.2: create --links must validate entries (previously only update did).
+        from specflow import cli
+        monkeypatch.chdir(project_root)
+        rc = cli.main([
+            "create", "--type", "requirement", "--title", "Bad links",
+            "--body", "b", "--links", '[{"foo":"bar"}]',
+        ])
+        assert rc == 1
+        out = capsys.readouterr().out
+        assert "--links" in out
+        assert "target and a role" in out
+        # No artifact was written.
+        arts = art_lib.discover_artifacts(project_root)
+        assert not [a for a in arts if a.title == "Bad links"]
+
+    def test_update_set_links_conflicts_with_add_link(self, project_root, monkeypatch, capsys):
+        # T2.1: --set links= combined with --add-link must error, not silently
+        # drop the --set value.
+        from specflow import cli
+        req = _make(project_root, "requirement", "R")
+        monkeypatch.chdir(project_root)
+        rc = cli.main([
+            "update", req.id,
+            "--set", 'links=[{"target":"ARCH-1","role":"derives_from"}]',
+            "--add-link", "ARCH-2:derives_from",
+        ])
+        assert rc == 1
+        assert "cannot be combined" in capsys.readouterr().out
+
+    def test_update_noop_remove_link_does_not_rewrite(self, project_root, monkeypatch, capsys):
+        # T2.2: removing a non-linked target is a no-op — no rewrite, no
+        # "Updated", the real link untouched.
+        from specflow import cli
+        from specflow.commands import update as update_cmd
+        req = _make(project_root, "requirement", "R")
+        arch = _make(project_root, "architecture", "A")
+        update_cmd.run(project_root, {"artifact_id": req.id,
+                                      "add_link": [f"{arch.id}:derives_from"]})
+        monkeypatch.chdir(project_root)
+        capsys.readouterr()  # clear seeded output
+        rc = cli.main(["update", req.id, "--remove-link", "ARCH-999"])
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "No link changes" in out          # only printed on the no-op path
+        assert "Updated" not in out              # the rewrite path was NOT taken
+        # The real link survived.
+        assert any(lk["target"] == arch.id for lk in _links_of(project_root, req.id))
+
+    def test_help_epilog_lists_standards_and_defect_from_suspect(self):
+        # T2.5: two previously-hidden commands now appear in the phase-grouped
+        # epilog. (Asserted on the constant directly — the --help choices list
+        # would mask a regression since it lists every registered subcommand.)
+        from specflow.cli import _HELP_EPILOG
+        assert "standards" in _HELP_EPILOG
+        assert "defect-from-suspect" in _HELP_EPILOG
+
+    def test_schema_renders_string_predecessor_without_charsplit(self, project_root, monkeypatch, capsys):
+        # T2.3: a schema declaring a bare-string predecessor (hand-edited/pack)
+        # renders "reviewed", not "r, e, v, i, e, w, e, d".
+        from specflow import cli
+        (project_root / ".specflow" / "schema" / "customflow.yaml").write_text(
+            "type: customflow\nprefix: CUST\n"
+            "allowed_status:\n  open: []\n  approved: reviewed\n"
+            "directory: _specflow/work/custom\n",
+            encoding="utf-8",
+        )
+        monkeypatch.chdir(project_root)
+        rc = cli.main(["schema", "customflow"])
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "reviewed" in out
+        assert "r, e, v" not in out

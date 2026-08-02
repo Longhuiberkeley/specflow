@@ -8,6 +8,7 @@ from pathlib import Path
 
 import yaml
 
+from specflow.lib import config as config_lib
 from specflow.lib import platform as plat_lib
 from specflow.lib import scaffold as scaffold_lib
 
@@ -208,6 +209,41 @@ def _refresh_shared(
     return summary
 
 
+def _refresh_active_packs(
+    root: Path,
+    platform_codes: list[str],
+    *,
+    dry_run: bool,
+    force: bool,
+) -> list[tuple[str, str]]:
+    """Preview or refresh assets for packs listed in project config."""
+    summary: list[tuple[str, str]] = []
+    active_packs = (config_lib.read_config(root) or {}).get("active_packs", []) or []
+    packs_dir = Path(__file__).parent.parent / "packs"
+    for pack_name in active_packs:
+        preview = scaffold_lib.inspect_pack_refresh(root, pack_name, packs_dir, platform_codes)
+        if not preview.get("ok"):
+            summary.append((f"pack:{pack_name}", preview.get("error", "not found")))
+            continue
+        changes = preview["changes"]
+        if dry_run:
+            detail = f"{len(changes)} managed file(s) differ" if changes else "up to date"
+            summary.append((f"pack:{pack_name}", detail))
+            continue
+        result = scaffold_lib.refresh_pack(
+            root, pack_name, packs_dir, platform_codes, force=force,
+        )
+        written = len(result.get("written", []))
+        preserved = len(result.get("preserved", []))
+        detail = f"{written} written"
+        if preserved:
+            detail += f", {preserved} preserved (use --force to replace)"
+        summary.append((f"pack:{pack_name}", detail))
+    if not active_packs:
+        summary.append(("packs", "no active packs"))
+    return summary
+
+
 def _run_all_platforms(root: Path, detected: list[tuple[str, dict]], args: dict) -> int:
     """Refresh skills + agent-context for every detected platform, plus shared
     (non-platform-scoped) steps once.
@@ -240,6 +276,13 @@ def _run_all_platforms(root: Path, detected: list[tuple[str, dict]], args: dict)
         dry_run=dry_run, do_schemas=do_schemas, do_checklists=do_checklists,
         force_schemas=force_schemas,
     )
+    if args.get("packs", False):
+        shared_summary.extend(_refresh_active_packs(
+            root,
+            [code for code, _ in detected],
+            dry_run=dry_run,
+            force=force_schemas,
+        ))
     if shared_summary:
         print("    shared:")
         for label, detail in shared_summary:
@@ -306,6 +349,13 @@ def run(root: Path, args: dict) -> int:
         dry_run=dry_run, do_schemas=do_schemas, do_checklists=do_checklists,
         force_schemas=force_schemas,
     ))
+    if args.get("packs", False):
+        summary.extend(_refresh_active_packs(
+            root,
+            [platform_code],
+            dry_run=dry_run,
+            force=force_schemas,
+        ))
 
     # ── Summary ─────────────────────────────────────────────────
     if dry_run:

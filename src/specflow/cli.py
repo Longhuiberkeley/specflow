@@ -303,9 +303,10 @@ def _add_refresh_parser(subparsers):
     p.add_argument("--platform", help="AI platform code (e.g., claude-code, cursor, windsurf)")
     p.add_argument("--no-skills", action="store_true", dest="no_skills", help="Skip skill update")
     p.add_argument("--no-context", action="store_true", dest="no_context", help="Skip agent-context re-injection")
-    p.add_argument("--schemas", action="store_true", help="Also update schema files (new only unless --force)")
-    p.add_argument("--checklists", action="store_true", help="Also update checklist templates (new only)")
-    p.add_argument("--force", action="store_true", help="Overwrite schemas even if they already exist")
+    p.add_argument("--schemas", action="store_true", help="Also update base schema files (new only unless --force)")
+    p.add_argument("--checklists", action="store_true", help="Also update base checklist templates (new only)")
+    p.add_argument("--packs", action="store_true", help="Also refresh assets for configured active packs")
+    p.add_argument("--force", action="store_true", help="Overwrite existing generated schemas/checklists/pack skills")
     p.add_argument("--dry-run", action="store_true", dest="dry_run", help="Show what would change without writing")
     p.add_argument("--all-platforms", action="store_true", dest="all_platforms", help="Refresh skills for every detected platform, not just one")
 
@@ -650,9 +651,13 @@ def _add_autoresearch_parser(subparsers):
     plan_p.add_argument("--competition", help="Competition ID (default: auto-detect active COMP)")
     plan_p.add_argument("--profile", action="store_true", help="Run 3x noise variance probe on verify command")
 
-    run_p = sub.add_parser("run", help="Print 8-phase protocol checklist for a LOOP")
+    run_p = sub.add_parser("run", help="Print protocol checklist and readiness signals for a LOOP")
     run_p.add_argument("--competition", help="Competition ID (default: auto-detect)")
     run_p.add_argument("--loop", help="LOOP ID (default: running or draft LOOP for the COMP)")
+
+    status_p = sub.add_parser("status", help="Show deterministic LOOP readiness and progress accounting")
+    status_p.add_argument("--competition", help="Competition ID (default: auto-detect)")
+    status_p.add_argument("--loop", help="LOOP ID (default: running or draft LOOP for the COMP)")
 
     review_p = sub.add_parser("review", help="Review FINDs, leaderboard, and loop history")
     review_p.add_argument("--competition", help="Competition ID (default: auto-detect)")
@@ -696,13 +701,13 @@ def _add_autoresearch_parser(subparsers):
 # so `specflow --help` actually shows the phase headers, not just the source.
 _HELP_EPILOG = """\
 commands by workflow phase:
-  Discover:   init, refresh, status, brief, domain, patterns, list, schema, transitions
+  Discover:   init, refresh, status, brief, domain, patterns, standards, list, schema, transitions
   Plan:       create, update, approve
   Execute:    go, done, phase-status, phase-set, cascade-status, reconcile, generate-tests
   Review:     artifact-lint, checklist-run, artifact-review, project-audit, trace, rtm
   Release:    baseline, document-changes
   CI:         hook, rbac, renumber-drafts, import, export, detect, change-impact,
-              fingerprint-refresh, ci, ci-gate
+              defect-from-suspect, fingerprint-refresh, ci, ci-gate
   Recovery:   unlock, locks, rebuild-index, split, merge
   Research:   autoresearch
   Adoption:   adopt (brownfield; install via /specflow-init --preset adoption)

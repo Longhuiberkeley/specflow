@@ -37,6 +37,7 @@ All subcommands have a CLI backend. Use the CLI for deterministic operations (ar
 |---|---|---|
 | `/specflow-autoresearch` | `specflow autoresearch run` | Run an autonomous LOOP on a COMP |
 | `/specflow-autoresearch:plan` | `specflow autoresearch plan` | Plan a LOOP before running |
+| `/specflow-autoresearch:status` | `specflow autoresearch status` | Deterministic LOOP readiness, budget, diversity, and stuck accounting |
 | `/specflow-autoresearch:review` | `specflow autoresearch review` | Review FINDs and EXPTs for a COMP |
 | `/specflow-autoresearch:leaderboard` | `specflow autoresearch leaderboard` | Top EXPTs ranked by metric |
 | `/specflow-autoresearch:log` | `specflow autoresearch log` | Log an EXPT and auto-update LOOP counters |
@@ -49,6 +50,7 @@ For multi-competition repos, all commands accept `--competition COMP-NNN`. Omit 
 
 - User invokes `/specflow-autoresearch` → run the loop
 - User invokes `/specflow-autoresearch:plan` → plan a LOOP
+- User invokes `/specflow-autoresearch:status`, asks "is the loop ready?", or asks for "loop health" → show deterministic readiness and progress accounting
 - User invokes `/specflow-autoresearch:review` → review findings
 - User invokes `/specflow-autoresearch:leaderboard` → show leaderboard
 - User says "run research loop", "explore this competition", "run experiments overnight" → run the loop
@@ -373,5 +375,5 @@ Subagents MUST return structured output (bullet lists, JSON, or YAML). The paren
 - `references/protocol-integrations.md` — Maps all producer-consumer relationships across protocols: COMP→LOOP, LOOP→EXPT, EXPT→FIND, cross-loop feedback, skill-to-protocol mapping, cross-cutting concerns — referenced from all steps for dependency context
 - `references/explore-exploit-protocol.md` — Mode behavior (explore/exploit/validate) and how each influences Phase 2 ideation — referenced from Phase 2c
 - `references/finding-generation-protocol.md` — Playbook for authoring and updating FIND artifacts after LOOP completion — referenced from Step 3 (review)
-- `references/methodology-handbook.md` — Domain-specific ML best practices (BP-01/02 mandatory, BP-05/07 gated, BP-03..09 advisory) — referenced from Phase 2
+- `references/methodology-handbook.md` — Domain-specific ML best practices (ML-01/02 mandatory, ML-05/07 gated, ML-03..09 advisory) — referenced from Phase 2
 - `references/domain-research-checklists.md` — Per-domain first-principles research checklists (quant, tabular_ml, vision, nlp, generic) with common traps per domain — loaded during Phase 0.7 for structured ideation breadth and trap awareness

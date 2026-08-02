@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 
@@ -10,48 +9,6 @@ from specflow.lib import artifacts as art_lib
 from specflow.lib import standards as std_lib
 from specflow.lib.dedup import find_similar_to
 from specflow.lib.display import RED, GREEN, YELLOW, YELLOW_DIM, CYAN, NC
-
-
-def _parse_links(links_json: str) -> list[dict[str, str]]:
-    """Parse a links value: a JSON array of ``{"target","role"}`` objects, or
-    comma-separated ``TARGET:ROLE`` pairs.
-
-    Raises ``ValueError`` on non-empty input that cannot be parsed into at
-    least one link entry. Silently returning ``[]`` here used to cause silent
-    data loss (``update --links`` wiping the list on garbage input), silent
-    no-ops (``--add-link`` without a role), and garbage writes (a JSON
-    *object* falling through to comma-splitting). Entry-level validation
-    (dict shape, target/role presence) stays with the callers.
-    """
-    text = links_json.strip()
-    if not text:
-        return []
-
-    try:
-        parsed = json.loads(text)
-    except json.JSONDecodeError:
-        parsed = None
-    if parsed is not None:
-        if not isinstance(parsed, list):
-            raise ValueError(
-                "links must be a JSON array of {\"target\",\"role\"} objects "
-                "or comma-separated TARGET:ROLE pairs"
-            )
-        return parsed
-
-    results = []
-    for part in text.split(","):
-        part = part.strip()
-        if ":" in part:
-            target, role = part.split(":", 1)
-            results.append({"target": target.strip(), "role": role.strip()})
-    if not results:
-        raise ValueError(
-            f"could not parse links value '{links_json}' — expected a JSON "
-            "array of {\"target\",\"role\"} objects or comma-separated "
-            "TARGET:ROLE pairs"
-        )
-    return results
 
 
 # Keys in --set KEY=VALUE that collide with a dedicated create_artifact()
@@ -82,19 +39,17 @@ def _merge_set_links(links: list[dict[str, str]], extra_fields: dict) -> str | N
     raw = extra_fields.pop("links")
     if isinstance(raw, str):
         try:
-            parsed = _parse_links(raw)
+            links.extend(art_lib.parse_and_validate_links(raw))
         except ValueError as exc:
             return f"--set links: {exc}"
-    elif isinstance(raw, list):
-        parsed = raw
-    else:
-        return '--set links must be a JSON array of {"target","role"} objects'
-
-    for entry in parsed:
-        if not isinstance(entry, dict) or not entry.get("target") or not entry.get("role"):
+        return None
+    if isinstance(raw, list):
+        try:
+            links.extend(art_lib.validate_link_entries(raw))
+        except ValueError:
             return '--set links must be a JSON array of {"target","role"} objects'
-        links.append(entry)
-    return None
+        return None
+    return '--set links must be a JSON array of {"target","role"} objects'
 
 
 def _lookup_standard_clause(root: Path, clause_id: str) -> dict | None:
@@ -121,7 +76,7 @@ def run(root: Path, args: dict) -> int:
     nfr_category = args.get("nfr_category")
 
     try:
-        links = _parse_links(links_str) if links_str else []
+        links = art_lib.parse_and_validate_links(links_str) if links_str else []
     except ValueError as exc:
         print(f"{RED}✗ --links: {exc}{NC}")
         return 1

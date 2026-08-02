@@ -206,6 +206,54 @@ class TestRefreshCommand:
         assert len(schema_files) == 0, \
             f"dry-run wrote schema files: {[f.name for f in schema_files]}"
 
+    def test_active_pack_dry_run_reports_without_writing(
+        self, refresh_project: Path, capsys
+    ):
+        config_path = refresh_project / ".specflow" / "config.yaml"
+        config = yaml.safe_load(config_path.read_text())
+        config["active_packs"] = ["autoresearch"]
+        config_path.write_text(yaml.dump(config))
+
+        rc = refresh_cmd.run(refresh_project, {"packs": True, "dry_run": True})
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "pack:autoresearch" in out
+        assert "managed file(s) differ" in out
+        assert not (refresh_project / ".specflow" / "schema" / "loop.yaml").exists()
+
+    def test_active_pack_refresh_preserves_existing_without_force(
+        self, refresh_project: Path, capsys
+    ):
+        config_path = refresh_project / ".specflow" / "config.yaml"
+        config = yaml.safe_load(config_path.read_text())
+        config["active_packs"] = ["autoresearch"]
+        config_path.write_text(yaml.dump(config))
+        schema = refresh_project / ".specflow" / "schema" / "loop.yaml"
+        schema.write_text("# user edit\n")
+
+        rc = refresh_cmd.run(refresh_project, {"packs": True, "no_skills": True})
+        assert rc == 0
+        assert schema.read_text() == "# user edit\n"
+        assert "preserved" in capsys.readouterr().out
+
+    def test_active_pack_force_refreshes_schema(
+        self, refresh_project: Path
+    ):
+        config_path = refresh_project / ".specflow" / "config.yaml"
+        config = yaml.safe_load(config_path.read_text())
+        config["active_packs"] = ["autoresearch"]
+        config_path.write_text(yaml.dump(config))
+        schema = refresh_project / ".specflow" / "schema" / "loop.yaml"
+        schema.write_text("# stale generated copy\n")
+
+        rc = refresh_cmd.run(
+            refresh_project,
+            {"packs": True, "force": True, "no_skills": True},
+        )
+        assert rc == 0
+        assert "type: loop" in schema.read_text()
+        assert not (refresh_project / "_specflow").exists()
+
 
 # ── 2. _check_spike_lifecycle ────────────────────────────────────────────────
 

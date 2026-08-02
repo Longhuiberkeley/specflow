@@ -97,6 +97,160 @@ def _get_all_expts_for_comp(root: Path, comp_id: str) -> list[art_lib.Artifact]:
     return all_expts
 
 
+def _resolve_loop(
+    root: Path,
+    comp: art_lib.Artifact,
+    args: dict,
+) -> art_lib.Artifact | None:
+    """Resolve an explicit LOOP or the single active/draft LOOP for a COMP."""
+    loops = _find_loops_for_comp(root, comp.id)
+    loop_id = args.get("loop")
+    if loop_id:
+        target = next((loop for loop in loops if loop.id == loop_id), None)
+        if not target:
+            print(f"{RED}✗ LOOP '{loop_id}' not found under {comp.id}.{NC}")
+        return target
+
+    running = [loop for loop in loops if loop.status == "running"]
+    draft = [loop for loop in loops if loop.status == "draft"]
+    if len(running) == 1:
+        return running[0]
+    if not running and len(draft) == 1:
+        return draft[0]
+    if len(running) > 1:
+        return running[0]  # The assessor reports the structural conflict.
+    if len(draft) > 1:
+        print(f"{YELLOW}Multiple draft LOOPs found. Specify --loop <ID>.{NC}")
+        return None
+    print(f"{RED}✗ No running or draft LOOP found for {comp.id}. Create one first.{NC}")
+    return None
+
+
+def _consecutive_tail(expts: list[art_lib.Artifact], key: str) -> tuple[object, int]:
+    """Return the final value and its consecutive run length by iteration/order."""
+    if not expts:
+        return None, 0
+    ordered = sorted(
+        expts,
+        key=lambda e: (e.frontmatter.get("iteration", 0), e.frontmatter.get("created", ""), e.id),
+    )
+    value = ordered[-1].frontmatter.get(key) if key != "status" else ordered[-1].status
+    count = 0
+    for expt in reversed(ordered):
+        current = expt.frontmatter.get(key) if key != "status" else expt.status
+        if current != value:
+            break
+        count += 1
+    return value, count
+
+
+def _assess_loop(
+    root: Path,
+    comp: art_lib.Artifact,
+    loop: art_lib.Artifact,
+) -> list[dict[str, str]]:
+    """Derive deterministic accounting signals without making research choices."""
+    signals: list[dict[str, str]] = []
+
+    def add(state: str, name: str, message: str, pointer: str = "") -> None:
+        signals.append({"state": state, "name": name, "message": message, "pointer": pointer})
+
+    loops = _find_loops_for_comp(root, comp.id)
+    running = [candidate for candidate in loops if candidate.status == "running"]
+    if len(running) > 1:
+        ids = ", ".join(candidate.id for candidate in running)
+        add("structural", "concurrency", f"Multiple running LOOPs: {ids}",
+            "Abort all but one running LOOP before continuing.")
+    else:
+        add("ok", "concurrency", "At most one LOOP is running for this competition")
+
+    fm = loop.frontmatter
+    budget = fm.get("budget")
+    iteration_count = fm.get("iteration_count", 0)
+    if isinstance(budget, int) and iteration_count >= budget:
+        add("structural", "budget", f"Budget exhausted ({iteration_count}/{budget})",
+            "Complete or plateau this LOOP; create a new LOOP to continue.")
+    else:
+        add("ok", "budget", f"Iteration budget {iteration_count}/{budget if budget is not None else '?'}")
+
+    quick = isinstance(budget, int) and budget <= 5
+    if fm.get("eda_completed"):
+        add("ok", "eda", "EDA is recorded")
+    else:
+        add("advisory", "eda", "No completed EDA is recorded",
+            f"specflow update {loop.id} --set eda_completed=true --set eda_summary=\"...\"")
+
+    agenda = fm.get("research_agenda") or []
+    agenda_min = 2 if quick else 5
+    if isinstance(agenda, list) and len(agenda) >= agenda_min:
+        add("ok", "agenda", f"Research agenda has {len(agenda)} directions")
+    else:
+        add("advisory", "agenda", f"Research agenda has fewer than {agenda_min} directions",
+            f"specflow update {loop.id} --set research_agenda='[...]'")
+
+    if fm.get("knowledge_input"):
+        add("ok", "knowledge", "Prior findings are loaded")
+    elif _find_findings_for_comp(root, comp.id):
+        add("advisory", "knowledge", "Competition has FINDs but LOOP knowledge_input is empty",
+            f"specflow update {loop.id} --set knowledge_input='[\"FIND-NNN\"]'")
+    else:
+        add("ok", "knowledge", "No prior findings are available")
+
+    expts = _find_expts_for_loop(root, loop.id)
+    category, category_count = _consecutive_tail(expts, "change_category")
+    threshold = 2 if fm.get("mode", "explore") == "explore" else 3
+    if category and category_count >= threshold:
+        add("advisory", "diversity", f"{category_count} consecutive '{category}' experiments",
+            "Review an orthogonal research-agenda direction before another similar iteration.")
+    else:
+        add("ok", "diversity", "No repeated-category streak detected")
+
+    failure_count = 0
+    for expt in reversed(sorted(expts, key=lambda e: (e.frontmatter.get("iteration", 0), e.id))):
+        if expt.status not in ("discarded", "crashed"):
+            break
+        failure_count += 1
+    if failure_count >= 5:
+        add("advisory", "stuck", f"{failure_count} consecutive discarded/crashed experiments",
+            "Switch category or revisit the highest-impact assumption.")
+    else:
+        add("ok", "stuck", "No 5-experiment failure streak detected")
+
+    if expts and iteration_count and iteration_count % 10 == 0 and not fm.get("condensation_briefs"):
+        add("advisory", "condensation", "No condensation brief recorded at this checkpoint",
+            f"specflow update {loop.id} --set condensation_briefs='[...]'")
+    return signals
+
+
+def _render_signals(signals: list[dict[str, str]]) -> None:
+    icons = {"ok": f"{GREEN}✓{NC}", "advisory": f"{YELLOW}⚠{NC}", "structural": f"{RED}✗{NC}"}
+    print(f"{BOLD}Deterministic accounting:{NC}")
+    for signal in signals:
+        print(f"  {icons[signal['state']]} {signal['name']}: {signal['message']}")
+        if signal["pointer"]:
+            print(f"      {DIM}→ {signal['pointer']}{NC}")
+    print()
+
+
+def _has_structural(signals: list[dict[str, str]]) -> bool:
+    return any(signal["state"] == "structural" for signal in signals)
+
+
+def _run_status(root: Path, args: dict) -> int:
+    comp = _resolve_comp(root, args)
+    if not comp:
+        return 1
+    loop = _resolve_loop(root, comp, args)
+    if not loop:
+        return 1
+    print(f"\n{BOLD}=== Autoresearch Status ==={NC}\n")
+    print(f"Competition: {CYAN}{comp.id}{NC}  {comp.title}")
+    print(f"LOOP:        {CYAN}{loop.id}{NC}  [{loop.status}]\n")
+    signals = _assess_loop(root, comp, loop)
+    _render_signals(signals)
+    return 2 if _has_structural(signals) else 0
+
+
 def _run_plan(root: Path, args: dict) -> int:
     comp = _resolve_comp(root, args)
     if not comp:
@@ -172,26 +326,15 @@ def _run_run(root: Path, args: dict) -> int:
     if not comp:
         return 1
 
-    loop_id = args.get("loop")
-    loops = _find_loops_for_comp(root, comp.id)
+    target_loop = _resolve_loop(root, comp, args)
+    if not target_loop:
+        return 1
 
-    target_loop = None
-    if loop_id:
-        target_loop = next((l for l in loops if l.id == loop_id), None)
-        if not target_loop:
-            print(f"{RED}✗ LOOP '{loop_id}' not found under {comp.id}.{NC}")
-            return 1
-    else:
-        running = [l for l in loops if l.status == "running"]
-        draft = [l for l in loops if l.status == "draft"]
-        if running:
-            target_loop = running[0]
-        elif draft:
-            target_loop = draft[0]
-        else:
-            print(f"{RED}✗ No running or draft LOOP found for {comp.id}. "
-                  f"Create one first.{NC}")
-            return 1
+    signals = _assess_loop(root, comp, target_loop)
+    _render_signals(signals)
+    if _has_structural(signals):
+        print(f"{RED}✗ Resolve structural LOOP state before continuing.{NC}\n")
+        return 2
 
     lf = target_loop.frontmatter
     fm = comp.frontmatter
@@ -512,10 +655,14 @@ def _run_log(root: Path, args: dict) -> int:
     elif status in ("discarded", "crashed"):
         discarded += 1
 
+    coverage = dict(lf.get("category_coverage") or {})
+    if change_category:
+        coverage[change_category] = int(coverage.get(change_category, 0)) + 1
     updates: dict = {
         "iteration_count": ic,
         "kept_count": kept,
         "discarded_count": discarded,
+        "category_coverage": coverage,
     }
 
     # Update best metric if applicable
@@ -663,6 +810,8 @@ def run(root: Path, args: dict) -> int:
         return _run_plan(root, args)
     if sub == "run":
         return _run_run(root, args)
+    if sub == "status":
+        return _run_status(root, args)
     if sub == "review":
         return _run_review(root, args)
     if sub == "leaderboard":
@@ -673,5 +822,5 @@ def run(root: Path, args: dict) -> int:
         return _run_suggest_finds(root, args)
 
     print(f"{RED}✗ Unknown autoresearch subcommand. "
-          f"Use: plan, run, review, leaderboard, log, suggest-finds{NC}")
+          f"Use: plan, run, status, review, leaderboard, log, suggest-finds{NC}")
     return 1

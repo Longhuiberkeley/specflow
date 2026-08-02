@@ -113,7 +113,7 @@ Example:
 | **medium** | Supported by one LOOP with 3+ kept EXPTs. Pattern is clear but not yet validated on a different split. |
 | **low** | Based on 1-2 kept EXPTs. Preliminary — needs confirmation before relying on it for direction. |
 
-**Multiple-comparisons cap (BP-13).** A `what_worked` finding selected as the *best of many* EXPTs is upward-biased — the more variants the LOOP tried, the more its top result owes to luck. **Cap such a finding at `confidence: medium` until it is confirmed on a fresh seed or a held-out slice.** Only a passed confirmation run (or reproduction in a later LOOP) earns `high`. Note the confirmation status in `what_worked` (e.g., "confirmed on seeds 7/11/13" vs "single-seed, unconfirmed").
+**Multiple-comparisons cap (ML-13).** A `what_worked` finding selected as the *best of many* EXPTs is upward-biased — the more variants the LOOP tried, the more its top result owes to luck. **Cap such a finding at `confidence: medium` until it is confirmed on a fresh seed or a held-out slice.** Only a passed confirmation run (or reproduction in a later LOOP) earns `high`. Note the confirmation status in `what_worked` (e.g., "confirmed on seeds 7/11/13" vs "single-seed, unconfirmed").
 
 ### deployability
 
@@ -160,7 +160,7 @@ For each auxiliary metric tracked across >=5 EXPTs:
 2. **Trend detection:** Simple linear regression on the auxiliary metric vs iteration number. Significant slope (p<0.05) → trend worth surfacing.
 3. **Breakpoint detection:** Did the auxiliary metric shift at a specific EXPT? That EXPT may have had side effects invisible to the primary metric.
 
-### Per-Component Analysis for Multi-Output Targets (BP-19)
+### Per-Component Analysis for Multi-Output Targets (ML-19)
 
 When the COMP target is a vector and EXPTs carry `component_<name>` auxiliary metrics, analyze **each component as its own series**, not only the aggregate:
 
