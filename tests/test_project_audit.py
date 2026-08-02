@@ -7,7 +7,10 @@ so it can be exercised directly without running the full audit pipeline.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from specflow.commands import project_audit as audit_cmd
+from specflow.lib import artifacts as art_lib
 
 
 def _f(axis: str, severity: str, message: str, **extra) -> dict:
@@ -185,3 +188,101 @@ class TestAccountingWarns:
 
         rc = audit_cmd.run(root, {"quick": False})
         assert rc == 2
+
+
+# ── RC1: foundational-doctrine provenance exemption (de-noise) ───────────────
+
+
+class TestFoundationalProvenanceExemption:
+    """RC1 cry-wolf kill: the horizontal "N/N <type> artifacts have no
+    links/provenance" headline must NOT fire for best-practice/decision — they
+    are foundational doctrine, upstream-less by design. Genuine orphan-provenance
+    detection for every other type stays intact (BP-005/006: de-noise)."""
+
+    @staticmethod
+    def _art(aid: str, type_name: str) -> art_lib.Artifact:
+        return art_lib.Artifact(
+            path=Path(f"{aid}.md"),
+            frontmatter={"id": aid, "type": type_name, "status": "approved"},
+            body="", links=[],
+        )
+
+    def test_best_practice_and_decision_not_flagged(self):
+        # 4 unlinked BPs + 4 unlinked DECs: above the warn threshold
+        # (orphan_count > len//2 and len > 2), but exempt as foundational.
+        arts = [self._art(f"BP-00{i}", "best-practice") for i in range(1, 5)]
+        arts += [self._art(f"DEC-00{i}", "decision") for i in range(1, 5)]
+        h = audit_cmd._horizontal_analysis(arts)
+        for t in ("best-practice", "decision"):
+            msgs = [it["message"] for it in h.get(t, [])]
+            assert not any("no links/provenance" in m for m in msgs), \
+                f"{t} should be exempt from orphan-provenance headline"
+
+    def test_non_exempt_type_still_warns(self):
+        # A non-exempt type (requirement) with no provenance still warns — the
+        # exemption is scoped to foundational doctrine, not a blanket silence.
+        arts = [self._art(f"REQ-00{i}", "requirement") for i in range(1, 5)]
+        h = audit_cmd._horizontal_analysis(arts)
+        req_items = h.get("requirement", [])
+        assert any("no links/provenance" in it["message"] for it in req_items)
+        assert any(it["severity"] == "warn" for it in req_items)
+
+
+# ── --dry-run: identical findings/exit code, zero filesystem side effects ─────
+
+
+class TestDryRun:
+    """``project-audit --dry-run`` skips all four write blocks (snapshot dir,
+    AUD artifact, CHL artifact, cache + index) while printing the identical
+    Findings/Result lines and returning the identical exit code. After a dry
+    run the project tree is byte-for-byte unchanged."""
+
+    @staticmethod
+    def _fixture(root: Path) -> None:
+        (root / "_specflow" / "specs" / "requirements").mkdir(parents=True)
+        # One approved REQ with no ARCH/STORY → vertical warns → exit 2, and a
+        # realistic exercise of discover_artifacts + the analysis pipeline.
+        (root / "_specflow" / "specs" / "requirements" / "REQ-001.md").write_text(
+            "---\nid: REQ-001\ntitle: T\ntype: requirement\nstatus: approved\n"
+            "tags: []\nsuspect: false\nlinks: []\nfingerprint: x\n---\n\n# T\n",
+            encoding="utf-8",
+        )
+
+    @staticmethod
+    def _files(root: Path) -> list[str]:
+        return sorted(str(p.relative_to(root)) for p in root.rglob("*") if p.is_file())
+
+    def test_dry_run_creates_no_files(self, tmp_path, capsys):
+        root = tmp_path / "project"
+        self._fixture(root)
+        before = self._files(root)
+
+        rc = audit_cmd.run(root, {"dry_run": True, "quick": True})
+        capsys.readouterr()  # drain stdout
+        after = self._files(root)
+
+        assert before == after, f"dry-run wrote files: {set(after) - set(before)}"
+        # Explicitly: none of the four write targets exist.
+        assert not (root / ".specflow").exists()               # snapshot dir + cache
+        assert not (root / "_specflow" / "specs" / "audits").exists()       # AUD
+        assert not (root / "_specflow" / "specs" / "challenges").exists()   # CHL
+        # A dry run still surfaces warns (exit 2), proving findings ran.
+        assert rc == 2
+
+    def test_dry_run_exit_code_matches_writing_run(self, tmp_path, capsys):
+        # Exit code is a pure function of in-memory findings (_count_warns), so
+        # dry and writing runs on the same fixture must agree.
+        root = tmp_path / "project"
+        self._fixture(root)
+
+        rc_dry = audit_cmd.run(root, {"dry_run": True, "quick": True})
+        capsys.readouterr()
+        rc_write = audit_cmd.run(root, {"dry_run": False, "quick": True})
+        capsys.readouterr()
+
+        assert rc_dry == rc_write
+        # Sanity: the writing run DID write its snapshot (the dry run is what
+        # suppressed it). AUD/CHL artifact creation is a separate write that
+        # silently no-ops on a minimal fixture, so the snapshot dir is the
+        # reliable witness that the writing path actually executed.
+        assert (root / ".specflow" / "audits").exists()

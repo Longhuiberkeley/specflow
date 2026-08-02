@@ -51,15 +51,13 @@ def _ts() -> str:
 
 
 def _audit_dir(root: Path, ts: str) -> Path:
-    d = root / ".specflow" / "audits" / ts
-    d.mkdir(parents=True, exist_ok=True)
-    return d
+    """Path to one audit run's snapshot directory (caller creates it)."""
+    return root / ".specflow" / "audits" / ts
 
 
 def _cache_dir(root: Path) -> Path:
-    d = root / ".specflow" / "audits" / ".cache"
-    d.mkdir(parents=True, exist_ok=True)
-    return d
+    """Path to the audit findings cache directory (caller creates it)."""
+    return root / ".specflow" / "audits" / ".cache"
 
 
 _AUD_OUTPUT_TYPES = frozenset({"challenge", "audit"})
@@ -583,6 +581,7 @@ def _group_findings_to_chls(findings: list[dict[str, str]]) -> list[TechniqueFin
 def run(root: Path, args: dict[str, Any]) -> int:
     root = root.resolve()
     ts = _ts()
+    dry_run = bool(args.get("dry_run", False))
 
     specflow_dir = root / "_specflow"
     if not specflow_dir.exists():
@@ -607,6 +606,8 @@ def run(root: Path, args: dict[str, Any]) -> int:
     print(f"  Artifacts: {len(artifacts)}" + (f" (sampled {sample_pct}%)" if sample_pct < 100 else ""))
 
     cache_dir = _cache_dir(root)
+    if not dry_run:
+        cache_dir.mkdir(parents=True, exist_ok=True)
     cache_hit, cached_findings = _apply_fingerprint_cache(artifacts, cache_dir)
 
     if cache_hit:
@@ -633,7 +634,11 @@ def run(root: Path, args: dict[str, Any]) -> int:
         cached_count = 0
 
     audit_dir = _audit_dir(root, ts)
-    print(f"  Output: {audit_dir.relative_to(root)}")
+    if dry_run:
+        print(f"  Output: (dry-run — no files written)")
+    else:
+        audit_dir.mkdir(parents=True, exist_ok=True)
+        print(f"  Output: {audit_dir.relative_to(root)}")
     print()
 
     if not cache_hit:
@@ -687,35 +692,37 @@ def run(root: Path, args: dict[str, Any]) -> int:
         # re-mints a CHL the first time a cache hit follows a fresh run). The
         # stable count-free title above bounds that to at most one extra CHL per
         # group; re-architecting the cache is out of scope here.
-        _save_cached_findings(cache_dir, proj_fp, all_findings_raw[:20])
+        if not dry_run:
+            _save_cached_findings(cache_dir, proj_fp, all_findings_raw[:20])
 
     report = _render_report(ts, horizontal, vertical, cross_cutting, cached_count, len(artifacts), scope_info)
     report_path = audit_dir / "report.md"
-    report_path.write_text(report, encoding="utf-8")
+    if not dry_run:
+        report_path.write_text(report, encoding="utf-8")
 
-    sub_horiz_path = audit_dir / "subagent-horizontal.md"
-    sub_horiz_lines = ["# Horizontal Analysis Details\n"]
-    for type_name, items in sorted(horizontal.items()):
-        sub_horiz_lines.append(f"## {type_name}\n")
-        for item in items:
-            sub_horiz_lines.append(f"- [{item['severity']}] {item['message']}")
-        sub_horiz_lines.append("")
-    sub_horiz_path.write_text("\n".join(sub_horiz_lines), encoding="utf-8")
+        sub_horiz_path = audit_dir / "subagent-horizontal.md"
+        sub_horiz_lines = ["# Horizontal Analysis Details\n"]
+        for type_name, items in sorted(horizontal.items()):
+            sub_horiz_lines.append(f"## {type_name}\n")
+            for item in items:
+                sub_horiz_lines.append(f"- [{item['severity']}] {item['message']}")
+            sub_horiz_lines.append("")
+        sub_horiz_path.write_text("\n".join(sub_horiz_lines), encoding="utf-8")
 
-    sub_vert_path = audit_dir / "subagent-vertical.md"
-    sub_vert_lines = ["# Vertical Analysis Details\n"]
-    for item in vertical:
-        sub_vert_lines.append(f"- [{item['severity']}] {item['message']}")
-    sub_vert_path.write_text("\n".join(sub_vert_lines), encoding="utf-8")
+        sub_vert_path = audit_dir / "subagent-vertical.md"
+        sub_vert_lines = ["# Vertical Analysis Details\n"]
+        for item in vertical:
+            sub_vert_lines.append(f"- [{item['severity']}] {item['message']}")
+        sub_vert_path.write_text("\n".join(sub_vert_lines), encoding="utf-8")
 
-    sub_cross_path = audit_dir / "subagent-cross-cutting.md"
-    sub_cross_lines = ["# Cross-cutting Analysis Details\n"]
-    for concern, items in sorted(cross_cutting.items()):
-        sub_cross_lines.append(f"## {concern}\n")
-        for item in items:
-            sub_cross_lines.append(f"- [{item['severity']}] {item['message']}")
-        sub_cross_lines.append("")
-    sub_cross_path.write_text("\n".join(sub_cross_lines), encoding="utf-8")
+        sub_cross_path = audit_dir / "subagent-cross-cutting.md"
+        sub_cross_lines = ["# Cross-cutting Analysis Details\n"]
+        for concern, items in sorted(cross_cutting.items()):
+            sub_cross_lines.append(f"## {concern}\n")
+            for item in items:
+                sub_cross_lines.append(f"- [{item['severity']}] {item['message']}")
+            sub_cross_lines.append("")
+        sub_cross_path.write_text("\n".join(sub_cross_lines), encoding="utf-8")
 
     all_findings = _collect_all_findings(horizontal, vertical, cross_cutting)
     errors = sum(1 for f in all_findings if f["severity"] == "error")
@@ -724,44 +731,53 @@ def run(root: Path, args: dict[str, Any]) -> int:
     # warns drive the exit code. See _ACCOUNTING_CONCERNS for the doctrine.
     warns = escalating_warns + accounting_warns
 
-    aud_title = f"Project Audit {ts}"
-    aud_body = report
-    aud_links: list[dict[str, str]] = []
-    for art in artifacts[:10]:
-        if art_lib.get_prefix_from_id(art.id) == "REQ":
-            aud_links.append({"target": art.id, "role": "refers_to"})
-
-    try:
-        aud_result = art_lib.create_artifact(
-            root,
-            artifact_type="audit",
-            title=aud_title,
-            status="open",
-            rationale="Automated project audit",
-            tags=["project-audit", "auto-generated"],
-            links=aud_links,
-            body=aud_body,
-            review_status="unreviewed",
-        )
-        if aud_result.get("ok"):
-            scope_info.append(f"AUD artifact: {aud_result['id']}")
-    except Exception:
-        pass
-
+    # AUD + CHL artifact creation and all filesystem snapshot/cache writes are
+    # skipped under --dry-run: the exit code is a pure function of the in-memory
+    # findings via _count_warns, so a dry run prints the identical Findings/
+    # Result lines and returns the identical exit code without touching the tree.
+    aud_result: dict[str, Any] = {}
     chl_count = 0
-    if errors + warns > 0:
-        warn_error_findings = [f for f in all_findings if f["severity"] in ("error", "warn")]
-        target_id = aud_result.get("id", "project") if aud_result.get("ok") else "project"
-        findings_typed = _group_findings_to_chls(warn_error_findings)
-        chl_results = chl_lib.create_chl_artifacts(
-            root, findings_typed, target_id,
-            link_role="refers_to", dedup=True,
-        )
-        chl_count = len(chl_results)
+    if not dry_run:
+        aud_title = f"Project Audit {ts}"
+        aud_body = report
+        aud_links: list[dict[str, str]] = []
+        for art in artifacts[:10]:
+            if art_lib.get_prefix_from_id(art.id) == "REQ":
+                aud_links.append({"target": art.id, "role": "refers_to"})
+
+        try:
+            aud_result = art_lib.create_artifact(
+                root,
+                artifact_type="audit",
+                title=aud_title,
+                status="open",
+                rationale="Automated project audit",
+                tags=["project-audit", "auto-generated"],
+                links=aud_links,
+                body=aud_body,
+                review_status="unreviewed",
+            )
+            if aud_result.get("ok"):
+                scope_info.append(f"AUD artifact: {aud_result['id']}")
+        except Exception:
+            pass
+
+        if errors + warns > 0:
+            warn_error_findings = [f for f in all_findings if f["severity"] in ("error", "warn")]
+            target_id = aud_result.get("id", "project") if aud_result.get("ok") else "project"
+            findings_typed = _group_findings_to_chls(warn_error_findings)
+            chl_results = chl_lib.create_chl_artifacts(
+                root, findings_typed, target_id,
+                link_role="refers_to", dedup=True,
+            )
+            chl_count = len(chl_results)
 
     print()
     print(_SEP)
-    print(f"  Report:   {report_path.relative_to(root)}")
+    if dry_run:
+        print(f"  Report:   (dry-run — not written)")
+    else:
+        print(f"  Report:   {report_path.relative_to(root)}")
     accounting_note = (
         f" ({accounting_warns} accounting, non-escalating)" if accounting_warns else ""
     )

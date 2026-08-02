@@ -481,6 +481,16 @@ _RESEARCH_PROVENANCE_FIELDS: dict[str, tuple[str, ...]] = {
 }
 
 
+# Foundational doctrine artifact types that are legitimately upstream-less: they
+# ARE the source other artifacts derive from, so "no links/provenance" is not a
+# defect. Best-practice (BP) and decision (DEC) records sit at the roots of the
+# traceability graph; the audit's horizontal "no links/provenance" headline is a
+# cry-wolf for them (de-noise, BP-005/006). Excluded from has_provenance so that
+# warn does not fire for these types; genuine orphan-provenance detection for
+# every other type stays intact.
+_FOUNDATIONAL_TYPES: frozenset[str] = frozenset({"best-practice", "decision"})
+
+
 def research_provenance_edges(art: Artifact) -> list[str]:
     """Return target artifact IDs this research artifact points to via its
     pack frontmatter provenance fields (not via ``links[]``).
@@ -518,6 +528,10 @@ def has_provenance(art: Artifact) -> bool:
     if art.links:
         return True
     if art.type == "competition":
+        return True
+    if art.type in _FOUNDATIONAL_TYPES:
+        # BP/DEC are foundational doctrine — upstream-less by design (other
+        # artifacts derive from them), so absent links[] is not orphan-provenance.
         return True
     return bool(research_provenance_edges(art))
 

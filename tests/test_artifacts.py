@@ -195,6 +195,26 @@ class TestFindOrphans:
         assert not art_lib.has_provenance(expt)
         assert art_lib.find_orphans([expt]) == [expt]
 
+    def test_foundational_types_exempt_from_provenance(self):
+        # RC1: best-practice and decision artifacts are foundational doctrine —
+        # upstream-less by design (other artifacts derive FROM them) — so an
+        # unlinked BP/DEC is not orphan-provenance. has_provenance returns True
+        # the same way it does for a competition root. Mirrors the research-type
+        # exemption; genuine orphan detection for non-foundational types is
+        # exercised in test_project_audit.
+        bp = art_lib.Artifact(
+            path=Path("bp.md"),
+            frontmatter={"id": "BP-001", "type": "best-practice"},
+            body="", links=[],
+        )
+        dec = art_lib.Artifact(
+            path=Path("dec.md"),
+            frontmatter={"id": "DEC-001", "type": "decision"},
+            body="", links=[],
+        )
+        assert art_lib.has_provenance(bp)
+        assert art_lib.has_provenance(dec)
+
 
 class TestFindMissingVPairs:
     def test_missing_verification(self):

@@ -732,6 +732,8 @@ def _add_project_audit_args(p):
     p.add_argument("--quick", action="store_true", help="Skip cross-cutting analysis (horizontal + vertical only)")
     p.add_argument("--sample-pct", dest="sample_pct", type=int, default=100,
                    help="Sample percentage for STORYs (default: 100)")
+    p.add_argument("--dry-run", action="store_true", dest="dry_run",
+                   help="Print findings without writing snapshot, AUD/CHL artifacts, or cache")
 
 
 def cmd_standards(args: argparse.Namespace) -> int:
