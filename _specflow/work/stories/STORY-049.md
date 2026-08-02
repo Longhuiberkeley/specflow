@@ -19,6 +19,8 @@ links:
 created: '2026-05-04'
 modified: '2026-06-15'
 fingerprint: sha256:1fb053d274f4
+output_files:
+- tests/test_artifact_lint.py
 ---
 
 # Add ARCH and DDD body quality lint checks

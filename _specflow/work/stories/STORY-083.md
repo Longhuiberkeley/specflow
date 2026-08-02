@@ -21,6 +21,9 @@ thinking_techniques:
 - worst_case_user
 - composition
 modified: '2026-08-02'
+output_files:
+- src/specflow/commands/refresh.py
+- tests/test_refresh_lints.py
 ---
 
 # Refresh active pack assets safely

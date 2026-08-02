@@ -29,6 +29,8 @@ checklists_applied:
 - checklist: check-STORY-005
   timestamp: '2026-04-14T17:03:22Z'
 version: 1
+output_files:
+- src/specflow/lib/locks.py
 ---
 
 # Implement filesystem locks for concurrent artifact modification

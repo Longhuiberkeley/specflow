@@ -1,6 +1,6 @@
 ---
 id: STORY-031
-title: "Install UX \u2014 one-line install path and getting-started tutorial"
+title: Install UX — one-line install path and getting-started tutorial
 type: story
 status: verified
 priority: high
@@ -35,6 +35,8 @@ checklists_applied:
 modified: '2026-04-22'
 fingerprint: sha256:9a3927cd99b2
 version: 1
+output_files:
+- src/specflow/lib/display.py
 ---
 
 # Install UX — one-line install path and getting-started tutorial

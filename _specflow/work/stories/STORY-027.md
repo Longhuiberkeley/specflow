@@ -29,6 +29,18 @@ checklists_applied:
 modified: '2026-04-22'
 fingerprint: sha256:283b8b4cca4f
 version: 1
+output_files:
+- src/specflow/commands/adopt.py
+- src/specflow/commands/locks.py
+- src/specflow/commands/merge.py
+- src/specflow/commands/rebuild_index.py
+- src/specflow/commands/split.py
+- src/specflow/commands/unlock.py
+- src/specflow/lib/dedup.py
+- src/specflow/lib/rbac.py
+- src/specflow/packs/adoption/pack.yaml
+- tests/test_adoption_mechanics.py
+- tests/test_adoption_pack.py
 ---
 
 # Expose recovery primitives as CLI commands and clean up dead code

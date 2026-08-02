@@ -18,6 +18,8 @@ links:
 created: '2026-05-04'
 modified: '2026-05-04'
 fingerprint: sha256:67dac14c2536
+output_files:
+- src/specflow/commands/cascade_status.py
 ---
 
 # Add REQ-to-ARCH coverage and story minimum AC checks

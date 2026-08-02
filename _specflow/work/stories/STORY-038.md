@@ -24,6 +24,8 @@ created: '2026-04-20'
 modified: '2026-04-22'
 fingerprint: sha256:b2c8458a85a7
 version: 1
+output_files:
+- tests/test_ci_generation.py
 ---
 
 # Add provider-agnostic CI gate command and GitHub Actions template

@@ -19,6 +19,8 @@ links:
 created: '2026-05-04'
 modified: '2026-06-15'
 fingerprint: sha256:d11543fd4127
+output_files:
+- tests/test_create_set_fields.py
 ---
 
 # Add output_files field to artifact schemas and lint

@@ -24,6 +24,9 @@ links:
   role: derives_from
 created: '2026-08-03'
 fingerprint: sha256:0c60189f291d
+output_files:
+- src/specflow/lib/orphans.py
+- tests/test_done.py
 ---
 
 # Orphan-code adoption + outcome feedback loop (upcoming wave)

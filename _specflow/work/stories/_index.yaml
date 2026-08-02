@@ -920,4 +920,16 @@ artifacts:
     tags: []
     fingerprint: sha256:a557ed85a54a
     children: []
-next_id: 625
+  STORY-625:
+    id: STORY-625
+    title: Pre-adoption baseline traceability
+    status: implemented
+    tags:
+    - traceability
+    - baseline
+    - orphan-code
+    - v1.13
+    - accounting-not-policing
+    fingerprint: sha256:773374d157a7
+    children: []
+next_id: 626

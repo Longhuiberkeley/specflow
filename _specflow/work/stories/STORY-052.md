@@ -18,6 +18,8 @@ links:
 created: '2026-05-04'
 modified: '2026-05-04'
 fingerprint: sha256:57148d878b2c
+output_files:
+- src/specflow/commands/update.py
 ---
 
 # Add --output-files flag to specflow update command

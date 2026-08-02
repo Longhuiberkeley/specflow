@@ -9,6 +9,8 @@ links:
   role: implements
 created: '2026-05-16'
 fingerprint: sha256:90a19484fc11
+output_files:
+- src/specflow/commands/autoresearch.py
 ---
 
 # Add CLI subcommand specflow autoresearch with plan/run/review/leaderboard

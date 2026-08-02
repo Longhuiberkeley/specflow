@@ -12,6 +12,10 @@ links:
 created: '2026-07-10'
 fingerprint: sha256:be7f291787f3
 modified: '2026-07-10'
+output_files:
+- src/specflow/commands/phase_set.py
+- src/specflow/commands/phase_status.py
+- tests/test_phase_machine.py
 ---
 
 # phase-set command: reverse-lifecycle phase accounting

@@ -15,6 +15,9 @@ links:
 created: '2026-05-15'
 modified: '2026-06-15'
 fingerprint: sha256:b09436eed97b
+output_files:
+- src/specflow/commands/trace.py
+- tests/test_trace_research.py
 ---
 
 # Extend specflow trace to render research chain

@@ -29,6 +29,24 @@ checklists_applied:
 modified: '2026-04-22'
 fingerprint: sha256:b95df92dbbbb
 version: 1
+output_files:
+- src/specflow/commands/ci.py
+- src/specflow/commands/export_cmd.py
+- src/specflow/commands/import_cmd.py
+- src/specflow/lib/adapters/base.py
+- src/specflow/lib/adapters/github_actions.py
+- src/specflow/lib/adapters/reqif.py
+- src/specflow/lib/techniques/__init__.py
+- src/specflow/lib/techniques/assumption_surfacing.py
+- src/specflow/lib/techniques/devils_advocate.py
+- src/specflow/lib/techniques/premortem.py
+- src/specflow/lib/techniques/red_blue_team.py
+- src/specflow/templates/checklists/review/architecture-review.yaml
+- src/specflow/templates/checklists/review/detailed-design-review.yaml
+- src/specflow/templates/checklists/review/implementation-review.yaml
+- src/specflow/templates/checklists/review/requirement-review.yaml
+- src/specflow/templates/checklists/review/story-review.yaml
+- tests/test_review_artifact.py
 ---
 
 # Ship /specflow-artifact-review with tiered depth and thinking techniques

@@ -12,6 +12,8 @@ links:
 created: '2026-07-10'
 fingerprint: sha256:8dd2644969f0
 modified: '2026-07-10'
+output_files:
+- tests/test_supersession.py
 ---
 
 # supersession status and supersedes role for REQ/ARCH/DDD schemas

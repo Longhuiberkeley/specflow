@@ -27,6 +27,19 @@ created: '2026-04-22'
 modified: '2026-04-22'
 fingerprint: sha256:7e7ac8a5b7d1
 version: 1
+output_files:
+- src/specflow/commands/schema_cmd.py
+- src/specflow/templates/schemas/best-practice.yaml
+- src/specflow/templates/schemas/defect.yaml
+- src/specflow/templates/schemas/integration-test.yaml
+- src/specflow/templates/schemas/optional/control.yaml
+- src/specflow/templates/schemas/optional/hazard.yaml
+- src/specflow/templates/schemas/optional/risk.yaml
+- src/specflow/templates/schemas/qualification-test.yaml
+- src/specflow/templates/schemas/review.yaml
+- src/specflow/templates/schemas/spike.yaml
+- src/specflow/templates/schemas/unit-test.yaml
+- tests/test_optional_types.py
 ---
 
 # Add optional artifact type schemas and init integration

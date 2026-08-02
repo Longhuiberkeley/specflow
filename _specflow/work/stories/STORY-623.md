@@ -23,6 +23,10 @@ links:
   role: derives_from
 created: '2026-08-03'
 fingerprint: sha256:29ac4ed67fa9
+output_files:
+- src/specflow/commands/verify.py
+- src/specflow/lib/verification.py
+- tests/test_verify.py
 ---
 
 # Verification arc: specflow verify + verify_run_* evidence + entry-point sync

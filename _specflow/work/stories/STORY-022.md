@@ -31,6 +31,8 @@ checklists_applied:
 modified: '2026-06-15'
 fingerprint: sha256:ea3bae1e6e1b
 version: 1
+output_files:
+- src/specflow/lib/skill_export.py
 ---
 
 # Ship command rename and thin-skill wrappers for all Tier 2/3 CLI commands

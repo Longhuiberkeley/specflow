@@ -200,4 +200,38 @@ artifacts:
     - loop
     fingerprint: sha256:aac285e28d84
     children: []
-next_id: 26
+  DDD-026:
+    id: DDD-026
+    title: Verification-contract recording + accounting evidence lenses
+    status: approved
+    tags:
+    - v1.13
+    - verification
+    - accounting-not-policing
+    - detailed-design
+    fingerprint: sha256:6527d73a94dc
+    children: []
+  DDD-027:
+    id: DDD-027
+    title: "Autoresearch pack \u2014 schema field contracts, CLI dispatch, context\
+      \ injection, domain-aware lint"
+    status: approved
+    tags:
+    - autoresearch
+    - detailed-design
+    - multi-criteria
+    - domain-aware
+    fingerprint: sha256:a18de667761b
+    children: []
+  DDD-028:
+    id: DDD-028
+    title: "Deferred lifecycle capabilities \u2014 command-surface detailed design"
+    status: approved
+    tags:
+    - lifecycle
+    - detailed-design
+    - accounting-not-policing
+    - v1.12
+    fingerprint: sha256:4beb0c084d3d
+    children: []
+next_id: 29

@@ -30,6 +30,10 @@ checklists_applied:
 modified: '2026-04-22'
 fingerprint: sha256:91ea8b11001c
 version: 1
+output_files:
+- src/specflow/lib/role_normalize.py
+- tests/test_hook.py
+- tests/test_role_normalize.py
 ---
 
 # Enforce role-based access control via git hooks and CODEOWNERS

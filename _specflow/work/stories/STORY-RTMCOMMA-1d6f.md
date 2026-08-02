@@ -12,6 +12,8 @@ links:
 created: '2026-07-10'
 fingerprint: sha256:a72a3ec06af0
 modified: '2026-07-10'
+output_files:
+- src/specflow/commands/rtm.py
 ---
 
 # rtm command: bidirectional requirements traceability matrix

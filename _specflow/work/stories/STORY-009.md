@@ -32,6 +32,9 @@ checklists_applied:
 - checklist: check-STORY-009
   timestamp: '2026-04-14T17:03:22Z'
 version: 1
+output_files:
+- src/specflow/lib/challenges.py
+- tests/test_challenges.py
 ---
 
 # Implement proactive challenge engine for edge case discovery

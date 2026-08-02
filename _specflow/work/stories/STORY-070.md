@@ -18,6 +18,12 @@ links:
   role: depends_on
 created: '2026-05-15'
 fingerprint: sha256:cf3d98d175c8
+output_files:
+- src/specflow/packs/autoresearch/pack.yaml
+- src/specflow/packs/autoresearch/schemas/competition.yaml
+- src/specflow/packs/autoresearch/schemas/experiment.yaml
+- src/specflow/packs/autoresearch/schemas/finding.yaml
+- src/specflow/packs/autoresearch/schemas/loop.yaml
 ---
 
 # Author specflow-autoresearch SKILL.md with subcommands and setup gate

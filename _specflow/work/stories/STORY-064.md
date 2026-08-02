@@ -20,6 +20,8 @@ links:
 created: '2026-05-15'
 modified: '2026-06-15'
 fingerprint: sha256:4f5d8d729f6c
+output_files:
+- src/specflow/packs/__init__.py
 ---
 
 # Extend apply_pack with skill installation step

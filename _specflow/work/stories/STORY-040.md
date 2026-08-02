@@ -24,6 +24,15 @@ created: '2026-04-21'
 modified: '2026-04-22'
 fingerprint: sha256:d87a2091f072
 version: 1
+output_files:
+- src/specflow/__main__.py
+- src/specflow/commands/__init__.py
+- src/specflow/commands/list_cmd.py
+- src/specflow/commands/transitions.py
+- src/specflow/templates/schemas/requirement.yaml
+- tests/test_cli_commands.py
+- tests/test_v124_ergonomics.py
+- tests/test_v12_features.py
 ---
 
 # Remove deprecated CLI aliases and fix requirement schema

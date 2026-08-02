@@ -29,6 +29,10 @@ checklists_applied:
 modified: '2026-04-22'
 fingerprint: sha256:e3f167eab875
 version: 1
+output_files:
+- src/specflow/templates/schemas/audit.yaml
+- src/specflow/templates/schemas/challenge.yaml
+- src/specflow/templates/schemas/decision.yaml
 ---
 
 # Ship the change-audit pipeline with review_status field

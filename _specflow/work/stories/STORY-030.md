@@ -36,6 +36,8 @@ checklists_applied:
 modified: '2026-04-22'
 fingerprint: sha256:8d8779ab40c0
 version: 1
+output_files:
+- tests/test_project_audit.py
 ---
 
 # Ship /specflow-project-audit with seamless core + wings

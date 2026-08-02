@@ -341,7 +341,7 @@ artifacts:
   REQ-035:
     id: REQ-035
     title: Enhanced autoresearch logging, objectives, and domain-aware checks
-    status: approved
+    status: implemented
     tags:
     - autoresearch
     - logging
@@ -353,7 +353,7 @@ artifacts:
   REQ-037:
     id: REQ-037
     title: Eliminate false-confidence signals (v1.13 cycle)
-    status: approved
+    status: implemented
     tags:
     - v1.13
     - verification

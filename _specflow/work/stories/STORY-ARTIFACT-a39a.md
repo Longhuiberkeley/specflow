@@ -12,6 +12,8 @@ links:
 created: '2026-07-10'
 fingerprint: sha256:e45e9f28f9d1
 modified: '2026-07-10'
+output_files:
+- tests/test_lint_quality_gates.py
 ---
 
 # artifact-lint quality gates: empty-AC error and NFR threshold warning

@@ -34,6 +34,8 @@ checklists_applied:
 - checklist: check-STORY-002
   timestamp: '2026-04-14T17:03:22Z'
 version: 1
+output_files:
+- tests/test_reverse_impact.py
 ---
 
 # Report and resolve suspect flags via specflow impact command

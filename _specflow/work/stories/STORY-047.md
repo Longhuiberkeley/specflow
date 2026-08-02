@@ -25,6 +25,8 @@ created: '2026-04-22'
 modified: '2026-04-22'
 fingerprint: sha256:745606762bf5
 version: 1
+output_files:
+- tests/test_standards_get_clause.py
 ---
 
 # Enhance standards gap analysis with scoring, remediation, and JSON output

@@ -32,6 +32,8 @@ checklists_applied:
 - checklist: check-STORY-001
   timestamp: '2026-04-14T17:03:22Z'
 version: 1
+output_files:
+- tests/test_rebuild_index.py
 ---
 
 # Detect fingerprint changes and propagate suspect flags for downstream artifacts

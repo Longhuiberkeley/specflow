@@ -29,6 +29,20 @@ checklists_applied:
 modified: '2026-04-22'
 fingerprint: sha256:6b583fbf7782
 version: 1
+output_files:
+- scripts/artifact-lint-fingerprints.sh
+- scripts/artifact-lint-gate.sh
+- scripts/artifact-lint-ids.sh
+- scripts/artifact-lint-links.sh
+- scripts/artifact-lint-schema.sh
+- scripts/artifact-lint-status.sh
+- scripts/checklist-run-acceptance.sh
+- src/specflow/commands/fingerprint_refresh.py
+- src/specflow/commands/renumber_drafts.py
+- src/specflow/lib/draft_ids.py
+- src/specflow/templates/checklists/in-process/requirement-writing.yaml
+- src/specflow/templates/checklists/phase-gates/discovering-to-specifying.yaml
+- src/specflow/templates/checklists/phase-gates/specifying-to-planning.yaml
 ---
 
 # Audit and rewrite the four existing SKILL.md prompts

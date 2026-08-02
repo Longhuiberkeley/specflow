@@ -221,4 +221,27 @@ artifacts:
     - architecture
     fingerprint: sha256:5b95d52012fe
     children: []
-next_id: 27
+  ARCH-027:
+    id: ARCH-027
+    title: "Autoresearch pack \u2014 schema-driven capability surface"
+    status: implemented
+    tags:
+    - autoresearch
+    - architecture
+    - pack
+    - multi-criteria
+    - domain-aware
+    fingerprint: sha256:a4cf4564638d
+    children: []
+  ARCH-028:
+    id: ARCH-028
+    title: "Deferred lifecycle capabilities \u2014 accounting-based command surfaces"
+    status: implemented
+    tags:
+    - lifecycle
+    - architecture
+    - accounting-not-policing
+    - v1.12
+    fingerprint: sha256:aa3755a74a75
+    children: []
+next_id: 29

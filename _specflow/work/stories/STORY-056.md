@@ -19,6 +19,8 @@ links:
 created: '2026-05-04'
 modified: '2026-05-05'
 fingerprint: sha256:aa12a11098e3
+output_files:
+- tests/test_spidr_coverage.py
 ---
 
 # Add SPIDR dimension coverage lint check

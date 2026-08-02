@@ -19,6 +19,8 @@ links:
 created: '2026-05-04'
 modified: '2026-05-05'
 fingerprint: sha256:d21a286a3111
+output_files:
+- tests/test_wave_cycle_detection.py
 ---
 
 # Add story dependency cycle detection to artifact-lint

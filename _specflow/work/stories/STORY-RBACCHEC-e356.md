@@ -12,6 +12,9 @@ links:
 created: '2026-07-10'
 fingerprint: sha256:52d7c708196c
 modified: '2026-07-10'
+output_files:
+- src/specflow/commands/rbac_check.py
+- tests/test_rbac_check.py
 ---
 
 # rbac check command: author role resolution and transition authorization

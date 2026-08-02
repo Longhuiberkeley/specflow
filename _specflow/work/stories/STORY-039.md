@@ -27,6 +27,8 @@ created: '2026-04-20'
 modified: '2026-04-22'
 fingerprint: sha256:a3189db97535
 version: 1
+output_files:
+- src/specflow/lib/__init__.py
 ---
 
 # Create pytest test suite for core lib modules

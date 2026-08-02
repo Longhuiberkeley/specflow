@@ -34,6 +34,10 @@ checklists_applied:
 - checklist: check-STORY-010
   timestamp: '2026-04-14T17:03:22Z'
 version: 1
+output_files:
+- src/specflow/commands/done.py
+- src/specflow/commands/patterns.py
+- src/specflow/lib/learning.py
 ---
 
 # Extract prevention patterns into learned checklists via specflow done

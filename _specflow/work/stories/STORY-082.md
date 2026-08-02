@@ -37,6 +37,7 @@ output_files:
 - AGENTS.md
 - tests/test_brief.py
 - tests/test_knowledge_lifecycle.py
+- src/specflow/__init__.py
 checklists_applied:
 - checklist: check-STORY-082
   timestamp: '2026-07-29T17:23:03Z'

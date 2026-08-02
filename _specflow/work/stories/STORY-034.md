@@ -1,7 +1,7 @@
 ---
 id: STORY-034
-title: "Documentation overhaul \u2014 rewrite lifecycle, commands, and README for\
-  \ 9-command surface"
+title: Documentation overhaul — rewrite lifecycle, commands, and README for 9-command
+  surface
 type: story
 status: verified
 priority: high
@@ -29,6 +29,23 @@ created: '2026-04-17'
 fingerprint: sha256:55db9741b5bd
 version: 2
 modified: '2026-04-22'
+output_files:
+- src/specflow/lib/adapters/__init__.py
+- src/specflow/lib/docs.py
+- src/specflow/templates/adapters.yaml
+- src/specflow/templates/checklists/domain/api-service.yaml
+- src/specflow/templates/checklists/domain/cli-tool.yaml
+- src/specflow/templates/checklists/domain/data-pipeline.yaml
+- src/specflow/templates/checklists/domain/embedded.yaml
+- src/specflow/templates/checklists/domain/library.yaml
+- src/specflow/templates/checklists/domain/mobile.yaml
+- src/specflow/templates/checklists/domain/web-app.yaml
+- src/specflow/templates/checklists/phase-gates/executing-to-verifying.yaml
+- src/specflow/templates/checklists/phase-gates/idle-to-discovering.yaml
+- src/specflow/templates/checklists/phase-gates/planning-to-executing.yaml
+- src/specflow/templates/checklists/phase-gates/verifying-to-complete.yaml
+- tests/test_doc_command_examples.py
+- tests/test_docs.py
 ---
 
 # Documentation overhaul — rewrite lifecycle, commands, and README for 9-command surface

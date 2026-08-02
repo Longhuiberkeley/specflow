@@ -12,6 +12,8 @@ links:
 created: '2026-07-10'
 fingerprint: sha256:2647c67c8626
 modified: '2026-07-10'
+output_files:
+- tests/test_multi_platform.py
 ---
 
 # multi-host platform detection warning and refresh --all-platforms

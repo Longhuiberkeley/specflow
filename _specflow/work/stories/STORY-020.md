@@ -30,6 +30,8 @@ checklists_applied:
 modified: '2026-06-15'
 fingerprint: sha256:77229e571f6c
 version: 1
+output_files:
+- src/specflow/lib/git_utils.py
 ---
 
 # Implement dead code and code similarity detection for project hygiene

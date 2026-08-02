@@ -18,6 +18,10 @@ links:
 created: '2026-05-04'
 modified: '2026-05-05'
 fingerprint: sha256:67fc9661feda
+output_files:
+- src/specflow/commands/reconcile.py
+- src/specflow/lib/files.py
+- tests/test_source_scope.py
 ---
 
 # Build output file reverse index and flag suspect artifacts

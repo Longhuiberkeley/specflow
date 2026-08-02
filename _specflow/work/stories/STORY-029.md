@@ -33,6 +33,8 @@ checklists_applied:
 modified: '2026-04-22'
 fingerprint: sha256:e2e291118dad
 version: 1
+output_files:
+- tests/test_update_thinking_techniques.py
 ---
 
 # Add deterministic analytical passes to the V-model

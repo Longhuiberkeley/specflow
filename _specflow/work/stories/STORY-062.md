@@ -19,6 +19,10 @@ links:
 created: '2026-05-04'
 modified: '2026-05-05'
 fingerprint: sha256:c84a20c5c078
+output_files:
+- src/specflow/lib/domain_constants.py
+- src/specflow/lib/domain_detect.py
+- tests/test_domain_detect.py
 ---
 
 # Pass domain classification from discover to plan skill

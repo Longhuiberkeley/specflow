@@ -29,6 +29,9 @@ checklists_applied:
 modified: '2026-04-22'
 fingerprint: sha256:fe09bc983eda
 version: 1
+output_files:
+- src/specflow/commands/baseline.py
+- src/specflow/lib/baselines.py
 ---
 
 # Create and compare immutable baselines for project state snapshots

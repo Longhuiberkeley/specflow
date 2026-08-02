@@ -30,6 +30,11 @@ checklists_applied:
 modified: '2026-04-22'
 fingerprint: sha256:bcd75bb30bed
 version: 1
+output_files:
+- src/specflow/commands/defect_from_monitor.py
+- src/specflow/commands/defect_from_suspect.py
+- src/specflow/lib/defects.py
+- tests/test_defects.py
 ---
 
 # Implement defect lifecycle tracking with V-model linkage
