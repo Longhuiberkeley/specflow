@@ -1,0 +1,8 @@
+changed: ARCH-028
+change_type: content_modified
+fingerprint_old: sha256:aa3755a74a75
+fingerprint_new: sha256:174bed332720
+update_type: minor
+flagged_suspects: []
+resolved: false
+timestamp: '2026-08-02T19:17:17Z'
