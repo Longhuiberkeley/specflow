@@ -4,6 +4,88 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.13.0] - 2026-08-03
+
+The false-confidence reduction cycle. Green signals must reflect reality: this
+release makes `status: verified` machine-checkable, turns proven cry-wolf
+audit warns into honest accounting, and closes every escalating structural
+gap with real traceability — never reclassification. Includes the 1.12.6 gate
+patch. The repo's own `specflow-release-gate` goes honestly green for the
+first time: 0 escalating structural warns (17 at v1.12.5). No new blocking
+gates, no new artifact types, no new link roles (accounting-not-policing,
+D-18 frozen vocabulary).
+
+### Added
+
+- **Verification contracts + `specflow verify`.** UT/IT/QT/STORY schemas gain
+  optional `verify_command` / `verify_evidence` / `verify_exit_code`.
+  `specflow verify [ID|--all|--type T] [--evidence-file] [--dry-run]
+  [--timeout S]` runs the contract and records deterministic evidence to
+  frontmatter (`verify_run_exit_code`, `verify_run_out_hash`, `verify_run_at`,
+  `verify_run_git_ref`, `verify_run_command_hash`, optional evidence
+  hash/mtime). A failing command is RECORDED, never blocking — the runner
+  exits non-zero only on runner failures. Recording is fingerprint-exempt by
+  design. Satisfies PREV-001, the repo's own learned pattern.
+- **Verification + AC-coverage accounting lenses** in `project-audit`,
+  registered in `_ACCOUNTING_CONCERNS`: declared-but-never-run, failed-run,
+  and command-drift surface as warns that never drive exit-2; REQs with ACs
+  but zero linked tests warn, count mismatches inform. The completeness warn
+  split keeps missing-ARCH/STORY structural while test-linkage gaps become
+  accounting. Compliance evidence output now annotates `verify_run` exit
+  codes instead of presenting bare `verified` as machine-backed.
+- **`specflow defect-from-monitor`** — wires a breached ops-pack MONITOR into
+  a DEF (`fails_to_meet`→REQ, `exposed_by`→MON), freezing the monitor's
+  ephemeral metrics/signals/captures into an Observed-at-breach block.
+  Warn-and-proceed on healthy monitors; the monitor is never mutated; DEF
+  closure fires the existing prevention-pattern path. A `brief` lens
+  (ops-pack-gated, two-direction link walk) makes untraced breaches loud.
+- **`output_files` auto-capture on phase closure** — `done` walks git history
+  to phase start, parses story IDs from wave-commit messages, and retro-links
+  new/modified source files onto owning STORYs. Best-effort and idempotent;
+  attribution failures print, never fail closure.
+- **`specflow project-audit --dry-run`** — identical findings and exit code,
+  zero write side-effects (no snapshot, AUD, CHL, or cache mutations).
+- `brief --next` recommends `specflow verify` when declared contracts lack
+  matching run evidence; `specflow-execute` skill runs verify before
+  transitioning artifacts to `verified` (reference doc included).
+
+### Fixed
+
+- **Fingerprint safety.** create/update/rebuild/drift-detection now all hash
+  the rendered body — freshly created artifacts were previously born drifted.
+  `rebuild-index` recomputes empty and empty-string-hash fingerprints (the
+  old bug's deterministic signature only — any other mismatch stays
+  suspect-detection's job), writes them back to index AND frontmatter
+  idempotently, and quarantines fileless index entries to
+  `_index.quarantine.yaml` instead of dropping them.
+- Best-practice and decision artifacts are exempt from orphan-provenance
+  (foundational doctrine, upstream-less by design).
+- `.antigravitycli` session caches excluded from source scan scope.
+
+### Housekeeping (dogfood)
+
+- One-time attribution sweep linked 172 orphaned source files to owning
+  STORYs (52 by git-history refs, 120 by feature area) plus a documented
+  pre-adoption baseline STORY-625 for genuinely ownerless files — the
+  orphan-code warn closes at 0/212 by real traceability.
+- ARCH-027/028 + DDD-026/027/028 close every no-ARCH/no-DDD gap (REQ-035,
+  REQ-AUTORESE-d684, REQ-DEFERRED-5cea, and the REQ-037 verification-arc
+  chain); REQ-035/037 promoted to `implemented` (the honest ceiling); 88
+  legacy CHLs staled only where their condition demonstrably no longer holds;
+  91 stale fingerprints repaired, ghost BP-001 quarantined.
+
+### Verification
+
+- 895 tests passing (baseline 820 at v1.12.5; +75, no regressions).
+- `specflow project-audit --dry-run`: 0 errors, **0 escalating warns** (17 at
+  v1.12.5), 23 accounting warns surfaced advisory-only — exit 0.
+- `specflow artifact-lint --method programmatic`: PASS, 0 blocking across 500
+  artifacts.
+- Two adversarial review passes proved the invariants: accounting carve-out
+  is the sole exit-2 mechanism (reversal-tested), `verify` never blocks on
+  recorded failure, `defect-from-suspect` behavior byte-identical after the
+  shared-helper extraction, sweep attributions spot-checked for padding.
+
 ## [1.12.6] - 2026-08-03
 
 ### Fixed
