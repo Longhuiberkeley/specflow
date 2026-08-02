@@ -161,7 +161,11 @@ def validate_artifact_schema(
             known_meta = {"created", "modified", "version", "priority", "rationale",
                           "tags", "suspect", "fingerprint", "links", "upstream",
                           "checklists_applied", "edge_cases_identified", "execution_wave",
-                          "non_functional_category", "output_files", "thinking_techniques"}
+                          "non_functional_category", "output_files", "thinking_techniques",
+                          "verify_command", "verify_evidence", "verify_exit_code",
+                          "verify_run_exit_code", "verify_run_out_hash", "verify_run_at",
+                          "verify_run_git_ref", "verify_run_command_hash",
+                          "verify_run_evidence_hash", "verify_run_evidence_mtime"}
             if key not in known_meta:
                 issues.append({
                     "severity": "info",

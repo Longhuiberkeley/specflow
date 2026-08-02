@@ -239,6 +239,12 @@ def cmd_generate_tests(args: argparse.Namespace) -> int:
     return cmd.run(root, vars(args))
 
 
+def cmd_verify(args: argparse.Namespace) -> int:
+    from specflow.commands import verify as cmd
+    root = _find_project_root()
+    return cmd.run(root, vars(args))
+
+
 def cmd_autoresearch(args: argparse.Namespace) -> int:
     from specflow.commands import autoresearch as autoresearch_cmd
     root = _find_project_root()
@@ -643,6 +649,18 @@ def _add_generate_tests_parser(subparsers):
     p.add_argument("--dry-run", action="store_true", dest="dry_run", help="Show what would be created without writing files")
 
 
+def _add_verify_parser(subparsers):
+    p = subparsers.add_parser("verify", help="Run verification contracts and record deterministic evidence")
+    p.add_argument("ids", nargs="*", help="Artifact IDs to verify (omit with --all or --type)")
+    p.add_argument("--all", action="store_true", dest="all", help="Verify all artifacts")
+    p.add_argument("--type", choices=["UT", "IT", "QT", "STORY"], help="Verify all artifacts of a given type")
+    p.add_argument("--evidence-file", action="store_true", dest="evidence_file",
+                   help="Also hash the first verify_evidence file match and record its mtime")
+    p.add_argument("--dry-run", action="store_true", dest="dry_run",
+                   help="Print each verify_command without executing or writing anything")
+    p.add_argument("--timeout", type=int, default=600, help="Per-command timeout in seconds (default: 600)")
+
+
 def _add_autoresearch_parser(subparsers):
     p = subparsers.add_parser("autoresearch", help="Autoresearch competition loop: plan, run, review, leaderboard")
     sub = p.add_subparsers(dest="autoresearch_subcommand")
@@ -703,7 +721,7 @@ _HELP_EPILOG = """\
 commands by workflow phase:
   Discover:   init, refresh, status, brief, domain, patterns, standards, list, schema, transitions
   Plan:       create, update, approve
-  Execute:    go, done, phase-status, phase-set, cascade-status, reconcile, generate-tests
+  Execute:    go, done, phase-status, phase-set, cascade-status, reconcile, generate-tests, verify
   Review:     artifact-lint, checklist-run, artifact-review, project-audit, trace, rtm
   Release:    baseline, document-changes
   CI:         hook, rbac, renumber-drafts, import, export, detect, change-impact,
@@ -920,6 +938,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_cascade_status_parser(subparsers)
     _add_reconcile_parser(subparsers)
     _add_generate_tests_parser(subparsers)
+    _add_verify_parser(subparsers)
 
     # ── Review ──────────────────────────────────────────────────
     _add_artifact_lint_parser(subparsers)
@@ -1018,6 +1037,7 @@ def main(argv: list[str] | None = None) -> int:
         "trace": cmd_trace,
         "ci-gate": cmd_ci_gate,
         "generate-tests": cmd_generate_tests,
+        "verify": cmd_verify,
         "autoresearch": cmd_autoresearch,
         "adopt": cmd_adopt,
     }
