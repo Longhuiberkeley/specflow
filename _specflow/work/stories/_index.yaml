@@ -1,208 +1,229 @@
 artifacts:
   STORY-001:
-    fingerprint: sha256:7e927cb96b50
     id: STORY-001
+    title: Detect fingerprint changes and propagate suspect flags for downstream artifacts
     status: verified
     tags:
     - traceability
     - impact
     - P4
     - spidr-path
-    title: Detect fingerprint changes and propagate suspect flags for downstream artifacts
+    fingerprint: sha256:7e927cb96b50
+    children: []
   STORY-002:
-    fingerprint: sha256:e6c357dd6dd6
     id: STORY-002
+    title: Report and resolve suspect flags via specflow impact command
     status: verified
     tags:
     - traceability
     - impact
     - cli
     - P4
-    title: Report and resolve suspect flags via specflow impact command
+    fingerprint: sha256:e6c357dd6dd6
+    children: []
   STORY-003:
-    fingerprint: sha256:ffd852f3fbc2
     id: STORY-003
+    title: Implement typo cascade defense with 3-tier classification
     status: verified
     tags:
     - traceability
     - typo-defense
     - P4
-    title: Implement typo cascade defense with 3-tier classification
+    fingerprint: sha256:ffd852f3fbc2
+    children: []
   STORY-004:
-    fingerprint: sha256:8b507fe4c303
     id: STORY-004
+    title: Implement split and merge operations for artifact refactoring
     status: verified
     tags:
     - traceability
     - refactoring
     - P4
-    title: Implement split and merge operations for artifact refactoring
+    fingerprint: sha256:8b507fe4c303
+    children: []
   STORY-005:
-    fingerprint: sha256:c26bcff9ced0
     id: STORY-005
+    title: Implement filesystem locks for concurrent artifact modification
     status: verified
     tags:
     - concurrency
     - locks
     - P4
-    title: Implement filesystem locks for concurrent artifact modification
+    fingerprint: sha256:c26bcff9ced0
+    children: []
   STORY-006:
-    fingerprint: sha256:915847809d40
     id: STORY-006
+    title: Group stories into dependency-free waves for parallel execution
     status: verified
     tags:
     - execution
     - orchestration
     - P5
-    title: Group stories into dependency-free waves for parallel execution
+    fingerprint: sha256:915847809d40
+    children: []
   STORY-007:
-    fingerprint: sha256:7a3c7d9dac0b
     id: STORY-007
+    title: Orchestrate parallel subagent execution with isolated context per story
     status: verified
     tags:
     - execution
     - orchestration
     - subagents
     - P5
-    title: Orchestrate parallel subagent execution with isolated context per story
+    fingerprint: sha256:7a3c7d9dac0b
+    children: []
   STORY-008:
-    fingerprint: sha256:bde4ab3a1b2e
     id: STORY-008
+    title: Assemble context-specific review criteria for specflow check
     status: verified
     tags:
     - review
     - checklists
     - P5
-    title: Assemble context-specific review criteria for specflow check
+    fingerprint: sha256:bde4ab3a1b2e
+    children: []
   STORY-009:
-    fingerprint: sha256:4a4c20106519
     id: STORY-009
+    title: Implement proactive challenge engine for edge case discovery
     status: verified
     tags:
     - challenge
     - proactive
     - review
     - P5
-    title: Implement proactive challenge engine for edge case discovery
+    fingerprint: sha256:4a4c20106519
+    children: []
   STORY-010:
-    fingerprint: sha256:fbbc5a2ad9c7
     id: STORY-010
+    title: Extract prevention patterns into learned checklists via specflow done
     status: verified
     tags:
     - challenge
     - reactive
     - learning
     - P5
-    title: Extract prevention patterns into learned checklists via specflow done
+    fingerprint: sha256:fbbc5a2ad9c7
+    children: []
   STORY-011:
-    fingerprint: sha256:fe09bc983eda
     id: STORY-011
+    title: Create and compare immutable baselines for project state snapshots
     status: verified
     tags:
     - compliance
     - baselines
     - P6
-    title: Create and compare immutable baselines for project state snapshots
+    fingerprint: sha256:fe09bc983eda
+    children: []
   STORY-012:
-    fingerprint: sha256:61abebf22c95
     id: STORY-012
+    title: Implement standards pack architecture and compliance gap analysis
     status: verified
     tags:
     - compliance
     - standards
     - gap-analysis
     - P6
-    title: Implement standards pack architecture and compliance gap analysis
+    fingerprint: sha256:61abebf22c95
+    children: []
   STORY-013:
-    fingerprint: sha256:ca1d162d382f
     id: STORY-013
+    title: Generate retroactive change records from git history and impact-log
     status: verified
     tags:
     - compliance
     - change-records
     - P6
-    title: Generate retroactive change records from git history and impact-log
+    fingerprint: sha256:ca1d162d382f
+    children: []
   STORY-014:
-    fingerprint: sha256:91ea8b11001c
     id: STORY-014
+    title: Enforce role-based access control via git hooks and CODEOWNERS
     status: verified
     tags:
     - team
     - rbac
     - security
     - P7
-    title: Enforce role-based access control via git hooks and CODEOWNERS
+    fingerprint: sha256:91ea8b11001c
+    children: []
   STORY-015:
-    fingerprint: sha256:c4a2d22865de
     id: STORY-015
+    title: Implement draft IDs on branches with CI renumbering on merge
     status: verified
     tags:
     - team
     - ids
     - branching
     - P7
-    title: Implement draft IDs on branches with CI renumbering on merge
+    fingerprint: sha256:c4a2d22865de
+    children: []
   STORY-016:
-    fingerprint: sha256:bcd75bb30bed
     id: STORY-016
+    title: Implement defect lifecycle tracking with V-model linkage
     status: verified
     tags:
     - team
     - defects
     - lifecycle
     - P7
-    title: Implement defect lifecycle tracking with V-model linkage
+    fingerprint: sha256:bcd75bb30bed
+    children: []
   STORY-017:
-    fingerprint: sha256:802ee56ce791
     id: STORY-017
+    title: Implement CI integration job with two-pass validation
     status: verified
     tags:
     - team
     - ci
     - validation
     - P7
-    title: Implement CI integration job with two-pass validation
+    fingerprint: sha256:802ee56ce791
+    children: []
   STORY-018:
-    fingerprint: sha256:2cfa543fa94c
     id: STORY-018
+    title: Implement ReqIF import and export for DOORS/Polarion interchange
     status: verified
     tags:
     - team
     - reqif
     - interchange
     - P7
-    title: Implement ReqIF import and export for DOORS/Polarion interchange
+    fingerprint: sha256:2cfa543fa94c
+    children: []
   STORY-019:
-    fingerprint: sha256:74a95266e364
     id: STORY-019
+    title: Implement tiered duplicate detection pipeline for artifacts
     status: verified
     tags:
     - intelligence
     - dedup
     - P8
-    title: Implement tiered duplicate detection pipeline for artifacts
+    fingerprint: sha256:74a95266e364
+    children: []
   STORY-020:
-    fingerprint: sha256:77229e571f6c
     id: STORY-020
+    title: Implement dead code and code similarity detection for project hygiene
     status: verified
     tags:
     - intelligence
     - analysis
     - P8
     - spidr-spike
-    title: Implement dead code and code similarity detection for project hygiene
+    fingerprint: sha256:77229e571f6c
+    children: []
   STORY-021:
-    fingerprint: sha256:6b583fbf7782
     id: STORY-021
+    title: Audit and rewrite the four existing SKILL.md prompts
     status: verified
     tags:
     - quality
     - skills
     - M1-clarity
-    title: Audit and rewrite the four existing SKILL.md prompts
+    fingerprint: sha256:6b583fbf7782
+    children: []
   STORY-022:
-    fingerprint: sha256:ea3bae1e6e1b
     id: STORY-022
+    title: Ship command rename and thin-skill wrappers for all Tier 2/3 CLI commands
     status: verified
     tags:
     - rename
@@ -210,488 +231,542 @@ artifacts:
     - skills
     - M1-clarity
     - spidr-interface
-    title: Ship command rename and thin-skill wrappers for all Tier 2/3 CLI commands
+    fingerprint: sha256:ea3bae1e6e1b
+    children: []
   STORY-023:
-    fingerprint: sha256:1f899b823f47
     id: STORY-023
+    title: Archive docs/phases and restructure docs/ directory
     status: verified
     tags:
     - documentation
     - M1-clarity
-    title: Archive docs/phases and restructure docs/ directory
+    fingerprint: sha256:1f899b823f47
+    children: []
   STORY-024:
-    fingerprint: sha256:b95df92dbbbb
     id: STORY-024
+    title: Ship /specflow-artifact-review with tiered depth and thinking techniques
     status: verified
     tags:
     - review
     - quality
     - M1-clarity
-    title: Ship /specflow-artifact-review with tiered depth and thinking techniques
+    fingerprint: sha256:b95df92dbbbb
+    children: []
   STORY-025:
-    fingerprint: sha256:e3f167eab875
     id: STORY-025
+    title: Ship the change-audit pipeline with review_status field
     status: verified
     tags:
     - pipeline
     - audit
     - M1-clarity
-    title: Ship the change-audit pipeline with review_status field
+    fingerprint: sha256:e3f167eab875
+    children: []
   STORY-026:
-    fingerprint: sha256:992a519742d4
     id: STORY-026
+    title: Build the unified adapter framework
     status: verified
     tags:
     - architecture
     - adapters
     - M2-extensible
-    title: Build the unified adapter framework
+    fingerprint: sha256:992a519742d4
+    children: []
   STORY-027:
-    fingerprint: sha256:283b8b4cca4f
     id: STORY-027
+    title: Expose recovery primitives as CLI commands and clean up dead code
     status: verified
     tags:
     - cleanup
     - CLI
     - M2-extensible
-    title: Expose recovery primitives as CLI commands and clean up dead code
+    fingerprint: sha256:283b8b4cca4f
+    children: []
   STORY-028:
-    fingerprint: sha256:2b3cc0030f5c
     id: STORY-028
+    title: "Compliance rework \u2014 BYOC with /specflow-pack-author"
     status: verified
     tags:
     - compliance
     - BYOC
     - M2-extensible
-    title: "Compliance rework \u2014 BYOC with /specflow-pack-author"
+    fingerprint: sha256:2b3cc0030f5c
+    children: []
   STORY-029:
-    fingerprint: sha256:e2e291118dad
     id: STORY-029
+    title: Add deterministic analytical passes to the V-model
     status: verified
     tags:
     - analysis
     - V-model
     - M3-depth
-    title: Add deterministic analytical passes to the V-model
+    fingerprint: sha256:e2e291118dad
+    children: []
   STORY-030:
-    fingerprint: sha256:8d8779ab40c0
     id: STORY-030
+    title: Ship /specflow-project-audit with conversational scope and chunked fan-out
     status: verified
     tags:
     - audit
     - M3-depth
-    title: Ship /specflow-project-audit with conversational scope and chunked fan-out
+    fingerprint: sha256:8d8779ab40c0
+    children: []
   STORY-031:
-    fingerprint: sha256:9a3927cd99b2
     id: STORY-031
+    title: "Install UX \u2014 one-line install path and getting-started tutorial"
     status: verified
     tags:
     - UX
     - documentation
     - M3-depth
-    title: "Install UX \u2014 one-line install path and getting-started tutorial"
+    fingerprint: sha256:9a3927cd99b2
+    children: []
   STORY-032:
-    fingerprint: sha256:84a65b667115
     id: STORY-032
-    status: verified
-    tags:
-    - UX
-    - skills
-    - M4-ux
     title: "Delete over-exposed skill directories \u2014 collapse 22 skills to 8 Tier\
       \ 1"
-  STORY-033:
-    fingerprint: sha256:e150f32f8b00
-    id: STORY-033
     status: verified
     tags:
     - UX
     - skills
     - M4-ux
+    fingerprint: sha256:84a65b667115
+    children: []
+  STORY-033:
+    id: STORY-033
     title: "Build the 9 Tier 1 conversational skills \u2014 init, audit, ship + modifications"
+    status: verified
+    tags:
+    - UX
+    - skills
+    - M4-ux
+    fingerprint: sha256:e150f32f8b00
+    children: []
   STORY-034:
-    fingerprint: sha256:55db9741b5bd
     id: STORY-034
+    title: "Documentation overhaul \u2014 rewrite lifecycle, commands, and README\
+      \ for 9-command surface"
     status: verified
     tags:
     - UX
     - documentation
     - M4-ux
-    title: "Documentation overhaul \u2014 rewrite lifecycle, commands, and README\
-      \ for 9-command surface"
+    fingerprint: sha256:55db9741b5bd
+    children: []
   STORY-035:
-    fingerprint: sha256:5d458c39e8b8
     id: STORY-035
+    title: "Project convention checklists \u2014 scaffold and enforce project structure"
     status: verified
     tags:
     - UX
     - conventions
     - checklists
-    title: "Project convention checklists \u2014 scaffold and enforce project structure"
+    fingerprint: sha256:5d458c39e8b8
+    children: []
   STORY-036:
-    fingerprint: sha256:6a7a4f1483c8
     id: STORY-036
+    title: Improve pack-author extraction protocol with verification layer
     status: verified
     tags:
     - skills
     - packs
     - quality
-    title: Improve pack-author extraction protocol with verification layer
+    fingerprint: sha256:6a7a4f1483c8
+    children: []
   STORY-037:
-    fingerprint: sha256:ddc227e4eb50
     id: STORY-037
+    title: Add trace command and chain-report lint check
     status: verified
     tags:
     - traceability
     - cli
     - reporting
-    title: Add trace command and chain-report lint check
+    fingerprint: sha256:ddc227e4eb50
+    children: []
   STORY-038:
-    fingerprint: sha256:b2c8458a85a7
     id: STORY-038
+    title: Add provider-agnostic CI gate command and GitHub Actions template
     status: verified
     tags:
     - rbac
     - ci
     - adapters
-    title: Add provider-agnostic CI gate command and GitHub Actions template
+    fingerprint: sha256:b2c8458a85a7
+    children: []
   STORY-039:
-    fingerprint: sha256:a3189db97535
     id: STORY-039
+    title: Create pytest test suite for core lib modules
     status: verified
     tags:
     - testing
     - quality
-    title: Create pytest test suite for core lib modules
+    fingerprint: sha256:a3189db97535
+    children: []
   STORY-040:
-    fingerprint: sha256:d87a2091f072
     id: STORY-040
+    title: Remove deprecated CLI aliases and fix requirement schema
     status: verified
     tags:
     - cleanup
     - deprecation
     - schema
-    title: Remove deprecated CLI aliases and fix requirement schema
+    fingerprint: sha256:d87a2091f072
+    children: []
   STORY-041:
-    fingerprint: sha256:4a61a5012692
     id: STORY-041
+    title: Add EARS patterns and quality guidance to normative-language reference
     status: verified
     tags:
     - quality
     - ears
     - discover
-    title: Add EARS patterns and quality guidance to normative-language reference
+    fingerprint: sha256:4a61a5012692
+    children: []
   STORY-042:
-    fingerprint: sha256:7753ffed1db4
     id: STORY-042
+    title: Add requirements quality lint check to artifact-lint
     status: verified
     tags:
     - quality
     - lint
     - ears
-    title: Add requirements quality lint check to artifact-lint
+    fingerprint: sha256:7753ffed1db4
+    children: []
   STORY-043:
-    fingerprint: sha256:8f982267b23d
     id: STORY-043
+    title: Add coverage metrics to specflow status command
     status: verified
     tags:
     - compliance
     - reporting
     - status
-    title: Add coverage metrics to specflow status command
+    fingerprint: sha256:8f982267b23d
+    children: []
   STORY-044:
-    fingerprint: sha256:1951bbd87bce
     id: STORY-044
+    title: 'Fix ReqIF round-trip quality: stable UUIDs, schema fix, tests, ARCH/DDD
+      export'
     status: verified
     tags:
     - reqif
     - interop
     - quality
-    title: 'Fix ReqIF round-trip quality: stable UUIDs, schema fix, tests, ARCH/DDD
-      export'
+    fingerprint: sha256:1951bbd87bce
+    children: []
   STORY-045:
-    fingerprint: sha256:d0d41ed8b5f6
     id: STORY-045
+    title: Add specflow generate-tests command and update execute skill
     status: verified
     tags:
     - testing
     - vmodel
     - scaffolding
-    title: Add specflow generate-tests command and update execute skill
+    fingerprint: sha256:d0d41ed8b5f6
+    children: []
   STORY-046:
-    fingerprint: sha256:307c26741722
     id: STORY-046
+    title: Add compliance evidence report to specflow ship
     status: verified
     tags:
     - compliance
     - reports
     - shipping
     - evidence
-    title: Add compliance evidence report to specflow ship
+    fingerprint: sha256:307c26741722
+    children: []
   STORY-047:
-    fingerprint: sha256:745606762bf5
     id: STORY-047
+    title: Enhance standards gap analysis with scoring, remediation, and JSON output
     status: verified
     tags:
     - standards
     - compliance
     - gap-analysis
     - json
-    title: Enhance standards gap analysis with scoring, remediation, and JSON output
+    fingerprint: sha256:745606762bf5
+    children: []
   STORY-048:
-    fingerprint: sha256:7e7ac8a5b7d1
     id: STORY-048
+    title: Add optional artifact type schemas and init integration
     status: verified
     tags:
     - artifact-types
     - init
     - packs
     - flexibility
-    title: Add optional artifact type schemas and init integration
+    fingerprint: sha256:7e7ac8a5b7d1
+    children: []
   STORY-049:
-    fingerprint: sha256:1fb053d274f4
     id: STORY-049
+    title: Add ARCH and DDD body quality lint checks
     status: implemented
     tags:
     - lint
     - quality
     - spidr-rules
-    title: Add ARCH and DDD body quality lint checks
+    fingerprint: sha256:1fb053d274f4
+    children: []
   STORY-050:
-    fingerprint: sha256:67dac14c2536
     id: STORY-050
+    title: Add REQ-to-ARCH coverage and story minimum AC checks
     status: implemented
     tags:
     - lint
     - coverage
-    title: Add REQ-to-ARCH coverage and story minimum AC checks
+    fingerprint: sha256:67dac14c2536
+    children: []
   STORY-051:
-    fingerprint: sha256:d11543fd4127
     id: STORY-051
+    title: Add output_files field to artifact schemas and lint
     status: implemented
     tags:
     - traceability
     - schema
     - spidr-data
-    title: Add output_files field to artifact schemas and lint
+    fingerprint: sha256:d11543fd4127
+    children: []
   STORY-052:
-    fingerprint: sha256:57148d878b2c
     id: STORY-052
+    title: Add --output-files flag to specflow update command
     status: implemented
     tags:
     - cli
     - traceability
-    title: Add --output-files flag to specflow update command
+    fingerprint: sha256:57148d878b2c
+    children: []
   STORY-053:
-    fingerprint: sha256:3138c854d574
     id: STORY-053
+    title: Implement config merge and version stamp for init upgrade
     status: implemented
     tags:
     - init
     - upgrade
     - config
-    title: Implement config merge and version stamp for init upgrade
+    fingerprint: sha256:3138c854d574
+    children: []
   STORY-054:
-    fingerprint: sha256:9a614e46dc55
     id: STORY-054
+    title: Add --force flag to specflow init for clean re-initialization
     status: implemented
     tags:
     - init
     - upgrade
     - cli
-    title: Add --force flag to specflow init for clean re-initialization
+    fingerprint: sha256:9a614e46dc55
+    children: []
   STORY-055:
-    fingerprint: sha256:67fc9661feda
     id: STORY-055
+    title: Build output file reverse index and flag suspect artifacts
     status: implemented
     tags:
     - impact
     - traceability
-    title: Build output file reverse index and flag suspect artifacts
+    fingerprint: sha256:67fc9661feda
+    children: []
   STORY-056:
-    fingerprint: sha256:aa12a11098e3
     id: STORY-056
+    title: Add SPIDR dimension coverage lint check
     status: implemented
     tags:
     - lint
     - spidr
     - plan
-    title: Add SPIDR dimension coverage lint check
+    fingerprint: sha256:aa12a11098e3
+    children: []
   STORY-057:
-    fingerprint: sha256:d21a286a3111
     id: STORY-057
+    title: Add story dependency cycle detection to artifact-lint
     status: implemented
     tags:
     - lint
     - waves
     - plan
-    title: Add story dependency cycle detection to artifact-lint
+    fingerprint: sha256:d21a286a3111
+    children: []
   STORY-058:
-    fingerprint: sha256:cffa9d8763d0
     id: STORY-058
+    title: Create DDD selection decision tree reference document
     status: implemented
     tags:
     - plan
     - reference
     - docs
-    title: Create DDD selection decision tree reference document
+    fingerprint: sha256:cffa9d8763d0
+    children: []
   STORY-059:
-    fingerprint: sha256:3e99768cf37d
     id: STORY-059
+    title: Bundle generic best-practice fallback for handbook generation
     status: implemented
     tags:
     - handbook
     - best-practices
-    title: Bundle generic best-practice fallback for handbook generation
+    fingerprint: sha256:3e99768cf37d
+    children: []
   STORY-060:
-    fingerprint: sha256:37c22118b06c
     id: STORY-060
+    title: Persist discovery challenge results as decision artifacts
     status: implemented
     tags:
     - discover
     - decisions
-    title: Persist discovery challenge results as decision artifacts
+    fingerprint: sha256:37c22118b06c
+    children: []
   STORY-061:
-    fingerprint: sha256:6bae276e1383
     id: STORY-061
+    title: Add inter-REQ dependency prompting to discover skill
     status: implemented
     tags:
     - discover
     - dependencies
-    title: Add inter-REQ dependency prompting to discover skill
+    fingerprint: sha256:6bae276e1383
+    children: []
   STORY-062:
-    fingerprint: sha256:c84a20c5c078
     id: STORY-062
+    title: Pass domain classification from discover to plan skill
     status: implemented
     tags:
     - plan
     - discover
     - domain
-    title: Pass domain classification from discover to plan skill
+    fingerprint: sha256:c84a20c5c078
+    children: []
   STORY-063:
-    fingerprint: sha256:17df6a029a13
     id: STORY-063
+    title: Improve discover-to-plan handoff with explicit approval instructions
     status: implemented
     tags:
     - discover
     - plan
     - handoff
-    title: Improve discover-to-plan handoff with explicit approval instructions
+    fingerprint: sha256:17df6a029a13
+    children: []
   STORY-064:
-    fingerprint: sha256:4f5d8d729f6c
     id: STORY-064
+    title: Extend apply_pack with skill installation step
     status: implemented
     tags:
     - autoresearch
     - wave-1
     - scaffold
     - pack
-    title: Extend apply_pack with skill installation step
+    fingerprint: sha256:4f5d8d729f6c
+    children: []
   STORY-065:
-    fingerprint: sha256:afd897eb39a8
     id: STORY-065
+    title: Add category field to existing schema YAMLs
     status: implemented
     tags:
     - autoresearch
     - wave-1
     - schemas
-    title: Add category field to existing schema YAMLs
+    fingerprint: sha256:afd897eb39a8
+    children: []
   STORY-066:
-    fingerprint: sha256:7c50360e6c6c
     id: STORY-066
+    title: Make specflow status dashboard dynamic via category
     status: implemented
     tags:
     - autoresearch
     - wave-1
     - status
-    title: Make specflow status dashboard dynamic via category
+    fingerprint: sha256:7c50360e6c6c
+    children: []
   STORY-067:
-    fingerprint: sha256:b09436eed97b
     id: STORY-067
+    title: Extend specflow trace to render research chain
     status: implemented
     tags:
     - autoresearch
     - wave-1
     - trace
-    title: Extend specflow trace to render research chain
+    fingerprint: sha256:b09436eed97b
+    children: []
   STORY-068:
-    fingerprint: sha256:062e77a573e6
     id: STORY-068
+    title: Create autoresearch pack directory and pack.yaml manifest
     status: implemented
     tags:
     - autoresearch
     - wave-2
     - pack
-    title: Create autoresearch pack directory and pack.yaml manifest
+    fingerprint: sha256:062e77a573e6
+    children: []
   STORY-069:
-    fingerprint: ''
     id: STORY-069
+    title: Author 4 schema YAMLs for COMP / LOOP / EXPT / FIND
     status: implemented
     tags:
     - autoresearch
     - wave-2
     - schemas
-    title: Author 4 schema YAMLs for COMP / LOOP / EXPT / FIND
+    fingerprint: sha256:c1629f868976
+    children: []
   STORY-070:
-    fingerprint: ''
     id: STORY-070
+    title: Author specflow-autoresearch SKILL.md with subcommands and setup gate
     status: implemented
     tags:
     - autoresearch
     - wave-3
     - skill
-    title: Author specflow-autoresearch SKILL.md with subcommands and setup gate
+    fingerprint: sha256:cf3d98d175c8
+    children: []
   STORY-071:
-    fingerprint: ''
     id: STORY-071
-    status: implemented
-    tags:
-    - autoresearch
-    - wave-3
-    - protocol
     title: Adapt autonomous-loop-protocol.md from autoresearch_fork
-  STORY-072:
-    fingerprint: ''
-    id: STORY-072
     status: implemented
     tags:
     - autoresearch
     - wave-3
     - protocol
+    fingerprint: sha256:fc2d3e819e8b
+    children: []
+  STORY-072:
+    id: STORY-072
     title: Write explore-exploit-protocol.md
+    status: implemented
+    tags:
+    - autoresearch
+    - wave-3
+    - protocol
+    fingerprint: sha256:fec81ef311f1
+    children: []
   STORY-073:
-    fingerprint: ''
     id: STORY-073
+    title: Write finding-generation-protocol.md
     status: implemented
     tags:
     - autoresearch
     - wave-3
     - protocol
     - findings
-    title: Write finding-generation-protocol.md
+    fingerprint: sha256:79d9ccf75874
+    children: []
   STORY-074:
-    fingerprint: ''
     id: STORY-074
+    title: Write competition-setup-protocol.md
     status: implemented
     tags:
     - autoresearch
     - wave-3
     - protocol
     - competition
-    title: Write competition-setup-protocol.md
+    fingerprint: sha256:fac1f62f511d
+    children: []
   STORY-075:
-    fingerprint: ''
     id: STORY-075
+    title: Test autoresearch pack end-to-end and pilot with quant_trade_rnd
     status: implemented
     tags:
     - autoresearch
     - wave-4
     - test
     - pilot
-    title: Test autoresearch pack end-to-end and pilot with quant_trade_rnd
+    fingerprint: sha256:b687d7ca14f1
+    children: []
   STORY-076:
-    fingerprint: sha256:d2b2d7aaeebb
     id: STORY-076
+    title: Improve autoresearch EXPT logging, COMP objectives, and domain-aware checks
     status: verified
     tags:
     - autoresearch
@@ -700,10 +775,11 @@ artifacts:
     - protocol
     - logging
     - domain-awareness
-    title: Improve autoresearch EXPT logging, COMP objectives, and domain-aware checks
+    fingerprint: sha256:d2b2d7aaeebb
+    children: []
   STORY-082:
-    fingerprint: sha256:d35eee78fc50
     id: STORY-082
+    title: Revive BP and PREV knowledge-surface visibility and consumption
     status: implemented
     tags:
     - learnings
@@ -712,87 +788,136 @@ artifacts:
     - brief
     - checklists
     - backfilled
-    title: Revive BP and PREV knowledge-surface visibility and consumption
+    fingerprint: sha256:d35eee78fc50
+    children: []
   STORY-083:
-    fingerprint: sha256:b6acee5be483
     id: STORY-083
+    title: Refresh active pack assets safely
     status: verified
     tags:
     - autoresearch
     - pack-system
     - refresh
     - v1.12.5
-    title: Refresh active pack assets safely
+    fingerprint: sha256:b6acee5be483
+    children: []
+  STORY-622:
+    id: STORY-622
+    title: 'v1.12.6 gate patch: kill the foundational-doctrine cry-wolf + add project-audit
+      --dry-run (retro)'
+    status: verified
+    tags:
+    - backfilled
+    - v1.12.6
+    - accounting-not-policing
+    - gate
+    fingerprint: sha256:bebfe53d9f39
+    children: []
+  STORY-623:
+    id: STORY-623
+    title: 'Verification arc: specflow verify + verify_run_* evidence + entry-point
+      sync'
+    status: implemented
+    tags:
+    - v1.13
+    - verification
+    - contracts
+    - entry-point-sync
+    fingerprint: sha256:29ac4ed67fa9
+    children: []
+  STORY-624:
+    id: STORY-624
+    title: Orphan-code adoption + outcome feedback loop (upcoming wave)
+    status: draft
+    tags:
+    - v1.13
+    - orphan-code
+    - adoption
+    - outcome-feedback
+    - upcoming
+    fingerprint: sha256:0c60189f291d
+    children: []
   STORY-ADDAUXIL-c7bd:
-    fingerprint: ''
     id: STORY-ADDAUXIL-c7bd
-    status: draft
-    tags: []
     title: Add auxiliary_metrics field to EXPT schema and update test coverage
+    status: draft
+    tags: []
+    fingerprint: sha256:c73031c9d86f
+    children: []
   STORY-ADDCLI-0e15:
-    fingerprint: ''
     id: STORY-ADDCLI-0e15
-    status: draft
-    tags: []
     title: Add CLI subcommand specflow autoresearch with plan/run/review/leaderboard
+    status: draft
+    tags: []
+    fingerprint: sha256:90a19484fc11
+    children: []
   STORY-ADDMULTI-0f54:
-    fingerprint: ''
     id: STORY-ADDMULTI-0f54
-    status: draft
-    tags: []
     title: Add multi-criteria and anti-leakage documentation to competition-setup-protocol
+    status: draft
+    tags: []
+    fingerprint: sha256:d0fdc70e2da3
+    children: []
   STORY-ARTIFACT-a39a:
-    fingerprint: sha256:e45e9f28f9d1
     id: STORY-ARTIFACT-a39a
-    status: implemented
-    tags:
-    - v1.12.0
     title: 'artifact-lint quality gates: empty-AC error and NFR threshold warning'
+    status: implemented
+    tags:
+    - v1.12.0
+    fingerprint: sha256:e45e9f28f9d1
+    children: []
   STORY-MULTIHOS-63a5:
-    fingerprint: sha256:2647c67c8626
     id: STORY-MULTIHOS-63a5
-    status: implemented
-    tags:
-    - v1.12.0
     title: multi-host platform detection warning and refresh --all-platforms
+    status: implemented
+    tags:
+    - v1.12.0
+    fingerprint: sha256:2647c67c8626
+    children: []
   STORY-PHASESET-d470:
-    fingerprint: sha256:be7f291787f3
     id: STORY-PHASESET-d470
-    status: implemented
-    tags:
-    - v1.12.0
     title: 'phase-set command: reverse-lifecycle phase accounting'
+    status: implemented
+    tags:
+    - v1.12.0
+    fingerprint: sha256:be7f291787f3
+    children: []
   STORY-RBACCHEC-e356:
-    fingerprint: sha256:52d7c708196c
     id: STORY-RBACCHEC-e356
-    status: implemented
-    tags:
-    - v1.12.0
     title: 'rbac check command: author role resolution and transition authorization'
+    status: implemented
+    tags:
+    - v1.12.0
+    fingerprint: sha256:52d7c708196c
+    children: []
   STORY-RTMCOMMA-1d6f:
-    fingerprint: sha256:a72a3ec06af0
     id: STORY-RTMCOMMA-1d6f
-    status: implemented
-    tags:
-    - v1.12.0
     title: 'rtm command: bidirectional requirements traceability matrix'
-  STORY-SMALLFIX-621b:
-    fingerprint: ''
-    id: STORY-SMALLFIX-621b
-    status: draft
-    tags: []
-    title: Small fixes - concurrent-LOOP gate, noise probe, test cleanup
-  STORY-SUPERSES-c408:
-    fingerprint: sha256:8dd2644969f0
-    id: STORY-SUPERSES-c408
     status: implemented
     tags:
     - v1.12.0
-    title: supersession status and supersedes role for REQ/ARCH/DDD schemas
-  STORY-UPDATESK-86fb:
-    fingerprint: ''
-    id: STORY-UPDATESK-86fb
+    fingerprint: sha256:a72a3ec06af0
+    children: []
+  STORY-SMALLFIX-621b:
+    id: STORY-SMALLFIX-621b
+    title: Small fixes - concurrent-LOOP gate, noise probe, test cleanup
     status: draft
     tags: []
+    fingerprint: sha256:6ef30b99260e
+    children: []
+  STORY-SUPERSES-c408:
+    id: STORY-SUPERSES-c408
+    title: supersession status and supersedes role for REQ/ARCH/DDD schemas
+    status: implemented
+    tags:
+    - v1.12.0
+    fingerprint: sha256:8dd2644969f0
+    children: []
+  STORY-UPDATESK-86fb:
+    id: STORY-UPDATESK-86fb
     title: Update SKILL.md to thin CLI wrapper and add pack context injection
-next_id: 90
+    status: draft
+    tags: []
+    fingerprint: sha256:a557ed85a54a
+    children: []
+next_id: 625

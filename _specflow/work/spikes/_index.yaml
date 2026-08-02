@@ -1,11 +1,12 @@
 artifacts:
   SPIKE-001:
-    fingerprint: ''
     id: SPIKE-001
+    title: "autoresearch_fork inventory \u2014 diff list before Wave 3"
     status: completed
     tags:
     - autoresearch
     - spike
     - research
-    title: "autoresearch_fork inventory \u2014 diff list before Wave 3"
+    fingerprint: sha256:5b2ae2442cd9
+    children: []
 next_id: 2

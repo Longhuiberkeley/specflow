@@ -1,164 +1,191 @@
 artifacts:
   QT-001:
-    fingerprint: sha256:b19df1c1eec2
     id: QT-001
-    status: implemented
-    tags: []
     title: CLI Command Integration
+    status: implemented
+    tags: []
+    fingerprint: sha256:b19df1c1eec2
+    children: []
   QT-002:
-    fingerprint: sha256:539792f23420
     id: QT-002
-    status: implemented
-    tags: []
     title: ReqIF Round-Trip Quality
+    status: implemented
+    tags: []
+    fingerprint: sha256:539792f23420
+    children: []
   QT-003:
-    fingerprint: sha256:085b249b9324
     id: QT-003
-    status: implemented
-    tags: []
     title: Coverage Metrics Accuracy
+    status: implemented
+    tags: []
+    fingerprint: sha256:085b249b9324
+    children: []
   QT-004:
-    fingerprint: sha256:f80cfe6e25cb
     id: QT-004
-    status: implemented
-    tags: []
     title: Artifact Structure Qualification
+    status: implemented
+    tags: []
+    fingerprint: sha256:f80cfe6e25cb
+    children: []
   QT-005:
-    fingerprint: sha256:eb5312a5938a
     id: QT-005
-    status: implemented
-    tags: []
     title: Trace and Suspect Propagation Qualification
+    status: implemented
+    tags: []
+    fingerprint: sha256:eb5312a5938a
+    children: []
   QT-006:
-    fingerprint: sha256:5a856dd3d248
     id: QT-006
-    status: implemented
-    tags: []
     title: AI Execution Boundaries Qualification
+    status: implemented
+    tags: []
+    fingerprint: sha256:5a856dd3d248
+    children: []
   QT-007:
-    fingerprint: sha256:02c9e3755b9a
     id: QT-007
-    status: implemented
-    tags: []
     title: Cross-Platform and Compliance Qualification
+    status: implemented
+    tags: []
+    fingerprint: sha256:02c9e3755b9a
+    children: []
   QT-008:
-    fingerprint: sha256:45aa35544686
     id: QT-008
-    status: implemented
-    tags: []
     title: Pack-Author Extraction Quality Qualification
+    status: implemented
+    tags: []
+    fingerprint: sha256:45aa35544686
+    children: []
   QT-009:
-    fingerprint: sha256:fe567b705713
     id: QT-009
-    status: implemented
-    tags: []
     title: Traceability Depth Reporting Qualification
+    status: implemented
+    tags: []
+    fingerprint: sha256:fe567b705713
+    children: []
   QT-010:
-    fingerprint: sha256:49d74613fb27
     id: QT-010
-    status: implemented
-    tags: []
     title: Provider-Agnostic CI Gate Qualification
+    status: implemented
+    tags: []
+    fingerprint: sha256:49d74613fb27
+    children: []
   QT-011:
-    fingerprint: sha256:6ff288501672
     id: QT-011
-    status: implemented
-    tags: []
     title: EARS Quality in Prompts and Lint Qualification
+    status: implemented
+    tags: []
+    fingerprint: sha256:6ff288501672
+    children: []
   QT-012:
-    fingerprint: sha256:2611916fc145
     id: QT-012
-    status: implemented
-    tags: []
     title: V-Model Test Scaffolding Qualification
+    status: implemented
+    tags: []
+    fingerprint: sha256:2611916fc145
+    children: []
   QT-013:
-    fingerprint: sha256:b710f7a7c332
     id: QT-013
-    status: implemented
-    tags: []
     title: Deprecation Cleanup Qualification
+    status: implemented
+    tags: []
+    fingerprint: sha256:b710f7a7c332
+    children: []
   QT-014:
-    fingerprint: sha256:2dab8c966f8d
     id: QT-014
-    status: implemented
-    tags: []
     title: Compliance Evidence Reports Qualification
+    status: implemented
+    tags: []
+    fingerprint: sha256:2dab8c966f8d
+    children: []
   QT-015:
-    fingerprint: sha256:a685fd7ed5cf
     id: QT-015
-    status: implemented
-    tags: []
     title: Standards Gap Analysis v2 Qualification
+    status: implemented
+    tags: []
+    fingerprint: sha256:a685fd7ed5cf
+    children: []
   QT-016:
-    fingerprint: sha256:b2fda0c6a593
     id: QT-016
-    status: implemented
-    tags: []
     title: Configurable Artifact Type Extensions Qualification
+    status: implemented
+    tags: []
+    fingerprint: sha256:b2fda0c6a593
+    children: []
   QT-018:
-    fingerprint: sha256:e9177887e3ae
     id: QT-018
-    status: implemented
-    tags: []
     title: Test Suite Foundation Qualification
+    status: implemented
+    tags: []
+    fingerprint: sha256:e9177887e3ae
+    children: []
   QT-019:
-    fingerprint: sha256:7ea6e477d4e5
     id: QT-019
-    status: implemented
-    tags: []
     title: Unified CLI Framework & Install UX Qualification
+    status: implemented
+    tags: []
+    fingerprint: sha256:7ea6e477d4e5
+    children: []
   QT-020:
-    fingerprint: sha256:6d8462cb2991
     id: QT-020
-    status: implemented
-    tags: []
     title: AI Skill Ecosystem Restructuring Qualification
+    status: implemented
+    tags: []
+    fingerprint: sha256:6d8462cb2991
+    children: []
   QT-021:
-    fingerprint: sha256:4f6f6864ccf9
     id: QT-021
-    status: implemented
-    tags: []
     title: Continuous Auditing & BYOC Compliance Qualification
-  QT-022:
-    fingerprint: sha256:cd7af4bf1867
-    id: QT-022
     status: implemented
     tags: []
+    fingerprint: sha256:4f6f6864ccf9
+    children: []
+  QT-022:
+    id: QT-022
     title: Convention Enforcement & Docs Architecture Qualification
+    status: implemented
+    tags: []
+    fingerprint: sha256:cd7af4bf1867
+    children: []
   QT-023:
-    fingerprint: ''
     id: QT-023
-    status: draft
-    tags: []
     title: 'Qualification Test for REQ-022: Init Upgrade Safety'
+    status: draft
+    tags: []
+    fingerprint: sha256:94662086965c
+    children: []
   QT-024:
-    fingerprint: ''
     id: QT-024
-    status: draft
-    tags: []
     title: 'Qualification Test for REQ-023: Specification Body Quality Enforcement'
+    status: draft
+    tags: []
+    fingerprint: sha256:cdcc5d9db3ec
+    children: []
   QT-025:
-    fingerprint: ''
     id: QT-025
-    status: draft
-    tags: []
     title: 'Qualification Test for REQ-024: Output File Traceability'
+    status: draft
+    tags: []
+    fingerprint: sha256:83b536a497c5
+    children: []
   QT-026:
-    fingerprint: ''
     id: QT-026
-    status: draft
-    tags: []
     title: 'Qualification Test for REQ-025: Reverse Impact Analysis'
+    status: draft
+    tags: []
+    fingerprint: sha256:6a388bec452b
+    children: []
   QT-027:
-    fingerprint: ''
     id: QT-027
-    status: draft
-    tags: []
     title: 'Qualification Test for REQ-026: Decomposition Completeness Guidance'
-  QT-028:
-    fingerprint: ''
-    id: QT-028
     status: draft
     tags: []
+    fingerprint: sha256:884dbc7d38bd
+    children: []
+  QT-028:
+    id: QT-028
     title: 'Qualification Test for REQ-027: Discovery-to-Plan Skill Continuity'
-next_id: 28
+    status: draft
+    tags: []
+    fingerprint: sha256:d388993beb0d
+    children: []
+next_id: 29

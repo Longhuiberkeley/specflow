@@ -20,6 +20,7 @@ links:
 - target: REQ-032
   role: implements
 created: '2026-05-15'
+fingerprint: sha256:b687d7ca14f1
 ---
 
 # Test autoresearch pack end-to-end and pilot with quant_trade_rnd

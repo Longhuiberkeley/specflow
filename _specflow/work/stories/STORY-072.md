@@ -13,6 +13,7 @@ links:
 - target: REQ-031
   role: implements
 created: '2026-05-15'
+fingerprint: sha256:fec81ef311f1
 ---
 
 # Write explore-exploit-protocol.md

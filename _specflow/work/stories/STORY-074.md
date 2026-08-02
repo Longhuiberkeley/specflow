@@ -16,6 +16,7 @@ links:
 - target: SPIKE-001
   role: depends_on
 created: '2026-05-15'
+fingerprint: sha256:fac1f62f511d
 ---
 
 # Write competition-setup-protocol.md

@@ -17,6 +17,7 @@ links:
 - target: DDD-022
   role: specified_by
 created: '2026-05-15'
+fingerprint: sha256:c1629f868976
 ---
 
 # Author 4 schema YAMLs for COMP / LOOP / EXPT / FIND

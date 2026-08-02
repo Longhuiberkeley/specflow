@@ -14,6 +14,7 @@ links:
 - target: REQ-030
   role: implements
 created: '2026-05-15'
+fingerprint: sha256:79d9ccf75874
 ---
 
 # Write finding-generation-protocol.md

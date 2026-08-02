@@ -1,11 +1,4 @@
 artifacts:
-  BP-001:
-    id: BP-001
-    title: Test BP
-    status: draft
-    tags: []
-    fingerprint: sha256:50c13e082b3c
-    children: []
   BP-002:
     id: BP-002
     title: Every approval gate must present a functional description and key decisions
@@ -54,15 +47,15 @@ artifacts:
     children: []
   BP-006:
     id: BP-006
-    title: 'Accounting not policing: surface, never block; warnings never fail a commit
-      or audit'
+    title: 'Accounting not policing: surface most signals; reserve blocking for structural
+      integrity and human approval'
     status: approved
     tags:
     - philosophy
     - core
     - review
     - compliance
-    fingerprint: sha256:e5bc07a3b0ae
+    fingerprint: sha256:15168a36b5fa
     children: []
   BP-007:
     id: BP-007

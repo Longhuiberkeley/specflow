@@ -1,188 +1,224 @@
 artifacts:
   ARCH-001:
-    fingerprint: sha256:9796f65acf40
     id: ARCH-001
+    title: CLI Core
     status: implemented
     tags:
     - cli
     - python
     - core
-    title: CLI Core
+    fingerprint: sha256:9796f65acf40
+    children: []
   ARCH-002:
-    fingerprint: sha256:4c258ae314a4
     id: ARCH-002
+    title: Framework Machinery
     status: implemented
     tags:
     - framework
     - internals
     - core
-    title: Framework Machinery
+    fingerprint: sha256:4c258ae314a4
+    children: []
   ARCH-003:
-    fingerprint: sha256:cbf9400d206a
     id: ARCH-003
+    title: Skill & Platform System
     status: implemented
     tags:
     - skills
     - platform
     - ai
     - progressive-disclosure
-    title: Skill & Platform System
+    fingerprint: sha256:cbf9400d206a
+    children: []
   ARCH-004:
-    fingerprint: sha256:9358bc85b477
     id: ARCH-004
-    status: implemented
-    tags: []
     title: Compliance & Exchange Subsystem
-  ARCH-005:
-    fingerprint: sha256:fa273ee409ec
-    id: ARCH-005
     status: implemented
     tags: []
+    fingerprint: sha256:9358bc85b477
+    children: []
+  ARCH-005:
+    id: ARCH-005
     title: Audit & Review Engine
+    status: implemented
+    tags: []
+    fingerprint: sha256:fa273ee409ec
+    children: []
   ARCH-006:
-    fingerprint: sha256:38704e647951
     id: ARCH-006
+    title: Pack-Author Pipeline
     status: implemented
     tags:
     - packs
     - skills
     - standards
     - quality
-    title: Pack-Author Pipeline
+    fingerprint: sha256:38704e647951
+    children: []
   ARCH-007:
-    fingerprint: sha256:683906d8a098
     id: ARCH-007
+    title: Traceability Chain Engine
     status: implemented
     tags:
     - traceability
     - reporting
     - cli
-    title: Traceability Chain Engine
+    fingerprint: sha256:683906d8a098
+    children: []
   ARCH-008:
-    fingerprint: sha256:beaa1348562b
     id: ARCH-008
+    title: V-Model Test Scaffolding Engine
     status: implemented
     tags:
     - testing
     - vmodel
     - scaffolding
     - cli
-    title: V-Model Test Scaffolding Engine
+    fingerprint: sha256:beaa1348562b
+    children: []
   ARCH-009:
-    fingerprint: sha256:76c8786760f1
     id: ARCH-009
+    title: Provider-Agnostic CI Gate
     status: implemented
     tags:
     - rbac
     - ci
     - adapters
-    title: Provider-Agnostic CI Gate
+    fingerprint: sha256:76c8786760f1
+    children: []
   ARCH-010:
-    fingerprint: sha256:f5769d8f0da2
     id: ARCH-010
-    status: implemented
-    tags: []
     title: Command Wrappers & Adapter Framework
+    status: implemented
+    tags: []
+    fingerprint: sha256:f5769d8f0da2
+    children: []
   ARCH-011:
-    fingerprint: sha256:f2f3094481f0
     id: ARCH-011
-    status: implemented
-    tags: []
     title: Tier 1 Conversational Routing
+    status: implemented
+    tags: []
+    fingerprint: sha256:f2f3094481f0
+    children: []
   ARCH-012:
-    fingerprint: sha256:dd2fd3fceb73
     id: ARCH-012
-    status: implemented
-    tags: []
     title: Change-Audit & Pack-Author Pipelines
+    status: implemented
+    tags: []
+    fingerprint: sha256:dd2fd3fceb73
+    children: []
   ARCH-013:
-    fingerprint: sha256:eaee17cccf0b
     id: ARCH-013
-    status: implemented
-    tags: []
     title: Structure Checklists & Doc Lifecycle
+    status: implemented
+    tags: []
+    fingerprint: sha256:eaee17cccf0b
+    children: []
   ARCH-014:
-    fingerprint: sha256:dae45f1d864e
     id: ARCH-014
-    status: implemented
-    tags: []
     title: Test Engine
+    status: implemented
+    tags: []
+    fingerprint: sha256:dae45f1d864e
+    children: []
   ARCH-015:
-    fingerprint: sha256:8bd625c65830
     id: ARCH-015
-    status: implemented
-    tags: []
     title: Deprecation Cleanup
+    status: implemented
+    tags: []
+    fingerprint: sha256:8bd625c65830
+    children: []
   ARCH-016:
-    fingerprint: sha256:829c96b2d7ea
     id: ARCH-016
-    status: implemented
-    tags: []
     title: Init Upgrade Engine
+    status: implemented
+    tags: []
+    fingerprint: sha256:829c96b2d7ea
+    children: []
   ARCH-017:
-    fingerprint: sha256:88f0010c1fb2
     id: ARCH-017
-    status: implemented
-    tags: []
     title: Spec Quality Gate
+    status: implemented
+    tags: []
+    fingerprint: sha256:88f0010c1fb2
+    children: []
   ARCH-018:
-    fingerprint: sha256:34da9eef4d92
     id: ARCH-018
-    status: implemented
-    tags: []
     title: File Traceability Layer
+    status: implemented
+    tags: []
+    fingerprint: sha256:34da9eef4d92
+    children: []
   ARCH-019:
-    fingerprint: sha256:c8d3e4d5924b
     id: ARCH-019
-    status: implemented
-    tags: []
     title: Reverse Impact Engine
+    status: implemented
+    tags: []
+    fingerprint: sha256:c8d3e4d5924b
+    children: []
   ARCH-020:
-    fingerprint: sha256:a1e55914cd09
     id: ARCH-020
-    status: implemented
-    tags: []
     title: Decomposition Guidance System
-  ARCH-021:
-    fingerprint: sha256:c11a474075c1
-    id: ARCH-021
     status: implemented
     tags: []
+    fingerprint: sha256:a1e55914cd09
+    children: []
+  ARCH-021:
+    id: ARCH-021
     title: Skill Continuity Layer
+    status: implemented
+    tags: []
+    fingerprint: sha256:c11a474075c1
+    children: []
   ARCH-022:
-    fingerprint: sha256:13275b1aa6fc
     id: ARCH-022
+    title: Pack-as-integration-boundary for autoresearch
     status: implemented
     tags:
     - autoresearch
     - architecture
     - pack
-    title: Pack-as-integration-boundary for autoresearch
+    fingerprint: sha256:13275b1aa6fc
+    children: []
   ARCH-023:
-    fingerprint: sha256:4d3692a0394e
     id: ARCH-023
+    title: Four-tier research artifact hierarchy
     status: draft
     tags:
     - autoresearch
     - architecture
     - hierarchy
-    title: Four-tier research artifact hierarchy
+    fingerprint: sha256:4d3692a0394e
+    children: []
   ARCH-024:
-    fingerprint: sha256:5eedd44d4af3
     id: ARCH-024
+    title: Dynamic status dashboard for research categories
     status: implemented
     tags:
     - autoresearch
     - status
     - dashboard
-    title: Dynamic status dashboard for research categories
+    fingerprint: sha256:5eedd44d4af3
+    children: []
   ARCH-025:
-    fingerprint: sha256:667cabf7f862
     id: ARCH-025
+    title: Research-aware traceability chain
     status: implemented
     tags:
     - autoresearch
     - trace
     - traceability
-    title: Research-aware traceability chain
-next_id: 26
+    fingerprint: sha256:667cabf7f862
+    children: []
+  ARCH-026:
+    id: ARCH-026
+    title: Verification-contract recording + accounting evidence lenses
+    status: approved
+    tags:
+    - v1.13
+    - verification
+    - accounting-not-policing
+    - architecture
+    fingerprint: sha256:5b95d52012fe
+    children: []
+next_id: 27

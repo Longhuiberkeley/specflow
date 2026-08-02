@@ -1,178 +1,203 @@
 artifacts:
   DDD-001:
-    fingerprint: sha256:1ed62292d238
     id: DDD-001
+    title: Impact Analysis Engine
     status: implemented
     tags:
     - traceability
     - impact
     - core
-    title: Impact Analysis Engine
+    fingerprint: sha256:1ed62292d238
+    children: []
   DDD-002:
-    fingerprint: sha256:c729c8aa66ef
     id: DDD-002
+    title: Execution Orchestrator
     status: implemented
     tags:
     - execution
     - orchestration
     - parallel
-    title: Execution Orchestrator
+    fingerprint: sha256:c729c8aa66ef
+    children: []
   DDD-003:
-    fingerprint: sha256:f59f8b56f0aa
     id: DDD-003
+    title: Review & Lint Pipeline
     status: implemented
     tags:
     - checklists
     - review
     - lint
     - quality
-    title: Review & Lint Pipeline
+    fingerprint: sha256:f59f8b56f0aa
+    children: []
   DDD-004:
-    fingerprint: sha256:f4b06889eb75
     id: DDD-004
-    status: implemented
-    tags: []
     title: ReqIF & Standards
-  DDD-005:
-    fingerprint: sha256:9a91f03b5d8a
-    id: DDD-005
     status: implemented
     tags: []
+    fingerprint: sha256:f4b06889eb75
+    children: []
+  DDD-005:
+    id: DDD-005
     title: Audit Engine
+    status: implemented
+    tags: []
+    fingerprint: sha256:9a91f03b5d8a
+    children: []
   DDD-006:
-    fingerprint: sha256:d770dabc85eb
     id: DDD-006
+    title: Pack Extraction Protocol
     status: implemented
     tags:
     - packs
     - extraction
     - quality
     - skills
-    title: Pack Extraction Protocol
+    fingerprint: sha256:d770dabc85eb
+    children: []
   DDD-007:
-    fingerprint: sha256:d3ed0151ee70
     id: DDD-007
-    status: implemented
-    tags: []
     title: Recovery Primitives Implementation
+    status: implemented
+    tags: []
+    fingerprint: sha256:d3ed0151ee70
+    children: []
   DDD-008:
-    fingerprint: sha256:c1b4c09f16c8
     id: DDD-008
-    status: implemented
-    tags: []
     title: Skill Prompt Optimization
+    status: implemented
+    tags: []
+    fingerprint: sha256:c1b4c09f16c8
+    children: []
   DDD-009:
-    fingerprint: sha256:0c7202d754ac
     id: DDD-009
-    status: implemented
-    tags: []
     title: Deterministic Analytics Engine
+    status: implemented
+    tags: []
+    fingerprint: sha256:0c7202d754ac
+    children: []
   DDD-010:
-    fingerprint: sha256:28d29891bee0
     id: DDD-010
-    status: implemented
-    tags: []
     title: Convention Evaluation Logic
+    status: implemented
+    tags: []
+    fingerprint: sha256:28d29891bee0
+    children: []
   DDD-011:
-    fingerprint: sha256:6e7148e48ad8
     id: DDD-011
-    status: implemented
-    tags: []
     title: CLI Core Detailed Design
+    status: implemented
+    tags: []
+    fingerprint: sha256:6e7148e48ad8
+    children: []
   DDD-012:
-    fingerprint: sha256:7b5ca1198d75
     id: DDD-012
-    status: implemented
-    tags: []
     title: Traceability Chain Detailed Design
+    status: implemented
+    tags: []
+    fingerprint: sha256:7b5ca1198d75
+    children: []
   DDD-013:
-    fingerprint: sha256:07b600d6cd6d
     id: DDD-013
-    status: implemented
-    tags: []
     title: Provider-Agnostic CI Gate Detailed Design
+    status: implemented
+    tags: []
+    fingerprint: sha256:07b600d6cd6d
+    children: []
   DDD-014:
-    fingerprint: sha256:44669784bc8a
     id: DDD-014
-    status: implemented
-    tags: []
     title: V-Model Test Scaffolding Detailed Design
+    status: implemented
+    tags: []
+    fingerprint: sha256:44669784bc8a
+    children: []
   DDD-015:
-    fingerprint: sha256:30d24a346f8a
     id: DDD-015
-    status: implemented
-    tags: []
     title: Test Engine DDD
+    status: implemented
+    tags: []
+    fingerprint: sha256:30d24a346f8a
+    children: []
   DDD-016:
-    fingerprint: sha256:8d5632fd7bea
     id: DDD-016
-    status: implemented
-    tags: []
     title: Deprecation Cleanup DDD
+    status: implemented
+    tags: []
+    fingerprint: sha256:8d5632fd7bea
+    children: []
   DDD-017:
-    fingerprint: sha256:03262a9a23f3
     id: DDD-017
-    status: implemented
-    tags: []
     title: Config Merge and Version Detection Algorithm
+    status: implemented
+    tags: []
+    fingerprint: sha256:03262a9a23f3
+    children: []
   DDD-018:
-    fingerprint: sha256:dfa75962f4ce
     id: DDD-018
-    status: implemented
-    tags: []
     title: Body Quality Validation and File Existence Checks
+    status: implemented
+    tags: []
+    fingerprint: sha256:dfa75962f4ce
+    children: []
   DDD-019:
-    fingerprint: sha256:fe9c64a74c21
     id: DDD-019
-    status: implemented
-    tags: []
     title: Source File to Artifact Reverse Mapping Algorithm
+    status: implemented
+    tags: []
+    fingerprint: sha256:fe9c64a74c21
+    children: []
   DDD-020:
-    fingerprint: sha256:50bd2dc7372c
     id: DDD-020
-    status: implemented
-    tags: []
     title: SPIDR Coverage, Wave Validation, and Generic BP Fallback
-  DDD-021:
-    fingerprint: sha256:24d92979d49c
-    id: DDD-021
     status: implemented
     tags: []
+    fingerprint: sha256:50bd2dc7372c
+    children: []
+  DDD-021:
+    id: DDD-021
     title: Discovery Persistence and Plan Domain Handoff
+    status: implemented
+    tags: []
+    fingerprint: sha256:24d92979d49c
+    children: []
   DDD-022:
-    fingerprint: sha256:fc7b6e223d0e
     id: DDD-022
+    title: Schema definitions for COMP / LOOP / EXPT / FIND
     status: implemented
     tags:
     - autoresearch
     - schemas
     - ddd
-    title: Schema definitions for COMP / LOOP / EXPT / FIND
+    fingerprint: sha256:fc7b6e223d0e
+    children: []
   DDD-023:
-    fingerprint: sha256:408956b3da00
     id: DDD-023
+    title: "pack.yaml adds_skills field \u2014 semantics and install behavior"
     status: implemented
     tags:
     - autoresearch
     - pack
     - skills
-    title: "pack.yaml adds_skills field \u2014 semantics and install behavior"
+    fingerprint: sha256:408956b3da00
+    children: []
   DDD-024:
-    fingerprint: sha256:14ab73af0d62
     id: DDD-024
+    title: Dynamic status dashboard via category field
     status: implemented
     tags:
     - autoresearch
     - status
     - dashboard
-    title: Dynamic status dashboard via category field
+    fingerprint: sha256:14ab73af0d62
+    children: []
   DDD-025:
-    fingerprint: sha256:aac285e28d84
     id: DDD-025
+    title: "Autonomous loop protocol \u2014 8 phases"
     status: implemented
     tags:
     - autoresearch
     - protocol
     - loop
-    title: "Autonomous loop protocol \u2014 8 phases"
+    fingerprint: sha256:aac285e28d84
+    children: []
 next_id: 26

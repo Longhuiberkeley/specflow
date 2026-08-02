@@ -17,6 +17,7 @@ links:
 - target: SPIKE-001
   role: depends_on
 created: '2026-05-15'
+fingerprint: sha256:fc2d3e819e8b
 ---
 
 # Adapt autonomous-loop-protocol.md from autoresearch_fork

@@ -1,0 +1,7 @@
+BP-001:
+  fingerprint: sha256:50c13e082b3c
+  id: BP-001
+  quarantined_at: '2026-08-02T16:15:44Z'
+  status: draft
+  tags: []
+  title: Test BP

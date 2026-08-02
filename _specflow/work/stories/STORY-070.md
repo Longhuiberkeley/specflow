@@ -17,6 +17,7 @@ links:
 - target: SPIKE-001
   role: depends_on
 created: '2026-05-15'
+fingerprint: sha256:cf3d98d175c8
 ---
 
 # Author specflow-autoresearch SKILL.md with subcommands and setup gate
