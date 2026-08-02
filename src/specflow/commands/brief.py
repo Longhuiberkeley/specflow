@@ -171,6 +171,13 @@ def _knowledge_summary(root: Path, artifacts: list[art_lib.Artifact]) -> dict:
             "findings (blocking/warning, learnable techniques) and `specflow done`."
         )
 
+    # REQ AC-quality aggregate (accounting, not policing): the honest gap between
+    # "has ACs" and "has ACs a test could fail on". One deterministic line. The
+    # cry-wolf guard lives in lib/ac_quality.py (the conjunction); here we only
+    # surface the count of aspirational ACs — clean line at zero aspirational.
+    from specflow.lib import ac_quality
+    ac_agg = ac_quality.classify_reqs_observability(artifacts)
+
     return {
         "bp_total": len(bps),
         "bp_by_status": bp_by_status,
@@ -179,6 +186,7 @@ def _knowledge_summary(root: Path, artifacts: list[art_lib.Artifact]) -> dict:
         "chl_open": chl_open,
         "chl_done": chl_done,
         "hints": hints,
+        "ac_quality": ac_agg,
     }
 
 
@@ -197,12 +205,14 @@ def _recent_changes(root: Path, since: str) -> list[str]:
     return [ln for ln in result.stdout.splitlines() if ln.strip()]
 
 
-def _recent_decisions(artifacts: list[art_lib.Artifact], limit: int = 5) -> list[tuple[str, str, str]]:
-    """Most-recently-modified DEC artifacts as (id, title, rationale first line).
+def _recent_decisions(artifacts: list[art_lib.Artifact], limit: int = 5) -> list[tuple[str, str, str, str]]:
+    """Most-recently-modified DEC artifacts as (id, title, rationale first line, tier marker).
 
     Deterministic read of the artifact graph — DEC bodies live in _specflow/work/decisions/.
     Sorted by file mtime (most recent first). This IS the durable "why"; brief only
-    surfaces it, never writes a separate log.
+    surfaces it, never writes a separate log. The 4th element is a risk-tier marker
+    (e.g. "T2") when a persisted ``risk_profile`` is present, else "" — the tier is
+    recorded-only (it gates nothing); showing it makes the Risk Profile visible at recall.
     """
     decs = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "DEC"]
 
@@ -213,7 +223,7 @@ def _recent_decisions(artifacts: list[art_lib.Artifact], limit: int = 5) -> list
             return 0.0
 
     decs.sort(key=_mtime, reverse=True)
-    out: list[tuple[str, str, str]] = []
+    out: list[tuple[str, str, str, str]] = []
     for a in decs[:limit]:
         first = ""
         for ln in (a.body or "").splitlines():
@@ -221,7 +231,10 @@ def _recent_decisions(artifacts: list[art_lib.Artifact], limit: int = 5) -> list
             if s and not s.startswith("#"):
                 first = s
                 break
-        out.append((a.id, a.title or "(untitled)", first[:140]))
+        rp = (a.frontmatter or {}).get("risk_profile") or {}
+        tier = rp.get("tier") if isinstance(rp, dict) else None
+        marker = f"T{tier}" if tier in (0, 1, 2) else ""
+        out.append((a.id, a.title or "(untitled)", first[:140], marker))
     return out
 
 
@@ -619,6 +632,18 @@ def run(root: Path, args: dict[str, Any]) -> int:
           f"PREV {knowledge['prev_count']}   "
           f"FIND {knowledge['find_count']}   "
           f"CHL {knowledge['chl_open']} open / {knowledge['chl_done']} done")
+    # REQ AC-quality: one aggregate line (accounting, not policing). Clean line
+    # (no ⚠) when zero aspirational; ⚠ surfaces the gap only when it exists.
+    acq = knowledge["ac_quality"]
+    if acq["reqs_with_acs"] > 0:
+        line = (
+            f"REQ quality: {acq['aspirational_free_reqs']}/{acq['reqs_with_acs']} "
+            f"REQs observable · {acq['aspirational']} aspirational AC(s)"
+        )
+        if acq["aspirational"] > 0:
+            print(f"    {YELLOW}⚠ {line}{NC}")
+        else:
+            print(f"    {CYAN}{line}{NC}")
     for h in knowledge["hints"]:
         print(f"    {YELLOW}⚠ {h}{NC}")
 
@@ -658,8 +683,9 @@ def run(root: Path, args: dict[str, Any]) -> int:
     decs = _recent_decisions(artifacts)
     print(f"\n  {BOLD}Recent decisions{NC} (DEC — the durable 'why')")
     if decs:
-        for did, title, rationale in decs:
-            print(f"    {did} — {title}")
+        for did, title, rationale, marker in decs:
+            tier_tag = f" {YELLOW}[{marker}]{NC}" if marker else ""
+            print(f"    {did}{tier_tag} — {title}")
             if rationale:
                 print(f"        {rationale}")
     else:

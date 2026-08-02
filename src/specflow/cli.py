@@ -297,6 +297,12 @@ def cmd_schema(args: argparse.Namespace) -> int:
     return cmd.run(root, vars(args))
 
 
+def cmd_risk_tier(args: argparse.Namespace) -> int:
+    from specflow.commands import risk_tier as cmd
+    root = _find_project_root()
+    return cmd.run(root, vars(args))
+
+
 # ── Parser builders ───────────────────────────────────────────────
 
 def _add_init_parser(subparsers):
@@ -448,7 +454,7 @@ def _add_reconcile_parser(subparsers):
 
 def _add_artifact_lint_parser(subparsers):
     p = subparsers.add_parser("artifact-lint", help="Run deterministic validation checks on artifacts")
-    p.add_argument("--type", choices=["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "thinking-techniques", "autoresearch-logging", "spike-lifecycle", "source-drift", "gate"], help="Run only a specific check")
+    p.add_argument("--type", choices=["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "thinking-techniques", "autoresearch-logging", "spike-lifecycle", "source-drift", "dec-risk-profile", "ac-observable", "gate"], help="Run only a specific check")
     p.add_argument("--fix", action="store_true", help="Auto-fix (rebuild indexes, recompute fingerprints)")
     p.add_argument("--gate", help="Phase-gate checklist name")
     p.add_argument("--method", choices=["programmatic", "llm"], default="programmatic", help="Validation method")
@@ -651,6 +657,12 @@ def _add_schema_parser(subparsers):
     p.add_argument("type", help="Artifact type or alias (e.g. requirement, dec, DEF)")
 
 
+def _add_risk_tier_parser(subparsers):
+    p = subparsers.add_parser("risk-tier",
+                              help="Print the computed risk tier for a change set (READ-ONLY; gates nothing)")
+    p.add_argument("ids", nargs="+", help="Artifact ID(s) in the change set")
+
+
 def _add_ci_gate_parser(subparsers):
     p = subparsers.add_parser("ci-gate", help="Run RBAC checks on a PR diff (server-side)")
     p.add_argument("--base", required=True, help="Base git ref (e.g., main)")
@@ -736,7 +748,7 @@ commands by workflow phase:
   Discover:   init, refresh, status, brief, domain, patterns, standards, list, schema, transitions
   Plan:       create, update, approve
   Execute:    go, done, phase-status, phase-set, cascade-status, reconcile, generate-tests, verify
-  Review:     artifact-lint, checklist-run, artifact-review, project-audit, trace, rtm
+  Review:     artifact-lint, checklist-run, artifact-review, project-audit, trace, rtm, risk-tier
   Release:    baseline, document-changes
   CI:         hook, rbac, renumber-drafts, import, export, detect, change-impact,
               defect-from-suspect, defect-from-monitor, fingerprint-refresh, ci, ci-gate
@@ -963,6 +975,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_transitions_parser(subparsers)
     _add_list_parser(subparsers)
     _add_schema_parser(subparsers)
+    _add_risk_tier_parser(subparsers)
 
     # ── Release ─────────────────────────────────────────────────
     _add_baseline_parser(subparsers)
@@ -1028,6 +1041,7 @@ def main(argv: list[str] | None = None) -> int:
         "transitions": cmd_transitions,
         "list": cmd_list,
         "schema": cmd_schema,
+        "risk-tier": cmd_risk_tier,
         "rbac": cmd_rbac,
         "cascade-status": cmd_cascade_status,
         "reconcile": cmd_reconcile,

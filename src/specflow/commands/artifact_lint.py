@@ -20,7 +20,7 @@ from specflow.lib import role_normalize
 from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC
 from specflow.lib.domain_constants import DOMAIN_RECOMMENDED
 
-CHECK_NAMES = ["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "thinking-techniques", "autoresearch-logging", "spike-lifecycle", "source-drift"]
+CHECK_NAMES = ["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "thinking-techniques", "autoresearch-logging", "spike-lifecycle", "source-drift", "dec-risk-profile", "ac-observable"]
 
 
 def _run_check(
@@ -78,6 +78,11 @@ def _run_check(
         return _check_spike_lifecycle(artifacts, root)
     elif check_name == "source-drift":
         return _check_source_drift(artifacts, root)
+    elif check_name == "dec-risk-profile":
+        return _check_dec_risk_profile(artifacts)
+    elif check_name == "ac-observable":
+        from specflow.lib.ac_quality import lint_ac_observability
+        return lint_ac_observability(artifacts)
 
     return {"status_icon": "?", "detail": f"Unknown check: {check_name}",
             "blocking_count": 0, "warning_count": 0}
@@ -1671,6 +1676,50 @@ def _check_source_drift(
         YELLOW + "⚠" + NC if warnings > 0 else CYAN + "ℹ" + NC
     )
     detail_msg = "\n".join(details) if details else "No source-file drift detected"
+
+    return {
+        "status_icon": icon,
+        "detail": detail_msg,
+        "blocking_count": 0,
+        "warning_count": warnings,
+    }
+
+
+def _check_dec_risk_profile(
+    artifacts: list[art_lib.Artifact],
+) -> dict[str, str | int]:
+    """Advisory: warn when an approved DEC carries no persisted risk_profile.
+
+    Accounting, not policing: this is a WARN-only nudge, NEVER a blocking error,
+    and NEVER part of ``--type gate`` (gate mode runs phase-gate checklists, not
+    CHECK_NAMES). The risk_profile's deterministic subset (tier/reversibility/
+    blast_radius_count) is auto-populated by ``document-changes``; a missing
+    profile on an approved DEC means either a human-authored DEC that predates
+    v1.13.1 or one whose author skipped ``--set risk_profile=...``. The fix is
+    ``specflow risk-tier <IDs addressed by the DEC>`` then record the tier — the
+    tier still gates nothing; it just makes the Risk Profile visible.
+    """
+    warnings = 0
+    details: list[str] = []
+
+    for art in artifacts:
+        if art_lib.get_prefix_from_id(art.id) != "DEC":
+            continue
+        if art.status != "approved":
+            continue
+        if not art.frontmatter.get("risk_profile"):
+            warnings += 1
+            details.append(
+                f"  ⚠ [{art.id}] approved DEC has no risk_profile — run "
+                f"`specflow risk-tier <IDs>` and record the tier "
+                f"(advisory; the tier gates nothing)"
+            )
+
+    icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
+    detail_msg = (
+        "\n".join(details) if details
+        else "All approved DECs carry a risk_profile"
+    )
 
     return {
         "status_icon": icon,

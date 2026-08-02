@@ -5,6 +5,7 @@ from typing import Any
 
 from specflow.lib import artifacts as art_lib
 from specflow.lib import git_utils
+from specflow.lib import risk as risk_lib
 from specflow.lib.display import GREEN, NC, RED
 from specflow.lib.impact import load_impact_events
 
@@ -129,6 +130,26 @@ def run(root: Path, args: dict[str, Any]) -> int:
         rationale = _build_rationale(commit, changed_art_ids)
         title = f"Change Record: {commit['subject']}"
 
+        # Deterministic Risk Profile subset, computed at commit time from the
+        # change set's intrinsic properties (accounting, not policing). Only the
+        # deterministic fields are populated; ``confidence`` is left EMPTY —
+        # there is no approval context at auto-record time, and confidence is
+        # the host agent's own judgment (SpecFlow never calls an LLM). A human
+        # fills confidence via `--set` when the DEC is reviewed. commit_subject
+        # is passed so a release/baseline action floors irreversibility.
+        all_artifacts = art_lib.discover_artifacts(root)
+        rp = risk_lib.compute_risk_tier(
+            changed_art_ids, all_artifacts, root,
+            commit_subject=commit.get("subject"),
+        )
+        risk_profile = {
+            "tier": rp["tier"],
+            "reversibility": rp["reversibility"],
+            "blast_radius_count": rp["blast_radius_count"],
+            "confidence": "",
+            "confidence_reason": "",
+        }
+
         result = art_lib.create_artifact(
             root,
             artifact_type="decision",
@@ -139,6 +160,7 @@ def run(root: Path, args: dict[str, Any]) -> int:
             links=links,
             body=body,
             review_status="unreviewed",
+            risk_profile=risk_profile,
         )
         if not result.get("ok"):
             print(f"  {RED}✗ Failed to create DEC for {commit['sha'][:8]}: "

@@ -56,6 +56,13 @@ _ACCOUNTING_CONCERNS: frozenset[str] = frozenset({
     # coverage prose, not a release blocker. The 3 no-ARCH warns and the
     # orphan-code warn remain structural either way.
     "ac-coverage",
+    # ac-observability: REQ AC falsifiability (observable / aspirational /
+    # unclassified). Accounting, not policing — never escalates: an aspirational
+    # AC ("responds quickly") is review-worthy prose, not a release blocker, and
+    # the lens reports counts at INFO precisely so a lexicon edge case can never
+    # cry-wolf at warn level. The conjunction guardrail (lib/ac_quality.py) keeps
+    # domain observables ("the relay energizes") UNCLASSIFIED, never aspirational.
+    "ac-observability",
 })
 
 
@@ -428,6 +435,13 @@ def _cross_cutting_analysis(
     if ac_findings:
         results.setdefault("ac-coverage", []).extend(ac_findings)
 
+    # AC-observability lens (accounting, not policing — see
+    # _ac_observability_lens). INFO-severity aggregate only — never a per-AC
+    # warn, so lexicon edge cases cannot cry-wolf at warn level.
+    ac_obs_findings = _ac_observability_lens(artifacts)
+    if ac_obs_findings:
+        results.setdefault("ac-observability", []).extend(ac_obs_findings)
+
     return results
 
 
@@ -584,6 +598,58 @@ def _ac_coverage_lens(artifacts: list[art_lib.Artifact]) -> list[dict[str, str]]
     # Self-describing: stamp the accounting concern (see _verification_lens).
     for f in findings:
         f["concern"] = "ac-coverage"
+    return findings
+
+
+def _ac_observability_lens(artifacts: list[art_lib.Artifact]) -> list[dict[str, str]]:
+    """REQ acceptance-criteria observability (observable / aspirational / unclassified).
+
+    Per REQ with ACs, report the per-REQ observability ratio and aspirational
+    count. Modeled on ``_ac_coverage_lens`` but INFO-severity throughout —
+    aspirational ACs surface as review-worthy counts, NEVER as per-AC warns,
+    so a lexicon edge case cannot cry-wolf at warn level. Accounting, not
+    policing — never escalates: "ac-observability" is registered in
+    ``_ACCOUNTING_CONCERNS``, so even if a future caller stamped a warn it
+    could not drive exit-2. The conjunction guardrail (lib/ac_quality.py)
+    keeps domain observables ("the relay energizes") UNCLASSIFIED, never
+    aspirational — that is what prevents this lens from discrediting itself on
+    legitimate engineering ACs.
+
+    Signals: every REQ with ACs → one INFO line ("REQ-001: 3/5 observable, 1
+    aspirational, 1 unclassified"); a project-wide summary line when any
+    aspirational ACs exist. Degrades gracefully — zero REQs/zero ACs → no
+    findings (silence), never a warn.
+    """
+    findings: list[dict[str, str]] = []
+    try:
+        from specflow.lib import ac_quality
+
+        agg = ac_quality.classify_reqs_observability(artifacts)
+        if agg["reqs_with_acs"] == 0:
+            return findings
+        for r in sorted(agg["per_req"], key=lambda r: r["id"]):
+            findings.append({
+                "severity": "info",
+                "message": (
+                    f"{r['id']}: {r['observable']}/{r['total']} observable, "
+                    f"{r['aspirational']} aspirational, {r['unclassified']} unclassified"
+                ),
+            })
+        if agg["aspirational"] > 0:
+            findings.append({
+                "severity": "info",
+                "message": (
+                    f"Project: {agg['aspirational']} aspirational AC(s) across "
+                    f"{agg['aspirational_reqs']} REQ(s); {agg['aspirational_free_reqs']}/"
+                    f"{agg['reqs_with_acs']} REQ(s) aspirational-free "
+                    f"({agg['observable']} observable, {agg['unclassified']} unclassified)"
+                ),
+            })
+    except Exception:
+        pass
+    # Self-describing: stamp the accounting concern (see _verification_lens).
+    for f in findings:
+        f["concern"] = "ac-observability"
     return findings
 
 
