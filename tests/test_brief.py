@@ -206,6 +206,56 @@ def test_next_skill_backlog_all_verified_points_at_review():
     assert "/specflow-artifact-review" in out
 
 
+# --- verification-contract advisory (v1.13): declared verify_command with no
+#     matching verify_run evidence → one advisory line, never blocking ---
+
+def _vart(artifact_id: str, status: str, frontmatter: dict | None = None) -> SimpleNamespace:
+    """Artifact stub carrying a frontmatter dict (for verify-contract fields)."""
+    return SimpleNamespace(id=artifact_id, status=status, suspect=False, frontmatter=frontmatter or {})
+
+
+def test_next_skill_verify_advisory_fires_when_no_run_evidence():
+    """An implemented UT that declares verify_command but has no verify_run_at
+    surfaces a `specflow verify` advisory. Accounting — never blocking."""
+    artifacts = [_vart("UT-001", "implemented", {"verify_command": "pytest tests/x.py"})]
+    out = brief_cmd._next_skill_recommendation("executing", artifacts, [], [])
+    assert "specflow verify" in out
+    assert "UT-001" in out
+
+
+def test_next_skill_verify_advisory_fires_on_exit_code_divergence():
+    """Declared verify_exit_code=0 but recorded verify_run_exit_code=1 → the run
+    diverged from the contract → recommend re-verifying (recorded, not blocking)."""
+    artifacts = [_vart(
+        "QT-003", "verified",
+        {"verify_command": "./run.sh", "verify_exit_code": 0,
+         "verify_run_at": "2026-08-01", "verify_run_exit_code": 1},
+    )]
+    out = brief_cmd._next_skill_recommendation("executing", artifacts, [], [])
+    assert "specflow verify" in out
+    assert "QT-003" in out
+
+
+def test_next_skill_verify_advisory_silent_when_evidence_matches():
+    """verify_run_exit_code equals declared verify_exit_code → contract satisfied,
+    no advisory noise."""
+    artifacts = [_vart(
+        "STORY-010", "verified",
+        {"verify_command": "pytest", "verify_exit_code": 0,
+         "verify_run_at": "2026-08-01", "verify_run_exit_code": 0},
+    )]
+    out = brief_cmd._next_skill_recommendation("executing", artifacts, [], [])
+    assert "specflow verify" not in out
+
+
+def test_next_skill_verify_advisory_silent_without_verify_command():
+    """No verify_command declared → the project doesn't use contracts → no noise.
+    This is the guard that keeps the advisory invisible for ordinary projects."""
+    artifacts = [_art("STORY-001", "implemented")]  # no frontmatter / no verify_command
+    out = brief_cmd._next_skill_recommendation("executing", artifacts, [], [])
+    assert "specflow verify" not in out
+
+
 # --- health nags (D2) ---
 
 def test_health_nags_domain_unset(tmp_path: Path):

@@ -163,6 +163,29 @@ specflow phase-set PHASE [--reason TEXT]
 | `PHASE` | Target phase: `idle`, `discovering`, `specifying`, `planning`, `executing`, `verifying`, `complete` |
 | `--reason` | Why the phase is being set (recorded in history) |
 
+### `specflow verify`
+
+Run an artifact's declared `verify_command` and **record** the result as verification evidence — turns the `verified` status from an assertion into machine-checkable proof. An evidence recorder, not a gate: a failing run is recorded truthfully (`verify_run_exit_code`) and **never blocks** a commit, transition, or release (accounting, not policing).
+
+```bash
+specflow verify ID
+specflow verify --all
+specflow verify --type TYPE
+specflow verify ID --dry-run
+specflow verify ID --evidence-file
+```
+
+| Flag | Purpose |
+|------|---------|
+| `ID` | Run one artifact's declared `verify_command`; records `verify_run_at`, `verify_run_exit_code`, `verify_run_out_hash` |
+| `--all` | Run every declared verification contract across the project in one pass |
+| `--type` | Scope to one V-model level (`unit-test`, `integration-test`, `qualification-test`, `story`) |
+| `--dry-run` | Print the resolved command(s) and target artifact(s) without executing or recording |
+| `--evidence-file` | Boolean flag (no path). Resolve the first file matching the artifact's `verify_evidence` glob(s) and record its hash (`verify_run_evidence_hash`) and mtime (`verify_run_evidence_mtime`). Command stdout+stderr are summarized into `verify_run_out_hash` regardless of this flag |
+| `--timeout` | Per-command timeout in seconds (default: 600) |
+
+Artifacts declare the contract via frontmatter: `verify_command` (the shell command that proves it works), `verify_exit_code` (expected pass code, default `0`), and `verify_evidence` (note on what the output proves). `specflow verify` records the run side: `verify_run_at`, `verify_run_exit_code`, `verify_run_out_hash` (and, with `--evidence-file`, `verify_run_evidence_hash` + `verify_run_evidence_mtime` for the first matched evidence file). A divergence between `verify_exit_code` and `verify_run_exit_code` surfaces as an advisory in `specflow brief --next` and an accounting warning in `specflow project-audit` — never as an error. Artifacts with no `verify_command` are unaffected. See the specflow-execute skill's `verification-contracts.md` reference for field semantics and the never-blocking invariant.
+
 ---
 
 ## Domain and Best Practices

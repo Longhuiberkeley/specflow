@@ -358,6 +358,45 @@ def _next_skill_recommendation(
                 f"{action}, or /specflow-plan for the pivot scope."
             )
 
+    # Verification-contract advisory: an implemented/verified test (UT/IT/QT) or
+    # STORY that DECLARES a verify_command but carries no recorded run evidence
+    # (or a recorded run whose exit code diverged from the declared expected
+    # code) wants `specflow verify`. This is the deterministic frontmatter query
+    # behind the /specflow-start router's verify nudge — accounting, not
+    # policing: one advisory line, never blocking, never changes the exit code.
+    # It fires only when a verify_command is actually declared, so projects that
+    # don't use verification contracts see zero noise.
+    verify_types = {"UT", "IT", "QT", "STORY"}
+    needs_verify: list[str] = []
+    for a in artifacts:
+        if art_lib.get_prefix_from_id(a.id) not in verify_types:
+            continue
+        if a.status not in ("implemented", "verified"):
+            continue
+        fm = getattr(a, "frontmatter", None) or {}
+        if not fm.get("verify_command"):
+            continue
+        ran_at = fm.get("verify_run_at")
+        expected = fm.get("verify_exit_code")
+        recorded = fm.get("verify_run_exit_code")
+        # Needs (re-)verification when never run, or when a recorded run diverged
+        # from the declared expected exit code (str compare tolerates 0/"0").
+        diverged = (
+            expected is not None
+            and recorded is not None
+            and str(expected) != str(recorded)
+        )
+        if not ran_at or diverged:
+            needs_verify.append(a.id)
+    if needs_verify:
+        shown = ", ".join(needs_verify[:5])
+        more = f" (+{len(needs_verify) - 5} more)" if len(needs_verify) > 5 else ""
+        notes.append(
+            f"{len(needs_verify)} artifact(s) declare a verify_command with no "
+            f"matching verify_run evidence ({shown}{more}) → "
+            f"`specflow verify <ID>` (or `specflow verify --all`)."
+        )
+
     return core + "".join(f"\n{n}" for n in notes)
 
 

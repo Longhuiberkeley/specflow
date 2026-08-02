@@ -40,6 +40,7 @@ flowchart TB
         direction LR
         REQ --> ARCH --> DDD --> STORY
         STORY -. "verified by" .-> TST["UT / IT / QT"]
+        TST -. "specflow verify records<br/>verify_run_* evidence<br/>(accounting, never blocks)" .-> VRF["verification contract<br/>verify_command · verify_evidence"]
         STORY --> WRK["DEC · DEF · AUD"]
     end
 
@@ -75,6 +76,10 @@ flowchart TB
                  │   ONE ENGINE — the artifact graph + gates        │
                  │   REQ → ARCH → DDD → STORY                       │
                  │   STORY verified by UT / IT / QT                 │
+                 │     UT/IT/QT declare verify_command;             │
+                 │     specflow verify records verify_run_* evidence│
+                 │     (accounting — a failing run is recorded,     │
+                 │      never blocks a commit/transition/release)   │
                  │   + DEC · DEF · AUD                              │
                  │   deterministic CLI · phase-gates · trace · lint │
                  └──────────▲───────────────────────────▲──────────┘
@@ -182,7 +187,7 @@ Every slash command above composes underlying `uv run specflow …` commands. Th
 
 - **Recall & navigation:** `specflow brief` (one-call digest), `specflow status`, `specflow trace <ID>`, `specflow rtm [--gaps]` (project-wide REQ→ARCH→STORY→test matrix)
 - **Authoring:** `specflow create`, `specflow update --status <status>`
-- **Gates & validation:** `specflow artifact-lint [--type … | --gate <name>]`
+- **Gates & validation:** `specflow artifact-lint [--type … | --gate <name>]`, `specflow verify <ID> | --all` (records `verify_run_*` evidence — accounting, never blocks)
 - **Defects:** `specflow defect-from-suspect <ID> --req <REQ>` (suspect → DEF with traceability)
 - **Release & change:** `specflow baseline`, `specflow document-changes`, `specflow project-audit`
 

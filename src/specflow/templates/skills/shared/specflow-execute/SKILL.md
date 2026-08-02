@@ -194,6 +194,17 @@ Report results and fix any issues.
 
 **Verification-gate delta.** Re-run the *same* gate you baselined at the top of Step 3 (the test suite, or `artifact-lint` if that was the baseline). Report the delta vs baseline: "baseline N failing {a,b} → now M failing {…}: +c I caused it / -d I fixed it / unchanged." Read a real exit code — don't grep narrowed to your own files. If the count rose, you caused a regression: revert the offending step, re-diagnose, re-sequence — don't stack a fix on a broken base.
 
+**Verification contracts.** Before transitioning any test artifact (UT/IT/QT) or STORY to `verified`, run its declared verification contract so the `verified` status carries machine-checkable evidence — mirroring how this step already runs `specflow artifact-lint`:
+
+```
+specflow verify <ID>              # run one artifact's verify_command; records verify_run_* evidence
+specflow verify --all             # run every declared contract in one pass
+specflow verify <ID> --dry-run    # confirm the contract wiring without executing
+specflow verify <ID> --evidence-file PATH   # capture long output into a file
+```
+
+This is an evidence recorder, **not** a gate: a failing `verify_command` is **recorded** (truthful `verify_run_exit_code`) and **never blocks** — accounting, not policing. You record the real result and let the human decide what a failure means (fix the code, fix the command, or accept the gap on record). Run `specflow verify <ID>` (or `--all`) before transitioning test/story artifacts to `verified`. Artifacts that declare no `verify_command` are unaffected. Read `references/verification-contracts.md` for the contract fields, the recorded run fields, and the keystone invariant.
+
 Record the gate result (baseline + final + delta) in the STORY or its linked UT/IT/QT artifact so `verified` is traced, not asserted. Do not move a STORY or test artifact to `verified` without this delta on record.
 
 **Exit message:** Report the count of stories marked `implemented`, tests created (UT/IT/QT), and the verification-gate delta. Recommend the next skill -- `/specflow-artifact-review`.
@@ -229,5 +240,6 @@ Record the gate result (baseline + final + delta) in the STORY or its linked UT/
 
 - `references/status-lifecycle.md` -- Valid status transitions for all artifact types.
 - `references/test-pairing.md` -- V-model verification test pairing rules.
+- `references/verification-contracts.md` -- Machine-checkable verify_command contracts: field meanings, recorded run evidence, the never-blocking invariant.
 - `references/wave-computation.md` -- Wave computation algorithm and context isolation.
 - `references/thinking-techniques.md` -- Quick execution-stage thinking checks (points to shared catalog at `../specflow-references/references/adversarial-lenses.md`).
