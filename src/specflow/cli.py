@@ -119,6 +119,12 @@ def cmd_defect_from_suspect(args: argparse.Namespace) -> int:
     return cmd.run(root, vars(args))
 
 
+def cmd_defect_from_monitor(args: argparse.Namespace) -> int:
+    from specflow.commands import defect_from_monitor as cmd
+    root = _find_project_root()
+    return cmd.run(root, vars(args))
+
+
 def cmd_fingerprint_refresh(args: argparse.Namespace) -> int:
     from specflow.commands import fingerprint_refresh as cmd
     root = _find_project_root()
@@ -558,6 +564,14 @@ def _add_defect_from_suspect_parser(subparsers):
     p.add_argument("--title", help="Override the auto-generated defect title")
 
 
+def _add_defect_from_monitor_parser(subparsers):
+    p = subparsers.add_parser("defect-from-monitor", help="Create a DEF from a breached MONITOR (ops), freezing its evidence with auto-linked traceability")
+    p.add_argument("monitor_id", help="The MONITOR artifact (e.g., MON-001)")
+    p.add_argument("--req", required=True, help="Upstream REQ the breach indicates is unsatisfied")
+    p.add_argument("--severity", choices=["low", "medium", "high", "critical"], default="medium", help="Defect severity")
+    p.add_argument("--title", help="Override the auto-generated defect title")
+
+
 def _add_fingerprint_refresh_parser(subparsers):
     p = subparsers.add_parser("fingerprint-refresh", help="Update fingerprint without suspect cascade")
     p.add_argument("targets", nargs="+", help="Artifact IDs (preferred) or file paths")
@@ -725,7 +739,7 @@ commands by workflow phase:
   Review:     artifact-lint, checklist-run, artifact-review, project-audit, trace, rtm
   Release:    baseline, document-changes
   CI:         hook, rbac, renumber-drafts, import, export, detect, change-impact,
-              defect-from-suspect, fingerprint-refresh, ci, ci-gate
+              defect-from-suspect, defect-from-monitor, fingerprint-refresh, ci, ci-gate
   Recovery:   unlock, locks, rebuild-index, split, merge
   Research:   autoresearch
   Adoption:   adopt (brownfield; install via /specflow-init --preset adoption)
@@ -963,6 +977,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_detect_parser(subparsers)
     _add_change_impact_parser(subparsers)
     _add_defect_from_suspect_parser(subparsers)
+    _add_defect_from_monitor_parser(subparsers)
     _add_fingerprint_refresh_parser(subparsers)
     _add_ci_parser(subparsers)
     _add_trace_parser(subparsers)
@@ -1018,6 +1033,7 @@ def main(argv: list[str] | None = None) -> int:
         "reconcile": cmd_reconcile,
         "change-impact": cmd_change_impact,
         "defect-from-suspect": cmd_defect_from_suspect,
+        "defect-from-monitor": cmd_defect_from_monitor,
         "fingerprint-refresh": cmd_fingerprint_refresh,
         "baseline": cmd_baseline,
         "document-changes": cmd_document_changes,

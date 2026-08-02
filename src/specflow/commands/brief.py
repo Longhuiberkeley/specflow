@@ -258,6 +258,75 @@ def _pack_state_note(artifacts: list[art_lib.Artifact], active_packs: list[str])
     return ""
 
 
+def _outcome_feedback_note(artifacts: list[art_lib.Artifact], active_packs: list[str]) -> str:
+    """Optional note: real-world ops outcomes that never fed back into a DEF.
+
+    Closes the traceability gap where a breached MONITOR can be hand-resolved
+    leaving zero defect record (and thus zero prevention pattern downstream).
+    Two deterministic counts over MONITOR artifacts via a TWO-DIRECTION graph
+    walk — both directions must be checked or this crys-wolf:
+
+      Forward (MONITOR's own links): does the MONITOR have an outgoing `informs`
+        edge (e.g., → LOOP/DEC) recording a follow-up?
+      Backward (any DEF's links): does a DEF point back at the MONITOR via
+        `exposed_by` (the defect-from-monitor wire)?
+
+    (i)  flagged/breached MONITORs with NO DEF backlink AND NO outgoing informs
+         edge → "breach unaccountable" (routes to `specflow defect-from-monitor`).
+    (ii) resolved MONITORs that were never linked to any DEF → "vanished without
+         prevention record" (the breach left no closed-DEF → PREV trace).
+
+    Gated on the ops pack being active AND at least one MONITOR existing, so
+    non-ops projects and docless states see zero noise. Pure read-only graph
+    queries — never blocking, never mutating.
+    """
+    if "ops" not in active_packs:
+        return ""
+    monitors = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "MON"]
+    if not monitors:
+        return ""
+
+    # Backward walk: every MONITOR id that some DEF points back at via exposed_by.
+    backed_by_def: set[str] = set()
+    for a in artifacts:
+        if art_lib.get_prefix_from_id(a.id) != "DEF":
+            continue
+        for lk in a.links:
+            if lk.role == "exposed_by":
+                backed_by_def.add(lk.target)
+
+    # Forward walk: every MONITOR that declared an outgoing informs follow-up.
+    has_informs: set[str] = set()
+    for m in monitors:
+        for lk in m.links:
+            if lk.role == "informs":
+                has_informs.add(m.id)
+
+    def _is_breached(m: art_lib.Artifact) -> bool:
+        return m.status == "flagged" or (m.frontmatter or {}).get("health") == "breached"
+
+    unaccountable = [
+        m for m in monitors
+        if _is_breached(m) and m.id not in backed_by_def and m.id not in has_informs
+    ]
+    vanished = [m for m in monitors if m.status == "resolved" and m.id not in backed_by_def]
+
+    notes: list[str] = []
+    if unaccountable:
+        first = unaccountable[0].id
+        more = f" (+{len(unaccountable) - 1} more)" if len(unaccountable) > 1 else ""
+        notes.append(
+            f"{len(unaccountable)} breached MONITOR(s) with no DEF (outcome unaccountable) "
+            f"→ specflow defect-from-monitor {first} --req REQ-NNN{more}"
+        )
+    if vanished:
+        notes.append(
+            f"{len(vanished)} resolved MONITOR(s) never linked to a DEF "
+            f"(vanished without prevention record)"
+        )
+    return "\n".join(notes)
+
+
 def _next_skill_recommendation(
     phase: str,
     artifacts: list[art_lib.Artifact],
@@ -334,6 +403,9 @@ def _next_skill_recommendation(
     pack_note = _pack_state_note(artifacts, active_packs)
     if pack_note:
         notes.append(pack_note)
+    outcome_note = _outcome_feedback_note(artifacts, active_packs)
+    if outcome_note:
+        notes.append(outcome_note)
 
     # Backlog-aware advisory: a strategic rewind to specifying/planning can leave
     # implemented/verified stories in the backlog. The phase-based primary line

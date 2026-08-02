@@ -304,3 +304,103 @@ def test_health_nags_no_adoption_nag_when_not_adopting(tmp_path: Path):
     """adoption=None (not an adopt project) → no adoption nag even with no baseline."""
     nags = brief_cmd._health_nags(tmp_path, {"project": {"domain": "quant"}}, [], None)
     assert not any("adoption handshake" in n for n in nags)
+
+
+# --- outcome-feedback note (v1.13): breached MONITOR with no DEF/informs →
+#     route to `specflow defect-from-monitor`. Two-direction walk; ops-gated. ---
+
+class _OLink:
+    """Minimal link stub (target + role) for the pure graph queries."""
+
+    def __init__(self, target: str, role: str) -> None:
+        self.target = target
+        self.role = role
+
+
+def _mon(
+    mon_id: str,
+    status: str = "flagged",
+    health: str | None = "breached",
+    links: list[_OLink] | None = None,
+) -> SimpleNamespace:
+    return SimpleNamespace(
+        id=mon_id, status=status, suspect=False,
+        frontmatter={"health": health} if health is not None else {},
+        links=links or [],
+    )
+
+
+def _def_stub(def_id: str, links: list[_OLink] | None = None) -> SimpleNamespace:
+    return SimpleNamespace(
+        id=def_id, status="open", suspect=False, frontmatter={}, links=links or [],
+    )
+
+
+def test_outcome_note_silent_on_non_ops_project():
+    """No ops pack → never print (no cry-wolf on non-ops projects)."""
+    mon = _mon("MON-001")
+    assert brief_cmd._outcome_feedback_note([mon], active_packs=[]) == ""
+
+
+def test_outcome_note_silent_with_no_monitors():
+    """Ops active but zero MONITOR artifacts → silent."""
+    out = brief_cmd._outcome_feedback_note(
+        [SimpleNamespace(id="REQ-001", status="approved", suspect=False,
+                         frontmatter={}, links=[])],
+        active_packs=["ops"],
+    )
+    assert out == ""
+
+
+def test_outcome_note_fires_for_breached_unlinked_monitor():
+    """A flagged+breached MONITOR with no DEF backlink and no informs edge →
+    'breach unaccountable', routed to defect-from-monitor."""
+    mon = _mon("MON-001")
+    out = brief_cmd._outcome_feedback_note([mon], active_packs=["ops"])
+    assert "1 breached MONITOR(s)" in out
+    assert "defect-from-monitor MON-001" in out
+    assert "unaccountable" in out
+
+
+def test_outcome_note_suppressed_by_def_backlink():
+    """Backward direction: a DEF whose exposed_by points back at the MONITOR →
+    accountable, no note (the two-direction walk must catch this)."""
+    mon = _mon("MON-001")
+    d = _def_stub("DEF-001", [_OLink("MON-001", "exposed_by")])
+    out = brief_cmd._outcome_feedback_note([mon, d], active_packs=["ops"])
+    assert "unaccountable" not in out
+
+
+def test_outcome_note_suppressed_by_informs_edge():
+    """Forward direction: the MONITOR's own outgoing `informs` edge records a
+    follow-up → accountable, no note."""
+    mon = _mon("MON-001", links=[_OLink("LOOP-001", "informs")])
+    out = brief_cmd._outcome_feedback_note([mon], active_packs=["ops"])
+    assert "unaccountable" not in out
+
+
+def test_outcome_note_resolved_vanished_count():
+    """A resolved MONITOR never linked to any DEF → 'vanished without prevention
+    record'."""
+    mon = _mon("MON-002", status="resolved", health="ok")
+    out = brief_cmd._outcome_feedback_note([mon], active_packs=["ops"])
+    assert "1 resolved MONITOR(s)" in out
+    assert "vanished without prevention record" in out
+
+
+def test_outcome_note_resolved_suppressed_when_def_backlink_exists():
+    """Resolved but a DEF was filed → prevention trace exists, no vanished note."""
+    mon = _mon("MON-002", status="resolved", health="ok")
+    d = _def_stub("DEF-001", [_OLink("MON-002", "exposed_by")])
+    out = brief_cmd._outcome_feedback_note([mon, d], active_packs=["ops"])
+    assert "vanished" not in out
+
+
+def test_outcome_note_router_recommendation_in_next_skill():
+    """The same conditions surface inside _next_skill_recommendation as an
+    advisory recommending defect-from-monitor (the router wire)."""
+    mon = _mon("MON-001")
+    out = brief_cmd._next_skill_recommendation(
+        "executing", [mon], [], [], active_packs=["ops"],
+    )
+    assert "defect-from-monitor" in out
