@@ -120,6 +120,18 @@ class TestScanSourceFiles:
         assert "src/app.py" in found
         assert not any(f.startswith("node_modules/") for f in found)
 
+    @git_only
+    def test_antigravitycli_session_cache_excluded(self, tmp_path: Path):
+        """A tracked Antigravity-CLI session cache dir is an external-tool
+        artifact, not project code — it drops out of source scanning on
+        principle (same backstop as node_modules)."""
+        _git_init(tmp_path)
+        _write(tmp_path, "src/app.py")
+        _write(tmp_path, ".antigravitycli/d227d301-d025-42d7-b9ac-57b9db0ad9b7.json", "{}")
+        found = _rel_names(tmp_path, files_lib.scan_source_files(tmp_path))
+        assert "src/app.py" in found
+        assert not any(f.startswith(".antigravitycli/") for f in found)
+
 
 class TestDescribeSourceScope:
     @git_only

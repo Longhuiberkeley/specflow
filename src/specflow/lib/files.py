@@ -32,7 +32,7 @@ EXCLUDE_DIRS: set[str] = {
     ".git", ".venv", "venv", "__pycache__", ".pytest_cache",
     "node_modules", ".next", "dist", "build", ".specflow",
     "_specflow", ".claude", ".cursor", ".windsurf", ".codex",
-    ".opencode", ".agents", ".roo", ".qwen", ".kiro", ".kilocode",
+    ".opencode", ".agents", ".antigravitycli", ".roo", ".qwen", ".kiro", ".kilocode",
     ".trae", ".github", ".husky", ".clinerules", ".cline",
     ".gemini", ".junie",
 }
