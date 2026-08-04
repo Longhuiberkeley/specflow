@@ -253,4 +253,41 @@ artifacts:
     - ergonomics
     fingerprint: sha256:ec70eb08d617
     children: []
-next_id: 33
+  IT-033:
+    id: IT-033
+    title: 'Integration Test for ARCH-027: Autoresearch skill + protocol-doc surface'
+    status: verified
+    tags:
+    - backfilled
+    - verification-contract
+    - autoresearch
+    - ARCH-027
+    - protocol-docs
+    fingerprint: sha256:669898b3fe4d
+    children: []
+  IT-034:
+    id: IT-034
+    title: 'Integration Test for STORY-082: BP/PREV knowledge-surface visibility and
+      consumption'
+    status: verified
+    tags:
+    - backfilled
+    - verification-contract
+    - learnings
+    - bp
+    - prev
+    - brief
+    fingerprint: sha256:2d5fe78f35d9
+    children: []
+  IT-035:
+    id: IT-035
+    title: 'Integration Test for REQ-015: Release-evidence RTM completeness'
+    status: verified
+    tags:
+    - backfilled
+    - verification-contract
+    - evidence
+    - REQ-015
+    fingerprint: sha256:1bb23f8c261f
+    children: []
+next_id: 36

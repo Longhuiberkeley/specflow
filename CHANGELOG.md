@@ -4,6 +4,12 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- Audit report header now shows chain coverage (approved STORYs with full UT+IT+QT verified_by coverage) and trend deltas (errors/warns/info/chain coverage) vs the prior audit; new audits stamp machine-readable summary fields (CHL-341, CHL-344#2).
+
 ## [1.13.4] - 2026-08-05
 
 Dogfood patch that completes the v1.13 accounting loop: fixes audit baseline selection and noisy decision recall, exposes the autoresearch protocol through the core CLI, closes six queued stories, and backfills executable V-model evidence across the repository. No new blocking gates.

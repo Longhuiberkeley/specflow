@@ -10,6 +10,8 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
+import yaml
+
 from specflow.commands import artifact_lint
 from specflow.commands import project_audit as audit_cmd
 from specflow.lib import artifacts as art_lib
@@ -621,3 +623,264 @@ class TestEvidenceVerifyRunAnnotation:
         text = "\n".join(evidence._test_results_section(arts))
         assert "verify_run" not in text
         assert "| verified |" in text  # bare status, no annotation
+
+
+# ── Audit report honesty: chain coverage + trend deltas (CHL-341, CHL-344#2) ─
+#
+# The audit report header gains two informational lines that must be honest:
+#   - **Chain coverage**: N% (c/t approved STORYs fully covered by UT+IT+QT)
+#   - **Trend vs AUD-0XX**: errors/warns/info/chain-coverage deltas vs the
+#     prior audit's stamped summary fields.
+# Both are pure rendering over the loaded artifact list: they never affect the
+# exit code, render on cache hits and --dry-run alike, and degrade to honest
+# fallbacks (n/a / "first audit") instead of inventing numbers.
+
+
+def _story_fixture(root: Path, n_covered: int, n_uncovered: int = 0) -> None:
+    """REQ-001 + ARCH-001 + N fully-verified STORYs + M unverified STORYs."""
+    _write_art(root, "_specflow/specs/requirements/REQ-001.md",
+               "---\nid: REQ-001\ntitle: T\ntype: requirement\nstatus: approved\n"
+               "tags: []\nsuspect: false\nlinks: []\nfingerprint: x\n---\n\n# T\n")
+    _write_art(root, "_specflow/specs/architecture/ARCH-001.md",
+               "---\nid: ARCH-001\ntitle: A\ntype: architecture\nstatus: approved\n"
+               "tags: []\nsuspect: false\n"
+               "links:\n  - {target: REQ-001, role: derives_from}\n"
+               "fingerprint: x\n---\n\n# A\n")
+    n = 0
+    for _ in range(n_covered):
+        n += 1
+        sid = f"STORY-{n:03d}"
+        _write_art(root, f"_specflow/work/stories/{sid}.md",
+                   f"---\nid: {sid}\ntitle: S\ntype: story\nstatus: implemented\n"
+                   "tags: []\nsuspect: false\n"
+                   f"links:\n  - {{target: REQ-001, role: implements}}\n"
+                   "fingerprint: x\n---\n\n# S\n")
+        for prefix, ttype, dirn in (
+            ("UT", "unit-test", "specs/unit-tests"),
+            ("IT", "integration-test", "specs/integration-tests"),
+            ("QT", "qualification-test", "specs/qualification-tests"),
+        ):
+            tid = f"{prefix}-{n:03d}"
+            _write_art(root, f"_specflow/{dirn}/{tid}.md",
+                       f"---\nid: {tid}\ntitle: V\ntype: {ttype}\nstatus: verified\n"
+                       "tags: []\nsuspect: false\n"
+                       f"links:\n  - {{target: {sid}, role: verified_by}}\n"
+                       "fingerprint: x\n---\n\n# V\n")
+    for _ in range(n_uncovered):
+        n += 1
+        sid = f"STORY-{n:03d}"
+        _write_art(root, f"_specflow/work/stories/{sid}.md",
+                   f"---\nid: {sid}\ntitle: S\ntype: story\nstatus: implemented\n"
+                   "tags: []\nsuspect: false\n"
+                   f"links:\n  - {{target: REQ-001, role: implements}}\n"
+                   "fingerprint: x\n---\n\n# S\n")
+
+
+def _aud_file(root: Path, aid: str, extra_fm: str = "") -> None:
+    """A prior AUD artifact file; extra_fm carries the stamped summary fields."""
+    _write_art(root, f"_specflow/specs/audits/{aid}.md",
+               f"---\nid: {aid}\ntitle: Prior Audit\ntype: audit\nstatus: open\n"
+               f"created: 2026-08-01\ntags: []\nsuspect: false\nlinks: []\n"
+               f"fingerprint: x\n{extra_fm}---\n\n# Prior Audit\n")
+
+
+def _run_quiet_audit(root: Path, monkeypatch, cross_cutting=None) -> int:
+    """Run the audit with the three analysis axes silenced to deterministic
+    values so only the header metrics vary; AUD/CHL side effects suppressed."""
+    monkeypatch.setattr(audit_cmd, "_horizontal_analysis", lambda arts: {})
+    monkeypatch.setattr(audit_cmd, "_vertical_analysis", lambda arts: [])
+    monkeypatch.setattr(audit_cmd, "_cross_cutting_analysis",
+                        lambda arts, r: cross_cutting or {})
+    monkeypatch.setattr(audit_cmd.art_lib, "create_artifact", lambda *a, **k: {"ok": False})
+    monkeypatch.setattr(audit_cmd.chl_lib, "create_chl_artifacts", lambda *a, **k: [])
+    return audit_cmd.run(root, {"quick": False})
+
+
+def _latest_report(root: Path) -> str:
+    reports = sorted((root / ".specflow" / "audits").glob("*/report.md"))
+    assert reports, "expected an audit report to be written"
+    return reports[-1].read_text(encoding="utf-8")
+
+
+class TestChainCoverageHeader:
+    def test_chain_coverage_line_renders_mixed_numbers(self, tmp_path, monkeypatch):
+        # 1 fully-verified STORY + 1 unverified STORY → 50% (1/2).
+        root = tmp_path / "project"
+        _story_fixture(root, n_covered=1, n_uncovered=1)
+        rc = _run_quiet_audit(root, monkeypatch)
+        report = _latest_report(root)
+        assert "- **Chain coverage**: 50% (1/2 approved STORYs fully covered by UT+IT+QT)" in report
+        assert rc == 0  # informational metric — adds no exit pressure
+
+    def test_chain_coverage_full(self, tmp_path, monkeypatch):
+        root = tmp_path / "project"
+        _story_fixture(root, n_covered=3)
+        _run_quiet_audit(root, monkeypatch)
+        assert "- **Chain coverage**: 100% (3/3 approved STORYs fully covered by UT+IT+QT)" \
+            in _latest_report(root)
+
+    def test_chain_coverage_na_without_approved_stories(self, tmp_path, monkeypatch):
+        # No STORYs at all → honest n/a, never a fabricated 0% or 100%.
+        root = tmp_path / "project"
+        (root / "_specflow" / "specs" / "requirements").mkdir(parents=True)
+        (root / "_specflow" / "specs" / "requirements" / "REQ-001.md").write_text(
+            "---\nid: REQ-001\ntitle: T\ntype: requirement\nstatus: approved\n"
+            "tags: []\nsuspect: false\nlinks: []\nfingerprint: x\n---\n\n# T\n",
+            encoding="utf-8",
+        )
+        _run_quiet_audit(root, monkeypatch)
+        assert "- **Chain coverage**: n/a (no approved STORYs)" in _latest_report(root)
+
+    def test_chain_coverage_matches_check_coverage_tally(self):
+        # The header metric reuses artifact_lint.check_coverage's own walk —
+        # covered/total agree with the lint's verification warnings 1:1.
+        req = _art("REQ-001", "requirement", status="approved")
+        covered = _art("STORY-001", "story", status="implemented",
+                       links=[art_lib.Link(target="REQ-001", role="implements")])
+        uncovered = _art("STORY-002", "story", status="implemented",
+                         links=[art_lib.Link(target="REQ-001", role="implements")])
+        tests = [
+            _art("UT-001", "unit-test", status="verified",
+                 links=[art_lib.Link(target="STORY-001", role="verified_by")]),
+            _art("IT-001", "integration-test", status="verified",
+                 links=[art_lib.Link(target="STORY-001", role="verified_by")]),
+            _art("QT-001", "qualification-test", status="verified",
+                 links=[art_lib.Link(target="STORY-001", role="verified_by")]),
+        ]
+        r = artifact_lint.check_coverage([req, covered, uncovered] + tests)
+        assert (r["approved_story_covered"], r["approved_story_total"]) == (1, 2)
+        assert audit_cmd._chain_coverage_stats([req, covered, uncovered] + tests) == (1, 2)
+
+
+class TestTrendDeltas:
+    def test_trend_renders_deltas_against_stamped_prior(self, tmp_path, monkeypatch):
+        root = tmp_path / "project"
+        _story_fixture(root, n_covered=1)
+        _aud_file(root, "AUD-001",
+                  extra_fm="summary_errors: 0\nsummary_warns: 29\nsummary_info: 19\n"
+                           "chain_coverage_pct: 61\n")
+        # Current run: 0 errors, 0 warns, 12 infos; chain coverage 100% (1/1).
+        infos = [{"severity": "info", "message": f"baseline info {i}"} for i in range(12)]
+        rc = _run_quiet_audit(root, monkeypatch, cross_cutting={"baseline-drift": infos})
+        report = _latest_report(root)
+        assert ("- **Trend vs AUD-001**: errors 0→0 (Δ0), warns 29→0 (Δ−29), "
+                "info 19→12 (Δ−7), chain coverage 61%→100% (Δ+39 pp)") in report
+        assert rc == 0
+
+    def test_trend_fallback_when_prior_predates_stamping(self, tmp_path, monkeypatch):
+        root = tmp_path / "project"
+        _story_fixture(root, n_covered=1)
+        _aud_file(root, "AUD-001")  # no summary_* fields
+        _run_quiet_audit(root, monkeypatch)
+        assert ("- **Trend vs AUD-001**: n/a (prior audit predates summary stamping)"
+                in _latest_report(root))
+
+    def test_trend_first_audit_wording(self, tmp_path, monkeypatch):
+        root = tmp_path / "project"
+        _story_fixture(root, n_covered=1)
+        _run_quiet_audit(root, monkeypatch)
+        assert "- **Trend**: first audit — no prior baseline" in _latest_report(root)
+
+    def test_dry_run_renders_nothing_to_disk_but_trend_is_readonly(self, tmp_path, monkeypatch, capsys):
+        # --dry-run writes nothing (no report, no AUD) yet the trend/coverage
+        # lines are pure rendering from already-loaded data — the same inputs a
+        # writing run sees. Exit parity with the writing run is the invariant.
+        root = tmp_path / "project"
+        _story_fixture(root, n_covered=1)
+        _aud_file(root, "AUD-001",
+                  extra_fm="summary_errors: 0\nsummary_warns: 1\nsummary_info: 2\n"
+                           "chain_coverage_pct: 50\n")
+        before = sorted(str(p.relative_to(root)) for p in root.rglob("*") if p.is_file())
+        rc_dry = audit_cmd.run(root, {"dry_run": True, "quick": True})
+        capsys.readouterr()
+        after = sorted(str(p.relative_to(root)) for p in root.rglob("*") if p.is_file())
+        assert before == after  # no report, no AUD, no cache writes
+        rc_write = audit_cmd.run(root, {"dry_run": False, "quick": True})
+        capsys.readouterr()
+        assert rc_dry == rc_write
+
+
+class TestPriorAuditSelection:
+    def test_created_date_is_primary_order(self):
+        # The newest-created audit is the prior baseline, regardless of suffix.
+        a1 = _art("AUD-001", "audit", status="open", created="2026-08-04")
+        a2 = _art("AUD-002", "audit", status="open", created="2026-01-01")
+        assert audit_cmd._select_prior_audit([a1, a2]).id == "AUD-001"
+
+    def test_same_day_numeric_suffix_breaks_tie(self):
+        # Same-day audits are created in suffix order → higher suffix wins.
+        a1 = _art("AUD-072", "audit", status="open", created="2026-08-04")
+        a2 = _art("AUD-073", "audit", status="open", created="2026-08-04")
+        assert audit_cmd._select_prior_audit([a1, a2]).id == "AUD-073"
+
+    def test_old_hash_draft_does_not_shadow_newer_numbered(self):
+        # Live regression: old draft-ID audits (AUD-PROJECTA-* era) must not
+        # outrank newer numbered ones and pin the trend line to n/a forever.
+        d1 = _art("AUD-PROJECTA-f7ce", "audit", status="open", created="2026-04-22")
+        a1 = _art("AUD-073", "audit", status="open", created="2026-08-05")
+        assert audit_cmd._select_prior_audit([d1, a1]).id == "AUD-073"
+
+    def test_same_day_hash_draft_sorts_after_numeric(self):
+        # A draft created the same day as the last numbered audit is newer.
+        a1 = _art("AUD-009", "audit", status="open", created="2026-07-15")
+        d1 = _art("AUD-audit-draft-a7b9", "audit", status="open", created="2026-07-01")
+        d2 = _art("AUD-audit-draft-b8c0", "audit", status="open", created="2026-07-15")
+        assert audit_cmd._select_prior_audit([a1, d1, d2]).id == "AUD-audit-draft-b8c0"
+
+    def test_no_aud_returns_none(self):
+        assert audit_cmd._select_prior_audit([_art("REQ-001", "requirement")]) is None
+
+    def test_unparseable_stamp_fields_treated_as_missing(self):
+        a = _art("AUD-001", "audit", status="open", summary_errors="garbage",
+                 summary_warns=1, summary_info=1, chain_coverage_pct=1)
+        assert audit_cmd._prior_audit_summary(a) is None
+        # → the trend line degrades to the "predates stamping" fallback.
+        line = audit_cmd._trend_bullet(0, 0, 0, 100, a)
+        assert line == "- **Trend vs AUD-001**: n/a (prior audit predates summary stamping)"
+
+
+class TestAudSummaryStamping:
+    def test_new_aud_stamps_machine_readable_summary(self, tmp_path, monkeypatch, capsys):
+        import specflow as _pkg
+
+        root = tmp_path / "project"
+        _story_fixture(root, n_covered=1, n_uncovered=3)  # chain coverage 25%
+        # The real create_artifact needs the audit schema on disk.
+        schema_dir = root / ".specflow" / "schema"
+        schema_dir.mkdir(parents=True)
+        tmpl = Path(_pkg.__file__).parent / "templates" / "schemas" / "audit.yaml"
+        (schema_dir / "audit.yaml").write_text(tmpl.read_text(encoding="utf-8"), encoding="utf-8")
+
+        infos = [{"severity": "info", "message": f"info {i}"} for i in range(3)]
+        monkeypatch.setattr(audit_cmd, "_horizontal_analysis", lambda arts: {})
+        monkeypatch.setattr(audit_cmd, "_vertical_analysis", lambda arts: [])
+        monkeypatch.setattr(audit_cmd, "_cross_cutting_analysis",
+                            lambda arts, r: {"baseline-drift": infos})
+        monkeypatch.setattr(audit_cmd.chl_lib, "create_chl_artifacts", lambda *a, **k: [])
+
+        rc = audit_cmd.run(root, {"quick": False})
+        capsys.readouterr()
+        assert rc == 0
+
+        aud_files = sorted((root / "_specflow" / "specs" / "audits").glob("AUD-*.md"))
+        assert aud_files, "expected an AUD artifact to be created"
+        text = aud_files[-1].read_text(encoding="utf-8")
+        fm = yaml.safe_load(text[3:text.find("---", 3)])
+        assert fm["summary_errors"] == 0
+        assert fm["summary_warns"] == 0
+        assert fm["summary_info"] == 3
+        assert fm["chain_coverage_pct"] == 25
+
+    def test_stamped_fields_pass_schema_lint(self, tmp_path):
+        # The audit schema enumerates the stamp fields as optional, and the
+        # global known-meta whitelist covers pre-existing on-disk schemas — so
+        # a stamped AUD never draws an "Unknown field" finding.
+        from specflow.lib import lint as lint_lib
+
+        stamped = _art("AUD-001", "audit", status="open",
+                       summary_errors=0, summary_warns=2, summary_info=5,
+                       chain_coverage_pct=61)
+        schema = {"required_fields": ["id", "title", "type", "status", "created"],
+                  "optional_fields": [], "allowed_status": {"open": [], "closed": ["open"]}}
+        issues = lint_lib.validate_artifact_schema(stamped, schema)
+        assert not any("Unknown field" in i["message"] for i in issues)

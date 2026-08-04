@@ -596,4 +596,37 @@ artifacts:
     tags: []
     fingerprint: sha256:cd2ebadd80c8
     children: []
-next_id: 64
+  UT-064:
+    id: UT-064
+    title: 'Unit Test for STORY-083: Refresh safety contract'
+    status: verified
+    tags:
+    - backfilled
+    - verification-contract
+    - refresh
+    - pack-system
+    fingerprint: sha256:be6085e96ad5
+    children: []
+  UT-065:
+    id: UT-065
+    title: 'Unit Test for STORY-076: Autoresearch logging lint + hypothesis logging'
+    status: verified
+    tags:
+    - backfilled
+    - verification-contract
+    - autoresearch
+    - logging
+    fingerprint: sha256:a40f4fa5ebef
+    children: []
+  UT-066:
+    id: UT-066
+    title: 'Unit Test for STORY-058: DDD-selection decision checklist guard'
+    status: verified
+    tags:
+    - backfilled
+    - verification-contract
+    - plan
+    - reference
+    fingerprint: sha256:1f42289f9f91
+    children: []
+next_id: 67

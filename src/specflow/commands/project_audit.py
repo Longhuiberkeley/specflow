@@ -676,13 +676,36 @@ def _render_report(
     cached_count: int,
     total_artifacts: int,
     scope_info: list[str],
+    chain_coverage: tuple[int, int] | None = None,
+    prior_audit: art_lib.Artifact | None = None,
 ) -> str:
+    all_findings = _collect_all_findings(horizontal, vertical, cross_cutting)
+    errors = sum(1 for f in all_findings if f["severity"] == "error")
+    warns = sum(1 for f in all_findings if f["severity"] == "warn")
+    infos = sum(1 for f in all_findings if f["severity"] == "info")
+
     lines = [
         f"# Project Audit Report",
         f"",
         f"- **Timestamp**: {ts}",
         f"- **Artifacts analyzed**: {total_artifacts} (cached: {cached_count})",
     ]
+    # Chain-coverage top-line metric + trend deltas vs the prior audit
+    # (CHL-341 / CHL-344#2). Informational — never affects the exit code.
+    # Rendered from the loaded artifact list, so it appears even when the
+    # findings themselves come from the fingerprint cache.
+    if chain_coverage is not None:
+        cov_covered, cov_total = chain_coverage
+        if cov_total > 0:
+            cov_pct = round(cov_covered * 100 / cov_total)
+            lines.append(
+                f"- **Chain coverage**: {cov_pct}% ({cov_covered}/{cov_total} "
+                f"approved STORYs fully covered by UT+IT+QT)"
+            )
+        else:
+            cov_pct = -1
+            lines.append("- **Chain coverage**: n/a (no approved STORYs)")
+        lines.append(_trend_bullet(errors, warns, infos, cov_pct, prior_audit))
     if scope_info:
         for s in scope_info:
             lines.append(f"- **{s}**")
@@ -723,11 +746,6 @@ def _render_report(
     else:
         lines.append("No cross-cutting issues found.")
         lines.append("")
-
-    all_findings = _collect_all_findings(horizontal, vertical, cross_cutting)
-    errors = sum(1 for f in all_findings if f["severity"] == "error")
-    warns = sum(1 for f in all_findings if f["severity"] == "warn")
-    infos = sum(1 for f in all_findings if f["severity"] == "info")
 
     lines.append("## Summary")
     lines.append("")
@@ -773,6 +791,112 @@ def _count_warns(findings: list[dict[str, str]]) -> tuple[int, int]:
         else:
             escalating += 1
     return escalating, accounting
+
+
+# Machine-readable summary fields stamped on every AUD artifact this command
+# creates, so the NEXT audit can render honest trend deltas against this one
+# (CHL-341 / CHL-344#2). chain_coverage_pct uses -1 as the n/a sentinel (no
+# approved STORYs to measure).
+_SUMMARY_STAMP_FIELDS = ("summary_errors", "summary_warns", "summary_info", "chain_coverage_pct")
+
+
+def _chain_coverage_stats(artifacts: list[art_lib.Artifact]) -> tuple[int, int]:
+    """(covered, total) approved STORYs fully verified via UT+IT+QT links.
+
+    Derived from ``artifact_lint.check_coverage``'s own approved-story walk
+    (same predicate, same verified_by link scan), so the audit header metric
+    and the lint coverage check can never disagree. Informational only — the
+    numbers never feed the exit-code gate (accounting, not policing).
+    """
+    r = artifact_lint.check_coverage(artifacts)
+    covered = int(r.get("approved_story_covered", 0))
+    total = int(r.get("approved_story_total", 0))
+    return covered, total
+
+
+def _select_prior_audit(artifacts: list[art_lib.Artifact]) -> art_lib.Artifact | None:
+    """The most recent PRIOR AUD artifact, or None.
+
+    Ordered by ``created`` (falling back to ``modified`` when absent) because
+    IDs alone lie: ledgers can carry OLD draft-ID audits (AUD-<hash>) that
+    predate newer numbered ones, and same-day numbered audits are created in
+    suffix order. Ties on the timestamp break by ID shape — numeric suffix
+    first (higher suffix wins), then hash-suffix drafts by id — so a draft
+    created the same day as the last numbered audit still sorts after it.
+    Defensive: any parse failure yields None rather than a crash.
+    """
+    try:
+        auds = [
+            a for a in artifacts
+            if a.type == "audit" or art_lib.get_prefix_from_id(a.id) == "AUD"
+        ]
+        if not auds:
+            return None
+
+        def _key(a: art_lib.Artifact) -> tuple[str, int, int, str]:
+            when = str(a.frontmatter.get("created") or a.frontmatter.get("modified") or "")
+            suffix = a.id.rsplit("-", 1)[-1]
+            try:
+                return (when, 0, int(suffix), a.id)
+            except ValueError:
+                return (when, 1, 0, a.id)
+
+        return max(auds, key=_key)
+    except Exception:
+        return None
+
+
+def _prior_audit_summary(art: art_lib.Artifact) -> dict[str, int] | None:
+    """The stamped summary fields of a prior AUD as ints, or None when the
+    artifact predates summary stamping (or its fields are unparseable)."""
+    fm = art.frontmatter
+    if any(k not in fm for k in _SUMMARY_STAMP_FIELDS):
+        return None
+    try:
+        return {k: int(fm[k]) for k in _SUMMARY_STAMP_FIELDS}
+    except (TypeError, ValueError):
+        return None
+
+
+def _signed_delta(d: int) -> str:
+    """Signed delta rendering: 0 → "0", positive → "+N", negative → "−N"."""
+    if d == 0:
+        return "0"
+    return f"+{d}" if d > 0 else f"−{abs(d)}"
+
+
+def _trend_bullet(
+    cur_errors: int,
+    cur_warns: int,
+    cur_infos: int,
+    cur_pct: int,
+    prior: art_lib.Artifact | None,
+) -> str:
+    """Header trend line vs the prior audit (CHL-341). ``cur_pct`` is -1 when
+    the current run has no approved STORYs (n/a). Pure rendering from loaded
+    data — read-only, never affects the exit code, safe under --dry-run and
+    fingerprint-cache hits alike."""
+    if prior is None:
+        return "- **Trend**: first audit — no prior baseline"
+    prev = _prior_audit_summary(prior)
+    if prev is None:
+        return f"- **Trend vs {prior.id}**: n/a (prior audit predates summary stamping)"
+    parts = [
+        f"errors {prev['summary_errors']}→{cur_errors} "
+        f"(Δ{_signed_delta(cur_errors - prev['summary_errors'])})",
+        f"warns {prev['summary_warns']}→{cur_warns} "
+        f"(Δ{_signed_delta(cur_warns - prev['summary_warns'])})",
+        f"info {prev['summary_info']}→{cur_infos} "
+        f"(Δ{_signed_delta(cur_infos - prev['summary_info'])})",
+    ]
+    if cur_pct >= 0 and prev["chain_coverage_pct"] >= 0:
+        parts.append(
+            f"chain coverage {prev['chain_coverage_pct']}%→{cur_pct}% "
+            f"(Δ{_signed_delta(cur_pct - prev['chain_coverage_pct'])} pp)"
+        )
+    else:
+        parts.append("chain coverage n/a (no approved STORYs)")
+    return f"- **Trend vs {prior.id}**: " + ", ".join(parts)
 
 
 def _artifact_scope(f: dict[str, str]) -> str:
@@ -967,7 +1091,16 @@ def run(root: Path, args: dict[str, Any]) -> int:
         if not dry_run:
             _save_cached_findings(cache_dir, proj_fp, all_findings_raw[:20])
 
-    report = _render_report(ts, horizontal, vertical, cross_cutting, cached_count, len(artifacts), scope_info)
+    # Chain-coverage top-line metric + prior-audit baseline for the trend line
+    # (CHL-341 / CHL-344#2). Both are pure reads over the loaded artifact list,
+    # so they render identically on cache hits, --quick, and --dry-run.
+    chain_coverage = _chain_coverage_stats(artifacts)
+    prior_aud = _select_prior_audit(artifacts)
+
+    report = _render_report(
+        ts, horizontal, vertical, cross_cutting, cached_count, len(artifacts),
+        scope_info, chain_coverage=chain_coverage, prior_audit=prior_aud,
+    )
     report_path = audit_dir / "report.md"
     if not dry_run:
         report_path.write_text(report, encoding="utf-8")
@@ -1017,6 +1150,12 @@ def run(root: Path, args: dict[str, Any]) -> int:
             if art_lib.get_prefix_from_id(art.id) == "REQ":
                 aud_links.append({"target": art.id, "role": "refers_to"})
 
+        # Machine-readable summary stamp so the next audit can render honest
+        # trend deltas against this run (CHL-341 / CHL-344#2). Counts mirror
+        # the report's Summary table exactly; chain_coverage_pct is -1 when
+        # the run has no approved STORYs to measure (n/a sentinel).
+        cov_covered, cov_total = chain_coverage
+        stamp_pct = round(cov_covered * 100 / cov_total) if cov_total > 0 else -1
         try:
             aud_result = art_lib.create_artifact(
                 root,
@@ -1028,6 +1167,10 @@ def run(root: Path, args: dict[str, Any]) -> int:
                 links=aud_links,
                 body=aud_body,
                 review_status="unreviewed",
+                summary_errors=errors,
+                summary_warns=warns,
+                summary_info=len(all_findings) - errors - warns,
+                chain_coverage_pct=stamp_pct,
             )
             if aud_result.get("ok"):
                 scope_info.append(f"AUD artifact: {aud_result['id']}")

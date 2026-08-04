@@ -700,6 +700,12 @@ def check_coverage(
     structural_details: list[str] = []
     verification_warnings = 0
     verification_details: list[str] = []
+    # Approved-story chain-coverage tally (consumed by project-audit's header
+    # metric, CHL-341): story.id → fully covered (≥1 UT + ≥1 IT + ≥1 QT linked
+    # via verified_by). Deduped by story id so a STORY linked from two approved
+    # REQs counts once. Same predicate and link scan as the warn loop below —
+    # the metric and the warnings can never disagree.
+    story_chain_coverage: dict[str, bool] = {}
 
     id_index = art_lib.build_id_index(artifacts)
 
@@ -757,6 +763,11 @@ def check_coverage(
                             test_links_by_type[t_type].append(t_art)
                             break
 
+            fully_covered = all(
+                test_links_by_type[t] for t in ("unit-test", "integration-test", "qualification-test")
+            )
+            story_chain_coverage[story.id] = story_chain_coverage.get(story.id, False) or fully_covered
+
             for t_type in ("unit-test", "integration-test", "qualification-test"):
                 prefix = art_lib.TYPE_TO_PREFIX.get(t_type, "")
                 if not test_links_by_type[t_type]:
@@ -783,6 +794,12 @@ def check_coverage(
         "structural_detail": "; ".join(structural_details) if structural_details else "",
         "verification_warning_count": verification_warnings,
         "verification_detail": "; ".join(verification_details) if verification_details else "",
+        # Approved-story chain-coverage tallies consumed by project-audit's
+        # header metric (CHL-341): how many approved/implemented/verified
+        # STORYs carry the full UT+IT+QT verified_by chain, out of how many
+        # were examined. Informational — never feeds any warning count.
+        "approved_story_total": len(story_chain_coverage),
+        "approved_story_covered": sum(1 for v in story_chain_coverage.values() if v),
     }
 
 

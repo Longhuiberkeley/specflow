@@ -167,7 +167,13 @@ def validate_artifact_schema(
                           "verify_command", "verify_evidence", "verify_exit_code",
                           "verify_run_exit_code", "verify_run_out_hash", "verify_run_at",
                           "verify_run_git_ref", "verify_run_command_hash",
-                          "verify_run_evidence_hash", "verify_run_evidence_mtime"}
+                          "verify_run_evidence_hash", "verify_run_evidence_mtime",
+                          # AUD summary stamp (project-audit trend deltas,
+                          # CHL-341): whitelisted globally so pre-existing
+                          # on-disk audit.yaml schemas that lack the fields in
+                          # optional_fields never flag them as unknown.
+                          "summary_errors", "summary_warns", "summary_info",
+                          "chain_coverage_pct"}
             if key not in known_meta:
                 issues.append({
                     "severity": "info",

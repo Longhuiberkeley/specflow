@@ -17,6 +17,8 @@ links:
 created: '2026-05-04'
 modified: '2026-05-05'
 fingerprint: sha256:cffa9d8763d0
+output_files:
+- tests/test_ddd_selection_doc.py
 ---
 
 # Create DDD selection decision tree reference document

@@ -95,7 +95,7 @@ artifacts:
     title: Compliance Evidence Reports Qualification
     status: implemented
     tags: []
-    fingerprint: sha256:2dab8c966f8d
+    fingerprint: sha256:1a5f98f21d5a
     children: []
   QT-015:
     id: QT-015
@@ -287,7 +287,7 @@ artifacts:
     - REQ-035
     - logging
     - domain-aware
-    fingerprint: sha256:5f6bf95ee224
+    fingerprint: sha256:a09ead40ba4b
     children: []
   QT-037:
     id: QT-037
@@ -300,7 +300,7 @@ artifacts:
     - v1.13
     - REQ-037
     - accounting-not-policing
-    fingerprint: sha256:c348fc9593c8
+    fingerprint: sha256:25a61583be5f
     children: []
   QT-038:
     id: QT-038
@@ -340,4 +340,26 @@ artifacts:
     - ergonomics
     fingerprint: sha256:d4dbf6b019c2
     children: []
-next_id: 41
+  QT-041:
+    id: QT-041
+    title: 'Qualification Test for REQ-001: Knowledge-surface visibility & consumption'
+    status: verified
+    tags:
+    - backfilled
+    - verification-contract
+    - knowledge-surfaces
+    - REQ-001
+    fingerprint: sha256:672dea47549d
+    children: []
+  QT-042:
+    id: QT-042
+    title: 'Qualification Test for REQ-015: Ship-grade evidence RTM'
+    status: verified
+    tags:
+    - backfilled
+    - verification-contract
+    - compliance
+    - REQ-015
+    fingerprint: sha256:33a6d8d8527a
+    children: []
+next_id: 43

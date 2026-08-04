@@ -774,9 +774,9 @@ artifacts:
   CHL-339:
     id: CHL-339
     title: Audit cross-cutting/verification findings
-    status: open
+    status: addressed
     tags: []
-    fingerprint: sha256:7f33773dce56
+    fingerprint: sha256:49040475f9ca
     children: []
   CHL-340:
     id: CHL-340
@@ -789,9 +789,9 @@ artifacts:
     id: CHL-341
     title: Green release gate coexists with 72% chain coverage; holes concentrate
       in recent cycles
-    status: open
+    status: addressed
     tags: []
-    fingerprint: sha256:b451be6599c6
+    fingerprint: sha256:4ce507e47de1
     children: []
   CHL-342:
     id: CHL-342
@@ -814,19 +814,19 @@ artifacts:
       ACs at info'
     status: open
     tags: []
-    fingerprint: sha256:8ad447a9d350
+    fingerprint: sha256:7cf66c1f23ea
     children: []
   CHL-345:
     id: CHL-345
     title: Audit cross-cutting/baseline-drift findings
-    status: open
+    status: stale
     tags: []
     fingerprint: sha256:094c5e97ad6d
     children: []
   CHL-346:
     id: CHL-346
     title: Audit cross-cutting/consistency findings
-    status: open
+    status: stale
     tags: []
     fingerprint: sha256:92b228b33f75
     children: []
@@ -872,4 +872,11 @@ artifacts:
     tags: []
     fingerprint: sha256:2a3d1132d093
     children: []
-next_id: 347
+  CHL-347:
+    id: CHL-347
+    title: Audit cross-cutting/orphan-code findings
+    status: addressed
+    tags: []
+    fingerprint: sha256:cdc8c6b4c335
+    children: []
+next_id: 348
