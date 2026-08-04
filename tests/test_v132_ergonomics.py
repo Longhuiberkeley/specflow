@@ -182,6 +182,37 @@ class TestUpdateAcSection:
         assert "old criteria" not in art.body
         assert "new criteria" in art.body
 
+    def test_ac_no_space_sibling_preserved(self, project_root: Path):
+        # Start matching accepts ##Acceptance Criteria, so boundary matching
+        # must symmetrically accept ##Notes; otherwise the sibling is consumed.
+        body = ("Intro.\n\n## Acceptance Criteria\n\nold criteria\n\n"
+                "##Notes\n\nkeep me")
+        req = _make_req(project_root, body=body)
+        rc = update_cmd.run(project_root, {"artifact_id": req.id,
+                                           "ac": "new criteria"})
+        assert rc == 0
+        art = art_lib.parse_artifact(art_lib.resolve_link_target(project_root, req.id))
+        assert "##Notes" in art.body
+        assert "keep me" in art.body
+        assert "old criteria" not in art.body
+
+    def test_ac_fenced_heading_not_used_as_boundary(self, project_root: Path):
+        # A heading inside a fenced example is AC-section content, not a real
+        # sibling boundary. The whole fenced block must be replaced together,
+        # leaving balanced Markdown and preserving the following real section.
+        body = ("Intro.\n\n## Acceptance Criteria\n\nold criteria\n\n"
+                "```markdown\n## Example heading\nexample\n```\n\n"
+                "## Notes\n\nkeep me")
+        req = _make_req(project_root, body=body)
+        rc = update_cmd.run(project_root, {"artifact_id": req.id,
+                                           "ac": "new criteria"})
+        assert rc == 0
+        art = art_lib.parse_artifact(art_lib.resolve_link_target(project_root, req.id))
+        assert "Example heading" not in art.body
+        assert "```" not in art.body
+        assert "## Notes" in art.body
+        assert "keep me" in art.body
+
     def test_ac_annotated_single_heading_replaced(self, project_root: Path):
         # A single annotated heading ("… (Performance)") IS the AC section:
         # anchored matching replaces it cleanly (no stray prefix, no demote).

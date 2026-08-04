@@ -285,9 +285,14 @@ _AC_GIVEN_PATTERN = re.compile(r"^\d+\.\s+given", re.MULTILINE | re.IGNORECASE)
 # artifact_lint.py for locating the end of an AC section.
 _NEXT_HEADING_RE = re.compile(r"^##\s", re.MULTILINE)
 
-# Boundary for a ### AC heading: any h2 or h3 sibling ends the section
-# (the h2-only regex above would silently swallow h3 siblings).
-_H3_BOUNDARY_RE = re.compile(r"^#{2,3}\s", re.MULTILINE)
+# Any h2/h3 heading shape used as a mutation boundary. Unlike the legacy
+# detection regexes above, this deliberately accepts no-space ATX headings
+# (``##Notes``) because the AC matcher also accepts ``##Acceptance Criteria``;
+# start and end recognition must be symmetric or section replacement can eat a
+# trailing sibling. ``(?!#)`` prevents a match inside h4+ headings.
+_MUTATION_HEADING_RE = re.compile(
+    r"^(#{2,3})(?!#)[ \t]*[^\n]*$", re.MULTILINE
+)
 
 # Heading-anchored AC detection for the MUTATION path only (set_acceptance_
 # criteria / count_acceptance_criteria_headings). The detection functions
@@ -326,6 +331,19 @@ def _fenced_spans(body: str) -> list[tuple[int, int]]:
 
 def _in_fence(pos: int, spans: list[tuple[int, int]]) -> bool:
     return any(s <= pos < e for s, e in spans)
+
+
+def _next_mutation_heading(
+    body: str,
+    start: int,
+    level: int,
+    spans: list[tuple[int, int]],
+) -> re.Match[str] | None:
+    """Return the next non-fenced heading at the same or higher level."""
+    for match in _MUTATION_HEADING_RE.finditer(body, start):
+        if len(match.group(1)) <= level and not _in_fence(match.start(), spans):
+            return match
+    return None
 
 
 def count_acceptance_criteria_headings(body: str) -> int:
@@ -423,10 +441,13 @@ def set_acceptance_criteria(body: str, ac_text: str) -> str:
 
     line_end = body.find("\n", start)
     rest_start = line_end + 1 if line_end != -1 else len(body)
-    rest = body[rest_start:]
-    boundary_re = _NEXT_HEADING_RE if level == 2 else _H3_BOUNDARY_RE
-    next_heading = boundary_re.search(rest)
-    section_end = rest_start + (next_heading.start() if next_heading else len(rest))
+    # Boundary selection must use the same fence map as start selection. A
+    # heading inside a fenced example belongs to the AC section content, not to
+    # the surrounding Markdown structure; stopping there leaves an orphan
+    # closing fence. Same-or-higher-level headings only: h3 children remain
+    # part of an h2 AC section by design.
+    next_heading = _next_mutation_heading(body, rest_start, level, spans)
+    section_end = next_heading.start() if next_heading else len(body)
     after = body[section_end:]
 
     if next_heading:

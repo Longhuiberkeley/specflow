@@ -4,6 +4,16 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.13.3] - 2026-08-04
+
+Patch release for two late-discovered `update --ac` section-boundary corruption cases in v1.13.2. No tag rewriting: v1.13.2 remains immutable and this patch supersedes it.
+
+### Fixed
+
+- **No-space sibling headings are preserved** — mutation boundary matching now accepts the same no-space ATX form as AC start matching (`##Notes` / `###Notes`), so replacing an AC section cannot consume a trailing sibling merely because it omits the optional Markdown space.
+- **Fenced headings cannot terminate AC replacement** — section-boundary selection now reuses the mutation path's code-fence map and skips headings inside fenced examples, preventing orphan closing fences and malformed Markdown.
+- Boundary selection remains level-aware: an h2 AC section owns its h3 children; a real same-or-higher-level non-fenced heading ends it.
+
 ## [1.13.2] - 2026-08-04
 
 Command-surface ergonomics mined from ~1,558 real agent CLI invocations
