@@ -764,4 +764,25 @@ artifacts:
     tags: []
     fingerprint: sha256:87bb5cc1407a
     children: []
+  CHL-V113-009f:
+    id: CHL-V113-009f
+    title: "v1.13.2 release lens \u2014 temporal drift"
+    status: accepted
+    tags: []
+    fingerprint: sha256:05fa6df41cb7
+    children: []
+  CHL-V113-387b:
+    id: CHL-V113-387b
+    title: "v1.13.2 release lens \u2014 compliance posture"
+    status: accepted
+    tags: []
+    fingerprint: sha256:6a29eac8e9c1
+    children: []
+  CHL-V113-b245:
+    id: CHL-V113-b245
+    title: "v1.13.2 release lens \u2014 premortem"
+    status: accepted
+    tags: []
+    fingerprint: sha256:2a3d1132d093
+    children: []
 next_id: 338

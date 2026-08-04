@@ -569,4 +569,13 @@ artifacts:
     tags: []
     fingerprint: sha256:bd6c55d2d79e
     children: []
+  DEC-CHANGERE-ed18:
+    id: DEC-CHANGERE-ed18
+    title: 'Change Record: chore: dogfood v1.13.2 ergonomics lifecycle'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:2dd9aae04035
+    children: []
 next_id: 60
