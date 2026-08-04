@@ -1,0 +1,47 @@
+# Project Audit Report
+
+- **Timestamp**: 20260804T170541Z
+- **Artifacts analyzed**: 597 (cached: 20)
+- **Baseline drift: compared v1.13.3 → v1.13.4**
+
+## Horizontal Analysis (per artifact type)
+
+### challenge
+- [○] No challenge artifacts use tags
+
+## Vertical Analysis (V-model threads)
+
+No V-model thread gaps found.
+
+## Cross-cutting Analysis
+
+### baseline-drift
+- [○] CHL-001: status stale → accepted
+- [○] CHL-002: status stale → accepted
+- [○] CHL-003: status stale → accepted
+- [○] CHL-004: status stale → accepted
+- [○] CHL-005: status stale → accepted
+- [○] CHL-006: status stale → accepted
+- [○] CHL-007: status stale → accepted
+- [○] CHL-008: status stale → accepted
+- [○] CHL-009: status stale → accepted
+- [○] CHL-010: status stale → accepted
+- [○] CHL-011: status stale → accepted
+- [○] CHL-012: status stale → accepted
+- [○] CHL-013: status stale → accepted
+- [○] CHL-014: status stale → accepted
+- [○] CHL-015: status stale → accepted
+- [○] CHL-016: status stale → accepted
+- [○] CHL-017: status stale → accepted
+
+### verification
+- [⚠] 29 test-verification coverage gap(s):   ⚠ [STORY-082] no IT linked via 'verified_by' (covers REQ REQ-001);   ⚠ [STORY-082] no QT linked via 'verified_by' (covers REQ REQ-001);   ⚠ [STORY-082] no IT linked via 'verified_by' (covers REQ REQ
+- [○] 50 artifact(s) declare verify_command; all have current, green verify runs.
+
+## Summary
+
+| Severity | Count |
+|----------|-------|
+| Error    | 0 |
+| Warning  | 1 |
+| Info     | 19 |
