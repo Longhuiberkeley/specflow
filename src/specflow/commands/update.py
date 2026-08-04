@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import sys
 from pathlib import Path
 
 from specflow.lib import artifacts as art_lib
@@ -29,8 +30,39 @@ def run(root: Path, args: dict) -> int:
 
     updates = {}
 
+    # Resolve the artifact's type schema + existing frontmatter so --set can
+    # support dotted nested-map keys (risk_profile.confidence=...) and reject
+    # flat-key typos with a did-you-mean instead of writing junk keys. Only
+    # scanned when --set is actually used: resolve_link_target walks the whole
+    # artifact tree, so it must not run on every update.
+    known_set_keys: list[str] | None = None
+    existing_fm: dict | None = None
+    if args.get("set_fields"):
+        _existing_path = art_lib.resolve_link_target(root, artifact_id)
+        if _existing_path is not None:
+            _parsed = art_lib.parse_artifact(_existing_path)
+            if _parsed is not None:
+                existing_fm = _parsed.frontmatter
+                _schema = art_lib._read_schema(root / ".specflow" / "schema", _parsed.type)
+                if _schema is not None:
+                    known_set_keys = list(_schema.get("optional_fields", []))
+                    # Required fields are legitimate --set targets too (e.g.
+                    # the autoresearch pack's metric_value / change_category /
+                    # summary); omitting them makes the typo check
+                    # false-positive on valid fields.
+                    known_set_keys += list(_schema.get("required_fields", []))
+                    # Dedicated update flags are legitimate --set targets too;
+                    # the validator is total (update_artifact still checks
+                    # transitions), and their names must not be shadowed by the
+                    # flat-typo did-you-mean (e.g. --set status= stays valid).
+                    known_set_keys += ["status", "title", "priority", "rationale",
+                                       "tags", "links", "output_files",
+                                       "thinking_techniques", "body"]
+
     try:
-        updates.update(art_lib.parse_set_fields(args.get("set_fields")))
+        updates.update(art_lib.parse_set_fields(
+            args.get("set_fields"), known_keys=known_set_keys, existing=existing_fm
+        ))
     except ValueError as exc:
         print(f"{RED}✗ {exc}{NC}")
         return 1
@@ -40,6 +72,16 @@ def run(root: Path, args: dict) -> int:
     # update_artifact. Remember whether --set supplied links for the conflict
     # guard below (--set links= is a full-replace form, like --links).
     set_provided_links = "links" in updates
+    # Same conflict-guard bookkeeping for the body: --body, --set body=, --ac,
+    # and piped stdin are four ways to write one field — every pair of them
+    # fails loudly instead of silently picking a winner.
+    set_provided_body = "body" in updates
+    # --set body= with an empty value is a no-op (consistent with the --body
+    # flag, where an empty string never reaches the writer). Without this, an
+    # empty value silently wipes the whole body with exit 0.
+    if set_provided_body and not str(updates["body"]).strip():
+        updates.pop("body")
+        set_provided_body = False
     if set_provided_links:
         raw_links = updates["links"]
         if isinstance(raw_links, str):
@@ -166,10 +208,86 @@ def run(root: Path, args: dict) -> int:
                 merged = list(dict.fromkeys(existing_techniques + new_techniques))
                 updates["thinking_techniques"] = merged
 
+    ac_text = args.get("ac")
+    body = args.get("body")
+    # Four writers, one field: any two of --ac / --body / --set body= are
+    # ambiguous and fail loudly (same precedent as --links vs --add-link).
+    if (ac_text and (body or set_provided_body)) or (body and set_provided_body):
+        print(f"{RED}✗ --ac, --body, and --set body= cannot be combined "
+              f"(ambiguous: they all write the body). Use one or the other.{NC}")
+        return 1
+
+    if ac_text:
+        # W2.3: replace/insert only the Acceptance Criteria section, preserving
+        # the rest of the body. Routes through the --body machinery so the
+        # fingerprint recomputes from the new body.
+        _ac_path = art_lib.resolve_link_target(root, artifact_id)
+        if _ac_path is None:
+            print(f"{RED}✗ Artifact '{artifact_id}' not found{NC}")
+            return 1
+        _ac_art = art_lib.parse_artifact(_ac_path)
+        if _ac_art is None:
+            print(f"{RED}✗ Cannot parse artifact at {_ac_path}{NC}")
+            return 1
+        from specflow.lib import lint as lint_lib
+        # AC sections are a requirement/story concept (lint's AC checks are
+        # scoped to those prefixes). Writing one into a DEC/ARCH is a
+        # wrong-command error — fail loudly instead of mutating the artifact.
+        _ac_prefix = art_lib.get_prefix_from_id(_ac_art.id)
+        if _ac_prefix not in ("REQ", "STORY"):
+            print(f"{RED}✗ --ac is only valid for REQ and STORY artifacts; "
+                  f"{_ac_art.id} is type '{_ac_art.type}' ({_ac_prefix}). "
+                  f"Use --body to edit the body directly.{NC}")
+            return 1
+        # Multiple genuine AC headings make the replacement target ambiguous;
+        # "earliest wins" here would be silent corruption of the other
+        # section, so fail loudly and let the author merge them first.
+        _ac_headings = lint_lib.count_acceptance_criteria_headings(_ac_art.body)
+        if _ac_headings > 1:
+            print(f"{RED}✗ {_ac_art.id} has {_ac_headings} 'Acceptance Criteria' "
+                  f"headings; --ac cannot choose between them. Merge or remove "
+                  f"the extras first (or use --body to replace the whole "
+                  f"body).{NC}")
+            return 1
+        updates["body"] = lint_lib.set_acceptance_criteria(_ac_art.body, ac_text)
+    elif body:
+        updates["body"] = body
+    elif not sys.stdin.isatty():
+        import select
+        # Only read stdin if data is actually available (not a hanging pipe).
+        # select() with timeout=0 returns immediately. Guarded because a
+        # redirected-but-unreadable stdin (e.g. pytest's capture pseudofile)
+        # has no fileno() and would otherwise raise UnsupportedOperation;
+        # the fallback reads only seekable stdins (real files), never a pipe
+        # that could hang.
+        piped = ""
+        try:
+            readable = select.select([sys.stdin], [], [], 0.0)[0]
+        except (OSError, ValueError):
+            readable = []
+            try:
+                if sys.stdin.seekable():
+                    piped = sys.stdin.read()
+            except Exception:
+                piped = ""
+        if readable:
+            piped = sys.stdin.read()
+        if piped:
+            if updates or has_output_files_update:
+                # Never silently replace the body as a side effect of an
+                # unrelated update just because stdin happens to carry data.
+                print(f"{YELLOW}⚠ Stdin data ignored (body NOT replaced) because "
+                      f"other fields are updated in the same call. To replace "
+                      f"the body, run a dedicated "
+                      f"'specflow update {artifact_id}' with the piped body "
+                      f"and no other flags, or use --body.{NC}")
+            else:
+                updates["body"] = piped
+
     if not updates and not has_output_files_update:
         print(f"{RED}✗ No fields to update. Provide at least one of: "
-              f"--status, --title, --priority, --rationale, --tags, --links, "
-              f"--add-link, --remove-link, --output-files, or --thinking-techniques.{NC}")
+              f"--status, --title, --priority, --rationale, --tags, --body, --ac, "
+              f"--links, --add-link, --remove-link, --output-files, or --thinking-techniques.{NC}")
         return 1
 
     result = art_lib.update_artifact(root=root, artifact_id=artifact_id, **updates)

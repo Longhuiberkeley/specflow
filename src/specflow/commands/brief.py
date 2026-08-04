@@ -346,6 +346,7 @@ def _next_skill_recommendation(
     suspects: list[art_lib.Artifact],
     next_wave: list[str],
     active_packs: list[str] | None = None,
+    root: Path | None = None,
 ) -> str:
     """Deterministic next-skill recommendation from phase + inventory.
 
@@ -482,6 +483,35 @@ def _next_skill_recommendation(
             f"`specflow verify <ID>` (or `specflow verify --all`)."
         )
 
+    # W3.2: surface unreviewed decisions with their blast radius so the
+    # brief→change-impact "what's unreviewed / what does it touch" ritual
+    # collapses into one command. Append-only, deterministic,
+    # accounting-not-policing: fires only when an unreviewed DEC exists (a DEC
+    # is created with review_status: unreviewed), so quiet projects stay quiet.
+    # Reuses the same transitive downstream cone as change-impact / risk-tier.
+    if root is not None:
+        unreviewed_decs = [
+            a for a in artifacts
+            if art_lib.get_prefix_from_id(a.id) == "DEC"
+            and (getattr(a, "frontmatter", None) or {}).get("review_status") == "unreviewed"
+        ]
+        if unreviewed_decs:
+            from specflow.lib import impact as impact_lib
+            # Union across DECs (shared downstream counted once) via a single
+            # discover pass — the per-DEC recursive cone re-discovers the
+            # whole tree at every hop and made brief --next unusably slow,
+            # and summing cone sizes double-counted shared downstream.
+            total_cone = len(impact_lib.find_downstream_union(
+                root, [dec.id for dec in unreviewed_decs]
+            ))
+            ids = ", ".join(d.id for d in unreviewed_decs[:3])
+            more = f" (+{len(unreviewed_decs) - 3} more)" if len(unreviewed_decs) > 3 else ""
+            notes.append(
+                f"{len(unreviewed_decs)} unreviewed DEC(s) ({ids}{more}) — blast "
+                f"radius {total_cone} downstream artifact(s) → "
+                f"`specflow change-impact` to inspect."
+            )
+
     return core + "".join(f"\n{n}" for n in notes)
 
 
@@ -591,7 +621,7 @@ def run(root: Path, args: dict[str, Any]) -> int:
     # --next: emit only the deterministic next-skill recommendation and stop.
     if args.get("next"):
         active_packs = config.get("active_packs", []) or []
-        print(_next_skill_recommendation(phase, artifacts, suspects, next_wave, active_packs))
+        print(_next_skill_recommendation(phase, artifacts, suspects, next_wave, active_packs, root))
         return 0
 
     docs_sum = _docs_summary(root)

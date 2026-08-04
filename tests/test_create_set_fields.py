@@ -167,3 +167,84 @@ class TestMalformedSetLinks:
         assert rc == 1
         out = capsys.readouterr().out
         assert "✗" in out
+
+
+class TestParseSetFieldsDottedKeys:
+    """W1.3 — dotted ``--set key.subkey=`` targets nested-map fields.
+
+    Direct unit tests of ``parse_set_fields`` (no project needed): a dotted key
+    merges into the head map, an unknown head or a non-map existing value fails
+    loudly, a flat typo suggests the nearest known key, and an unknown-but-not-
+    close flat key still passes through as a custom-field escape hatch.
+    """
+
+    def test_dotted_merges_into_existing_map(self):
+        result = art_lib.parse_set_fields(
+            ["risk_profile.confidence=high"],
+            known_keys=["risk_profile"],
+            existing={"risk_profile": {"tier": 2}},
+        )
+        assert result == {"risk_profile": {"tier": 2, "confidence": "high"}}
+
+    def test_dotted_starts_fresh_when_absent(self):
+        result = art_lib.parse_set_fields(
+            ["risk_profile.confidence=high"], known_keys=["risk_profile"]
+        )
+        assert result == {"risk_profile": {"confidence": "high"}}
+
+    def test_multiple_dotted_same_head_merge(self):
+        result = art_lib.parse_set_fields(
+            ["risk_profile.a=1", "risk_profile.b=2"], known_keys=["risk_profile"]
+        )
+        assert result == {"risk_profile": {"a": 1, "b": 2}}
+
+    def test_dotted_unknown_head_raises(self):
+        with pytest.raises(ValueError, match="not a known nested-map field"):
+            art_lib.parse_set_fields(["bogus.x=1"], known_keys=["risk_profile"])
+
+    def test_dotted_non_dict_existing_raises(self):
+        with pytest.raises(ValueError, match="not a map"):
+            art_lib.parse_set_fields(
+                ["tags.x=1"], known_keys=["tags"], existing={"tags": ["a"]}
+            )
+
+    def test_flat_typo_suggests_closest(self):
+        with pytest.raises(ValueError, match="Did you mean"):
+            art_lib.parse_set_fields(["rationalee=x"], known_keys=["rationale"])
+
+    def test_flat_unknown_not_close_passes_through(self):
+        # "1" parses as JSON int 1; the key passes through as a custom field.
+        result = art_lib.parse_set_fields(["totally_custom=1"], known_keys=["rationale"])
+        assert result == {"totally_custom": 1}
+
+    def test_no_known_keys_dotted_still_merges(self):
+        # Without a schema (known_keys=None) there is no allowlist to validate
+        # against, so dotted keys merge into a nested map instead of erroring.
+        result = art_lib.parse_set_fields(["a.b=1", "plain=2"])
+        assert result == {"a": {"b": 1}, "plain": 2}
+
+
+class TestCreateSetNestedMapField:
+    """W1.3 end-to-end through the create command with a nested-map schema."""
+
+    def test_create_set_dotted_into_declared_map(self, project_root: Path):
+        # Extend the requirement schema with a nested-map optional field.
+        schema_path = project_root / ".specflow" / "schema" / "requirement.yaml"
+        schema = yaml.safe_load(schema_path.read_text(encoding="utf-8"))
+        schema["optional_fields"] = ["risk_profile"]
+        schema_path.write_text(yaml.dump(schema), encoding="utf-8")
+
+        rc = create_cmd.run(project_root, _base_args(
+            set_fields=["risk_profile.confidence=high"],
+        ))
+        assert rc == 0
+        art = art_lib.discover_artifacts(project_root, artifact_type="requirement")[0]
+        assert art.frontmatter.get("risk_profile") == {"confidence": "high"}
+
+    def test_create_set_dotted_unknown_head_errors(self, project_root: Path, capsys):
+        rc = create_cmd.run(project_root, _base_args(
+            set_fields=["not_a_map.x=1"],
+        ))
+        assert rc == 1
+        out = capsys.readouterr().out
+        assert "not a known nested-map field" in out

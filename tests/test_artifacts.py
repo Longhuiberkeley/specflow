@@ -594,6 +594,86 @@ class TestCreateArtifactFingerprint:
         assert index["artifacts"][result["id"]]["fingerprint"] == original_fp
 
 
+class TestUpdateBodyOverride:
+    """W1.1 — ``specflow update --body`` replaces the whole body and the
+    fingerprint is recomputed from the new body."""
+
+    def _create(self, root: Path, body: str = "original body") -> str:
+        result = art_lib.create_artifact(
+            root, "requirement", title="T", body=body, status="draft"
+        )
+        assert result["ok"]
+        return result["id"]
+
+    def _read(self, root: Path, art_id: str) -> art_lib.Artifact:
+        return art_lib.parse_artifact(art_lib.resolve_link_target(root, art_id))
+
+    def test_body_override_replaces_body(self, tmp_path: Path):
+        root = _scaffold_full_project(tmp_path)
+        art_id = self._create(root)
+        res = art_lib.update_artifact(root=root, artifact_id=art_id, body="brand new body")
+        assert res["ok"]
+        art = self._read(root, art_id)
+        assert art.body == "brand new body"
+        assert "original body" not in art.body
+
+    def test_body_override_recomputes_fingerprint(self, tmp_path: Path):
+        root = _scaffold_full_project(tmp_path)
+        art_id = self._create(root)
+        before = self._read(root, art_id).fingerprint
+        art_lib.update_artifact(root=root, artifact_id=art_id, body="different content")
+        after = self._read(root, art_id)
+        assert after.fingerprint != before
+        assert after.fingerprint == art_lib.compute_fingerprint("different content")
+
+    def test_update_without_body_preserves_body(self, tmp_path: Path):
+        root = _scaffold_full_project(tmp_path)
+        art_id = self._create(root, body="keep me")
+        res = art_lib.update_artifact(root=root, artifact_id=art_id, priority="high")
+        assert res["ok"]
+        art = self._read(root, art_id)
+        assert "keep me" in art.body
+
+
+class TestUpdateRejectsUnknownStatus:
+    """W1.2 — ``update`` rejects a status not in the type's ``allowed_status``
+    (closes the silent raw-write hole) and suggests the nearest valid status."""
+
+    def _create(self, root: Path) -> str:
+        result = art_lib.create_artifact(
+            root, "requirement", title="T", body="b", status="draft"
+        )
+        assert result["ok"]
+        return result["id"]
+
+    def test_unknown_status_rejected_loudly(self, tmp_path: Path):
+        root = _scaffold_full_project(tmp_path)
+        art_id = self._create(root)
+        res = art_lib.update_artifact(root=root, artifact_id=art_id, status="resolved")
+        assert not res["ok"]
+        assert "Invalid status" in res["error"]
+
+    def test_unknown_status_not_written(self, tmp_path: Path):
+        root = _scaffold_full_project(tmp_path)
+        art_id = self._create(root)
+        art_lib.update_artifact(root=root, artifact_id=art_id, status="resolved")
+        art = art_lib.parse_artifact(art_lib.resolve_link_target(root, art_id))
+        assert art.status == "draft"  # unchanged, not silently overwritten
+
+    def test_typo_status_suggests_closest(self, tmp_path: Path):
+        root = _scaffold_full_project(tmp_path)
+        art_id = self._create(root)
+        res = art_lib.update_artifact(root=root, artifact_id=art_id, status="approvd")
+        assert not res["ok"]
+        assert "approved" in res["error"]
+
+    def test_legal_transition_still_works(self, tmp_path: Path):
+        root = _scaffold_full_project(tmp_path)
+        art_id = self._create(root)
+        res = art_lib.update_artifact(root=root, artifact_id=art_id, status="approved")
+        assert res["ok"]
+
+
 class TestRebuildIndexSafety:
     def test_warns_on_dropped_artifacts(self, tmp_path: Path, caplog):
         import logging

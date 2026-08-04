@@ -349,6 +349,8 @@ def _add_create_parser(subparsers):
     p.add_argument("--rationale", help="Rationale for this artifact")
     p.add_argument("--tags", help="Comma-separated tags")
     p.add_argument("--links", help="Links as JSON array or comma-separated target:role pairs")
+    p.add_argument("--add-link", action="append", dest="add_link", metavar="TARGET:ROLE",
+                   help="Append a link (repeatable; dedups on target+role). Append-style parity with `specflow update --add-link`.")
     p.add_argument("--body", default="", help="Markdown body content")
     p.add_argument("--force", action="store_true", help="Skip duplicate-check prompt")
     p.add_argument("--skip-dedup-check", action="store_true", dest="skip_dedup_check", help="Bypass search-before-create")
@@ -401,6 +403,8 @@ def _add_update_parser(subparsers):
                    help="Remove all links to this target (repeatable). No-op if the target is not linked.")
     p.add_argument("--output-files", dest="output_files", help="Comma-separated output file paths (replaces existing; empty string removes)")
     p.add_argument("--thinking-techniques", dest="thinking_techniques", help="Comma-separated technique names to append (e.g., premortem,devils_advocate)")
+    p.add_argument("--body", default="", help="Markdown body content (replaces the entire body; stdin auto-read when piped)")
+    p.add_argument("--ac", dest="ac", help="Replace (or insert) the '## Acceptance Criteria' section of the body; other sections are preserved")
     p.add_argument("--set", action="append", dest="set_fields", metavar="KEY=VALUE",
                    help="Set an arbitrary frontmatter field (repeatable). Value is parsed as JSON if possible, else kept as a string. "
                         "E.g. --set failure_analysis='...' --set goals='[\"...\"]'")
@@ -580,7 +584,7 @@ def _add_defect_from_monitor_parser(subparsers):
 
 def _add_fingerprint_refresh_parser(subparsers):
     p = subparsers.add_parser("fingerprint-refresh", help="Update fingerprint without suspect cascade")
-    p.add_argument("targets", nargs="+", help="Artifact IDs (preferred) or file paths")
+    p.add_argument("targets", nargs="*", help="Artifact IDs (preferred) or file paths. With none given, lists stale fingerprints without modifying anything.")
 
 
 def _add_artifact_review_parser(subparsers):
@@ -865,6 +869,21 @@ class _HintParser(argparse.ArgumentParser):
         m = re.search(r"unrecognized arguments: (-{1,2}[A-Za-z][\w-]*)", message)
         if m:
             token = m.group(1)
+            # W2.1: --confidence is the single most-repeated agent error — the
+            # field lives inside the risk_profile map, not as a standalone flag.
+            # Point at the nested --set form on the two commands that write it.
+            # Advisory only (argparse still exits non-zero); no new flag.
+            # risk_profile is declared only on the decision schema, so the
+            # actionable suggestion is scoped to DEC contexts; elsewhere the
+            # hint explains where confidence lives without steering at a
+            # command that would fail (wrong-command erosion).
+            if token == "--confidence" and self._invoked_subcommand_name() in ("create", "update"):
+                if self._dec_context():
+                    return ("did you mean: --set risk_profile.confidence=<value> "
+                            "(confidence is a key of the risk_profile map)?")
+                return ("hint: confidence is a key of the risk_profile map on "
+                        "decision artifacts — on a DEC, use "
+                        "--set risk_profile.confidence=<value>.")
             matches = difflib.get_close_matches(
                 token, self._scoped_option_strings(), n=2, cutoff=0.5
             )
@@ -872,6 +891,35 @@ class _HintParser(argparse.ArgumentParser):
                 return f'did you mean: {", ".join(matches)}?'
             return None
         return None
+
+    def _invoked_subcommand_name(self) -> str | None:
+        """Return the top-level subcommand name from the argv snapshot, if any."""
+        argv = getattr(self, "_argv_snapshot", None) or []
+        top_names = set(self._subcommand_names())
+        for tok in argv:
+            if tok in top_names:
+                return tok
+        return None
+
+    def _dec_context(self) -> bool:
+        """Best-effort: is the invocation targeting a decision artifact?
+
+        ``update <DEC-…>`` (artifact-ID positional) or ``create --type
+        decision|dec``. Used to scope the --confidence hint so it only
+        recommends the risk_profile --set form where risk_profile is a
+        declared field.
+        """
+        argv = getattr(self, "_argv_snapshot", None) or []
+        sub = self._invoked_subcommand_name()
+        if sub == "update":
+            return any(re.match(r"^DEC-\d", tok) for tok in argv)
+        if sub == "create":
+            for i, tok in enumerate(argv):
+                if tok == "--type" and i + 1 < len(argv):
+                    return argv[i + 1].strip().lower() in ("decision", "dec")
+                if tok.startswith("--type="):
+                    return tok.split("=", 1)[1].strip().lower() in ("decision", "dec")
+        return False
 
     def _subcommand_names(self) -> list[str]:
         names: list[str] = []

@@ -16,12 +16,26 @@ import yaml
 logger = logging.getLogger(__name__)
 
 
-def parse_set_fields(set_list: list[str] | None) -> dict[str, Any]:
+def parse_set_fields(
+    set_list: list[str] | None,
+    known_keys: list[str] | None = None,
+    existing: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Parse repeatable ``--set KEY=VALUE`` CLI args into a frontmatter dict.
 
     Each value is parsed as JSON when possible (so dicts, lists, numbers, and
     bools type correctly), otherwise kept as a raw string. Raises ``ValueError``
     on a malformed entry (missing ``=``) so the CLI can report it clearly.
+
+    Dotted keys (``key.subkey=value``) target nested-map fields: the merge is
+    allowed only when the head key is schema-declared (``known_keys`` — the
+    type's ``optional_fields``) and its existing value is a dict (``None``/
+    absent at create = start fresh). Anything else fails loudly with the
+    full-field-replace form, instead of silently writing a junk top-level
+    dotted key. A flat key outside ``known_keys`` only errors when a close typo
+    match exists (did-you-mean); unknown-but-not-close keys pass through as an
+    escape hatch for custom fields, as does any key already present in
+    ``existing`` frontmatter (an established field is never a typo).
     """
     fields: dict[str, Any] = {}
     for entry in set_list or []:
@@ -32,9 +46,47 @@ def parse_set_fields(set_list: list[str] | None) -> dict[str, Any]:
         if not key:
             raise ValueError(f"Invalid --set value '{entry}'. Empty key.")
         try:
-            fields[key] = json.loads(raw)
+            value = json.loads(raw)
         except (json.JSONDecodeError, ValueError):
-            fields[key] = raw
+            value = raw
+        if "." in key:
+            head, sub = key.split(".", 1)
+            sub = sub.strip()
+            if not sub:
+                raise ValueError(
+                    f"Invalid --set key '{key}': empty sub-key after '.'."
+                )
+            if known_keys is not None and head not in known_keys:
+                raise ValueError(
+                    f"Invalid --set key '{key}': '{head}' is not a known "
+                    f"nested-map field on this artifact type. Use the "
+                    f"full-field-replace form: --set {head}='{{\"...\"}}'."
+                )
+            # Base = this call's accumulated map (multiple dotted entries to the
+            # same head) falling back to the on-disk value; never wipe sub-keys.
+            current = fields.get(head, (existing or {}).get(head))
+            if current is not None and not isinstance(current, dict):
+                raise ValueError(
+                    f"Invalid --set key '{key}': field '{head}' is a "
+                    f"{type(current).__name__}, not a map. Use the "
+                    f"full-field-replace form: --set {head}='{{\"...\"}}'."
+                )
+            merged = dict(current) if isinstance(current, dict) else {}
+            merged[sub] = value
+            fields[head] = merged
+        else:
+            # A key already present in the artifact's frontmatter is an
+            # established (possibly pack-written) custom field, not a typo —
+            # the did-you-mean check must never reject it, even when it
+            # happens to be a near-miss of a declared field.
+            if (known_keys is not None and key not in known_keys
+                    and key not in (existing or {})):
+                matches = difflib.get_close_matches(key, known_keys, n=1, cutoff=0.6)
+                if matches:
+                    raise ValueError(
+                        f"Unknown --set field '{key}'. Did you mean '{matches[0]}'?"
+                    )
+            fields[key] = value
     return fields
 
 def validate_link_entries(entries: Any) -> list[dict[str, str]]:
@@ -1016,15 +1068,38 @@ def update_artifact(
             if new_status in allowed_status:
                 allowed_from = allowed_status[new_status]
                 current = fm.get("status", "")
-                if current not in allowed_from:
+                # Repair path: when the CURRENT status itself is not a legal
+                # status (a pre-validator typo like 'draftt'), the transition
+                # gate can never be satisfied and the artifact would be
+                # uncorrectable via CLI. Allow correction to any legal status
+                # in that case; the gate is enforced normally otherwise.
+                if current not in allowed_from and current in allowed_status:
                     return {
                         "ok": False,
                         "error": f"Cannot transition '{artifact_id}' from '{current}' to '{new_status}'. Allowed from: {', '.join(allowed_from) if allowed_from else '(none)'}"
                                 f" Hint: run 'specflow transitions {artifact_id}' to see the full transition map.",
                     }
+            else:
+                # Close the silent-invalid-status hole: an unknown status (e.g.
+                # 'resolved' on a DEF, or a 'verifed' typo) previously fell
+                # through with no else-branch and was written raw, surfacing
+                # only later in artifact-lint. Mirror create_artifact's
+                # initial-status guard so update and create reject the same
+                # unknown statuses (data-integrity parity with the existing
+                # legal-transition gate above — not a new gate).
+                msg = (f"Invalid status '{new_status}' for type '{art_type}'. "
+                       f"Allowed: {', '.join(allowed_status)}.")
+                matches = difflib.get_close_matches(
+                    new_status, list(allowed_status.keys()), n=1, cutoff=0.5
+                )
+                if matches:
+                    msg += f" Did you mean '{matches[0]}'?"
+                msg += f" Hint: run 'specflow schema {art_type}' to see statuses and the transition map."
+                return {"ok": False, "error": msg}
 
     from datetime import date
 
+    body_override = updates.pop("body", None)
     for key, value in updates.items():
         if key == "output_files" and value is None:
             fm.pop("output_files", None)
@@ -1032,7 +1107,7 @@ def update_artifact(
             fm[key] = value
     fm["modified"] = date.today().isoformat()
 
-    body = text[end + 3:].strip()
+    body = body_override.strip() if body_override is not None else text[end + 3:].strip()
     fingerprint = compute_fingerprint(body)
     fm["fingerprint"] = fingerprint
 

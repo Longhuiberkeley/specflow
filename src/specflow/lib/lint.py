@@ -19,6 +19,8 @@ __all__ = [
     "has_acceptance_criteria",
     "acceptance_criteria_text",
     "count_acceptance_criteria_items",
+    "set_acceptance_criteria",
+    "count_acceptance_criteria_headings",
     "recompute_fingerprint",
     "discover_checklists",
     "run_automated_checklist",
@@ -283,6 +285,62 @@ _AC_GIVEN_PATTERN = re.compile(r"^\d+\.\s+given", re.MULTILINE | re.IGNORECASE)
 # artifact_lint.py for locating the end of an AC section.
 _NEXT_HEADING_RE = re.compile(r"^##\s", re.MULTILINE)
 
+# Boundary for a ### AC heading: any h2 or h3 sibling ends the section
+# (the h2-only regex above would silently swallow h3 siblings).
+_H3_BOUNDARY_RE = re.compile(r"^#{2,3}\s", re.MULTILINE)
+
+# Heading-anchored AC detection for the MUTATION path only (set_acceptance_
+# criteria / count_acceptance_criteria_headings). The detection functions
+# (has_acceptance_criteria, acceptance_criteria_text) intentionally keep the
+# looser _AC_MARKERS — advisory lint wants recall. Mutation wants precision:
+# a substring match on prose like "the acceptance criteria: ..." would let a
+# section replace truncate the paragraph, so mutation matches only real
+# headings at line start. Group 1 captures the #-run for level-aware
+# boundaries. Tolerates no-space-after-## and trailing annotations
+# ("## Acceptance Criteria (NFR)", trailing colon); h1/h4+ never match.
+_AC_HEADING_RE = re.compile(
+    r"^(#{2,3})[ \t]*acceptance[ \t]+criteria[^\n]*$",
+    re.MULTILINE | re.IGNORECASE,
+)
+
+# Code-fence tracking: an AC heading inside a ``` block is a documentation
+# example, not a section — mutation must skip it.
+_FENCE_RE = re.compile(r"^```", re.MULTILINE)
+
+
+def _fenced_spans(body: str) -> list[tuple[int, int]]:
+    """Return (start, end) offsets of fenced code regions in *body*.
+
+    Pairs ``` markers by order (1st opens, 2nd closes, …); an unclosed fence
+    extends to end-of-body.
+    """
+    starts = [m.start() for m in _FENCE_RE.finditer(body)]
+    spans: list[tuple[int, int]] = []
+    i = 0
+    while i < len(starts):
+        end = starts[i + 1] if i + 1 < len(starts) else len(body)
+        spans.append((starts[i], end))
+        i += 2
+    return spans
+
+
+def _in_fence(pos: int, spans: list[tuple[int, int]]) -> bool:
+    return any(s <= pos < e for s, e in spans)
+
+
+def count_acceptance_criteria_headings(body: str) -> int:
+    """Count non-fenced Acceptance Criteria headings in *body*.
+
+    Returns 0 when AC is absent or appears only in prose or code fences.
+    Used by the ``update --ac`` caller to fail loudly when multiple AC
+    headings make the replacement target ambiguous.
+    """
+    spans = _fenced_spans(body)
+    return sum(
+        1 for m in _AC_HEADING_RE.finditer(body)
+        if not _in_fence(m.start(), spans)
+    )
+
 
 def has_acceptance_criteria(artifact: art_lib.Artifact) -> bool:
     """Check if a REQ artifact has acceptance criteria in its body."""
@@ -328,6 +386,52 @@ def acceptance_criteria_text(artifact: art_lib.Artifact) -> str:
 
     next_heading = _NEXT_HEADING_RE.search(rest)
     return rest[:next_heading.start()] if next_heading else rest
+
+
+def set_acceptance_criteria(body: str, ac_text: str) -> str:
+    """Return ``body`` with its Acceptance Criteria section replaced or added.
+
+    Mutation path only — detection (:func:`has_acceptance_criteria`,
+    :func:`acceptance_criteria_text`) keeps the looser ``_AC_MARKERS``. Here
+    the match is heading-anchored and fence-aware so prose mentions and
+    fenced examples are never touched. When a section exists, its span
+    (heading line through the next same-or-higher-level heading) is replaced;
+    otherwise a new ``## Acceptance Criteria`` section is appended. The
+    heading is normalized to ``## Acceptance Criteria``. Only the section is
+    touched — the rest of the body is preserved, so the caller can route the
+    result through ``update --body`` and the fingerprint recomputes cleanly.
+
+    Assumes a single AC heading; the caller must check
+    :func:`count_acceptance_criteria_headings` and fail loudly on >1, since
+    "earliest wins" between two genuine AC sections is silent corruption.
+    """
+    new_section = "## Acceptance Criteria\n\n" + ac_text.strip()
+
+    spans = _fenced_spans(body)
+    matches = [
+        m for m in _AC_HEADING_RE.finditer(body)
+        if not _in_fence(m.start(), spans)
+    ]
+
+    if not matches:
+        base = body.rstrip()
+        return (base + "\n\n" + new_section + "\n") if base else (new_section + "\n")
+
+    m = matches[0]
+    start = m.start()
+    level = len(m.group(1))  # 2 or 3
+
+    line_end = body.find("\n", start)
+    rest_start = line_end + 1 if line_end != -1 else len(body)
+    rest = body[rest_start:]
+    boundary_re = _NEXT_HEADING_RE if level == 2 else _H3_BOUNDARY_RE
+    next_heading = boundary_re.search(rest)
+    section_end = rest_start + (next_heading.start() if next_heading else len(rest))
+    after = body[section_end:]
+
+    if next_heading:
+        return body[:start] + new_section + "\n\n" + after.lstrip("\n")
+    return body[:start].rstrip() + "\n\n" + new_section + "\n"
 
 
 def count_acceptance_criteria_items(artifact: art_lib.Artifact) -> int:

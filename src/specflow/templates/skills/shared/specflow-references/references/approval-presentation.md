@@ -94,9 +94,11 @@ this is what lets the human delegate safely instead of re-deriving everything:
 The tier, reversibility, and blast-radius count come from the CLI and are **persisted to the
 DEC's `risk_profile`**; `confidence` (and `confidence_reason`) are the host agent's own and are
 filled via `specflow update <DEC> --set risk_profile='{"tier":...,"confidence":"..."}'`.
-`--set risk_profile=` is a **full-field replace** — always pass the complete JSON (all five
-keys). The dotted form `risk_profile.confidence=...` is NOT supported and silently writes a
-junk top-level key, leaving the real field empty.
+`--set risk_profile=` is a **full-field replace** — pass the complete JSON (all five keys)
+when you mean to reset the whole profile. To patch a single sub-key without touching the
+others, use the dotted form `--set risk_profile.confidence=high`, which merges into the
+existing map. A dotted key whose head is not a declared nested-map field on the type fails
+loudly (it no longer writes a junk top-level key).
 
 ```
 Assessment:

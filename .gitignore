@@ -53,6 +53,7 @@ Thumbs.db
 
 # AI tool developer-local settings
 .claude/settings.local.json
+.claude/worktrees/
 .qwen/
 .opencode/
 .gemini/settings.json

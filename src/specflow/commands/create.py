@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -81,10 +82,55 @@ def run(root: Path, args: dict) -> int:
         print(f"{RED}✗ --links: {exc}{NC}")
         return 1
 
+    # W2.3: --add-link append form (parity with `update --add-link`). At
+    # create-time there are no prior links, so this appends to the --links list
+    # with target+role dedup — an ergonomic single-link form for authoring.
+    add_links_raw = args.get("add_link") or []
+    if add_links_raw:
+        seen = {(lk["target"], lk["role"]) for lk in links}
+        for raw in add_links_raw:
+            try:
+                parsed_entries = art_lib.parse_and_validate_links(raw)
+            except ValueError:
+                print(f"{RED}✗ --add-link expects TARGET:ROLE (got '{raw}').{NC}")
+                return 1
+            for entry in parsed_entries:
+                key = (entry["target"], entry["role"])
+                if key not in seen:
+                    links.append({"target": entry["target"], "role": entry["role"]})
+                    seen.add(key)
+
     try:
-        extra_fields = art_lib.parse_set_fields(args.get("set_fields"))
+        known_keys: list[str] | None = None
+        if artifact_type:
+            norm_type = art_lib.normalize_type(artifact_type)
+            _schema = art_lib._read_schema(root / ".specflow" / "schema", norm_type)
+            if _schema is not None:
+                known_keys = list(_schema.get("optional_fields", []))
+                # Required fields are legitimate --set targets too (e.g. the
+                # autoresearch pack's metric_value / change_category / summary);
+                # omitting them makes the typo check false-positive on valid
+                # fields. Adding keys only suppresses typo errors, never adds.
+                known_keys += list(_schema.get("required_fields", []))
+                # Dedicated create flags are reserved --set targets; include
+                # their names so the flat-key typo check never shadows the
+                # clearer reserved-key error ("Use --status instead of
+                # --set status=").
+                known_keys += list(_RESERVED_SET_KEYS.keys())
+        extra_fields = art_lib.parse_set_fields(
+            args.get("set_fields"), known_keys=known_keys
+        )
     except ValueError as exc:
-        print(f"{RED}✗ {exc}{NC}")
+        msg = str(exc)
+        # When the flat-typo did-you-mean suggests a reserved key, point
+        # straight at the dedicated flag — otherwise the suggestion itself
+        # trips the reserved-key error one round-trip later.
+        _m = re.search(r"Did you mean '([^']+)'", msg)
+        if _m and _m.group(1) in _RESERVED_SET_KEYS:
+            flag = _RESERVED_SET_KEYS[_m.group(1)] or f"--{_m.group(1)}"
+            msg = msg.replace(f"Did you mean '{_m.group(1)}'?",
+                              f"Did you mean the {flag} flag?")
+        print(f"{RED}✗ {msg}{NC}")
         return 1
 
     links_error = _merge_set_links(links, extra_fields)

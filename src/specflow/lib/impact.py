@@ -127,6 +127,42 @@ def _find_all_downstream_recursive(root: Path, changed_id: str) -> list[Artifact
     return result
 
 
+def find_downstream_union(root: Path, source_ids: list[str]) -> list[Artifact]:
+    """Union of the transitive downstream cones of all *source_ids*.
+
+    Equivalent to the union of ``_find_all_downstream_recursive`` over each
+    source, but with ONE ``discover_artifacts`` pass and an in-memory
+    reverse-adjacency BFS — the recursive variant re-discovers the whole tree
+    at every hop, which is far too slow for hot paths (``brief --next``), and
+    summing per-source cone lengths double-counts artifacts downstream of
+    several sources. Shared downstream artifacts are counted once here.
+    """
+    all_artifacts = discover_artifacts(root)
+    by_id = {a.id: a for a in all_artifacts}
+    reverse: dict[str, list[str]] = {}
+    for art in all_artifacts:
+        for link in art.links:
+            reverse.setdefault(link.target, []).append(art.id)
+
+    # All sources are queued up-front so each cone is traversed once. Keep a
+    # separate result set: a source may itself be downstream of another source
+    # and therefore belongs in the union even though it is already visited.
+    visited: set[str] = set(source_ids)
+    result_ids: set[str] = set()
+    queue = list(source_ids)
+    result: list[Artifact] = []
+    while queue:
+        current = queue.pop(0)
+        for nid in reverse.get(current, ()):
+            if nid not in result_ids and nid in by_id:
+                result_ids.add(nid)
+                result.append(by_id[nid])
+            if nid not in visited:
+                visited.add(nid)
+                queue.append(nid)
+    return result
+
+
 def _update_frontmatter_field(file_path: Path, field_name: str, value: Any) -> bool:
     """Update a single frontmatter field in an artifact file."""
     try:

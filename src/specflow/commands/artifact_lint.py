@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import difflib
 import hashlib
 import re
 import subprocess
@@ -224,7 +225,16 @@ def _check_status(
             allowed = schema.get("allowed_status", {})
             if art.status and art.status not in allowed:
                 blocking += 1
-                details.append(f"  ✗ [{art.id}] invalid status '{art.status}'")
+                msg = f"  ✗ [{art.id}] invalid status '{art.status}'"
+                # W2.2: deterministic fix only for the typo case (near-miss of a
+                # valid status). A genuinely-invalid value has no single correct
+                # target, so it gets no fix command (avoids wrong-command erosion).
+                matches = difflib.get_close_matches(
+                    art.status, list(allowed.keys()), n=1, cutoff=0.6
+                )
+                if matches:
+                    msg += f" → fix: specflow update {art.id} --status {matches[0]}"
+                details.append(msg)
 
     # Hierarchy checks
     hierarchy_issues = lint_lib.validate_status_hierarchy(artifacts)
@@ -454,6 +464,8 @@ def _check_fingerprints(
         if len(stale) > 5:
             stale_str += f" (+{len(stale) - 5} more)"
         detail = f"{len(stale)} fingerprint(s) stale: {stale_str}"
+        # W2.2: fingerprint-refresh is the deterministic single-command remedy.
+        detail += f" → fix: specflow fingerprint-refresh {' '.join(stale)}"
     else:
         detail = "All fingerprints match"
 
@@ -493,13 +505,15 @@ def _check_acceptance(
     for art in reqs:
         if not lint_lib.has_acceptance_criteria(art):
             blocking += 1
-            details.append(f"  ✗ [{art.id}] no acceptance criteria found")
+            details.append(f"  ✗ [{art.id}] no acceptance criteria found"
+                           f" → fix: specflow update {art.id} --ac '<criteria>'")
             continue
 
         item_count = lint_lib.count_acceptance_criteria_items(art)
         if item_count == 0:
             blocking += 1
-            details.append(f"  ✗ [{art.id}] empty Acceptance Criteria section (header only)")
+            details.append(f"  ✗ [{art.id}] empty Acceptance Criteria section (header only)"
+                           f" → fix: specflow update {art.id} --ac '<criteria>'")
             continue
 
         category = art.frontmatter.get("non_functional_category")

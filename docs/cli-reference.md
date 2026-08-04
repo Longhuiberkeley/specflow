@@ -89,6 +89,7 @@ specflow create --from-standard CLAUSE_ID
 | `--rationale` | Rationale text |
 | `--tags` | Comma-separated tags |
 | `--links` | Links as JSON array of `{"target","role"}` objects or comma-separated `TARGET:ROLE` pairs |
+| `--add-link` | Append one `TARGET:ROLE` link (repeatable; dedups on target+role) — append-style parity with `update --add-link` |
 | `--body` | Markdown body content |
 | `--force` | Skip duplicate-check prompt |
 | `--nfr-category` | NFR category (performance, security, reliability, etc.) |
@@ -101,6 +102,8 @@ Update an artifact's frontmatter fields.
 
 ```bash
 specflow update ARTIFACT_ID [--status STATUS] [--title TITLE] [--priority PRIORITY] [--tags TAGS]
+specflow update ARTIFACT_ID --body 'Markdown body…'        # replaces the whole body (stdin auto-read when piped)
+specflow update ARTIFACT_ID --ac 'criteria…'               # replaces/inserts only the Acceptance Criteria section
 specflow update ARTIFACT_ID --add-link TARGET:ROLE [--add-link TARGET:ROLE ...]
 specflow update ARTIFACT_ID --remove-link TARGET
 specflow update ARTIFACT_ID --links '[{"target": "ARCH-007", "role": "implements"}]'
@@ -109,14 +112,16 @@ specflow update ARTIFACT_ID --links '[{"target": "ARCH-007", "role": "implements
 | Flag | Purpose |
 |------|---------|
 | `--status` / `--title` / `--priority` / `--rationale` / `--tags` | Replace the corresponding field |
+| `--body` | Replace the entire Markdown body (fingerprint is recomputed). Reads stdin when piped and `--body` is omitted — but only when no other field is updated in the same call; otherwise piped data is ignored with an advisory (the body is never replaced as a side effect). |
+| `--ac` | Replace (or insert) the `## Acceptance Criteria` section only; all other sections are preserved and the fingerprint recomputes. REQ and STORY artifacts only. Matching is heading-anchored and fence-aware: prose mentions and fenced examples are never touched. Fails loudly on multiple AC headings (ambiguous target) and cannot be combined with `--body` / `--set body=`. |
 | `--links` | Replace the whole link list (JSON array or `TARGET:ROLE` pairs) |
 | `--add-link` | Append one `TARGET:ROLE` link (repeatable; dedups on target+role). Nonexistent targets warn, never block. |
 | `--remove-link` | Remove links by target (repeatable; idempotent) |
 | `--output-files` | Replace declared output files (empty string removes) |
 | `--thinking-techniques` | Append thinking-technique names (e.g. `premortem,devils_advocate`) |
-| `--set KEY=VALUE` | Set an arbitrary frontmatter field (repeatable, JSON-aware) |
+| `--set KEY=VALUE` | Set an arbitrary frontmatter field (repeatable, JSON-aware). Dotted `KEY.subkey=` merges into a declared nested-map field. |
 
-`--links` cannot be combined with `--add-link`/`--remove-link` (ambiguous). Malformed link input fails with an error and leaves the artifact untouched.
+`--links` cannot be combined with `--add-link`/`--remove-link` (ambiguous), and `--ac`, `--body`, and `--set body=` are pairwise exclusive (they all write the body). Malformed link input fails with an error and leaves the artifact untouched. A `--status` not in the type's `allowed_status` is rejected (with a did-you-mean hint); an artifact whose current status is itself invalid can be corrected to any legal status via `--status` (repair path — it is never locked out of the CLI). A dotted `--set` key whose head is not a declared nested-map field fails loudly; an unknown flat `--set` key that is a near-miss of a known field errors with a suggestion — except keys already present in the artifact's frontmatter, which are established custom fields and always pass through.
 
 ---
 
@@ -293,7 +298,7 @@ The deterministic floor is Tier 2 when the change is **irreversible** (a status 
 
 ### `specflow artifact-lint`
 
-Run deterministic validation checks on artifacts. Zero tokens.
+Run deterministic validation checks on artifacts. Zero tokens. Findings that already fire append a deterministic one-command `→ fix:` remedy where one exists (typo status → `update --status`, stale fingerprint → `fingerprint-refresh`, missing/empty AC → `update --ac`); genuinely-ambiguous findings get no hint. No new warnings, exit codes unchanged.
 
 ```bash
 specflow artifact-lint [--type CHECK] [--fix] [--gate GATE] [--method {programmatic,llm}]
@@ -546,10 +551,10 @@ specflow renumber-drafts [--dry-run]
 Update content fingerprint without triggering suspect cascade.
 
 ```bash
-specflow fingerprint-refresh TARGET [TARGET ...]
+specflow fingerprint-refresh [TARGET ...]
 ```
 
-Targets are artifact IDs (preferred, like every other command) or file paths; both may be mixed and multiple targets may be given in one invocation. Each target reports its own result line; the exit code is non-zero only if *all* targets fail.
+Targets are artifact IDs (preferred, like every other command) or file paths; both may be mixed and multiple targets may be given in one invocation. Each target reports its own result line; the exit code is non-zero only if *all* targets fail. With **no targets** the command is report-only: it lists stale fingerprints and exits 0 without modifying anything — a safe "what's drifted?" check that preserves the explicit-repair drift signal.
 
 ---
 

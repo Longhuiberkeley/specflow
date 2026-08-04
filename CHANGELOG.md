@@ -4,6 +4,88 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.13.2] - 2026-08-04
+
+Command-surface ergonomics mined from ~1,558 real agent CLI invocations
+(2026-07-04 → 08-02, six consuming projects). The false-confidence cycle
+(v1.13.0/1) fixed the truthfulness of signals; this cycle fixes the
+day-to-day ergonomics that were deliberately left untouched. Every change is
+either a loud failure replacing a silent corruption, or an advisory hint —
+no new blocking gates, accounting-not-policing throughout.
+
+### Added
+
+- **`specflow update --body`** — replaces the whole Markdown body. The
+  fingerprint recomputes from the new body, so the hand-edit →
+  `fingerprint-refresh` repair dance is no longer needed. Stdin auto-reads
+  when piped — but only when no other field is updated in the same call;
+  otherwise piped data is ignored with an advisory, so the body is never
+  replaced as a side effect of an unrelated update.
+- **`specflow update --ac`** — replaces (or inserts) the
+  `## Acceptance Criteria` section only; all other sections are preserved.
+  Routes through the `--body` machinery. REQ and STORY artifacts only (loud
+  error elsewhere). Matching is heading-anchored and fence-aware with
+  level-aware section boundaries: prose mentions (`acceptance criteria:` in a
+  sentence), fenced examples, and h4 headings are never touched, and an
+  annotated heading (`## Acceptance Criteria (NFR)`) is only ever replaced as
+  its own whole section. Multiple AC headings fail loudly (ambiguous target —
+  "earliest wins" would be silent corruption). Pairwise exclusive with
+  `--body` and `--set body=`.
+- **`specflow create --add-link TARGET:ROLE`** — append-style link parity with
+  `update --add-link` (repeatable, dedups on target+role).
+- **Dotted `--set key.subkey=` nested-map support** — merges into a declared
+  nested-map field (e.g. `--set risk_profile.confidence=high`) instead of
+  silently writing a junk top-level dotted key and reporting success. A dotted
+  key whose head is not a declared field fails loudly, naming the
+  full-field-replace form.
+- **`--confidence` did-you-mean** — passing `--confidence` to create/update
+  (the single most-repeated agent error in the corpus, ×54) now hints at
+  `--set risk_profile.confidence=<value>` on decision artifacts, and explains
+  where confidence lives elsewhere (risk_profile is declared only on the DEC
+  schema, so the actionable suggestion is DEC-scoped — no wrong-command
+  steering). Advisory only; no new flag.
+- **`specflow fingerprint-refresh` bare run → report-only** — with no targets
+  it lists stale fingerprints without modifying anything (exit 0) instead of
+  erroring, preserving the explicit-repair drift signal.
+- **`brief --next` unreviewed-DEC blast radius** — append-only note when
+  unreviewed DEC(s) exist, reporting the change-impact downstream cone as a
+  union (an artifact downstream of several DECs counts once) computed in a
+  single discover pass (the recursive per-hop variant was too slow for the
+  `/specflow-start` hot path). Fires only on presence, so quiet projects stay
+  quiet.
+
+### Changed
+
+- **`update` rejects unknown statuses loudly** — closes the silent raw-write
+  hole where an unknown status (e.g. `resolved` on a DEF, a `verifed` typo)
+  fell through with no validation and was written raw, surfacing only later in
+  lint. Now mirrors `create`'s did-you-mean guard. Legal transitions are
+  unchanged (this completes the validator, it is not a new gate) — with one
+  repair path: when the CURRENT status itself is invalid, correction to any
+  legal status is allowed, so a typo'd artifact is never locked out of the
+  CLI (and artifact-lint's `→ fix: update --status` hint always succeeds).
+- **`--set` flat-key typo did-you-mean** — an unknown flat key that is a
+  near-miss of a declared field errors with a suggestion; unknown-but-not-close
+  keys still pass through as a custom-field escape hatch, as does any key
+  already present in the artifact's frontmatter (an established field — e.g.
+  pack-written `verification_gate` — is never a typo). On `create`, a
+  suggestion that lands on a reserved key points straight at the dedicated
+  flag. `--set body=` with an empty value is a no-op (consistent with the
+  `--body` flag), never a silent wipe.
+- **`artifact-lint` deterministic fix hints** — findings that already fire now
+  append a one-command `→ fix:` remedy (typo status → `update --status`,
+  stale fingerprint → `fingerprint-refresh`, missing/empty AC → `update --ac`).
+  Zero new warnings; exit codes unchanged; genuinely-ambiguous findings (broken
+  links, invalid-with-no-near-miss statuses) get no hint, avoiding
+  wrong-command erosion.
+
+### Verification
+
+- 1023 tests passing (baseline 971; +52 incl. the adversarial-review
+  hardening suite, no regressions).
+- `specflow project-audit --dry-run`: exit 0 — 0 errors, 26 warnings (all
+  accounting, non-escalating). Gate stays honestly green.
+
 ## [1.13.1] - 2026-08-03
 
 Decision & objective quality: approval tiers are computed from the change's

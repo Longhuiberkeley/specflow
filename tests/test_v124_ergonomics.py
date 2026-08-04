@@ -216,12 +216,37 @@ class TestDidYouMean:
 
     def test_unrelated_flag_no_hint(self, capsys):
         from specflow import cli
-        # --confidence has no close match among update's flags -> no misleading hint.
+        # A truly unrelated flag has no close match -> no misleading hint.
+        with pytest.raises(SystemExit) as exc:
+            cli.main(["update", "REQ-001", "--zzzzzz", "medium"])
+        assert exc.value.code == 2
+        err = capsys.readouterr().err
+        assert "did you mean" not in err
+
+    def test_confidence_flag_hints_risk_profile(self, capsys):
+        from specflow import cli
+        # W2.1: --confidence lives inside the risk_profile map, not as a flag.
+        # Non-DEC target: risk_profile is declared only on the decision
+        # schema, so the hint explains where confidence lives instead of
+        # steering at a --set command that would fail on a REQ
+        # (wrong-command erosion).
         with pytest.raises(SystemExit) as exc:
             cli.main(["update", "REQ-001", "--confidence", "medium"])
         assert exc.value.code == 2
         err = capsys.readouterr().err
-        assert "did you mean" not in err
+        assert "risk_profile.confidence" in err
+        assert "decision artifacts" in err
+
+    def test_confidence_flag_hints_set_form_on_dec(self, capsys):
+        from specflow import cli
+        # DEC target: the actionable did-you-mean points straight at the
+        # nested --set form, which succeeds on decision artifacts.
+        with pytest.raises(SystemExit) as exc:
+            cli.main(["update", "DEC-001", "--confidence", "medium"])
+        assert exc.value.code == 2
+        err = capsys.readouterr().err
+        assert "did you mean" in err
+        assert "--set risk_profile.confidence" in err
 
 
 # ── A5: fingerprint-refresh accepts IDs + multiple targets ───────────────
