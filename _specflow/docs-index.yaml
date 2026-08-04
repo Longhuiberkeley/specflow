@@ -1,5 +1,5 @@
-version: 1.12.6
-rebuilt_at: '2026-08-02T17:32:12+00:00'
+version: 1.13.3
+rebuilt_at: '2026-08-04T16:03:23+00:00'
 docs:
   AGENTS.md:
     title: AGENTS.md
@@ -9,19 +9,19 @@ docs:
     audience: ''
   CHANGELOG.md:
     title: Changelog
-    fingerprint: sha256:0e00aa02581f
+    fingerprint: sha256:bcdbb075b025
     cites: []
     last_reviewed: ''
     audience: ''
   README.md:
     title: SpecFlow
-    fingerprint: sha256:1fae729ba3be
+    fingerprint: sha256:69b40f59e752
     cites: []
     last_reviewed: ''
     audience: ''
   ROADMAP.md:
     title: SpecFlow Roadmap
-    fingerprint: sha256:94a2312cb205
+    fingerprint: sha256:b25df6cc74cc
     cites: []
     last_reviewed: ''
     audience: ''
@@ -45,7 +45,7 @@ docs:
     audience: ''
   docs/cli-reference.md:
     title: SpecFlow CLI Reference
-    fingerprint: sha256:f93e7c9808c3
+    fingerprint: sha256:b29fa1ce9642
     cites: []
     last_reviewed: ''
     audience: ''
@@ -76,7 +76,7 @@ docs:
     audience: ''
   docs/lifecycle.md:
     title: SpecFlow Lifecycle
-    fingerprint: sha256:45cd2e4d1367
+    fingerprint: sha256:7b3da1493bac
     cites: []
     last_reviewed: ''
     audience: ''

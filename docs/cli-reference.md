@@ -56,6 +56,8 @@ specflow brief [--since "7 days ago"]
 |------|---------|
 | `--since` | Window for the "recent changes" git log (default: `7 days ago`) |
 
+`brief --next` appends an unreviewed-DEC blast-radius note when one or more human-authored ADRs have no review — reporting the change-impact downstream cone as a union (an artifact downstream of several DECs counts once), computed in a single discover pass. Auto-generated change records are excluded by `dec_kind: change_record` (with tags as a backward-compatible fallback), and the Recent decisions section shows ADRs only. Quiet projects stay quiet (fires only on presence).
+
 ### `specflow standards gaps`
 
 List uncovered standard clauses — clauses in `.specflow/standards/` with no REQ linking to them via `complies_with`.
@@ -121,7 +123,7 @@ specflow update ARTIFACT_ID --links '[{"target": "ARCH-007", "role": "implements
 | `--thinking-techniques` | Append thinking-technique names (e.g. `premortem,devils_advocate`) |
 | `--set KEY=VALUE` | Set an arbitrary frontmatter field (repeatable, JSON-aware). Dotted `KEY.subkey=` merges into a declared nested-map field. |
 
-`--links` cannot be combined with `--add-link`/`--remove-link` (ambiguous), and `--ac`, `--body`, and `--set body=` are pairwise exclusive (they all write the body). Malformed link input fails with an error and leaves the artifact untouched. A `--status` not in the type's `allowed_status` is rejected (with a did-you-mean hint); an artifact whose current status is itself invalid can be corrected to any legal status via `--status` (repair path — it is never locked out of the CLI). A dotted `--set` key whose head is not a declared nested-map field fails loudly; an unknown flat `--set` key that is a near-miss of a known field errors with a suggestion — except keys already present in the artifact's frontmatter, which are established custom fields and always pass through.
+`--links` cannot be combined with `--add-link`/`--remove-link` (ambiguous), and `--ac`, `--body`, and `--set body=` are pairwise exclusive (they all write the body). Malformed link input fails with an error and leaves the artifact untouched. A `--status` not in the type's `allowed_status` is rejected (with a did-you-mean hint); an artifact whose current status is itself invalid can be corrected to any legal status via `--status` (repair path — it is never locked out of the CLI). A dotted `--set` key whose head is not a declared nested-map field fails loudly; an unknown flat `--set` key that is a near-miss of a known field errors with a suggestion — except keys already present in the artifact's frontmatter, which are established custom fields and always pass through. Passing `--confidence` to `create` or `update` (no such flag exists) hints at `--set risk_profile.confidence=<value>` on DEC artifacts, where `risk_profile` is declared; advisory only.
 
 ---
 
@@ -178,6 +180,7 @@ specflow verify --all
 specflow verify --type TYPE
 specflow verify ID --dry-run
 specflow verify ID --evidence-file
+specflow verify --all --seed-prev
 ```
 
 | Flag | Purpose |
@@ -188,6 +191,7 @@ specflow verify ID --evidence-file
 | `--dry-run` | Print the resolved command(s) and target artifact(s) without executing or recording |
 | `--evidence-file` | Boolean flag (no path). Resolve the first file matching the artifact's `verify_evidence` glob(s) and record its hash (`verify_run_evidence_hash`) and mtime (`verify_run_evidence_mtime`). Command stdout+stderr are summarized into `verify_run_out_hash` regardless of this flag |
 | `--timeout` | Per-command timeout in seconds (default: 600) |
+| `--seed-prev` | Opt in to creating a PREV prevention pattern for each divergent verification result; accounting-only and never blocks |
 
 Artifacts declare the contract via frontmatter: `verify_command` (the shell command that proves it works), `verify_exit_code` (expected pass code, default `0`), and `verify_evidence` (note on what the output proves). `specflow verify` records the run side: `verify_run_at`, `verify_run_exit_code`, `verify_run_out_hash` (and, with `--evidence-file`, `verify_run_evidence_hash` + `verify_run_evidence_mtime` for the first matched evidence file). A divergence between `verify_exit_code` and `verify_run_exit_code` surfaces as an advisory in `specflow brief --next` and an accounting warning in `specflow project-audit` — never as an error. Artifacts with no `verify_command` are unaffected. See the specflow-execute skill's `verification-contracts.md` reference for field semantics and the never-blocking invariant.
 
@@ -385,9 +389,33 @@ specflow baseline create TAG
 specflow baseline diff BASELINE_A BASELINE_B
 ```
 
+### `specflow autoresearch`
+
+Drive an installed autoresearch pack from any harness. The command reads and writes COMP/LOOP/EXPT/FIND artifacts; it does not call an external model API.
+
+```bash
+specflow autoresearch plan --competition COMP-001 --profile
+specflow autoresearch run --competition COMP-001 [--no-start]
+specflow autoresearch status [--competition COMP-001]
+specflow autoresearch review --competition COMP-001
+specflow autoresearch leaderboard [--competition COMP-001 | --all]
+specflow autoresearch log --loop LOOP-001 --status kept --metric-value 0.73 --summary "..."
+specflow autoresearch suggest-finds --loop LOOP-001
+```
+
+| Subcommand | Purpose |
+|------------|---------|
+| `plan` | Create/update a LOOP or print the setup checklist; `--profile` includes the host-run three-sample noise probe in that checklist |
+| `run` | Print the loop protocol and start a draft LOOP unless `--no-start`; refuses a second concurrent running LOOP |
+| `status` | Show readiness, budget use, and best metric for one resolved competition and LOOP |
+| `review` | Summarize all loops, experiments, and candidate findings for one competition |
+| `leaderboard` | Rank experiments for one competition or all competitions |
+| `log` | Record an experiment outcome and optional structured fields (`--set KEY=VALUE`) |
+| `suggest-finds` | Propose one condensed FIND from a LOOP's experiment history |
+
 ### `specflow document-changes`
 
-Generate change records (DEC artifacts) from git history.
+Generate change records (DEC artifacts) from git history. Generated records carry `dec_kind: change_record`; human architecture decisions use `dec_kind: adr`, allowing review and briefing surfaces to distinguish bookkeeping from design rationale.
 
 ```bash
 specflow document-changes --since GIT_REF
@@ -510,7 +538,9 @@ Project-hygiene scans.
 specflow detect dead-code                                  # Report unreferenced functions/classes
 specflow detect similarity                                 # Report near-identical function pairs
 specflow detect orphan-code                                # Coverage % + unreferenced source files (globs honored)
-specflow detect orphan-code --retro-link ARCH-003          # Adopt orphans into an ARCH's output_files (STORY/ARCH/DDD/REQ)
+specflow detect orphan-code --retro-link ARCH-003          # Link orphans into an existing artifact's output_files
+specflow detect orphan-code --adopt ARCH-003                # Link the cluster and create a backfilled STORY
+specflow detect orphan-code --adopt ARCH-003 --story-title "Imported worker"
 specflow detect stale-docs                                 # Docs citing superseded/cancelled/deprecated artifacts (warning, never blocks)
 ```
 
@@ -518,7 +548,7 @@ specflow detect stale-docs                                 # Docs citing superse
 The orphan meter credits all four types and expands globs through `lib.files.expand_output_files`,
 the same helper reconcile and source-drift use — so a package glob in any artifact's
 `output_files` is honored uniformly. The command reports **coverage %** (referenced ÷ total)
-and the **biggest un-adopted cluster** (the top-level directory with the most orphan files).
+and the **biggest un-adopted cluster** (the top-level directory with the most orphan files). `--adopt` is the one-step mid-project closure: it retro-links the cluster into the target ARCH and creates a `backfilled` STORY that traces to it. `--story-title` overrides the generated story title.
 
 Orphan-code is also surfaced as a lens in `specflow project-audit` (full mode, not `--quick`): it distinguishes "source↔spec tracking not yet adopted" (info) from "files slipped through partial tracking" (warn).
 

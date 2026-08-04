@@ -163,6 +163,7 @@ specflow init --preset autoresearch
 # …or drive from the CLI (harness-agnostic)
 specflow autoresearch plan --competition COMP-001 --profile
 specflow autoresearch run --competition COMP-001
+specflow autoresearch review --competition COMP-001
 specflow autoresearch leaderboard --all
 ```
 
