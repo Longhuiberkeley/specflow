@@ -57,7 +57,7 @@ def _read_fm(path: Path) -> dict:
 def _run(root: Path, **kwargs) -> tuple[int, str]:
     """Invoke the verify command, return (exit_code, captured_stdout)."""
     args = {"ids": [], "all": False, "type": None, "dry_run": False,
-            "evidence_file": False, "timeout": 600}
+            "evidence_file": False, "timeout": 600, "seed_prev": False}
     args.update(kwargs)
     import io
     import contextlib
@@ -329,3 +329,101 @@ class TestEvidenceFile:
         fm = _read_fm(root / "_specflow/specs/unit-tests/UT-031.md")
         assert fm["verify_run_evidence_hash"] == ""
         assert fm["verify_run_evidence_mtime"] == ""
+
+
+# ── STORY-624: outcome feedback loop (divergent verify → PREV) ──────
+
+
+class TestSeedPrevFeedback:
+    """STORY-624 Part 2: a divergent verify_command can seed a PREV prevention
+    pattern via the existing learnings path. Opt-in (--seed-prev), never blocks."""
+
+    def test_divergent_with_seed_prev_creates_prev(self, tmp_path):
+        """A non-zero (divergent) exit code + --seed-prev seeds a PREV pattern;
+        verify STILL exits 0 (opt-in, never blocking)."""
+        root = _scaffold(tmp_path)
+        _write_artifact(
+            root, "_specflow/specs/unit-tests/UT-040.md",
+            {"id": "UT-040", "title": "T", "type": "unit-test", "status": "verified",
+             "created": "2026-08-04", "verify_command": "echo fail; exit 2"},
+        )
+
+        code, out = _run(root, ids=["UT-040"], seed_prev=True)
+
+        assert code == 0  # never blocking
+        assert "exit=2" in out
+        assert "recorded" in out
+        assert "seeded PREV-" in out
+        # The PREV file exists on disk under the learned-checklists surface.
+        learned_dir = root / ".specflow" / "checklists" / "learned"
+        prevs = sorted(learned_dir.glob("PREV-*.yaml"))
+        assert len(prevs) == 1
+        data = yaml.safe_load(prevs[0].read_text(encoding="utf-8"))
+        assert data["source"] == "verify-divergence"
+        assert data["discovered_from"] == "UT-040"
+        assert data["mode"] == "reactive"
+        # The recorded divergence is captured in the check text.
+        check_text = data["items"][0]["check"]
+        assert "exit=2" in check_text and "expected=0" in check_text
+
+    def test_divergent_without_seed_prev_creates_no_prev(self, tmp_path):
+        """Without --seed-prev, a divergent contract records evidence but seeds
+        NO PREV — only the Tip (the offer) is printed."""
+        root = _scaffold(tmp_path)
+        _write_artifact(
+            root, "_specflow/specs/unit-tests/UT-041.md",
+            {"id": "UT-041", "title": "T", "type": "unit-test", "status": "verified",
+             "created": "2026-08-04", "verify_command": "exit 1"},
+        )
+
+        code, out = _run(root, ids=["UT-041"])  # seed_prev defaults to False
+
+        assert code == 0
+        assert "seeded PREV-" not in out
+        assert "--seed-prev" in out  # the Tip offers the opt-in
+        learned_dir = root / ".specflow" / "checklists" / "learned"
+        assert not learned_dir.exists()
+
+    def test_passing_contract_seeds_no_prev_even_with_seed_prev(self, tmp_path):
+        """A non-divergent (passing) contract never seeds a PREV, even with
+        --seed-prev: the loop fires on divergence only."""
+        root = _scaffold(tmp_path)
+        _write_artifact(
+            root, "_specflow/specs/unit-tests/UT-042.md",
+            {"id": "UT-042", "title": "T", "type": "unit-test", "status": "verified",
+             "created": "2026-08-04", "verify_command": "true"},
+        )
+
+        code, out = _run(root, ids=["UT-042"], seed_prev=True)
+
+        assert code == 0
+        assert "exit=0" in out
+        assert "seeded PREV-" not in out
+        learned_dir = root / ".specflow" / "checklists" / "learned"
+        assert not learned_dir.exists()
+
+    def test_seed_prev_respects_session_cap(self, tmp_path):
+        """Multiple divergent contracts seed at most max_patterns_per_session
+        PREVs in one verify run (mirrors the review/done learnable budget)."""
+        root = _scaffold(tmp_path)
+        for i, aid in enumerate(("UT-050", "UT-051", "UT-052", "UT-053"), start=50):
+            _write_artifact(
+                root, f"_specflow/specs/unit-tests/{aid}.md",
+                {"id": aid, "title": "T", "type": "unit-test", "status": "verified",
+                 "created": "2026-08-04", "verify_command": "exit 1"},
+            )
+        # Force a small cap via config (default is 3; set to 2 to prove the cap).
+        (root / ".specflow").mkdir(parents=True, exist_ok=True)
+        (root / ".specflow" / "config.yaml").write_text(
+            yaml.dump({"learning": {"max_patterns_per_session": 2}}),
+            encoding="utf-8",
+        )
+
+        code, out = _run(root, all=True, seed_prev=True)
+
+        assert code == 0
+        # Exactly 2 PREVs created; the remaining divergences hit the cap message.
+        learned_dir = root / ".specflow" / "checklists" / "learned"
+        prevs = sorted(learned_dir.glob("PREV-*.yaml"))
+        assert len(prevs) == 2
+        assert "PREV cap" in out

@@ -6,6 +6,7 @@ Follows the config shape established in tests/test_rbac.py
 
 from __future__ import annotations
 
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -44,6 +45,12 @@ def project_root(tmp_path: Path) -> Path:
     root = tmp_path / "project"
     (root / ".specflow").mkdir(parents=True, exist_ok=True)
     return root
+
+
+# The git-fallback test shells out to real git; skip cleanly when git is absent
+# instead of erroring on FileNotFoundError. Mirrors test_source_scope.py /
+# test_done.py, which guard every git-dependent test the same way.
+git_only = pytest.mark.skipif(shutil.which("git") is None, reason="git not available")
 
 
 class TestNoTeamConfig:
@@ -99,6 +106,7 @@ class TestWithTeamConfig:
         assert "Denied" in out
         assert "approver" in out
 
+    @git_only
     def test_falls_back_to_git_author_email(self, project_root: Path, capsys, monkeypatch):
         _team_config(project_root)
         subprocess.run(["git", "init"], cwd=project_root, capture_output=True, check=False)

@@ -46,6 +46,26 @@ All subcommands have a CLI backend. Use the CLI for deterministic operations (ar
 
 For multi-competition repos, all commands accept `--competition COMP-NNN`. Omit to auto-detect the single active COMP, or specify when multiple exist. The `leaderboard` command also accepts `--all` for a cross-COMP view.
 
+## Context Loading (Before Execution)
+
+Before any subcommand, load the pack's current state so decisions are grounded in the artifacts, not assumptions. The CLI is the single source of truth — never reason about COMP/LOOP state from memory.
+
+```bash
+# 1. Which COMP is active, and is a LOOP already running? (auto-detects the single active COMP)
+specflow autoresearch status
+specflow autoresearch status --competition COMP-NNN   # explicit when multiple COMPs exist
+
+# 2. Full artifact hierarchy + frontmatter (COMP → LOOPs → EXPTs → FINDs)
+specflow trace COMP-NNN
+```
+
+From that output, read two things into context before acting:
+
+- **COMP metadata** — `verify_command`, `metric_name`, `metric_direction`, `objective_type`, `goals`, `constraints`, `success_criteria`, `domain`. These pin what "better" means and the rules of engagement.
+- **LOOP state** — `status`, `iteration_count` / `budget`, `best_metric`, `mode`, `active_research_questions`, `knowledge_input`. These pin where the loop is and what it already knows.
+
+Only then choose the subcommand. If `status` reports a running LOOP, attach rather than spawn a second one (see Setup Gate). If no COMP exists, walk `references/competition-setup-protocol.md`. The pack's standing context block — injected into this repo's agent instructions under the `<!-- pack:autoresearch context -->` sentinel in AGENTS.md/CLAUDE.md at install time — is the reminder that this subsystem exists and how to trigger it; the `status` command above is how you load its live state per invocation.
+
 ## Activation Triggers
 
 - User invokes `/specflow-autoresearch` → run the loop

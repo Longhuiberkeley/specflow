@@ -2,7 +2,7 @@
 id: STORY-624
 title: Orphan-code adoption + outcome feedback loop (upcoming wave)
 type: story
-status: draft
+status: verified
 priority: medium
 rationale: 'Planned follow-on to REQ-037/ARCH-026. Two coupled gaps surfaced by the
   v1.13 audit pass: (1) detect orphan-code still reports un-adopted source clusters
@@ -22,11 +22,17 @@ links:
   role: implements
 - target: ARCH-026
   role: derives_from
+- target: UT-035
+  role: verified_by
+- target: UT-039
+  role: verified_by
 created: '2026-08-03'
 fingerprint: sha256:0c60189f291d
 output_files:
 - src/specflow/lib/orphans.py
 - tests/test_done.py
+- tests/test_verify.py
+modified: '2026-08-04'
 ---
 
 # Orphan-code adoption + outcome feedback loop (upcoming wave)

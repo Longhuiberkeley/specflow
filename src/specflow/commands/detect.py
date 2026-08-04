@@ -5,7 +5,9 @@ Four informational subcommands that never block:
 - `specflow detect similarity` — near-duplicate function bodies.
 - `specflow detect orphan-code` — source files not referenced by any
   STORY/REQ/ARCH/DDD. Use `--retro-link <ID>` to retroactively link all orphan
-  files to an artifact (any of STORY/ARCH/DDD/REQ).
+  files to an artifact (any of STORY/ARCH/DDD/REQ), or `--adopt <ARCH-ID>` for
+  the one-step closure: retro-link the cluster into the ARCH's output_files AND
+  create a backfilled STORY (tagged `backfilled`) that traces to it.
 - `specflow detect stale-docs` — docs that cite a superseded/cancelled/deprecated
   artifact. Docs are prose; staleness is surfaced (warning), never enforced.
 
@@ -25,7 +27,7 @@ from specflow.lib.analysis import (
     find_similar_functions,
 )
 from specflow.lib import artifacts as art_lib
-from specflow.lib.orphans import find_orphan_code, retro_link
+from specflow.lib.orphans import adopt_orphan_cluster, find_orphan_code, retro_link
 
 from specflow.lib.display import YELLOW_DIM, GREEN, CYAN, NC, RED, YELLOW, BOLD
 
@@ -129,6 +131,38 @@ def _run_orphan_code(root: Path, args: dict[str, Any]) -> int:
     for f in sorted(orphans):
         print(f"    {_rel(root, f)}")
 
+    # One-step adoption (STORY-624): retro-link the cluster into an ARCH's
+    # output_files AND create a backfilled STORY tracing to it. Supersedes the
+    # plain --retro-link when given (the files end up linked either way; --adopt
+    # adds the traceability chain). Accounting: never blocks.
+    adopt_target = args.get("adopt_target")
+    if adopt_target:
+        print(f"\n  {CYAN}Adopting orphan cluster into {adopt_target} (one step)...{NC}")
+        story_title = args.get("story_title")
+        summary = adopt_orphan_cluster(root, adopt_target, story_title=story_title)
+        if not summary["ok"]:
+            print(f"  {RED}✗ {summary.get('error', 'adoption failed')}{NC}")
+            return 1
+        print(
+            f"  {GREEN}✓{NC} Linked {summary['linked']}/{summary['total_orphans']} "
+            f"orphan files to {adopt_target}"
+        )
+        if summary.get("story_id"):
+            print(
+                f"  {GREEN}✓{NC} Created backfilled STORY {summary['story_id']} "
+                f"(derives_from {adopt_target})"
+            )
+        else:
+            print(
+                f"  {YELLOW_DIM}backfilled STORY could not be created "
+                f"(files still linked){NC}"
+            )
+        print(
+            f"  Coverage: {summary['coverage_before']:.1f}% → "
+            f"{summary['coverage_after']:.1f}%"
+        )
+        return 0
+
     retro_target = args.get("retro_link_target") or args.get("retro_link_story")
     if retro_target:
         print(f"\n  {CYAN}Retro-linking all orphan files to {retro_target}...{NC}")
@@ -141,8 +175,9 @@ def _run_orphan_code(root: Path, args: dict[str, Any]) -> int:
             print(f"  {YELLOW_DIM}{len(orphans) - linked} files could not be linked (target not found or file error){NC}")
         return 0 if linked == len(orphans) else 1
     else:
-        print(f"\n  {CYAN}Tip:{NC} Use --retro-link <ID> to retroactively link all orphan files to an existing artifact (STORY/ARCH/DDD/REQ).")
-        print(f"  {YELLOW_DIM}Orphan code breaks SpecFlow traceability. Run with --retro-link to fix, or review manually.{NC}")
+        print(f"\n  {CYAN}Tip:{NC} Use --adopt <ARCH-ID> for the one-step closure (link cluster + backfilled STORY),")
+        print(f"  or --retro-link <ID> to retroactively link all orphan files to an existing artifact (STORY/ARCH/DDD/REQ).")
+        print(f"  {YELLOW_DIM}Orphan code breaks SpecFlow traceability. Run with --adopt/--retro-link to fix, or review manually.{NC}")
 
     return 0
 

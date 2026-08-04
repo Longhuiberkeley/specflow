@@ -338,6 +338,60 @@ These are recommendations with tradeoffs, not mandates. The user decides how str
 | Multiple guards | Regulated domain, multiple failure modes to prevent | More discards, fewer keeps, but higher quality |
 | Composite metric instead | Only when you truly have a multi-objective problem | Requires careful weighting, agent will game weights |
 
+### Weighted (Composite) Primary Metric
+
+The lexicographic pattern above — one primary metric plus binary guards — is the default because it keeps each concern unforgeable. Reach for a **weighted composite** only when you genuinely have a multi-objective problem (e.g. return vs. drawdown, accuracy vs. latency) and are willing to make the weighting a deliberate, frozen, reviewed choice.
+
+The schema exposes a single `metric_name` / `metric_direction`, so the weighting lives **inside the verify command**: the script combines the components, applies the weights, and prints one number. The COMP records the weight contract in `description`, and every component is logged as an `auxiliary_metric` on each EXPT so the review phase can decompose the score.
+
+Concrete COMP (frontmatter, consistent with `competition.yaml`):
+
+```yaml
+id: COMP-003
+title: "Risk-adjusted return composite"
+type: competition
+status: active
+created: '2026-08-04'
+verify_command: "python scripts/composite_score.py --strategy {strategy}"
+metric_name: "Composite score (0.6*sharpe - 0.4*max_dd)"
+metric_direction: higher_is_better
+description: |
+  Weighted composite printed by composite_score.py:
+  score = 0.6*sharpe - 0.4*max_drawdown.
+  Weights are FROZEN for the lifetime of this COMP; changing them
+  is a new COMP, not an in-place edit.
+guard_command: "python scripts/floor_check.py --strategy {strategy}"
+guard_mode: pass_fail
+objective_type: single_best
+```
+
+The verify script bakes in the weights and prints exactly one number — the agent never sees the components, only the composite:
+
+```python
+# composite_score.py — frozen weights, prints ONE number to stdout
+m = load_results()
+score = 0.6 * m["sharpe"] - 0.4 * m["max_drawdown"]
+print(round(score, 4))
+```
+
+Log every component as an `auxiliary_metric` so review can audit the trade-off the agent made:
+
+```bash
+specflow autoresearch log --loop LOOP-003 --status kept \
+  --metric-value 1.07 --change-category features \
+  --summary "added volatility filter" \
+  --set 'auxiliary_metrics={"sharpe": 1.9, "max_drawdown": 0.12, "composite": 1.07}'
+```
+
+**Rules that keep a composite honest:**
+
+- **Freeze the weights in `description` and treat them as part of the metric.** Re-weighting mid-competition silently re-benchmarks every prior EXPT — that is a new COMP, not an edit (same rule as mutating `verify_command`).
+- **Pair the composite with at least one `guard_command` floor** on the most safety-critical component (e.g. max drawdown, latency p99). A composite lets the agent trade a component down to lift the sum; a binary guard sets the unforgeable floor it cannot cross.
+- **Log all components, every EXPT.** A climbing composite with a silently degrading component is the failure mode this pattern enables; `auxiliary_metrics` makes it visible at `:review`.
+- **If one component dominates the sum**, switch back to lexicographic guards (above), where the floor stays binary and un-gameable.
+
+When in doubt, prefer primary + guards. Use a weighted composite only when you can name the trade-off you want and accept that the agent will press against it.
+
 ## Leakage and Gaming
 
 Leakage occurs when evaluation data or evaluation artifacts are accessible to the optimization process. Gaming occurs when the agent finds a way to inflate the metric without genuine improvement. Both produce misleading results.
@@ -384,6 +438,49 @@ Point estimates over a single backtest are the most overfittable metrics in fina
 | Single-split point estimate | Low | Only for quick prototyping; don't trust results |
 
 The protocol's noise-handling section (Phase 5.1 in `autonomous-loop-protocol.md`) addresses measurement noise — running the same code multiple times and getting different numbers. That's different from generalization — whether the result holds on unseen data. Both problems matter. Noise handling fixes measurement; robustness-adjusted primaries fix generalization.
+
+### Split Validation & Temporal Boundary Checks
+
+Before trusting any result, verify the split itself is sound. These are deterministic checks you run locally — no network, no model training, just file and timestamp comparison against your data directory. Run them once at setup and re-run whenever the dataset changes.
+
+**1. Train/test disjointness.** The evaluation set must share no records with training. Hash both partitions and confirm the intersection is empty:
+
+```bash
+# File-level: prints "LEAK: 0" and exits 0 when partitions are disjoint.
+python -c "import hashlib,sys; \
+  a={hashlib.md5(open(p,'rb').read()).hexdigest() for p in ['data/train.csv']}; \
+  b={hashlib.md5(open(p,'rb').read()).hexdigest() for p in ['data/test.csv']}; \
+  leak=a&b; print('LEAK:',len(leak)); sys.exit(1 if leak else 0)"
+```
+
+For row-level (not file-level) checks, extract a key from each record with `awk`/`jq`, sort, and intersect — the output must be empty:
+
+```bash
+awk -F, '{print $1}' data/train.csv | sort > /tmp/train_keys.txt
+awk -F, '{print $1}' data/test.csv  | sort > /tmp/test_keys.txt
+comm -12 /tmp/train_keys.txt /tmp/test_keys.txt        # must print nothing
+```
+
+**2. Temporal boundary integrity.** For time-series splits, no feature computed for a training row may use information dated at or after the split cutoff. Static checks against the source:
+
+| Check | How to verify | Pass |
+|-------|---------------|------|
+| Feature join respects cutoff | Feature pipeline keys off an `as_of` date that is `< split_boundary` for training rows | No feature column has a max timestamp at/after the boundary |
+| No lookahead accessor | `grep -rn "shift(-" src/features/` and any `future`/negative-lag accessor | Zero hits |
+| Walk-forward windows don't overlap | For each fold, training-window end `<` test-window start | `comm -12` of per-fold train/test key sets is empty |
+
+**3. Verify command respects the split.** The `verify_command` must read only the held-out evaluation partition. Confirm the path it loads is eval-only, not the full dataset:
+
+```bash
+# The data path inside the verify script must point at the eval partition only.
+grep -n "data/" scripts/evaluate.py
+```
+
+Record the outcome of these checks in the COMP's `constraints` field so a later LOOP inherits the guarantee without re-deriving it:
+
+```bash
+specflow update COMP-001 --set constraints="Train/test disjoint: verified (0 overlap). Temporal cutoff: 2024-01-01; no lookahead accessors in src/features/. Verify reads eval partition only."
+```
 
 ### User decides strictness
 
@@ -433,6 +530,41 @@ SpecFlow EXPT artifacts are the source of truth for the research loop, but they 
 | Lookahead in verify | In-sample metric improbably high | Use walk-forward or temporal split; check verify doesn't peek ahead |
 | Overfitting to test set | Sharpe degrades immediately in production | Read-only eval data; prefer robustness-adjusted primaries |
 | Rich verify output | Agent uses per-window details to guide next iteration | Verify prints one number; save rich output to disk for review only |
+
+## COMP Configuration Checklist
+
+Run this before starting the first LOOP. Each item is a single deterministic check — if any fails, fix the COMP before iterating. The whole list costs a few seconds and catches the mistakes that otherwise waste a 50-iteration budget.
+
+**Artifact & schema**
+
+- [ ] COMP created with `--status active` (not `draft`); `specflow artifact-lint COMP-NNN` reports no blocking findings
+- [ ] `verify_command`, `metric_name`, and `metric_direction` are all set, and the direction matches what the verify number actually means
+- [ ] Baseline metric from the dry-run recorded as the initial reference point
+
+**Verify command**
+
+- [ ] Dry-run exits 0 and prints exactly one parseable number matching `^-?[0-9]+\.?[0-9]*$`
+- [ ] Safety screen clean — no `rm -rf /`, fork bombs, `curl ... | sh`, or embedded credentials
+- [ ] Output is one number — rich diagnostics go to `--save-dir` (disk), not stdout
+- [ ] (Skipped in quick mode ≤ 5) Noise probe: 3 back-to-back runs, stdev ≤ ~5% of mean
+
+**Split integrity (anti-leakage)**
+
+- [ ] Train/test partitions are disjoint — hash/`comm` intersection is empty
+- [ ] Temporal boundary holds — no feature uses data at/after the split cutoff (`grep "shift(-"` returns nothing)
+- [ ] `verify_command` reads only the evaluation partition, not the full dataset
+- [ ] Eval data is read-only to the agent — file permissions, separate cwd, container isolation, or a documented convention
+
+**Multi-criteria (if applicable)**
+
+- [ ] One primary metric drives ranking; secondary concerns are guards (binary floors) or `auxiliary_metrics` (logged, not ranked)
+- [ ] If using a weighted composite: weights frozen in `description`, every component logged as an `auxiliary_metric`, and at least one `guard_command` floor on the most safety-critical component
+
+**Goals & boundaries**
+
+- [ ] `goals`, `success_criteria`, and `constraints` capture the "why" and the rules of engagement (allowed data, forbidden techniques)
+- [ ] `domain` set when known — triggers the expected `auxiliary_metrics` in lint
+- [ ] Pre-check / post-check commands defined where the goal implies them, and each has passed a dry-run
 
 ## Post-Setup: Methodology Review
 

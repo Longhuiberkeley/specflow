@@ -148,6 +148,46 @@ def create_pattern_from_finding(
     return persist_prevention_pattern(root, pattern)
 
 
+def create_pattern_from_divergence(
+    root: Path,
+    artifact: Artifact,
+    *,
+    actual: int,
+    expected: int,
+) -> Path | None:
+    """Seed a PREV prevention pattern from a divergent ``verify_run``.
+
+    STORY-624 outcome feedback loop: when a verification contract records a
+    divergent exit code (``actual != expected``), feed it into the EXISTING
+    learnings surface so a repeated failure mode informs the next wave.
+    Reuses :func:`extract_prevention_pattern` + :func:`persist_prevention_pattern`
+    — no new artifact type, no new link roles (D-18 respected). The caller
+    gates this on an opt-in flag (``verify --seed-prev``); it never blocks
+    (``verify`` still exits 0).
+
+    A ``source: verify-divergence`` provenance marker distinguishes
+    verify-sourced PREVs from review-sourced ones without changing the
+    PREV schema (the YAML checklist has no schema-strictness).
+
+    Returns the created Path, or None if persistence failed.
+    """
+    pattern = extract_prevention_pattern(
+        story=artifact,
+        pattern_description=(
+            f"Prevent recurrence: {artifact.id} verification contract divergence"
+        ),
+        check_text=(
+            f"the {artifact.id} verify_command exit code matches "
+            f"verify_exit_code (recorded divergence: exit={actual}, "
+            f"expected={expected})"
+        ),
+    )
+    pattern["items"][0]["severity"] = "warning"
+    pattern["mode"] = "reactive"
+    pattern["source"] = "verify-divergence"
+    return persist_prevention_pattern(root, pattern)
+
+
 def _next_prev_number(root: Path) -> int:
     """Determine the next PREV number from existing learned patterns."""
     learned_dir = root / ".specflow" / "checklists" / "learned"

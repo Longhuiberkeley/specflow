@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import sys
+from datetime import date
 from pathlib import Path
 
 from specflow.lib import artifacts as art_lib
@@ -251,11 +252,168 @@ def _run_status(root: Path, args: dict) -> int:
     return 2 if _has_structural(signals) else 0
 
 
+def _running_loops_for_comp(
+    root: Path, comp_id: str, exclude: str | None = None
+) -> list[art_lib.Artifact]:
+    """Return LOOPs in `running` status for a COMP (optionally excluding one ID).
+
+    Accounting helper: it only reports state, never mutates. The concurrent-LOOP
+    gate (STORY-SMALLFIX-621b AC1) consults this to refuse starting a second
+    active LOOP on the same COMP.
+    """
+    loops = _find_loops_for_comp(root, comp_id)
+    return [l for l in loops if l.status == "running" and l.id != exclude]
+
+
+def _print_concurrent_blocker(
+    running_loops: list[art_lib.Artifact], comp_id: str
+) -> int:
+    """Render the concurrent-LOOP gate refusal. Returns exit code 2."""
+    ids = ", ".join(l.id for l in running_loops)
+    print(f"{RED}✗ Concurrent-LOOP gate: cannot start a running LOOP on {comp_id}.{NC}")
+    print(f"  Already active: {CYAN}{ids}{NC}")
+    print(f"  {DIM}Complete, plateau, or abort the active LOOP first, e.g.{NC}")
+    print(f"  {DIM}  specflow update {running_loops[0].id} --status completed{NC}")
+    return 2
+
+
+def _parse_knowledge_input(raw: str | None) -> list[str] | None:
+    """Accept a JSON list or comma-separated FIND IDs → list[str]."""
+    if raw is None:
+        return None
+    raw = raw.strip()
+    if not raw:
+        return []
+    try:
+        parsed = json.loads(raw)
+        if isinstance(parsed, list):
+            return [str(x) for x in parsed]
+    except (json.JSONDecodeError, ValueError):
+        pass
+    return [item.strip() for item in raw.split(",") if item.strip()]
+
+
+def _render_loop_summary(root: Path, comp: art_lib.Artifact, loop_id: str) -> None:
+    artifacts = art_lib.discover_artifacts(root)
+    id_index = art_lib.build_id_index(artifacts)
+    loop = id_index.get(loop_id)
+    if not loop:
+        return
+    lf = loop.frontmatter
+    fm = comp.frontmatter
+    print(f"  {CYAN}{loop.id}{NC}  [{loop.status}]")
+    print(f"    competition: {comp.id}  metric: {fm.get('metric_name', '?')} "
+          f"({fm.get('metric_direction', '?')})")
+    print(f"    mode={lf.get('mode', '?')}  budget={lf.get('budget', '?')}  "
+          f"iterations={lf.get('iteration_count', 0)}")
+    ki = lf.get("knowledge_input")
+    if ki:
+        print(f"    knowledge_input: {ki}")
+    print()
+
+
 def _run_plan(root: Path, args: dict) -> int:
+    """plan = create/update a LOOP (AC1) when mode/budget given, else checklist."""
     comp = _resolve_comp(root, args)
     if not comp:
         return 1
 
+    mode = args.get("mode")
+    budget = args.get("budget")
+    has_create_intent = (
+        mode is not None
+        or budget is not None
+        or args.get("knowledge_input") is not None
+        or bool(args.get("create", False))
+    )
+
+    if not has_create_intent:
+        return _run_plan_info(root, comp, args)
+
+    # ── Create / update path (STORY-ADDCLI-0e15 AC1) ──
+    target_status = args.get("status") or "draft"
+    if target_status not in ("draft", "running"):
+        print(f"{RED}✗ --status must be 'draft' or 'running' (got '{target_status}').{NC}")
+        return 1
+
+    loops = _find_loops_for_comp(root, comp.id)
+    existing: art_lib.Artifact | None = None
+    explicit = args.get("loop")
+    if explicit:
+        existing = next((l for l in loops if l.id == explicit), None)
+        if not existing:
+            print(f"{RED}✗ LOOP '{explicit}' not found under {comp.id}.{NC}")
+            return 1
+    else:
+        draft_loops = [l for l in loops if l.status == "draft"]
+        if len(draft_loops) == 1:
+            existing = draft_loops[0]
+
+    # Concurrent-LOOP gate (STORY-SMALLFIX-621b AC1): refuse to bring up a
+    # second running LOOP on the same COMP. Accounting-friendly: reports state,
+    # never corrupts. Drafting a LOOP while another runs is allowed (planning
+    # the next loop); only *starting* a second active loop is blocked.
+    will_run = target_status == "running" or bool(args.get("start", False))
+    exclude = existing.id if existing else None
+    if will_run:
+        blockers = _running_loops_for_comp(root, comp.id, exclude=exclude)
+        if blockers:
+            return _print_concurrent_blocker(blockers, comp.id)
+
+    if not existing and (mode is None or budget is None):
+        print(f"{RED}✗ Creating a LOOP requires --mode and --budget.{NC}")
+        print(f"  {DIM}e.g. specflow autoresearch plan --competition {comp.id} "
+              f"--mode explore --budget 50{NC}")
+        return 1
+
+    knowledge_input = _parse_knowledge_input(args.get("knowledge_input"))
+    fields: dict = {}
+    if mode is not None:
+        fields["mode"] = mode
+    if budget is not None:
+        fields["budget"] = int(budget)
+    if knowledge_input is not None:
+        fields["knowledge_input"] = knowledge_input
+
+    if existing:
+        updates = dict(fields)
+        if will_run and existing.status == "draft":
+            updates["status"] = "running"
+            updates["started_at"] = date.today().isoformat()
+        result = art_lib.update_artifact(root, existing.id, **updates)
+        if not result.get("ok"):
+            print(f"{RED}✗ Failed to update {existing.id}: {result.get('error')}{NC}")
+            return 1
+        verb = "Started" if ("status" in updates) else "Updated"
+        print(f"\n{GREEN}✓ {verb} {existing.id}{NC}\n")
+        _render_loop_summary(root, comp, existing.id)
+        return 0
+
+    title = args.get("title") or f"{mode or 'Explore'} loop on {comp.id}"
+    create_status = "running" if will_run else "draft"
+    create_kwargs: dict = {"competition": comp.id, **fields}
+    if will_run:
+        create_kwargs["started_at"] = date.today().isoformat()
+    result = art_lib.create_artifact(
+        root,
+        artifact_type="loop",
+        title=title,
+        status=create_status,
+        body=f"# {title}\n\nAutoresearch loop on {comp.id}.\n",
+        **create_kwargs,
+    )
+    if not result.get("ok"):
+        print(f"{RED}✗ Failed to create LOOP: {result.get('error')}{NC}")
+        return 1
+    loop_id = result["id"]
+    verb = "Started" if will_run else "Planned"
+    print(f"\n{GREEN}✓ {verb} {loop_id}{NC}\n")
+    _render_loop_summary(root, comp, loop_id)
+    return 0
+
+
+def _run_plan_info(root: Path, comp: art_lib.Artifact, args: dict) -> int:
+    """Informational setup checklist (no artifact mutation)."""
     fm = comp.frontmatter
     print(f"\n{BOLD}=== Autoresearch Plan ==={NC}\n")
     print(f"Competition:   {CYAN}{comp.id}{NC}  {comp.title}")
@@ -314,8 +472,8 @@ def _run_plan(root: Path, args: dict) -> int:
 
     if not draft and not running:
         print(f"{DIM}No LOOP artifact yet. Create one:{NC}")
-        print(f"  specflow create --type loop --title \"Initial exploration\" --status draft "
-              f"--set competition={comp.id} --set mode=explore --set budget=50")
+        print(f"  specflow autoresearch plan --competition {comp.id} "
+              f"--mode explore --budget 50")
         print()
 
     return 0
@@ -330,11 +488,39 @@ def _run_run(root: Path, args: dict) -> int:
     if not target_loop:
         return 1
 
+    allow_start = not bool(args.get("no_start", False))
+
+    # Concurrent-LOOP gate (STORY-SMALLFIX-621b AC1): refuse to start a second
+    # LOOP on the same COMP while one is active. `run` starts a draft LOOP
+    # (draft→running) unless --no-start is passed; if another LOOP is already
+    # running, that start is blocked here. Accounting-friendly: reports state,
+    # never corrupts the existing active LOOP.
+    if target_loop.status == "draft" and allow_start:
+        blockers = _running_loops_for_comp(root, comp.id, exclude=target_loop.id)
+        if blockers:
+            _render_signals(_assess_loop(root, comp, target_loop))
+            return _print_concurrent_blocker(blockers, comp.id)
+
     signals = _assess_loop(root, comp, target_loop)
     _render_signals(signals)
     if _has_structural(signals):
         print(f"{RED}✗ Resolve structural LOOP state before continuing.{NC}\n")
         return 2
+
+    # Start the draft LOOP (draft→running) unless the user opted out.
+    if target_loop.status == "draft" and allow_start:
+        started = art_lib.update_artifact(
+            root, target_loop.id,
+            status="running", started_at=date.today().isoformat(),
+        )
+        if started.get("ok"):
+            print(f"{GREEN}✓ Started {target_loop.id} (draft → running){NC}\n")
+            refreshed = art_lib.resolve_link_target(root, target_loop.id)
+            if refreshed:
+                target_loop = art_lib.parse_artifact(refreshed)
+        else:
+            print(f"{YELLOW}⚠ Could not start {target_loop.id}: "
+                  f"{started.get('error')}{NC}")
 
     lf = target_loop.frontmatter
     fm = comp.frontmatter

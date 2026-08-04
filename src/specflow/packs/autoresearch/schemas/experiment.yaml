@@ -1,3 +1,15 @@
+# EXPT (experiment) schema — autoresearch pack.
+#
+# Freeform-dict optional fields (YAML mapping of metric-name -> value):
+#   auxiliary_metrics — secondary metrics logged alongside the primary
+#                       metric_value, e.g. {max_drawdown: 0.12, total_trades: 340,
+#                       f1_score: 0.87}. Optional; an EXPT without it is still
+#                       valid. The schema is name-only (it does not enforce dict
+#                       type or key set, consistent with sibling freeform fields
+#                       like `parameters`); domain-specific key recommendations
+#                       live in DOMAIN_RECOMMENDED (lib/domain_constants) and are
+#                       surfaced as advisory warnings by `artifact-lint`
+#                       (autoresearch-logging check), never as blockers.
 type: experiment
 category: research
 prefix: EXPT

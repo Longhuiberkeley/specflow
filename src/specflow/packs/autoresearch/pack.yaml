@@ -24,4 +24,5 @@ context_snippet: |
   **Artifact types:** COMP, LOOP, EXPT, FIND.
   **Trigger only when** the user explicitly asks to run a research loop, set up a competition, review leaderboards, or iterate experiments autonomously.
   **Never use for:** codebase exploration, code review, bug investigation, feature implementation, data preparation, or general engineering questions — those are core SpecFlow engineering.
+  **Before acting** on an autoresearch request, load current pack context with `specflow autoresearch status` (active COMP, any running LOOP, budget spent, best metric) so decisions rest on artifact state, not assumptions.
   For full protocol details, invoke `/specflow-autoresearch` (loads the skill on demand).

@@ -2,15 +2,19 @@
 id: STORY-ADDCLI-0e15
 title: Add CLI subcommand specflow autoresearch with plan/run/review/leaderboard
 type: story
-status: draft
+status: verified
 suspect: false
 links:
 - target: REQ-AUTORESE-d684
   role: implements
+- target: UT-040
+  role: verified_by
 created: '2026-05-16'
 fingerprint: sha256:90a19484fc11
 output_files:
 - src/specflow/commands/autoresearch.py
+- tests/test_autoresearch_cli.py
+modified: '2026-08-04'
 ---
 
 # Add CLI subcommand specflow autoresearch with plan/run/review/leaderboard

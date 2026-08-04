@@ -24,8 +24,9 @@ from pathlib import Path
 from typing import Any
 
 from specflow.lib import artifacts as art_lib
+from specflow.lib import learning as learn_lib
 from specflow.lib import verification as verify_lib
-from specflow.lib.display import RED, GREEN, YELLOW, NC
+from specflow.lib.display import RED, GREEN, YELLOW, YELLOW_DIM, CYAN, NC
 
 
 def run(root: Path, args: dict[str, Any]) -> int:
@@ -44,6 +45,7 @@ def run(root: Path, args: dict[str, Any]) -> int:
     dry_run: bool = args.get("dry_run", False)
     evidence_file: bool = args.get("evidence_file", False)
     timeout: int = args.get("timeout", 600)
+    seed_prev: bool = args.get("seed_prev", False)
 
     # ── Resolve the target artifact set ──────────────────────────
     artifacts: list[art_lib.Artifact] = []
@@ -72,6 +74,13 @@ def run(root: Path, args: dict[str, Any]) -> int:
         if not artifacts:
             print("No artifacts found.")
             return 0
+
+    # Outcome feedback loop (STORY-624): a divergent contract can seed a PREV
+    # prevention pattern via the existing learnings path. Opt-in (--seed-prev),
+    # never blocking (verify still exits 0 regardless). The per-run cap mirrors
+    # the review/done learnable-pattern budget.
+    max_prev = learn_lib.max_patterns_per_session(root) if seed_prev else 0
+    seeded = 0
 
     # ── Run each artifact's verification contract ────────────────
     for art in artifacts:
@@ -115,5 +124,40 @@ def run(root: Path, args: dict[str, Any]) -> int:
                 f"{YELLOW}  ⚠ {art.id}: no evidence file matched "
                 f"verify_evidence{NC}"
             )
+
+        # Outcome feedback loop (STORY-624): offer to seed a PREV prevention
+        # pattern from a divergent (actual != expected) verify_command. Opt-in
+        # via --seed-prev; without it we only surface the Tip (the "offer").
+        # Accounting — never affects exit_code.
+        if not passed:
+            if seed_prev:
+                if seeded < max_prev:
+                    try:
+                        prev_path = learn_lib.create_pattern_from_divergence(
+                            root, art, actual=actual, expected=expected
+                        )
+                    except Exception as exc:
+                        prev_path = None
+                        print(
+                            f"{YELLOW}  ⚠ {art.id}: could not seed prevention "
+                            f"pattern: {exc}{NC}"
+                        )
+                    if prev_path is not None:
+                        seeded += 1
+                        print(
+                            f"  {CYAN}seeded {prev_path.name} from {art.id} "
+                            f"divergence (exit={actual}, expected={expected}){NC}"
+                        )
+                else:
+                    print(
+                        f"  {YELLOW_DIM}PREV cap ({max_prev}) reached; not "
+                        f"seeding a pattern for {art.id}{NC}"
+                    )
+            else:
+                print(
+                    f"  {CYAN}Tip:{NC} {art.id} diverged (exit={actual}, "
+                    f"expected={expected}) — run with --seed-prev to seed a "
+                    f"prevention pattern"
+                )
 
     return exit_code

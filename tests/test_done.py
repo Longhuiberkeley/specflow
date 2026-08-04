@@ -21,7 +21,9 @@ import pytest
 from specflow.commands import done as done_cmd
 from specflow.lib import artifacts as art_lib
 from specflow.lib.orphans import (
+    adopt_orphan_cluster,
     capture_phase_output_files,
+    find_orphan_code,
     parse_wave_commit_stories,
 )
 
@@ -37,7 +39,10 @@ def _bootstrap(tmp_path: Path) -> Path:
     pkg_schemas = (
         Path(__file__).parent.parent / "src" / "specflow" / "templates" / "schemas"
     )
-    for name in ("story.yaml", "requirement.yaml"):
+    # story + requirement cover the existing done/capture tests; architecture
+    # is included so STORY-624 adoption tests can create ARCH targets and run
+    # create_artifact for the backfilled STORY through the real schema path.
+    for name in ("story.yaml", "requirement.yaml", "architecture.yaml"):
         src = pkg_schemas / name
         assert src.exists(), f"missing template schema: {src}"
         (schema_dir / name).write_text(src.read_text(), encoding="utf-8")
@@ -61,6 +66,9 @@ def _bootstrap(tmp_path: Path) -> Path:
     (stories_dir / "_index.yaml").write_text(
         "artifacts: {}\nnext_id: 1\n", encoding="utf-8"
     )
+    # Architecture dir for STORY-624 adoption tests (ARCH targets are written
+    # here; resolve_link_target finds them via rglob, so no index is required).
+    (root / "_specflow" / "specs" / "architecture").mkdir(parents=True, exist_ok=True)
     return root
 
 
@@ -69,6 +77,17 @@ def _make_story(root: Path, sid: str, title: str = "Test story") -> Path:
     path = root / "_specflow" / "work" / "stories" / f"{sid}.md"
     path.write_text(
         f"---\nid: {sid}\ntitle: {title}\ntype: story\nstatus: implemented\n"
+        f"created: '2026-01-01'\nlinks: []\n---\n\n# {title}\n",
+        encoding="utf-8",
+    )
+    return path
+
+
+def _make_arch(root: Path, aid: str, title: str = "Adoption target") -> Path:
+    """Write a minimal discoverable ARCH artifact (STORY-624 adoption target)."""
+    path = root / "_specflow" / "specs" / "architecture" / f"{aid}.md"
+    path.write_text(
+        f"---\nid: {aid}\ntitle: {title}\ntype: architecture\nstatus: approved\n"
         f"created: '2026-01-01'\nlinks: []\n---\n\n# {title}\n",
         encoding="utf-8",
     )
@@ -241,3 +260,170 @@ class TestDoneCommandCapture:
         out = capsys.readouterr().out
         assert rc == 0
         assert "captured 1 output_file link(s)" in out
+
+
+# ── STORY-624: orphan-code adoption closure ──────────────────────────────
+
+
+class TestAdoptOrphanCluster:
+    """STORY-624 Part 1: one-step adopt lands an un-adopted cluster under an
+    ARCH with a backfilled STORY (tagged ``backfilled``), and coverage rises."""
+
+    def test_adopts_cluster_into_arch_and_creates_backfilled_story(self, tmp_path: Path):
+        root = _bootstrap(tmp_path)
+        _make_arch(root, "ARCH-007")
+        # Two orphan source files in one cluster.
+        pkg = root / "src" / "legacy"
+        pkg.mkdir(parents=True, exist_ok=True)
+        (pkg / "a.py").write_text("x = 1\n", encoding="utf-8")
+        (pkg / "b.py").write_text("y = 2\n", encoding="utf-8")
+
+        summary = adopt_orphan_cluster(root, "ARCH-007")
+
+        assert summary["ok"] is True
+        assert summary["linked"] == 2
+        assert summary["total_orphans"] == 2
+        # Backfilled STORY created and traces to the ARCH.
+        assert summary["story_id"] is not None
+        assert summary["story_path"] is not None
+        story = art_lib.parse_artifact(Path(summary["story_path"]))
+        assert story is not None
+        assert "backfilled" in (story.tags or [])
+        assert story.status == "approved"
+        links = story.links or []
+        assert any(
+            l.target == "ARCH-007" and l.role == "derives_from"
+            for l in links
+        )
+        # The ARCH now carries both files in output_files.
+        arch = art_lib.parse_artifact(
+            root / "_specflow" / "specs" / "architecture" / "ARCH-007.md"
+        )
+        of = arch.frontmatter.get("output_files") or []
+        assert "src/legacy/a.py" in of
+        assert "src/legacy/b.py" in of
+
+    def test_coverage_rises_after_adoption(self, tmp_path: Path):
+        root = _bootstrap(tmp_path)
+        _make_arch(root, "ARCH-001")
+        pkg = root / "src" / "orphan"
+        pkg.mkdir(parents=True, exist_ok=True)
+        (pkg / "one.py").write_text("x = 1\n", encoding="utf-8")
+
+        # Before adoption: the file is orphaned → 0% coverage.
+        before = find_orphan_code(root)
+        assert before["referenced_count"] == 0
+        assert before["orphan_files"]
+
+        summary = adopt_orphan_cluster(root, "ARCH-001")
+
+        assert summary["ok"] is True
+        assert summary["coverage_before"] == 0.0
+        assert summary["coverage_after"] == 100.0
+        # After adoption: no orphans remain.
+        after = find_orphan_code(root)
+        assert after["orphan_files"] == []
+        assert after["referenced_count"] == 1
+
+    def test_unknown_arch_target_returns_not_ok(self, tmp_path: Path):
+        root = _bootstrap(tmp_path)
+        (root / "src").mkdir(parents=True, exist_ok=True)
+        (root / "src" / "x.py").write_text("x = 1\n", encoding="utf-8")
+
+        summary = adopt_orphan_cluster(root, "ARCH-999")
+
+        assert summary["ok"] is False
+        assert "not found" in summary.get("error", "").lower()
+        assert summary["linked"] == 0
+        # Coverage unchanged.
+        assert summary["coverage_before"] == summary["coverage_after"]
+        assert summary["story_id"] is None
+
+    def test_no_orphans_still_succeeds_and_creates_story(self, tmp_path: Path):
+        """When there is nothing to adopt, the call still succeeds; the ARCH
+        gets no new output_files but the backfilled STORY is still created
+        (accounting-not-policing: never raises)."""
+        root = _bootstrap(tmp_path)
+        _make_arch(root, "ARCH-010")
+
+        summary = adopt_orphan_cluster(root, "ARCH-010")
+
+        assert summary["ok"] is True
+        assert summary["linked"] == 0
+        assert summary["total_orphans"] == 0
+        assert summary["story_id"] is not None
+
+    def test_custom_story_title_used(self, tmp_path: Path):
+        root = _bootstrap(tmp_path)
+        _make_arch(root, "ARCH-002")
+        (root / "src").mkdir(parents=True, exist_ok=True)
+        (root / "src" / "f.py").write_text("x = 1\n", encoding="utf-8")
+
+        summary = adopt_orphan_cluster(
+            root, "ARCH-002", story_title="Legacy payments adoption"
+        )
+        assert summary["ok"] is True
+        story = art_lib.parse_artifact(Path(summary["story_path"]))
+        assert story.title == "Legacy payments adoption"
+
+
+class TestDetectAdoptCommand:
+    """STORY-624 Part 1: the `detect orphan-code --adopt <ARCH>` command path
+    prints the one-step summary and reports the coverage delta."""
+
+    def test_adopt_command_path_prints_summary(self, tmp_path: Path, capsys):
+        from specflow.commands import detect as detect_cmd
+
+        root = _bootstrap(tmp_path)
+        _make_arch(root, "ARCH-007")
+        pkg = root / "src" / "legacy"
+        pkg.mkdir(parents=True, exist_ok=True)
+        (pkg / "a.py").write_text("x = 1\n", encoding="utf-8")
+
+        rc = detect_cmd._run_orphan_code(root, {"adopt_target": "ARCH-007"})
+
+        out = capsys.readouterr().out
+        assert rc == 0
+        assert "Adopting orphan cluster into ARCH-007" in out
+        assert "Linked 1/1 orphan files to ARCH-007" in out
+        assert "backfilled STORY" in out
+        assert "derives_from ARCH-007" in out
+        assert "Coverage:" in out
+        assert "0.0%" in out  # before
+        assert "100.0%" in out  # after
+
+    def test_adopt_command_unknown_target_exits_nonzero(self, tmp_path: Path, capsys):
+        from specflow.commands import detect as detect_cmd
+
+        root = _bootstrap(tmp_path)
+        (root / "src").mkdir(parents=True, exist_ok=True)
+        (root / "src" / "x.py").write_text("x = 1\n", encoding="utf-8")
+
+        rc = detect_cmd._run_orphan_code(root, {"adopt_target": "ARCH-999"})
+        out = capsys.readouterr().out
+        assert rc == 1
+        assert "not found" in out.lower()
+
+
+class TestAdoptionArtifactLintClean:
+    """STORY-624 AC: `artifact-lint --method programmatic` adds 0 blocking
+    issues in a scaffolded project after adoption."""
+
+    def test_lint_clean_after_adoption(self, tmp_path: Path, capsys):
+        from specflow.commands import artifact_lint as lint_cmd
+
+        root = _bootstrap(tmp_path)
+        _make_arch(root, "ARCH-007")
+        pkg = root / "src" / "legacy"
+        pkg.mkdir(parents=True, exist_ok=True)
+        (pkg / "a.py").write_text("x = 1\n", encoding="utf-8")
+
+        adopt_orphan_cluster(root, "ARCH-007")
+
+        rc = lint_cmd.run(root, {"method": "programmatic"})
+        out = capsys.readouterr().out
+        # 0 blocking issues → exit 0 and a PASS summary (warnings are allowed;
+        # the AC gates on *blocking* issues only).
+        assert rc == 0, f"artifact-lint reported blocking issues:\n{out}"
+        assert "FAIL" not in out
+        assert "PASS" in out

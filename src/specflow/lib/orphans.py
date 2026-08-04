@@ -205,6 +205,120 @@ def retro_link(root: Path, filepath: str, target_id: str) -> bool:
     return True
 
 
+def adopt_orphan_cluster(
+    root: Path,
+    target_id: str,
+    *,
+    story_title: str | None = None,
+    rationale: str | None = None,
+) -> dict[str, object]:
+    """One-step adoption: land an un-adopted orphan cluster under an ARCH's
+    ``output_files`` AND create a backfilled STORY that traces to the ARCH.
+
+    STORY-624 orphan-code adoption closure. The existing ``--retro-link`` flow
+    already links orphan files into an existing artifact's ``output_files``
+    (which raises the orphan meter on its own); this closure adds the
+    traceability chain in the same step — a backfilled STORY tagged
+    ``backfilled`` (the adoption signal ``specflow adopt`` / ``specflow brief``
+    already recognize) that ``derives_from`` the target ARCH.
+
+    Accounting-not-policing: never raises. If the ARCH target cannot be
+    resolved the call returns ``ok: False`` with coverage unchanged. If the
+    backfilled STORY cannot be created (e.g. missing story schema) the files
+    are still linked and the call reports ``ok: True`` with ``story_id=None``
+    — linking is the keystone, the STORY is the traceability nicety.
+
+    Returns a summary dict::
+
+        {"ok": bool, "target_id": str, "linked": int, "total_orphans": int,
+         "story_id": str | None, "story_path": str | None,
+         "coverage_before": float, "coverage_after": float, "error": str}
+    """
+    root = Path(root).resolve()
+
+    before = find_orphan_code(root)
+    total = before["total_count"]
+    cov_before = (
+        100.0 * before["referenced_count"] / total if total else 100.0
+    )
+    orphans = before["orphan_files"]
+
+    # The ARCH target must already exist (mirrors --retro-link). Resolved via
+    # the link graph so any of ARCH/DDD/STORY/REQ is accepted, though the
+    # canonical adoption target is an ARCH.
+    target_path = art_lib.resolve_link_target(root, target_id)
+    if target_path is None or not Path(target_path).exists():
+        return {
+            "ok": False,
+            "target_id": target_id,
+            "error": f"Artifact '{target_id}' not found",
+            "linked": 0,
+            "total_orphans": len(orphans),
+            "story_id": None,
+            "story_path": None,
+            "coverage_before": cov_before,
+            "coverage_after": cov_before,
+        }
+
+    # 1) Retro-link every orphan file into the target's output_files. This is
+    #    what raises the orphan coverage meter; retro_link is idempotent.
+    linked = 0
+    for f in orphans:
+        if retro_link(root, str(f), target_id):
+            linked += 1
+
+    # 2) Create the backfilled STORY tracing to the target. No new link role —
+    #    derives_from is already in STORY's frozen allowed_link_roles (D-18).
+    title = story_title or f"Backfilled adoption: orphan cluster under {target_id}"
+    story_id: str | None = None
+    story_path: str | None = None
+    try:
+        res = art_lib.create_artifact(
+            root,
+            "story",
+            title=title,
+            status="approved",
+            tags=["backfilled"],
+            rationale=rationale or (
+                f"Backfilled adoption of a pre-existing source cluster into "
+                f"{target_id}; the code pre-dates the spec."
+            ),
+            links=[{"target": target_id, "role": "derives_from"}],
+            body=(
+                f"# {title}\n\n"
+                f"Backfilled STORY created by `specflow detect orphan-code "
+                f"--adopt {target_id}`. The orphan source cluster was "
+                f"retro-linked into {target_id}'s `output_files` in the same "
+                f"step so the orphan coverage meter rises and the cluster "
+                f"gains a traceability chain.\n"
+            ),
+        )
+        if res.get("ok"):
+            story_id = res.get("id")
+            story_path = res.get("path")
+    except Exception:
+        # Accounting-not-policing: the files are already linked (coverage
+        # already rose); a STORY-creation failure must not fail the adoption.
+        pass
+
+    after = find_orphan_code(root)
+    after_total = after["total_count"]
+    cov_after = (
+        100.0 * after["referenced_count"] / after_total if after_total else 100.0
+    )
+
+    return {
+        "ok": True,
+        "target_id": target_id,
+        "linked": linked,
+        "total_orphans": len(orphans),
+        "story_id": story_id,
+        "story_path": story_path,
+        "coverage_before": cov_before,
+        "coverage_after": cov_after,
+    }
+
+
 def capture_phase_output_files(
     root: Path, since: str | None = None
 ) -> dict[str, object]:

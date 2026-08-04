@@ -542,6 +542,10 @@ def _add_detect_parser(subparsers):
     op = sub.add_parser("orphan-code", help="Report source files not referenced by any STORY/REQ/ARCH/DDD")
     op.add_argument("--retro-link", dest="retro_link_target",
                     help="Artifact ID (STORY/ARCH/DDD/REQ) to retroactively link all orphan files to")
+    op.add_argument("--adopt", dest="adopt_target",
+                    help="One-step adoption: retro-link all orphan files into ARCH's output_files AND create a backfilled STORY (tagged 'backfilled') tracing to it")
+    op.add_argument("--story-title", dest="story_title",
+                    help="Title for the backfilled STORY created by --adopt (default: auto-generated)")
     sub.add_parser("stale-docs", help="Report docs citing superseded/cancelled/deprecated artifacts")
 
 
@@ -689,19 +693,35 @@ def _add_verify_parser(subparsers):
     p.add_argument("--dry-run", action="store_true", dest="dry_run",
                    help="Print each verify_command without executing or writing anything")
     p.add_argument("--timeout", type=int, default=600, help="Per-command timeout in seconds (default: 600)")
+    p.add_argument("--seed-prev", action="store_true", dest="seed_prev",
+                   help="Opt-in outcome feedback: seed a PREV prevention pattern for each divergent verify_command (never blocks)")
 
 
 def _add_autoresearch_parser(subparsers):
     p = subparsers.add_parser("autoresearch", help="Autoresearch competition loop: plan, run, review, leaderboard")
     sub = p.add_subparsers(dest="autoresearch_subcommand")
 
-    plan_p = sub.add_parser("plan", help="Plan a LOOP: setup gate checklist for a competition")
+    plan_p = sub.add_parser("plan", help="Create or update a LOOP (mode/budget/knowledge_input), or show the setup checklist")
     plan_p.add_argument("--competition", help="Competition ID (default: auto-detect active COMP)")
-    plan_p.add_argument("--profile", action="store_true", help="Run 3x noise variance probe on verify command")
+    plan_p.add_argument("--profile", action="store_true", help="Include the host-run 3x noise variance probe in the setup checklist")
+    plan_p.add_argument("--mode", help="LOOP mode: explore / exploit / validate (triggers create/update)")
+    plan_p.add_argument("--budget", type=int, help="Iteration budget for the LOOP (triggers create/update)")
+    plan_p.add_argument("--knowledge-input", dest="knowledge_input",
+                        help="Comma-separated or JSON list of FIND IDs to seed knowledge_input")
+    plan_p.add_argument("--title", help="LOOP title (create only; default '<mode> loop on <COMP>')")
+    plan_p.add_argument("--status", choices=["draft", "running"],
+                        help="LOOP status at create/update (default: draft; 'running' starts it)")
+    plan_p.add_argument("--loop", help="Update a specific existing LOOP ID (default: the single draft LOOP)")
+    plan_p.add_argument("--start", action="store_true",
+                        help="Transition the LOOP to running (draft→running); gated against concurrent LOOPs")
+    plan_p.add_argument("--create", action="store_true",
+                        help="Force create/update intent even when --mode/--budget are omitted")
 
-    run_p = sub.add_parser("run", help="Print protocol checklist and readiness signals for a LOOP")
+    run_p = sub.add_parser("run", help="Execute the loop protocol against a COMP (starts a draft LOOP unless --no-start)")
     run_p.add_argument("--competition", help="Competition ID (default: auto-detect)")
     run_p.add_argument("--loop", help="LOOP ID (default: running or draft LOOP for the COMP)")
+    run_p.add_argument("--no-start", action="store_true", dest="no_start",
+                       help="Do not transition a draft LOOP to running; just print the protocol")
 
     status_p = sub.add_parser("status", help="Show deterministic LOOP readiness and progress accounting")
     status_p.add_argument("--competition", help="Competition ID (default: auto-detect)")
