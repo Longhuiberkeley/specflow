@@ -127,17 +127,24 @@ def _find_all_downstream_recursive(root: Path, changed_id: str) -> list[Artifact
     return result
 
 
-def find_downstream_union(root: Path, source_ids: list[str]) -> list[Artifact]:
+def find_downstream_union(
+    root: Path,
+    source_ids: list[str],
+    artifacts: list[Artifact] | None = None,
+) -> list[Artifact]:
     """Union of the transitive downstream cones of all *source_ids*.
 
     Equivalent to the union of ``_find_all_downstream_recursive`` over each
-    source, but with ONE ``discover_artifacts`` pass and an in-memory
+    source, but with ONE artifact-discovery pass and an in-memory
     reverse-adjacency BFS — the recursive variant re-discovers the whole tree
     at every hop, which is far too slow for hot paths (``brief --next``), and
     summing per-source cone lengths double-counts artifacts downstream of
     several sources. Shared downstream artifacts are counted once here.
+
+    Callers that already discovered artifacts should pass them via
+    ``artifacts`` to avoid a redundant full-tree scan.
     """
-    all_artifacts = discover_artifacts(root)
+    all_artifacts = artifacts if artifacts is not None else discover_artifacts(root)
     by_id = {a.id: a for a in all_artifacts}
     reverse: dict[str, list[str]] = {}
     for art in all_artifacts:

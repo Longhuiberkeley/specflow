@@ -502,7 +502,7 @@ def _next_skill_recommendation(
             # whole tree at every hop and made brief --next unusably slow,
             # and summing cone sizes double-counted shared downstream.
             total_cone = len(impact_lib.find_downstream_union(
-                root, [dec.id for dec in unreviewed_decs]
+                root, [dec.id for dec in unreviewed_decs], artifacts=artifacts
             ))
             ids = ", ".join(d.id for d in unreviewed_decs[:3])
             more = f" (+{len(unreviewed_decs) - 3} more)" if len(unreviewed_decs) > 3 else ""

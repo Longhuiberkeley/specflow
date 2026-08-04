@@ -25,6 +25,7 @@ Review hardening (adversarial release review):
 from __future__ import annotations
 
 import io
+import os
 import sys
 from pathlib import Path
 
@@ -280,6 +281,28 @@ class TestBodyWriterSemantics:
         art = art_lib.parse_artifact(art_lib.resolve_link_target(project_root, req.id))
         assert "precious content" in art.body
         assert "PIPED BODY" not in art.body
+
+    def test_real_pipe_not_consumed_with_other_updates(
+            self, project_root: Path, capsys, monkeypatch):
+        # Exercise the real select()-readable path. Keep the write end open:
+        # an unconditional read() would hang waiting for EOF. The update must
+        # only detect presence, ignore stdin, and return immediately.
+        req = _make_req(project_root, body="precious content")
+        read_fd, write_fd = os.pipe()
+        os.write(write_fd, b"PARTIAL BODY")
+        stream = os.fdopen(read_fd, "r")
+        monkeypatch.setattr(sys, "stdin", stream)
+        try:
+            rc = update_cmd.run(project_root, {"artifact_id": req.id,
+                                               "status": "approved"})
+        finally:
+            os.close(write_fd)
+            stream.close()
+        assert rc == 0
+        assert "Stdin data ignored" in capsys.readouterr().out
+        art = art_lib.parse_artifact(art_lib.resolve_link_target(project_root, req.id))
+        assert "precious content" in art.body
+        assert art.status == "approved"
 
     def test_stdin_replaces_body_when_no_other_updates(
             self, project_root: Path, monkeypatch):

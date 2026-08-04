@@ -81,8 +81,8 @@ no new blocking gates, accounting-not-policing throughout.
 
 ### Verification
 
-- 1023 tests passing (baseline 971; +52 incl. the adversarial-review
-  hardening suite, no regressions).
+- 1024 tests passing (baseline 971; +53 incl. the adversarial-review and
+  real-pipe release hardening suite, no regressions).
 - `specflow project-audit --dry-run`: exit 0 — 0 errors, 26 warnings (all
   accounting, non-escalating). Gate stays honestly green.
 

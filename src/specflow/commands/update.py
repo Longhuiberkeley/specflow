@@ -254,34 +254,33 @@ def run(root: Path, args: dict) -> int:
         updates["body"] = body
     elif not sys.stdin.isatty():
         import select
-        # Only read stdin if data is actually available (not a hanging pipe).
-        # select() with timeout=0 returns immediately. Guarded because a
-        # redirected-but-unreadable stdin (e.g. pytest's capture pseudofile)
-        # has no fileno() and would otherwise raise UnsupportedOperation;
-        # the fallback reads only seekable stdins (real files), never a pipe
-        # that could hang.
-        piped = ""
+        # Only read stdin for a dedicated body-only update. With other field
+        # updates, even a readable pipe may still be open (partial streaming
+        # input), so reading to EOF could hang; detect presence without
+        # consuming and advise instead.
         try:
-            readable = select.select([sys.stdin], [], [], 0.0)[0]
+            readable = bool(select.select([sys.stdin], [], [], 0.0)[0])
         except (OSError, ValueError):
-            readable = []
+            readable = False
+            # pytest capture / StringIO has no fileno(). A one-character
+            # seekable probe is safe and restores the original position.
             try:
                 if sys.stdin.seekable():
-                    piped = sys.stdin.read()
+                    pos = sys.stdin.tell()
+                    readable = bool(sys.stdin.read(1))
+                    sys.stdin.seek(pos)
             except Exception:
-                piped = ""
-        if readable:
+                readable = False
+
+        if readable and (updates or has_output_files_update):
+            print(f"{YELLOW}⚠ Stdin data ignored (body NOT replaced) because "
+                  f"other fields are updated in the same call. To replace "
+                  f"the body, run a dedicated "
+                  f"'specflow update {artifact_id}' with the piped body "
+                  f"and no other flags, or use --body.{NC}")
+        elif readable:
             piped = sys.stdin.read()
-        if piped:
-            if updates or has_output_files_update:
-                # Never silently replace the body as a side effect of an
-                # unrelated update just because stdin happens to carry data.
-                print(f"{YELLOW}⚠ Stdin data ignored (body NOT replaced) because "
-                      f"other fields are updated in the same call. To replace "
-                      f"the body, run a dedicated "
-                      f"'specflow update {artifact_id}' with the piped body "
-                      f"and no other flags, or use --body.{NC}")
-            else:
+            if piped:
                 updates["body"] = piped
 
     if not updates and not has_output_files_update:
