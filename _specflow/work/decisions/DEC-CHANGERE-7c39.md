@@ -24,6 +24,7 @@ modified: '2026-08-04'
 thinking_techniques:
 - temporal_drift
 - premortem
+dec_kind: change_record
 ---
 
 # Change Record: v1.13.3 AC mutation boundary patch

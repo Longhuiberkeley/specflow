@@ -32,6 +32,7 @@ thinking_techniques:
 - regulator
 - premortem
 modified: '2026-08-04'
+dec_kind: change_record
 ---
 
 # Change Record: chore: dogfood v1.13.2 ergonomics lifecycle

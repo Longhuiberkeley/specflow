@@ -1164,7 +1164,11 @@ def rebuild_index(root: Path, artifact_type: str | None = None) -> dict[str, Any
                 continue
 
             base_id = get_base_id(art.id)
-            num_match = re.search(r"\d+", base_id.split("-")[-1]) if "-" in base_id else None
+            # Only canonical numeric IDs advance next_id. Draft IDs end with a
+            # short hash (for example STORY-FIXACCEP-f941); searching that segment
+            # for digits made rebuild_index treat the hash as an allocated ID.
+            last_segment = base_id.rsplit("-", 1)[-1]
+            num_match = re.fullmatch(r"\d+", last_segment)
             if num_match:
                 num = int(num_match.group())
                 if num > max_num:

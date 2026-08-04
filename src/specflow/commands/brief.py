@@ -205,6 +205,20 @@ def _recent_changes(root: Path, since: str) -> list[str]:
     return [ln for ln in result.stdout.splitlines() if ln.strip()]
 
 
+def _is_auto_dec(a: art_lib.Artifact) -> bool:
+    """True when a DEC is an auto-generated change/audit record, not a human-authored ADR.
+
+    Release/audit tooling emits ~49 change-record DECs (tags like ``change-record``,
+    ``auto-generated``, ``project-audit``) that carry ``review_status: unreviewed`` and
+    inflate both the unreviewed-DEC count and the blast-radius cone, drowning the real
+    decision-review signal. Excluded everywhere brief surfaces "decisions to look at".
+    """
+    if a.frontmatter.get("dec_kind") == "change_record":
+        return True
+    tags = getattr(a, "tags", None) or []
+    return bool(set(tags) & {"change-record", "auto-generated", "project-audit"})
+
+
 def _recent_decisions(artifacts: list[art_lib.Artifact], limit: int = 5) -> list[tuple[str, str, str, str]]:
     """Most-recently-modified DEC artifacts as (id, title, rationale first line, tier marker).
 
@@ -213,8 +227,13 @@ def _recent_decisions(artifacts: list[art_lib.Artifact], limit: int = 5) -> list
     surfaces it, never writes a separate log. The 4th element is a risk-tier marker
     (e.g. "T2") when a persisted ``risk_profile`` is present, else "" — the tier is
     recorded-only (it gates nothing); showing it makes the Risk Profile visible at recall.
+
+    Auto-generated change records (see ``_is_auto_dec``) are filtered out so the section
+    surfaces real ADRs — when fewer real ADRs than ``limit`` exist, what's there is shown
+    rather than padding with change records.
     """
-    decs = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "DEC"]
+    decs = [a for a in artifacts
+            if art_lib.get_prefix_from_id(a.id) == "DEC" and not _is_auto_dec(a)]
 
     def _mtime(a: art_lib.Artifact) -> float:
         try:
@@ -347,6 +366,7 @@ def _next_skill_recommendation(
     next_wave: list[str],
     active_packs: list[str] | None = None,
     root: Path | None = None,
+    history: list | None = None,
 ) -> str:
     """Deterministic next-skill recommendation from phase + inventory.
 
@@ -428,11 +448,18 @@ def _next_skill_recommendation(
     # presence (>=3 done stories), NOT on next_wave — next_wave only holds
     # *approved* stories, so the motivating case (a rewound project with a deep
     # implemented backlog and nothing newly queued) would never fire otherwise.
+    # Evidence-gated: a real rewind is recorded by set_phase stamping ``rewind: true``
+    # on the history entry (lib/learning.py). Without such an entry the "after rewind"
+    # wording is a false positive — a phase can land on specifying/planning with a deep
+    # implemented backlog for other reasons — so the note requires that evidence.
     if phase in ("specifying", "planning"):
         implemented = _count("STORY", "implemented")
         verified = _count("STORY", "verified")
         done = implemented + verified
-        if done >= 3:
+        has_rewind = any(
+            isinstance(h, dict) and h.get("rewind") is True for h in (history or [])
+        )
+        if done >= 3 and has_rewind:
             noun = "story" if done == 1 else "stories"
             if verified and not implemented:
                 # Backlog is all verified — it wants review/ship, not more execute.
@@ -494,6 +521,7 @@ def _next_skill_recommendation(
             a for a in artifacts
             if art_lib.get_prefix_from_id(a.id) == "DEC"
             and (getattr(a, "frontmatter", None) or {}).get("review_status") == "unreviewed"
+            and not _is_auto_dec(a)
         ]
         if unreviewed_decs:
             from specflow.lib import impact as impact_lib
@@ -621,7 +649,10 @@ def run(root: Path, args: dict[str, Any]) -> int:
     # --next: emit only the deterministic next-skill recommendation and stop.
     if args.get("next"):
         active_packs = config.get("active_packs", []) or []
-        print(_next_skill_recommendation(phase, artifacts, suspects, next_wave, active_packs, root))
+        print(_next_skill_recommendation(
+            phase, artifacts, suspects, next_wave, active_packs, root,
+            state.get("history", []),
+        ))
         return 0
 
     docs_sum = _docs_summary(root)

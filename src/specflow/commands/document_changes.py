@@ -161,6 +161,7 @@ def run(root: Path, args: dict[str, Any]) -> int:
             body=body,
             review_status="unreviewed",
             risk_profile=risk_profile,
+            dec_kind="change_record",
         )
         if not result.get("ok"):
             print(f"  {RED}✗ Failed to create DEC for {commit['sha'][:8]}: "

@@ -172,16 +172,19 @@ def test_next_skill_still_points_at_execute_when_wave_ready():
 def test_next_skill_backlog_advisory_on_rewind():
     """A rewind to 'specifying' that leaves implemented stories in the backlog
     appends an advisory pointing at /specflow-execute — the primary /specflow-plan
-    line alone looks nonsensical when 61 stories are already implemented."""
+    line alone looks nonsensical when 61 stories are already implemented. Gated on
+    a real rewind entry in history (set_phase stamps ``rewind: true``)."""
     artifacts = [_art(f"STORY-00{i}", "implemented") for i in range(1, 5)]
-    out = brief_cmd._next_skill_recommendation("specifying", artifacts, [], ["STORY-001"])
+    history = [{"phase": "specifying", "entered": "2026-08-01", "rewind": True}]
+    out = brief_cmd._next_skill_recommendation("specifying", artifacts, [], ["STORY-001"], history=history)
     assert "/specflow-plan" in out  # primary line unchanged
     assert "remain implemented after rewind" in out
     assert "/specflow-execute" in out
 
 
 def test_next_skill_no_backlog_advisory_when_clean():
-    """specifying with no implemented backlog → no rewind advisory noise."""
+    """specifying with no implemented backlog → no rewind advisory noise.
+    (Independent of history: done < 3 short-circuits before the rewind gate.)"""
     artifacts = [_art("REQ-001", "approved")]
     out = brief_cmd._next_skill_recommendation("specifying", artifacts, [], ["STORY-001"])
     assert "remain implemented after rewind" not in out
@@ -191,19 +194,41 @@ def test_next_skill_backlog_advisory_fires_without_next_wave():
     """The advisory keys off backlog presence, NOT next_wave. The motivating
     case — a rewound project with a deep implemented backlog and nothing newly
     queued — has an empty next_wave and must still fire (next_wave only ever
-    holds *approved* stories, so gating on it silenced exactly this case)."""
+    holds *approved* stories, so gating on it silenced exactly this case).
+    Gated on a real rewind entry in history."""
     artifacts = [_art(f"STORY-00{i}", "implemented") for i in range(1, 5)]
-    out = brief_cmd._next_skill_recommendation("specifying", artifacts, [], [])  # empty next_wave
+    history = [{"phase": "specifying", "entered": "2026-08-01", "rewind": True}]
+    out = brief_cmd._next_skill_recommendation("specifying", artifacts, [], [], history=history)  # empty next_wave
     assert "remain implemented after rewind" in out
     assert "/specflow-execute" in out
 
 
 def test_next_skill_backlog_all_verified_points_at_review():
-    """An all-verified backlog wants artifact-review/ship, not more execute."""
+    """An all-verified backlog wants artifact-review/ship, not more execute.
+    Gated on a real rewind entry in history."""
     artifacts = [_art(f"STORY-00{i}", "verified") for i in range(1, 5)]
-    out = brief_cmd._next_skill_recommendation("planning", artifacts, [], [])
+    history = [{"phase": "planning", "entered": "2026-08-01", "rewind": True}]
+    out = brief_cmd._next_skill_recommendation("planning", artifacts, [], [], history=history)
     assert "remain implemented after rewind" in out
     assert "/specflow-artifact-review" in out
+
+
+def test_next_skill_no_rewind_advisory_when_history_lacks_rewind():
+    """A deep implemented backlog during specifying/planning but NO rewind entry
+    in history → the 'after rewind' wording is a false positive (this repo's
+    state.yaml has zero rewind entries). Stay silent."""
+    artifacts = [_art(f"STORY-00{i}", "implemented") for i in range(1, 5)]
+    history = [{"phase": "planning", "entered": "2026-08-01"}]  # no rewind key
+    out = brief_cmd._next_skill_recommendation("specifying", artifacts, [], [], history=history)
+    assert "remain implemented after rewind" not in out
+
+
+def test_next_skill_no_rewind_advisory_when_state_has_no_history():
+    """state has no history list at all (history=None default) → no rewind
+    evidence → advisory silent even with a deep implemented backlog."""
+    artifacts = [_art(f"STORY-00{i}", "implemented") for i in range(1, 5)]
+    out = brief_cmd._next_skill_recommendation("specifying", artifacts, [], [])  # history defaults to None
+    assert "remain implemented after rewind" not in out
 
 
 # --- verification-contract advisory (v1.13): declared verify_command with no
@@ -254,6 +279,103 @@ def test_next_skill_verify_advisory_silent_without_verify_command():
     artifacts = [_art("STORY-001", "implemented")]  # no frontmatter / no verify_command
     out = brief_cmd._next_skill_recommendation("executing", artifacts, [], [])
     assert "specflow verify" not in out
+
+
+# --- auto-DEC de-pollution: change-record/audit DECs must not inflate the
+#     unreviewed count, the blast-radius cone, or the "durable why" section ---
+
+def _dec(
+    dec_id: str,
+    review_status: str = "unreviewed",
+    tags: list[str] | None = None,
+    body: str = "",
+    title: str | None = None,
+    dec_kind: str | None = None,
+) -> SimpleNamespace:
+    """Minimal DEC stub carrying frontmatter (review_status) + a tags attribute.
+
+    `_is_auto_dec` reads ``a.tags``; on real Artifact that's a frontmatter-derived
+    property, so the stub mirrors it as an explicit attribute. ``path`` points at a
+    nonexistent file so _recent_decisions' mtime sort falls back to 0.0 (stable)."""
+    fm: dict = {"id": dec_id, "review_status": review_status, "type": "decision"}
+    if tags:
+        fm["tags"] = tags
+    if dec_kind:
+        fm["dec_kind"] = dec_kind
+    return SimpleNamespace(
+        id=dec_id,
+        status="approved",
+        suspect=False,
+        tags=tags or [],
+        frontmatter=fm,
+        body=body,
+        title=title or f"Decision {dec_id}",
+        links=[],
+        path=Path(f"/fake/{dec_id}.md"),
+    )
+
+
+def test_auto_dec_excluded_from_unreviewed_count_and_cone(tmp_path):
+    """An unreviewed DEC tagged change-record/auto-generated is an auto change
+    record, not a human ADR — excluded from both the unreviewed count and the
+    blast-radius cone, while a real unreviewed ADR is still surfaced."""
+    auto_dec = _dec("DEC-001", tags=["change-record", "auto-generated"], body="auto change record")
+    real_dec = _dec("DEC-002", tags=None, body="We chose X because Y")
+    out = brief_cmd._next_skill_recommendation(
+        "executing", [auto_dec, real_dec], [], [], root=tmp_path,
+    )
+    assert "DEC-002" in out  # real ADR still surfaced
+    assert "DEC-001" not in out  # auto change record suppressed
+    assert "1 unreviewed DEC" in out  # count excludes the auto one
+
+
+def test_dec_kind_change_record_excluded_without_tags(tmp_path):
+    """The explicit discriminator is authoritative even when tags are absent."""
+    auto_dec = _dec("DEC-001", dec_kind="change_record", body="auto change record")
+    real_adr = _dec("DEC-002", dec_kind="adr", body="We chose X because Y")
+    out = brief_cmd._next_skill_recommendation(
+        "executing", [auto_dec, real_adr], [], [], root=tmp_path,
+    )
+    assert "DEC-002" in out
+    assert "DEC-001" not in out
+    assert "1 unreviewed DEC" in out
+
+
+def test_unreviewed_advisory_silent_when_every_dec_is_auto(tmp_path):
+    """Every unreviewed DEC is auto-generated → no real review debt → advisory
+    silent. This is the cry-wolf that inflated the count by ~49 auto records and
+    made the blast-radius cone unusable."""
+    auto_decs = [
+        _dec("DEC-001", tags=["change-record", "auto-generated"]),
+        _dec("DEC-002", tags=["project-audit", "auto-generated"]),
+        _dec("DEC-003", tags=["auto-generated"]),
+    ]
+    out = brief_cmd._next_skill_recommendation(
+        "executing", auto_decs, [], [], root=tmp_path,
+    )
+    assert "unreviewed DEC" not in out
+    assert "blast radius" not in out
+
+
+def test_recent_decisions_skips_auto_records():
+    """Auto change records don't belong in 'the durable why' — filter them out
+    so the section surfaces real ADRs."""
+    auto = _dec("DEC-A1", tags=["change-record", "auto-generated"], body="bumped version")
+    real = _dec("DEC-R1", tags=None, body="We chose X because Y")
+    decs = brief_cmd._recent_decisions([auto, real])
+    ids = [d[0] for d in decs]
+    assert "DEC-R1" in ids
+    assert "DEC-A1" not in ids
+
+
+def test_recent_decisions_shows_few_real_adrs_without_padding():
+    """Fewer real ADRs than the limit → show what's there; never pad the section
+    with auto change records to reach the limit."""
+    auto_decs = [_dec(f"DEC-A{i}", tags=["auto-generated"]) for i in range(12)]
+    real = _dec("DEC-R1", tags=None, body="We chose X because Y")
+    decs = brief_cmd._recent_decisions(auto_decs + [real])
+    assert len(decs) == 1
+    assert decs[0][0] == "DEC-R1"
 
 
 # --- health nags (D2) ---

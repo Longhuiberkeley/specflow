@@ -119,3 +119,45 @@ class TestDiffBaselines:
         assert result["status_changed"][0]["id"] == "REQ-001"
         assert result["status_changed"][0]["old"] == "draft"
         assert result["status_changed"][0]["new"] == "approved"
+
+
+class TestListBaselines:
+    def _write(self, root: Path, name: str) -> None:
+        # list_baselines only globs *.yaml stems; content is irrelevant, so a
+        # minimal placeholder file is enough to exercise ordering.
+        d = root / ".specflow" / "baselines"
+        (d / f"{name}.yaml").write_text("name: x\n", encoding="utf-8")
+
+    def test_semver_order_newest_last(self, tmp_path: Path):
+        # CHL-343 trap: lexicographic sort put v1.9.0/v1.9.2 last because
+        # "9" > "1" char-by-char, so baselines[-2:] returned the wrong pair.
+        # Semver sort must keep the two newest releases (v1.13.2, v1.13.3) last.
+        _scaffold(tmp_path)
+        for name in ["v1.9.0", "v1.9.2", "v1.12.3", "v1.12.5", "v1.13.2", "v1.13.3"]:
+            self._write(tmp_path, name)
+        result = baseline_lib.list_baselines(tmp_path)
+        assert result == ["v1.9.0", "v1.9.2", "v1.12.3", "v1.12.5", "v1.13.2", "v1.13.3"]
+        assert result[-2:] == ["v1.13.2", "v1.13.3"]
+
+    def test_release_sorts_after_its_prereleases(self, tmp_path: Path):
+        _scaffold(tmp_path)
+        for name in ["v1.13.3", "v1.13.3-rc.2", "v1.13.3-rc.1"]:
+            self._write(tmp_path, name)
+        assert baseline_lib.list_baselines(tmp_path) == [
+            "v1.13.3-rc.1",
+            "v1.13.3-rc.2",
+            "v1.13.3",
+        ]
+
+    def test_non_semver_fallback_sorts(self, tmp_path: Path):
+        # Non-semver names must not crash the sort; they land stably after all
+        # semver names so the ordering stays total and deterministic.
+        _scaffold(tmp_path)
+        for name in ["v1.0.0", "snapshot", "v0.2.0"]:
+            self._write(tmp_path, name)
+        result = baseline_lib.list_baselines(tmp_path)
+        assert result == ["v0.2.0", "v1.0.0", "snapshot"]
+
+    def test_empty_dir_returns_empty(self, tmp_path: Path):
+        _scaffold(tmp_path)
+        assert baseline_lib.list_baselines(tmp_path) == []

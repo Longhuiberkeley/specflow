@@ -1917,31 +1917,10 @@ def _auto_fix(root: Path) -> None:
     if not specflow_dir.exists():
         return
 
-    # Rebuild _index.yaml files
-    for d in sorted(specflow_dir.rglob("*")):
-        if d.is_dir() and d.name not in ("specs", "work"):
-            index_file = d / "_index.yaml"
-            artifacts_in_dir = []
-            for md in sorted(d.glob("*.md")):
-                if md.name.startswith("_"):
-                    continue
-                art = art_lib.parse_artifact(md)
-                if art:
-                    artifacts_in_dir.append({
-                        "id": art.id,
-                        "title": art.title,
-                        "status": art.status,
-                        "tags": art.tags,
-                        "fingerprint": art.fingerprint,
-                    })
-
-            next_id = len(artifacts_in_dir) + 1
-            index_data = {
-                "artifacts": {a["id"]: a for a in artifacts_in_dir},
-                "next_id": next_id,
-            }
-            index_file.write_text(yaml.dump(index_data, default_flow_style=False))
-            print(f"  ✓ Rebuilt {index_file.relative_to(root)}")
+    # Use the canonical rebuild path so next_id follows the highest canonical
+    # numeric ID rather than the file count (gaps and quarantined IDs matter).
+    rebuilt = art_lib.rebuild_index(root)
+    print(f"  ✓ Rebuilt indexes ({rebuilt['rebuilt']} artifacts)")
 
     # Recompute fingerprints
     artifacts = art_lib.discover_artifacts(root)

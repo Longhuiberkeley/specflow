@@ -432,6 +432,46 @@ def test_document_changes_writes_risk_profile_with_empty_confidence(tmp_path, mo
     assert rp["reversibility"] == "irreversible", rp
 
 
+def test_document_changes_stamps_dec_kind_change_record(tmp_path, monkeypatch):
+    """Generated change-record DECs carry dec_kind=change_record so the ledger
+    can discriminate auto-generated change records from real ADRs (STORY-629)."""
+    from specflow.commands import document_changes as dc
+
+    root = _scaffold(tmp_path)
+    _req(root, "REQ-001")
+    (root / ".specflow" / "schema" / "decision.yaml").write_text(yaml.dump({
+        "type": "decision", "prefix": "DEC",
+        "allowed_status": {"draft": [], "approved": ["draft"]},
+        "optional_fields": ["dec_kind", "risk_profile", "tags", "links",
+                            "review_status", "rationale", "fingerprint"],
+        "allowed_link_roles": ["derives_from", "addresses"],
+    }), encoding="utf-8")
+
+    commit = {
+        "sha": "fedcba987654", "author_name": "Tester",
+        "author_email": "t@example.com", "date_iso": "2026-01-03",
+        "subject": "feat: touch REQ-001", "body": "",
+    }
+    monkeypatch.setattr(dc.git_utils, "is_git_repo", lambda r: True)
+    monkeypatch.setattr(dc.git_utils, "resolve_ref", lambda r, ref: ref)
+    monkeypatch.setattr(dc.git_utils, "get_commits_since", lambda r, ref: [commit])
+    monkeypatch.setattr(dc.git_utils, "get_changed_files",
+                        lambda r, sha: ["_specflow/specs/requirements/REQ-001.md"])
+    monkeypatch.setattr(dc.git_utils, "is_spec_artifact_path", lambda f: f.endswith(".md"))
+    monkeypatch.setattr(dc.git_utils, "artifact_id_from_path",
+                        lambda f: "REQ-001")
+    monkeypatch.chdir(root)
+
+    rc = dc.run(root, {"since": "HEAD~1"})
+    assert rc == 0
+
+    decs = [a for a in art_lib.discover_artifacts(root)
+            if art_lib.get_prefix_from_id(a.id) == "DEC"]
+    assert decs, "no DEC generated"
+    assert decs[0].frontmatter.get("dec_kind") == "change_record", \
+        decs[0].frontmatter.get("dec_kind")
+
+
 # ── verification-evidence aggregation (5C) ────────────────────────
 
 

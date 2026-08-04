@@ -11,6 +11,7 @@ from pathlib import Path
 
 import yaml
 
+from specflow.commands import artifact_lint as lint_cmd
 from specflow.lib import artifacts as art_lib
 
 _STD_FLOW = {"draft": [], "approved": ["draft"], "implemented": ["approved"], "verified": ["implemented"]}
@@ -280,3 +281,37 @@ class TestNextIdRecompute:
         assert index["next_id"] == 3
         assert "REQ-001" not in index["artifacts"]
         assert "REQ-002" in index["artifacts"]
+
+    def test_draft_id_hash_digits_do_not_advance_next_id(self, tmp_path: Path):
+        root = _scaffold(tmp_path)
+        created = art_lib.create_artifact(root, "requirement", title="Numeric", body="b")
+        assert created["id"] == "REQ-001"
+
+        # Feature-branch draft IDs end with a short hash. Digits in that hash are
+        # not allocated numeric IDs and must not influence the sequence.
+        art_lib.create_artifact(
+            root,
+            "requirement",
+            title="Draft",
+            body="b",
+            artifact_id="REQ-DEFERRED-d684",
+        )
+
+        art_lib.rebuild_index(root)
+
+        index = art_lib._read_index(_req_index(root))
+        assert index["next_id"] == 2
+        assert "REQ-DEFERRED-d684" in index["artifacts"]
+
+    def test_artifact_lint_fix_uses_canonical_next_id(self, tmp_path: Path):
+        root = _scaffold(tmp_path)
+        r1 = art_lib.create_artifact(root, "requirement", title="One", body="b")
+        r2 = art_lib.create_artifact(root, "requirement", title="Two", body="b")
+        assert r1["id"] == "REQ-001"
+        assert r2["id"] == "REQ-002"
+        Path(r1["path"]).unlink()
+
+        lint_cmd._auto_fix(root)
+
+        index = art_lib._read_index(_req_index(root))
+        assert index["next_id"] == 3

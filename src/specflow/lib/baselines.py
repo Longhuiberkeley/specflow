@@ -124,12 +124,39 @@ def load_baseline(root: Path, name: str) -> dict[str, Any] | None:
     return data
 
 
+def _semver_sort_key(name: str) -> tuple[int, tuple[int, ...], int, str]:
+    """Sort key for semver-aware ascending ordering of baseline names.
+
+    Baselines are typically named like the release that produced them
+    ("v1.13.3"). Lexicographic sort breaks on multi-digit segments: "v1.9.2"
+    sorts after "v1.13.3" because "9" > "1" character-by-character, so the
+    lexicographic last two entries are not the two newest releases.
+
+    Strategy: strip a single leading "v", then match ``^(\\d+(?:\\.\\d+)*)(.*)$``.
+    Parseable names sort naturally by numeric segments, with prereleases before
+    the clean release of the same version. Unparseable names sort stably after
+    every semver name. The result is ascending with the newest
+    baseline last, which is what callers (e.g. ``baselines[-1]`` /
+    ``baselines[-2:]``) rely on.
+    """
+    stripped = name[1:] if name.startswith("v") else name
+    m = re.match(r"^(\d+(?:\.\d+)*)(.*)$", stripped)
+    if m:
+        nums = tuple(int(x) for x in m.group(1).split("."))
+        suffix = m.group(2)
+        return (0, nums, 1 if not suffix else 0, suffix)
+    return (1, (0,), 0, name)
+
+
 def list_baselines(root: Path) -> list[str]:
-    """Return sorted list of existing baseline names."""
+    """Return semver-sorted (ascending, newest last) list of baseline names."""
     d = baseline_dir(root)
     if not d.exists():
         return []
-    return sorted(p.stem for p in d.glob("*.yaml"))
+    return sorted(
+        (p.stem for p in d.glob("*.yaml")),
+        key=_semver_sort_key,
+    )
 
 
 def diff_baselines(root: Path, name_a: str, name_b: str) -> dict[str, Any]:
