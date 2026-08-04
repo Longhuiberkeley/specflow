@@ -606,6 +606,15 @@ artifacts:
     - auto-generated
     fingerprint: sha256:3f769447c60c
     children: []
+  DEC-064:
+    id: DEC-064
+    title: 'Change Record: fix: preserve complete v1.13.4 release evidence'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:eac30df8aa14
+    children: []
   DEC-CHANGERE-7c39:
     id: DEC-CHANGERE-7c39
     title: 'Change Record: chore: trace v1.13.3 AC boundary patch'
@@ -624,4 +633,4 @@ artifacts:
     - auto-generated
     fingerprint: sha256:2dd9aae04035
     children: []
-next_id: 64
+next_id: 65
