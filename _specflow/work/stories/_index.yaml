@@ -950,4 +950,14 @@ artifacts:
     - dogfood
     fingerprint: sha256:2a64bb3f9eef
     children: []
+  STORY-FIXACCEP-f941:
+    id: STORY-FIXACCEP-f941
+    title: Fix Acceptance Criteria mutation boundaries (v1.13.3)
+    status: implemented
+    tags:
+    - v1.13.3
+    - bugfix
+    - ac-mutation
+    fingerprint: sha256:0090ff56379c
+    children: []
 next_id: 627
