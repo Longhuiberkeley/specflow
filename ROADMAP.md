@@ -240,6 +240,68 @@ Focus: **the false-confidence reduction cycle** — green signals must reflect r
 - **Fingerprint safety** — create/update/rebuild/drift-detection now all hash the rendered body; freshly created artifacts are no longer born drifted. `rebuild-index` recomputes empty fingerprints, writes them back to index AND frontmatter idempotently, and quarantines fileless index entries to `_index.quarantine.yaml` instead of dropping them. Best-practice and decision artifacts exempt from orphan-provenance (foundational doctrine, upstream-less by design).
 - **`brief --next` recommends `specflow verify`** when declared contracts lack matching run evidence; `specflow-execute` skill runs verify before transitioning artifacts to `verified`.
 
+## v1.12.6
+
+Focus: **release-gate cry-wolf kill + dry-run pre-push verification**. No new blocking gates; the deterministic core is unchanged. Drops the dogfood `specflow-release-gate` from 17 to 16 escalating structural warns.
+
+- **Foundational-doctrine provenance** — the horizontal analysis no longer emits "N/N best-practice (or decision) artifacts have no links/provenance": BP/DEC are upstream-less by design (other artifacts derive from them), so absent `links[]` is not orphan-provenance. `has_provenance` now exempts `best-practice` and `decision` the same way it already exempted the autoresearch competition root. Genuine orphan-provenance detection for every other type stays intact.
+- **`specflow project-audit --dry-run`** — identical findings, identical exit code (errors→3, escalating warns→2, else 0), but skips all four write side-effects: the `.specflow/audits/<ts>/` snapshot, the AUD artifact, the CHL artifacts, and the `.specflow/audits/.cache` + index mutations. Local pre-push verification of the gate's exit code without dirtying the tree.
+
+## v1.12.5
+
+Focus: **autoresearch state visibility, pack refresh, and protocol-schema completeness** — the deterministic core is unchanged; pack-side maturity closes long-standing observability and CLI holes.
+
+- **`specflow autoresearch status`** — deterministic LOOP readiness, budget, prior knowledge, EDA/agenda completeness, repeated-category exploration, and stuck streaks with exact next actions. Research-quality findings stay advisory; conflicting running LOOPs and exhausted budgets stop continuation as structural hazards.
+- **Active-pack refresh** — `specflow refresh --packs` previews and refreshes schemas, checklists, skills, and context for configured packs. Existing differing files are preserved unless `--force` is explicit; `_specflow/` artifacts are never refresh targets.
+- **Protocol-state schemas** — LOOP and EXPT schemas now document the EDA, agenda, coverage, condensation, hypothesis, lesson, and failure-stage fields used by the autoresearch protocol.
+- **Fixes** — pre-check failures use `discarded` + `failure_stage: pre_check` (preserving the four-status EXPT contract); ML handbook practices use the unambiguous `ML-01`…`ML-22` namespace; centralized link parsing/validation across `create`/`update`/`--set links` (malformed entries fail loudly, no-op link mutations don't rewrite artifacts); commit-hook advisory checks surface warning-only findings non-blocking; schema/transition rendering tolerates a scalar predecessor in hand-authored pack schemas; CLI help includes previously hidden commands; BP-006 clarified (accounting stays advisory, structural findings may block).
+
+## v1.12.4
+
+Focus: **ergonomics mined from ~2,300 real agent CLI invocations** — every change closes a brute-forced-by-for-loop or hand-edited-frontmatter path. No new blocking gates; the deterministic core is unchanged. Mined failure corpus replayed as `tests/test_v124_ergonomics.py`.
+
+- **Central did-you-mean hook** — every misspelled subcommand and unrecognized flag suggests the closest valid one (scoped per-subcommand so unrelated flags never leak). Exit codes and usage output unchanged.
+- **`specflow transitions <ID>`** — read-only legal-next-states plus the full type-specific transition table; both "Cannot transition" / "Invalid status" messages hint at it.
+- **`specflow list [--type] [--status] [--tags] [--json]`** — first-class artifact query (replaces hand-parsed `_index.yaml`); unknown types error with the valid list instead of silently listing everything.
+- **`specflow schema <type>`** — prints required/optional fields (the valid `--set` keys), the status transition map, and allowed link roles — keys discoverable without trial and error.
+- **Link management on `update`** — `--links` (replace), `--add-link TARGET:ROLE` (repeatable, dedups), `--remove-link TARGET` (idempotent). The `specflow-discover` skill now teaches `--add-link` instead of a flag that never existed.
+- **Type abbreviations everywhere** — `create`/`list`/`schema` accept case-insensitive canonical abbreviations via one `normalize_type()` resolver; unknown types get the valid list + closest-match suggestion.
+- **Per-type initial status on `create`** — omitting `--status` uses the type's natural root status (`open` for defects, `draft` for specs); multi-root types (e.g. `experiment`) require explicit `--status` and list allowed values. Fixes the `specflow create --type defect` hardcoded-`draft` crash.
+- **`fingerprint-refresh` accepts artifact IDs and multiple targets** (file paths still work); per-target result lines, non-zero exit only when *every* target fails.
+- **Repo dogfoods its own gates** — CI now runs the `ci-gate` (RBAC, PR-only) and `release-gate` (tag-only) jobs the generator emits; pre-commit reports status-cascade and story-linkage as non-blocking advisory warnings (CI Pass 1 remains the authoritative blocker).
+- **Opt-in `lint.autoresearch_logging_strict`** — escalates warn-only autoresearch-logging findings (missing hypothesis/failure_analysis on kept EXPTs) to blocking, mirroring `compliance_evidence_strict`. Default off.
+- **Link inputs fail loudly, never silently** — `_parse_links` no longer drops unparseable input (a JSON object vs. array, malformed JSON, or bare target) — explicit error, artifact untouched, no garbage writes, no success-on-wiped-list, no traceback.
+- **Audit exit-code truthfulness** — accounting lenses (docs-staleness) are printed but excluded from the warn count that drives `project-audit`'s exit code 2 (matches the "surfaced, never enforced" doctrine); structural warns still escalate.
+- **Skill/context guidance accuracy** — agent-context cheat-sheet lists the real core types (drops schemaless `prevention`, moves ops `run`/`monitor` to the pack parenthetical, adds missing test types); `.specflow/` (config — never edit) vs. `_specflow/` (artifacts — use `specflow update`) distinguished; type-specific transition guidance replaces the linear "draft → approved → implemented → verified" arrow.
+- **Autoresearch enforcement claims are now honest** — pack SKILL/protocol/handbook describe the Category Diversity Gate, Stuck Detector, etc. as "protocol gates enforced by the agent" (always were) instead of "structural gates (not advisory)". Protocol substance unchanged.
+- **Link-target warnings no longer fire on standards-clause-shaped targets** (`ISO-14971`) — only tokens whose prefix is a registered artifact prefix warn.
+- **`docs/cli-reference.md`** — documents the full new surface (transitions/list/schema, update link flags, fingerprint-refresh targets, type abbreviations, did-you-mean).
+
+## v1.12.3
+
+Focus: **the existing BP/PREV learning loops become visible and actually consumed** — a dormant learning system no longer fails silently.
+
+- **BP/PREV surface in `brief`** — `specflow brief` reports BP, PREV, FIND, and CHL health even when every surface is empty; matching active or approved BP artifacts now join the local `checklist-run` pipeline alongside learned PREV patterns.
+- **Centralized BP selection** — one canonical matcher shared by CI context and local checklist assembly, using tag overlap or explicit `applies_to` links.
+- **No double-injection** — normal artifact review no longer injects the same BP both as prose context and as a checklist item; each applicable practice is judged once.
+- **`brief` inventory reuse** — the parsed artifact inventory is reused when computing executable stories, eliminating a second repo scan and YAML parse pass.
+- **Checklist assembly doc corrected** — describes all seven ordered sources.
+- **Dogfood examples** — BP-003..007 and PREV-001..002 added with generated-agent guidance, STORY/REQ traceability, and focused regression coverage.
+- **Independent review** — implementation reviewed with independent multi-reviewer passes; all verified findings fixed.
+
+## v1.12.2
+
+Focus: **generated-CI bootstrap fix, install-instruction truth, and consuming-project correctness** — the deterministic core is unchanged; every change is a loud fix for a path that silently failed in real consumer projects.
+
+- **Generated CI bootstraps SpecFlow from its Git source** — `specflow init` / `specflow ci generate` now write `uvx --from git+https://github.com/Longhuiberkeley/specflow@v<ver> specflow …` (pinned to the generating version). The bare `uv sync` / `uv run specflow …` form was a `command not found` in every consuming project (the `specflow` name on PyPI is an unrelated JSON-Schema library, and consuming projects don't declare specflow as a dependency). The `pytest` job still uses `uv sync` (it needs the consuming project's own deps). Clean CI runners are the one exception and keep `uvx --from git+…@v<ver>`.
+- **`change-impact` CI job no longer passes a non-existent `--all`** — argparse's exit 2 was silently swallowed by `|| true`; the job was a no-op. Now bare `specflow change-impact`.
+- **`specflow init` no longer offers "GitLab CI"** — no GitLab adapter is registered (only `github-actions` ships); selecting it made `specflow ci generate` fail. Non-GitHub CI stays build-it-yourself via `docs/authoring-an-adapter.md`.
+- **Install/upgrade instructions point at the Git source** — `uv tool upgrade specflow` (bare) resolves the unrelated PyPI package. Replaced with `uv tool install --force git+https://github.com/Longhuiberkeley/specflow`.
+- **Removed the orphaned, divergent `templates/ci/github-actions.yml`** — the runtime generator (`lib/adapters/github_actions.py`) is the source of truth for shipped workflows.
+- **Test coverage for CI workflow generation** — `tests/test_ci_generation.py` is why the bootstrap and `--all` bugs went undetected; now caught.
+- **Bootstrap fix applied everywhere, not just generated CI** — `uv run specflow …` was failing in consuming projects on every sibling surface; all now invoke bare `specflow` (on PATH via the documented `uv tool install git+…`): the **pre-commit hook** (the three divergent copies are consolidated into one source of truth `_DEFAULT_HOOK_SCRIPT`; subprocess checks no longer shell out through `uv run`); the **8 shipped checklist templates** whose `script:` items ran `uv run specflow artifact-lint …` via `bash -c`; the **~12 skill-doc templates** and **7 user-facing CLI hints** that told the consumer to run `uv run specflow …`.
+- **Release-gate CI job now actually runs** — the `if: startsWith(github.ref, 'refs/tags/')` guard was unreachable because the workflow trigger had no `tags:` filter. Added `tags: ['v*']` to the `push:` trigger.
+
 ## v1.12.1
 
 Focus: **restore deterministic-signal credibility and make core accounting pack-aware** (the retrospective theme: `artifact-lint`/`status`/`audit`/docs-citation crying wolf). No new blocking gates, no D-18 vocabulary expansion.
@@ -424,6 +486,7 @@ Focus: **status cascade automation and reconciliation.**
 These may ship someday, but are not committed:
 
 - **Auto-capture `output_files` on execute/`done`** — record the source files a story produced as it's implemented, so `detect orphan-code` and `source-drift` work without manual `--retro-link`. The detection + audit surfacing shipped in v1.9.0; the **capture half shipped in v1.13.0** for the `done` path (`done` walks git history from phase start, parses STORY IDs from wave-commit messages, retro-links new/modified files). Still deferred: the **general half** — renames, deletes, and multi-story files during `done` (and the parallel `execute` path), where best-effort git-history attribution is harder.
+- **Audit signal design** *(CHL-344)* — make audit findings honest and actionable: same problem class (e.g. REQ with ACs but zero linked tests) must not be `warn` for 8 and `info` for 20 while triaging; report trend deltas vs the prior audit (growing vs shrinking gaps) in report headers; per-AC verification rows instead of per-REQ rollups so observability-unclassified ACs are individually actionable; exercise non-functional categories beyond `functional` (18/39 REQs carry none today); and add structural rules behind workflow tags (`backfilled`, `deferred`) so they assert, not just describe.
 - **Continued skill ↔ template reconciliation / prompt tuning** — v1.9.0 made `.claude/skills` and `templates/skills/shared` byte-identical (richer-wins). Future skill-prompt edits should update both trees together (mirror live→ship); revisit if prompts need deeper tuning.
 - **Schema sync for initialized projects** — template `schema/*.yaml` edits don't propagate to an existing project's `.specflow/schema/`; the only re-sync path today is `init --force` (which does far more than schemas). Surfaced in v1.9.4 when the `id_format` widening had not reached the dogfood project. Sequenced plan:
   1. **Drift lint (do first, low-risk)** — an `artifact-lint` check (`--type schema-drift`) that compares each `.specflow/schema/*.yaml` against the installed package template and *warns* on divergence. Non-destructive: surfaces staleness without touching files. Add a test.
