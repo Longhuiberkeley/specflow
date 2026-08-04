@@ -2,210 +2,210 @@ artifacts:
   CHL-001:
     id: CHL-001
     title: Error executing devils_advocate
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:2af47150b370
     children: []
   CHL-002:
     id: CHL-002
     title: 'REQ-001: no ARCH refinement in V-model thread'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:6051b60b3a10
     children: []
   CHL-003:
     id: CHL-003
     title: 'STORY-002 (implements REQ-001): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:dd0e04f9e5a1
     children: []
   CHL-004:
     id: CHL-004
     title: 'STORY-007 (implements REQ-001): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:4a0b724f18b3
     children: []
   CHL-005:
     id: CHL-005
     title: 'STORY-008 (implements REQ-001): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:9aa506eec93b
     children: []
   CHL-006:
     id: CHL-006
     title: 'STORY-010 (implements REQ-001): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:338190c4657b
     children: []
   CHL-007:
     id: CHL-007
     title: 'REQ-002: no ARCH refinement in V-model thread'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:77b9ae8783d0
     children: []
   CHL-008:
     id: CHL-008
     title: 'STORY-015 (implements REQ-002): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:ee154853373a
     children: []
   CHL-009:
     id: CHL-009
     title: 'STORY-016 (implements REQ-002): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:b1e7d3b55e12
     children: []
   CHL-010:
     id: CHL-010
     title: 'REQ-003: no ARCH refinement in V-model thread'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:d7b24991d978
     children: []
   CHL-011:
     id: CHL-011
     title: 'STORY-001 (implements REQ-003): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:7e968b4c4053
     children: []
   CHL-012:
     id: CHL-012
     title: 'STORY-002 (implements REQ-003): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:49c399518533
     children: []
   CHL-013:
     id: CHL-013
     title: 'STORY-003 (implements REQ-003): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:f8f3ded7e5fb
     children: []
   CHL-014:
     id: CHL-014
     title: 'STORY-004 (implements REQ-003): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:67269d8bca34
     children: []
   CHL-015:
     id: CHL-015
     title: 'STORY-005 (implements REQ-003): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:ef8715326f03
     children: []
   CHL-016:
     id: CHL-016
     title: 'REQ-004: no ARCH refinement in V-model thread'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:7c4f313bb87b
     children: []
   CHL-017:
     id: CHL-017
     title: 'STORY-006 (implements REQ-004): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:e5d79ee91d9a
     children: []
   CHL-018:
     id: CHL-018
     title: 'STORY-007 (implements REQ-004): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:3113831d9cd6
     children: []
   CHL-019:
     id: CHL-019
     title: 'STORY-008 (implements REQ-004): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:d1c514dd0f2f
     children: []
   CHL-020:
     id: CHL-020
     title: 'STORY-009 (implements REQ-004): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:67203d2566ec
     children: []
   CHL-021:
     id: CHL-021
     title: 'STORY-010 (implements REQ-004): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:45f1a7f996fe
     children: []
   CHL-022:
     id: CHL-022
     title: 'STORY-017 (implements REQ-004): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:fc4b8a64c027
     children: []
   CHL-023:
     id: CHL-023
     title: 'STORY-019 (implements REQ-004): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:8cc35a0d5ddf
     children: []
   CHL-024:
     id: CHL-024
     title: 'STORY-020 (implements REQ-004): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:458e569870fe
     children: []
   CHL-025:
     id: CHL-025
     title: 'REQ-005: no ARCH refinement in V-model thread'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:52c60547ff58
     children: []
   CHL-026:
     id: CHL-026
     title: 'STORY-011 (implements REQ-005): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:ab3aa3dae08f
     children: []
   CHL-027:
     id: CHL-027
     title: 'STORY-012 (implements REQ-005): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:96af5d7f8157
     children: []
   CHL-028:
     id: CHL-028
     title: 'STORY-013 (implements REQ-005): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:d9d76e5969af
     children: []
   CHL-029:
     id: CHL-029
     title: 'STORY-014 (implements REQ-005): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:74ec2564ea89
     children: []
   CHL-030:
     id: CHL-030
     title: 'STORY-018 (implements REQ-005): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:58409b50b607
     children: []
@@ -213,392 +213,392 @@ artifacts:
     id: CHL-031
     title: "72 coverage gap(s):   \u26A0 [STORY-002] no UT linked via 'verified_by'\
       \ (covers REQ REQ-001);   \u26A0 [STORY-"
-    status: open
+    status: stale
     tags: []
     fingerprint: sha256:40c253f91dad
     children: []
   CHL-032:
     id: CHL-032
     title: 5/5 REQs have no non_functional_category
-    status: open
+    status: stale
     tags: []
     fingerprint: sha256:816cc3e9e653
     children: []
   CHL-033:
     id: CHL-033
     title: 1 schema issue(s)
-    status: open
+    status: addressed
     tags: []
     fingerprint: sha256:8e28b6f3224b
     children: []
   CHL-108:
     id: CHL-108
     title: Audit vertical findings
-    status: open
+    status: stale
     tags: []
     fingerprint: sha256:ed7c58280c82
     children: []
   CHL-109:
     id: CHL-109
     title: Audit horizontal/best-practice findings
-    status: open
+    status: addressed
     tags: []
     fingerprint: sha256:48af2204ce1b
     children: []
   CHL-128:
     id: CHL-128
     title: 2 schema issue(s)
-    status: open
+    status: addressed
     tags: []
     fingerprint: sha256:0a1708424c44
     children: []
   CHL-160:
     id: CHL-160
     title: 3 schema issue(s)
-    status: open
+    status: addressed
     tags: []
     fingerprint: sha256:2688ffa86b35
     children: []
   CHL-222:
     id: CHL-222
     title: 'REQ-006: no ARCH refinement in V-model thread'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:8583665a162b
     children: []
   CHL-223:
     id: CHL-223
     title: 'STORY-036 (implements REQ-006): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:692147dde547
     children: []
   CHL-224:
     id: CHL-224
     title: 'REQ-007: no ARCH refinement in V-model thread'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:10603f8f7ffd
     children: []
   CHL-225:
     id: CHL-225
     title: 'STORY-037 (implements REQ-007): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:a426f49f9a71
     children: []
   CHL-226:
     id: CHL-226
     title: 'REQ-008: no ARCH refinement in V-model thread'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:cf6726ef83ea
     children: []
   CHL-227:
     id: CHL-227
     title: 'STORY-038 (implements REQ-008): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:eec26666a7a2
     children: []
   CHL-228:
     id: CHL-228
     title: 'REQ-009: no ARCH refinement in V-model thread'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:fd9eaf815198
     children: []
   CHL-229:
     id: CHL-229
     title: 'STORY-039 (implements REQ-009): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:ddb72c48248b
     children: []
   CHL-230:
     id: CHL-230
     title: 'REQ-010: no ARCH refinement in V-model thread'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:70ef2dfcfe3a
     children: []
   CHL-231:
     id: CHL-231
     title: 'STORY-041 (implements REQ-010): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:48f184922242
     children: []
   CHL-232:
     id: CHL-232
     title: 'STORY-042 (implements REQ-010): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:1237c38fae28
     children: []
   CHL-233:
     id: CHL-233
     title: 'REQ-011: no ARCH refinement in V-model thread'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:7d24ec465924
     children: []
   CHL-234:
     id: CHL-234
     title: 'STORY-044 (implements REQ-011): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:8f7971d9e29a
     children: []
   CHL-235:
     id: CHL-235
     title: 'REQ-012: no ARCH refinement in V-model thread'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:b36f10affa3e
     children: []
   CHL-236:
     id: CHL-236
     title: 'STORY-043 (implements REQ-012): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:4af0233f0e27
     children: []
   CHL-237:
     id: CHL-237
     title: 'REQ-013: no ARCH refinement in V-model thread'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:0302d7ba9adb
     children: []
   CHL-238:
     id: CHL-238
     title: 'STORY-045 (implements REQ-013): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:754434b428b6
     children: []
   CHL-239:
     id: CHL-239
     title: 'REQ-014: no ARCH refinement in V-model thread'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:8c2ef93ed428
     children: []
   CHL-240:
     id: CHL-240
     title: 'STORY-040 (implements REQ-014): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:8b6add47f251
     children: []
   CHL-285:
     id: CHL-285
     title: 'REQ-015: no ARCH refinement in V-model thread'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:911ea1f51c01
     children: []
   CHL-286:
     id: CHL-286
     title: 'REQ-015: no STORY implements this requirement'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:a5964ec66a59
     children: []
   CHL-287:
     id: CHL-287
     title: 'REQ-016: no ARCH refinement in V-model thread'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:8c6b2904236d
     children: []
   CHL-288:
     id: CHL-288
     title: 'REQ-016: no STORY implements this requirement'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:1b9554249b9d
     children: []
   CHL-289:
     id: CHL-289
     title: 'STORY-046 (implements REQ-015): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:1410342bd10b
     children: []
   CHL-290:
     id: CHL-290
     title: 'STORY-047 (implements REQ-016): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:2ebd09cfb72e
     children: []
   CHL-291:
     id: CHL-291
     title: 'REQ-017: no ARCH refinement in V-model thread'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:75a7327eedf1
     children: []
   CHL-292:
     id: CHL-292
     title: 'STORY-048 (implements REQ-017): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:d0548251d6dc
     children: []
   CHL-293:
     id: CHL-293
     title: 'REQ-001: ARCH exists but no DDD refinement'
-    status: open
+    status: addressed
     tags: []
     fingerprint: sha256:2ddfc1fca2e6
     children: []
   CHL-294:
     id: CHL-294
     title: 'REQ-007: ARCH exists but no DDD refinement'
-    status: open
+    status: addressed
     tags: []
     fingerprint: sha256:44abf15d01ac
     children: []
   CHL-295:
     id: CHL-295
     title: 'REQ-008: ARCH exists but no DDD refinement'
-    status: open
+    status: addressed
     tags: []
     fingerprint: sha256:c1ee1426eb70
     children: []
   CHL-296:
     id: CHL-296
     title: 'REQ-013: ARCH exists but no DDD refinement'
-    status: open
+    status: addressed
     tags: []
     fingerprint: sha256:d95032fac250
     children: []
   CHL-297:
     id: CHL-297
     title: 'REQ-009: ARCH exists but no DDD refinement'
-    status: open
+    status: addressed
     tags: []
     fingerprint: sha256:3478f77ea5ff
     children: []
   CHL-298:
     id: CHL-298
     title: 'REQ-014: ARCH exists but no DDD refinement'
-    status: open
+    status: addressed
     tags: []
     fingerprint: sha256:4c698a2c762b
     children: []
   CHL-299:
     id: CHL-299
     title: 21/21 REQs have no non_functional_category
-    status: open
+    status: stale
     tags: []
     fingerprint: sha256:07dbf797cbc0
     children: []
   CHL-300:
     id: CHL-300
     title: 'STORY-053 (implements REQ-022): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:701e084206b9
     children: []
   CHL-301:
     id: CHL-301
     title: 'STORY-054 (implements REQ-022): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:6f01f081e1e4
     children: []
   CHL-302:
     id: CHL-302
     title: 'STORY-049 (implements REQ-023): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:ab2c9439b662
     children: []
   CHL-303:
     id: CHL-303
     title: 'STORY-050 (implements REQ-023): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:4b08e384a7fb
     children: []
   CHL-304:
     id: CHL-304
     title: 'STORY-051 (implements REQ-024): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:1daee19eabc1
     children: []
   CHL-305:
     id: CHL-305
     title: 'STORY-052 (implements REQ-024): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:2f54c3324a44
     children: []
   CHL-306:
     id: CHL-306
     title: 'STORY-055 (implements REQ-025): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:3cc5b90c9b26
     children: []
   CHL-307:
     id: CHL-307
     title: 'STORY-056 (implements REQ-026): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:9eb4b605fe05
     children: []
   CHL-308:
     id: CHL-308
     title: 'STORY-057 (implements REQ-026): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:d140e527879f
     children: []
   CHL-309:
     id: CHL-309
     title: 'STORY-058 (implements REQ-026): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:9e3775b9afdc
     children: []
   CHL-310:
     id: CHL-310
     title: 'STORY-059 (implements REQ-026): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:0cfa53bed5fb
     children: []
   CHL-311:
     id: CHL-311
     title: 'STORY-060 (implements REQ-027): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:e64305661433
     children: []
   CHL-312:
     id: CHL-312
     title: 'STORY-061 (implements REQ-027): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:07048d31292c
     children: []
   CHL-313:
     id: CHL-313
     title: 'STORY-062 (implements REQ-027): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:d28ffd709231
     children: []
   CHL-314:
     id: CHL-314
     title: 'STORY-063 (implements REQ-027): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:bec2684098ae
     children: []
@@ -606,161 +606,161 @@ artifacts:
     id: CHL-315
     title: "1 coverage gap(s):   \u26A0 [STORY-058] no UT linked via 'verified_by'\
       \ (covers REQ REQ-026)"
-    status: open
+    status: stale
     tags: []
     fingerprint: sha256:edae410d9586
     children: []
   CHL-316:
     id: CHL-316
     title: 146 schema warning(s)
-    status: open
+    status: addressed
     tags: []
     fingerprint: sha256:930f5f393275
     children: []
   CHL-317:
     id: CHL-317
     title: 'STORY-068 (implements REQ-028): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:090d0344d91e
     children: []
   CHL-318:
     id: CHL-318
     title: 'STORY-070 (implements REQ-028): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:f84942991715
     children: []
   CHL-319:
     id: CHL-319
     title: 'STORY-071 (implements REQ-028): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:0d10eada70f8
     children: []
   CHL-320:
     id: CHL-320
     title: 'STORY-075 (implements REQ-028): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:d40240d6e7b9
     children: []
   CHL-321:
     id: CHL-321
     title: 'STORY-069 (implements REQ-029): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:c33b7d4c923a
     children: []
   CHL-322:
     id: CHL-322
     title: 'STORY-074 (implements REQ-029): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:16c1be57048f
     children: []
   CHL-323:
     id: CHL-323
     title: 'STORY-075 (implements REQ-029): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:43d53496d27d
     children: []
   CHL-324:
     id: CHL-324
     title: 'STORY-069 (implements REQ-030): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:fadc70e84032
     children: []
   CHL-325:
     id: CHL-325
     title: 'STORY-073 (implements REQ-030): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:e3631e6ad8b0
     children: []
   CHL-326:
     id: CHL-326
     title: 'STORY-075 (implements REQ-030): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:ea8d0c50ebed
     children: []
   CHL-327:
     id: CHL-327
     title: 'STORY-070 (implements REQ-031): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:1c8b977ed48c
     children: []
   CHL-328:
     id: CHL-328
     title: 'STORY-072 (implements REQ-031): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:0686c53bc4e3
     children: []
   CHL-329:
     id: CHL-329
     title: 'STORY-064 (implements REQ-032): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:0d9617a64cc1
     children: []
   CHL-330:
     id: CHL-330
     title: 'STORY-075 (implements REQ-032): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:f6ba6dbfad2d
     children: []
   CHL-331:
     id: CHL-331
     title: 'REQ-033: no ARCH refinement in V-model thread'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:ffdb3b63b721
     children: []
   CHL-332:
     id: CHL-332
     title: 'STORY-065 (implements REQ-033): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:01952d8610cc
     children: []
   CHL-333:
     id: CHL-333
     title: 'STORY-066 (implements REQ-033): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:dbf799dd521e
     children: []
   CHL-334:
     id: CHL-334
     title: 'REQ-034: no ARCH refinement in V-model thread'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:99bdd50a50c1
     children: []
   CHL-335:
     id: CHL-335
     title: 'STORY-067 (implements REQ-034): no test verification'
-    status: stale
+    status: accepted
     tags: []
     fingerprint: sha256:f0831d321b33
     children: []
   CHL-336:
     id: CHL-336
     title: 'REQ-033: ARCH exists but no DDD refinement'
-    status: open
+    status: addressed
     tags: []
     fingerprint: sha256:1186dca4c4c0
     children: []
   CHL-337:
     id: CHL-337
     title: 'REQ-034: ARCH exists but no DDD refinement'
-    status: open
+    status: addressed
     tags: []
     fingerprint: sha256:87bb5cc1407a
     children: []
@@ -785,4 +785,56 @@ artifacts:
     tags: []
     fingerprint: sha256:2a3d1132d093
     children: []
-next_id: 338
+  CHL-338:
+    id: CHL-338
+    title: Audit cross-cutting/ac-coverage findings
+    status: open
+    tags: []
+    fingerprint: sha256:2a532fe21dcd
+    children: []
+  CHL-339:
+    id: CHL-339
+    title: Audit cross-cutting/verification findings
+    status: open
+    tags: []
+    fingerprint: sha256:7c8f21b59987
+    children: []
+  CHL-340:
+    id: CHL-340
+    title: Verified status without machine-verifiable evidence (REQ-037 meta-wave)
+    status: open
+    tags: []
+    fingerprint: sha256:d86761263a23
+    children: []
+  CHL-341:
+    id: CHL-341
+    title: Green release gate coexists with 72% chain coverage; holes concentrate
+      in recent cycles
+    status: open
+    tags: []
+    fingerprint: sha256:b451be6599c6
+    children: []
+  CHL-342:
+    id: CHL-342
+    title: DEC ledger conflates ADRs with auto-generated change records (49/62)
+    status: open
+    tags: []
+    fingerprint: sha256:a65565b5dab8
+    children: []
+  CHL-343:
+    id: CHL-343
+    title: project-audit baseline drift compares v1.9.0->v1.9.2 despite newer baselines
+      through v1.13.3
+    status: open
+    tags: []
+    fingerprint: sha256:c35dffb5f451
+    children: []
+  CHL-344:
+    id: CHL-344
+    title: 'Audit signal design: severity asymmetry, no audit-over-audit trend, unclassified
+      ACs at info'
+    status: open
+    tags: []
+    fingerprint: sha256:8ad447a9d350
+    children: []
+next_id: 345

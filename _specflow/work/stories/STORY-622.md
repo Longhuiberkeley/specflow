@@ -26,6 +26,10 @@ links:
   role: derives_from
 created: '2026-08-03'
 fingerprint: sha256:bebfe53d9f39
+thinking_techniques:
+- premortem
+- assumption_surfacing
+modified: '2026-08-04'
 ---
 
 # v1.12.6 gate patch: kill the foundational-doctrine cry-wolf + add project-audit --dry-run (retro)

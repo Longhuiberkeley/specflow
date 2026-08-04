@@ -198,6 +198,48 @@ Focus: **autoresearch methodology depth, escalation/permanence test, and templat
 
 > Delivered: the `spike-lifecycle` lint detector (stale / zombie / repeated-topic SPIKEs) shipped as a first-class `artifact-lint --type spike-lifecycle` check — the work-side complement to the v1.8.0 *Stale Code Detection* item. Still deferred: optional structured multi-output schema (typed per-component fields on COMP/EXPT) if the `component_<name>` convention proves too loose.
 
+## v1.13.3
+
+Focus: **AC section-boundary patch** (supplemental patch over v1.13.2, no tag rewrite). No new features, no entry-point sync needed.
+
+- **No-space sibling headings preserved** — mutation boundary matching now accepts the same no-space ATX form as AC start matching (`##Notes` / `###Notes`); a trailing sibling with an optional-space-omitted heading can no longer be consumed when replacing an AC section.
+- **Fenced headings cannot terminate AC replacement** — section-boundary selection reuses the mutation path's code-fence map and skips headings inside fenced examples (no orphan closing fences, no malformed Markdown).
+- Boundary selection remains level-aware: an h2 AC section owns its h3 children; a real same-or-higher-level non-fenced heading ends it.
+
+## v1.13.2
+
+Focus: **CLI ergonomics mined from ~1,558 real agent invocations** — every change is either a loud failure replacing silent corruption, or an advisory hint. No new blocking gates.
+
+- **`update --body` and `update --ac`** — `--body` replaces the whole Markdown body (fingerprint recomputes from the new body, no `fingerprint-refresh` dance); `--ac` replaces (or inserts) the `## Acceptance Criteria` section only, with heading-anchored, fence-aware, level-aware matching that never touches prose mentions, fenced examples, or h4 headings. Multiple AC headings fail loudly. REQ/STORY only.
+- **Append-style link parity** — `create --add-link TARGET:ROLE` mirrors `update --add-link` (repeatable, dedups on target+role).
+- **Dotted `--set key.subkey=` nested-map support** — merges into a declared nested-map field (e.g. `--set risk_profile.confidence=high`) instead of silently writing a junk top-level dotted key. Non-declared dotted keys fail loudly.
+- **`--confidence` did-you-mean + `--set` flat-key did-you-mean** — passing `--confidence` to `create`/`update` (the single most-repeated agent error, ×54) hints at `--set risk_profile.confidence=<value>` on DEC artifacts; unknown flat `--set` keys with a near-miss get a suggestion (custom-field escape hatch preserved).
+- **Loud rejection of unknown statuses** — `update` now mirrors `create`'s did-you-mean guard on status values (closes the silent raw-write hole); legal transitions unchanged; the current-artifact-is-invalid repair path keeps typo'd artifacts from being locked out.
+- **`fingerprint-refresh` bare run → report-only** — with no targets, lists stale fingerprints (exit 0) instead of erroring, preserving the explicit-repair drift signal.
+- **`artifact-lint` deterministic fix hints** — findings that already fire append a one-command `→ fix:` remedy (`update --status`, `fingerprint-refresh`, `update --ac`); zero new warnings, exit codes unchanged.
+- **`brief --next` unreviewed-DEC blast radius** — append-only note when unreviewed DEC(s) exist, reporting the change-impact downstream cone as a union (computed in a single discover pass); quiet projects stay quiet.
+
+## v1.13.1
+
+Focus: **decision & objective quality** — approval tiers are computed from the change's own properties instead of asserted in prose, the reasoning is persisted into the durable record, and acceptance-criterion falsifiability is accounted. Advisory throughout; release gate stays green.
+
+- **`specflow risk-tier ID [ID...]`** — computed approval-tier floor. Tier is derived deterministically from intrinsic change-set properties: an irreversibility lexicon (status moving to `verified`/`released`, a `supersedes` link, a deletion, `destructive`/`data-migration` tags, baseline/release actions floor Tier 2) plus blast radius from the existing impact cone (≥ 8 downstream artifacts = large). Unclassifiable changes default UP. Strictly read-only, gates nothing; downgrading below the floor requires a recorded DEC justification. Output includes a verification-evidence line computed from real `verify_run_*` data — never fabricated green.
+- **`risk_profile` on DEC artifacts** (additive optional field) — tier, reversibility, blast-radius count auto-populated on auto change-records at commit time; human authors fill `confidence` via `--set`; advisory `dec-risk-profile` lint check warns on approved DECs lacking a profile. `brief` shows a tier marker on recent decisions.
+- **AC-observability accounting** — `classify_ac_observability` classifies each AC item with a cry-wolf-proof conjunction (aspirational only if no observable outcome marker AND an ambiguity word or bare vague verb). Surfaced as a `brief` REQ-quality line, an info-only `ac-observability` audit lens, and an advisory `ac-observable` lint check (REQ-level, never per-AC, never in the gate).
+- **Approval-gate skill guidance** — "derive a tier" prose replaced with "run `specflow risk-tier`; computed tier is the minimum; downgrading requires a recorded justification" across approval-presentation + plan/execute/discover/artifact-review skills (shipped and live mirrors).
+
+## v1.13.0
+
+Focus: **the false-confidence reduction cycle** — green signals must reflect reality. `status: verified` becomes machine-checkable, proven cry-wolf audit warns become honest accounting, and every escalating structural gap closes with real traceability (never reclassification). The repo's own `specflow-release-gate` goes honestly green for the first time: 0 escalating structural warns. No new blocking gates, no new artifact types, no new link roles (D-18 holds). Includes the 1.12.6 gate patch.
+
+- **Verification contracts + `specflow verify`** — UT/IT/QT/STORY schemas gain optional `verify_command` / `verify_evidence` / `verify_exit_code`; `specflow verify [ID|--all|--type T] [--evidence-file] [--dry-run] [--timeout S]` runs the contract and records deterministic evidence to frontmatter (`verify_run_exit_code`, `verify_run_out_hash`, `verify_run_at`, `verify_run_git_ref`, `verify_run_command_hash`, optional evidence hash/mtime). A failing command is **recorded, never blocking** — recording is fingerprint-exempt by design.
+- **Verification + AC-coverage accounting lenses** in `project-audit` — declared-but-never-run, failed-run, and command-drift surface as warns that never drive exit-2; REQs with ACs but zero linked tests warn. Compliance evidence output annotates `verify_run` exit codes instead of presenting bare `verified` as machine-backed.
+- **`specflow defect-from-monitor`** — wires a breached ops-pack MONITOR into a DEF (`fails_to_meet`→REQ, `exposed_by`→MON), freezing the monitor's ephemeral metrics/signals/captures into an Observed-at-breach block. Warn-and-proceed on healthy monitors; monitor never mutated. A `brief` lens (ops-pack-gated, two-direction link walk) makes untraced breaches loud.
+- **`output_files` auto-capture on phase closure** — `done` walks git history to phase start, parses STORY IDs from wave-commit messages, and retro-links new/modified source files onto owning STORYs. Best-effort and idempotent; attribution failures print, never fail closure.
+- **`specflow project-audit --dry-run`** — identical findings and exit code, zero write side-effects (no snapshot, AUD, CHL, or cache mutations).
+- **Fingerprint safety** — create/update/rebuild/drift-detection now all hash the rendered body; freshly created artifacts are no longer born drifted. `rebuild-index` recomputes empty fingerprints, writes them back to index AND frontmatter idempotently, and quarantines fileless index entries to `_index.quarantine.yaml` instead of dropping them. Best-practice and decision artifacts exempt from orphan-provenance (foundational doctrine, upstream-less by design).
+- **`brief --next` recommends `specflow verify`** when declared contracts lack matching run evidence; `specflow-execute` skill runs verify before transitioning artifacts to `verified`.
+
 ## v1.12.1
 
 Focus: **restore deterministic-signal credibility and make core accounting pack-aware** (the retrospective theme: `artifact-lint`/`status`/`audit`/docs-citation crying wolf). No new blocking gates, no D-18 vocabulary expansion.
@@ -381,7 +423,7 @@ Focus: **status cascade automation and reconciliation.**
 
 These may ship someday, but are not committed:
 
-- **Auto-capture `output_files` on execute/`done`** — record the source files a story produced as it's implemented, so `detect orphan-code` and `source-drift` work without manual `--retro-link`. The detection + audit surfacing shipped in v1.9.0; this is the capture half. Needs care around renames, deletions, and files shared across stories.
+- **Auto-capture `output_files` on execute/`done`** — record the source files a story produced as it's implemented, so `detect orphan-code` and `source-drift` work without manual `--retro-link`. The detection + audit surfacing shipped in v1.9.0; the **capture half shipped in v1.13.0** for the `done` path (`done` walks git history from phase start, parses STORY IDs from wave-commit messages, retro-links new/modified files). Still deferred: the **general half** — renames, deletes, and multi-story files during `done` (and the parallel `execute` path), where best-effort git-history attribution is harder.
 - **Continued skill ↔ template reconciliation / prompt tuning** — v1.9.0 made `.claude/skills` and `templates/skills/shared` byte-identical (richer-wins). Future skill-prompt edits should update both trees together (mirror live→ship); revisit if prompts need deeper tuning.
 - **Schema sync for initialized projects** — template `schema/*.yaml` edits don't propagate to an existing project's `.specflow/schema/`; the only re-sync path today is `init --force` (which does far more than schemas). Surfaced in v1.9.4 when the `id_format` widening had not reached the dogfood project. Sequenced plan:
   1. **Drift lint (do first, low-risk)** — an `artifact-lint` check (`--type schema-drift`) that compares each `.specflow/schema/*.yaml` against the installed package template and *warns* on divergence. Non-destructive: surfaces staleness without touching files. Add a test.
