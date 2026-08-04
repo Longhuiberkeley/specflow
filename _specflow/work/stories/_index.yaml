@@ -940,4 +940,14 @@ artifacts:
     tags: []
     fingerprint: sha256:354f29fa9053
     children: []
+  STORY-SHIPV1-cbb2:
+    id: STORY-SHIPV1-cbb2
+    title: Ship v1.13.2 transcript-mined CLI ergonomics
+    status: implemented
+    tags:
+    - v1.13.2
+    - ergonomics
+    - dogfood
+    fingerprint: sha256:2a64bb3f9eef
+    children: []
 next_id: 627

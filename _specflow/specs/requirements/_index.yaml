@@ -376,4 +376,14 @@ artifacts:
     tags: []
     fingerprint: sha256:d512b2374ca6
     children: []
+  REQ-TRANSCRI-24b7:
+    id: REQ-TRANSCRI-24b7
+    title: "Transcript-mined CLI authoring ergonomics \u2014 wave 2 (v1.13.2)"
+    status: implemented
+    tags:
+    - v1.13.2
+    - ergonomics
+    - accounting-not-policing
+    fingerprint: sha256:7e2a7a6434b9
+    children: []
 next_id: 685

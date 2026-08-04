@@ -244,4 +244,15 @@ artifacts:
     - v1.12
     fingerprint: sha256:aa3755a74a75
     children: []
+  ARCH-LOUDFAIL-d87a:
+    id: ARCH-LOUDFAIL-d87a
+    title: Loud-failure and advisory ergonomics command surfaces (v1.13.2)
+    status: implemented
+    tags:
+    - v1.13.2
+    - ergonomics
+    - architecture
+    - accounting-not-policing
+    fingerprint: sha256:f9a476477150
+    children: []
 next_id: 29
