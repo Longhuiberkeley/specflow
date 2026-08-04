@@ -9,9 +9,11 @@ suspect: false
 links:
 - target: REQ-DEFERRED-5cea
   role: implements
+- target: UT-050
+  role: verified_by
 created: '2026-07-10'
 fingerprint: sha256:be7f291787f3
-modified: '2026-07-10'
+modified: '2026-08-04'
 output_files:
 - src/specflow/commands/phase_set.py
 - src/specflow/commands/phase_status.py

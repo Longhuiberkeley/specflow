@@ -16,6 +16,8 @@ links:
   role: implements
 - target: ARCH-LOUDFAIL-d87a
   role: derives_from
+- target: UT-055
+  role: verified_by
 created: '2026-08-04'
 fingerprint: sha256:2a64bb3f9eef
 output_files:

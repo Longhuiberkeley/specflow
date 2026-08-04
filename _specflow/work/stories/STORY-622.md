@@ -24,6 +24,8 @@ links:
   role: implements
 - target: ARCH-026
   role: derives_from
+- target: UT-033
+  role: verified_by
 created: '2026-08-03'
 fingerprint: sha256:bebfe53d9f39
 thinking_techniques:

@@ -9,9 +9,11 @@ suspect: false
 links:
 - target: REQ-DEFERRED-5cea
   role: implements
+- target: UT-051
+  role: verified_by
 created: '2026-07-10'
 fingerprint: sha256:52d7c708196c
-modified: '2026-07-10'
+modified: '2026-08-04'
 output_files:
 - src/specflow/commands/rbac_check.py
 - tests/test_rbac_check.py

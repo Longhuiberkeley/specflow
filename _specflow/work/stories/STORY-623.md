@@ -21,12 +21,15 @@ links:
   role: implements
 - target: ARCH-026
   role: derives_from
+- target: UT-034
+  role: verified_by
 created: '2026-08-03'
 fingerprint: sha256:29ac4ed67fa9
 output_files:
 - src/specflow/commands/verify.py
 - src/specflow/lib/verification.py
 - tests/test_verify.py
+modified: '2026-08-04'
 ---
 
 # Verification arc: specflow verify + verify_run_* evidence + entry-point sync

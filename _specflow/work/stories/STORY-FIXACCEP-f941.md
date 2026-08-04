@@ -19,6 +19,8 @@ links:
   role: derives_from
 - target: DDD-LOUDFAIL-3e02
   role: specified_by
+- target: UT-054
+  role: verified_by
 created: '2026-08-04'
 fingerprint: sha256:0090ff56379c
 output_files:

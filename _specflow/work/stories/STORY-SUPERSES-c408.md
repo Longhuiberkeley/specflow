@@ -9,9 +9,11 @@ suspect: false
 links:
 - target: REQ-DEFERRED-5cea
   role: implements
+- target: UT-053
+  role: verified_by
 created: '2026-07-10'
 fingerprint: sha256:8dd2644969f0
-modified: '2026-07-10'
+modified: '2026-08-04'
 output_files:
 - tests/test_supersession.py
 ---

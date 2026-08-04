@@ -163,4 +163,94 @@ artifacts:
     - v1.12.5
     fingerprint: sha256:f62c5c9aeafd
     children: []
-next_id: 26
+  IT-026:
+    id: IT-026
+    title: 'Integration Test for ARCH-023: Four-tier research artifact hierarchy'
+    status: verified
+    tags:
+    - backfilled
+    - verification-contract
+    - autoresearch
+    - hierarchy
+    - ARCH-023
+    fingerprint: sha256:e1a6f09e6b62
+    children: []
+  IT-027:
+    id: IT-027
+    title: 'Integration Test for ARCH-024: Dynamic status dashboard for research categories'
+    status: verified
+    tags:
+    - backfilled
+    - verification-contract
+    - autoresearch
+    - status
+    - dashboard
+    - ARCH-024
+    fingerprint: sha256:32f67176fcae
+    children: []
+  IT-028:
+    id: IT-028
+    title: 'Integration Test for ARCH-025: Research-aware traceability chain'
+    status: verified
+    tags:
+    - backfilled
+    - verification-contract
+    - autoresearch
+    - trace
+    - ARCH-025
+    fingerprint: sha256:e9ec768f4ef4
+    children: []
+  IT-029:
+    id: IT-029
+    title: 'Integration Test for ARCH-026: Verification-contract recording + accounting
+      evidence lenses'
+    status: verified
+    tags:
+    - backfilled
+    - verification-contract
+    - v1.13
+    - ARCH-026
+    - accounting-not-policing
+    fingerprint: sha256:d5c8c5525269
+    children: []
+  IT-030:
+    id: IT-030
+    title: 'Integration Test for ARCH-027: Autoresearch pack schema-driven capability
+      surface'
+    status: verified
+    tags:
+    - backfilled
+    - verification-contract
+    - autoresearch
+    - ARCH-027
+    - multi-criteria
+    - domain-aware
+    fingerprint: sha256:81b7523981ad
+    children: []
+  IT-031:
+    id: IT-031
+    title: 'Integration Test for ARCH-028: Deferred lifecycle capabilities command
+      surfaces'
+    status: verified
+    tags:
+    - backfilled
+    - verification-contract
+    - ARCH-028
+    - lifecycle
+    - v1.12
+    - accounting-not-policing
+    fingerprint: sha256:f19a1e5ea020
+    children: []
+  IT-032:
+    id: IT-032
+    title: 'Integration Test for ARCH-LOUDFAIL: Loud-failure and advisory ergonomics'
+    status: verified
+    tags:
+    - backfilled
+    - verification-contract
+    - v1.13.2
+    - ARCH-LOUDFAIL
+    - ergonomics
+    fingerprint: sha256:ec70eb08d617
+    children: []
+next_id: 33

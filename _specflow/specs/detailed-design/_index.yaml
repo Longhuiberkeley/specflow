@@ -209,7 +209,7 @@ artifacts:
     - verification
     - accounting-not-policing
     - detailed-design
-    fingerprint: sha256:6527d73a94dc
+    fingerprint: sha256:415f7a57d5ee
     children: []
   DDD-027:
     id: DDD-027
@@ -221,7 +221,7 @@ artifacts:
     - detailed-design
     - multi-criteria
     - domain-aware
-    fingerprint: sha256:a18de667761b
+    fingerprint: sha256:f475966b169b
     children: []
   DDD-028:
     id: DDD-028
@@ -232,7 +232,7 @@ artifacts:
     - detailed-design
     - accounting-not-policing
     - v1.12
-    fingerprint: sha256:4beb0c084d3d
+    fingerprint: sha256:53ef7bdc86bb
     children: []
   DDD-LOUDFAIL-3e02:
     id: DDD-LOUDFAIL-3e02

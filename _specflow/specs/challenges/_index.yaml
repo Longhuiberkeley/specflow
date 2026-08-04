@@ -764,6 +764,72 @@ artifacts:
     tags: []
     fingerprint: sha256:87bb5cc1407a
     children: []
+  CHL-338:
+    id: CHL-338
+    title: Audit cross-cutting/ac-coverage findings
+    status: addressed
+    tags: []
+    fingerprint: sha256:dd5d9eace415
+    children: []
+  CHL-339:
+    id: CHL-339
+    title: Audit cross-cutting/verification findings
+    status: open
+    tags: []
+    fingerprint: sha256:7f33773dce56
+    children: []
+  CHL-340:
+    id: CHL-340
+    title: Verified status without machine-verifiable evidence (REQ-037 meta-wave)
+    status: addressed
+    tags: []
+    fingerprint: sha256:abdf92e2b819
+    children: []
+  CHL-341:
+    id: CHL-341
+    title: Green release gate coexists with 72% chain coverage; holes concentrate
+      in recent cycles
+    status: open
+    tags: []
+    fingerprint: sha256:b451be6599c6
+    children: []
+  CHL-342:
+    id: CHL-342
+    title: DEC ledger conflates ADRs with auto-generated change records (49/62)
+    status: addressed
+    tags: []
+    fingerprint: sha256:b2312f8f95aa
+    children: []
+  CHL-343:
+    id: CHL-343
+    title: project-audit baseline drift compares v1.9.0->v1.9.2 despite newer baselines
+      through v1.13.3
+    status: addressed
+    tags: []
+    fingerprint: sha256:3c1534c44781
+    children: []
+  CHL-344:
+    id: CHL-344
+    title: 'Audit signal design: severity asymmetry, no audit-over-audit trend, unclassified
+      ACs at info'
+    status: open
+    tags: []
+    fingerprint: sha256:8ad447a9d350
+    children: []
+  CHL-345:
+    id: CHL-345
+    title: Audit cross-cutting/baseline-drift findings
+    status: open
+    tags: []
+    fingerprint: sha256:094c5e97ad6d
+    children: []
+  CHL-346:
+    id: CHL-346
+    title: Audit cross-cutting/consistency findings
+    status: open
+    tags: []
+    fingerprint: sha256:92b228b33f75
+    children: []
   CHL-V113-009f:
     id: CHL-V113-009f
     title: "v1.13.2 release lens \u2014 temporal drift"
@@ -785,56 +851,4 @@ artifacts:
     tags: []
     fingerprint: sha256:2a3d1132d093
     children: []
-  CHL-338:
-    id: CHL-338
-    title: Audit cross-cutting/ac-coverage findings
-    status: open
-    tags: []
-    fingerprint: sha256:2a532fe21dcd
-    children: []
-  CHL-339:
-    id: CHL-339
-    title: Audit cross-cutting/verification findings
-    status: open
-    tags: []
-    fingerprint: sha256:7c8f21b59987
-    children: []
-  CHL-340:
-    id: CHL-340
-    title: Verified status without machine-verifiable evidence (REQ-037 meta-wave)
-    status: open
-    tags: []
-    fingerprint: sha256:d86761263a23
-    children: []
-  CHL-341:
-    id: CHL-341
-    title: Green release gate coexists with 72% chain coverage; holes concentrate
-      in recent cycles
-    status: open
-    tags: []
-    fingerprint: sha256:b451be6599c6
-    children: []
-  CHL-342:
-    id: CHL-342
-    title: DEC ledger conflates ADRs with auto-generated change records (49/62)
-    status: open
-    tags: []
-    fingerprint: sha256:a65565b5dab8
-    children: []
-  CHL-343:
-    id: CHL-343
-    title: project-audit baseline drift compares v1.9.0->v1.9.2 despite newer baselines
-      through v1.13.3
-    status: open
-    tags: []
-    fingerprint: sha256:c35dffb5f451
-    children: []
-  CHL-344:
-    id: CHL-344
-    title: 'Audit signal design: severity asymmetry, no audit-over-audit trend, unclassified
-      ACs at info'
-    status: open
-    tags: []
-    fingerprint: sha256:8ad447a9d350
-    children: []
-next_id: 345
+next_id: 347

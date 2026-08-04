@@ -188,4 +188,156 @@ artifacts:
     tags: []
     fingerprint: sha256:d388993beb0d
     children: []
-next_id: 29
+  QT-029:
+    id: QT-029
+    title: 'Qualification Test for REQ-028: Autonomous experimentation loop on SpecFlow'
+    status: verified
+    tags:
+    - backfilled
+    - verification-contract
+    - autoresearch
+    - REQ-028
+    fingerprint: sha256:9755a1603ec6
+    children: []
+  QT-030:
+    id: QT-030
+    title: 'Qualification Test for REQ-029: Competition-scoped experiment tracking'
+    status: verified
+    tags:
+    - backfilled
+    - verification-contract
+    - autoresearch
+    - competition
+    - REQ-029
+    fingerprint: sha256:2a91f21d16c8
+    children: []
+  QT-031:
+    id: QT-031
+    title: 'Qualification Test for REQ-030: Knowledge condensation across loops'
+    status: verified
+    tags:
+    - backfilled
+    - verification-contract
+    - autoresearch
+    - findings
+    - knowledge
+    - REQ-030
+    fingerprint: sha256:d5b318ec251b
+    children: []
+  QT-032:
+    id: QT-032
+    title: 'Qualification Test for REQ-031: Explore / exploit / validate LOOP modes'
+    status: verified
+    tags:
+    - backfilled
+    - verification-contract
+    - autoresearch
+    - modes
+    - REQ-031
+    fingerprint: sha256:b21c7cb533bf
+    children: []
+  QT-033:
+    id: QT-033
+    title: 'Qualification Test for REQ-032: Pack system supports skill installation'
+    status: verified
+    tags:
+    - backfilled
+    - verification-contract
+    - autoresearch
+    - pack
+    - skills
+    - REQ-032
+    fingerprint: sha256:5f5b9a7a5250
+    children: []
+  QT-034:
+    id: QT-034
+    title: 'Qualification Test for REQ-033: Dynamic status dashboard for new artifact
+      categories'
+    status: verified
+    tags:
+    - backfilled
+    - verification-contract
+    - autoresearch
+    - status
+    - dashboard
+    - REQ-033
+    fingerprint: sha256:839db2914833
+    children: []
+  QT-035:
+    id: QT-035
+    title: 'Qualification Test for REQ-034: Traceability covers research chain'
+    status: verified
+    tags:
+    - backfilled
+    - verification-contract
+    - autoresearch
+    - trace
+    - REQ-034
+    fingerprint: sha256:4d8acbd77679
+    children: []
+  QT-036:
+    id: QT-036
+    title: 'Qualification Test for REQ-035: Enhanced autoresearch logging, objectives,
+      and domain-aware checks'
+    status: verified
+    tags:
+    - backfilled
+    - verification-contract
+    - autoresearch
+    - REQ-035
+    - logging
+    - domain-aware
+    fingerprint: sha256:5f6bf95ee224
+    children: []
+  QT-037:
+    id: QT-037
+    title: 'Qualification Test for REQ-037: Eliminate false-confidence signals (v1.13
+      cycle)'
+    status: verified
+    tags:
+    - backfilled
+    - verification-contract
+    - v1.13
+    - REQ-037
+    - accounting-not-policing
+    fingerprint: sha256:c348fc9593c8
+    children: []
+  QT-038:
+    id: QT-038
+    title: 'Qualification Test for REQ-AUTORESE-d684: Autoresearch pack v0.2.0'
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - autoresearch
+    - REQ-AUTORESE-d684
+    - v0.2.0
+    fingerprint: sha256:83a4d5c754b3
+    children: []
+  QT-039:
+    id: QT-039
+    title: 'Qualification Test for REQ-DEFERRED-5cea: Deferred lifecycle capabilities'
+    status: verified
+    tags:
+    - backfilled
+    - verification-contract
+    - REQ-DEFERRED-5cea
+    - lifecycle
+    - v1.12
+    - accounting-not-policing
+    fingerprint: sha256:84008136ebfb
+    children: []
+  QT-040:
+    id: QT-040
+    title: 'Qualification Test for REQ-TRANSCRI-24b7: Transcript-mined CLI authoring
+      ergonomics'
+    status: verified
+    tags:
+    - backfilled
+    - verification-contract
+    - v1.13.2
+    - REQ-TRANSCRI-24b7
+    - ergonomics
+    fingerprint: sha256:d4dbf6b019c2
+    children: []
+next_id: 41

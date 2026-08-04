@@ -223,4 +223,370 @@ artifacts:
     - brief
     fingerprint: sha256:aae828ea32c0
     children: []
-next_id: 33
+  UT-033:
+    id: UT-033
+    title: 'v1.12.6 gate patch: project-audit dry-run + foundational-doctrine cry-wolf
+      kill'
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - REQ-037
+    - v1.12.6
+    fingerprint: sha256:626de76e0b2d
+    children: []
+  UT-034:
+    id: UT-034
+    title: 'specflow verify arc: evidence recorder + verify_run_* persistence'
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - REQ-037
+    - v1.13
+    fingerprint: sha256:21ff91da4aeb
+    children: []
+  UT-035:
+    id: UT-035
+    title: Orphan-code detection + retro-link path (v1.13 adoption wave)
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - REQ-037
+    - v1.13
+    - orphan-code
+    fingerprint: sha256:d0c67e27b61a
+    children: []
+  UT-036:
+    id: UT-036
+    title: 'Pre-adoption baseline handshake: ops pack + monitor/run schemas'
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - REQ-037
+    - v1.13
+    - orphan-code
+    - baseline
+    fingerprint: sha256:e6f7bbdd78c6
+    children: []
+  UT-037:
+    id: UT-037
+    title: 'Risk tiers + AC observability: decision & objective quality lenses (v1.13.1)'
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - REQ-037
+    - v1.13.1
+    - risk-tier
+    - ac-quality
+    fingerprint: sha256:5eeed20334d2
+    children: []
+  UT-039:
+    id: UT-039
+    title: Orphan adoption closure + outcome feedback loop (v1.13 wave)
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - v1.13
+    - orphan-code
+    - outcome-feedback
+    fingerprint: sha256:98ddaa716249
+    children: []
+  UT-040:
+    id: UT-040
+    title: 'specflow autoresearch CLI: plan/run/review/leaderboard + concurrent-LOOP
+      gate'
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - autoresearch
+    - CLI
+    - REQ-AUTORESE
+    fingerprint: sha256:acd5b1a90f84
+    children: []
+  UT-041:
+    id: UT-041
+    title: EXPT auxiliary_metrics field + schema/lint coverage
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - autoresearch
+    - EXPT-schema
+    - REQ-AUTORESE
+    fingerprint: sha256:32379f8e763e
+    children: []
+  UT-042:
+    id: UT-042
+    title: 'Protocol doc parse-guard: multi-criteria/anti-leakage/checklist in competition-setup-protocol'
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - autoresearch
+    - docs
+    - REQ-AUTORESE
+    fingerprint: sha256:c3d51b23164a
+    children: []
+  UT-043:
+    id: UT-043
+    title: Noise probe + concurrent-LOOP gate + rbac-check cleanup (small-fixes cluster)
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - small-fixes
+    - noise-probe
+    - LOOP-gate
+    - REQ-035
+    fingerprint: sha256:961d751f2f10
+    children: []
+  UT-044:
+    id: UT-044
+    title: Thin SKILL.md + pack context injection (autoresearch pack refactor)
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - autoresearch
+    - skill-refactor
+    - REQ-AUTORESE
+    fingerprint: sha256:2cdf6f3d910d
+    children: []
+  UT-045:
+    id: UT-045
+    title: project-audit baseline selection uses semver ordering (v1.13.4 CHL-343
+      fix)
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - small-fixes
+    - baselines
+    - semver
+    - REQ-035
+    fingerprint: sha256:f336c64ddebd
+    children: []
+  UT-046:
+    id: UT-046
+    title: 'brief --next de-noise: rewind-evidence gate + auto-DEC filter (v1.13.4
+      CHL-344 fix)'
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - small-fixes
+    - brief
+    - de-noise
+    - REQ-035
+    fingerprint: sha256:57a10363efee
+    children: []
+  UT-047:
+    id: UT-047
+    title: DEC dec_kind discriminator (adr | change_record) for type conflation fix
+      (CHL-342)
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - small-fixes
+    - DEC
+    - dec_kind
+    - REQ-035
+    fingerprint: sha256:1d315cf3ca0a
+    children: []
+  UT-048:
+    id: UT-048
+    title: 'artifact-lint quality gates: empty-AC error and NFR threshold warning'
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - REQ-DEFERRED-5cea
+    - v1.12.0
+    fingerprint: sha256:b53b91bd6229
+    children: []
+  UT-049:
+    id: UT-049
+    title: multi-host platform detection warning and refresh --all-platforms
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - REQ-DEFERRED-5cea
+    - v1.12.0
+    fingerprint: sha256:d33d6d1d227f
+    children: []
+  UT-050:
+    id: UT-050
+    title: 'phase-set command: reverse-lifecycle phase accounting'
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - REQ-DEFERRED-5cea
+    - v1.12.0
+    fingerprint: sha256:881e630065fc
+    children: []
+  UT-051:
+    id: UT-051
+    title: 'rbac check command: author role resolution and transition authorization'
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - REQ-DEFERRED-5cea
+    - v1.12.0
+    fingerprint: sha256:b8d3f080237b
+    children: []
+  UT-052:
+    id: UT-052
+    title: 'rtm command: bidirectional requirements traceability matrix'
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - REQ-DEFERRED-5cea
+    - v1.12.0
+    fingerprint: sha256:f6c7f845837d
+    children: []
+  UT-053:
+    id: UT-053
+    title: supersession status and supersedes role for REQ/ARCH/DDD schemas
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - REQ-DEFERRED-5cea
+    - v1.12.0
+    fingerprint: sha256:1b87a34e5d0c
+    children: []
+  UT-054:
+    id: UT-054
+    title: Fix Acceptance Criteria mutation boundaries (v1.13.3)
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - REQ-TRANSCRI-24b7
+    - v1.13.3
+    fingerprint: sha256:211c83d6d507
+    children: []
+  UT-055:
+    id: UT-055
+    title: Ship v1.13.2 transcript-mined CLI ergonomics
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - REQ-TRANSCRI-24b7
+    - v1.13.2
+    fingerprint: sha256:7d73c114150b
+    children: []
+  UT-056:
+    id: UT-056
+    title: 'DDD-022 unit tests: COMP/LOOP/EXPT/FIND schema validation'
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - autoresearch
+    - schema
+    - DDD-022
+    fingerprint: sha256:2ec8279f9f60
+    children: []
+  UT-057:
+    id: UT-057
+    title: 'DDD-023 unit tests: pack.yaml adds_skills field semantics'
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - autoresearch
+    - pack
+    - skills
+    - DDD-023
+    fingerprint: sha256:334a18bec519
+    children: []
+  UT-058:
+    id: UT-058
+    title: 'DDD-024 unit tests: dynamic status dashboard category field'
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - autoresearch
+    - status
+    - dashboard
+    - DDD-024
+    fingerprint: sha256:6a8a6510e8d1
+    children: []
+  UT-059:
+    id: UT-059
+    title: 'DDD-025 unit tests: autonomous loop protocol 8 phases'
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - autoresearch
+    - protocol
+    - loop
+    - DDD-025
+    fingerprint: sha256:af158b88bf04
+    children: []
+  UT-060:
+    id: UT-060
+    title: 'DDD-026 unit tests: verification-contract + accounting evidence lenses'
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - v1.13
+    - DDD-026
+    - accounting-not-policing
+    fingerprint: sha256:7e43cdbc0301
+    children: []
+  UT-061:
+    id: UT-061
+    title: 'DDD-027 unit tests: autoresearch pack detailed design'
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - autoresearch
+    - DDD-027
+    - multi-criteria
+    - domain-aware
+    fingerprint: sha256:3e66b568336f
+    children: []
+  UT-062:
+    id: UT-062
+    title: 'DDD-028 unit tests: deferred lifecycle capabilities detailed design'
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - DDD-028
+    - lifecycle
+    - v1.12
+    - accounting-not-policing
+    fingerprint: sha256:bea371f938f1
+    children: []
+  UT-063:
+    id: UT-063
+    title: 'DDD-LOUDFAIL unit tests: loud-failure + advisory ergonomics'
+    status: implemented
+    tags:
+    - backfilled
+    - verification-contract
+    - v1.13.2
+    - DDD-LOUDFAIL
+    - ergonomics
+    fingerprint: sha256:466dc15c31a3
+    children: []
+next_id: 64

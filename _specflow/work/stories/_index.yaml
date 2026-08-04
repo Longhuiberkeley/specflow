@@ -828,7 +828,7 @@ artifacts:
   STORY-624:
     id: STORY-624
     title: Orphan-code adoption + outcome feedback loop (upcoming wave)
-    status: draft
+    status: verified
     tags:
     - v1.13
     - orphan-code
@@ -837,24 +837,65 @@ artifacts:
     - upcoming
     fingerprint: sha256:0c60189f291d
     children: []
+  STORY-625:
+    id: STORY-625
+    title: Pre-adoption baseline traceability
+    status: implemented
+    tags:
+    - traceability
+    - baseline
+    - orphan-code
+    - v1.13
+    - accounting-not-policing
+    fingerprint: sha256:fccf88e2d5f3
+    children: []
+  STORY-626:
+    id: STORY-626
+    title: "Decision & objective quality \u2014 computed risk tiers + AC observability\
+      \ (v1.13.1)"
+    status: implemented
+    tags: []
+    fingerprint: sha256:354f29fa9053
+    children: []
+  STORY-627:
+    id: STORY-627
+    title: Fix project-audit baseline selection to semver ordering
+    status: verified
+    tags: []
+    fingerprint: sha256:b76debaf06ec
+    children: []
+  STORY-628:
+    id: STORY-628
+    title: 'De-noise brief --next: rewind-evidence gate and auto-DEC filter'
+    status: verified
+    tags: []
+    fingerprint: sha256:067983d6c42e
+    children: []
+  STORY-629:
+    id: STORY-629
+    title: Add dec_kind discriminator to DEC artifacts
+    status: verified
+    tags: []
+    fingerprint: sha256:a657f806a0a2
+    children: []
   STORY-ADDAUXIL-c7bd:
     id: STORY-ADDAUXIL-c7bd
     title: Add auxiliary_metrics field to EXPT schema and update test coverage
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:c73031c9d86f
     children: []
   STORY-ADDCLI-0e15:
     id: STORY-ADDCLI-0e15
     title: Add CLI subcommand specflow autoresearch with plan/run/review/leaderboard
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:90a19484fc11
     children: []
   STORY-ADDMULTI-0f54:
     id: STORY-ADDMULTI-0f54
     title: Add multi-criteria and anti-leakage documentation to competition-setup-protocol
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:d0fdc70e2da3
     children: []
@@ -865,6 +906,16 @@ artifacts:
     tags:
     - v1.12.0
     fingerprint: sha256:e45e9f28f9d1
+    children: []
+  STORY-FIXACCEP-f941:
+    id: STORY-FIXACCEP-f941
+    title: Fix Acceptance Criteria mutation boundaries (v1.13.3)
+    status: implemented
+    tags:
+    - v1.13.3
+    - bugfix
+    - ac-mutation
+    fingerprint: sha256:0090ff56379c
     children: []
   STORY-MULTIHOS-63a5:
     id: STORY-MULTIHOS-63a5
@@ -898,10 +949,20 @@ artifacts:
     - v1.12.0
     fingerprint: sha256:a72a3ec06af0
     children: []
+  STORY-SHIPV1-cbb2:
+    id: STORY-SHIPV1-cbb2
+    title: Ship v1.13.2 transcript-mined CLI ergonomics
+    status: implemented
+    tags:
+    - v1.13.2
+    - ergonomics
+    - dogfood
+    fingerprint: sha256:2a64bb3f9eef
+    children: []
   STORY-SMALLFIX-621b:
     id: STORY-SMALLFIX-621b
     title: Small fixes - concurrent-LOOP gate, noise probe, test cleanup
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:6ef30b99260e
     children: []
@@ -916,48 +977,8 @@ artifacts:
   STORY-UPDATESK-86fb:
     id: STORY-UPDATESK-86fb
     title: Update SKILL.md to thin CLI wrapper and add pack context injection
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:a557ed85a54a
     children: []
-  STORY-625:
-    id: STORY-625
-    title: Pre-adoption baseline traceability
-    status: implemented
-    tags:
-    - traceability
-    - baseline
-    - orphan-code
-    - v1.13
-    - accounting-not-policing
-    fingerprint: sha256:773374d157a7
-    children: []
-  STORY-626:
-    id: STORY-626
-    title: "Decision & objective quality \u2014 computed risk tiers + AC observability\
-      \ (v1.13.1)"
-    status: implemented
-    tags: []
-    fingerprint: sha256:354f29fa9053
-    children: []
-  STORY-SHIPV1-cbb2:
-    id: STORY-SHIPV1-cbb2
-    title: Ship v1.13.2 transcript-mined CLI ergonomics
-    status: implemented
-    tags:
-    - v1.13.2
-    - ergonomics
-    - dogfood
-    fingerprint: sha256:2a64bb3f9eef
-    children: []
-  STORY-FIXACCEP-f941:
-    id: STORY-FIXACCEP-f941
-    title: Fix Acceptance Criteria mutation boundaries (v1.13.3)
-    status: implemented
-    tags:
-    - v1.13.3
-    - bugfix
-    - ac-mutation
-    fingerprint: sha256:0090ff56379c
-    children: []
-next_id: 627
+next_id: 630

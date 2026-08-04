@@ -18,6 +18,8 @@ suspect: false
 links:
 - target: REQ-037
   role: implements
+- target: UT-036
+  role: verified_by
 created: '2026-08-03'
 fingerprint: sha256:fccf88e2d5f3
 output_files:
@@ -26,6 +28,7 @@ output_files:
 - src/specflow/packs/ops/schemas/run.yaml
 - tests/test_ops_pack.py
 version: 1
+modified: '2026-08-04'
 ---
 
 # Pre-adoption baseline traceability

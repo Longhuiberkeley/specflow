@@ -364,7 +364,7 @@ artifacts:
     id: REQ-AUTORESE-d684
     title: 'Autoresearch pack v0.2.0: multi-criteria support, CLI subcommand, and
       harness-agnosticism'
-    status: approved
+    status: verified
     tags: []
     fingerprint: sha256:0fc93b56a8e8
     children: []
@@ -386,4 +386,4 @@ artifacts:
     - accounting-not-policing
     fingerprint: sha256:7e2a7a6434b9
     children: []
-next_id: 685
+next_id: 38

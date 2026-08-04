@@ -1,6 +1,7 @@
 ---
 id: STORY-626
-title: Decision & objective quality — computed risk tiers + AC observability (v1.13.1)
+title: "Decision & objective quality \u2014 computed risk tiers + AC observability\
+  \ (v1.13.1)"
 type: story
 status: implemented
 rationale: v1.13.1 honest-quality lenses (risk tiers + AC observability); accounting,
@@ -11,9 +12,11 @@ links:
   role: implements
 - target: ARCH-026
   role: derives_from
+- target: UT-037
+  role: verified_by
 created: '2026-08-03'
 fingerprint: sha256:354f29fa9053
-modified: '2026-08-03'
+modified: '2026-08-04'
 output_files:
 - tests/test_risk.py
 - src/specflow/lib/risk.py

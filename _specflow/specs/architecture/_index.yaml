@@ -242,7 +242,7 @@ artifacts:
     - architecture
     - accounting-not-policing
     - v1.12
-    fingerprint: sha256:aa3755a74a75
+    fingerprint: sha256:174bed332720
     children: []
   ARCH-LOUDFAIL-d87a:
     id: ARCH-LOUDFAIL-d87a
