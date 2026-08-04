@@ -296,12 +296,20 @@ class TestNextIdRecompute:
             body="b",
             artifact_id="REQ-DEFERRED-d684",
         )
+        art_lib.create_artifact(
+            root,
+            "requirement",
+            title="All-digit draft hash",
+            body="b",
+            artifact_id="REQ-PLACEHOL-1234",
+        )
 
         art_lib.rebuild_index(root)
 
         index = art_lib._read_index(_req_index(root))
         assert index["next_id"] == 2
         assert "REQ-DEFERRED-d684" in index["artifacts"]
+        assert "REQ-PLACEHOL-1234" in index["artifacts"]
 
     def test_artifact_lint_fix_uses_canonical_next_id(self, tmp_path: Path):
         root = _scaffold(tmp_path)

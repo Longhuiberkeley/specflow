@@ -1,5 +1,5 @@
 STORY-001:
-  tests/test_rebuild_index.py: ea46d945d0129d1f
+  tests/test_rebuild_index.py: 18724d224a454506
 STORY-002:
   tests/test_reverse_impact.py: f1b1c09c3d568008
 STORY-005:
@@ -141,8 +141,8 @@ STORY-043:
   tests/test_reqif_roundtrip.py: 3463ce0fc6138e05
   tests/test_status_coverage.py: 9995f842e8dbe9a9
 STORY-046:
-  src/specflow/lib/evidence.py: 6d2b86d573520651
-  tests/test_evidence.py: 47e6d63b654a606f
+  src/specflow/lib/evidence.py: ea267ed15cb00bc0
+  tests/test_evidence.py: 80b18e033a9e4395
 STORY-047:
   tests/test_standards_get_clause.py: 704693702a201a39
 STORY-048:
@@ -191,7 +191,7 @@ STORY-070:
   src/specflow/packs/autoresearch/schemas/loop.yaml: d8bfef4f0fe999e1
 STORY-082:
   AGENTS.md: 9d66ae3ed728ed30
-  src/specflow/__init__.py: 5b987d07d72b492e
+  src/specflow/__init__.py: 0c27dd5b766cdcbf
   src/specflow/commands/artifact_review.py: c5c5199fe8e3032c
   src/specflow/commands/brief.py: bc4d51eafc68166b
   src/specflow/lib/checklists.py: cb6567237cc74af0
@@ -243,9 +243,12 @@ STORY-ADDMULTI-0f54:
 STORY-ARTIFACT-a39a:
   tests/test_lint_quality_gates.py: e265efa68913bac8
 STORY-FIXACCEP-f941:
-  CHANGELOG.md: e424df59aed7779f
+  CHANGELOG.md: 3c989be74b740802
   src/specflow/lib/lint.py: 2392d547b13e7047
   tests/test_v132_ergonomics.py: 32cc151a32036af1
+STORY-KEEPRELE-37de:
+  src/specflow/lib/evidence.py: ea267ed15cb00bc0
+  tests/test_evidence.py: 80b18e033a9e4395
 STORY-MULTIHOS-63a5:
   tests/test_multi_platform.py: 9f1705767005ef67
 STORY-PHASESET-d470:
@@ -258,7 +261,7 @@ STORY-RBACCHEC-e356:
 STORY-RTMCOMMA-1d6f:
   src/specflow/commands/rtm.py: 8cf5379414d7c677
 STORY-SHIPV1-cbb2:
-  CHANGELOG.md: e424df59aed7779f
+  CHANGELOG.md: 3c989be74b740802
   docs/cli-reference.md: ae8c04a46ead6371
   src/specflow/cli.py: 2cb4fe214a63997f
   src/specflow/commands/artifact_lint.py: df812d9b0c803706
@@ -266,7 +269,7 @@ STORY-SHIPV1-cbb2:
   src/specflow/commands/create.py: b708133caa5af387
   src/specflow/commands/fingerprint_refresh.py: 07e897d63c5e289c
   src/specflow/commands/update.py: c8e9297a55bc568f
-  src/specflow/lib/artifacts.py: 8ca78481ecdaef00
+  src/specflow/lib/artifacts.py: 6811765d62d26c36
   src/specflow/lib/impact.py: 5b3565bb49f80451
   src/specflow/lib/lint.py: 2392d547b13e7047
   tests/test_artifacts.py: 5eb6a8662b304967

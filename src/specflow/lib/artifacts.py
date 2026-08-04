@@ -1165,10 +1165,11 @@ def rebuild_index(root: Path, artifact_type: str | None = None) -> dict[str, Any
 
             base_id = get_base_id(art.id)
             # Only canonical numeric IDs advance next_id. Draft IDs end with a
-            # short hash (for example STORY-FIXACCEP-f941); searching that segment
-            # for digits made rebuild_index treat the hash as an allocated ID.
+            # short hash (for example STORY-FIXACCEP-f941); even an all-digit
+            # hash is not an allocated sequence number.
+            from specflow.lib import draft_ids as draft_lib
             last_segment = base_id.rsplit("-", 1)[-1]
-            num_match = re.fullmatch(r"\d+", last_segment)
+            num_match = None if draft_lib.is_draft_id(base_id) else re.fullmatch(r"\d+", last_segment)
             if num_match:
                 num = int(num_match.group())
                 if num > max_num:

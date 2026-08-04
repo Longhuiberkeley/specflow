@@ -20,12 +20,13 @@ Dogfood patch that completes the v1.13 accounting loop: fixes audit baseline sel
 - **Semver-aware audit baseline selection** — numeric release segments and prerelease ordering now select the newest baselines (`v1.13.2 → v1.13.3`) instead of the lexicographic `v1.9.x` pair; rebuild-index and `artifact-lint --fix` no longer derive `next_id` from digits embedded in draft-ID hashes or from file counts.
 - **Brief decision de-noise** — auto-generated change records no longer inflate unreviewed-decision or Recent decisions output; the explicit `dec_kind` discriminator separates 49 change records from 12 ADRs with tag fallback for older ledgers.
 - **Verification evidence honesty** — corrected one backfilled integration contract's cited dashboard test, preserved historical DEC modification dates, aligned exit-zero UT contracts with `implemented`, and retained unresolved verification-link debt as an open challenge.
+- **Complete ship-grade evidence RTM** — approved, implemented, and verified requirements now render together; the first verified REQ can no longer hide the rest of the traceability matrix. Draft IDs are excluded from index counters even when their four-character hash is all digits.
 
 ### Verification
 
-- 1097 tests passing; targeted rebuild-index/baseline/brief regressions 63/63.
+- 1098 tests passing; targeted rebuild-index/baseline/brief regressions 63/63 and evidence/rebuild release-gate regressions 17/17.
 - Live sampled contracts: UT-045 14 passed, IT-027 179 passed, QT-035 108 passed.
-- Artifact schema/links/status/IDs/fingerprints and source-drift checks pass across 580 artifacts; RTM gaps empty and orphan tests 0.
+- Artifact schema/links/status/IDs/fingerprints and source-drift checks pass across the complete release artifact set; RTM gaps empty and orphan tests 0.
 - Dry-run audit: 0 errors, 2 advisory warnings (1 accounting/non-escalating), 71 info.
 
 ## [1.13.3] - 2026-08-04

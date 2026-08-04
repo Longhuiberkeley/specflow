@@ -65,6 +65,29 @@ class TestGenerateEvidenceReport:
         assert "REQ-001" in report
         assert "ARCH-001" in report
 
+    def test_traceability_includes_mixed_eligible_statuses(self, tmp_path: Path):
+        """One verified REQ must not hide approved/implemented peers."""
+        _scaffold_project(tmp_path)
+        for req_id, status in [
+            ("REQ-001", "approved"),
+            ("REQ-002", "implemented"),
+            ("REQ-003", "verified"),
+        ]:
+            _write_artifact(tmp_path, "specs/requirements", f"{req_id}.md", {
+                "id": req_id,
+                "type": "requirement",
+                "title": f"Requirement {req_id}",
+                "status": status,
+                "links": [],
+            })
+
+        baseline_lib.create_baseline(tmp_path, "v1.0")
+        result = evidence_lib.generate_evidence_report(tmp_path, "v1.0")
+        assert result["ok"]
+        report = Path(result["path"]).read_text(encoding="utf-8")
+        for req_id in ("REQ-001", "REQ-002", "REQ-003"):
+            assert f"| {req_id} |" in report
+
     def test_test_results_section(self, tmp_path: Path):
         _scaffold_project(tmp_path)
         _write_artifact(tmp_path, "specs/unit-tests", "UT-001.md", {

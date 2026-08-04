@@ -917,6 +917,13 @@ artifacts:
     - ac-mutation
     fingerprint: sha256:0090ff56379c
     children: []
+  STORY-KEEPRELE-37de:
+    id: STORY-KEEPRELE-37de
+    title: Keep release evidence RTM complete when verified REQs exist
+    status: implemented
+    tags: []
+    fingerprint: sha256:387b32f39e7f
+    children: []
   STORY-MULTIHOS-63a5:
     id: STORY-MULTIHOS-63a5
     title: multi-host platform detection warning and refresh --all-platforms

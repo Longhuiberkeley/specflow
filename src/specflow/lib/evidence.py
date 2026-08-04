@@ -61,9 +61,10 @@ def _traceability_section(
     lines.append(f"## 1. Traceability Matrix")
     lines.append(f"")
 
-    reqs = [a for a in artifacts if a.type == "requirement" and a.status == "verified"]
-    if not reqs:
-        reqs = [a for a in artifacts if a.type == "requirement" and a.status in ("approved", "implemented", "verified")]
+    reqs = [
+        a for a in artifacts
+        if a.type == "requirement" and a.status in ("approved", "implemented", "verified")
+    ]
 
     if not reqs:
         lines.append(f"*No verified/approved requirements found.*")

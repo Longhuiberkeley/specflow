@@ -830,6 +830,27 @@ artifacts:
     tags: []
     fingerprint: sha256:92b228b33f75
     children: []
+  CHL-NONSEMVE-c16b:
+    id: CHL-NONSEMVE-c16b
+    title: Non-semver baseline names can outrank release baselines
+    status: open
+    tags: []
+    fingerprint: sha256:b157eaef4aa4
+    children: []
+  CHL-RELEASEB-58c6:
+    id: CHL-RELEASEB-58c6
+    title: Release baseline outputs must be committed before tag
+    status: open
+    tags: []
+    fingerprint: sha256:a879dcc280ff
+    children: []
+  CHL-RELEASEE-b5ca:
+    id: CHL-RELEASEE-b5ca
+    title: Release evidence RTM collapses after first verified REQ
+    status: open
+    tags: []
+    fingerprint: sha256:525fa5b10b1d
+    children: []
   CHL-V113-009f:
     id: CHL-V113-009f
     title: "v1.13.2 release lens \u2014 temporal drift"

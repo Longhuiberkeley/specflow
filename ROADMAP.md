@@ -198,6 +198,14 @@ Focus: **autoresearch methodology depth, escalation/permanence test, and templat
 
 > Delivered: the `spike-lifecycle` lint detector (stale / zombie / repeated-topic SPIKEs) shipped as a first-class `artifact-lint --type spike-lifecycle` check — the work-side complement to the v1.8.0 *Stale Code Detection* item. Still deferred: optional structured multi-output schema (typed per-component fields on COMP/EXPT) if the `component_<name>` convention proves too loose.
 
+## v1.13.4
+
+Focus: **dogfood evidence integrity, autoresearch CLI completion, and audit-signal de-noise.** No new blocking gates.
+
+- **Release evidence completeness** — compliance evidence now renders every approved, implemented, and verified REQ together; the first verified REQ can no longer collapse the ship-grade RTM to one row.
+- **Harness-agnostic autoresearch and adoption** — core CLI plan/run/status/review/leaderboard/log/suggest-finds, concurrent-LOOP guard, one-step orphan `--adopt`, optional verification-to-PREV capture, and weighted/split-integrity pack guidance.
+- **Audit and recall honesty** — semver-aware baseline selection, canonical index counters, `dec_kind` separation of ADRs from generated change records, brief de-noise, and 41 executable UT/IT/QT contracts. Verification-link debt reduced from 79 to 27 and remains openly tracked.
+
 ## v1.13.3
 
 Focus: **AC section-boundary patch** (supplemental patch over v1.13.2, no tag rewrite). No new features, no entry-point sync needed.

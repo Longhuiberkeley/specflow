@@ -589,4 +589,11 @@ artifacts:
     - ergonomics
     fingerprint: sha256:466dc15c31a3
     children: []
+  UT-EVIDENCE-9a3d:
+    id: UT-EVIDENCE-9a3d
+    title: Evidence RTM includes mixed eligible REQ statuses
+    status: implemented
+    tags: []
+    fingerprint: sha256:cd2ebadd80c8
+    children: []
 next_id: 64

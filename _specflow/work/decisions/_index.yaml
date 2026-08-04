@@ -569,6 +569,43 @@ artifacts:
     tags: []
     fingerprint: sha256:bd6c55d2d79e
     children: []
+  DEC-060:
+    id: DEC-060
+    title: 'Change Record: chore: backfill traceability and reconcile ledgers'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:6495d5097f67
+    children: []
+  DEC-061:
+    id: DEC-061
+    title: 'Change Record: feat: complete autoresearch and adoption story wave'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:dcd17ae8f15f
+    children: []
+  DEC-062:
+    id: DEC-062
+    title: 'Change Record: fix: repair index counters, baseline sort, and DEC signals'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:3edab774641b
+    children: []
+  DEC-063:
+    id: DEC-063
+    title: "Change Record: chore: dogfood \u2014 ledger hygiene + AUD-058: roadmap\
+      \ sync, orphan links, CHL triage, adversarial wings"
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:3f769447c60c
+    children: []
   DEC-CHANGERE-7c39:
     id: DEC-CHANGERE-7c39
     title: 'Change Record: chore: trace v1.13.3 AC boundary patch'
@@ -587,4 +624,4 @@ artifacts:
     - auto-generated
     fingerprint: sha256:2dd9aae04035
     children: []
-next_id: 60
+next_id: 64
