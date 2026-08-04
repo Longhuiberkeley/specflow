@@ -4,6 +4,30 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.13.4] - 2026-08-05
+
+Dogfood patch that completes the v1.13 accounting loop: fixes audit baseline selection and noisy decision recall, exposes the autoresearch protocol through the core CLI, closes six queued stories, and backfills executable V-model evidence across the repository. No new blocking gates.
+
+### Added
+
+- **Harness-agnostic autoresearch CLI** — `specflow autoresearch plan/run/status/review/leaderboard/log/suggest-finds` now drives COMP/LOOP/EXPT/FIND workflows without an external model API; concurrent running LOOPs are refused deterministically.
+- **One-step orphan adoption** — `detect orphan-code --adopt ARCH-ID` links the orphan cluster and creates a traceable backfilled STORY; `verify --seed-prev` can record prevention patterns from divergent verification outcomes.
+- **Autoresearch protocol guidance** — weighted multi-criteria metrics, split/temporal leakage checks, auxiliary metrics, and pre-LOOP configuration checks ship with the opt-in pack.
+- **Executable traceability backfill** — 41 new UT/IT/QT contracts record runnable `verify_command` evidence for recent story and design waves.
+
+### Fixed
+
+- **Semver-aware audit baseline selection** — numeric release segments and prerelease ordering now select the newest baselines (`v1.13.2 → v1.13.3`) instead of the lexicographic `v1.9.x` pair; rebuild-index and `artifact-lint --fix` no longer derive `next_id` from digits embedded in draft-ID hashes or from file counts.
+- **Brief decision de-noise** — auto-generated change records no longer inflate unreviewed-decision or Recent decisions output; the explicit `dec_kind` discriminator separates 49 change records from 12 ADRs with tag fallback for older ledgers.
+- **Verification evidence honesty** — corrected one backfilled integration contract's cited dashboard test, preserved historical DEC modification dates, aligned exit-zero UT contracts with `implemented`, and retained unresolved verification-link debt as an open challenge.
+
+### Verification
+
+- 1097 tests passing; targeted rebuild-index/baseline/brief regressions 63/63.
+- Live sampled contracts: UT-045 14 passed, IT-027 179 passed, QT-035 108 passed.
+- Artifact schema/links/status/IDs/fingerprints and source-drift checks pass across 580 artifacts; RTM gaps empty and orphan tests 0.
+- Dry-run audit: 0 errors, 2 advisory warnings (1 accounting/non-escalating), 71 info.
+
 ## [1.13.3] - 2026-08-04
 
 Patch release for two late-discovered `update --ac` section-boundary corruption cases in v1.13.2. No tag rewriting: v1.13.2 remains immutable and this patch supersedes it.

@@ -1,5 +1,5 @@
-version: 1.13.3
-rebuilt_at: '2026-08-04T16:03:23+00:00'
+version: 1.13.4
+rebuilt_at: '2026-08-04T16:16:02+00:00'
 docs:
   AGENTS.md:
     title: AGENTS.md
@@ -9,7 +9,7 @@ docs:
     audience: ''
   CHANGELOG.md:
     title: Changelog
-    fingerprint: sha256:bcdbb075b025
+    fingerprint: sha256:db7a996befb9
     cites: []
     last_reviewed: ''
     audience: ''
