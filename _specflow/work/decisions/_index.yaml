@@ -578,4 +578,13 @@ artifacts:
     - auto-generated
     fingerprint: sha256:2dd9aae04035
     children: []
+  DEC-CHANGERE-7c39:
+    id: DEC-CHANGERE-7c39
+    title: 'Change Record: chore: trace v1.13.3 AC boundary patch'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:6938a165bdf3
+    children: []
 next_id: 60

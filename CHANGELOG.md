@@ -14,6 +14,12 @@ Patch release for two late-discovered `update --ac` section-boundary corruption 
 - **Fenced headings cannot terminate AC replacement** — section-boundary selection now reuses the mutation path's code-fence map and skips headings inside fenced examples, preventing orphan closing fences and malformed Markdown.
 - Boundary selection remains level-aware: an h2 AC section owns its h3 children; a real same-or-higher-level non-fenced heading ends it.
 
+### Verification
+
+- 1026 tests passing; focused AC ergonomics suite 36/36.
+- Full and quick project audits: exit 0, zero errors, accounting-only warnings.
+- Live and shipped skill mirrors byte-identical.
+
 ## [1.13.2] - 2026-08-04
 
 Command-surface ergonomics mined from ~1,558 real agent CLI invocations
