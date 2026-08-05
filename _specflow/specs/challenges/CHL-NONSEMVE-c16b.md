@@ -14,8 +14,9 @@ severity: info
 technique: premortem
 thinking_techniques:
 - premortem
-fingerprint: sha256:dfca327579e0
+fingerprint: sha256:47f860f5616d
 modified: '2026-08-05'
+version: 1
 ---
 
 # Non-semver baseline names can outrank release baselines

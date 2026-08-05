@@ -16,7 +16,9 @@ links:
   role: derives_from
 created: '2026-08-04'
 fingerprint: sha256:7e2a7a6434b9
-modified: '2026-08-04'
+modified: '2026-08-05'
+non_functional_category: functional
+version: 1
 ---
 
 # Transcript-mined CLI authoring ergonomics — wave 2 (v1.13.2)

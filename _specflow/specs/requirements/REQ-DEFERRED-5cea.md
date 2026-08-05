@@ -11,7 +11,9 @@ suspect: false
 links: []
 created: '2026-07-10'
 fingerprint: sha256:d512b2374ca6
-modified: '2026-07-10'
+modified: '2026-08-05'
+non_functional_category: functional
+version: 1
 ---
 
 # Deferred lifecycle capabilities: rewind accounting, RTM, RBAC check, supersession, quality gates, multi-host

@@ -6,8 +6,10 @@ status: verified
 suspect: false
 links: []
 created: '2026-05-16'
-modified: '2026-08-04'
+modified: '2026-08-05'
 fingerprint: sha256:0fc93b56a8e8
+non_functional_category: functional
+version: 1
 ---
 
 # Autoresearch pack v0.2.0: multi-criteria support, CLI subcommand, and harness-agnosticism

@@ -1,0 +1,8 @@
+changed: REQ-023
+change_type: content_modified
+fingerprint_old: sha256:f79686a4868b
+fingerprint_new: sha256:f79686a4868b
+update_type: minor
+flagged_suspects: []
+resolved: false
+timestamp: '2026-08-05T08:39:18Z'
