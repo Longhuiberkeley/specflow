@@ -32,6 +32,22 @@ from specflow.lib.techniques import TechniqueFinding
 
 _SEP = "─" * 58
 
+# Severity-policy doctrine (CHL-344 A2): ONE problem class gets ONE severity.
+# When a lens reports degrees of the same problem (e.g. ac-coverage: a REQ with
+# ZERO linked tests vs one with FEWER-than-AC-count linked tests), every degree
+# carries the SAME severity — the degree lives in the message text, never in a
+# severity downgrade. Splitting one class across warn/info lets triage clear the
+# warn layer while the info layer silently regenerates the identical debt
+# (that asymmetry is what kept CHL-338/339 alive).
+#
+# Accounting treatment: a concern registered in _ACCOUNTING_CONCERNS follows the
+# accounting-not-policing doctrine — its warns are printed, reported, stamped
+# (summary_warns_accounting), and mint CHLs, but NEVER drive the exit-2
+# (warnings) code; only structural warns escalate. Every lens with accounting
+# treatment (docs-staleness, verification, ac-coverage, ac-observability)
+# obeys BOTH rules: one severity per problem class, and accounting warns tell
+# the truth without holding the gate.
+#
 # Cross-cutting concerns whose warn-severity findings are ACCOUNTING ONLY:
 # surfaced in the report and printed for review, but excluded from the warn
 # count that drives the exit-2 (warnings) code. Doctrine (BP-005/006:
@@ -88,7 +104,9 @@ _AUD_OUTPUT_TYPES = frozenset({"challenge", "audit"})
 # full recompute; acceptable and honest). Deliberately NOT keyed on
 # __version__: dogfood lens changes land mid-version and must invalidate
 # replays too.
-_CACHE_GENERATION = 1
+# gen 2 (A2): ac-coverage count-mismatch findings unified from info to warn —
+# severity IS part of the cached findings, so pre-A2 replays must not shadow it.
+_CACHE_GENERATION = 2
 
 
 def _project_fingerprint(artifacts: list[art_lib.Artifact]) -> str:
@@ -578,9 +596,12 @@ def _ac_coverage_lens(artifacts: list[art_lib.Artifact]) -> list[dict[str, str]]
     never escalates: "ac-coverage" is registered in ``_ACCOUNTING_CONCERNS``, so
     its warns never drive exit-2: a REQ whose AC count exceeds its linked-test
     count is a review-worthy coverage signal, not a release blocker (BP-005/006).
+    Severity policy: one problem class, one severity — both degrees below are
+    WARN (see the doctrine block at ``_ACCOUNTING_CONCERNS``).
 
     Signals: REQ with ACs but ZERO linked tests → warn; linked-test-count <
-    AC-count → info "count mismatch, review"; else clean.
+    AC-count → warn "count mismatch, review" (with the green-run degree);
+    else clean.
     """
     findings: list[dict[str, str]] = []
     try:
@@ -629,7 +650,7 @@ def _ac_coverage_lens(artifacts: list[art_lib.Artifact]) -> list[dict[str, str]]
                 })
             elif test_count < ac_count:
                 findings.append({
-                    "severity": "info",
+                    "severity": "warn",
                     "message": (
                         f"{req.id}: {test_count} linked test(s) < {ac_count} AC "
                         f"item(s) ({green} green) — review coverage"

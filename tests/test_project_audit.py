@@ -464,7 +464,9 @@ class TestVerificationLensBuckets:
         assert escalating == 0 and accounting == len(warns)
 
 
-# (e) ac-coverage lens: zero-tests REQ → warn; mismatch → info.
+# (e) ac-coverage lens: one problem class, one severity (A2, CHL-344) —
+# zero-tests REQ → warn; count-mismatch → warn. Both degrees are accounting
+# (concern in _ACCOUNTING_CONCERNS) and never escalate the exit code.
 
 
 class TestAcCoverageLens:
@@ -482,21 +484,39 @@ class TestAcCoverageLens:
         warn = [f for f in findings if f["severity"] == "warn" and "no linked tests" in f["message"]]
         assert warn and "3 AC item(s)" in warn[0]["message"]
 
-    def test_count_mismatch_emits_info(self):
+    def test_count_mismatch_emits_warn(self):
+        # A2 (CHL-344): one problem class, one severity — the mismatch degree
+        # is WARN like the zero-test degree (it used to be info, which let the
+        # debt regenerate after the warn layer was triaged). Degree information
+        # survives in the message text ("(N green) — review coverage").
         req = self._req_with_acs("REQ-001", 3)  # 3 ACs
         qt = _art(
             "QT-001", "qualification-test", status="verified",
             links=[art_lib.Link(target="REQ-001", role="verified_by")],
+            verify_run_exit_code=0,  # green run → the degree text carries it
         )
         findings = audit_cmd._ac_coverage_lens([req, qt])
-        assert any(f["severity"] == "info" and "review" in f["message"] for f in findings)
-        assert not any(f["severity"] == "warn" for f in findings)
+        warn = [f for f in findings if f["severity"] == "warn" and "review" in f["message"]]
+        assert warn
+        assert "1 linked test(s) < 3 AC item(s)" in warn[0]["message"]
+        assert "(1 green)" in warn[0]["message"]
+        assert not any(f["severity"] == "info" for f in findings)
 
     def test_ac_coverage_warns_are_accounting(self):
-        req = self._req_with_acs("REQ-001", 2)
-        findings = audit_cmd._ac_coverage_lens([req])
+        # BOTH degrees (zero-test and mismatch) land in the accounting bucket:
+        # concern="ac-coverage" is registered in _ACCOUNTING_CONCERNS, so
+        # neither degree can escalate.
+        req_a = self._req_with_acs("REQ-001", 2)  # zero linked tests → warn
+        req_b = self._req_with_acs("REQ-002", 3)  # mismatch → warn
+        qt = _art(
+            "QT-001", "qualification-test", status="verified",
+            links=[art_lib.Link(target="REQ-002", role="verified_by")],
+        )
+        findings = audit_cmd._ac_coverage_lens([req_a, req_b, qt])
         warns = [f for f in findings if f["severity"] == "warn"]
-        assert warns
+        assert len(warns) == 2  # one per degree, both warn
+        for w in warns:
+            assert w.get("concern") == "ac-coverage"
         escalating, accounting = audit_cmd._count_warns(warns)
         assert escalating == 0 and accounting == len(warns)
 
@@ -978,6 +998,48 @@ class TestAudSummaryStamping:
         assert fm["summary_warns"] == 2
         assert fm["summary_warns_escalating"] == 1
         assert fm["summary_warns_accounting"] == 1
+
+    def test_ac_coverage_warns_only_exit_clean_stamped_accounting(self, tmp_path, monkeypatch, capsys):
+        # A2 (CHL-344): after severity unification the ac-coverage lens emits
+        # warns on BOTH degrees. With ONLY ac-coverage warns present the run
+        # must still exit CLEAN (0) — accounting warns print + stamp but never
+        # drive exit-2 — and the stamp split must carry the whole movement in
+        # the accounting bucket (escalating stays 0). This is the unit-level
+        # guarantee that the live "escalating 0→0, accounting 0→N" trend line
+        # is honest.
+        import specflow as _pkg
+
+        root = tmp_path / "project"
+        _story_fixture(root, n_covered=1)
+        schema_dir = root / ".specflow" / "schema"
+        schema_dir.mkdir(parents=True)
+        tmpl = Path(_pkg.__file__).parent / "templates" / "schemas" / "audit.yaml"
+        (schema_dir / "audit.yaml").write_text(tmpl.read_text(encoding="utf-8"), encoding="utf-8")
+
+        monkeypatch.setattr(audit_cmd, "_horizontal_analysis", lambda arts: {})
+        monkeypatch.setattr(audit_cmd, "_vertical_analysis", lambda arts: [])
+        monkeypatch.setattr(audit_cmd, "_cross_cutting_analysis",
+                            lambda arts, r, **kw: {
+                                "ac-coverage": [
+                                    {"severity": "warn",
+                                     "message": "REQ-001: 3 AC item(s) but no linked tests"},
+                                    {"severity": "warn",
+                                     "message": "REQ-002: 1 linked test(s) < 3 AC item(s) (0 green) — review coverage"},
+                                ]})
+        monkeypatch.setattr(audit_cmd.chl_lib, "create_chl_artifacts", lambda *a, **k: [])
+
+        rc = audit_cmd.run(root, {"quick": False})
+        out = capsys.readouterr().out
+        assert rc == 0, f"ac-coverage warns alone must exit CLEAN, got {rc}\n{out}"
+
+        aud_files = sorted((root / "_specflow" / "specs" / "audits").glob("AUD-*.md"))
+        assert aud_files, "expected an AUD artifact to be created"
+        text = aud_files[-1].read_text(encoding="utf-8")
+        fm = yaml.safe_load(text[3:text.find("---", 3)])
+        assert fm["summary_warns"] == 2
+        assert fm["summary_warns_escalating"] == 0
+        assert fm["summary_warns_accounting"] == 2
+        assert fm["summary_info"] == 0
 
     def test_stamped_fields_pass_schema_lint(self, tmp_path):
         # The audit schema enumerates the stamp fields as optional, and the
