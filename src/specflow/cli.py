@@ -340,6 +340,8 @@ def _add_brief_parser(subparsers):
 
 
 def _add_create_parser(subparsers):
+    from specflow.lib import lint as lint_lib
+
     p = subparsers.add_parser("create", help="Create a new artifact")
     p.add_argument("--type", help="Artifact type (required unless --from-standard is used)")
     p.add_argument("--title", help="Artifact title (required unless --from-standard is used)")
@@ -354,8 +356,16 @@ def _add_create_parser(subparsers):
     p.add_argument("--body", default="", help="Markdown body content")
     p.add_argument("--force", action="store_true", help="Skip duplicate-check prompt")
     p.add_argument("--skip-dedup-check", action="store_true", dest="skip_dedup_check", help="Bypass search-before-create")
+    # Create-boundary vocabulary gate (CHL-344 A4): choices are generated from
+    # lib.lint.NFR_CATEGORIES — the single source of truth — so help prose can
+    # never drift from the enforced values again. The generic freeform path
+    # (`update --set non_functional_category=...`) stays unconstrained on
+    # purpose; artifact-lint's `nfr-category` check is its typo net.
     p.add_argument("--nfr-category", dest="nfr_category",
-                   help="Non-functional requirement category (performance, security, reliability, usability, maintainability, scalability, compliance)")
+                   choices=lint_lib.NFR_CATEGORIES,
+                   help="Non-functional requirement category: "
+                        f"{', '.join(lint_lib.NFR_CATEGORIES)} "
+                        "('functional' is the sanctioned bookkeeping value for functional REQs)")
     p.add_argument("--set", action="append", dest="set_fields", metavar="KEY=VALUE",
                    help="Set an arbitrary frontmatter field (repeatable). Value is parsed as JSON if possible, else kept as a string. "
                         "E.g. --set metric_value=0.93 --set parameters='{\"lr\": 0.001}'")

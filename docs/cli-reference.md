@@ -94,7 +94,7 @@ specflow create --from-standard CLAUSE_ID
 | `--add-link` | Append one `TARGET:ROLE` link (repeatable; dedups on target+role) — append-style parity with `update --add-link` |
 | `--body` | Markdown body content |
 | `--force` | Skip duplicate-check prompt |
-| `--nfr-category` | NFR category (performance, security, reliability, etc.) |
+| `--nfr-category` | NFR category — frozen vocabulary enforced at the create boundary: `functional`, `performance`, `security`, `reliability`, `usability`, `maintainability`, `scalability`, `compliance` (`functional` is the sanctioned bookkeeping value for functional REQs). The generic `update --set non_functional_category=...` path stays freeform; artifact-lint's `nfr-category` check is its typo net. |
 
 Run `specflow schema <type>` to see a type's settable fields, statuses, and transition map.
 

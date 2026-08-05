@@ -12,6 +12,8 @@ from specflow.lib import artifacts as art_lib
 
 
 __all__ = [
+    "NFR_CATEGORIES",
+    "validate_nfr_category",
     "load_schemas",
     "validate_artifact_schema",
     "validate_status_hierarchy",
@@ -25,6 +27,51 @@ __all__ = [
     "discover_checklists",
     "run_automated_checklist",
 ]
+
+
+# ---------------------------------------------------------------------------
+# NFR category vocabulary (CHL-344 A4)
+# ---------------------------------------------------------------------------
+
+# The single source of truth for `non_functional_category` values. Pre-A4 the
+# vocabulary existed only as CLI help prose and had drifted from the docs
+# (docs/cli-reference.md listed a different subset). `functional` is a
+# SANCTIONED bookkeeping value: projects use the field to mark functional REQs
+# so the NFR measurable-threshold gate (artifact_lint._check_acceptance) can
+# exempt them — it is vocabulary, not a typo. The create boundary enforces
+# this tuple via argparse choices; the generic freeform `update --set
+# non_functional_category=...` path is deliberately NOT constrained here —
+# artifact-lint's `nfr-category` check is its typo net (warn-only).
+NFR_CATEGORIES = (
+    "functional",
+    "performance",
+    "security",
+    "reliability",
+    "usability",
+    "maintainability",
+    "scalability",
+    "compliance",
+)
+
+
+def validate_nfr_category(value: str) -> str | None:
+    """Validate a `non_functional_category` value against NFR_CATEGORIES.
+
+    Returns None when the value is inside the frozen vocabulary, else an error
+    string naming the offender and the vocabulary. Pure helper shared by the
+    artifact-lint typo net (warn-only) and the audit nfr lens's out-of-
+    vocabulary INFO line. Comparison is case-insensitive (strip + lower),
+    matching the pre-existing "functional" exemption precedent in
+    _check_acceptance. Empty/missing values are NOT validated here — this
+    slice mandates no category presence; callers skip empties themselves.
+    """
+    v = str(value).strip().lower()
+    if v in NFR_CATEGORIES:
+        return None
+    return (
+        f"non_functional_category '{value}' is outside the frozen vocabulary "
+        f"({', '.join(NFR_CATEGORIES)})"
+    )
 
 
 # ---------------------------------------------------------------------------

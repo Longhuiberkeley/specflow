@@ -1699,3 +1699,122 @@ class TestAcObservabilityDetailSection:
         assert audit_cmd.run(root, {"quick": False}) == 0
         capsys.readouterr()
         assert "## AC observability detail" not in _latest_report(root)
+
+
+# ── CHL-344 A4: NFR vocabulary + nfr-coverage accounting parity ─────────────
+#
+# A4 demotes nfr-coverage to accounting: the >=50%-missing warn is still
+# printed and stamped but can never drive exit-2 (pre-A4 it was the ONLY
+# REQ-quality warn that could block a release-gate project-audit). The lens
+# also reports out-of-vocabulary values as ONE deterministic INFO line — the
+# typo NET itself is artifact-lint's warn-only nfr-category check.
+
+
+class TestNfrCoverageAccounting:
+    def test_nfr_coverage_registered_accounting(self):
+        assert "nfr-coverage" in audit_cmd._ACCOUNTING_CONCERNS
+
+    def test_nfr_warn_lands_in_accounting_bucket(self):
+        findings = [
+            _f("cross-cutting", "warn",
+               "20/39 REQs have no non_functional_category",
+               concern="nfr-coverage"),
+        ]
+        escalating, accounting = audit_cmd._count_warns(findings)
+        assert escalating == 0
+        assert accounting == 1
+
+    def test_lens_missing_over_half_warns_but_never_escalates(self):
+        # >=50% missing keeps its warn severity (truth-telling) — but the
+        # concern stamp routes it to the accounting bucket, never exit-2.
+        arts = [
+            _art("REQ-001", "requirement", status="approved"),
+            _art("REQ-002", "requirement", status="approved"),
+        ]
+        findings = audit_cmd._nfr_coverage_lens(arts)
+        warns = [f for f in findings if f["severity"] == "warn"]
+        assert len(warns) == 1
+        assert "2/2 REQs have no non_functional_category" in warns[0]["message"]
+        escalating, accounting = audit_cmd._count_warns(findings)
+        assert escalating == 0
+        assert accounting == 1
+
+    def test_lens_missing_under_half_is_info(self):
+        # Regression guard for the pre-existing threshold: <50% stays info.
+        arts = [
+            _art("REQ-001", "requirement", status="approved",
+                 non_functional_category="functional"),
+            _art("REQ-002", "requirement", status="approved",
+                 non_functional_category="functional"),
+            _art("REQ-003", "requirement", status="approved"),
+        ]
+        findings = audit_cmd._nfr_coverage_lens(arts)
+        missing = [f for f in findings
+                   if "have no non_functional_category" in f["message"]]
+        assert missing and missing[0]["severity"] == "info"
+
+    def test_lens_out_of_vocab_info_line_sorted_and_deterministic(self):
+        arts = [
+            _art("REQ-001", "requirement", status="approved",
+                 non_functional_category="securityy"),   # typo
+            _art("REQ-002", "requirement", status="approved",
+                 non_functional_category="perfomance"),  # typo
+            _art("REQ-003", "requirement", status="approved",
+                 non_functional_category="security"),    # in-vocabulary
+        ]
+        findings_a = audit_cmd._nfr_coverage_lens(arts)
+        findings_b = audit_cmd._nfr_coverage_lens(arts)
+        assert findings_a == findings_b  # deterministic across runs
+        oov = [f for f in findings_a if "Out-of-vocabulary" in f["message"]]
+        assert len(oov) == 1             # ONE line, not one per value
+        assert oov[0]["severity"] == "info"
+        # Sorted values in a single line.
+        assert "perfomance, securityy" in oov[0]["message"]
+
+    def test_lens_no_oov_line_when_vocabulary_clean(self):
+        arts = [
+            _art("REQ-001", "requirement", status="approved",
+                 non_functional_category="functional"),
+            _art("REQ-002", "requirement", status="approved"),
+        ]
+        findings = audit_cmd._nfr_coverage_lens(arts)
+        assert findings  # missing-category + distribution lines still render
+        assert not any("Out-of-vocabulary" in f["message"] for f in findings)
+
+    def test_run_nfr_warn_only_exits_zero_and_stamps_zero_escalating(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        # Run-level: an audit whose ONLY warn is nfr-coverage must exit 0 and
+        # stamp summary_warns_escalating == 0 — the release-gate job running
+        # project-audit without continue-on-error is never blocked by it.
+        root = tmp_path / "project"
+        _write_art(root, "_specflow/specs/requirements/REQ-001.md",
+                   "---\nid: REQ-001\ntitle: T\ntype: requirement\nstatus: approved\n"
+                   "tags: []\nsuspect: false\nlinks: []\nfingerprint: x\n---\n\n# T\n")
+        monkeypatch.setattr(audit_cmd, "_horizontal_analysis", lambda arts: {})
+        monkeypatch.setattr(audit_cmd, "_vertical_analysis", lambda arts: [])
+        monkeypatch.setattr(
+            audit_cmd, "_cross_cutting_analysis",
+            lambda arts, r, **kw: {"nfr-coverage": [
+                {"severity": "warn",
+                 "message": "20/39 REQs have no non_functional_category"},
+            ]},
+        )
+        stamps: dict = {}
+
+        def fake_create(*a, **kw):
+            stamps.update(kw)
+            return {"ok": False}
+
+        monkeypatch.setattr(audit_cmd.art_lib, "create_artifact", fake_create)
+        monkeypatch.setattr(audit_cmd.chl_lib, "create_chl_artifacts",
+                            lambda *a, **k: [])
+
+        rc = audit_cmd.run(root, {"quick": False})
+        out = capsys.readouterr().out
+        assert rc == 0, f"expected CLEAN (exit 0), got {rc}\n{out}"
+        assert "accounting" in out.lower()
+        # The AUD stamp records the split: zero escalating, one accounting.
+        assert stamps["summary_warns_escalating"] == 0
+        assert stamps["summary_warns_accounting"] == 1
+        assert stamps["summary_warns"] == 1

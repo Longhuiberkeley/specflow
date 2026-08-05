@@ -21,7 +21,7 @@ from specflow.lib import role_normalize
 from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC
 from specflow.lib.domain_constants import DOMAIN_RECOMMENDED
 
-CHECK_NAMES = ["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "thinking-techniques", "autoresearch-logging", "spike-lifecycle", "source-drift", "dec-risk-profile", "ac-observable"]
+CHECK_NAMES = ["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "thinking-techniques", "autoresearch-logging", "spike-lifecycle", "source-drift", "dec-risk-profile", "ac-observable", "nfr-category"]
 
 
 def _run_check(
@@ -84,6 +84,8 @@ def _run_check(
     elif check_name == "ac-observable":
         from specflow.lib.ac_quality import lint_ac_observability
         return lint_ac_observability(artifacts)
+    elif check_name == "nfr-category":
+        return _check_nfr_category(artifacts)
 
     return {"status_icon": "?", "detail": f"Unknown check: {check_name}",
             "blocking_count": 0, "warning_count": 0}
@@ -1750,6 +1752,49 @@ def _check_dec_risk_profile(
     detail_msg = (
         "\n".join(details) if details
         else "All approved DECs carry a risk_profile"
+    )
+
+    return {
+        "status_icon": icon,
+        "detail": detail_msg,
+        "blocking_count": 0,
+        "warning_count": warnings,
+    }
+
+
+def _check_nfr_category(
+    artifacts: list[art_lib.Artifact],
+) -> dict[str, str | int]:
+    """Warn when a REQ's non_functional_category is outside the frozen vocabulary.
+
+    The typo net for the generic freeform path (``specflow update --set
+    non_functional_category=...``): the create boundary enforces
+    ``lint_lib.NFR_CATEGORIES`` via argparse choices, but --set is freeform by
+    design, so this check is the only deterministic catch for a mistyped
+    category. Accounting, not policing — WARNING only, never blocking, never an
+    error: artifact-lint warnings never feed project-audit's exit gate (which
+    is exactly why the vocabulary net lives here and NOT in lib/lint.py's
+    schema validation, where it would route through concern "consistency" and
+    escalate). Missing field passes — this slice mandates no category presence
+    (CHL-344 A4).
+    """
+    warnings = 0
+    details: list[str] = []
+
+    reqs = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "REQ"]
+    for art in reqs:
+        category = art.frontmatter.get("non_functional_category")
+        if not category:
+            continue
+        err = lint_lib.validate_nfr_category(str(category))
+        if err:
+            warnings += 1
+            details.append(f"  ⚠ [{art.id}] {err}")
+
+    icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
+    detail_msg = (
+        "\n".join(details) if details
+        else f"All set non_functional_category values are in the frozen vocabulary ({len(reqs)} REQ(s) checked)"
     )
 
     return {

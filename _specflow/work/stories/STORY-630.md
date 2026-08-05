@@ -31,6 +31,7 @@ output_files:
 - tests/test_project_audit.py
 - tests/test_evidence.py
 - docs/cli-reference.md
+- tests/test_nfr_category.py
 modified: '2026-08-05'
 ---
 

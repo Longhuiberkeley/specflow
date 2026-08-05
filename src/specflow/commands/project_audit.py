@@ -26,6 +26,7 @@ from specflow.commands import artifact_lint
 from specflow.lib import artifacts as art_lib
 from specflow.lib import baselines as baseline_lib
 from specflow.lib import challenges as chl_lib
+from specflow.lib import lint as lint_lib
 from specflow.lib import standards as standards_lib
 from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC, BOLD
 from specflow.lib.techniques import TechniqueFinding
@@ -44,9 +45,9 @@ _SEP = "─" * 58
 # accounting-not-policing doctrine — its warns are printed, reported, stamped
 # (summary_warns_accounting), and mint CHLs, but NEVER drive the exit-2
 # (warnings) code; only structural warns escalate. Every lens with accounting
-# treatment (docs-staleness, verification, ac-coverage, ac-observability)
-# obeys BOTH rules: one severity per problem class, and accounting warns tell
-# the truth without holding the gate.
+# treatment (docs-staleness, verification, ac-coverage, ac-observability,
+# nfr-coverage) obeys BOTH rules: one severity per problem class, and
+# accounting warns tell the truth without holding the gate.
 #
 # Cross-cutting concerns whose warn-severity findings are ACCOUNTING ONLY:
 # surfaced in the report and printed for review, but excluded from the warn
@@ -61,6 +62,14 @@ _SEP = "─" * 58
 # "accounting, not policing" / "never escalates".
 _ACCOUNTING_CONCERNS: frozenset[str] = frozenset({
     "docs-staleness",
+    # nfr-coverage: REQ non_functional_category coverage. Accounting, not
+    # policing — never escalates: "N/M REQs have no category" is review-worthy
+    # bookkeeping prose, not a release blocker. The >=50%-missing warn is still
+    # printed and stamped — it just can no longer drive exit-2 (pre-A4 it was
+    # the ONLY REQ-quality warn that could block a release-gate project-audit;
+    # its siblings ac-coverage/ac-observability are accounting). Out-of-
+    # vocabulary values ride along as one deterministic INFO line (CHL-344 A4).
+    "nfr-coverage",
     # verification: test-linkage / verify-runner-contract gaps. Accounting, not
     # policing — never escalates: a STORY missing a UT link is a traceability
     # bookkeeping gap (the tests usually exist, unlinked), not a V-model hole.
@@ -106,7 +115,11 @@ _AUD_OUTPUT_TYPES = frozenset({"challenge", "audit"})
 # replays too.
 # gen 2 (A2): ac-coverage count-mismatch findings unified from info to warn —
 # severity IS part of the cached findings, so pre-A2 replays must not shadow it.
-_CACHE_GENERATION = 2
+# gen 3 (A4): nfr-coverage demoted from escalating to accounting and its lens
+# gained the out-of-vocabulary INFO line — concern classification is part of
+# the cached findings, so a gen-2 cache would replay the nfr warn with its old
+# escalating treatment and corrupt the stamp split.
+_CACHE_GENERATION = 3
 
 
 def _project_fingerprint(artifacts: list[art_lib.Artifact]) -> str:
@@ -386,28 +399,8 @@ def _cross_cutting_analysis(
     if compliance_findings:
         results["standards-coverage"] = compliance_findings
 
-    nfr_findings: list[dict[str, str]] = []
-    reqs = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "REQ"]
-    nfr_cats: dict[str, int] = {}
-    nfr_missing = 0
-    for req in reqs:
-        cat = req.frontmatter.get("non_functional_category", "")
-        if cat:
-            nfr_cats[cat] = nfr_cats.get(cat, 0) + 1
-        else:
-            nfr_missing += 1
-    if nfr_missing > 0 and len(reqs) > 0:
-        pct = nfr_missing * 100 // len(reqs)
-        nfr_findings.append({
-            "severity": "info" if pct < 50 else "warn",
-            "message": f"{nfr_missing}/{len(reqs)} REQs have no non_functional_category",
-        })
-    if nfr_cats:
-        categories_str = ", ".join(f"{k}({v})" for k, v in sorted(nfr_cats.items()))
-        nfr_findings.append({
-            "severity": "info",
-            "message": f"NFR categories: {categories_str}",
-        })
+    # NFR-coverage lens (accounting, not policing — see _nfr_coverage_lens).
+    nfr_findings = _nfr_coverage_lens(artifacts)
     if nfr_findings:
         results["nfr-coverage"] = nfr_findings
 
@@ -713,6 +706,63 @@ def _ac_observability_lens(artifacts: list[art_lib.Artifact]) -> list[dict[str, 
     # Self-describing: stamp the accounting concern (see _verification_lens).
     for f in findings:
         f["concern"] = "ac-observability"
+    return findings
+
+
+def _nfr_coverage_lens(artifacts: list[art_lib.Artifact]) -> list[dict[str, str]]:
+    """REQ non_functional_category coverage + vocabulary health.
+
+    Signals: >=50% of REQs missing a category → WARN (below 50% → info); the
+    category-distribution rollup → INFO; any out-of-vocabulary values present
+    → ONE deterministic INFO line listing them sorted (no line when none).
+    Accounting, not policing — never escalates: "nfr-coverage" is registered
+    in ``_ACCOUNTING_CONCERNS``, so even the >=50% warn never drives exit-2 —
+    category coverage is review-worthy bookkeeping prose, not a release blocker
+    (BP-005/006; pre-A4 it was the ONLY REQ-quality warn that could block a
+    release-gate project-audit). The out-of-vocabulary line reports vocabulary
+    health only — the typo NET is artifact-lint's warn-only nfr-category check
+    (this lens never warns per value, so a freeform `--set` typo can never
+    escalate an audit through either surface). Pure helper so the lens bucket
+    is unit-testable without running the full cross-cutting pipeline (CHL-344
+    A4).
+    """
+    findings: list[dict[str, str]] = []
+    reqs = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "REQ"]
+    nfr_cats: dict[str, int] = {}
+    nfr_missing = 0
+    out_of_vocab: set[str] = set()
+    for req in reqs:
+        cat = req.frontmatter.get("non_functional_category", "")
+        if cat:
+            cat = str(cat)
+            nfr_cats[cat] = nfr_cats.get(cat, 0) + 1
+            if lint_lib.validate_nfr_category(cat) is not None:
+                out_of_vocab.add(cat)
+        else:
+            nfr_missing += 1
+    if nfr_missing > 0 and len(reqs) > 0:
+        pct = nfr_missing * 100 // len(reqs)
+        findings.append({
+            "severity": "info" if pct < 50 else "warn",
+            "message": f"{nfr_missing}/{len(reqs)} REQs have no non_functional_category",
+        })
+    if nfr_cats:
+        categories_str = ", ".join(f"{k}({v})" for k, v in sorted(nfr_cats.items()))
+        findings.append({
+            "severity": "info",
+            "message": f"NFR categories: {categories_str}",
+        })
+    if out_of_vocab:
+        findings.append({
+            "severity": "info",
+            "message": (
+                "Out-of-vocabulary non_functional_category values: "
+                f"{', '.join(sorted(out_of_vocab))}"
+            ),
+        })
+    # Self-describing: stamp the accounting concern (see _verification_lens).
+    for f in findings:
+        f["concern"] = "nfr-coverage"
     return findings
 
 
