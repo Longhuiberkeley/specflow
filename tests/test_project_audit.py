@@ -1060,3 +1060,175 @@ class TestDriftSelectionAndBaselineAnchor:
         rc_write2 = audit_cmd.run(root, {"quick": False, "baseline": "nope"})
         capsys.readouterr()
         assert rc_write2 == rc_dry2
+
+
+# ── CHL-344 A0: lossless findings cache + generation key ────────────────────
+
+
+class TestLosslessCache:
+    """A0 (CHL-344): the findings cache is lossless and generation-keyed.
+
+    Pre-A0 the cache stored ``all_findings_raw[:20]`` only, so a cache-hit run
+    replayed a truncated set while the AUD stamp had already recorded the full
+    totals (AUD-075 stamped summary_info=187; a cached dry-run printed 20).
+    The fingerprint also keyed on artifact content only, so lens-code changes
+    could not invalidate replays. Both are fixed here: full-set round-trip,
+    generation-bump recompute, dry-run parity preserved.
+    """
+
+    N_HORIZ_REQ = 15
+    N_HORIZ_STORY = 5
+    N_VERT = 3
+    N_CC_INFO = 2
+    N_CC_WARN = 2
+    TOTAL = N_HORIZ_REQ + N_HORIZ_STORY + N_VERT + N_CC_INFO + N_CC_WARN  # 27 > 20
+
+    @staticmethod
+    def _req(root: Path) -> None:
+        (root / "_specflow" / "specs" / "requirements").mkdir(parents=True)
+        (root / "_specflow" / "specs" / "requirements" / "REQ-001.md").write_text(
+            "---\nid: REQ-001\ntitle: T\ntype: requirement\nstatus: approved\n"
+            "tags: []\nsuspect: false\nlinks: []\nfingerprint: x\n---\n\n# T\n",
+            encoding="utf-8",
+        )
+
+    @classmethod
+    def _stub_axes(cls, monkeypatch) -> None:
+        """Deterministic 27 findings (>20): all info except 2 docs-staleness
+        warns (accounting), so exit 0 and no CHL creation. Factories rebuild
+        the structures per call because run() mutates findings in place."""
+
+        def _horiz() -> dict:
+            return {
+                "requirement": [
+                    {"severity": "info", "message": f"req info {i}"}
+                    for i in range(cls.N_HORIZ_REQ)
+                ],
+                "story": [
+                    {"severity": "info", "message": f"story info {i}"}
+                    for i in range(cls.N_HORIZ_STORY)
+                ],
+            }
+
+        def _vert() -> list:
+            return [
+                {"severity": "info", "message": f"vert info {i}"}
+                for i in range(cls.N_VERT)
+            ]
+
+        def _cc() -> dict:
+            return {
+                "docs-staleness": [
+                    {"severity": "warn", "message": f"stale doc {i}"}
+                    for i in range(cls.N_CC_WARN)
+                ],
+                "consistency": [
+                    {"severity": "info", "message": f"cc info {i}"}
+                    for i in range(cls.N_CC_INFO)
+                ],
+            }
+
+        monkeypatch.setattr(audit_cmd, "_horizontal_analysis", lambda arts: _horiz())
+        monkeypatch.setattr(audit_cmd, "_vertical_analysis", lambda arts: _vert())
+        monkeypatch.setattr(
+            audit_cmd, "_cross_cutting_analysis", lambda arts, r, **kw: _cc()
+        )
+        # Avoid AUD/CHL artifact side effects in the minimal fixture.
+        monkeypatch.setattr(audit_cmd.art_lib, "create_artifact", lambda *a, **k: {"ok": False})
+        monkeypatch.setattr(audit_cmd.chl_lib, "create_chl_artifacts", lambda *a, **k: [])
+
+    @staticmethod
+    def _findings_line(out: str) -> str:
+        return next(l for l in out.splitlines() if "Findings:" in l)
+
+    def test_over_20_findings_round_trip(self, tmp_path, monkeypatch, capsys):
+        # (a) A fresh run caches ALL findings (pre-A0: only the first 20), and
+        # a cache-hit run replays the identical full set with identical summary
+        # counts (the Findings line mirrors the AUD stamp fields).
+        root = tmp_path / "project"
+        self._req(root)
+        self._stub_axes(monkeypatch)
+
+        rc_fresh = audit_cmd.run(root, {"quick": False})
+        out_fresh = capsys.readouterr().out
+        assert rc_fresh == 0
+
+        cache_dir = root / ".specflow" / "audits" / ".cache"
+        cache_files = sorted(cache_dir.glob("*.md"))
+        assert len(cache_files) == 1
+        cached = audit_cmd._load_cached_findings(cache_dir, cache_files[0].stem)
+        assert len(cached) == self.TOTAL  # pre-A0 this was capped at 20
+        assert {f.get("axis") for f in cached} == {"horizontal", "vertical", "cross-cutting"}
+        expected_msgs = {f"req info {i}" for i in range(self.N_HORIZ_REQ)}
+        expected_msgs |= {f"story info {i}" for i in range(self.N_HORIZ_STORY)}
+        expected_msgs |= {f"vert info {i}" for i in range(self.N_VERT)}
+        expected_msgs |= {f"cc info {i}" for i in range(self.N_CC_INFO)}
+        expected_msgs |= {f"stale doc {i}" for i in range(self.N_CC_WARN)}
+        assert {f["message"] for f in cached} == expected_msgs
+
+        line_fresh = self._findings_line(out_fresh)
+        assert "0 error(s)" in line_fresh
+        assert "2 warning(s)" in line_fresh
+        assert "25 info" in line_fresh  # 27 total − 2 accounting warns
+
+        # Cache-hit run: identical full set → identical counts and exit code,
+        # and the hit itself does not rewrite the cache.
+        rc_cached = audit_cmd.run(root, {"quick": False})
+        out_cached = capsys.readouterr().out
+        assert rc_cached == rc_fresh
+        assert "reusing previous findings" in out_cached
+        assert self._findings_line(out_cached) == line_fresh
+        assert sorted(cache_dir.glob("*.md")) == cache_files
+
+    def test_generation_bump_forces_recompute(self, tmp_path, monkeypatch, capsys):
+        # (b) Bumping _CACHE_GENERATION changes every fingerprint, so the
+        # existing cache file can never match: the next run recomputes fresh
+        # and writes a cache file under the new-generation key.
+        root = tmp_path / "project"
+        self._req(root)
+        self._stub_axes(monkeypatch)
+
+        rc1 = audit_cmd.run(root, {"quick": False})
+        capsys.readouterr()
+        assert rc1 == 0
+        cache_dir = root / ".specflow" / "audits" / ".cache"
+        gen1_files = sorted(cache_dir.glob("*.md"))
+        assert len(gen1_files) == 1
+
+        monkeypatch.setattr(
+            audit_cmd, "_CACHE_GENERATION", audit_cmd._CACHE_GENERATION + 1
+        )
+        rc2 = audit_cmd.run(root, {"quick": False})
+        out2 = capsys.readouterr().out
+        assert rc2 == rc1
+        assert "reusing previous findings" not in out2   # no replay
+        assert "Running horizontal analysis" in out2     # fresh compute
+        gen2_files = sorted(cache_dir.glob("*.md"))
+        assert len(gen2_files) == 2                      # new-gen key written
+        assert gen1_files[0] in gen2_files               # old file left intact
+
+    def test_dry_run_with_populated_cache_reads_and_writes_nothing(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        # (c) With a populated cache, --dry-run still reads the full cached set
+        # (identical Findings line and exit code as the writing run) while
+        # writing nothing at all — parity preserved on the replay path too.
+        root = tmp_path / "project"
+        self._req(root)
+        self._stub_axes(monkeypatch)
+
+        rc_write = audit_cmd.run(root, {"quick": False})   # populates the cache
+        out_write = capsys.readouterr().out
+        cache_dir = root / ".specflow" / "audits" / ".cache"
+        assert len(list(cache_dir.glob("*.md"))) == 1
+
+        def _files() -> list[str]:
+            return sorted(str(p.relative_to(root)) for p in root.rglob("*") if p.is_file())
+
+        before = _files()
+        rc_dry = audit_cmd.run(root, {"quick": False, "dry_run": True})
+        out_dry = capsys.readouterr().out
+        assert _files() == before                          # wrote nothing
+        assert rc_dry == rc_write                          # exit-code parity
+        assert "reusing previous findings" in out_dry      # read the cache
+        assert self._findings_line(out_dry) == self._findings_line(out_write)

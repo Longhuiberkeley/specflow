@@ -82,6 +82,14 @@ def _cache_dir(root: Path) -> Path:
 
 _AUD_OUTPUT_TYPES = frozenset({"challenge", "audit"})
 
+# Cache generation (CHL-344 A0): bump whenever lens semantics change so cached
+# replays can't shadow new logic — the generation is folded into every project
+# fingerprint, so one bump invalidates every cache file repo-wide (a one-time
+# full recompute; acceptable and honest). Deliberately NOT keyed on
+# __version__: dogfood lens changes land mid-version and must invalidate
+# replays too.
+_CACHE_GENERATION = 1
+
 
 def _project_fingerprint(artifacts: list[art_lib.Artifact]) -> str:
     source_fps = sorted(
@@ -89,7 +97,8 @@ def _project_fingerprint(artifacts: list[art_lib.Artifact]) -> str:
         for art in artifacts
         if art.type not in _AUD_OUTPUT_TYPES
     )
-    return hashlib.sha256("|".join(source_fps).encode()).hexdigest()[:16]
+    payload = f"gen{_CACHE_GENERATION}|" + "|".join(source_fps)
+    return hashlib.sha256(payload.encode()).hexdigest()[:16]
 
 
 def _load_cached_findings(cache_dir: Path, fingerprint: str) -> list[dict[str, str]]:
@@ -1137,16 +1146,17 @@ def run(root: Path, args: dict[str, Any]) -> int:
                 item["concern"] = concern
                 all_findings_raw.append(item)
         proj_fp = _project_fingerprint(artifacts)
-        # Cache caps at 20 findings to keep the cache artifact small. Known
-        # limitation: on a cache hit, CHL grouping works from the truncated set, so
-        # group counts/titles can differ between fresh and cached runs (which also
-        # re-mints a CHL the first time a cache hit follows a fresh run). The
-        # stable count-free title above bounds that to at most one extra CHL per
-        # group; re-architecting the cache is out of scope here.
+        # Lossless cache (CHL-344 A0): the cache stores ALL findings, so on a
+        # cache hit CHL grouping works from the full set and group counts/titles
+        # match fresh runs exactly. The pre-A0 cache capped at 20 findings, so a
+        # cached replay dropped findings the fresh AUD stamp had already counted
+        # (AUD-075 stamped 187 infos; the cached dry-run replayed 20). The stable
+        # count-free title machinery stays as-is — it is about CHL dedup, not
+        # truncation.
         # Anchored runs never write the cache (see the anchor block above:
         # the fingerprint key cannot represent the --baseline anchor).
         if not dry_run and not baseline_anchor:
-            _save_cached_findings(cache_dir, proj_fp, all_findings_raw[:20])
+            _save_cached_findings(cache_dir, proj_fp, all_findings_raw)
 
     # Chain-coverage top-line metric + prior-audit baseline for the trend line
     # (CHL-341 / CHL-344#2). Both are pure reads over the loaded artifact list,
