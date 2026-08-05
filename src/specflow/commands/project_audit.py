@@ -252,8 +252,38 @@ def _vertical_analysis(artifacts: list[art_lib.Artifact]) -> list[dict[str, str]
     return findings
 
 
+def _resolve_drift_pair(
+    root: Path, baseline_anchor: str | None
+) -> tuple[list[str], str | None]:
+    """Resolve the baseline-drift comparison pair for this run.
+
+    Returns ``(pair, warning)``. Without an anchor the pair is the
+    semver-preferring auto pair (``select_release_pair``). With ``--baseline``:
+    a known name anchors drift as <baseline> → newest semver release (falling
+    back to the newest baseline overall when nothing parses as semver); an
+    unknown name warns and falls back to the auto pair — accounting, not
+    policing, so a typo never fails the audit.
+    """
+    baselines = baseline_lib.list_baselines(root)
+    pair = baseline_lib.select_release_pair(baselines)
+    anchor = (baseline_anchor or "").strip()
+    if not anchor:
+        return pair, None
+    if baseline_lib.load_baseline(root, anchor) is None:
+        return pair, (
+            f"--baseline '{anchor}' not found among "
+            f"{len(baselines)} baseline(s); falling back to the auto pair"
+        )
+    newest = baseline_lib.newest_release(baselines) or (
+        baselines[-1] if baselines else anchor
+    )
+    return [anchor, newest], None
+
+
 def _cross_cutting_analysis(
-    artifacts: list[art_lib.Artifact], root: Path
+    artifacts: list[art_lib.Artifact],
+    root: Path,
+    drift_pair: list[str] | None = None,
 ) -> dict[str, list[dict[str, str]]]:
     results: dict[str, list[dict[str, str]]] = {}
 
@@ -287,9 +317,12 @@ def _cross_cutting_analysis(
         })
 
     baseline_findings: list[dict[str, str]] = []
-    baselines = baseline_lib.list_baselines(root)
-    if len(baselines) >= 2:
-        diff = baseline_lib.diff_baselines(root, baselines[-2], baselines[-1])
+    if drift_pair is None:
+        drift_pair = baseline_lib.select_release_pair(
+            baseline_lib.list_baselines(root)
+        )
+    if len(drift_pair) >= 2:
+        diff = baseline_lib.diff_baselines(root, drift_pair[0], drift_pair[1])
         if diff.get("ok"):
             for sc in diff.get("status_changed", []):
                 baseline_findings.append({
@@ -1001,10 +1034,25 @@ def run(root: Path, args: dict[str, Any]) -> int:
     artifacts = _sample_artifacts(artifacts, sample_pct)
     print(f"  Artifacts: {len(artifacts)}" + (f" (sampled {sample_pct}%)" if sample_pct < 100 else ""))
 
+    # --baseline drift anchor (CHL-NONSEMVE-c16b): resolved once and shared
+    # by the cross-cutting drift diff and the scope line. An unknown name
+    # warns and falls back to the auto pair (accounting-not-policing: a typo
+    # in the anchor never fails the audit). Anchored runs bypass the findings
+    # cache both ways: the fingerprint key does not include the anchor, so a
+    # cached auto-pair result could silently shadow an explicit anchor, and
+    # anchored findings would poison the cache for later unanchored runs.
+    baseline_anchor = (args.get("baseline") or "").strip() or None
+    drift_pair, drift_anchor_warn = _resolve_drift_pair(root, baseline_anchor)
+    if drift_anchor_warn:
+        print(f"{YELLOW}⚠ {drift_anchor_warn}{NC}")
+
     cache_dir = _cache_dir(root)
     if not dry_run:
         cache_dir.mkdir(parents=True, exist_ok=True)
-    cache_hit, cached_findings = _apply_fingerprint_cache(artifacts, cache_dir)
+    if baseline_anchor:
+        cache_hit, cached_findings = False, []
+    else:
+        cache_hit, cached_findings = _apply_fingerprint_cache(artifacts, cache_dir)
 
     if cache_hit:
         print(f"  Cache: project fingerprint unchanged, reusing previous findings")
@@ -1053,7 +1101,9 @@ def run(root: Path, args: dict[str, Any]) -> int:
             print(f"  {GREEN}✓{NC} Cross-cutting: skipped (--quick mode)")
         else:
             print(f"  {CYAN}Running cross-cutting analysis...{NC}")
-            cross_cutting = _cross_cutting_analysis(artifacts, root)
+            cross_cutting = _cross_cutting_analysis(
+                artifacts, root, drift_pair=drift_pair
+            )
             cc_concerns = len(cross_cutting)
             print(f"  {GREEN}✓{NC} Cross-cutting: {cc_concerns} concern(s) analyzed")
     else:
@@ -1063,8 +1113,13 @@ def run(root: Path, args: dict[str, Any]) -> int:
     if installed:
         scope_info.append(f"Compliance: {', '.join(installed)}")
     baselines = baseline_lib.list_baselines(root)
-    if baselines:
-        scope_info.append(f"Baseline drift: compared {baselines[-2] if len(baselines) >= 2 else 'N/A'} → {baselines[-1]}")
+    if len(drift_pair) >= 2:
+        drift_line = f"Baseline drift: compared {drift_pair[0]} → {drift_pair[1]}"
+        if baseline_anchor and not drift_anchor_warn:
+            drift_line += " (--baseline anchor)"
+        scope_info.append(drift_line)
+    elif baselines:
+        scope_info.append(f"Baseline drift: compared N/A → {baselines[-1]}")
 
     if not cache_hit:
         all_findings_raw: list[dict[str, str]] = []
@@ -1088,7 +1143,9 @@ def run(root: Path, args: dict[str, Any]) -> int:
         # re-mints a CHL the first time a cache hit follows a fresh run). The
         # stable count-free title above bounds that to at most one extra CHL per
         # group; re-architecting the cache is out of scope here.
-        if not dry_run:
+        # Anchored runs never write the cache (see the anchor block above:
+        # the fingerprint key cannot represent the --baseline anchor).
+        if not dry_run and not baseline_anchor:
             _save_cached_findings(cache_dir, proj_fp, all_findings_raw[:20])
 
     # Chain-coverage top-line metric + prior-audit baseline for the trend line

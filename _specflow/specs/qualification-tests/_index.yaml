@@ -362,4 +362,15 @@ artifacts:
     - REQ-015
     fingerprint: sha256:33a6d8d8527a
     children: []
-next_id: 43
+  QT-043:
+    id: QT-043
+    title: 'Qualification Test for REQ-035: baseline naming policy end to end'
+    status: verified
+    tags:
+    - verification-contract
+    - baselines
+    - semver
+    - REQ-035
+    fingerprint: sha256:45a12a7104eb
+    children: []
+next_id: 44

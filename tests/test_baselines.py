@@ -27,6 +27,28 @@ class TestCreateBaseline:
         assert not result["ok"]
         assert "Invalid" in result["error"]
 
+    def test_freeform_names_rejected_at_create_time(self, tmp_path: Path):
+        # CHL-NONSEMVE-c16b enforcement: new baselines must be semver-shaped
+        # so drift selection always has releases to prefer. The error must be
+        # loud and name the policy (automation breaking on this needs to know
+        # WHY and what shape to use instead).
+        _scaffold(tmp_path)
+        for bad in ("snapshot", "a", "latest", "v1.0_rc", "1.0 rc1"):
+            result = baseline_lib.create_baseline(tmp_path, bad)
+            assert not result["ok"], f"'{bad}' must be rejected"
+            assert "Invalid baseline name" in result["error"]
+            assert "semver-shaped" in result["error"]
+            assert "v1.2.3-rc1" in result["error"]  # shows a valid example
+        # Nothing was written for any rejected name.
+        assert list((tmp_path / ".specflow" / "baselines").glob("*.yaml")) == []
+
+    def test_semver_shaped_names_accepted(self, tmp_path: Path):
+        # The v prefix is optional; prerelease suffixes are allowed.
+        _scaffold(tmp_path)
+        for good in ("v1.2", "v1.2.3-rc1", "1.0", "v1.13.5", "v0.2.1-spec-sync"):
+            result = baseline_lib.create_baseline(tmp_path, good)
+            assert result["ok"], f"'{good}' must be accepted: {result.get('error')}"
+
     def test_immutability(self, tmp_path: Path):
         _scaffold(tmp_path)
         r1 = baseline_lib.create_baseline(tmp_path, "v1.0")
@@ -82,17 +104,17 @@ class TestLoadBaseline:
 class TestDiffBaselines:
     def test_empty_diff(self, tmp_path: Path):
         _scaffold(tmp_path)
-        baseline_lib.create_baseline(tmp_path, "a")
-        baseline_lib.create_baseline(tmp_path, "b")
-        result = baseline_lib.diff_baselines(tmp_path, "a", "b")
+        baseline_lib.create_baseline(tmp_path, "v1.0")
+        baseline_lib.create_baseline(tmp_path, "v1.1")
+        result = baseline_lib.diff_baselines(tmp_path, "v1.0", "v1.1")
         assert result["ok"]
         assert result["added"] == []
         assert result["removed"] == []
 
     def test_missing_baseline(self, tmp_path: Path):
         _scaffold(tmp_path)
-        baseline_lib.create_baseline(tmp_path, "a")
-        result = baseline_lib.diff_baselines(tmp_path, "a", "nonexistent")
+        baseline_lib.create_baseline(tmp_path, "v1.0")
+        result = baseline_lib.diff_baselines(tmp_path, "v1.0", "nonexistent")
         assert not result["ok"]
 
     def test_status_change_detected(self, tmp_path: Path):
@@ -161,3 +183,70 @@ class TestListBaselines:
     def test_empty_dir_returns_empty(self, tmp_path: Path):
         _scaffold(tmp_path)
         assert baseline_lib.list_baselines(tmp_path) == []
+
+    def test_grandfathered_freeform_baselines_still_listed(self, tmp_path: Path):
+        # Create-time enforcement (CHL-NONSEMVE-c16b) does NOT migrate: a
+        # freeform baseline written directly to disk (pre-enforcement, or by an
+        # external tool) is still globbed by list_baselines and sorts after
+        # every semver name. Write the fixture file directly — create_baseline
+        # would reject the name.
+        _scaffold(tmp_path)
+        self._write(tmp_path, "snapshot")
+        self._write(tmp_path, "v1.0.0")
+        assert baseline_lib.list_baselines(tmp_path) == ["v1.0.0", "snapshot"]
+
+
+class TestSelectReleasePair:
+    """CHL-NONSEMVE-c16b selection policy: drift callers prefer
+    semver-parseable releases and only fall back to the raw tail when fewer
+    than two names parse. Byte-identical to baselines[-2:] for pure-semver
+    and pure-freeform lists; only mixed lists change."""
+
+    def test_mixed_names_select_releases_not_freeform(self):
+        # The CHL scenario: a freeform name must not displace the newest
+        # release in the drift pair. (list_baselines sorts freeform last, so
+        # a raw [-2:] tail would return ["v1.1.0", "snapshot"].)
+        baselines = ["v1.0.0", "v1.1.0", "snapshot"]
+        assert baseline_lib.select_release_pair(baselines) == ["v1.0.0", "v1.1.0"]
+
+    def test_freeform_between_releases_is_skipped(self):
+        baselines = ["v1.0.0", "wip", "v1.1.0"]  # not the on-disk order, but
+        # the predicate is order-preserving either way: releases win.
+        assert baseline_lib.select_release_pair(baselines) == ["v1.0.0", "v1.1.0"]
+
+    def test_pure_freeform_falls_back_to_raw_tail(self):
+        baselines = ["alpha", "snapshot", "wip"]
+        assert baseline_lib.select_release_pair(baselines) == ["snapshot", "wip"]
+
+    def test_single_semver_falls_back_to_raw_tail(self):
+        # Fewer than two parseable names → keep the previous behavior exactly.
+        baselines = ["v1.0.0", "snapshot"]
+        assert baseline_lib.select_release_pair(baselines) == ["v1.0.0", "snapshot"]
+
+    def test_pure_semver_byte_identical_to_raw_tail(self):
+        # The CHL-343 lex-trap fixture: selection must equal the raw tail for
+        # pure-semver histories (no behavior change where nothing is wrong).
+        baselines = ["v0.2.0", "v1.9.0", "v1.9.2", "v1.12.3", "v1.13.4"]
+        assert baseline_lib.select_release_pair(baselines) == baselines[-2:]
+
+    def test_prerelease_counts_as_semver(self):
+        baselines = ["v1.13.4-rc.1", "v1.13.4", "snapshot"]
+        assert baseline_lib.select_release_pair(baselines) == [
+            "v1.13.4-rc.1",
+            "v1.13.4",
+        ]
+
+    def test_short_inputs(self):
+        assert baseline_lib.select_release_pair([]) == []
+        assert baseline_lib.select_release_pair(["v1.0.0"]) == ["v1.0.0"]
+        assert baseline_lib.select_release_pair(["snapshot"]) == ["snapshot"]
+
+
+class TestNewestRelease:
+    def test_newest_release_prefers_semver(self):
+        baselines = ["v1.0.0", "v1.13.4", "snapshot"]
+        assert baseline_lib.newest_release(baselines) == "v1.13.4"
+
+    def test_newest_release_none_when_no_semver(self):
+        assert baseline_lib.newest_release(["snapshot", "wip"]) is None
+        assert baseline_lib.newest_release([]) is None

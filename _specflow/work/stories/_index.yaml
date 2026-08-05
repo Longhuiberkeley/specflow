@@ -988,4 +988,15 @@ artifacts:
     tags: []
     fingerprint: sha256:a557ed85a54a
     children: []
-next_id: 630
+  STORY-630:
+    id: STORY-630
+    title: Enforce semver baseline naming and prefer releases in drift selection
+    status: verified
+    tags:
+    - baselines
+    - semver
+    - CHL-NONSEMVE-c16b
+    - REQ-035
+    fingerprint: sha256:6fc057fe0db5
+    children: []
+next_id: 631

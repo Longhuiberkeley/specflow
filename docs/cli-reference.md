@@ -358,9 +358,11 @@ specflow project-audit [--standard STANDARD] [--baseline BASELINE] [--quick] [--
 | Flag | Purpose |
 |------|---------|
 | `--standard` | Standard name for compliance check (auto-detects if omitted) |
-| `--baseline` | Baseline for drift comparison (auto-detects latest if omitted) |
+| `--baseline` | Drift anchor: drift compares `<baseline>` → newest release. Omitted → auto-detects the newest pair. An unknown name warns and falls back to the auto pair (never fails the audit). Anchored runs bypass the findings cache. |
 | `--quick` | Skip cross-cutting analysis (horizontal + vertical only) |
 | `--sample-pct` | Sample percentage for STORYs (default: 100) |
+
+**Baseline naming policy.** Drift selection prefers semver-parseable baselines: with a mix of release names (`v1.13.4`) and freeform names (`snapshot`), the drift diff and evidence predecessor compare the two newest *releases*, falling back to the raw newest pair only when fewer than two names parse as semver. To keep that guarantee honest, `baseline create` enforces semver-shaped names (`v1.2`, `v1.2.3`, `v1.2.3-rc1`) and rejects freeform names with a loud error. **Consumer-visible breaking change:** automation that creates freeform-named baselines must switch to version-shaped names. Existing freeform baselines on disk are grandfathered — baselines are write-once and immutable, no migration runs — and still list/diff normally.
 
 ### `specflow rtm`
 
@@ -388,6 +390,8 @@ Create and compare immutable baseline snapshots.
 specflow baseline create TAG
 specflow baseline diff BASELINE_A BASELINE_B
 ```
+
+Names must be semver-shaped (`v1.2`, `v1.2.3`, `v1.2.3-rc1`): freeform names are rejected at create time so drift selection always has release versions to prefer (@CHL-NONSEMVE-c16b). Pre-existing freeform baselines are grandfathered — baselines are write-once, so nothing on disk is migrated or rejected after the fact.
 
 ### `specflow autoresearch`
 

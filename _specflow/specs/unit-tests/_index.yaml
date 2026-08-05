@@ -629,4 +629,15 @@ artifacts:
     - reference
     fingerprint: sha256:1f42289f9f91
     children: []
-next_id: 67
+  UT-067:
+    id: UT-067
+    title: 'Unit Test for STORY-630: semver baseline selection and name enforcement'
+    status: implemented
+    tags:
+    - verification-contract
+    - baselines
+    - semver
+    - REQ-035
+    fingerprint: sha256:dc685983ed8d
+    children: []
+next_id: 68

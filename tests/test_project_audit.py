@@ -152,7 +152,7 @@ class TestAccountingWarns:
         monkeypatch.setattr(audit_cmd, "_vertical_analysis", lambda arts: [])
         monkeypatch.setattr(
             audit_cmd, "_cross_cutting_analysis",
-            lambda arts, r: {"docs-staleness": [
+            lambda arts, r, **kw: {"docs-staleness": [
                 {"severity": "warn", "message": "README cites superseded DEC-001"},
             ]},
         )
@@ -184,7 +184,7 @@ class TestAccountingWarns:
         monkeypatch.setattr(audit_cmd, "_vertical_analysis", lambda arts: [])
         monkeypatch.setattr(
             audit_cmd, "_cross_cutting_analysis",
-            lambda arts, r: {"completeness": [
+            lambda arts, r, **kw: {"completeness": [
                 {"severity": "warn", "message": "2 coverage gap(s)"},
             ]},
         )
@@ -690,7 +690,7 @@ def _run_quiet_audit(root: Path, monkeypatch, cross_cutting=None) -> int:
     monkeypatch.setattr(audit_cmd, "_horizontal_analysis", lambda arts: {})
     monkeypatch.setattr(audit_cmd, "_vertical_analysis", lambda arts: [])
     monkeypatch.setattr(audit_cmd, "_cross_cutting_analysis",
-                        lambda arts, r: cross_cutting or {})
+                        lambda arts, r, **kw: cross_cutting or {})
     monkeypatch.setattr(audit_cmd.art_lib, "create_artifact", lambda *a, **k: {"ok": False})
     monkeypatch.setattr(audit_cmd.chl_lib, "create_chl_artifacts", lambda *a, **k: [])
     return audit_cmd.run(root, {"quick": False})
@@ -855,7 +855,7 @@ class TestAudSummaryStamping:
         monkeypatch.setattr(audit_cmd, "_horizontal_analysis", lambda arts: {})
         monkeypatch.setattr(audit_cmd, "_vertical_analysis", lambda arts: [])
         monkeypatch.setattr(audit_cmd, "_cross_cutting_analysis",
-                            lambda arts, r: {"baseline-drift": infos})
+                            lambda arts, r, **kw: {"baseline-drift": infos})
         monkeypatch.setattr(audit_cmd.chl_lib, "create_chl_artifacts", lambda *a, **k: [])
 
         rc = audit_cmd.run(root, {"quick": False})
@@ -884,3 +884,179 @@ class TestAudSummaryStamping:
                   "optional_fields": [], "allowed_status": {"open": [], "closed": ["open"]}}
         issues = lint_lib.validate_artifact_schema(stamped, schema)
         assert not any("Unknown field" in i["message"] for i in issues)
+
+
+# ── Baseline naming policy: drift selection + --baseline anchor ──────────────
+# CHL-NONSEMVE-c16b: (b) drift selection prefers semver-parseable release
+# baselines and falls back to the raw tail only when fewer than two names
+# parse; the --baseline flag is wired as an explicit drift anchor
+# (<baseline> → newest release), with warn + auto-fallback on an unknown
+# name (accounting-not-policing). Create-time name enforcement lives in
+# tests/test_baselines.py.
+
+
+def _snap_entry(status: str = "approved", fp: str = "sha256:aaa") -> dict:
+    return {"status": status, "fingerprint": fp, "title": "T", "type": "requirement"}
+
+
+def _baseline_file(root: Path, name: str, arts: dict) -> None:
+    d = root / ".specflow" / "baselines"
+    d.mkdir(parents=True, exist_ok=True)
+    data = {
+        "name": name,
+        "created_at": "2026-08-05T00:00:00Z",
+        "git_ref": "",
+        "artifacts": arts,
+    }
+    (d / f"{name}.yaml").write_text(
+        yaml.dump(data, default_flow_style=False, sort_keys=False), encoding="utf-8"
+    )
+
+
+class TestDriftSelectionAndBaselineAnchor:
+    @staticmethod
+    def _req(root: Path) -> None:
+        # One real artifact so discover_artifacts is non-empty; carries an NFR
+        # category so the nfr-coverage lens stays at info.
+        _write_art(root, "_specflow/specs/requirements/REQ-001.md",
+                   "---\nid: REQ-001\ntitle: T\ntype: requirement\nstatus: approved\n"
+                   "non_functional_category: performance\n"
+                   "tags: []\nsuspect: false\nlinks: []\nfingerprint: x\n---\n\n# T\n")
+
+    @staticmethod
+    def _quiet(monkeypatch) -> None:
+        """Silence every lens except the real cross-cutting baseline drift."""
+        monkeypatch.setattr(audit_cmd, "_horizontal_analysis", lambda arts: {})
+        monkeypatch.setattr(audit_cmd, "_vertical_analysis", lambda arts: [])
+        monkeypatch.setattr(audit_cmd.art_lib, "create_artifact", lambda *a, **k: {"ok": False})
+        monkeypatch.setattr(audit_cmd.chl_lib, "create_chl_artifacts", lambda *a, **k: [])
+        monkeypatch.setattr(audit_cmd.standards_lib, "check_compliance", lambda r: {"ok": False})
+        monkeypatch.setattr(audit_cmd.artifact_lint, "check_schema",
+                            lambda arts, schema_dir: {"blocking_count": 0, "warning_count": 0})
+        monkeypatch.setattr(audit_cmd.artifact_lint, "check_coverage",
+                            lambda arts: {"structural_warning_count": 0,
+                                          "verification_warning_count": 0,
+                                          "approved_story_covered": 0,
+                                          "approved_story_total": 0})
+
+    def test_mixed_names_drift_compares_releases_not_freeform(self, tmp_path, monkeypatch, capsys):
+        # The CHL scenario end to end: with [v1.0.0, v1.1.0, snapshot] on disk
+        # the auto pair must be v1.0.0 → v1.1.0 (select_release_pair), NOT the
+        # raw tail v1.1.0 → snapshot. The REQ-002 removal finding exists only
+        # in the release pair, so its presence proves which pair was diffed.
+        root = tmp_path / "project"
+        self._req(root)
+        _baseline_file(root, "v1.0.0", {"REQ-001": _snap_entry(), "REQ-002": _snap_entry(status="draft")})
+        _baseline_file(root, "v1.1.0", {"REQ-001": _snap_entry()})
+        _baseline_file(root, "snapshot", {"REQ-001": _snap_entry()})
+        self._quiet(monkeypatch)
+
+        rc = audit_cmd.run(root, {"quick": False, "dry_run": True})
+        capsys.readouterr()
+        assert rc == 2  # the removed-artifact drift warn escalates (dry run too)
+        rc2 = audit_cmd.run(root, {"quick": False})
+        capsys.readouterr()
+        assert rc2 == rc  # exit-code parity between dry and writing runs
+        report = _latest_report(root)
+        assert "REQ-002: removed since last baseline" in report
+        assert "**Baseline drift: compared v1.0.0 → v1.1.0**" in report
+
+    def test_pure_freeform_falls_back_to_raw_tail(self, tmp_path, monkeypatch, capsys):
+        # Fewer than two semver names → raw-tail behavior is preserved exactly.
+        root = tmp_path / "project"
+        self._req(root)
+        _baseline_file(root, "alpha", {"REQ-001": _snap_entry()})
+        _baseline_file(root, "beta", {})  # REQ-001 removed between the two
+        self._quiet(monkeypatch)
+
+        rc = audit_cmd.run(root, {"quick": False})
+        capsys.readouterr()
+        assert rc == 2
+        report = _latest_report(root)
+        assert "REQ-001: removed since last baseline" in report
+        assert "**Baseline drift: compared alpha → beta**" in report
+
+    def test_known_baseline_anchors_drift(self, tmp_path, monkeypatch, capsys):
+        # v1.0.0 → v2.0.0 spans a removal the auto pair (v1.1.0 → v2.0.0) does
+        # not see: anchored run escalates, unanchored run is clean.
+        root = tmp_path / "project"
+        self._req(root)
+        _baseline_file(root, "v1.0.0", {"REQ-001": _snap_entry(), "REQ-002": _snap_entry(status="draft")})
+        _baseline_file(root, "v1.1.0", {"REQ-001": _snap_entry()})
+        _baseline_file(root, "v2.0.0", {"REQ-001": _snap_entry()})
+        self._quiet(monkeypatch)
+
+        rc_auto = audit_cmd.run(root, {"quick": False})
+        capsys.readouterr()
+        assert rc_auto == 0  # auto pair sees no drift
+
+        rc_anchored = audit_cmd.run(root, {"quick": False, "baseline": "v1.0.0"})
+        capsys.readouterr()
+        assert rc_anchored == 2  # anchor widens the window to the removal
+        reports = sorted((root / ".specflow" / "audits").glob("*/report.md"))
+        anchored_report = reports[-1].read_text(encoding="utf-8")
+        assert "REQ-002: removed since last baseline" in anchored_report
+        assert "**Baseline drift: compared v1.0.0 → v2.0.0 (--baseline anchor)**" in anchored_report
+
+        # The anchored run must NOT poison the fingerprint cache: the next
+        # unanchored run still sees the auto-pair findings (clean), not the
+        # cached anchored findings.
+        rc_after = audit_cmd.run(root, {"quick": False})
+        capsys.readouterr()
+        assert rc_after == 0
+
+    def test_unknown_baseline_warns_and_falls_back(self, tmp_path, monkeypatch, capsys):
+        # Accounting-not-policing: a typo in --baseline warns loudly, then the
+        # audit proceeds with the auto pair and the identical exit code.
+        root = tmp_path / "project"
+        self._req(root)
+        _baseline_file(root, "v1.0.0", {"REQ-001": _snap_entry(), "REQ-002": _snap_entry(status="draft")})
+        _baseline_file(root, "v1.1.0", {"REQ-001": _snap_entry()})
+        _baseline_file(root, "v2.0.0", {"REQ-001": _snap_entry()})
+        self._quiet(monkeypatch)
+
+        rc_auto = audit_cmd.run(root, {"quick": False})
+        capsys.readouterr()
+
+        rc_unknown = audit_cmd.run(root, {"quick": False, "baseline": "nope"})
+        out = capsys.readouterr().out
+        assert rc_unknown == rc_auto  # fallback keeps the auto-pair outcome
+        assert "--baseline 'nope' not found" in out
+        assert "falling back to the auto pair" in out
+
+    def test_dry_run_with_anchor_writes_nothing_and_matches_exit_code(self, tmp_path, monkeypatch, capsys):
+        # Dry-run parity holds on BOTH anchor paths (known and unknown): the
+        # exit code is a pure function of findings, and no files are written.
+        root = tmp_path / "project"
+        self._req(root)
+        _baseline_file(root, "v1.0.0", {"REQ-001": _snap_entry(), "REQ-002": _snap_entry(status="draft")})
+        _baseline_file(root, "v1.1.0", {"REQ-001": _snap_entry()})
+        _baseline_file(root, "v2.0.0", {"REQ-001": _snap_entry()})
+        self._quiet(monkeypatch)
+
+        def _files() -> list[str]:
+            return sorted(str(p.relative_to(root)) for p in root.rglob("*") if p.is_file())
+
+        # Known anchor: dry run escalates identically to the writing run, and
+        # leaves the tree untouched.
+        before = _files()
+        rc_dry = audit_cmd.run(root, {"quick": False, "dry_run": True, "baseline": "v1.0.0"})
+        capsys.readouterr()
+        assert rc_dry == 2
+        assert _files() == before
+        rc_write = audit_cmd.run(root, {"quick": False, "baseline": "v1.0.0"})
+        capsys.readouterr()
+        assert rc_write == rc_dry
+
+        # Unknown anchor: the fallback (auto pair) is clean here, so both dry
+        # and writing runs exit 0 — parity on the warn-and-fallback path too —
+        # and the dry run again writes nothing.
+        before2 = _files()
+        rc_dry2 = audit_cmd.run(root, {"quick": False, "dry_run": True, "baseline": "nope"})
+        out = capsys.readouterr().out
+        assert rc_dry2 == 0
+        assert "--baseline 'nope' not found" in out
+        assert _files() == before2
+        rc_write2 = audit_cmd.run(root, {"quick": False, "baseline": "nope"})
+        capsys.readouterr()
+        assert rc_write2 == rc_dry2

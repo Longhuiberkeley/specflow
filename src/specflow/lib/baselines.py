@@ -17,7 +17,14 @@ import yaml
 from specflow.lib import artifacts as art_lib
 from specflow.lib import git_utils
 
-_BASELINE_NAME_RE = re.compile(r"^[\w.\-]+$")
+# Create-time naming policy (CHL-NONSEMVE-c16b): new baselines must be
+# semver-shaped so semver-aware selection (select_release_pair) always has
+# release versions to prefer. Accepts v1.0, v1.13.5, v1.13.5-rc1; rejects
+# freeform names like 'snapshot' or 'a'. Freeform baselines already on disk
+# are grandfathered: baselines are write-once and list_baselines still globs
+# them unchecked, so selection falls back gracefully when fewer than two
+# names parse as semver.
+_SEMVER_NAME_RE = re.compile(r"^v?\d+(\.\d+)*(-[0-9A-Za-z.-]+)?$")
 
 
 def baseline_dir(root: Path) -> Path:
@@ -32,10 +39,14 @@ def _validate_name(name: str) -> str | None:
     """Return an error message if the name is invalid, else None."""
     if not name:
         return "Baseline name cannot be empty"
-    if not _BASELINE_NAME_RE.match(name):
+    if not _SEMVER_NAME_RE.match(name):
         return (
-            f"Invalid baseline name '{name}'. "
-            "Use alphanumerics, '.', '-', and '_' only (no slashes or spaces)."
+            f"Invalid baseline name '{name}'. Baseline names must be "
+            "semver-shaped: 'v1.2', 'v1.2.3', or 'v1.2.3-rc1' "
+            "(pattern: optional 'v', dot-separated numeric segments, optional "
+            "'-prerelease' suffix). Freeform names like 'snapshot' are "
+            "rejected at create time so drift comparisons always have release "
+            "versions to prefer."
         )
     return None
 
@@ -124,6 +135,22 @@ def load_baseline(root: Path, name: str) -> dict[str, Any] | None:
     return data
 
 
+def _semver_parts(name: str) -> tuple[tuple[int, ...], str] | None:
+    """Parse a baseline name into (numeric segments, suffix), or None.
+
+    This is THE semver-parseability predicate: strip a single leading "v",
+    then match ``^(\\d+(?:\\.\\d+)*)(.*)$``. Both the sort order
+    (``_semver_sort_key``) and release-pair selection
+    (``select_release_pair``) reuse this exact predicate so "parseable"
+    means the same thing everywhere.
+    """
+    stripped = name[1:] if name.startswith("v") else name
+    m = re.match(r"^(\d+(?:\.\d+)*)(.*)$", stripped)
+    if not m:
+        return None
+    return tuple(int(x) for x in m.group(1).split(".")), m.group(2)
+
+
 def _semver_sort_key(name: str) -> tuple[int, tuple[int, ...], int, str]:
     """Sort key for semver-aware ascending ordering of baseline names.
 
@@ -132,18 +159,15 @@ def _semver_sort_key(name: str) -> tuple[int, tuple[int, ...], int, str]:
     sorts after "v1.13.3" because "9" > "1" character-by-character, so the
     lexicographic last two entries are not the two newest releases.
 
-    Strategy: strip a single leading "v", then match ``^(\\d+(?:\\.\\d+)*)(.*)$``.
-    Parseable names sort naturally by numeric segments, with prereleases before
-    the clean release of the same version. Unparseable names sort stably after
-    every semver name. The result is ascending with the newest
-    baseline last, which is what callers (e.g. ``baselines[-1]`` /
-    ``baselines[-2:]``) rely on.
+    Parseable names (see ``_semver_parts``) sort naturally by numeric
+    segments, with prereleases before the clean release of the same version.
+    Unparseable names sort stably after every semver name. The result is
+    ascending with the newest baseline last, which is what callers (e.g.
+    ``baselines[-1]`` / ``baselines[-2:]``) rely on.
     """
-    stripped = name[1:] if name.startswith("v") else name
-    m = re.match(r"^(\d+(?:\.\d+)*)(.*)$", stripped)
-    if m:
-        nums = tuple(int(x) for x in m.group(1).split("."))
-        suffix = m.group(2)
+    parts = _semver_parts(name)
+    if parts is not None:
+        nums, suffix = parts
         return (0, nums, 1 if not suffix else 0, suffix)
     return (1, (0,), 0, name)
 
@@ -157,6 +181,39 @@ def list_baselines(root: Path) -> list[str]:
         (p.stem for p in d.glob("*.yaml")),
         key=_semver_sort_key,
     )
+
+
+def select_release_pair(baselines: list[str]) -> list[str]:
+    """Select the drift-comparison pair, preferring semver-parseable releases.
+
+    Selection policy (CHL-NONSEMVE-c16b): newest/predecessor callers must
+    compare release versions, not freeform names such as ``snapshot`` that a
+    mixed project may carry. Filter to names the same predicate used for
+    sorting (``_semver_parts``) accepts and take the two newest. When fewer
+    than two names parse, fall back to the raw tail so pure-freeform
+    histories keep their previous behavior. The result is byte-identical to
+    ``baselines[-2:]`` for pure-semver and pure-freeform inputs; only mixed
+    lists change (the freeform tail no longer displaces the newest release).
+
+    Expects the ascending order produced by ``list_baselines`` (semver names
+    first, numerically ascending, freeform names stably last); the returned
+    pair preserves that order.
+    """
+    semver = [b for b in baselines if _semver_parts(b) is not None]
+    if len(semver) >= 2:
+        return semver[-2:]
+    return baselines[-2:]
+
+
+def newest_release(baselines: list[str]) -> str | None:
+    """The newest semver-parseable baseline name, or None if none parse.
+
+    With ``list_baselines`` ordering (all semver names precede every
+    freeform name, ascending within the semver block), the last parseable
+    entry is the highest release version.
+    """
+    semver = [b for b in baselines if _semver_parts(b) is not None]
+    return semver[-1] if semver else None
 
 
 def diff_baselines(root: Path, name_a: str, name_b: str) -> dict[str, Any]:

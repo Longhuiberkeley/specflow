@@ -290,4 +290,16 @@ artifacts:
     - REQ-015
     fingerprint: sha256:1bb23f8c261f
     children: []
-next_id: 36
+  IT-036:
+    id: IT-036
+    title: 'Integration Test for STORY-630: project-audit --baseline anchor and drift
+      wiring'
+    status: verified
+    tags:
+    - verification-contract
+    - baselines
+    - semver
+    - REQ-035
+    fingerprint: sha256:d8344e84998e
+    children: []
+next_id: 37

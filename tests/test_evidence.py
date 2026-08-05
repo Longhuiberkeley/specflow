@@ -131,3 +131,77 @@ class TestGenerateEvidenceReport:
         report = Path(result["path"]).read_text(encoding="utf-8")
         assert "Baseline Snapshot" in report
         assert "Changes from v0.1" in report
+
+
+class TestPredecessorSelection:
+    """CHL-NONSEMVE-c16b: the Baseline Snapshot's diff predecessor follows the
+    semver-prefer policy — a release target diffs against the previous
+    release; a freeform target with >=2 releases on disk diffs against the
+    newest release instead of a freeform sibling; pure-freeform histories
+    keep the old raw predecessor. Freeform fixture files are written
+    directly: create_baseline rejects them at create time, but
+    list_baselines still globs them (grandfathered)."""
+
+    @staticmethod
+    def _write_baseline(root: Path, name: str, arts: dict) -> None:
+        data = {
+            "name": name,
+            "created_at": "2026-08-05T00:00:00Z",
+            "git_ref": "",
+            "artifacts": arts,
+        }
+        (root / ".specflow" / "baselines" / f"{name}.yaml").write_text(
+            yaml.dump(data, default_flow_style=False, sort_keys=False),
+            encoding="utf-8",
+        )
+
+    @staticmethod
+    def _entry(status: str = "approved", fp: str = "sha256:aaa") -> dict:
+        return {"status": status, "fingerprint": fp, "title": "T", "type": "requirement"}
+
+    def test_freeform_target_diffs_against_newest_release(self, tmp_path: Path):
+        # Sort order is [v0.1, v0.2, wip1, wip2]; the OLD raw predecessor of
+        # wip2 was wip1. The policy prefers releases: wip2 must diff against
+        # v0.2 (the newest release), not its freeform sibling.
+        _scaffold_project(tmp_path)
+        self._write_baseline(tmp_path, "v0.1", {"REQ-001": self._entry(status="draft")})
+        self._write_baseline(tmp_path, "v0.2", {"REQ-001": self._entry()})
+        self._write_baseline(tmp_path, "wip1", {"REQ-001": self._entry()})
+        self._write_baseline(tmp_path, "wip2", {"REQ-001": self._entry()})
+        result = evidence_lib.generate_evidence_report(tmp_path, "wip2")
+        assert result["ok"]
+        report = Path(result["path"]).read_text(encoding="utf-8")
+        assert "Changes from v0.2" in report
+        assert "Changes from wip1" not in report
+
+    def test_release_target_unaffected_by_freeform_tail(self, tmp_path: Path):
+        # The prefix stops at the target, so a freeform tail can never leak
+        # into a release's predecessor selection.
+        _scaffold_project(tmp_path)
+        self._write_baseline(tmp_path, "v0.1", {"REQ-001": self._entry(status="draft")})
+        self._write_baseline(tmp_path, "v0.2", {"REQ-001": self._entry()})
+        self._write_baseline(tmp_path, "snapshot", {"REQ-001": self._entry()})
+        result = evidence_lib.generate_evidence_report(tmp_path, "v0.2")
+        assert result["ok"]
+        report = Path(result["path"]).read_text(encoding="utf-8")
+        assert "Changes from v0.1" in report
+
+    def test_pure_freeform_keeps_raw_predecessor(self, tmp_path: Path):
+        # Fewer than two semver names → byte-identical old behavior.
+        _scaffold_project(tmp_path)
+        self._write_baseline(tmp_path, "alpha", {"REQ-001": self._entry(status="draft")})
+        self._write_baseline(tmp_path, "beta", {"REQ-001": self._entry()})
+        result = evidence_lib.generate_evidence_report(tmp_path, "beta")
+        assert result["ok"]
+        report = Path(result["path"]).read_text(encoding="utf-8")
+        assert "Changes from alpha" in report
+
+    def test_single_semver_plus_freeform_keeps_raw_predecessor(self, tmp_path: Path):
+        # One release + freeform names: <2 parseable → raw predecessor kept.
+        _scaffold_project(tmp_path)
+        self._write_baseline(tmp_path, "v0.1", {"REQ-001": self._entry(status="draft")})
+        self._write_baseline(tmp_path, "wip1", {"REQ-001": self._entry()})
+        result = evidence_lib.generate_evidence_report(tmp_path, "wip1")
+        assert result["ok"]
+        report = Path(result["path"]).read_text(encoding="utf-8")
+        assert "Changes from v0.1" in report

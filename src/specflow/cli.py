@@ -796,7 +796,7 @@ def _add_artifact_review_args(p):
 
 def _add_project_audit_args(p):
     p.add_argument("--standard", help="Standard name (auto-detect first installed if omitted)")
-    p.add_argument("--baseline", help="Baseline name for drift comparison (auto-detect latest if omitted)")
+    p.add_argument("--baseline", help="Drift anchor: compare <baseline> → newest release (auto-detects the newest pair if omitted; unknown names warn and fall back to the auto pair)")
     p.add_argument("--quick", action="store_true", help="Skip cross-cutting analysis (horizontal + vertical only)")
     p.add_argument("--sample-pct", dest="sample_pct", type=int, default=100,
                    help="Sample percentage for STORYs (default: 100)")

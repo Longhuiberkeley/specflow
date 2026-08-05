@@ -154,11 +154,27 @@ def _baseline_section(root: Path, baseline_name: str) -> list[str]:
     lines.append(f"**Artifacts**: {len(arts)}")
     lines.append(f"")
 
-    prev_name = None
+    # Predecessor selection (CHL-NONSEMVE-c16b): same semver-prefer policy as
+    # project-audit's drift pair. Build the ordered prefix up to (and
+    # including) this baseline, then select the release pair within it:
+    #   - semver target with a prior release → the pair ends at this
+    #     baseline, so the predecessor is the previous release (identical to
+    #     the old raw predecessor for pure-semver histories);
+    #   - freeform target with ≥2 releases on disk → compare against the
+    #     newest release instead of a freeform sibling;
+    #   - pure-freeform histories (<2 semver names) → raw predecessor,
+    #     byte-identical to the old behavior.
+    prefix: list[str] = []
     for name in all_baselines:
+        prefix.append(name)
         if name == baseline_name:
             break
-        prev_name = name
+    pair = baseline_lib.select_release_pair(prefix)
+    prev_name: str | None = None
+    if len(pair) == 2 and pair[1] == baseline_name:
+        prev_name = pair[0]
+    elif pair and pair[-1] != baseline_name:
+        prev_name = pair[-1]
 
     if prev_name:
         diff = baseline_lib.diff_baselines(root, prev_name, baseline_name)
