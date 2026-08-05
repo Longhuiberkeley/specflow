@@ -6,6 +6,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.13.6] - 2026-08-05
+
+The CHL-344 "audit signal design" workstream, complete: audit signals are now honest, unified, and individually actionable. No new blocking gates — every new warn is accounting (prints + stamps, never drives exit-2).
+
+### Highlights
+
+- **Audit signal honesty workstream (CHL-344 addressed)** — severity asymmetry unified, per-AC rows surfaced, the NFR surface exercised end-to-end, and workflow tags now assert structure. Six dogfood slices (A0–A6) with trend-safe sequencing.
+
+### Added
+
+- **Lossless audit findings cache** — the cache stores the full finding set (previously capped at 20, replaying truncated totals into new audits) and is keyed on a bumpable cache generation, so cached replays match fresh-run totals and lens changes invalidate replays.
+- **Escalating/accounting warn split in AUD stamps** — trend lines show `warns N→M (escalating X→Y, accounting X→Y)` when both audits carry the split; pre-split audits fall back to honest legacy totals.
+- **Per-AC observability detail** — audit reports gain an `## AC observability detail` appendix (unclassified/aspirational ACs per REQ, sorted, deterministic); the full all-class table lives in subagent-cross-cutting.md. Findings list and Summary counts are untouched — rows are report body, not findings.
+- **NFR vocabulary** — `non_functional_category` frozen in code (`NFR_CATEGORIES`); `--nfr-category` validates at the create boundary; new artifact-lint `nfr-category` warn-only typo net for the freeform `update --set` path.
+- **Backfilled-tag structural rules** — artifact-lint warns on backfilled artifacts with no links; audits count backfilled STORY chains outside REQ-anchored expectations (exemption bucket: visible growth is reviewable).
+
+### Changed
+
+- **ac-coverage severity unified at WARN** (accounting) — one problem class, one severity; the zero-test vs partial-coverage degree lives in the message text. Accounting warns print, stamp, and mint CHLs but never block releases.
+- **nfr-coverage de-escalated to accounting** — the >=50%-missing warn still prints and stamps but can no longer drive exit-2 (it was the only REQ-quality warn that could block a release-gate audit).
+- `deferred` workflow tag closed by documentation: verified nonexistent; introducing it for zero consumers would violate the frozen-vocabulary discipline.
+
+### Decisions / Docs
+
+- CHL-344 addressed with consolidated Resolution Evidence covering all five sub-findings; two adjacent-machinery follow-ups recorded (status-blind CHL dedup; findings cache lacks a frontmatter component).
+- NFR dogfood sweep: all 18 category-less REQs walked against the CKL-REV-REQ-02 bar and backfilled `functional` — zero genuine NFRs in this project is the recorded outcome.
+
+### Verification
+
+- 1208 tests passing (+68 over v1.13.5); artifact-lint PASS; project-audit CLEAN with dry-run exit parity across fresh/cache-hit runs; chain coverage 100% preserved; trend line honest through every slice (escalating flat at 0→0).
+
 ## [1.13.5] - 2026-08-05
 
 Baseline naming-policy patch: release-baseline selection can no longer be displaced by freeform baselines, the documented `--baseline` audit anchor now works, and audit headers gain the chain-coverage + trend lines first built post-v1.13.4. No new blocking gates.

@@ -812,9 +812,9 @@ artifacts:
     id: CHL-344
     title: 'Audit signal design: severity asymmetry, no audit-over-audit trend, unclassified
       ACs at info'
-    status: open
+    status: addressed
     tags: []
-    fingerprint: sha256:7cf66c1f23ea
+    fingerprint: sha256:e2631e3c8d88
     children: []
   CHL-345:
     id: CHL-345

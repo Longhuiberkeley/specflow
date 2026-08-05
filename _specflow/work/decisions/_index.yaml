@@ -662,4 +662,85 @@ artifacts:
     - auto-generated
     fingerprint: sha256:64cd41fd2031
     children: []
-next_id: 68
+  DEC-068:
+    id: DEC-068
+    title: "Change Record: chore: dogfood \u2014 A6 workflow tags: backfilled link\
+      \ guard + counted exemption bucket (CHL-344)"
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:ceeee903bfae
+    children: []
+  DEC-069:
+    id: DEC-069
+    title: "Change Record: chore: dogfood \u2014 A5 NFR sweep: 18 REQs backfilled\
+      \ functional, zero genuine NFRs (CHL-344)"
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:b04a5fb2ffc5
+    children: []
+  DEC-070:
+    id: DEC-070
+    title: "Change Record: chore: dogfood \u2014 A4 NFR vocabulary frozen + nfr-coverage\
+      \ accounting parity (CHL-344)"
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:f147a7cada60
+    children: []
+  DEC-071:
+    id: DEC-071
+    title: "Change Record: chore: dogfood \u2014 A3 per-AC observability rows in audit\
+      \ report body (CHL-344)"
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:bf1b350e7075
+    children: []
+  DEC-072:
+    id: DEC-072
+    title: "Change Record: chore: dogfood \u2014 CHL-338 progress note: ac-coverage\
+      \ debt resurfaced as 25 partial-coverage warns after A2 unification; stays addressed\
+      \ (no reopen transition in frozen vocabulary), tracked via CHL-344"
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:b7000c1a76d0
+    children: []
+  DEC-073:
+    id: DEC-073
+    title: "Change Record: chore: dogfood \u2014 A2 ac-coverage severity unification\
+      \ at warn + accounting parity (CHL-344)"
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:c1b46c0e0fe8
+    children: []
+  DEC-074:
+    id: DEC-074
+    title: "Change Record: chore: dogfood \u2014 A1 escalating/accounting warn-split\
+      \ stamp + trend split (CHL-344)"
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:5f053be48b79
+    children: []
+  DEC-075:
+    id: DEC-075
+    title: "Change Record: chore: dogfood \u2014 A0 lossless audit findings cache\
+      \ + generation key (CHL-344)"
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:ff8f9e38258a
+    children: []
+next_id: 76
