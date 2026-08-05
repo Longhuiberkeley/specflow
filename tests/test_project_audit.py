@@ -767,6 +767,43 @@ class TestTrendDeltas:
                 "info 19→12 (Δ−7), chain coverage 61%→100% (Δ+39 pp)") in report
         assert rc == 0
 
+    def test_trend_renders_warn_split_when_both_sides_carry_it(self, tmp_path, monkeypatch):
+        # A1: both the prior stamp and the current run carry the
+        # escalating/accounting split → the warns bullet is extended.
+        root = tmp_path / "project"
+        _story_fixture(root, n_covered=1)
+        _aud_file(root, "AUD-001",
+                  extra_fm="summary_errors: 0\nsummary_warns: 25\nsummary_info: 10\n"
+                           "chain_coverage_pct: 100\n"
+                           "summary_warns_escalating: 10\n"
+                           "summary_warns_accounting: 15\n")
+        # Current run: 1 accounting warn (ac-coverage), 0 structural warns.
+        warns = [{"severity": "warn", "message": "ac coverage gap"}]
+        rc = _run_quiet_audit(root, monkeypatch, cross_cutting={"ac-coverage": warns})
+        report = _latest_report(root)
+        assert ("- **Trend vs AUD-001**: errors 0→0 (Δ0), warns 25→1 (Δ−24) "
+                "(escalating 10→0, accounting 15→1), info 10→0 (Δ−10), "
+                "chain coverage 100%→100% (Δ0 pp)") in report
+        assert rc == 0  # accounting warns never drive the exit code
+
+    def test_trend_legacy_totals_when_prior_lacks_split(self, tmp_path, monkeypatch):
+        # A pre-A1 prior (4-field stamp only, e.g. AUD-073..080): the trend
+        # line stays on legacy totals — no split suffix, no crash, no
+        # invented split numbers, and NOT the "predates summary stamping"
+        # fallback (the prior is still a full trend baseline).
+        root = tmp_path / "project"
+        _story_fixture(root, n_covered=1)
+        _aud_file(root, "AUD-001",
+                  extra_fm="summary_errors: 0\nsummary_warns: 25\nsummary_info: 10\n"
+                           "chain_coverage_pct: 100\n")
+        warns = [{"severity": "warn", "message": "ac coverage gap"}]
+        _run_quiet_audit(root, monkeypatch, cross_cutting={"ac-coverage": warns})
+        trend = next(l for l in _latest_report(root).splitlines()
+                     if l.startswith("- **Trend vs AUD-001**:"))
+        assert trend == ("- **Trend vs AUD-001**: errors 0→0 (Δ0), "
+                         "warns 25→1 (Δ−24), info 10→0 (Δ−10), "
+                         "chain coverage 100%→100% (Δ0 pp)")
+
     def test_trend_fallback_when_prior_predates_stamping(self, tmp_path, monkeypatch):
         root = tmp_path / "project"
         _story_fixture(root, n_covered=1)
@@ -838,6 +875,40 @@ class TestPriorAuditSelection:
         line = audit_cmd._trend_bullet(0, 0, 0, 100, a)
         assert line == "- **Trend vs AUD-001**: n/a (prior audit predates summary stamping)"
 
+    def test_four_field_stamp_still_resolves_after_a1(self):
+        # Regression (A1, CHL-344): an AUD-073..080-shaped prior with ONLY
+        # the four baseline stamp fields must still resolve as a full trend
+        # baseline — the split fields are EXTRA, not a new membership
+        # requirement, so _prior_audit_summary behavior is unchanged.
+        a = _art("AUD-073", "audit", status="open",
+                 summary_errors=0, summary_warns=29, summary_info=19,
+                 chain_coverage_pct=61)
+        assert audit_cmd._prior_audit_summary(a) == {
+            "summary_errors": 0, "summary_warns": 29,
+            "summary_info": 19, "chain_coverage_pct": 61,
+        }
+        assert audit_cmd._prior_warn_split(a) is None
+        # …and the trend renders legacy totals even when the CURRENT run
+        # carries a split — never the "predates" fallback, never a suffix.
+        line = audit_cmd._trend_bullet(0, 0, 0, 100, a, cur_warn_split=(0, 0))
+        assert line.startswith("- **Trend vs AUD-073**: errors 0→0 (Δ0), "
+                               "warns 29→0 (Δ−29)")
+        assert "predates" not in line
+        assert "escalating" not in line
+
+    def test_prior_warn_split_needs_both_fields(self):
+        # The split is consumed opportunistically: BOTH extra fields must be
+        # present and parseable, else legacy total rendering (no invented
+        # numbers).
+        full = _art("AUD-001", "audit", status="open",
+                    summary_warns_escalating=3, summary_warns_accounting=5)
+        assert audit_cmd._prior_warn_split(full) == (3, 5)
+        half = _art("AUD-002", "audit", status="open", summary_warns_escalating=3)
+        assert audit_cmd._prior_warn_split(half) is None
+        bad = _art("AUD-003", "audit", status="open",
+                   summary_warns_escalating="garbage", summary_warns_accounting=5)
+        assert audit_cmd._prior_warn_split(bad) is None
+
 
 class TestAudSummaryStamping:
     def test_new_aud_stamps_machine_readable_summary(self, tmp_path, monkeypatch, capsys):
@@ -870,16 +941,55 @@ class TestAudSummaryStamping:
         assert fm["summary_warns"] == 0
         assert fm["summary_info"] == 3
         assert fm["chain_coverage_pct"] == 25
+        # A1: the warn split is ALWAYS stamped alongside the baseline stamp —
+        # a clean run stamps the trivial 0/0 split.
+        assert fm["summary_warns_escalating"] == 0
+        assert fm["summary_warns_accounting"] == 0
+
+    def test_new_aud_stamps_warn_split_fields(self, tmp_path, monkeypatch, capsys):
+        # A1 (CHL-344): warns split by _ACCOUNTING_CONCERNS membership —
+        # a vertical (structural) warn escalates, an ac-coverage warn is
+        # accounting. Totals stay consistent: escalating + accounting == warns.
+        import specflow as _pkg
+
+        root = tmp_path / "project"
+        _story_fixture(root, n_covered=1)
+        schema_dir = root / ".specflow" / "schema"
+        schema_dir.mkdir(parents=True)
+        tmpl = Path(_pkg.__file__).parent / "templates" / "schemas" / "audit.yaml"
+        (schema_dir / "audit.yaml").write_text(tmpl.read_text(encoding="utf-8"), encoding="utf-8")
+
+        monkeypatch.setattr(audit_cmd, "_horizontal_analysis", lambda arts: {})
+        monkeypatch.setattr(audit_cmd, "_vertical_analysis",
+                            lambda arts: [{"severity": "warn", "message": "structural gap"}])
+        monkeypatch.setattr(audit_cmd, "_cross_cutting_analysis",
+                            lambda arts, r, **kw: {
+                                "ac-coverage": [{"severity": "warn", "message": "ac gap"}]})
+        monkeypatch.setattr(audit_cmd.chl_lib, "create_chl_artifacts", lambda *a, **k: [])
+
+        rc = audit_cmd.run(root, {"quick": False})
+        capsys.readouterr()
+        assert rc == 2  # the structural warn escalates; accounting does not add
+
+        aud_files = sorted((root / "_specflow" / "specs" / "audits").glob("AUD-*.md"))
+        assert aud_files, "expected an AUD artifact to be created"
+        text = aud_files[-1].read_text(encoding="utf-8")
+        fm = yaml.safe_load(text[3:text.find("---", 3)])
+        assert fm["summary_warns"] == 2
+        assert fm["summary_warns_escalating"] == 1
+        assert fm["summary_warns_accounting"] == 1
 
     def test_stamped_fields_pass_schema_lint(self, tmp_path):
         # The audit schema enumerates the stamp fields as optional, and the
         # global known-meta whitelist covers pre-existing on-disk schemas — so
-        # a stamped AUD never draws an "Unknown field" finding.
+        # a stamped AUD never draws an "Unknown field" finding (incl. the A1
+        # warn-split fields).
         from specflow.lib import lint as lint_lib
 
         stamped = _art("AUD-001", "audit", status="open",
                        summary_errors=0, summary_warns=2, summary_info=5,
-                       chain_coverage_pct=61)
+                       chain_coverage_pct=61,
+                       summary_warns_escalating=1, summary_warns_accounting=1)
         schema = {"required_fields": ["id", "title", "type", "status", "created"],
                   "optional_fields": [], "allowed_status": {"open": [], "closed": ["open"]}}
         issues = lint_lib.validate_artifact_schema(stamped, schema)

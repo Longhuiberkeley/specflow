@@ -173,7 +173,11 @@ def validate_artifact_schema(
                           # on-disk audit.yaml schemas that lack the fields in
                           # optional_fields never flag them as unknown.
                           "summary_errors", "summary_warns", "summary_info",
-                          "chain_coverage_pct"}
+                          "chain_coverage_pct",
+                          # AUD warn-split stamp (escalating vs accounting,
+                          # CHL-344 A1): same global-whitelist rationale.
+                          "summary_warns_escalating",
+                          "summary_warns_accounting"}
             if key not in known_meta:
                 issues.append({
                     "severity": "info",

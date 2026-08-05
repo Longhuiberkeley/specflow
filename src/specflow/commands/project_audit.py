@@ -725,6 +725,7 @@ def _render_report(
     errors = sum(1 for f in all_findings if f["severity"] == "error")
     warns = sum(1 for f in all_findings if f["severity"] == "warn")
     infos = sum(1 for f in all_findings if f["severity"] == "info")
+    warn_split = _count_warns(all_findings)  # (escalating, accounting), A1
 
     lines = [
         f"# Project Audit Report",
@@ -747,7 +748,8 @@ def _render_report(
         else:
             cov_pct = -1
             lines.append("- **Chain coverage**: n/a (no approved STORYs)")
-        lines.append(_trend_bullet(errors, warns, infos, cov_pct, prior_audit))
+        lines.append(_trend_bullet(errors, warns, infos, cov_pct, prior_audit,
+                                   cur_warn_split=warn_split))
     if scope_info:
         for s in scope_info:
             lines.append(f"- **{s}**")
@@ -839,6 +841,13 @@ def _count_warns(findings: list[dict[str, str]]) -> tuple[int, int]:
 # creates, so the NEXT audit can render honest trend deltas against this one
 # (CHL-341 / CHL-344#2). chain_coverage_pct uses -1 as the n/a sentinel (no
 # approved STORYs to measure).
+#
+# The A1 warn-split fields (summary_warns_escalating / summary_warns_accounting,
+# CHL-344) are deliberately NOT in this tuple: _prior_audit_summary returns
+# None whenever ANY field here is missing, which is the "predates summary
+# stamping" fallback — adding the split here would demote every pre-A1 audit
+# (AUD-073..080) from a full trend baseline to n/a. The split is stamped
+# ALONGSIDE these fields and consumed opportunistically by _trend_bullet.
 _SUMMARY_STAMP_FIELDS = ("summary_errors", "summary_warns", "summary_info", "chain_coverage_pct")
 
 
@@ -900,6 +909,21 @@ def _prior_audit_summary(art: art_lib.Artifact) -> dict[str, int] | None:
         return None
 
 
+def _prior_warn_split(art: art_lib.Artifact) -> tuple[int, int] | None:
+    """(escalating, accounting) warn split stamped on a prior AUD (A1), or
+    None when the artifact predates the split stamp or either field is
+    missing/unparseable. Deliberately separate from _prior_audit_summary:
+    a prior lacking ONLY the split is still a full trend baseline — the
+    trend line degrades to legacy total rendering, never to "predates
+    summary stamping" and never to invented split numbers."""
+    fm = art.frontmatter
+    try:
+        return (int(fm["summary_warns_escalating"]),
+                int(fm["summary_warns_accounting"]))
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
 def _signed_delta(d: int) -> str:
     """Signed delta rendering: 0 → "0", positive → "+N", negative → "−N"."""
     if d == 0:
@@ -913,21 +937,35 @@ def _trend_bullet(
     cur_infos: int,
     cur_pct: int,
     prior: art_lib.Artifact | None,
+    cur_warn_split: tuple[int, int] | None = None,
 ) -> str:
     """Header trend line vs the prior audit (CHL-341). ``cur_pct`` is -1 when
     the current run has no approved STORYs (n/a). Pure rendering from loaded
     data — read-only, never affects the exit code, safe under --dry-run and
-    fingerprint-cache hits alike."""
+    fingerprint-cache hits alike.
+
+    ``cur_warn_split`` is the current run's (escalating, accounting) warn
+    split (A1, CHL-344). The warns bullet is extended with the split ONLY
+    when both the current run and the prior AUD carry it — otherwise the
+    legacy total-only rendering stays exactly as before."""
     if prior is None:
         return "- **Trend**: first audit — no prior baseline"
     prev = _prior_audit_summary(prior)
     if prev is None:
         return f"- **Trend vs {prior.id}**: n/a (prior audit predates summary stamping)"
+    warn_part = (
+        f"warns {prev['summary_warns']}→{cur_warns} "
+        f"(Δ{_signed_delta(cur_warns - prev['summary_warns'])})"
+    )
+    prev_split = _prior_warn_split(prior)
+    if cur_warn_split is not None and prev_split is not None:
+        cur_esc, cur_acc = cur_warn_split
+        prev_esc, prev_acc = prev_split
+        warn_part += f" (escalating {prev_esc}→{cur_esc}, accounting {prev_acc}→{cur_acc})"
     parts = [
         f"errors {prev['summary_errors']}→{cur_errors} "
         f"(Δ{_signed_delta(cur_errors - prev['summary_errors'])})",
-        f"warns {prev['summary_warns']}→{cur_warns} "
-        f"(Δ{_signed_delta(cur_warns - prev['summary_warns'])})",
+        warn_part,
         f"info {prev['summary_info']}→{cur_infos} "
         f"(Δ{_signed_delta(cur_infos - prev['summary_info'])})",
     ]
@@ -1221,6 +1259,9 @@ def run(root: Path, args: dict[str, Any]) -> int:
         # trend deltas against this run (CHL-341 / CHL-344#2). Counts mirror
         # the report's Summary table exactly; chain_coverage_pct is -1 when
         # the run has no approved STORYs to measure (n/a sentinel).
+        # The A1 warn split (escalating/accounting, CHL-344) is stamped as
+        # EXTRA fields alongside the baseline stamp — never folded into
+        # _SUMMARY_STAMP_FIELDS, so pre-A1 priors stay full trend baselines.
         cov_covered, cov_total = chain_coverage
         stamp_pct = round(cov_covered * 100 / cov_total) if cov_total > 0 else -1
         try:
@@ -1238,6 +1279,8 @@ def run(root: Path, args: dict[str, Any]) -> int:
                 summary_warns=warns,
                 summary_info=len(all_findings) - errors - warns,
                 chain_coverage_pct=stamp_pct,
+                summary_warns_escalating=escalating_warns,
+                summary_warns_accounting=accounting_warns,
             )
             if aud_result.get("ok"):
                 scope_info.append(f"AUD artifact: {aud_result['id']}")
