@@ -198,6 +198,15 @@ Focus: **autoresearch methodology depth, escalation/permanence test, and templat
 
 > Delivered: the `spike-lifecycle` lint detector (stale / zombie / repeated-topic SPIKEs) shipped as a first-class `artifact-lint --type spike-lifecycle` check — the work-side complement to the v1.8.0 *Stale Code Detection* item. Still deferred: optional structured multi-output schema (typed per-component fields on COMP/EXPT) if the `component_<name>` convention proves too loose.
 
+## v1.13.5
+
+Focus: **baseline naming policy — releases can no longer be displaced by freeform baselines.** No new blocking gates.
+
+- **Semver-prefer selection (CHL-NONSEMVE-c16b)** — audit drift and evidence-predecessor callers compare the two newest semver-parseable releases; pure-semver/pure-freeform histories unchanged. Freeform names rejected at `baseline create` (grandfathered on disk); the documented `--baseline` audit anchor wired with warn+auto-fallback.
+- **Audit trend + chain coverage header** (post-v1.13.4 work, lands here) — signed deltas vs the prior stamped AUD and approved-STORY UT+IT+QT coverage in every report header; machine-readable summary stamps (CHL-341, CHL-344#2).
+
+> Delivered via STORY-630 (REQ-035) with UT-067/IT-036/QT-043. The CHL-344 umbrella (remaining audit-signal sub-findings: severity unification, per-AC rows, NFR exercising, workflow-tag rules) continues under the Future "Audit signal design" workstream.
+
 ## v1.13.4
 
 Focus: **dogfood evidence integrity, autoresearch CLI completion, and audit-signal de-noise.** No new blocking gates.

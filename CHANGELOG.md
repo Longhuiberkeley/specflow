@@ -6,9 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.13.5] - 2026-08-05
+
+Baseline naming-policy patch: release-baseline selection can no longer be displaced by freeform baselines, the documented `--baseline` audit anchor now works, and audit headers gain the chain-coverage + trend lines first built post-v1.13.4. No new blocking gates.
+
+### Highlights
+
+- **Semver baseline naming policy (CHL-NONSEMVE-c16b)** — newest/predecessor selection prefers semver-parseable release baselines (falling back only when fewer than two parse), freeform names are rejected at create time with a loud error, and the previously dead `--baseline` audit flag is wired as the explicit drift anchor.
+
 ### Added
 
-- Audit report header now shows chain coverage (approved STORYs with full UT+IT+QT verified_by coverage) and trend deltas (errors/warns/info/chain coverage) vs the prior audit; new audits stamp machine-readable summary fields (CHL-341, CHL-344#2).
+- **`project-audit --baseline <name>`** — anchors drift as `<baseline>` → newest release; unknown names warn and fall back to the auto pair (accounting-not-policing). Anchored runs bypass the findings cache so an explicit anchor can never be shadowed by, or poison, cached auto-pair results.
+- **Chain coverage + audit trend header** — audit reports show approved-STORY UT+IT+QT coverage and signed errors/warns/info/chain-coverage deltas vs the prior stamped audit; new AUD artifacts stamp machine-readable summary fields (CHL-341, CHL-344#2).
+
+### Changed
+
+- **BREAKING (consumer automation):** `specflow baseline create` now rejects non-semver names (`snapshot`, `adoption-v0`). Pattern: optional `v`, dot-separated numeric segments, optional `-prerelease` suffix. Baselines already on disk are grandfathered (write-once, no migration) but are second-class for selection.
+
+### Fixed
+
+- **Freeform baselines can no longer outrank releases** — drift and evidence-predecessor selection compare the two newest release versions in mixed projects; pure-semver and pure-freeform histories are byte-identical to previous behavior (STORY-630).
+
+### Verification
+
+- 1140 tests passing (+21 new: mixed-name selection, create-time rejection, anchor wiring incl. cache-poisoning regression, predecessor edge cases).
+- Gates: artifact-lint PASS; `project-audit --dry-run` exit 0 == fresh run exit 0 (0 errors / 0 warns / 187 infos, identical findings); orphan-code detection 0 orphans.
 
 ## [1.13.4] - 2026-08-05
 

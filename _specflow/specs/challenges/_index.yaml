@@ -833,7 +833,7 @@ artifacts:
   CHL-NONSEMVE-c16b:
     id: CHL-NONSEMVE-c16b
     title: Non-semver baseline names can outrank release baselines
-    status: open
+    status: addressed
     tags: []
     fingerprint: sha256:dfca327579e0
     children: []

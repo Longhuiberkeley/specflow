@@ -633,4 +633,33 @@ artifacts:
     - auto-generated
     fingerprint: sha256:2dd9aae04035
     children: []
-next_id: 65
+  DEC-065:
+    id: DEC-065
+    title: 'Change Record: feat: semver baseline naming policy + wired --baseline
+      audit anchor (STORY-630)'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:f87fd79e5dd4
+    children: []
+  DEC-066:
+    id: DEC-066
+    title: "Change Record: chore: dogfood \u2014 clear CHL backlog; audit chain-coverage\
+      \ + trend header (CHL-341)"
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:d7de5d6d00e6
+    children: []
+  DEC-067:
+    id: DEC-067
+    title: "Change Record: chore: dogfood \u2014 v1.13.4 readiness-audit ledger bookkeeping"
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:64cd41fd2031
+    children: []
+next_id: 68
