@@ -731,6 +731,55 @@ def _sample_artifacts(
     return always_include + sampled
 
 
+def _ac_observability_detail_lines(agg: dict | None) -> list[str]:
+    """Per-AC AC-observability appendix for the report body (A3, CHL-344).
+
+    Judge-verified placement: the ~160 per-AC rows live in the REPORT BODY,
+    NOT the findings list — as INFO findings they would inflate summary_info
+    trends, replay through the findings cache, and never mint CHLs anyway (all
+    cost, no contract benefit). The findings list and summary counts are
+    untouched by this section.
+
+    Pure rendering over the ``ac_quality.classify_reqs_observability``
+    aggregate — the single AC parse path; this helper never re-parses AC text.
+    NOISE BOUND: only unclassified/aspirational rows are listed (observable
+    ACs are the majority and need no action); the full all-class table lives
+    in subagent-cross-cutting.md instead. Determinism contract: REQ IDs
+    sorted, item order is document order — the section must render
+    byte-identically on fresh runs, cache hits, and --dry-run alike, because
+    non-deterministic ordering would register as false drift in future audits.
+    Returns [] (section omitted) when ``agg`` is None (--quick suppression —
+    the cross-cutting analysis this appendix accompanies is skipped there) or
+    when no REQ carries ACs (the lens's graceful-silence precedent).
+    """
+    if agg is None or agg["reqs_with_acs"] == 0:
+        return []
+    actionable = agg["aspirational"] + agg["unclassified"]
+    lines = [
+        "## AC observability detail",
+        "",
+        f"Per-AC rows for the ac-observability cross-cutting lens: "
+        f"{actionable} of {agg['total_items']} AC item(s) across "
+        f"{agg['reqs_with_acs']} REQ(s) with ACs are classified unclassified "
+        f"or aspirational. Observable items are omitted here (they need no "
+        f"action); the full all-class per-AC table is in this audit "
+        f"snapshot's subagent-cross-cutting.md.",
+        "",
+    ]
+    for r in sorted(agg["per_req"], key=lambda r: r["id"]):
+        rows = [
+            it for it in r["items"]
+            if it["classification"] in ("unclassified", "aspirational")
+        ]
+        if not rows:
+            continue
+        lines.append(f"### {r['id']}")
+        for it in rows:
+            lines.append(f"- [{it['classification']}] {it['text']}")
+        lines.append("")
+    return lines
+
+
 def _render_report(
     ts: str,
     horizontal: dict[str, list[dict[str, str]]],
@@ -741,6 +790,7 @@ def _render_report(
     scope_info: list[str],
     chain_coverage: tuple[int, int] | None = None,
     prior_audit: art_lib.Artifact | None = None,
+    ac_observability: dict | None = None,
 ) -> str:
     all_findings = _collect_all_findings(horizontal, vertical, cross_cutting)
     errors = sum(1 for f in all_findings if f["severity"] == "error")
@@ -811,6 +861,15 @@ def _render_report(
     else:
         lines.append("No cross-cutting issues found.")
         lines.append("")
+
+    # Per-AC AC-observability appendix (A3, CHL-344): report-body detail for
+    # the cross-cutting ac-observability lens. It is NOT a findings block —
+    # it adds nothing to the findings list, the Summary counts, or the AUD
+    # stamp (see _ac_observability_detail_lines). Suppressed under --quick
+    # (ac_observability=None) alongside the cross-cutting analysis.
+    ac_obs_lines = _ac_observability_detail_lines(ac_observability)
+    if ac_obs_lines:
+        lines.extend(ac_obs_lines)
 
     lines.append("## Summary")
     lines.append("")
@@ -1223,9 +1282,24 @@ def run(root: Path, args: dict[str, Any]) -> int:
     chain_coverage = _chain_coverage_stats(artifacts)
     prior_aud = _select_prior_audit(artifacts)
 
+    # Per-AC AC-observability aggregate for the report appendix + the
+    # cross-cutting subagent table (A3, CHL-344). Same pure-read precedent as
+    # chain coverage: computed from the loaded artifact list (never from the
+    # findings cache), so it renders identically on fresh runs, cache hits,
+    # and --dry-run. Suppressed under --quick exactly like the cross-cutting
+    # analysis it accompanies (pass None; the renderer/subagent writer skip).
+    quick = args.get("quick", False)
+    if quick:
+        ac_observability: dict | None = None
+    else:
+        from specflow.lib import ac_quality
+
+        ac_observability = ac_quality.classify_reqs_observability(artifacts)
+
     report = _render_report(
         ts, horizontal, vertical, cross_cutting, cached_count, len(artifacts),
         scope_info, chain_coverage=chain_coverage, prior_audit=prior_aud,
+        ac_observability=ac_observability,
     )
     report_path = audit_dir / "report.md"
     if not dry_run:
@@ -1253,6 +1327,32 @@ def run(root: Path, args: dict[str, Any]) -> int:
             for item in items:
                 sub_cross_lines.append(f"- [{item['severity']}] {item['message']}")
             sub_cross_lines.append("")
+        # Full all-class per-AC observability table (A3, CHL-344): OBSERVABLE
+        # INCLUDED — the report.md appendix is noise-bounded to the
+        # unclassified/aspirational rows, so the complete table lives here.
+        # Same --quick suppression as the cross-cutting analysis (None →
+        # skip); same determinism contract (sorted REQ IDs, document-order
+        # items); same single parse path (lib/ac_quality.py).
+        if ac_observability is not None and ac_observability["per_req"]:
+            agg = ac_observability
+            sub_cross_lines.append("## ac-observability — full per-AC table\n")
+            sub_cross_lines.append(
+                f"All {agg['total_items']} AC item(s) across "
+                f"{agg['reqs_with_acs']} REQ(s) with ACs, by observability "
+                f"class ({agg['observable']} observable, "
+                f"{agg['aspirational']} aspirational, "
+                f"{agg['unclassified']} unclassified). report.md lists only "
+                f"the unclassified/aspirational rows.\n"
+            )
+            for r in sorted(agg["per_req"], key=lambda r: r["id"]):
+                sub_cross_lines.append(
+                    f"### {r['id']} — {r['observable']}/{r['total']} observable, "
+                    f"{r['aspirational']} aspirational, "
+                    f"{r['unclassified']} unclassified\n"
+                )
+                for it in r["items"]:
+                    sub_cross_lines.append(f"- [{it['classification']}] {it['text']}")
+                sub_cross_lines.append("")
         sub_cross_path.write_text("\n".join(sub_cross_lines), encoding="utf-8")
 
     all_findings = _collect_all_findings(horizontal, vertical, cross_cutting)

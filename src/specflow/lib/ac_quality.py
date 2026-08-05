@@ -296,13 +296,18 @@ def classify_reqs_observability(artifacts: list[art_lib.Artifact]) -> dict:
           "aspirational": int,
           "unclassified": int,
           "per_req": [ {id, total, observable, aspirational, unclassified,
-                        observable_ratio}, ... ],
+                        observable_ratio, items}, ... ],
           "aspirational_texts": [str, ...],
         }
 
-    ``observable_ratio`` is observable/total (0.0 when total==0). REQs with no
-    AC items are excluded from ``reqs_with_acs`` (a presence gap is the
-    acceptance-check's job, not this lens's).
+    ``observable_ratio`` is observable/total (0.0 when total==0). Each per-REQ
+    entry's ``items`` is the SAME per-AC list
+    (:func:`classify_ac_observability` computes — one ``{"text", "classification"}``
+    dict per item, in document order) carried out unchanged (A3, CHL-344): it is
+    the single parse path for the per-AC report appendix and the cross-cutting
+    subagent table, so neither surface re-parses AC text. REQs with no AC items
+    are excluded from ``reqs_with_acs`` (a presence gap is the acceptance-check's
+    job, not this lens's).
     """
     per_req: list[dict] = []
     asp_texts: list[str] = []
@@ -329,6 +334,9 @@ def classify_reqs_observability(artifacts: list[art_lib.Artifact]) -> dict:
             "aspirational": summary["aspirational"],
             "unclassified": summary["unclassified"],
             "observable_ratio": ratio,
+            # A3 (CHL-344): carry the per-AC rows out unchanged so the report
+            # appendix / cross-cutting table consume the single parse path.
+            "items": summary["items"],
         })
         if summary["aspirational"] == 0:
             aspirational_free += 1

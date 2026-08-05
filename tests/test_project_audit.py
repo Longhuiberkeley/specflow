@@ -14,6 +14,7 @@ import yaml
 
 from specflow.commands import artifact_lint
 from specflow.commands import project_audit as audit_cmd
+from specflow.lib import ac_quality
 from specflow.lib import artifacts as art_lib
 from specflow.lib import evidence
 
@@ -1404,3 +1405,297 @@ class TestLosslessCache:
         assert rc_dry == rc_write                          # exit-code parity
         assert "reusing previous findings" in out_dry      # read the cache
         assert self._findings_line(out_dry) == self._findings_line(out_write)
+
+
+# ── CHL-344 A3: per-AC observability rows in the report body ────────────────
+#
+# The ~N unclassified/aspirational AC rows surface in the REPORT BODY (a new
+# "## AC observability detail" section), NOT the findings list — as INFO
+# findings they would inflate summary_info trends, replay through the cache,
+# and never mint CHLs. The findings list, Summary counts, and AUD stamp are
+# byte-identical with and without the section. The full all-class table
+# (observable included) lives in subagent-cross-cutting.md. The section is a
+# pure read over the loaded artifact list (chain-coverage precedent), so it
+# renders identically on fresh runs, cache hits, and --dry-run, and is
+# suppressed under --quick alongside the cross-cutting analysis.
+
+
+def _ac_obs_req(root: Path, aid: str, items: list[str]) -> None:
+    """One approved REQ whose AC section carries the given items in order."""
+    acs = "\n".join(f"- {it}" for it in items)
+    _write_art(root, f"_specflow/specs/requirements/{aid}.md",
+               f"---\nid: {aid}\ntitle: T\ntype: requirement\nstatus: approved\n"
+               "tags: []\nsuspect: false\nlinks: []\nfingerprint: x\n---\n\n# T\n\n"
+               f"## Acceptance Criteria\n{acs}\n")
+
+
+def _ac_obs_fixture(root: Path) -> None:
+    """REQ-001 mixes all three classes; REQ-002 is fully observable.
+
+    REQ-001: "returns exit code 0" → observable, "the relay energizes" →
+    unclassified (cry-wolf guard: a domain observable), "responds quickly" →
+    aspirational. REQ-002: "creates a file" → observable. So the report
+    appendix must carry exactly the two REQ-001 rows (observable excluded) and
+    omit REQ-002 entirely, while the subagent table carries all four items.
+    """
+    _ac_obs_req(root, "REQ-001", [
+        "returns exit code 0",       # observable
+        "the relay energizes",       # unclassified (domain observable)
+        "responds quickly",          # aspirational
+    ])
+    _ac_obs_req(root, "REQ-002", [
+        "creates a file",            # observable
+    ])
+
+
+def _ac_obs_section(report: str) -> str:
+    """The '## AC observability detail' block, from its heading to the next
+    '## ' heading (exclusive). Empty string when the section is absent."""
+    marker = "## AC observability detail"
+    start = report.find(marker)
+    if start == -1:
+        return ""
+    nxt = report.find("\n## ", start + len(marker))
+    return report[start:] if nxt == -1 else report[start:nxt + 1]
+
+
+def _ac_obs_table(report: str) -> str:
+    """The full per-AC table block in subagent-cross-cutting.md, or ''."""
+    marker = "## ac-observability — full per-AC table"
+    start = report.find(marker)
+    if start == -1:
+        return ""
+    nxt = report.find("\n## ", start + len(marker))
+    return report[start:] if nxt == -1 else report[start:nxt + 1]
+
+
+class TestAcObservabilityDetailSection:
+    """A3 (CHL-344): per-AC rows in the report body; full table in the
+    cross-cutting subagent file; findings/Summary/stamp untouched."""
+
+    @staticmethod
+    def _quiet(monkeypatch, cc=None) -> None:
+        """Silence the three axes to deterministic values (the section is a
+        pure read over artifacts, independent of the axes) and suppress
+        AUD/CHL side effects so only the report/subagent files vary."""
+        monkeypatch.setattr(audit_cmd, "_horizontal_analysis", lambda arts: {})
+        monkeypatch.setattr(audit_cmd, "_vertical_analysis", lambda arts: [])
+        monkeypatch.setattr(audit_cmd, "_cross_cutting_analysis",
+                            lambda arts, r, **kw: cc or {})
+        monkeypatch.setattr(audit_cmd.art_lib, "create_artifact",
+                            lambda *a, **k: {"ok": False})
+        monkeypatch.setattr(audit_cmd.chl_lib, "create_chl_artifacts",
+                            lambda *a, **k: [])
+
+    # (a) section present on the normal (writing) run, correct rows + markers.
+    def test_section_present_with_correct_rows(self, tmp_path, monkeypatch, capsys):
+        root = tmp_path / "project"
+        _ac_obs_fixture(root)
+        self._quiet(monkeypatch)
+        rc = audit_cmd.run(root, {"quick": False})
+        capsys.readouterr()
+        assert rc == 0
+        report = _latest_report(root)
+        section = _ac_obs_section(report)
+        assert section, "expected the AC observability detail section"
+        # Noise bound: observable excluded, fully-observable REQ-002 omitted.
+        assert "### REQ-001" in section
+        assert "REQ-002" not in section
+        assert "[unclassified] the relay energizes" in section
+        assert "[aspirational] responds quickly" in section
+        assert "returns exit code 0" not in section
+        assert "creates a file" not in section
+        # The intro carries the honest counts (2 actionable of 4 total).
+        assert "2 of 4 AC item(s)" in section
+        # REQ IDs are sorted; item order is stable (document order).
+        assert section.index("REQ-001") < section.index("the relay energizes")
+
+    # (b) section present on the cache-hit path (pure read over artifacts).
+    def test_section_present_on_cache_hit(self, tmp_path, monkeypatch, capsys):
+        root = tmp_path / "project"
+        _ac_obs_fixture(root)
+        # One cross-cutting info so the cache stores a NON-EMPTY findings set
+        # (an empty list is falsy and never registers as a hit).
+        self._quiet(monkeypatch, cc={"baseline-drift": [
+            {"severity": "info", "message": "baseline info"}]})
+
+        rc_fresh = audit_cmd.run(root, {"quick": False})
+        capsys.readouterr()
+        assert rc_fresh == 0
+        fresh_section = _ac_obs_section(_latest_report(root))
+        assert fresh_section
+
+        rc_cached = audit_cmd.run(root, {"quick": False})
+        out_cached = capsys.readouterr().out
+        assert rc_cached == rc_fresh
+        assert "reusing previous findings" in out_cached   # a genuine hit
+        cached_section = _ac_obs_section(_latest_report(root))
+        assert cached_section, "section must render on the cache-hit path too"
+        assert cached_section == fresh_section
+
+    # (c) section present in the in-memory report under --dry-run, which still
+    # writes nothing (parity: pure rendering from already-loaded data).
+    def test_section_renders_in_dry_run_report_without_writing(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        root = tmp_path / "project"
+        _ac_obs_fixture(root)
+        self._quiet(monkeypatch)
+
+        captured: dict = {}
+        real_render = audit_cmd._render_report
+
+        def _spy(ts, *a, **kw):
+            report = real_render(ts, *a, **kw)
+            captured["report"] = report
+            return report
+
+        monkeypatch.setattr(audit_cmd, "_render_report", _spy)
+
+        def _files() -> list[str]:
+            return sorted(str(p.relative_to(root)) for p in root.rglob("*") if p.is_file())
+
+        before = _files()
+        rc = audit_cmd.run(root, {"quick": False, "dry_run": True})
+        capsys.readouterr()
+        assert rc == 0
+        assert _files() == before                       # wrote nothing
+        assert "report" in captured                     # rendered in memory
+        section = _ac_obs_section(captured["report"])
+        assert section, "section must render in the dry-run in-memory report"
+        assert "[aspirational] responds quickly" in section
+
+    # (d) section ABSENT under --quick (cross-cutting is skipped there), in
+    # both the report body and the cross-cutting subagent file.
+    def test_section_absent_under_quick(self, tmp_path, monkeypatch, capsys):
+        root = tmp_path / "project"
+        _ac_obs_fixture(root)
+        self._quiet(monkeypatch)
+        rc = audit_cmd.run(root, {"quick": True})
+        capsys.readouterr()
+        assert rc == 0
+        report = _latest_report(root)
+        assert "## AC observability detail" not in report
+        snaps = sorted((root / ".specflow" / "audits").glob("*/subagent-cross-cutting.md"))
+        assert snaps, "expected a cross-cutting subagent file"
+        assert "## ac-observability — full per-AC table" not in snaps[-1].read_text(
+            encoding="utf-8")
+
+    # (e) findings list + Summary counts byte-identical with/without the
+    # section — the section adds NO findings and touches NO counts. Render the
+    # SAME findings twice (ac_observability set vs None); removing the section
+    # from the with-render must reproduce the without-render byte-for-byte.
+    def test_findings_and_summary_unchanged_by_section(self):
+        arts = [
+            _art("REQ-001", "requirement", status="approved",
+                 body="## Acceptance Criteria\n"
+                      "- returns exit code 0\n"
+                      "- the relay energizes\n"
+                      "- responds quickly\n"),
+        ]
+        agg = ac_quality.classify_reqs_observability(arts)
+        assert agg["aspirational"] + agg["unclassified"] == 2  # fixture sanity
+
+        horizontal = {"requirement": [{"severity": "info", "message": "a horiz info"}]}
+        vertical = [{"severity": "warn", "message": "a vertical warn"}]
+        cc = {"consistency": [
+            {"severity": "warn", "message": "a structural warn"},
+            {"severity": "info", "message": "an info"},
+        ]}
+        kwargs = dict(horizontal=horizontal, vertical=vertical, cross_cutting=cc,
+                      cached_count=0, total_artifacts=1, scope_info=[],
+                      chain_coverage=None, prior_audit=None)
+        with_sec = audit_cmd._render_report("TS", ac_observability=agg, **kwargs)
+        without = audit_cmd._render_report("TS", ac_observability=None, **kwargs)
+
+        section = _ac_obs_section(with_sec)
+        assert section, "with-render must carry the section"
+        assert "## AC observability detail" not in without
+        # The ONLY difference between the two renders is the section block.
+        assert with_sec.replace(section, "") == without
+        # Summary counts derive ONLY from findings and are identical in both.
+        for r in (with_sec, without):
+            assert "| Error    | 0 |" in r
+            assert "| Warning  | 2 |" in r   # vertical + consistency warns
+            assert "| Info     | 2 |" in r   # horiz info + consistency info
+
+    # (f) full all-class table (observable included) in subagent-cross-cutting.
+    def test_full_table_in_cross_cutting_subagent(self, tmp_path, monkeypatch, capsys):
+        root = tmp_path / "project"
+        _ac_obs_fixture(root)
+        self._quiet(monkeypatch)
+        rc = audit_cmd.run(root, {"quick": False})
+        capsys.readouterr()
+        assert rc == 0
+        snaps = sorted((root / ".specflow" / "audits").glob("*/subagent-cross-cutting.md"))
+        assert snaps, "expected a cross-cutting subagent file"
+        sub = snaps[-1].read_text(encoding="utf-8")
+        table = _ac_obs_table(sub)
+        assert table, "expected the full per-AC table in subagent-cross-cutting.md"
+        # Observable INCLUDED here (the noise bound applies only to report.md).
+        assert "[observable] returns exit code 0" in table
+        assert "[observable] creates a file" in table
+        assert "[unclassified] the relay energizes" in table
+        assert "[aspirational] responds quickly" in table
+        # Both REQs appear (no noise-bound omission in the full table).
+        assert "### REQ-001" in table
+        assert "### REQ-002" in table
+
+    # (g) determinism regression: byte-identical section across a fresh run and
+    # a cache-hit run. Non-deterministic ordering would register as false drift
+    # in future audits, so the two renders must agree exactly.
+    def test_byte_identical_render_fresh_vs_cache_hit(self, tmp_path, monkeypatch, capsys):
+        root = tmp_path / "project"
+        _ac_obs_fixture(root)
+        self._quiet(monkeypatch, cc={"baseline-drift": [
+            {"severity": "info", "message": "baseline info"}]})
+
+        assert audit_cmd.run(root, {"quick": False}) == 0
+        capsys.readouterr()
+        fresh_section = _ac_obs_section(_latest_report(root))
+
+        # A cache-hit run renders the section byte-identically.
+        out_cached = ""
+        assert audit_cmd.run(root, {"quick": False}) == 0
+        out_cached = capsys.readouterr().out
+        assert "reusing previous findings" in out_cached
+        cached_section = _ac_obs_section(_latest_report(root))
+
+        assert fresh_section == cached_section
+        assert fresh_section.encode("utf-8") == cached_section.encode("utf-8")
+
+    # (h) determinism regression at the pure-function level: repeated renders of
+    # the same aggregate are byte-identical (guards dict/set ordering leaks),
+    # and REQ IDs render sorted even when the artifact list is unsorted.
+    def test_render_is_a_pure_function_of_the_aggregate(self):
+        arts = [
+            # Listed out of ID order on purpose: the renderer must sort by ID.
+            _art("REQ-002", "requirement", status="approved",
+                 body="## Acceptance Criteria\n- works correctly\n"),
+            _art("REQ-001", "requirement", status="approved",
+                 body="## Acceptance Criteria\n"
+                      "- returns exit code 0\n"
+                      "- the relay energizes\n"
+                      "- responds quickly\n"),
+        ]
+        agg = ac_quality.classify_reqs_observability(arts)
+        lines_a = audit_cmd._ac_observability_detail_lines(agg)
+        lines_b = audit_cmd._ac_observability_detail_lines(agg)
+        assert lines_a == lines_b
+        rendered = "\n".join(lines_a)
+        assert "## AC observability detail" in rendered
+        # Sorted REQ IDs even though the input list was reversed.
+        assert rendered.index("### REQ-001") < rendered.index("### REQ-002")
+        # None aggregate (--quick) → no section.
+        assert audit_cmd._ac_observability_detail_lines(None) == []
+
+    # (i) graceful silence: no REQs with ACs → no section (never an empty box).
+    def test_section_absent_when_no_reqs_have_acs(self, tmp_path, monkeypatch, capsys):
+        root = tmp_path / "project"
+        _write_art(root, "_specflow/specs/requirements/REQ-001.md",
+                   "---\nid: REQ-001\ntitle: T\ntype: requirement\nstatus: approved\n"
+                   "tags: []\nsuspect: false\nlinks: []\nfingerprint: x\n---\n\n# T\n")
+        self._quiet(monkeypatch)
+        assert audit_cmd.run(root, {"quick": False}) == 0
+        capsys.readouterr()
+        assert "## AC observability detail" not in _latest_report(root)

@@ -219,6 +219,41 @@ class TestAggregate:
         assert by_id["REQ-002"]["observable_ratio"] == 0.0
         assert by_id["REQ-003"]["observable_ratio"] == 0.0  # 0 obs / 1 unclassified
 
+    def test_per_req_entries_carry_items_round_tripping_markers(self):
+        # A3 (CHL-344): classify_reqs_observability carries the per-AC items
+        # out unchanged (the single parse path) — each per-REQ entry's items
+        # round-trip exactly the classification markers the counts record.
+        agg = q.classify_reqs_observability(self._project())
+        by_id = {r["id"]: r for r in agg["per_req"]}
+        for r in agg["per_req"]:
+            assert len(r["items"]) == r["total"]
+            markers = [it["classification"] for it in r["items"]]
+            assert markers.count("observable") == r["observable"]
+            assert markers.count("aspirational") == r["aspirational"]
+            assert markers.count("unclassified") == r["unclassified"]
+            for it in r["items"]:
+                assert set(it) == {"text", "classification"}
+        # Exact per-REQ round-trip (document order preserved).
+        assert [it["classification"] for it in by_id["REQ-001"]["items"]] == [
+            "observable", "observable"]
+        assert [it["classification"] for it in by_id["REQ-002"]["items"]] == [
+            "aspirational", "aspirational"]
+        assert by_id["REQ-003"]["items"][0]["classification"] == "unclassified"
+        # Texts round-trip clean (marker-stripped) alongside the markers.
+        assert [it["text"] for it in by_id["REQ-002"]["items"]] == [
+            "responds quickly", "is user-friendly"]
+
+    def test_per_req_items_identical_to_per_artifact_classification(self):
+        # The carried-out items are the SAME list classify_ac_observability
+        # computes — no second parse path, no drift between the aggregate and
+        # the per-artifact surface.
+        arts = self._project()
+        agg = q.classify_reqs_observability(arts)
+        by_id = {r["id"]: r for r in agg["per_req"]}
+        for art in arts:
+            if art.id in by_id:
+                assert by_id[art.id]["items"] == q.classify_ac_observability(art)["items"]
+
     def test_non_req_artifact_summary_is_zeroed(self):
         arch = art_lib.Artifact(
             path=Path("ARCH-1.md"),
