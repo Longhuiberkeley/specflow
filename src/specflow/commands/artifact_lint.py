@@ -21,7 +21,7 @@ from specflow.lib import role_normalize
 from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC
 from specflow.lib.domain_constants import DOMAIN_RECOMMENDED
 
-CHECK_NAMES = ["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "thinking-techniques", "autoresearch-logging", "spike-lifecycle", "source-drift", "dec-risk-profile", "ac-observable", "nfr-category"]
+CHECK_NAMES = ["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "thinking-techniques", "autoresearch-logging", "spike-lifecycle", "source-drift", "dec-risk-profile", "ac-observable", "nfr-category", "backfilled-links"]
 
 
 def _run_check(
@@ -86,6 +86,8 @@ def _run_check(
         return lint_ac_observability(artifacts)
     elif check_name == "nfr-category":
         return _check_nfr_category(artifacts)
+    elif check_name == "backfilled-links":
+        return _check_backfilled_links(artifacts)
 
     return {"status_icon": "?", "detail": f"Unknown check: {check_name}",
             "blocking_count": 0, "warning_count": 0}
@@ -1795,6 +1797,69 @@ def _check_nfr_category(
     detail_msg = (
         "\n".join(details) if details
         else f"All set non_functional_category values are in the frozen vocabulary ({len(reqs)} REQ(s) checked)"
+    )
+
+    return {
+        "status_icon": icon,
+        "detail": detail_msg,
+        "blocking_count": 0,
+        "warning_count": warnings,
+    }
+
+
+def _check_backfilled_links(
+    artifacts: list[art_lib.Artifact],
+) -> dict[str, str | int]:
+    """Warn when a backfilled artifact has NO links at all.
+
+    CHL-344 sub-finding #4 code half (A6): a backfilled record describes work
+    that pre-dates its spec — its links ARE the claim that the pre-existing
+    work traces to the chain. A backfilled artifact with zero links in EITHER
+    direction describes nothing and asserts nothing: it is adoption noise.
+    This is PROPHYLACTIC for the adoption shape: ``specflow detect orphan-code
+    --adopt`` always mints the backfilled STORY with a derives_from link, and
+    every live backfilled artifact in this repo carries links — the rule keeps
+    that invariant visible instead of implicit.
+
+    Direction carve-out: a backfilled artifact passes if it carries ≥1 outbound
+    link OR is the target of ≥1 inbound link. The adoption-pack anchor ARCH is
+    upstream-less BY CONSTRUCTION (skeleton = no parent REQ — that is the whole
+    adoption shape), yet it asserts plenty: a STORY derives_from it and its
+    output_files carry the adopted cluster's provenance (it is exactly the
+    artifact the audit's adoption-exemption line tells reviewers to verify).
+    Warning on it would cry-wolf for every adoption-pack consumer — the same
+    mistake the BP/DEC foundational-provenance exemption fixed (upstream-less
+    by design; absent links[] correct, not orphan). A truly disconnected
+    backfilled record — nothing outbound, nothing inbound — is the noise.
+
+    Accounting, not policing — WARNING only, never blocking, never an error:
+    artifact-lint warnings never feed project-audit's exit gate. The 'deferred'
+    tag gets NO rule here: it does not exist anywhere (verified; the 'deferred'
+    in go.py is a wave-lock result key, REQ-DEFERRED-* is a draft-ID slug) and
+    minting a tag for zero consumers violates the D-18 frozen-vocabulary
+    discipline. Sorted by ID for a deterministic detail line.
+    """
+    warnings = 0
+    details: list[str] = []
+
+    inbound_targets = {link.target for a in artifacts for link in a.links}
+    backfilled = sorted(
+        (a for a in artifacts if "backfilled" in (a.tags or [])),
+        key=lambda a: a.id,
+    )
+    for art in backfilled:
+        if not art.links and art.id not in inbound_targets:
+            warnings += 1
+            details.append(
+                f"  ⚠ [{art.id}] backfilled artifact has no links in either "
+                "direction — a backfilled record describing nothing asserts "
+                "nothing"
+            )
+
+    icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
+    detail_msg = (
+        "\n".join(details) if details
+        else f"All {len(backfilled)} backfilled artifact(s) carry ≥1 link"
     )
 
     return {

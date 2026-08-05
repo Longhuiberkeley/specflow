@@ -32,6 +32,7 @@ output_files:
 - tests/test_evidence.py
 - docs/cli-reference.md
 - tests/test_nfr_category.py
+- tests/test_backfilled_guard.py
 modified: '2026-08-05'
 ---
 

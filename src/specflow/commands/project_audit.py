@@ -119,7 +119,11 @@ _AUD_OUTPUT_TYPES = frozenset({"challenge", "audit"})
 # gained the out-of-vocabulary INFO line — concern classification is part of
 # the cached findings, so a gen-2 cache would replay the nfr warn with its old
 # escalating treatment and corrupt the stamp split.
-_CACHE_GENERATION = 3
+# gen 4 (A6): the backfilled-exemption INFO line became part of the cached
+# cross-cutting findings — the findings set (INFO included) is what the cache
+# stores, so a gen-3 cache would replay without the counted exemption bucket
+# and shadow it.
+_CACHE_GENERATION = 4
 
 
 def _project_fingerprint(artifacts: list[art_lib.Artifact]) -> str:
@@ -355,6 +359,19 @@ def _cross_cutting_analysis(
                 f"{lint_result.get('verification_detail', '')[:200]}"
             ),
         })
+
+    # Backfilled-exemption bucket (CHL-344 A6): check_coverage's test-link
+    # predicates are REQ-anchored, so a backfilled STORY that derives_from an
+    # anchor ARCH with no parent REQ (the adoption shape) SILENTLY never
+    # enters the test-link loop. That exemption is emergent, not asserted —
+    # invisible growth is not reviewable. The lens makes it explicit and
+    # counted: one deterministic INFO line naming every exempt backfilled
+    # chain, printed every audit it is non-zero. Omitted when zero (the nfr
+    # out-of-vocabulary precedent), so a fully REQ-anchored backfill leaves
+    # the findings set byte-identical.
+    exempt_findings = _backfilled_exemption_lens(artifacts)
+    if exempt_findings:
+        results.setdefault("adoption-exemption", []).extend(exempt_findings)
 
     baseline_findings: list[dict[str, str]] = []
     if drift_pair is None:
@@ -763,6 +780,70 @@ def _nfr_coverage_lens(artifacts: list[art_lib.Artifact]) -> list[dict[str, str]
     # Self-describing: stamp the accounting concern (see _verification_lens).
     for f in findings:
         f["concern"] = "nfr-coverage"
+    return findings
+
+
+def _backfilled_exemption_lens(artifacts: list[art_lib.Artifact]) -> list[dict[str, str]]:
+    """Counted exemption bucket for backfilled STORYs (CHL-344 A6).
+
+    ``check_coverage``'s test-link expectations are REQ-anchored: a STORY is
+    only examined for UT/IT/QT verified_by links when it implements/derives_from
+    an approved-status REQ. A backfilled STORY in the ADOPTION shape — created
+    by ``specflow detect orphan-code --adopt`` with a single derives_from link
+    to an anchor ARCH that has no parent REQ — therefore silently sits outside
+    those expectations. That exemption is emergent (nothing in the code grants
+    it), which is exactly the problem: invisible growth is not reviewable.
+
+    This lens makes the exemption explicit, counted, and reviewable: ONE
+    deterministic INFO line per audit naming every backfilled STORY
+    (approved/implemented/verified) that is NOT anchored to an approved-status
+    REQ via implements/derives_from, IDs sorted for a stable line. The review
+    instruction points at the anchor ARCH's output_files — that is where the
+    adopted code's provenance lives.
+
+    INFO severity deliberately: adopted code permanently lacks tests by
+    definition, so a WARN here would be permanent — cry-wolf for every
+    adoption-pack consumer. Omitted entirely when zero (the nfr
+    out-of-vocabulary precedent): a fully REQ-anchored backfill (STORY-622
+    shape) leaves the findings set untouched. The lens can only ever emit
+    INFO, so it cannot drive exit-2 through any concern — no registration in
+    ``_ACCOUNTING_CONCERNS`` is needed (there is no warn to carve out). Pure
+    helper so the bucket is unit-testable without the full pipeline.
+    """
+    findings: list[dict[str, str]] = []
+    anchored_reqs = {
+        a.id for a in artifacts
+        if art_lib.get_prefix_from_id(a.id) == "REQ"
+        and a.status in ("approved", "implemented", "verified")
+    }
+    exempt: list[str] = []
+    for art in artifacts:
+        if art_lib.get_prefix_from_id(art.id) != "STORY":
+            continue
+        if "backfilled" not in (art.tags or []):
+            continue
+        if art.status not in ("approved", "implemented", "verified"):
+            continue
+        anchored = any(
+            link.role in ("implements", "derives_from")
+            and link.target in anchored_reqs
+            for link in art.links
+        )
+        if not anchored:
+            exempt.append(art.id)
+    if exempt:
+        findings.append({
+            "severity": "info",
+            "message": (
+                f"{len(exempt)} backfilled chain(s) exempt from REQ-anchored "
+                f"test-link expectations ({', '.join(sorted(exempt))}) — verify "
+                "via the anchor ARCH's output_files"
+            ),
+        })
+    # Self-describing: stamp the concern (see _verification_lens). INFO-only
+    # bucket — never registers in _ACCOUNTING_CONCERNS (no warn exists).
+    for f in findings:
+        f["concern"] = "adoption-exemption"
     return findings
 
 
