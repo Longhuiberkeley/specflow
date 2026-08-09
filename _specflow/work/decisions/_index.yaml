@@ -756,4 +756,14 @@ artifacts:
     - data-integrity
     fingerprint: sha256:aebb8deb1526
     children: []
+  DEC-CHANGERE-066b:
+    id: DEC-CHANGERE-066b
+    title: 'Change Record: fix: normalize all list-valued frontmatter fields, not
+      just tags'
+    status: draft
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:52b829d853cf
+    children: []
 next_id: 76

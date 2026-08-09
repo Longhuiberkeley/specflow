@@ -879,4 +879,11 @@ artifacts:
     tags: []
     fingerprint: sha256:cdc8c6b4c335
     children: []
+  CHL-AUDITHOR-af97:
+    id: CHL-AUDITHOR-af97
+    title: Audit horizontal/spike findings
+    status: open
+    tags: []
+    fingerprint: sha256:6e55229774bc
+    children: []
 next_id: 348

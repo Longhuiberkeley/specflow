@@ -198,6 +198,16 @@ Focus: **autoresearch methodology depth, escalation/permanence test, and templat
 
 > Delivered: the `spike-lifecycle` lint detector (stale / zombie / repeated-topic SPIKEs) shipped as a first-class `artifact-lint --type spike-lifecycle` check — the work-side complement to the v1.8.0 *Stale Code Detection* item. Still deferred: optional structured multi-output schema (typed per-component fields on COMP/EXPT) if the `component_<name>` convention proves too loose.
 
+## v1.13.7
+
+Focus: **completing the list-valued frontmatter normalization bug class.** v1.13.6's tags fix left the same scalar-string hazard live in `thinking_techniques` (a loud crash) and `output_files` (a silent miss). Pure correctness; no new gates.
+
+- **Generalized normalization** — `_normalize_tags` → `_normalize_str_list` across `tags` / `thinking_techniques` / `output_files` at every read/write boundary (new `.thinking_techniques` / `.output_files` properties + `parse_set_fields` `_LIST_VALUED_KEYS` + create/update/rebuild index parity).
+- **Killed the `thinking_techniques` `str + list` `TypeError`** that aborted `artifact-review --depth deep`; fixed `output_files` silent zero-credit in `expand_output_files`.
+- **Helper correctness + dedupe** — `None` list element dropped (was a phantom `"None"` tag); unexpected types log a warning; `artifact_lint`'s divergent hand-rolled splitter deduped to `.tags`. 26 mutation-checked regression tests (+12).
+
+> Deferred to SPIKE-BPSURFAC-710b / SPIKE-CHECKLIS-1a12: BP `applies_to: all` wildcard, promote-PREV/CHL→BP, review→PREV capture, empty-checklist-results-read-as-passed.
+
 ## v1.13.6
 
 Focus: **the CHL-344 audit-signal-design workstream, complete.** Signals honest, unified, and individually actionable; every new warn accounting (never exit-2).

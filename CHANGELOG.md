@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.13.7] - 2026-08-09
+
+Completes the list-valued frontmatter normalization bug class begun by v1.13.6's tags fix. The same scalar-string hazard that silently char-split `tags` was still live for `thinking_techniques` (a loud `TypeError` that aborted deep reviews) and `output_files` (a silent coverage zero-credit). Pure correctness + robustness — no new gates.
+
+### Highlights
+
+- **Normalization generalized across all list-valued fields** — `tags`, `thinking_techniques`, and `output_files` are coerced to lists at every read/write boundary, so a YAML scalar or `--set KEY=a,b` can never reach a consumer as a raw string.
+
+### Fixed
+
+- **`thinking_techniques` deep-review crash** — `--set thinking_techniques=a,b` persisted a scalar string; the review/update merge paths then hit `str + list` `TypeError` and aborted `artifact-review --depth deep`. New `.thinking_techniques` read-boundary property + `parse_set_fields` normalization closes it.
+- **`output_files` silent zero-credit** — a hand-edited scalar `output_files: src/x.py` (or `--set`) credited zero files with no warning. `expand_output_files` now coerces a scalar to a one-element list; new `.output_files` property normalizes on read.
+- **Index/tags consistency (WARNING-1)** — `create_artifact` and `update_artifact` now write normalized tags to `_index.yaml`, matching `rebuild_index`.
+- **Checklist/PREV tag matching (WARNING-2)** — `_load_shared_checklists` / `_load_learned_patterns` normalize `applies_to.tags`, so a scalar-tagged checklist or PREV no longer silently fails to match.
+- **`None` list element** — a null element in a tags list is dropped instead of stringified to a phantom `"None"` tag.
+- **`artifact_lint` divergence** — the repeated-topic detector's hand-rolled tag splitter (which diverged on whitespace and crashed on non-str types) now reads through `.tags`.
+
+### Changed
+
+- `_normalize_tags` renamed to `_normalize_str_list` (field-agnostic); unexpected types now log a warning instead of returning a silent empty list. New `_LIST_VALUED_KEYS` is the single source of truth for which fields are normalized.
+
+> Regression coverage 14 → 26 tests, including mutation-checked boundary tests that pin the WARNING-1/WARNING-2 fix sites (the prior suite stayed green when those lines were reverted). Deferred to SPIKEs: BP `applies_to: all` wildcard, promote-PREV/CHL→BP, review→PREV capture, empty-checklist-results-read-as-passed.
+
 ## [1.13.6] - 2026-08-05
 
 The CHL-344 "audit signal design" workstream, complete: audit signals are now honest, unified, and individually actionable. No new blocking gates — every new warn is accounting (prints + stamps, never drives exit-2).
