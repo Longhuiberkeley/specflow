@@ -743,4 +743,17 @@ artifacts:
     - auto-generated
     fingerprint: sha256:ff8f9e38258a
     children: []
+  DEC-NORMALIZ-90e0:
+    id: DEC-NORMALIZ-90e0
+    title: Normalize list-valued frontmatter fields to prevent scalar-string corruption
+      (tags char-split, thinking_techniques TypeError)
+    status: draft
+    tags:
+    - bug
+    - tags
+    - learning
+    - prev
+    - data-integrity
+    fingerprint: sha256:aebb8deb1526
+    children: []
 next_id: 76

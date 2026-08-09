@@ -346,7 +346,14 @@ def expand_output_files(root: Path, entries: list[str] | None) -> set[Path]:
     """
     root = Path(root).resolve()
     resolved: set[Path] = set()
-    if not entries or not isinstance(entries, list):
+    if entries is None:
+        return resolved
+    # A hand-edited ``output_files: src/x.py`` or a bare ``--set output_files=``
+    # YAML scalar parses as a string, not a list. Treat it as a one-element list
+    # so the file is credited instead of silently zero-counted.
+    if isinstance(entries, str):
+        entries = [entries]
+    if not isinstance(entries, list):
         return resolved
 
     for entry in entries:

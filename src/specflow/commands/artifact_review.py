@@ -276,7 +276,7 @@ def _record_techniques_on_artifacts(
     techniques: list[str],
 ) -> None:
     for art in targets:
-        existing = art.frontmatter.get("thinking_techniques") or []
+        existing = art.thinking_techniques
         merged = list(dict.fromkeys(existing + techniques))
         if merged != existing:
             art_lib.update_artifact(

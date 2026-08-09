@@ -10,7 +10,7 @@ from typing import Any
 
 import yaml
 
-from specflow.lib.artifacts import Artifact
+from specflow.lib.artifacts import Artifact, _normalize_str_list
 
 
 @dataclass
@@ -151,7 +151,7 @@ def _load_shared_checklists(root: Path, artifact: Artifact) -> list[ChecklistIte
         if not isinstance(applies_to, dict):
             continue
 
-        checklist_tags = applies_to.get("tags", [])
+        checklist_tags = _normalize_str_list(applies_to.get("tags", []))
         checklist_types = applies_to.get("types", [])
 
         # Match if tags intersect AND type matches (or no type filter)
@@ -231,7 +231,7 @@ def _load_learned_patterns(root: Path, artifact: Artifact) -> list[ChecklistItem
             continue
 
         applies_to = data.get("applies_to", {})
-        pattern_tags = applies_to.get("tags", []) if isinstance(applies_to, dict) else []
+        pattern_tags = _normalize_str_list(applies_to.get("tags", [])) if isinstance(applies_to, dict) else []
 
         if match_tags(artifact.tags, pattern_tags):
             items.extend(parse_checklist_file(pattern_path))

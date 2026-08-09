@@ -204,7 +204,7 @@ def run(root: Path, args: dict) -> int:
                 parsed = art_lib.parse_artifact(existing_art)
                 existing_techniques = []
                 if parsed:
-                    existing_techniques = parsed.frontmatter.get("thinking_techniques") or []
+                    existing_techniques = parsed.thinking_techniques
                 merged = list(dict.fromkeys(existing_techniques + new_techniques))
                 updates["thinking_techniques"] = merged
 

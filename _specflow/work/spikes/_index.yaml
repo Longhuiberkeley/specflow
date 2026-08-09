@@ -9,4 +9,28 @@ artifacts:
     - research
     fingerprint: sha256:5b2ae2442cd9
     children: []
+  SPIKE-BPSURFAC-710b:
+    id: SPIKE-BPSURFAC-710b
+    title: 'BP surface gaps: inert applies_to field + no wildcard; no promote-PREV/CHL
+      to BP command'
+    status: draft
+    tags:
+    - best-practice
+    - checklist
+    - doctrine
+    - ux
+    fingerprint: sha256:5b732f9be3f9
+    children: []
+  SPIKE-CHECKLIS-1a12:
+    id: SPIKE-CHECKLIS-1a12
+    title: 'Checklist/review behavior gaps: starved review to PREV capture; empty
+      checklist results read as success'
+    status: draft
+    tags:
+    - checklist
+    - review
+    - learning
+    - observability
+    fingerprint: sha256:ee1fdea97a1c
+    children: []
 next_id: 2

@@ -1347,7 +1347,7 @@ def _check_thinking_techniques(
             continue
         if art.status not in CHALLENGED_STATUSES:
             continue
-        techniques = art.frontmatter.get("thinking_techniques")
+        techniques = art.thinking_techniques
         if not techniques:
             warnings += 1
             details.append(
@@ -1590,9 +1590,7 @@ def _check_spike_lifecycle(
     tag_counter: Counter[str] = Counter()
     tag_spikes: dict[str, list[str]] = {}
     for sp in spikes:
-        tags = sp.frontmatter.get("tags") or []
-        if isinstance(tags, str):
-            tags = [t.strip() for t in tags.split(",") if t.strip()]
+        tags = sp.tags
         for tag in tags:
             tag_counter[tag] += 1
             tag_spikes.setdefault(tag, []).append(sp.id)

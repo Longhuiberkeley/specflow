@@ -16,6 +16,42 @@ import yaml
 logger = logging.getLogger(__name__)
 
 
+# Frontmatter fields that are canonically ``list[str]`` but are frequently
+# authored (or written via ``--set KEY=a,b``) as a comma scalar string, which
+# YAML then parses as ``"a,b"``. Consumers that iterate / concatenate these
+# (e.g. ``list(art.tags)``, ``existing + techniques``) char-split or TypeError
+# on the scalar. These keys are normalized to a list at every read/write
+# boundary (the ``.tags``/``.thinking_techniques``/``.output_files`` properties
+# and ``parse_set_fields``) so no consumer can see the raw scalar.
+_LIST_VALUED_KEYS: frozenset[str] = frozenset({"tags", "thinking_techniques", "output_files"})
+
+
+def _normalize_str_list(raw: Any) -> list[str]:
+    """Coerce a comma-scalar-or-list frontmatter/CLI value into a ``list[str]``.
+
+    YAML parses ``tags: a,b`` (no brackets/quotes) as the scalar string
+    ``"a,b"``, not a list. Code that then iterates the value (e.g.
+    :func:`specflow.lib.learning.extract_prevention_pattern` calls
+    ``list(art.tags)``) char-splits that string into individual characters,
+    silently corrupting it; ``existing + techniques`` concatenations raise
+    ``TypeError``. Normalizing at the read boundary makes every consumer safe
+    regardless of how the value was written. Applies to every field in
+    :data:`_LIST_VALUED_KEYS`.
+    """
+    if raw is None:
+        return []
+    if isinstance(raw, str):
+        return [t.strip() for t in raw.split(",") if t.strip()]
+    if isinstance(raw, (list, tuple)):
+        # ``str(None)`` is the truthy ``"None"``, so guard ``t is not None``
+        # explicitly or a null element becomes a phantom ``"None"`` tag.
+        return [str(t).strip() for t in raw if t is not None and str(t).strip()]
+    # A dict/int/etc. is always corruption (e.g. a dotted-key ``--set tags.x=a``
+    # write). Surface it rather than silently returning [] — visible, not fatal.
+    logger.warning("ignoring malformed list value of type %s: %r", type(raw).__name__, raw)
+    return []
+
+
 def parse_set_fields(
     set_list: list[str] | None,
     known_keys: list[str] | None = None,
@@ -49,6 +85,14 @@ def parse_set_fields(
             value = json.loads(raw)
         except (json.JSONDecodeError, ValueError):
             value = raw
+        # Normalize list-valued fields: a CLI ``--set KEY=a,b`` or a YAML scalar
+        # parses as the string "a,b"; every consumer expects a list. Without this
+        # the scalar persists and later char-splits (tags) or TypeErrors on
+        # ``str + list`` concat (thinking_techniques). See _normalize_str_list.
+        # Dotted keys (``tags.x``) target nested-map fields and are left to the
+        # merge logic below.
+        if "." not in key and key in _LIST_VALUED_KEYS:
+            value = _normalize_str_list(value)
         if "." in key:
             head, sub = key.split(".", 1)
             sub = sub.strip()
@@ -323,7 +367,23 @@ class Artifact:
 
     @property
     def tags(self) -> list[str]:
-        return self.frontmatter.get("tags", [])
+        return _normalize_str_list(self.frontmatter.get("tags"))
+
+    @property
+    def thinking_techniques(self) -> list[str]:
+        """Thinking techniques as a normalized list (see :func:`_normalize_str_list`).
+
+        Read boundary for a list-valued field: a scalar ``"a,b"`` (from a bare
+        ``--set thinking_techniques=a,b`` or hand-edited YAML) is coerced here
+        so the ``existing + techniques`` merges in the review/update paths can
+        never hit ``str + list``.
+        """
+        return _normalize_str_list(self.frontmatter.get("thinking_techniques"))
+
+    @property
+    def output_files(self) -> list[str]:
+        """Output files as a normalized list (see :func:`_normalize_str_list`)."""
+        return _normalize_str_list(self.frontmatter.get("output_files"))
 
     @property
     def parent_id(self) -> str | None:
@@ -906,7 +966,7 @@ def _render_artifact_file(
     if rationale:
         fm["rationale"] = rationale
     if tags:
-        fm["tags"] = tags
+        fm["tags"] = _normalize_str_list(tags)
     fm["suspect"] = False
     fm["links"] = links or []
     fm["created"] = today
@@ -1019,7 +1079,7 @@ def create_artifact(
         "id": new_id,
         "title": title,
         "status": status,
-        "tags": tags or [],
+        "tags": _normalize_str_list(tags),
         "fingerprint": fingerprint,
         "children": [],
     }
@@ -1124,7 +1184,7 @@ def update_artifact(
             index_data["artifacts"][artifact_id]["status"] = fm.get("status", "draft")
             index_data["artifacts"][artifact_id]["fingerprint"] = fingerprint
             if "tags" in fm:
-                index_data["artifacts"][artifact_id]["tags"] = fm["tags"]
+                index_data["artifacts"][artifact_id]["tags"] = _normalize_str_list(fm.get("tags"))
             _write_index(index_path, index_data)
 
     return {"ok": True, "id": artifact_id, "path": str(file_path), "fingerprint": fingerprint}
