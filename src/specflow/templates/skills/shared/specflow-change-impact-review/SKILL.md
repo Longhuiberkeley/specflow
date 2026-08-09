@@ -51,6 +51,12 @@ For each unreviewed DEC found:
    ```
 2. Note the "cone of impact". This limits the scope of the review to only the artifacts affected by the change, preventing unnecessary full-project reviews.
 
+**Source File Impact:** To map recent non-`_specflow/` code changes back to artifacts through `output_files` and flag matches, run:
+```bash
+specflow change-impact --flag
+```
+After reviewing a flagged artifact, resolve it with `specflow change-impact --resolve <ARTIFACT_ID>`.
+
 ### Step 4: Review
 
 For each DEC and its impact cone:
@@ -101,10 +107,14 @@ If issues are discovered during the review of a DEC's impact cone:
 ### Step 6: Resolution
 
 After the review for a specific DEC is complete:
-1. Update the DEC's `review_status` in its YAML frontmatter.
-   - If issues were found and CHL artifacts created, set `review_status: flagged`.
-   - If the change is clean and no issues were found, set `review_status: reviewed`.
-2. Record which lenses were applied to each impacted artifact:
+1. Resolve any reviewed suspect flag through the CLI:
+   ```bash
+   specflow change-impact --resolve <ARTIFACT_ID>
+   ```
+2. Update the DEC's `review_status`:
+   - Issues found and CHLs created → `specflow update <DEC-ID> --set review_status=flagged`
+   - Clean → `specflow update <DEC-ID> --set review_status=reviewed`
+3. Record which lenses were applied to each impacted artifact:
    ```bash
    specflow update <ARTIFACT-ID> --thinking-techniques <lens1,lens2>
    ```

@@ -1,4 +1,4 @@
-current: planning
+current: complete
 history:
 - phase: idle
   entered: '2026-04-10'
@@ -6,4 +6,20 @@ history:
 - phase: planning
   entered: '2026-04-11'
   exited: '2026-04-11'
+- phase: planning
+  entered: '2026-08-09'
+  exited: '2026-08-09'
+- phase: executing
+  entered: '2026-08-09'
+  reason: Implementing approved STORY-631 for the v1.13.8 readiness sweep.
+  exited: '2026-08-09'
+- phase: verifying
+  entered: '2026-08-09'
+  reason: STORY-631 implementation complete; running final qualification and v1.13.8
+    release gates.
+  exited: '2026-08-09'
+- phase: complete
+  entered: '2026-08-09'
+  reason: v1.13.8 readiness work and qualification reconciliation passed all local
+    gates; release publication awaits explicit confirmation.
 created: '2026-04-10'

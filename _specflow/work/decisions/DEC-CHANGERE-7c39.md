@@ -2,7 +2,7 @@
 id: DEC-CHANGERE-7c39
 title: 'Change Record: chore: trace v1.13.3 AC boundary patch'
 type: decision
-status: draft
+status: approved
 rationale: 'chore: trace v1.13.3 AC boundary patch. Changed: STORY-FIXACCEP-f941.'
 tags:
 - change-record
@@ -20,7 +20,7 @@ risk_profile:
   confidence: high
   confidence_reason: ''
 fingerprint: sha256:6938a165bdf3
-modified: '2026-08-04'
+modified: '2026-08-10'
 thinking_techniques:
 - temporal_drift
 - premortem

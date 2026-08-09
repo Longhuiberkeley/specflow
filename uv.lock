@@ -120,7 +120,7 @@ wheels = [
 
 [[package]]
 name = "specflow"
-version = "1.13.7"
+version = "1.13.8"
 source = { editable = "." }
 dependencies = [
     { name = "pyyaml" },

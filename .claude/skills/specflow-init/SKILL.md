@@ -76,7 +76,7 @@ If **Existing codebase** (brownfield): remember a `brownfield` flag and prefer t
 Ask the user:
 
 - "What type of project is this?" -- bounded options: Web App, CLI Tool, Library, Firmware/Embedded, Data Pipeline, Mobile, Other
-- "Do you want to apply an industry standards preset?" -- bounded options: `iso26262-demo`, `default`, `adoption` (existing codebase — installs `/specflow-adopt`), or None (Recommended)
+- "Do you want to apply an optional preset?" -- bounded options: `iso26262-demo`, `adoption` (existing codebase — installs `/specflow-adopt`), `autoresearch`, `ops`, `tldr-communication`, or None (Recommended)
 - "Do you want to install optional artifact types (hazard, risk, control)?" -- bounded options: Yes, No (Recommended)
 - "Which CI provider do you use?" -- bounded options: GitHub Actions (Recommended), None. (Only GitHub Actions ships a built-in adapter; GitLab/other CI is build-it-yourself via `docs/authoring-an-adapter.md` — do not offer it as a choice.)
 - "Do you have any specific compliance standard packs you want to install?" -- free text, or None (Recommended)
@@ -94,8 +94,11 @@ Append flags as needed:
 - `--preset <preset>` if a preset was chosen
 - `--with-types hazard,risk,control` if optional artifact types were chosen
 - `--no-ci` if no CI provider was requested
+- `--force` only for an intentional clean re-initialization (backs up existing config, state, and schemas first)
 
-This scaffolds `.specflow/`, `_specflow/`, config files, schemas, checklists, and installs skill directories for the target platform. When `--domain` is provided, it also persists the domain classification and attempts to generate project-level best practices (the "process booklet").
+This scaffolds `.specflow/`, `_specflow/`, config files, schemas, checklists, and installs skill directories for the target platform. Preset-declared skills install during the same init run. When `--domain` is provided, it also persists the domain classification and attempts to generate project-level best practices (the "process booklet"). The deterministic no-API fallback reads the configured project domain and can be previewed with `specflow handbook generate` or written as BP artifacts with `specflow handbook generate --create`.
+
+For an **already initialized** project, do not rerun full init just to receive schema updates. Preview with `specflow refresh --schemas --dry-run`; normal `--schemas` installs missing schemas and preserves changed local files, while explicit `--force` restores shipped defaults.
 
 ### 4. Verify SpecFlow instruction injection
 

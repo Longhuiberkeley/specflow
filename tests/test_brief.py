@@ -169,6 +169,61 @@ def test_next_skill_still_points_at_execute_when_wave_ready():
     assert "/specflow-execute" in out
 
 
+# --- core-signal honesty: executing phase must not claim execute without
+#     approved-or-beyond stories (approved/implemented/verified) ---
+
+def test_next_skill_executing_no_approved_stories_routes_to_plan():
+    """Phase is 'executing' but every STORY is still draft (zero approved/
+    implemented/verified). The router must NOT say /specflow-execute — it
+    routes back to /specflow-plan so an approved backlog is established.
+    Guards against a dishonest 'Continue /specflow-execute' when nothing
+    approved exists to run."""
+    artifacts = [_art("STORY-001", "draft"), _art("STORY-002", "draft")]
+    out = brief_cmd._next_skill_recommendation("executing", artifacts, [], [])
+    assert "/specflow-execute" not in out
+    assert "/specflow-plan" in out
+
+
+def test_next_skill_executing_no_stories_at_all_routes_to_plan():
+    """Phase 'executing' with zero STORY artifacts — same honesty fix: never
+    claim execute when there is no approved backlog at all."""
+    artifacts = [_art("REQ-001", "approved"), _art("ARCH-001", "approved")]
+    out = brief_cmd._next_skill_recommendation("executing", artifacts, [], [])
+    assert "/specflow-execute" not in out
+    assert "/specflow-plan" in out
+
+
+def test_next_skill_executing_approved_stories_still_route_to_execute():
+    """Regression: an approved STORY with a ready next wave still routes to
+    /specflow-execute — the honesty guard only fires when the approved-plus
+    count is zero, so legitimate execute-state is untouched."""
+    artifacts = [_art("STORY-001", "approved")]
+    out = brief_cmd._next_skill_recommendation("executing", artifacts, [], ["STORY-001"])
+    assert "/specflow-execute" in out
+
+
+def test_next_skill_executing_all_implemented_routes_to_review_not_plan():
+    """Implemented stories count as approved-plus (they crossed the gate), so
+    a fully-implemented backlog routes to artifact-review/ship, NOT back to
+    plan — the guard must not over-fire and erase real progress."""
+    artifacts = [_art("STORY-001", "implemented"), _art("STORY-002", "implemented")]
+    out = brief_cmd._next_skill_recommendation("executing", artifacts, [], [])
+    assert "/specflow-plan" not in out
+    assert "/specflow-artifact-review" in out or "/specflow-ship" in out
+
+
+def test_next_skill_executing_guard_preserves_rewind_advisory():
+    """The no-approved-stories guard is in the 'executing' branch; the rewind
+    backlog advisory fires in specifying/planning. A rewound project with an
+    implemented backlog still gets its /specflow-execute backlog advisory —
+    the guard and the advisory are independent and must not interfere."""
+    artifacts = [_art(f"STORY-00{i}", "implemented") for i in range(1, 5)]
+    history = [{"phase": "specifying", "entered": "2026-08-01", "rewind": True}]
+    out = brief_cmd._next_skill_recommendation("specifying", artifacts, [], [], history=history)
+    assert "remain implemented after rewind" in out
+    assert "/specflow-execute" in out
+
+
 def test_next_skill_backlog_advisory_on_rewind():
     """A rewind to 'specifying' that leaves implemented stories in the backlog
     appends an advisory pointing at /specflow-execute — the primary /specflow-plan

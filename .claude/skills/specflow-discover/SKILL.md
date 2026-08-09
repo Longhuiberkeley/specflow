@@ -92,7 +92,7 @@ After each answer, update your readiness assessment silently.
 
 ### Step 3F: Full Discovery — Phase 2: Domain Deep-Dive
 
-1. Check if a domain is already set in `.specflow/config.yaml` (field `project.domain`). If it is set, skip Step 2 (classification) and Step 4 (handbook generation) — the init skill already handled them. Proceed directly to Step 5 (domain-specific questions) using the existing domain.
+1. Check if a domain is already set in `.specflow/config.yaml` (field `project.domain`). If it is set, skip Step 2 (classification) and Step 6 (handbook generation) — the init skill already handled them. Proceed directly to Step 5 (domain-specific questions) using the existing domain.
 
 2. If no domain is set, classify the project type from Phase 1 answers. Categories:
    - `web-app` — Browser-based application
@@ -124,6 +124,13 @@ After each answer, update your readiness assessment silently.
    specflow create --type best-practice --title "<practice>" --status approved --tags "<domain>" --body "## Practice\n...\n## Rationale\n...\n## Verification\n..."
    ```
    Generate 3-5 BPs covering the most impactful domain practices (e.g., for embedded: memory safety, interrupt handling; for web-app: input validation, CSRF protection). Link each to the domain standard if applicable via `--links`. These BPs guide all downstream plan, execute, and review skills. The agent reads them from `_specflow/specs/best-practices/` — no external API calls needed.
+
+   **Deterministic fallback:** Instead of crafting BPs manually, you can generate bundled domain-specific + generic best practices deterministically with no external LLM:
+   ```
+   specflow handbook generate              # print to stdout
+   specflow handbook generate --create      # write BP artifacts to _specflow/specs/best-practices/
+   ```
+   Use this when you want a consistent baseline fast, then add or refine individual BPs with `specflow create --type best-practice`.
 
 6. Present questions from the domain checklist. These should offer **bounded choices with opinionated defaults**:
    - "For your use case (small team, read-heavy), SQLite is simplest, PostgreSQL handles growth best — which fits?"

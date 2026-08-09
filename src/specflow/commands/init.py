@@ -21,7 +21,7 @@ def _get_packs_dir() -> Path:
 
 def _apply_preset(root: Path, preset: str, platform_code: str | None = None) -> int:
     packs_dir = _get_packs_dir()
-    result = scaffold_lib.apply_pack(root, preset, packs_dir)
+    result = scaffold_lib.apply_pack(root, preset, packs_dir, platform_code=platform_code)
     if not result["ok"]:
         print(f"  x Pack '{preset}' not applied: {result['error']}")
         return 1

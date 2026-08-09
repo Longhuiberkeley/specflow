@@ -7,6 +7,8 @@ SpecFlow is **one engine driven two ways**:
 
 Both lanes operate on the **same substrate and the same gates**, so you can mix them: an agent drafts in the AI-first lane, a reviewer approves in the ALM lane via CLI or CI. The skills never do anything you couldn't do by hand — they just compose the same `specflow …` commands.
 
+**Upgrade/knowledge maintenance uses that same engine.** `specflow brief` warns when installed base schemas drift; `specflow refresh --schemas --dry-run` previews new/changed schemas, normal refresh preserves project-owned changes, and explicit `--force` restores shipped defaults. `specflow handbook generate` provides bundled generic/domain practices with no API key, while `specflow export --skills` emits self-contained platform files with referenced guidance inlined.
+
 > **Approval, in each lane.** "No self-approval" restrains the *agent*: it may never move an artifact from `draft` to `approved` on its own. In the ALM lane the human *is* the operator and approves directly by running `specflow update <ID> --status approved` (or via a reviewer / CI gate). Approval is always a human act — the lanes only differ in who surfaces the decision.
 >
 > **Risk tiers are computed, not asserted.** `specflow risk-tier <IDs>` derives a minimum tier (0 light / 1 normal / 2 stop) from the change set's intrinsic properties (status transitions, `supersedes` links, deletions, destructive/data-migration tags, release/baseline actions, and the downstream blast-radius cone). The tier is **recorded** onto the DEC's `risk_profile` and **gates nothing** in code — it is a floor the agent may escalate above freely; downgrading below it requires a recorded justification. Unclassifiable change sets default *up* to Tier 1.

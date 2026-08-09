@@ -43,6 +43,14 @@ Run the automated audit pipeline silently. This covers horizontal, vertical, and
 specflow project-audit
 ```
 
+Useful flags:
+- `--quick` skips cross-cutting analysis.
+- `--dry-run` prints findings without writing snapshots, AUD/CHL artifacts, or cache.
+- `--sample-pct N` samples STORY artifacts (default 100).
+- `--baseline <name>` anchors drift from that baseline to the newest release.
+
+Findings are cached in `.specflow/audits/.cache/` with a generation key. Body edits and audit-relevant frontmatter edits (status, links, tags, NFR, verification fields) invalidate the cache; `--dry-run` writes nothing.
+
 If the audit reports orphaned source code, list the specific files with `specflow detect orphan-code` and offer to adopt them (`--retro-link STORY-NNN`) so every file traces back to a spec.
 
 After the project audit, run the chain depth survey to show traceability coverage distribution:
@@ -83,25 +91,11 @@ If accepted:
    specflow update <ARTIFACT_ID> --thinking-techniques premortem,stress_scale
    ```
 
-### Step 4: Artifact Creation
+### Step 4: Artifacts (Auto-Created)
 
-For any significant findings or systemic gaps identified in Step 2 or Step 3:
+The `specflow project-audit` command in Step 2 already creates an AUD artifact for the run and title-deduplicated CHL artifacts for actionable findings. Do not create duplicates manually.
 
-1. Create a single AUD (Audit) artifact documenting the overall run, its scope, and high-level result.
-2. For each specific actionable finding, create a CHL (Challenge) artifact linked to the AUD artifact via `identified_by`.
-
-```
-specflow create \
-  --type audit \
-  --title "Pre-Release Audit" \
-  --body "<summary of findings>"
-
-specflow create \
-  --type challenge \
-  --title "Missing error handling in Payment API" \
-  --links "[{\"target\": \"AUD-xxx\", \"role\": \"identified_by\"}]" \
-  --body "<details>"
-```
+If Step 2 used `--dry-run`, no artifacts were written. Only when the user explicitly wants to persist that dry-run should you create one AUD plus CHLs for its actionable findings, linking each CHL to the AUD via `identified_by`.
 
 ### Step 5: Summary
 

@@ -405,14 +405,44 @@ def _next_skill_recommendation(
         core = (f"{reqs_draft} REQ(s) still draft → approve before planning."
                 if reqs_draft else "REQs approved → /specflow-plan.")
     elif phase == "planning":
+        approved_stories = _count("STORY", "approved")
         if not archs:
             core = "No ARCH yet → continue /specflow-plan (architecture decomposition)."
+        elif approved_stories:
+            core = "ARCH + STORY approved → /specflow-execute (run the waves)."
         elif _count("STORY", "draft") or not stories:
             core = "Stories not approved yet → finish /specflow-plan and approve STORYs."
+        elif _count("STORY", "implemented") + _count("STORY", "verified") == stories:
+            core = ("No approved stories ready to execute; existing stories are complete → "
+                    "/specflow-artifact-review, then /specflow-ship, or /specflow-plan "
+                    "for new scope.")
         else:
-            core = "ARCH + STORY approved → /specflow-execute (run the waves)."
+            core = ("No approved stories ready to execute → /specflow-plan to reconcile "
+                    "the backlog and approve the next scope.")
     elif phase == "executing":
-        if next_wave:
+        # Core-signal honesty: the phase can be left on "executing" with zero
+        # approved-or-beyond stories (a manual set_phase, a rewind, or a stale
+        # state.yaml). Don't claim execute in that case — route back to plan so
+        # the user re-establishes an approved backlog. "approved" here means a
+        # story that has crossed the approval gate at least once
+        # (approved/implemented/verified), so a fully-implemented project still
+        # routes to review/ship, not back to plan. The rewind backlog advisory
+        # below fires independently (it reads history + done count, never this
+        # guard), so a genuine rewind that left implemented stories behind is
+        # preserved exactly.
+        approved_plus = (
+            _count("STORY", "approved")
+            + _count("STORY", "implemented")
+            + _count("STORY", "verified")
+        )
+        if approved_plus == 0:
+            if not archs:
+                core = ("No approved stories to execute → /specflow-plan "
+                        "(decompose into approved stories).")
+            else:
+                core = ("No approved stories to execute → finish /specflow-plan "
+                        "and approve STORYs.")
+        elif next_wave:
             core = f"Next wave ready ({len(next_wave)} stories) → /specflow-execute (or `specflow go`)."
         elif stories and _count("STORY", "implemented") >= stories:
             # Lifecycle is execute → artifact-review → ship. The router used to jump
@@ -588,6 +618,24 @@ def _health_nags(
                 "adoption handshake incomplete: no baseline cut → "
                 "`specflow baseline create` / `specflow adopt status`"
             )
+
+    # Schema drift: installed base schemas diverged from shipped defaults.
+    # Reuses refresh.py's classifier (new / identical / changed) so brief and
+    # `specflow refresh --schemas` agree. Only *changed* schemas nag — new
+    # (missing) schemas are a no-risk `refresh --schemas` add, identical is
+    # clean, and pack-owned schemas never appear in the base templates, so a
+    # fresh project sees zero noise here.
+    from specflow.commands import refresh as refresh_cmd
+
+    _new, _identical, changed = refresh_cmd.classify_schemas(root)
+    if changed:
+        shown = ", ".join(changed[:4])
+        more = f" (+{len(changed) - 4} more)" if len(changed) > 4 else ""
+        nags.append(
+            f"{len(changed)} schema(s) diverged from shipped defaults "
+            f"({shown}{more}) — `specflow refresh --schemas` keeps your edits, "
+            f"`--schemas --force` restores shipped defaults"
+        )
 
     return nags
 

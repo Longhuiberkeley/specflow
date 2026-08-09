@@ -1,8 +1,9 @@
 ---
 id: DEC-NORMALIZ-90e0
-title: Normalize list-valued frontmatter fields to prevent scalar-string corruption (tags char-split, thinking_techniques TypeError)
+title: Normalize list-valued frontmatter fields to prevent scalar-string corruption
+  (tags char-split, thinking_techniques TypeError)
 type: decision
-status: draft
+status: approved
 tags:
 - bug
 - tags
@@ -13,7 +14,9 @@ suspect: false
 links: []
 created: '2026-08-09'
 fingerprint: sha256:aebb8deb1526
-modified: '2026-08-09'
+modified: '2026-08-10'
+rationale: Ratified after the list-valued frontmatter normalization shipped and was
+  verified in v1.13.7.
 ---
 
 ## Decision

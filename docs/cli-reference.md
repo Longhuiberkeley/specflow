@@ -28,13 +28,18 @@ specflow init [--preset PRESET] [--no-ci]
 Update the copied skills, agent-context block, and templates in this repo to match the installed SpecFlow version — without a full re-init. Run this after upgrading SpecFlow (`uv tool install --force git+https://github.com/Longhuiberkeley/specflow`) so new routing triggers, lifecycle fixes, and reference docs land in `.claude/skills/` (and the other platform skill dirs). It is the only way installed skills stay current after an upgrade. (SpecFlow is distributed from Git only — not on PyPI — so install and upgrade always use the Git source.)
 
 ```bash
-specflow refresh [--platform <code>]
+specflow refresh [--platform <code>] [--schemas [--force]] [--dry-run]
 ```
 
 | Flag | Purpose |
 |------|---------|
 | `--platform` | Target a specific platform's skill dir (e.g., `opencode`, `codex`). Defaults to the detected/installed platform. |
 | `--all-platforms` | Refresh skills for every detected AI-host platform dir, not just one |
+| `--schemas` | Also update base schema files. Installs missing schemas; **preserves** schemas that have drifted from shipped defaults (prints which ones). |
+| `--force` | With `--schemas`, replaces drifted schemas with shipped defaults instead of preserving them. |
+| `--dry-run` | Classify every schema as new / identical / changed and report without writing anything. |
+
+`--schemas` is safe by default: a schema you (or prior tooling) edited is never silently overwritten — it is preserved with an actionable hint (`run specflow refresh --schemas --force to replace`). `--force` explicitly restores shipped defaults for drifted schemas. `brief` surfaces the same drift signal as a health nag.
 
 ### `specflow status`
 
@@ -524,11 +529,19 @@ specflow import --adapter reqif FILE
 
 ### `specflow export`
 
-Export artifacts to external formats.
+Export artifacts to external formats, or SpecFlow skills to single-file platform formats.
 
 ```bash
-specflow export --adapter reqif [--output FILE]
+specflow export --adapter reqif [--output FILE]            # artifact export
+specflow export --skills --format <fmt> [--output DIR]     # skill export
 ```
+
+Skill export (`--skills`) converts every shared SpecFlow skill into a
+platform-specific single-file format: `cursor-rules` (.mdc), `gemini-toml`
+(TOML commands), `codex-agents` (TOML agents), or `markdown` (plain rules).
+Each skill's `references/**/*.md` files are inlined deterministically (sorted
+by relative path) under an `## Inlined references` section, so the exported
+file is self-contained and byte-stable across runs.
 
 ---
 

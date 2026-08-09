@@ -27,8 +27,41 @@ def _find_shared_skills() -> Path | None:
     return None
 
 
+def _parse_frontmatter(raw: str) -> dict:
+    """Parse a YAML frontmatter block, tolerating unquoted `: ` in scalars.
+
+    SKILL.md ``description`` fields are written for human/Claude consumption and
+    routinely contain unquoted colons (e.g. ``NOT for: data exploration``), which
+    strict YAML rejects. When ``yaml.safe_load`` fails, fall back to a plain
+    ``key: value`` line parse (value = everything after the first colon), which
+    preserves the full description text. Deterministic for the single-line
+    ``name``/``description`` frontmatter the skills use.
+    """
+    try:
+        data = yaml.safe_load(raw)
+        if isinstance(data, dict):
+            return data
+        return {}
+    except Exception:
+        pass
+    data: dict = {}
+    for line in raw.splitlines():
+        if ":" in line:
+            key, _, val = line.partition(":")
+            key = key.strip()
+            if key and key not in data:
+                data[key] = val.strip()
+    return data
+
+
 def _read_skill(skill_dir: Path) -> dict | None:
-    """Read a SKILL.md file and return {name, description, body}."""
+    """Read a SKILL.md file and return {name, description, body, references}.
+
+    ``references`` is a deterministic (relpath, content) list for every
+    ``references/**/*.md`` file under the skill directory, sorted by relative
+    POSIX path. Content is read verbatim so exported single-file formats stay
+    byte-faithful to the shipped reference material.
+    """
     skill_md = skill_dir / "SKILL.md"
     if not skill_md.exists():
         return None
@@ -40,7 +73,7 @@ def _read_skill(skill_dir: Path) -> dict | None:
     if text.startswith("---"):
         end = text.find("---", 3)
         if end != -1:
-            fm_data = yaml.safe_load(text[3:end]) or {}
+            fm_data = _parse_frontmatter(text[3:end])
             body_start = end + 3
 
     body = text[body_start:].strip()
@@ -48,7 +81,76 @@ def _read_skill(skill_dir: Path) -> dict | None:
         "name": fm_data.get("name", skill_dir.name),
         "description": fm_data.get("description", ""),
         "body": body,
+        "references": _collect_references(skill_dir),
     }
+
+
+def _collect_references(skill_dir: Path) -> list[tuple[str, str]]:
+    """Return every ``references/**/*.md`` file as sorted (relpath, content).
+
+    Sorted by relative POSIX path so the inlined order is identical regardless
+    of filesystem enumeration order — the deterministic ordering guarantee for
+    single-file exports.
+    """
+    refs_dir = skill_dir / "references"
+    if not refs_dir.is_dir():
+        return []
+
+    def _rel(p: Path) -> str:
+        return p.relative_to(skill_dir).as_posix()
+
+    files = sorted(
+        (p for p in refs_dir.rglob("*.md") if p.is_file()),
+        key=_rel,
+    )
+    return [(_rel(p), p.read_text(encoding="utf-8")) for p in files]
+
+
+def _inline_references(body: str, references: list[tuple[str, str]]) -> str:
+    """Append an ``## Inlined references`` section to a skill body.
+
+    Each reference file is emitted under a ``### <relpath>`` heading with its
+    content verbatim. Empty references leave the body untouched.
+    """
+    if not references:
+        return body
+    parts = [body, "\n\n---\n\n## Inlined references\n"]
+    for rel, content in references:
+        # Trailing newline guarantees a blank line before the next heading even
+        # when a reference file does not end with one (CommonMark headings).
+        parts.append(f"\n### {rel}\n\n{content}\n")
+    return "".join(parts)
+
+
+def skills_dirs_identical(live_dir: Path, shipped_dir: Path) -> tuple[bool, list[str]]:
+    """Recursive byte-equality guard between two skill directory trees.
+
+    Every file under ``live_dir`` must exist at the same relative path under
+    ``shipped_dir`` with identical bytes, and vice versa. Returns
+    ``(identical, differing_rel_paths)`` where ``differing_rel_paths`` lists
+    relative POSIX paths whose bytes differ or that exist on only one side.
+
+    This is the guard that keeps live dogfood skills (``.claude/skills``) and
+    shipped skill templates (``src/specflow/templates/skills/shared``)
+    byte-identical.
+    """
+
+    def _walk(d: Path) -> dict[str, bytes]:
+        out: dict[str, bytes] = {}
+        if d.is_dir():
+            for f in d.rglob("*"):
+                if f.is_file():
+                    out[f.relative_to(d).as_posix()] = f.read_bytes()
+        return out
+
+    live = _walk(live_dir)
+    shipped = _walk(shipped_dir)
+    differing = [
+        rel
+        for rel in sorted(set(live) | set(shipped))
+        if rel not in live or rel not in shipped or live[rel] != shipped[rel]
+    ]
+    return not differing, differing
 
 
 def _export_cursor_rules(skills: list[dict], output_dir: Path) -> int:
@@ -71,6 +173,21 @@ alwaysApply: false
     return count
 
 
+def _toml_escape(value: str) -> str:
+    """Escape a string for embedding inside a TOML basic string.
+
+    Order matters: backslashes first (so the quote escapes added below are not
+    themselves treated as escapes), then every double-quote. Escaping *all*
+    quotes is valid inside both single-line ``"..."`` strings (description) and
+    triple-quoted ``prompt``/``system_prompt`` bodies (where ``\\"`` is a
+    literal quote). Reference content routinely carries regex backslashes (e.g.
+    ``\\d``) and prose quotes, so this is required for valid TOML output.
+    """
+    value = value.replace("\\", "\\\\")
+    value = value.replace('"', '\\"')
+    return value
+
+
 def _export_gemini_toml(skills: list[dict], output_dir: Path) -> int:
     """Export skills as Gemini CLI TOML command files."""
     commands_dir = output_dir / "commands"
@@ -78,9 +195,8 @@ def _export_gemini_toml(skills: list[dict], output_dir: Path) -> int:
     count = 0
 
     for skill in skills:
-        # Escape any triple-quotes in body
-        safe_body = skill["body"].replace('"""', '\\"\\"\\"')
-        safe_desc = skill["description"].replace('"', '\\"')
+        safe_body = _toml_escape(skill["body"])
+        safe_desc = _toml_escape(skill["description"])
 
         content = f'''# {skill['name']}
 # {skill['description']}
@@ -104,8 +220,8 @@ def _export_codex_agents(skills: list[dict], output_dir: Path) -> int:
     count = 0
 
     for skill in skills:
-        safe_body = skill["body"].replace('"""', '\\"\\"\\"')
-        safe_desc = skill["description"].replace('"', '\\"')
+        safe_body = _toml_escape(skill["body"])
+        safe_desc = _toml_escape(skill["description"])
 
         content = f'''# {skill['name']}
 # {skill['description']}
@@ -170,6 +286,11 @@ def export_skills(output_dir: Path, format: str) -> dict:
 
     if not skills:
         return {"ok": False, "error": f"No skills found in {shared_dir}"}
+
+    # Inline each skill's references/**/*.md into its body deterministically so
+    # every exported file is self-contained and byte-stable across runs.
+    for skill in skills:
+        skill["body"] = _inline_references(skill["body"], skill.pop("references", []))
 
     handler, default_subdir = FORMAT_HANDLERS[format]
     target_dir = output_dir / default_subdir

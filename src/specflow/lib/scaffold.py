@@ -179,12 +179,24 @@ def refresh_pack(
     return {"ok": True, "written": written, "preserved": preserved}
 
 
-def apply_pack(root: Path, pack_name: str, packs_dir: Path) -> dict[str, Any]:
+def apply_pack(
+    root: Path,
+    pack_name: str,
+    packs_dir: Path,
+    platform_code: str | None = None,
+) -> dict[str, Any]:
     """Apply a standards pack from packs_dir/<pack_name>/ to the project.
 
     Copies schemas, checklists, and standards into the project's .specflow/
     internals, and creates any new _specflow/ artifact directories declared in
     the pack manifest. Existing destination files are preserved (not overwritten).
+
+    Pack-declared skills are installed into the platform skills directory. When
+    ``platform_code`` is provided (e.g. ``specflow init --platform X``) it is used
+    directly so skills install even before the platform marker directory exists
+    (a fresh init applies presets before installing the shared skills). When it is
+    None, the platform is auto-detected from the root's marker directories, and
+    skills are skipped (with a warning) if no platform is detectable.
 
     Returns {"ok": True, "pack": ..., "types_added": [...], "standards_added": [...]}
     or {"ok": False, "error": str} on failure.
@@ -254,7 +266,8 @@ def apply_pack(root: Path, pack_name: str, packs_dir: Path) -> dict[str, Any]:
     skills_added: list[str] = []
     declared_skills = manifest.get("adds_skills", []) or []
     if declared_skills:
-        platform_code, _ = platform.detect_platform(root)
+        if platform_code is None:
+            platform_code, _ = platform.detect_platform(root)
         if platform_code is None:
             print(f"  ⚠ Pack '{pack_name}' declares skills but no AI platform detected; install manually")
         else:

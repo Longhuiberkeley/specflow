@@ -13,7 +13,7 @@ artifacts:
     id: SPIKE-BPSURFAC-710b
     title: 'BP surface gaps: inert applies_to field + no wildcard; no promote-PREV/CHL
       to BP command'
-    status: draft
+    status: completed
     tags:
     - best-practice
     - checklist
@@ -25,7 +25,7 @@ artifacts:
     id: SPIKE-CHECKLIS-1a12
     title: 'Checklist/review behavior gaps: starved review to PREV capture; empty
       checklist results read as success'
-    status: draft
+    status: completed
     tags:
     - checklist
     - review

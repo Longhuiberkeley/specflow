@@ -3,7 +3,7 @@ id: DEC-CHANGERE-066b
 title: 'Change Record: fix: normalize all list-valued frontmatter fields, not just
   tags'
 type: decision
-status: draft
+status: approved
 rationale: 'fix: normalize all list-valued frontmatter fields, not just tags. Changed:
   DEC-NORMALIZ-90e0, SPIKE-BPSURFAC-710b, SPIKE-CHECKLIS-1a12.'
 tags:
@@ -29,7 +29,7 @@ risk_profile:
     1234 tests + mutation-checked boundary tests
 dec_kind: change_record
 fingerprint: sha256:52b829d853cf
-modified: '2026-08-09'
+modified: '2026-08-10'
 ---
 
 # Change Record: fix: normalize all list-valued frontmatter fields, not just tags

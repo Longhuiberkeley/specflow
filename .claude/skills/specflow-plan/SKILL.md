@@ -52,6 +52,8 @@ Break down approved requirements into architecture, detailed design, and user st
 
 Read existing BP artifacts from `_specflow/specs/best-practices/`. If no planning-phase BPs exist yet, generate them as BP artifacts covering architecture, detailed design, and story best practices. Create each with structured body (## Practice / ## Rationale / ## Verification).
 
+**Deterministic shortcut:** If no BPs exist yet and you want a consistent baseline without crafting each one manually, run `specflow handbook generate --create` to seed domain-specific + generic BP artifacts deterministically (no external LLM). Then add or refine individual BPs as needed.
+
 **Proactive Enforcement Loop:** Do not just passively read the BPs or thinking techniques. You must actively audit your own output against them.
 1. Draft your architecture/design internally.
 2. Run a self-audit against the BPs and `thinking-techniques.md`.

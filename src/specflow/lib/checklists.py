@@ -459,6 +459,17 @@ def persist_results(
         )
     )
 
+    # Honest overall: an empty result list (no automated items ran) must NOT
+    # be reported as "passed" — vacuous truth (all() over []) is dishonest
+    # because nothing was actually verified. Empty → "incomplete"; non-empty
+    # all-passed → "passed"; otherwise (any failed) → "failed".
+    if not results:
+        overall = "incomplete"
+    elif all(r.result == "passed" for r in results):
+        overall = "passed"
+    else:
+        overall = "failed"
+
     log_data = {
         "id": f"{ts}_{checklist_id}",
         "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -469,7 +480,7 @@ def persist_results(
             {"item": r.item_id, "result": r.result, **({"detail": r.detail} if r.detail else {})}
             for r in results
         ],
-        "overall": "passed" if all(r.result == "passed" for r in results) else "failed",
+        "overall": overall,
         "blocking_failures": sum(1 for r in results if r.result == "failed"),
     }
 

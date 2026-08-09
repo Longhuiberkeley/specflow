@@ -2,14 +2,10 @@
 id: ARCH-026
 title: Verification-contract recording + accounting evidence lenses
 type: architecture
-status: approved
+status: implemented
 priority: high
-rationale: "Refines REQ-037: how SpecFlow turns the verified status from an assertion\
-  \ into recorded, machine-checkable evidence without ever becoming a gate. Two coupled\
-  \ mechanisms \u2014 a verification-contract recorder (specflow verify) and accounting\
-  \ lenses that surface evidence gaps as warnings \u2014 over the existing artifact\
-  \ graph. No new artifact types, no new link roles (D-18 respected), zero external\
-  \ API calls."
+rationale: Implementation and verification-contract surfaces shipped in v1.13.x and
+  are covered by QT-037/STORY-622..626.
 tags:
 - v1.13
 - verification
@@ -21,6 +17,7 @@ links:
   role: derives_from
 created: '2026-08-03'
 fingerprint: sha256:5b95d52012fe
+modified: '2026-08-10'
 ---
 
 # Verification-contract recording + accounting evidence lenses

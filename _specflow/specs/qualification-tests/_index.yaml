@@ -149,42 +149,42 @@ artifacts:
   QT-023:
     id: QT-023
     title: 'Qualification Test for REQ-022: Init Upgrade Safety'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:94662086965c
     children: []
   QT-024:
     id: QT-024
     title: 'Qualification Test for REQ-023: Specification Body Quality Enforcement'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:cdcc5d9db3ec
     children: []
   QT-025:
     id: QT-025
     title: 'Qualification Test for REQ-024: Output File Traceability'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:83b536a497c5
     children: []
   QT-026:
     id: QT-026
     title: 'Qualification Test for REQ-025: Reverse Impact Analysis'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:6a388bec452b
     children: []
   QT-027:
     id: QT-027
     title: 'Qualification Test for REQ-026: Decomposition Completeness Guidance'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:884dbc7d38bd
     children: []
   QT-028:
     id: QT-028
     title: 'Qualification Test for REQ-027: Discovery-to-Plan Skill Continuity'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:d388993beb0d
     children: []

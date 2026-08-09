@@ -153,8 +153,20 @@ def _load_categories(root: Path) -> dict[str, list[str]]:
     return categories
 
 
-def _suggest_action(root: Path, phase: str, artifact_counts: dict[str, int]) -> str:
-    """Suggest next action based on current phase and artifact state."""
+def _suggest_action(
+    root: Path,
+    phase: str,
+    artifact_counts: dict[str, int],
+    approved_stories: int = 0,
+) -> str:
+    """Suggest next action based on current phase and artifact state.
+
+    ``approved_stories`` counts stories that have crossed the approval gate at
+    least once (approved/implemented/verified). The executing-phase suggestion
+    must not claim execute when the backlog is empty of approved stories — a
+    stale or manually-rewound phase can leave "executing" set with nothing to
+    run, and routing to /specflow-execute there is a dishonest signal.
+    """
     total = sum(artifact_counts.values())
 
     if total == 0:
@@ -176,9 +188,12 @@ def _suggest_action(root: Path, phase: str, artifact_counts: dict[str, int]) -> 
     elif phase == "planning":
         if story_count == 0:
             return "Use /specflow-plan to decompose requirements into stories"
-        else:
-            return "Review architecture and stories, then use /specflow-execute"
+        if approved_stories == 0:
+            return "No approved stories ready to execute → use /specflow-plan to reconcile or approve the next scope"
+        return "Review architecture and stories, then use /specflow-execute"
     elif phase == "executing":
+        if approved_stories == 0:
+            return "No approved stories to execute → use /specflow-plan to create and approve stories"
         return "Use /specflow-execute to implement story waves"
     elif phase == "verifying":
         return "Use /specflow-artifact-review to review artifacts"
@@ -294,7 +309,11 @@ def run(root: Path, args: dict) -> int:
         print(f"\n  {YELLOW}⚠ Issues: {issues} artifact(s) flagged as suspect{NC}")
 
     # Suggested next action
-    suggestion = _suggest_action(root, phase, by_type)
+    approved_stories = sum(
+        1 for a in all_artifacts
+        if a.type == "story" and a.status in ("approved", "implemented", "verified")
+    )
+    suggestion = _suggest_action(root, phase, by_type, approved_stories)
     print(f"\n  → {suggestion}")
     print()
 

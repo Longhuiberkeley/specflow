@@ -78,64 +78,68 @@ def run(root: Path, args: dict[str, Any]) -> int:
 
     unresolved_events = [e for e in events if not e.resolved]
 
-    if not suspects and not unresolved_events:
-        print("No unresolved suspect flags")
-        return 0
-
-    source_groups: dict[str, list[dict[str, str]]] = {}
-    for event in unresolved_events:
-        source = event.changed
-        for s in event.flagged_suspects:
-            source_groups.setdefault(source, []).append({
-                "artifact": s.get("artifact", ""),
-                "link_role": s.get("link_role", ""),
-                "timestamp": event.timestamp,
-            })
-
-    print(f"\n{BOLD}Unresolved Suspect Flags{NC} ({len(suspects)} artifacts)\n")
-
-    for source, flagged in sorted(source_groups.items()):
-        print(f"  Source: {BOLD}{YELLOW}{source}{NC} (changed)")
-        for f in flagged:
-            art_id = f["artifact"]
-            role = f["link_role"]
-            ts = f["timestamp"]
-            print(f"    → {art_id} (via {role}) — flagged {_format_age(ts)}")
-        print()
-
-    if unresolved_events:
-        oldest_ts = min(e.timestamp for e in unresolved_events)
-        print(f"  Oldest unresolved flag: {_format_age(oldest_ts)}\n")
-
-    if suspects:
-        print("To resolve: specflow change-impact --resolve <ARTIFACT_ID>")
-
+    # Detect source file changes before the early return so the Source File
+    # Impact section renders even when there are no pre-existing suspect flags.
     source_changes = _detect_source_file_changes(root)
+    source_matches = []
     if source_changes:
         index = build_output_file_index(root)
         source_matches = query_reverse_impact(root, source_changes, index)
 
-        if source_matches:
-            if do_flag:
-                flagged_ids = flag_suspects_from_matches(root, source_matches)
-                print(f"\n{BOLD}Source File Impact{NC} ({len(source_matches)} match(es), {len(flagged_ids)} artifact(s) flagged)\n")
-            else:
-                print(f"\n{BOLD}Source File Impact{NC} ({len(source_matches)} match(es))\n")
+    if not suspects and not unresolved_events and not source_matches:
+        print("No unresolved suspect flags")
+        return 0
 
-            by_artifact: dict[str, list] = {}
-            for m in source_matches:
-                by_artifact.setdefault(m.artifact_id, []).append(m)
+    if suspects or unresolved_events:
+        source_groups: dict[str, list[dict[str, str]]] = {}
+        for event in unresolved_events:
+            source = event.changed
+            for s in event.flagged_suspects:
+                source_groups.setdefault(source, []).append({
+                    "artifact": s.get("artifact", ""),
+                    "link_role": s.get("link_role", ""),
+                    "timestamp": event.timestamp,
+                })
 
-            for art_id, file_matches in sorted(by_artifact.items()):
-                print(f"  Artifact: {BOLD}{YELLOW}{art_id}{NC}")
-                for m in file_matches:
-                    match_label = f"({m.match_type}: {m.pattern})"
-                    print(f"    ← {m.file_path} {match_label}")
-                print()
+        print(f"\n{BOLD}Unresolved Suspect Flags{NC} ({len(suspects)} artifacts)\n")
 
-            if do_flag:
-                print("To resolve: specflow change-impact --resolve <ARTIFACT_ID>")
-            else:
-                print("To flag these artifacts: specflow change-impact --flag")
+        for source, flagged in sorted(source_groups.items()):
+            print(f"  Source: {BOLD}{YELLOW}{source}{NC} (changed)")
+            for f in flagged:
+                art_id = f["artifact"]
+                role = f["link_role"]
+                ts = f["timestamp"]
+                print(f"    → {art_id} (via {role}) — flagged {_format_age(ts)}")
+            print()
+
+        if unresolved_events:
+            oldest_ts = min(e.timestamp for e in unresolved_events)
+            print(f"  Oldest unresolved flag: {_format_age(oldest_ts)}\n")
+
+        if suspects:
+            print("To resolve: specflow change-impact --resolve <ARTIFACT_ID>")
+
+    if source_matches:
+        if do_flag:
+            flagged_ids = flag_suspects_from_matches(root, source_matches)
+            print(f"\n{BOLD}Source File Impact{NC} ({len(source_matches)} match(es), {len(flagged_ids)} artifact(s) flagged)\n")
+        else:
+            print(f"\n{BOLD}Source File Impact{NC} ({len(source_matches)} match(es))\n")
+
+        by_artifact: dict[str, list] = {}
+        for m in source_matches:
+            by_artifact.setdefault(m.artifact_id, []).append(m)
+
+        for art_id, file_matches in sorted(by_artifact.items()):
+            print(f"  Artifact: {BOLD}{YELLOW}{art_id}{NC}")
+            for m in file_matches:
+                match_label = f"({m.match_type}: {m.pattern})"
+                print(f"    ← {m.file_path} {match_label}")
+            print()
+
+        if do_flag:
+            print("To resolve: specflow change-impact --resolve <ARTIFACT_ID>")
+        else:
+            print("To flag these artifacts: specflow change-impact --flag")
 
     return 0

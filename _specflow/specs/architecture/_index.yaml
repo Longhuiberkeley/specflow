@@ -183,7 +183,7 @@ artifacts:
   ARCH-023:
     id: ARCH-023
     title: Four-tier research artifact hierarchy
-    status: draft
+    status: implemented
     tags:
     - autoresearch
     - architecture
@@ -213,7 +213,7 @@ artifacts:
   ARCH-026:
     id: ARCH-026
     title: Verification-contract recording + accounting evidence lenses
-    status: approved
+    status: implemented
     tags:
     - v1.13
     - verification

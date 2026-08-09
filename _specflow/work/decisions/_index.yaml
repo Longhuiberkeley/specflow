@@ -411,7 +411,7 @@ artifacts:
     id: DEC-043
     title: "Change Record: chore: release v1.3.1 \u2014 close verification gap, promote\
       \ DECs"
-    status: draft
+    status: approved
     tags:
     - change-record
     - auto-generated
@@ -421,7 +421,7 @@ artifacts:
     id: DEC-044
     title: "Change Record: feat: v1.4.0 \u2014 compliance evidence quality + REVIEW\
       \ artifact type"
-    status: draft
+    status: approved
     tags:
     - change-record
     - auto-generated
@@ -492,7 +492,7 @@ artifacts:
     id: DEC-051
     title: "Change Record: feat: v1.6.3 \u2014 goal-driven research ladder + protocol\
       \ split"
-    status: draft
+    status: approved
     tags:
     - change-record
     - auto-generated
@@ -524,7 +524,7 @@ artifacts:
     id: DEC-055
     title: "Change Record: chore: close v1.8.1 audit warnings \u2014 full V-model\
       \ close-out"
-    status: draft
+    status: approved
     tags:
     - change-record
     - auto-generated
@@ -534,7 +534,7 @@ artifacts:
     id: DEC-056
     title: 'Change Record: fix: ship best-practice schema to templates, register audit/challenge
       types, fix ARCH-025 role'
-    status: draft
+    status: approved
     tags:
     - change-record
     - auto-generated
@@ -572,7 +572,7 @@ artifacts:
   DEC-060:
     id: DEC-060
     title: 'Change Record: chore: backfill traceability and reconcile ledgers'
-    status: draft
+    status: approved
     tags:
     - change-record
     - auto-generated
@@ -581,7 +581,7 @@ artifacts:
   DEC-061:
     id: DEC-061
     title: 'Change Record: feat: complete autoresearch and adoption story wave'
-    status: draft
+    status: approved
     tags:
     - change-record
     - auto-generated
@@ -590,7 +590,7 @@ artifacts:
   DEC-062:
     id: DEC-062
     title: 'Change Record: fix: repair index counters, baseline sort, and DEC signals'
-    status: draft
+    status: approved
     tags:
     - change-record
     - auto-generated
@@ -600,7 +600,7 @@ artifacts:
     id: DEC-063
     title: "Change Record: chore: dogfood \u2014 ledger hygiene + AUD-058: roadmap\
       \ sync, orphan links, CHL triage, adversarial wings"
-    status: draft
+    status: approved
     tags:
     - change-record
     - auto-generated
@@ -609,7 +609,7 @@ artifacts:
   DEC-064:
     id: DEC-064
     title: 'Change Record: fix: preserve complete v1.13.4 release evidence'
-    status: draft
+    status: approved
     tags:
     - change-record
     - auto-generated
@@ -618,7 +618,7 @@ artifacts:
   DEC-CHANGERE-7c39:
     id: DEC-CHANGERE-7c39
     title: 'Change Record: chore: trace v1.13.3 AC boundary patch'
-    status: draft
+    status: approved
     tags:
     - change-record
     - auto-generated
@@ -627,7 +627,7 @@ artifacts:
   DEC-CHANGERE-ed18:
     id: DEC-CHANGERE-ed18
     title: 'Change Record: chore: dogfood v1.13.2 ergonomics lifecycle'
-    status: draft
+    status: approved
     tags:
     - change-record
     - auto-generated
@@ -637,7 +637,7 @@ artifacts:
     id: DEC-065
     title: 'Change Record: feat: semver baseline naming policy + wired --baseline
       audit anchor (STORY-630)'
-    status: draft
+    status: approved
     tags:
     - change-record
     - auto-generated
@@ -647,7 +647,7 @@ artifacts:
     id: DEC-066
     title: "Change Record: chore: dogfood \u2014 clear CHL backlog; audit chain-coverage\
       \ + trend header (CHL-341)"
-    status: draft
+    status: approved
     tags:
     - change-record
     - auto-generated
@@ -656,7 +656,7 @@ artifacts:
   DEC-067:
     id: DEC-067
     title: "Change Record: chore: dogfood \u2014 v1.13.4 readiness-audit ledger bookkeeping"
-    status: draft
+    status: approved
     tags:
     - change-record
     - auto-generated
@@ -666,7 +666,7 @@ artifacts:
     id: DEC-068
     title: "Change Record: chore: dogfood \u2014 A6 workflow tags: backfilled link\
       \ guard + counted exemption bucket (CHL-344)"
-    status: draft
+    status: approved
     tags:
     - change-record
     - auto-generated
@@ -676,7 +676,7 @@ artifacts:
     id: DEC-069
     title: "Change Record: chore: dogfood \u2014 A5 NFR sweep: 18 REQs backfilled\
       \ functional, zero genuine NFRs (CHL-344)"
-    status: draft
+    status: approved
     tags:
     - change-record
     - auto-generated
@@ -686,7 +686,7 @@ artifacts:
     id: DEC-070
     title: "Change Record: chore: dogfood \u2014 A4 NFR vocabulary frozen + nfr-coverage\
       \ accounting parity (CHL-344)"
-    status: draft
+    status: approved
     tags:
     - change-record
     - auto-generated
@@ -696,7 +696,7 @@ artifacts:
     id: DEC-071
     title: "Change Record: chore: dogfood \u2014 A3 per-AC observability rows in audit\
       \ report body (CHL-344)"
-    status: draft
+    status: approved
     tags:
     - change-record
     - auto-generated
@@ -707,7 +707,7 @@ artifacts:
     title: "Change Record: chore: dogfood \u2014 CHL-338 progress note: ac-coverage\
       \ debt resurfaced as 25 partial-coverage warns after A2 unification; stays addressed\
       \ (no reopen transition in frozen vocabulary), tracked via CHL-344"
-    status: draft
+    status: approved
     tags:
     - change-record
     - auto-generated
@@ -717,7 +717,7 @@ artifacts:
     id: DEC-073
     title: "Change Record: chore: dogfood \u2014 A2 ac-coverage severity unification\
       \ at warn + accounting parity (CHL-344)"
-    status: draft
+    status: approved
     tags:
     - change-record
     - auto-generated
@@ -727,7 +727,7 @@ artifacts:
     id: DEC-074
     title: "Change Record: chore: dogfood \u2014 A1 escalating/accounting warn-split\
       \ stamp + trend split (CHL-344)"
-    status: draft
+    status: approved
     tags:
     - change-record
     - auto-generated
@@ -737,7 +737,7 @@ artifacts:
     id: DEC-075
     title: "Change Record: chore: dogfood \u2014 A0 lossless audit findings cache\
       \ + generation key (CHL-344)"
-    status: draft
+    status: approved
     tags:
     - change-record
     - auto-generated
@@ -747,7 +747,7 @@ artifacts:
     id: DEC-NORMALIZ-90e0
     title: Normalize list-valued frontmatter fields to prevent scalar-string corruption
       (tags char-split, thinking_techniques TypeError)
-    status: draft
+    status: approved
     tags:
     - bug
     - tags
@@ -760,10 +760,20 @@ artifacts:
     id: DEC-CHANGERE-066b
     title: 'Change Record: fix: normalize all list-valued frontmatter fields, not
       just tags'
-    status: draft
+    status: approved
     tags:
     - change-record
     - auto-generated
     fingerprint: sha256:52b829d853cf
     children: []
-next_id: 76
+  DEC-076:
+    id: DEC-076
+    title: v1.13.8 readiness sweep implementation policy
+    status: approved
+    tags:
+    - v1.13.8
+    - readiness
+    - dogfood
+    fingerprint: sha256:47c6f1a1171b
+    children: []
+next_id: 77

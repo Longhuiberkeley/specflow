@@ -6,6 +6,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.13.8] - 2026-08-10
+
+Full readiness patch focused on truthful deterministic signals, safe downstream upgrades, complete skill delivery, real distribution validation, and closure of the dogfood qualification ledger. No external model service and no new blocking policy gates.
+
+### Highlights
+
+- **Truthful next-step guidance** — `brief --next` and `status` no longer claim an execution wave merely because historical stories exist; recommendations now distinguish approved work, completed backlogs, and genuinely empty execution scope.
+- **Audit cache freshness** — project-audit cache keys now include stable audit-relevant frontmatter while content fingerprints remain body-only, so status/link/tag/NFR/verification edits cannot replay stale findings.
+- **Safe schema upgrades** — `refresh --schemas` classifies new/identical/changed schemas, preserves local drift by default, previews changes, and replaces shipped defaults only under explicit `--force`.
+- **Distribution path tested** — CI covers Python 3.11–3.13 and builds, installs, initializes, and exercises the actual wheel with all packaged schemas, skills/references, checklists, packs, and agent context.
+
+### Added
+
+- **Deterministic single-file skill export** — `specflow export --skills --format <fmt>` inlines every skill-local `references/**/*.md` in stable path order; tolerant frontmatter parsing and TOML escaping keep all four export formats valid and self-contained.
+- **Recursive skill byte-equality guard** — tests enforce byte parity between live `.claude/skills` and shipped templates.
+- **`specflow handbook generate`** — self-contained generic and domain-aware best-practice guidance, with optional BP artifact creation and no API key or external LLM dependency.
+- **Built-wheel smoke tooling** — `scripts/wheel-smoke.sh` validates wheel contents and the isolated installed CLI locally and in GitHub Actions.
+
+### Fixed
+
+- Empty checklist executions now persist `incomplete`, never vacuous `passed`.
+- `change-impact` renders Source File Impact even when no pre-existing suspect is open.
+- Pack skills install during `init --preset` using the already resolved platform instead of requiring a follow-up refresh.
+- Cross-platform skill export no longer drops referenced guidance or crashes on human-oriented frontmatter descriptions.
+
+### Verification / Dogfood
+
+- QT-023..028 and legacy UT-017..027 / IT-016..023 now carry executable verification contracts and recorded passing evidence; no draft artifacts remain.
+- The two v1.13.7 follow-up spikes carry provenance and are completed; CHL-AUDITHOR-af97 is addressed.
+- Dogfood schemas are synchronized explicitly, shipped DEC/ARCH/DDD ledger statuses are reconciled, and traceability remains 100% with zero broken links, orphans, or missing verification pairs.
+- 1,329 tests plus focused qualification, wheel-install, schema-drift, skill-parity, and Python 3.11–3.13 runs are green.
+
 ## [1.13.7] - 2026-08-09
 
 Completes the list-valued frontmatter normalization bug class begun by v1.13.6's tags fix. The same scalar-string hazard that silently char-split `tags` was still live for `thinking_techniques` (a loud `TypeError` that aborted deep reviews) and `output_files` (a silent coverage zero-credit). Pure correctness + robustness — no new gates.

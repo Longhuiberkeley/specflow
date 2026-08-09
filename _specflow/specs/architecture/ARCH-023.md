@@ -2,11 +2,10 @@
 id: ARCH-023
 title: Four-tier research artifact hierarchy
 type: architecture
-status: draft
+status: implemented
 priority: high
-rationale: Without explicit hierarchy and link roles, queries like 'all EXPTs for
-  this COMP' or 'what FINDs feed the next LOOP' become unanswerable. The four tiers
-  cleanly separate scope, session, attempt, and condensed knowledge.
+rationale: Research hierarchy architecture shipped through the autoresearch pack and
+  REQ-028..031 implementation.
 tags:
 - autoresearch
 - architecture
@@ -22,7 +21,7 @@ links:
 - target: REQ-031
   role: derives_from
 created: '2026-05-15'
-modified: '2026-06-15'
+modified: '2026-08-10'
 fingerprint: sha256:4d3692a0394e
 ---
 

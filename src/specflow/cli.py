@@ -83,6 +83,12 @@ def cmd_approve(args: argparse.Namespace) -> int:
     return approve_cmd.run(root, vars(args))
 
 
+def cmd_handbook(args: argparse.Namespace) -> int:
+    from specflow.commands import handbook as handbook_cmd
+    root = _find_project_root()
+    return handbook_cmd.run(root, vars(args))
+
+
 def cmd_phase_status(args: argparse.Namespace) -> int:
     from specflow.commands import phase_status as phase_status_cmd
     root = _find_project_root()
@@ -321,10 +327,10 @@ def _add_refresh_parser(subparsers):
     p.add_argument("--platform", help="AI platform code (e.g., claude-code, cursor, windsurf)")
     p.add_argument("--no-skills", action="store_true", dest="no_skills", help="Skip skill update")
     p.add_argument("--no-context", action="store_true", dest="no_context", help="Skip agent-context re-injection")
-    p.add_argument("--schemas", action="store_true", help="Also update base schema files (new only unless --force)")
+    p.add_argument("--schemas", action="store_true", help="Also update base schema files (writes missing; preserves drifted unless --force)")
     p.add_argument("--checklists", action="store_true", help="Also update base checklist templates (new only)")
     p.add_argument("--packs", action="store_true", help="Also refresh assets for configured active packs")
-    p.add_argument("--force", action="store_true", help="Overwrite existing generated schemas/checklists/pack skills")
+    p.add_argument("--force", action="store_true", help="Replace drifted generated schemas/checklists/pack skills")
     p.add_argument("--dry-run", action="store_true", dest="dry_run", help="Show what would change without writing")
     p.add_argument("--all-platforms", action="store_true", dest="all_platforms", help="Refresh skills for every detected platform, not just one")
 
@@ -377,6 +383,19 @@ def _add_standards_parser(subparsers):
     gaps_p = sub.add_parser("gaps", help="List uncovered standard clauses")
     gaps_p.add_argument("--standard", help="Standard name (auto-detect if omitted)")
     gaps_p.add_argument("--json", action="store_true", dest="json", help="Output as JSON")
+
+
+def _add_handbook_parser(subparsers):
+    p = subparsers.add_parser(
+        "handbook",
+        help="Generate bundled best-practice guidance (deterministic, no external LLM)",
+    )
+    sub = p.add_subparsers(dest="handbook_subcommand")
+    gen_p = sub.add_parser("generate", help="Surface or create bundled best-practice BP artifacts")
+    gen_p.add_argument(
+        "--create", action="store_true",
+        help="Create BP artifacts in _specflow/specs/best-practices/ (default: print to stdout)",
+    )
 
 
 def _add_domain_parser(subparsers):
@@ -536,7 +555,7 @@ def _add_export_parser(subparsers):
     p.add_argument("--output", help="Path to write the exported file")
     # Skill export: --format flag
     p.add_argument("--format", dest="export_format", choices=["cursor-rules", "gemini-toml", "codex-agents", "markdown"],
-                   help="Export SPECFLOW skills to a platform-specific format (use with --output to set target dir)")
+                   help="Export SPECFLOW skills to a platform-specific format (references/**/*.md inlined; use --output to set target dir)")
     p.add_argument("--skills", action="store_true", dest="export_skills", help="Export SpecFlow skills (use with --format)")
 
 
@@ -779,7 +798,7 @@ def _add_autoresearch_parser(subparsers):
 # so `specflow --help` actually shows the phase headers, not just the source.
 _HELP_EPILOG = """\
 commands by workflow phase:
-  Discover:   init, refresh, status, brief, domain, patterns, standards, list, schema, transitions
+  Discover:   init, refresh, status, brief, domain, patterns, handbook, standards, list, schema, transitions
   Plan:       create, update, approve
   Execute:    go, done, phase-status, phase-set, cascade-status, reconcile, generate-tests, verify
   Review:     artifact-lint, checklist-run, artifact-review, project-audit, trace, rtm, risk-tier
@@ -1028,6 +1047,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_standards_parser(subparsers)
     _add_domain_parser(subparsers)
     _add_patterns_parser(subparsers)
+    _add_handbook_parser(subparsers)
 
     # ── Plan ────────────────────────────────────────────────────
     _add_create_parser(subparsers)
@@ -1106,6 +1126,7 @@ def main(argv: list[str] | None = None) -> int:
         "standards": cmd_standards,
         "domain": cmd_domain,
         "patterns": cmd_patterns,
+        "handbook": cmd_handbook,
         "artifact-lint": cmd_artifact_lint,
         "create": cmd_create,
         "update": cmd_update,

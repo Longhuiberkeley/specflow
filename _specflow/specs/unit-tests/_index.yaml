@@ -107,63 +107,63 @@ artifacts:
   UT-017:
     id: UT-017
     title: 'Unit Test for DDD-011: CLI Core Detailed Design'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:0d02a9326af1
     children: []
   UT-018:
     id: UT-018
     title: 'Unit Test for DDD-012: Traceability Chain Detailed Design'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:2bafb00f327c
     children: []
   UT-019:
     id: UT-019
     title: 'Unit Test for DDD-013: Provider-Agnostic CI Gate Detailed Design'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:2de29ac67d7e
     children: []
   UT-020:
     id: UT-020
     title: 'Unit Test for DDD-014: V-Model Test Scaffolding Detailed Design'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:da1704e2b670
     children: []
   UT-021:
     id: UT-021
     title: 'Unit Test for DDD-015: Test Engine DDD'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:e9a74311f9d3
     children: []
   UT-022:
     id: UT-022
     title: 'Unit Test for DDD-016: Deprecation Cleanup DDD'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:e1f9644576a8
     children: []
   UT-023:
     id: UT-023
     title: 'Unit Test for DDD-017: Config Merge and Version Detection Algorithm'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:af5a4a39fab6
     children: []
   UT-024:
     id: UT-024
     title: 'Unit Test for DDD-018: Body Quality Validation and File Existence Checks'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:a9f4f0ffef0a
     children: []
   UT-025:
     id: UT-025
     title: 'Unit Test for DDD-019: Source File to Artifact Reverse Mapping Algorithm'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:4ae1fb0f43dd
     children: []
@@ -171,14 +171,14 @@ artifacts:
     id: UT-026
     title: 'Unit Test for DDD-020: SPIDR Coverage, Wave Validation, and Generic BP
       Fallback'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:a423a351cc24
     children: []
   UT-027:
     id: UT-027
     title: 'Unit Test for DDD-021: Discovery Persistence and Plan Domain Handoff'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:c62cb245e510
     children: []
@@ -640,4 +640,14 @@ artifacts:
     - REQ-035
     fingerprint: sha256:dc685983ed8d
     children: []
-next_id: 68
+  UT-068:
+    id: UT-068
+    title: v1.13.8 readiness sweep regression suite
+    status: verified
+    tags:
+    - v1.13.8
+    - verification-contract
+    - readiness
+    fingerprint: sha256:326b53a92611
+    children: []
+next_id: 69

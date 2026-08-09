@@ -101,6 +101,10 @@ The `checklist-run` command automatically assembles:
 
 Read `references/checklist-assembly.md` for the full assembly algorithm.
 
+Use `specflow checklist-run --dedup` when the review specifically needs the tier-1 + tier-2 duplicate-detection pipeline across all artifacts; review the generated candidates rather than treating similarity as automatic duplication.
+
+An `overall: incomplete` checklist result means no automated checks ran. Treat it as missing evidence requiring attention, never as a pass.
+
 **Read the full checklist output before continuing.** You will need to know what has already been covered so the agent and lens passes complement rather than re-ask.
 
 ### Step 5: Agent-Judged Checklist Items

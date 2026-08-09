@@ -178,6 +178,26 @@ Read and display `.specflow/adapters.yaml` and the `team` section from `.specflo
 
 ---
 
+### 2F. Skill and Schema Upgrades
+
+After upgrading SpecFlow, refresh copied assets through the universal CLI:
+
+1. Preview schema changes: `specflow refresh --schemas --dry-run`.
+2. Install missing schemas while preserving local drift: `specflow refresh --schemas`.
+3. Explicitly restore shipped schema defaults: `specflow refresh --schemas --force`.
+4. Refresh checklists or pack assets with `--checklists` / `--packs`.
+5. Synchronize every detected host with `specflow refresh --all-platforms`.
+
+For single-file platform exports, run:
+
+```bash
+specflow export --skills --format <cursor-rules|gemini-toml|codex-agents|markdown> --output <dir>
+```
+
+Each exported skill inlines its skill-local `references/**/*.md`, producing self-contained guidance.
+
+---
+
 ## Rules
 
 - Never overwrite existing CI workflow files without confirmation. The `specflow ci generate` command replaces files; always warn the user first.

@@ -3,17 +3,21 @@ id: SPIKE-BPSURFAC-710b
 title: 'BP surface gaps: inert applies_to field + no wildcard; no promote-PREV/CHL
   to BP command'
 type: spike
-status: draft
+status: completed
 tags:
 - best-practice
 - checklist
 - doctrine
 - ux
 suspect: false
-links: []
+links:
+- target: DEC-CHANGERE-066b
+  role: derives_from
 created: '2026-08-09'
 fingerprint: sha256:5b732f9be3f9
-modified: '2026-08-09'
+modified: '2026-08-10'
+rationale: Investigation complete; remaining BP wildcard/promotion enhancements are
+  explicitly deferred on the roadmap.
 ---
 
 ## Goal

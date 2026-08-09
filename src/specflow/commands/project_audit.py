@@ -123,16 +123,68 @@ _AUD_OUTPUT_TYPES = frozenset({"challenge", "audit"})
 # cross-cutting findings — the findings set (INFO included) is what the cache
 # stores, so a gen-3 cache would replay without the counted exemption bucket
 # and shadow it.
-_CACHE_GENERATION = 4
+# gen 5: the project fingerprint now folds in audit-relevant frontmatter
+# (status, tags, links, verify-contract fields, …), not just artifact body
+# content. Pre-gen-5 a frontmatter-only edit (status transition, tag add, NFR
+# category set, verify-contract field change) left the fingerprint unchanged,
+# so the cache replayed stale findings that no longer matched the artifacts.
+# Body-fingerprint semantics (compute_fingerprint) are unchanged — this is
+# project-audit-cache-only.
+_CACHE_GENERATION = 5
+
+# Audit-relevant frontmatter fields folded into the project cache fingerprint
+# (gen 5). The body fingerprint captures content drift; these are the STABLE
+# frontmatter fields the audit lenses actually read, so a frontmatter-only
+# edit invalidates the cache instead of replaying stale findings. Keep this
+# list aligned with the lens reads in _horizontal_analysis /
+# _vertical_analysis / _cross_cutting_analysis / the *_lens helpers. A field
+# absent from an artifact's frontmatter contributes nothing to the signature,
+# so partial adoption is a no-op. The volatile body `fingerprint` field is
+# deliberately excluded — it is already represented by the body hash and is a
+# stored cache of content, not a lens input.
+_AUDIT_RELEVANT_FM_KEYS = (
+    "status",
+    "tags",
+    "links",
+    "output_files",
+    "non_functional_category",
+    "verify_command",
+    "verify_exit_code",
+    "verify_run_at",
+    "verify_run_exit_code",
+    "verify_run_command_hash",
+)
+
+
+def _audit_fm_signature(art: art_lib.Artifact) -> str:
+    """Stable serialization of one artifact's audit-relevant frontmatter.
+
+    Project-audit-cache-only: folded into ``_project_fingerprint`` so a
+    frontmatter-only edit invalidates the cache. Does NOT touch the body
+    fingerprint (``art.fingerprint`` / ``compute_fingerprint``) — that stays
+    content-only for suspect/baseline drift. Fields absent from frontmatter
+    contribute nothing, so an artifact lacking a field is stable. Each value
+    is serialized with sorted keys for deterministic output regardless of
+    dict insertion order.
+    """
+    fm = art.frontmatter or {}
+    parts: list[str] = []
+    for key in _AUDIT_RELEVANT_FM_KEYS:
+        if key in fm:
+            parts.append(
+                f"{key}:{yaml.dump(fm[key], sort_keys=True, default_flow_style=False).strip()}"
+            )
+    return "|".join(parts)
 
 
 def _project_fingerprint(artifacts: list[art_lib.Artifact]) -> str:
-    source_fps = sorted(
-        art.fingerprint or art_lib.compute_fingerprint(art.body)
+    source_sigs = sorted(
+        (art.fingerprint or art_lib.compute_fingerprint(art.body))
+        + "@" + _audit_fm_signature(art)
         for art in artifacts
         if art.type not in _AUD_OUTPUT_TYPES
     )
-    payload = f"gen{_CACHE_GENERATION}|" + "|".join(source_fps)
+    payload = f"gen{_CACHE_GENERATION}|" + "|".join(source_sigs)
     return hashlib.sha256(payload.encode()).hexdigest()[:16]
 
 
@@ -328,6 +380,7 @@ def _cross_cutting_analysis(
     artifacts: list[art_lib.Artifact],
     root: Path,
     drift_pair: list[str] | None = None,
+    standard_name: str | None = None,
 ) -> dict[str, list[dict[str, str]]]:
     results: dict[str, list[dict[str, str]]] = {}
 
@@ -400,7 +453,11 @@ def _cross_cutting_analysis(
         results["baseline-drift"] = baseline_findings
 
     compliance_findings: list[dict[str, str]] = []
-    comp = standards_lib.check_compliance(root)
+    comp = (
+        standards_lib.check_compliance(root, standard_name)
+        if standard_name is not None
+        else standards_lib.check_compliance(root)
+    )
     if comp.get("ok"):
         uncovered = comp.get("uncovered", [])
         if uncovered:
@@ -1360,7 +1417,10 @@ def run(root: Path, args: dict[str, Any]) -> int:
         else:
             print(f"  {CYAN}Running cross-cutting analysis...{NC}")
             cross_cutting = _cross_cutting_analysis(
-                artifacts, root, drift_pair=drift_pair
+                artifacts,
+                root,
+                drift_pair=drift_pair,
+                standard_name=args.get("standard"),
             )
             cc_concerns = len(cross_cutting)
             print(f"  {GREEN}✓{NC} Cross-cutting: {cc_concerns} concern(s) analyzed")

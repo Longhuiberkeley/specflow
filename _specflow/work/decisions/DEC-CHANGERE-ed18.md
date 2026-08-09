@@ -2,7 +2,7 @@
 id: DEC-CHANGERE-ed18
 title: 'Change Record: chore: dogfood v1.13.2 ergonomics lifecycle'
 type: decision
-status: draft
+status: approved
 rationale: 'chore: dogfood v1.13.2 ergonomics lifecycle. Changed: ARCH-LOUDFAIL-d87a,
   DDD-LOUDFAIL-3e02, REQ-TRANSCRI-24b7, STORY-SHIPV1-cbb2.'
 tags:
@@ -31,7 +31,7 @@ thinking_techniques:
 - temporal_drift
 - regulator
 - premortem
-modified: '2026-08-04'
+modified: '2026-08-10'
 dec_kind: change_record
 ---
 

@@ -999,4 +999,14 @@ artifacts:
     - REQ-035
     fingerprint: sha256:6fc057fe0db5
     children: []
-next_id: 631
+  STORY-631:
+    id: STORY-631
+    title: Close v1.13.8 readiness and distribution gaps
+    status: verified
+    tags:
+    - v1.13.8
+    - readiness
+    - dogfood
+    fingerprint: sha256:7642a070b2c7
+    children: []
+next_id: 632

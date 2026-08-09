@@ -8,9 +8,13 @@ links:
 - target: REQ-026
   role: derives_from
 created: '2026-05-04'
-modified: '2026-05-05'
+modified: '2026-08-10'
 fingerprint: sha256:a1e55914cd09
-thinking_techniques: [assumption-surfacing, devil's-advocate]
+thinking_techniques:
+- assumption-surfacing
+- devil's-advocate
+rationale: 'Fully implemented: SPIDR, wave-cycle, DDD selection, decision guidance,
+  and the bundled no-API handbook fallback now ship with executable evidence.'
 ---
 
 # Decomposition Guidance System

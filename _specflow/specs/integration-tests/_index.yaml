@@ -93,56 +93,56 @@ artifacts:
   IT-016:
     id: IT-016
     title: 'Integration Test for ARCH-014: Test Engine'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:672e96ce63a3
     children: []
   IT-017:
     id: IT-017
     title: 'Integration Test for ARCH-015: Deprecation Cleanup'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:233e2d29d665
     children: []
   IT-018:
     id: IT-018
     title: 'Integration Test for ARCH-016: Init Upgrade Engine'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:76276e443763
     children: []
   IT-019:
     id: IT-019
     title: 'Integration Test for ARCH-017: Spec Quality Gate'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:8e9d99f53313
     children: []
   IT-020:
     id: IT-020
     title: 'Integration Test for ARCH-018: File Traceability Layer'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:c2665f71f743
     children: []
   IT-021:
     id: IT-021
     title: 'Integration Test for ARCH-019: Reverse Impact Engine'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:79efbe6f08d5
     children: []
   IT-022:
     id: IT-022
     title: 'Integration Test for ARCH-020: Decomposition Guidance System'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:5c0688864efd
     children: []
   IT-023:
     id: IT-023
     title: 'Integration Test for ARCH-021: Skill Continuity Layer'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:fef67d26ad6a
     children: []

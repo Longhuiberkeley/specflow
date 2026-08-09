@@ -203,7 +203,7 @@ artifacts:
   DDD-026:
     id: DDD-026
     title: Verification-contract recording + accounting evidence lenses
-    status: approved
+    status: implemented
     tags:
     - v1.13
     - verification
@@ -215,7 +215,7 @@ artifacts:
     id: DDD-027
     title: "Autoresearch pack \u2014 schema field contracts, CLI dispatch, context\
       \ injection, domain-aware lint"
-    status: approved
+    status: implemented
     tags:
     - autoresearch
     - detailed-design
@@ -226,7 +226,7 @@ artifacts:
   DDD-028:
     id: DDD-028
     title: "Deferred lifecycle capabilities \u2014 command-surface detailed design"
-    status: approved
+    status: implemented
     tags:
     - lifecycle
     - detailed-design

@@ -22,7 +22,30 @@ jobs:
       - name: Validate artifacts (deterministic, zero tokens)
         run: uv run specflow artifact-lint --method programmatic
   pytest:
-    name: Run tests
+    name: Run tests (${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install uv
+        run: pip install uv
+      - name: Install dependencies
+        run: uv sync --python ${{ matrix.python-version }}
+      - name: Run pytest
+        run: uv run pytest tests/ -v
+  specflow-wheel-smoke:
+    # Release verification: build a wheel from this source tree, install it into
+    # an isolated venv, init a throwaway project with the *installed* entry
+    # point, and confirm `specflow status`/`brief` run and every packaged asset
+    # (schemas, skills + references, checklists, packs, agent-context) is
+    # present. Also runs on tag pushes via the workflow's `tags: ['v*']` trigger.
+    name: Wheel smoke (isolated install/init)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,10 +54,10 @@ jobs:
           python-version: "3.11"
       - name: Install uv
         run: pip install uv
-      - name: Install dependencies
+      - name: Install SpecFlow (build tooling)
         run: uv sync
-      - name: Run pytest
-        run: uv run pytest tests/ -v
+      - name: Wheel smoke
+        run: ./scripts/wheel-smoke.sh
   specflow-project-audit:
     name: Project audit
     runs-on: ubuntu-latest

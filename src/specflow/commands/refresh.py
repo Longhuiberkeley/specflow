@@ -78,40 +78,81 @@ def _install_skills(root: Path, platform_code: str, *, dry_run: bool = False) ->
     return count
 
 
-def _compare_schemas(root: Path, template_dir: Path) -> tuple[int, list[str]]:
-    """Compare package schemas with installed schemas.
+def classify_schemas(root: Path, template_dir: Path | None = None) -> tuple[list[str], list[str], list[str]]:
+    """Classify installed base schemas against package templates.
 
-    Returns (new_count, list_of_new_schema_names).
+    Returns ``(new, identical, changed)`` as lists of schema type names (file
+    stems):
+      - new:       package schema with no installed counterpart in
+                   ``.specflow/schema/``
+      - identical: installed file exists and matches the package byte-for-byte
+      - changed:   installed file exists but differs from the package (drift)
+
+    Only base ``templates/schemas/*.yaml`` are considered; pack-added schemas
+    that live only in ``.specflow/schema/`` are never classified, so pack-owned
+    drift does not pollute the base-schema signal.
     """
+    if template_dir is None:
+        template_dir = _get_package_templates()
     schema_src = template_dir / "schemas"
     schema_dst = root / ".specflow" / "schema"
-    new_schemas = []
+    new: list[str] = []
+    identical: list[str] = []
+    changed: list[str] = []
     if not schema_src.is_dir():
-        return 0, new_schemas
+        return new, identical, changed
     for yaml_file in sorted(schema_src.glob("*.yaml")):
         dst_file = schema_dst / yaml_file.name
         if not dst_file.exists():
-            new_schemas.append(yaml_file.stem)
-    return len(new_schemas), new_schemas
+            new.append(yaml_file.stem)
+        elif dst_file.read_bytes() == yaml_file.read_bytes():
+            identical.append(yaml_file.stem)
+        else:
+            changed.append(yaml_file.stem)
+    return new, identical, changed
 
 
-def _update_schemas(root: Path, template_dir: Path, *, force: bool = False) -> int:
-    """Copy new (or all, if force) schemas from package to project.
+def _update_schemas(root: Path, template_dir: Path, *, force: bool = False) -> tuple[int, list[str], list[str]]:
+    """Write missing schemas always; drifted schemas only with ``force``.
 
-    Returns count of schemas written.
+    Safe schema-drift behavior: plain ``refresh --schemas`` installs new types
+    but preserves a user's (or a prior tool's) edits to a shipped schema —
+    overwriting silently would lose intentional drift. ``force`` explicitly
+    replaces drifted schemas with the shipped defaults.
+
+    Returns ``(written_count, preserved_changed, replaced_changed)``.
     """
     schema_src = template_dir / "schemas"
     schema_dst = root / ".specflow" / "schema"
     schema_dst.mkdir(parents=True, exist_ok=True)
-    count = 0
+    written = 0
+    preserved: list[str] = []
+    replaced: list[str] = []
     if not schema_src.is_dir():
-        return 0
+        return 0, preserved, replaced
     for yaml_file in sorted(schema_src.glob("*.yaml")):
         dst_file = schema_dst / yaml_file.name
-        if force or not dst_file.exists():
+        if not dst_file.exists():
             shutil.copy2(str(yaml_file), str(dst_file))
-            count += 1
-    return count
+            written += 1
+        elif dst_file.read_bytes() != yaml_file.read_bytes():
+            if force:
+                shutil.copy2(str(yaml_file), str(dst_file))
+                replaced.append(yaml_file.stem)
+                written += 1
+            else:
+                preserved.append(yaml_file.stem)
+    return written, preserved, replaced
+
+
+def _schema_drift_summary(new_names: list[str], changed_names: list[str]) -> str:
+    """Deterministic one-line schema summary for dry-run output."""
+    parts: list[str] = []
+    if new_names:
+        parts.append(f"{len(new_names)} new: {', '.join(new_names)}")
+    if changed_names:
+        parts.append(f"{len(changed_names)} changed: {', '.join(changed_names)}")
+    return "; ".join(parts) if parts else "up to date"
 
 
 def _refresh_platform_specific(
@@ -185,18 +226,23 @@ def _refresh_shared(
 
     # ── Schemas ─────────────────────────────────────────────────
     if do_schemas:
-        new_count, new_names = _compare_schemas(root, template_dir)
+        new_names, _identical_names, changed_names = classify_schemas(root, template_dir)
         if dry_run:
-            if new_count:
-                summary.append(("schemas", f"{new_count} new: {', '.join(new_names)}"))
-            else:
-                summary.append(("schemas", "up to date"))
+            summary.append(("schemas", _schema_drift_summary(new_names, changed_names)))
         else:
-            written = _update_schemas(root, template_dir, force=force_schemas)
+            written, preserved, replaced = _update_schemas(root, template_dir, force=force_schemas)
+            parts: list[str] = []
             if written:
-                summary.append(("schemas", f"{written} written"))
-            else:
-                summary.append(("schemas", "up to date"))
+                parts.append(f"{written} written")
+            if preserved:
+                parts.append(f"{len(preserved)} preserved (changed): {', '.join(preserved)}")
+            if replaced:
+                parts.append(f"{len(replaced)} replaced: {', '.join(replaced)}")
+            detail = "; ".join(parts) if parts else "up to date"
+            if preserved and not force_schemas:
+                detail += (" — run `specflow refresh --schemas --force` to "
+                           "replace with shipped defaults")
+            summary.append(("schemas", detail))
 
     # ── Checklists ──────────────────────────────────────────────
     if do_checklists:

@@ -1407,6 +1407,137 @@ class TestLosslessCache:
         assert self._findings_line(out_dry) == self._findings_line(out_write)
 
 
+# ── gen 5: frontmatter-sensitive project fingerprint ────────────────────────
+#
+# The project cache fingerprint folds in audit-relevant frontmatter (status,
+# tags, links, verify-contract fields, …), not just artifact body content.
+# Pre-gen-5 a frontmatter-only edit (status transition, tag add, NFR category
+# set, verify-contract field change) left the fingerprint unchanged, so the
+# cache replayed stale findings that no longer matched the artifacts. The body
+# fingerprint (compute_fingerprint) is unchanged — this is cache-only.
+
+
+class TestExplicitStandard:
+    def test_cross_cutting_passes_standard_to_compliance(self, tmp_path, monkeypatch):
+        seen = {}
+
+        def _check_compliance(_root, standard=None):
+            seen["standard"] = standard
+            return {"ok": False}
+
+        monkeypatch.setattr(
+            audit_cmd.standards_lib,
+            "check_compliance",
+            _check_compliance,
+        )
+        monkeypatch.setattr(audit_cmd.artifact_lint, "check_coverage", lambda _arts: {})
+        monkeypatch.setattr(audit_cmd.artifact_lint, "check_schema", lambda *_args: {"blocking_count": 0, "warning_count": 0})
+        monkeypatch.setattr(audit_cmd, "_nfr_coverage_lens", lambda _arts: [])
+        monkeypatch.setattr(audit_cmd, "_backfilled_exemption_lens", lambda _arts: [])
+        monkeypatch.setattr(audit_cmd.baseline_lib, "list_baselines", lambda _root: [])
+
+        audit_cmd._cross_cutting_analysis([], tmp_path, standard_name="iso-test")
+
+        assert seen["standard"] == "iso-test"
+
+
+class TestFrontmatterFingerprint:
+    """gen 5: _project_fingerprint is sensitive to audit-relevant frontmatter.
+
+    Pure-function tests over the fingerprint, plus one end-to-end cache-miss
+    test proving a frontmatter-only edit forces a fresh recompute."""
+
+    @staticmethod
+    def _req(status: str = "approved", extra_fm: str = "") -> art_lib.Artifact:
+        return art_lib.Artifact(
+            path=Path("REQ-001.md"),
+            frontmatter={
+                "id": "REQ-001", "type": "requirement", "status": status,
+                "tags": [], "links": [], "fingerprint": "x",
+                **(dict(yaml.safe_load(extra_fm) or {}) if extra_fm.strip() else {}),
+            },
+            body="# T\n",
+        )
+
+    def test_status_change_changes_fingerprint(self):
+        """Same body, only the status frontmatter field changes → different
+        project fingerprint (cache key changes → cache miss)."""
+        fp_a = audit_cmd._project_fingerprint([self._req(status="approved")])
+        fp_b = audit_cmd._project_fingerprint([self._req(status="implemented")])
+        assert fp_a != fp_b
+
+    def test_identical_frontmatter_stable_fingerprint(self):
+        """Regression: identical frontmatter + body → identical fingerprint,
+        even when no stored body fingerprint is present (falls back to
+        compute_fingerprint). Stability is what makes cache HITS work."""
+        arts = [self._req(status="approved")]
+        assert audit_cmd._project_fingerprint(arts) == audit_cmd._project_fingerprint(list(arts))
+
+    def test_verify_contract_field_change_changes_fingerprint(self):
+        """A verify_run_exit_code change (the verification lens's input) must
+        invalidate the cache — pre-gen-5 it did not."""
+        a = art_lib.Artifact(
+            path=Path("UT-001.md"),
+            frontmatter={"id": "UT-001", "type": "unit-test", "status": "implemented",
+                         "tags": [], "links": [], "fingerprint": "x",
+                         "verify_command": "pytest a", "verify_run_exit_code": 0},
+            body="# T\n",
+        )
+        b = art_lib.Artifact(
+            path=Path("UT-001.md"),
+            frontmatter={"id": "UT-001", "type": "unit-test", "status": "implemented",
+                         "tags": [], "links": [], "fingerprint": "x",
+                         "verify_command": "pytest a", "verify_run_exit_code": 1},
+            body="# T\n",
+        )
+        assert audit_cmd._project_fingerprint([a]) != audit_cmd._project_fingerprint([b])
+
+    def test_nfr_category_change_changes_fingerprint(self):
+        """non_functional_category drives the nfr-coverage lens — a change must
+        invalidate the cache."""
+        a = self._req(status="approved", extra_fm="non_functional_category: performance\n")
+        b = self._req(status="approved", extra_fm="non_functional_category: reliability\n")
+        assert audit_cmd._project_fingerprint([a]) != audit_cmd._project_fingerprint([b])
+
+    def test_frontmatter_only_edit_forces_cache_recompute(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        """End-to-end: a REQ whose body is byte-identical but whose status
+        frontmatter changes between runs must MISS the cache (fresh
+        recompute), not replay stale findings. This is the real-world bug
+        gen 5 fixes."""
+        root = tmp_path / "project"
+        (root / "_specflow" / "specs" / "requirements").mkdir(parents=True)
+        req_path = root / "_specflow" / "specs" / "requirements" / "REQ-001.md"
+        req_path.write_text(
+            "---\nid: REQ-001\ntitle: T\ntype: requirement\nstatus: approved\n"
+            "tags: []\nsuspect: false\nlinks: []\nfingerprint: x\n---\n\n# T\n",
+            encoding="utf-8",
+        )
+        TestLosslessCache._stub_axes(monkeypatch)
+
+        rc1 = audit_cmd.run(root, {"quick": False})
+        capsys.readouterr()
+        assert rc1 == 0
+        cache_dir = root / ".specflow" / "audits" / ".cache"
+        assert len(sorted(cache_dir.glob("*.md"))) == 1
+
+        # Frontmatter-only edit: body byte-identical, status changes.
+        req_path.write_text(
+            "---\nid: REQ-001\ntitle: T\ntype: requirement\nstatus: implemented\n"
+            "tags: []\nsuspect: false\nlinks: []\nfingerprint: x\n---\n\n# T\n",
+            encoding="utf-8",
+        )
+
+        rc2 = audit_cmd.run(root, {"quick": False})
+        out2 = capsys.readouterr().out
+        assert rc2 == 0
+        assert "reusing previous findings" not in out2   # cache MISS
+        assert "Running horizontal analysis" in out2      # fresh recompute
+        assert len(sorted(cache_dir.glob("*.md"))) == 2   # new fingerprint key
+
+
+
 # ── CHL-344 A3: per-AC observability rows in the report body ────────────────
 #
 # The ~N unclassified/aspirational AC rows surface in the REPORT BODY (a new

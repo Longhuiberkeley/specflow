@@ -32,6 +32,13 @@ def _check_artifact(
 
     if not assembled.items:
         print(f"  {YELLOW}Warning: No checklists matched this artifact.{NC}")
+        # Persist the honest incomplete outcome instead of returning with no
+        # record (which is indistinguishable from a successful no-op).
+        from datetime import datetime, timezone
+        ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        checklist_id = f"check-{artifact.id}"
+        persist_results(root, artifact.id, checklist_id, [])
+        update_artifact_checklists_applied(root, artifact.id, checklist_id, ts)
         return 0
 
     # Pass 1: Automated

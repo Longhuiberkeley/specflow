@@ -3,17 +3,21 @@ id: SPIKE-CHECKLIS-1a12
 title: 'Checklist/review behavior gaps: starved review to PREV capture; empty checklist
   results read as success'
 type: spike
-status: draft
+status: completed
 tags:
 - checklist
 - review
 - learning
 - observability
 suspect: false
-links: []
+links:
+- target: DEC-CHANGERE-066b
+  role: derives_from
 created: '2026-08-09'
 fingerprint: sha256:ee1fdea97a1c
-modified: '2026-08-09'
+modified: '2026-08-10'
+rationale: Investigation complete; empty-checklist false pass fixed in v1.13.8 and
+  review-to-PREV enhancement remains explicitly deferred.
 ---
 
 ## Goal

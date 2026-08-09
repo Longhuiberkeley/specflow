@@ -131,6 +131,7 @@ You can invoke a skill by typing its `/specflow-*` slash **or** by just describi
 
 | Command | What it does |
 |---------|---------|
+| `/specflow-start` | Deterministic “where am I / what next?” router |
 | `/specflow-init` | Bootstrap the project, install skills, wire CI |
 | `/specflow-discover` | Capture requirements through conversation |
 | `/specflow-plan` | Break REQs into architecture + stories |
@@ -263,7 +264,7 @@ Everything is Markdown with YAML frontmatter. Your repo is the database.
 uv tool install git+https://github.com/Longhuiberkeley/specflow
 
 # Pin to a release
-uv tool install git+https://github.com/Longhuiberkeley/specflow@v1.13.7
+uv tool install git+https://github.com/Longhuiberkeley/specflow@v1.13.8
 
 # Run without installing (ephemeral)
 uvx --from git+https://github.com/Longhuiberkeley/specflow specflow init

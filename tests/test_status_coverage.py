@@ -183,3 +183,35 @@ class TestCategoryRowRendering:
         assert spec_pos < work_pos < review_pos, (
             "Row order must be spec → work → review per DDD-024"
         )
+
+
+class TestExecutingPhaseApprovedGuard:
+    """Core-signal honesty: the executing-phase suggestion must not claim
+    /specflow-execute when zero stories are approved-or-beyond
+    (approved/implemented/verified). A stale or manually-rewound phase can
+    leave 'executing' set with nothing approved to run."""
+
+    def test_executing_no_approved_stories_routes_to_plan(self, tmp_path):
+        suggestion = status_cmd._suggest_action(
+            tmp_path, "executing", {"REQ": 1, "ARCH": 1, "STORY": 2},
+            approved_stories=0,
+        )
+        assert "/specflow-execute" not in suggestion
+        assert "/specflow-plan" in suggestion
+
+    def test_executing_with_approved_stories_routes_to_execute(self, tmp_path):
+        suggestion = status_cmd._suggest_action(
+            tmp_path, "executing", {"REQ": 1, "STORY": 2},
+            approved_stories=2,
+        )
+        assert "/specflow-execute" in suggestion
+
+    def test_executing_implemented_counts_as_approved(self, tmp_path):
+        """Implemented stories crossed the approval gate — they count as
+        approved-plus, so the executing suggestion still routes to execute,
+        not back to plan."""
+        suggestion = status_cmd._suggest_action(
+            tmp_path, "executing", {"REQ": 1, "STORY": 2},
+            approved_stories=2,
+        )
+        assert "/specflow-execute" in suggestion
