@@ -55,7 +55,7 @@ def _install_skills(root: Path, platform_code: str, *, dry_run: bool = False) ->
     """
     template_dir = _get_package_templates()
     skills_src = template_dir / "skills" / "shared"
-    skills_dst = plat_lib.get_skills_dir(root, platform_code)
+    skills_dst = plat_lib.get_skills_install_dir(root, platform_code)
 
     skills_dst.mkdir(parents=True, exist_ok=True)
 
@@ -173,19 +173,34 @@ def _refresh_platform_specific(
     # ── Skills ──────────────────────────────────────────────────
     if do_skills:
         skills_src = template_dir / "skills" / "shared"
-        skills_dst = plat_lib.get_skills_dir(root, platform_code)
+        skills_dst = plat_lib.get_skills_install_dir(root, platform_code)
+        remapped = plat_lib.get_skills_install_code(platform_code) != platform_code
+        dest_note = " → .claude/skills (OpenCode reads this tree)" if remapped else ""
+        leftovers = plat_lib.leftover_specflow_skills(root, platform_code)
         changed_count, changed_names = _count_skill_diffs(skills_src, skills_dst)
         if dry_run:
             if changed_count:
-                summary.append(("skills", f"{changed_count} to update: {', '.join(changed_names)}"))
+                summary.append((
+                    "skills",
+                    f"{changed_count} to update: {', '.join(changed_names)}{dest_note}",
+                ))
             else:
-                summary.append(("skills", "up to date"))
+                summary.append(("skills", f"up to date{dest_note}"))
         else:
             if changed_count:
                 installed = _install_skills(root, platform_code, dry_run=False)
-                summary.append(("skills", f"{installed} installed ({', '.join(changed_names)})"))
+                summary.append((
+                    "skills",
+                    f"{installed} installed ({', '.join(changed_names)}){dest_note}",
+                ))
             else:
-                summary.append(("skills", "up to date"))
+                summary.append(("skills", f"up to date{dest_note}"))
+        if leftovers:
+            summary.append((
+                "skills-leftover",
+                f"{', '.join(leftovers)} in .opencode/skills would override "
+                f".claude/skills — remove to avoid a silent fork",
+            ))
 
     # ── Agent-context ───────────────────────────────────────────
     if do_context:
@@ -308,11 +323,28 @@ def _run_all_platforms(root: Path, detected: list[tuple[str, dict]], args: dict)
     else:
         print(f"  Refresh complete for {len(detected)} platform(s):")
 
+    seen_skill_installs: set[str] = set()
     for platform_code, cfg in detected:
+        install_code = plat_lib.get_skills_install_code(platform_code)
+        do_skills_here = do_skills and install_code not in seen_skill_installs
+        if do_skills_here:
+            seen_skill_installs.add(install_code)
         platform_summary = _refresh_platform_specific(
             root, platform_code, template_dir,
-            dry_run=dry_run, do_skills=do_skills, do_context=do_context,
+            dry_run=dry_run, do_skills=do_skills_here, do_context=do_context,
         )
+        if do_skills and not do_skills_here:
+            platform_summary.insert(0, (
+                "skills",
+                f"shared with {install_code} (.claude/skills) — not copied again",
+            ))
+        leftovers = plat_lib.leftover_specflow_skills(root, platform_code)
+        if leftovers and not any(label == "skills-leftover" for label, _ in platform_summary):
+            platform_summary.append((
+                "skills-leftover",
+                f"{', '.join(leftovers)} in host skills dir would override "
+                f".claude/skills — remove to avoid a silent fork",
+            ))
         print(f"    [{platform_code}] {cfg.get('name', platform_code)}:")
         for label, detail in platform_summary:
             print(f"      {label}: {detail}")
@@ -390,6 +422,26 @@ def run(root: Path, args: dict) -> int:
         root, platform_code, template_dir,
         dry_run=dry_run, do_skills=do_skills, do_context=do_context,
     )
+
+    # ── Cross-host leftovers ────────────────────────────────────
+    # A remapped host (OpenCode) prefers its own skills tree over .claude/skills,
+    # so a leftover specflow-* copy silently overrides the install. Default
+    # refresh resolves to ONE platform, so scan the other detected hosts too —
+    # otherwise leftovers only surface via init or --all-platforms.
+    if do_skills:
+        for code, _host_cfg in plat_lib.detect_platforms(root):
+            if code == platform_code:
+                continue  # already reported by _refresh_platform_specific
+            others = plat_lib.leftover_specflow_skills(root, code)
+            if others:
+                host_cfg = plat_lib.get_platform(code) or {}
+                summary.append((
+                    "skills-leftover",
+                    f"{', '.join(others)} in {host_cfg.get('skills_dir', '?')} "
+                    f"would override .claude/skills on {host_cfg.get('name', code)} "
+                    f"— remove to avoid a silent fork",
+                ))
+
     summary.extend(_refresh_shared(
         root, template_dir,
         dry_run=dry_run, do_schemas=do_schemas, do_checklists=do_checklists,

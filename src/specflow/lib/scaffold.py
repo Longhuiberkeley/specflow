@@ -140,8 +140,8 @@ def inspect_pack_refresh(
 
     compare_tree(pack_root / "schemas", root / ".specflow" / "schema", "schema")
     compare_tree(pack_root / "checklists", root / ".specflow" / "checklists", "checklist")
-    for platform_code in platform_codes:
-        skills_root = platform.get_skills_dir(root, platform_code)
+    for platform_code in platform.unique_skill_install_codes(platform_codes):
+        skills_root = platform.get_skills_install_dir(root, platform_code)
         for skill_name in manifest.get("adds_skills", []) or []:
             compare_tree(pack_root / "skills" / skill_name, skills_root / skill_name, "skill")
     return {"ok": True, "manifest": manifest, "changes": changes}
@@ -271,7 +271,7 @@ def apply_pack(
         if platform_code is None:
             print(f"  ⚠ Pack '{pack_name}' declares skills but no AI platform detected; install manually")
         else:
-            skills_dir = platform.get_skills_dir(root, platform_code)
+            skills_dir = platform.get_skills_install_dir(root, platform_code)
             for skill_name in declared_skills:
                 src = pack_root / "skills" / skill_name
                 if not src.is_dir():
@@ -300,15 +300,95 @@ _SENTINEL_END = "<!-- end pack:{pack_name} context -->"
 _BASE_SENTINEL_START = "<!-- SpecFlow section (auto-generated, do not edit manually) -->"
 _BASE_SENTINEL_END = "<!-- End SpecFlow section -->"
 
+# Old Claude-Code fallback. We never write here anymore; leftover sentinels
+# are stripped so they do not rot beside AGENTS.md. Any platform whose
+# instruction_file is AGENTS.md (claude-code, opencode, codex, junie, ...) can
+# carry one from the old fallback path. Gemini already uses GEMINI.md as its
+# instruction_file — not a fallback, never touched.
+_LEGACY_INSTRUCTION_FILE = "CLAUDE.md"
+
 
 def _get_target_instruction_file(root: Path, platform_code: str, instruction_file: str) -> Path | None:
-    target = root / instruction_file
-    if not target.exists() and instruction_file == "AGENTS.md":
-        if platform_code == "claude-code" and (root / "CLAUDE.md").exists():
-            target = root / "CLAUDE.md"
-        elif platform_code == "gemini" and (root / "GEMINI.md").exists():
-            target = root / "GEMINI.md"
-    return target
+    """Always the platform's declared instruction file. No CLAUDE.md fallback."""
+    del platform_code  # kept in the signature for call-site compatibility
+    return root / instruction_file
+
+
+def _strip_sentinel_block(path: Path, start: str, end: str) -> bool:
+    """Remove one sentinel-bounded block from ``path``. Returns True if rewritten."""
+    if not path.exists():
+        return False
+    content = path.read_text(encoding="utf-8")
+    if start not in content or end not in content:
+        return False
+    start_idx = content.index(start)
+    end_idx = content.index(end) + len(end)
+    # Drop a single surrounding newline so we do not leave a hole.
+    if start_idx > 0 and content[start_idx - 1] == "\n":
+        start_idx -= 1
+    new_content = content[:start_idx] + content[end_idx:]
+    if new_content.strip():
+        path.write_text(new_content.lstrip("\n") if new_content.startswith("\n\n") else new_content, encoding="utf-8")
+    else:
+        path.write_text("", encoding="utf-8")
+    return True
+
+
+def _ensure_claude_code_bridge(root: Path) -> None:
+    """Make Claude Code load the shared AGENTS.md via a one-line import.
+
+    Claude Code reads ``CLAUDE.md`` only — it does not discover ``AGENTS.md``
+    natively. The documented pattern (code.claude.com/docs/en/memory) is a
+    ``@AGENTS.md`` import line in CLAUDE.md; Claude loads the imported file at
+    session start, then the rest of CLAUDE.md. Without it, a migrated
+    dual-host project's Claude Code sessions lose the shared SpecFlow guidance
+    entirely. OpenCode ignores CLAUDE.md, so the line is inert for it.
+    """
+    claude_md = root / _LEGACY_INSTRUCTION_FILE
+    agents_md = root / "AGENTS.md"
+    if not claude_md.exists() or not agents_md.exists():
+        return
+    text = claude_md.read_text(encoding="utf-8")
+    if any(line.strip() == "@AGENTS.md" for line in text.splitlines()):
+        return  # already bridged (idempotent)
+    if text.strip():
+        rest = text.lstrip("\n")
+        claude_md.write_text(f"@AGENTS.md\n\n{rest}", encoding="utf-8")
+    else:
+        # File held only the old SpecFlow block; the bridge is its whole content.
+        claude_md.write_text("@AGENTS.md\n", encoding="utf-8")
+
+
+def _migrate_legacy_instruction_sentinels(root: Path, platform_code: str) -> None:
+    """Strip SpecFlow / pack sentinels from a leftover CLAUDE.md, then bridge it.
+
+    Runs whenever the platform's instruction file is AGENTS.md — the old
+    CLAUDE.md fallback applied to every such host, not just claude-code.
+    A block (base or pack) is stripped only once the same sentinel exists
+    in AGENTS.md, so a pack-only or context-only refresh never deletes
+    guidance that has not landed in the new location yet. Finally, the
+    ``@AGENTS.md`` import line is added to CLAUDE.md so Claude Code keeps
+    loading the shared guidance (it never reads AGENTS.md directly).
+    """
+    cfg = platform.get_platform(platform_code)
+    if not cfg or cfg.get("instruction_file") != "AGENTS.md":
+        return
+    legacy = root / _LEGACY_INSTRUCTION_FILE
+    if not legacy.exists():
+        return
+    target = root / "AGENTS.md"
+    target_text = target.read_text(encoding="utf-8") if target.exists() else ""
+    if _BASE_SENTINEL_START in target_text:
+        _strip_sentinel_block(legacy, _BASE_SENTINEL_START, _BASE_SENTINEL_END)
+    text = legacy.read_text(encoding="utf-8") if legacy.exists() else ""
+    for line in text.splitlines():
+        if line.startswith("<!-- pack:") and "context (auto-generated" in line:
+            pack_name = line[len("<!-- pack:"):].split(" ", 1)[0]
+            start = _SENTINEL_START.format(pack_name=pack_name)
+            end = _SENTINEL_END.format(pack_name=pack_name)
+            if start in target_text:
+                _strip_sentinel_block(legacy, start, end)
+    _ensure_claude_code_bridge(root)
 
 
 def inject_base_context(root: Path, templates_dir: Path, explicit_platform: str | None = None) -> bool:
@@ -346,17 +426,21 @@ def inject_base_context(root: Path, templates_dir: Path, explicit_platform: str 
             existing_block = content[start_idx:end_idx]
             new_block = block.strip()
             if existing_block == new_block:
+                _migrate_legacy_instruction_sentinels(root, platform_code)
                 return False
             content = content[:start_idx] + new_block + content[end_idx:]
             target.write_text(content, encoding="utf-8")
+            _migrate_legacy_instruction_sentinels(root, platform_code)
             return True
         content = content.rstrip() + "\n" + block
         target.write_text(content, encoding="utf-8")
+        _migrate_legacy_instruction_sentinels(root, platform_code)
         return True
     else:
         if instruction_file.endswith(".mdc"):
             block = f"---\ndescription: SpecFlow instructions\n---\n{block}"
         target.write_text(block.lstrip(), encoding="utf-8")
+        _migrate_legacy_instruction_sentinels(root, platform_code)
         return True
 
 
@@ -400,13 +484,17 @@ def inject_pack_context(root: Path, pack_name: str, context_snippet: str, explic
             existing_block = content[start_idx:end_idx]
             new_block = block.strip()
             if existing_block == new_block:
+                _migrate_legacy_instruction_sentinels(root, platform_code)
                 return False
             content = content[:start_idx] + new_block + content[end_idx:]
             target.write_text(content, encoding="utf-8")
+            _migrate_legacy_instruction_sentinels(root, platform_code)
             return True
         content = content.rstrip() + "\n" + block
         target.write_text(content, encoding="utf-8")
+        _migrate_legacy_instruction_sentinels(root, platform_code)
         return True
     else:
         target.write_text(block, encoding="utf-8")
+        _migrate_legacy_instruction_sentinels(root, platform_code)
         return True

@@ -1,11 +1,10 @@
 name: tldr-communication
 version: "1.1.0"
 description: >
-  Action-first TLDR + ELI5 communication shaping for AI agents. Optimizes output
-  for a reader who acts on it under cognitive load — lead with the answer, keep
-  state on-screen, drop preamble/closers. Helps any reader, not only those who
-  asked for brevity. Action-first framing adapted from github.com/ayghri/i-have-adhd
-  (behavioural shaping, no diagnosis implied).
+  Optional longer TLDR+ELI5 reply style. Baseline AGENTS.md already leads with
+  the answer; install this pack only if you want the full 10-line action-first
+  variant (restating step N of M, list cap 5, pre-send check). Adapted from
+  github.com/ayghri/i-have-adhd (behavioural shaping, no diagnosis implied).
 adds_artifact_types: []
 adds_directories: []
 adds_skills: []

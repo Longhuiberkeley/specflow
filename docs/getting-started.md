@@ -47,6 +47,7 @@ _specflow/
     └── decisions/            # DEC artifacts
 .specflow/                    # Framework internals (don't edit manually)
 .claude/skills/               # 13 skill directories (incl. the specflow-start router, specflow-doc, specflow-references)
+                              # OpenCode2 reads this same tree — do not copy specflow-* into .opencode/skills
 ```
 
 ### Already have a codebase? (Brownfield adoption)

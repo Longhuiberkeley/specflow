@@ -43,7 +43,7 @@ Check the project root for platform detection markers (from `platforms.yaml`):
 | `.trae/` | `trae` | Trae |
 | `.junie/` | `junie` | Junie |
 
-Scan markers in order. If a marker exists, use that platform code. If multiple markers are found, prefer the first match (table order). `specflow init` also warns when multiple AI-host platform dirs are detected, since skills are only installed to the one you targeted — run `specflow refresh --all-platforms` afterward to bring the others current.
+Scan markers in order. If a marker exists, use that platform code. If multiple markers are found, prefer the first match (table order). `specflow init` also warns when multiple AI-host platform dirs are detected, since skills are only installed to the one you targeted. Claude Code and OpenCode share the `.claude/skills` tree, so only genuinely different hosts (Cursor, Gemini, …) need `specflow refresh --all-platforms` to get their own copy.
 
 If **no** marker is found, ask:
 
@@ -76,7 +76,7 @@ If **Existing codebase** (brownfield): remember a `brownfield` flag and prefer t
 Ask the user:
 
 - "What type of project is this?" -- bounded options: Web App, CLI Tool, Library, Firmware/Embedded, Data Pipeline, Mobile, Other
-- "Do you want to apply an optional preset?" -- bounded options: `iso26262-demo`, `adoption` (existing codebase — installs `/specflow-adopt`), `autoresearch`, `ops`, `tldr-communication`, or None (Recommended)
+- "Do you want to apply an optional preset?" -- bounded options: `iso26262-demo`, `adoption` (existing codebase — installs `/specflow-adopt`), `autoresearch`, `ops`, or None (Recommended). Reply style is already TLDR-by-default in AGENTS.md; `tldr-communication` is only for the longer 10-line variant.
 - "Do you want to install optional artifact types (hazard, risk, control)?" -- bounded options: Yes, No (Recommended)
 - "Which CI provider do you use?" -- bounded options: GitHub Actions (Recommended), None. (Only GitHub Actions ships a built-in adapter; GitLab/other CI is build-it-yourself via `docs/authoring-an-adapter.md` — do not offer it as a choice.)
 - "Do you have any specific compliance standard packs you want to install?" -- free text, or None (Recommended)

@@ -179,9 +179,9 @@ This is the human design log. Structured change records (the auto-generated "Cha
 - Marker-based merge (update only between markers) — overengineered
 - Append during install, simple prompt on reinstall
 
-**Decision:** Append during install. The install command asks which file to target (AGENTS.md, CLAUDE.md, etc.) and appends the SpecFlow instructions section. On reinstall, prompt: "SpecFlow section already exists, overwrite? [y/n]".
+**Decision (superseded in implementation; see DEC-077):** Sentinel merge into the platform `instruction_file` (Claude Code / OpenCode: always `AGENTS.md`). Existing user prose is never overwritten. Same sentinels → in-place replace; missing block → append; identical content → no-op. No prompt. Leftover `CLAUDE.md` SpecFlow sentinels are stripped so they do not rot beside `AGENTS.md`.
 
-**Rationale:** Simple. No merge logic, no markers, no parsing. The SpecFlow section is clearly delineated with a header so users can move or edit it manually if needed.
+**Rationale:** OpenCode V2 loads `AGENTS.md` only. Two instruction files with the same SpecFlow block is a silent fork. Markers (shipped in v1.6.5) make refresh safe without a prompt.
 
 ---
 

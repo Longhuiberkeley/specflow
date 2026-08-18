@@ -898,24 +898,36 @@ class TestBaseContextInjection:
         assert "# Content" in content
         assert content.count("<!-- SpecFlow section (auto-generated, do not edit manually) -->") == 1
 
-    def test_falls_back_to_claude_md(self, tmp_path: Path):
+    def test_always_writes_agents_md_and_strips_claude_md_sentinel(self, tmp_path: Path):
         root = tmp_path / "project"
         root.mkdir()
         (root / ".claude").mkdir()
         (root / ".specflow" / "schema").mkdir(parents=True)
         (root / ".specflow" / "standards").mkdir(parents=True)
         claude_md = root / "CLAUDE.md"
-        claude_md.write_text("# Existing CLAUDE.md\n", encoding="utf-8")
+        claude_md.write_text(
+            "# Existing CLAUDE.md\n\n"
+            "<!-- SpecFlow section (auto-generated, do not edit manually) -->\n"
+            "## Old SpecFlow block\n"
+            "<!-- End SpecFlow section -->\n",
+            encoding="utf-8",
+        )
 
         modified = scaffold_lib.inject_base_context(
             root, TEMPLATES_DIR, "claude-code"
         )
         assert modified
 
-        assert not (root / "AGENTS.md").exists()
-        content = claude_md.read_text(encoding="utf-8")
-        assert "<!-- SpecFlow section (auto-generated, do not edit manually) -->" in content
-        assert "# Existing CLAUDE.md" in content
+        agents = root / "AGENTS.md"
+        assert agents.exists()
+        agents_text = agents.read_text(encoding="utf-8")
+        assert "<!-- SpecFlow section (auto-generated, do not edit manually) -->" in agents_text
+        assert "## SpecFlow" in agents_text
+
+        leftover = claude_md.read_text(encoding="utf-8")
+        assert "# Existing CLAUDE.md" in leftover
+        assert "<!-- SpecFlow section" not in leftover
+        assert "## Old SpecFlow block" not in leftover
 
     def test_base_before_packs_ordering(self, fresh_project: Path):
         agents_md = fresh_project / "AGENTS.md"

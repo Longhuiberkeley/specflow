@@ -61,13 +61,63 @@ def detect_platforms(root: Path) -> list[tuple[str, dict]]:
     return detected
 
 
+# Hosts that already read project `.claude/skills` (OpenCode V2 compatibility
+# source). Installing a second SpecFlow tree into their own skills_dir would
+# collapse to the same IDs — `.opencode/skills` wins, silently forking the
+# playbook. `.opencode/skills` stays reserved for *different* IDs only.
+_SKILLS_CONSUME_CLAUDE = frozenset({"opencode"})
+
+
+def get_skills_install_code(platform_code: str) -> str:
+    """Platform whose ``skills_dir`` should receive SpecFlow + pack skills."""
+    if platform_code in _SKILLS_CONSUME_CLAUDE:
+        return "claude-code"
+    return platform_code
+
+
+def unique_skill_install_codes(platform_codes: list[str]) -> list[str]:
+    """Dedup platform codes that share one SpecFlow skill tree."""
+    seen: list[str] = []
+    for code in platform_codes:
+        install = get_skills_install_code(code)
+        if install not in seen:
+            seen.append(install)
+    return seen
+
+
 def get_skills_dir(root: Path, platform_code: str) -> Path:
-    """Return the absolute skills directory for a platform."""
+    """Return the absolute skills directory listed in the platform registry.
+
+    This is the host's *own* skills dir (e.g. ``.opencode/skills``). Use
+    :func:`get_skills_install_dir` when copying SpecFlow or pack skills.
+    """
     cfg = get_platform(platform_code)
     if cfg is None:
         cfg = get_platform("claude-code")
     rel = cfg["skills_dir"]
     return root / rel
+
+
+def get_skills_install_dir(root: Path, platform_code: str) -> Path:
+    """Directory that should receive SpecFlow + pack skill copies."""
+    return get_skills_dir(root, get_skills_install_code(platform_code))
+
+
+def leftover_specflow_skills(root: Path, platform_code: str) -> list[str]:
+    """SpecFlow skill dirs sitting in a host tree we no longer install to.
+
+    Same-ID leftovers in ``.opencode/skills`` silently override ``.claude/skills``
+    on OpenCode. Callers should warn; we do not delete them.
+    """
+    if get_skills_install_code(platform_code) == platform_code:
+        return []
+    own = get_skills_dir(root, platform_code)
+    if not own.is_dir():
+        return []
+    return sorted(
+        p.name for p in own.iterdir()
+        if p.is_dir() and p.name.startswith("specflow-")
+    )
 
 
 def get_preferred_platforms() -> list[tuple[str, dict]]:

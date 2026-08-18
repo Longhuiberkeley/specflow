@@ -118,7 +118,7 @@ Full walkthrough in the [getting-started guide](docs/getting-started.md).
 | **Computed risk tiers** *(new)* | `specflow risk-tier <IDs>` derives a minimum approval tier (0 light / 1 normal / 2 stop) from the change set's intrinsic properties and persists it to the DEC's `risk_profile`. The tier **gates nothing** — it is a recorded floor; downgrade below it only with a recorded justification |
 | **Bring-your-own-standard** | Drop a PDF, URL, or pasted text. SpecFlow extracts clauses into compliance schemas |
 | **Immutable baselines** | Snapshot, diff, and generate audit evidence between releases |
-| **First-class Claude Code + OpenCode** | Skills install automatically; other assistants with project file access may work but are community-supported. `specflow init` warns if multiple AI-host dirs are detected; `specflow refresh --all-platforms` keeps every detected host in sync |
+| **First-class Claude Code + OpenCode** | SpecFlow skills install once, into `.claude/skills`. OpenCode2 already reads that tree — a second copy in `.opencode/skills` would silently override it. Other hosts still get their own dir. `specflow init` warns if a leftover `.opencode/skills/specflow-*` exists; `specflow refresh --all-platforms` syncs hosts that do not share the Claude tree |
 | **Autoresearch loops** | Define a competition + verify command, let your assistant iterate; every experiment becomes a tracked artifact |
 | **Docs knowledge surface** *(new)* | `docs/` + root markdown is a recognized surface — `@ID`-cited, shown in `specflow brief`, staleness-warned, never an artifact type |
 | **Accounting-only phase rewinds** *(new)* | `specflow phase-set <phase> --reason "..."` records a forward or reverse phase move (e.g. "go back to requirements") — never blocks, keeps `brief --next` honest |
@@ -145,6 +145,8 @@ You can invoke a skill by typing its `/specflow-*` slash **or** by just describi
 | `/specflow-doc` | Author/cite docs (`@ID`), sync the docs index, check staleness |
 
 All core skills accept freeform context. `/specflow-audit I'm worried about REQ coverage` scopes the audit to your concern.
+
+Replies already lead with the answer (a short TLDR is in the injected `AGENTS.md`). The optional `tldr-communication` pack (`specflow init --preset tldr-communication`) is only the longer 10-line variant — you do not need to ask for a TLDR.
 
 ## Autoresearch — autonomous research loops (new in v1.6.0)
 
@@ -279,7 +281,7 @@ cd your-project
 specflow init
 ```
 
-This creates `_specflow/` and `.specflow/` in your repo, and copies skill files into the appropriate directory for your AI assistant (`.claude/skills/` for Claude Code, `.opencode/skills/` for OpenCode). After this step, `/specflow-*` slash commands are available in your assistant.
+This creates `_specflow/` and `.specflow/` in your repo, and copies skill files into `.claude/skills/` (Claude Code and OpenCode both read that tree). Other assistants get their own skills dir. After this step, `/specflow-*` slash commands are available in your assistant.
 
 ## Docs
 

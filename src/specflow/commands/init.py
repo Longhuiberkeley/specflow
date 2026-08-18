@@ -124,7 +124,7 @@ def _install_optional_types(root: Path, type_names: list[str]) -> int:
 def _install_skills(root: Path, platform_code: str) -> None:
     template_dir = _get_package_templates()
     skills_src = template_dir / "skills" / "shared"
-    skills_dst = plat_lib.get_skills_dir(root, platform_code)
+    skills_dst = plat_lib.get_skills_install_dir(root, platform_code)
 
     skills_dst.mkdir(parents=True, exist_ok=True)
 
@@ -144,26 +144,48 @@ def _install_skills(root: Path, platform_code: str) -> None:
 
 
 def _multi_platform_warning(root: Path, installed_code: str, explicit_platform: bool) -> str | None:
-    """Return a warning string if multiple AI-host platforms are detected but skills
-    were only installed for one, or None if no warning is warranted.
+    """Return a warning if other detected hosts still need their own skill tree.
 
-    No warning is issued when the platform was explicitly requested via --platform;
-    the user made a deliberate choice in that case.
+    OpenCode consumes ``.claude/skills`` — it is not a missing install target.
+    No warning when the platform was explicitly requested via ``--platform``.
+    Leftover ``.opencode/skills/specflow-*`` copies are always reported (they
+    silently override the Claude tree on OpenCode) even if ``--platform`` was set.
     """
+    leftovers: list[str] = []
+    leftover_note = ""
+    for code, _ in plat_lib.detect_platforms(root) or [(installed_code, {})]:
+        found = plat_lib.leftover_specflow_skills(root, code)
+        if found:
+            leftovers.extend(f"{code}:{name}" for name in found)
+    if leftovers:
+        leftover_note = (
+            f" Leftover SpecFlow skills in a host tree OpenCode would prefer over "
+            f".claude/skills ({', '.join(leftovers)}). Remove them to avoid a "
+            f"silent per-harness fork."
+        )
+
     if explicit_platform:
-        return None
+        return leftover_note.strip() or None
     detected = plat_lib.detect_platforms(root)
     if len(detected) <= 1:
-        return None
-    other_codes = [code for code, _ in detected if code != installed_code]
+        return leftover_note.strip() or None
+    install_code = plat_lib.get_skills_install_code(installed_code)
+    other_codes = [
+        code for code, _ in detected
+        if plat_lib.get_skills_install_code(code) != install_code
+    ]
     if not other_codes:
+        if leftover_note:
+            return leftover_note.strip()
         return None
     others_str = ", ".join(other_codes)
     return (
         f"⚠ Multiple AI-host platforms detected: {installed_code} (installed), {others_str}. "
-        f"Skills were installed only for {installed_code}. "
+        f"Skills were installed only for {install_code} "
+        f"(OpenCode reads .claude/skills; other hosts need their own copy). "
         f"Run 'specflow refresh --platform <code>' for each other host, "
         f"or 'specflow refresh --all-platforms'."
+        f"{leftover_note}"
     )
 
 
@@ -283,12 +305,25 @@ def run(root: Path, args: dict) -> int:
             if _install_optional_types(root, type_names) != 0:
                 return 1
 
-    print(f"  Installing skills for {platform_name}...")
+    install_code = plat_lib.get_skills_install_code(platform_code)
+    dest = plat_lib.get_skills_install_dir(root, platform_code)
+    dest_rel = dest.relative_to(root)
+    if install_code != platform_code:
+        print(f"  Installing skills for {platform_name} into {dest_rel} "
+              f"(OpenCode reads .claude/skills; not copying a second tree)...")
+    else:
+        print(f"  Installing skills for {platform_name}...")
     _install_skills(root, platform_code)
     skills_src = _get_package_templates() / "skills" / "shared"
     for skill_dir in sorted(skills_src.iterdir()):
         if skill_dir.is_dir():
             print(f"  + {skill_dir.name}")
+    leftovers = plat_lib.leftover_specflow_skills(root, platform_code)
+    if leftovers:
+        print(
+            f"  ! Leftover SpecFlow skills in {plat_lib.get_skills_dir(root, platform_code).relative_to(root)} "
+            f"({', '.join(leftovers)}) would override {dest_rel} on OpenCode — remove them."
+        )
 
     _install_pre_commit_hook(root)
 

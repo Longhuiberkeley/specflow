@@ -37,8 +37,8 @@ Interface specs for each `/specflow-*` slash command. For a lifecycle overview, 
 **Writes:**
 - `.specflow/` internals (config, schemas, checklists, adapters)
 - `_specflow/` artifact directories (specs/, work/)
-- `.claude/skills/` (or `.opencode/`, `.gemini/`) — 13 skill directories (incl. the `specflow-start` router, `specflow-doc`, `specflow-references`)
-- SpecFlow section appended to `AGENTS.md` (or `CLAUDE.md`)
+- `.claude/skills/` — 13 skill directories (incl. the `specflow-start` router, `specflow-doc`, `specflow-references`). OpenCode consumes this tree; other hosts (Cursor, Gemini, …) get their own copy.
+- SpecFlow section appended to the platform's `instruction_file` (`AGENTS.md` for Claude Code/OpenCode; leftover `CLAUDE.md` sentinels are stripped and a one-line `@AGENTS.md` import is added to `CLAUDE.md` so Claude Code keeps loading the shared guidance)
 - `.github/workflows/specflow.yml` (if CI requested)
 
 ---

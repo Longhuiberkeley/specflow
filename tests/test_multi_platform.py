@@ -153,6 +153,32 @@ class TestRefreshAllPlatforms:
         out = capsys.readouterr().out
         assert "No AI platform detected" in out
 
+    def test_claude_plus_opencode_installs_skills_once_to_claude(self, tmp_path: Path, capsys):
+        root = tmp_path / "project"
+        root.mkdir()
+        (root / ".claude").mkdir()
+        (root / ".opencode").mkdir()
+        leftover = root / ".opencode" / "skills" / "specflow-discover"
+        leftover.mkdir(parents=True)
+        (leftover / "SKILL.md").write_text("# leftover fork\n", encoding="utf-8")
+        _make_specflow_project(root)
+
+        rc = refresh_cmd.run(root, {"all_platforms": True})
+        assert rc == 0
+
+        claude_skills = root / ".claude" / "skills"
+        assert claude_skills.is_dir()
+        assert (claude_skills / "specflow-init").is_dir()
+        assert not (root / ".opencode" / "skills" / "specflow-init").exists()
+        # Leftovers are not deleted — they are reported.
+        assert leftover.is_dir()
+
+        out = capsys.readouterr().out
+        assert "claude-code" in out
+        assert "opencode" in out
+        assert "skills-leftover" in out or "leftover" in out.lower()
+        assert "specflow-discover" in out
+
 
 # ── 3. init multi-platform warning ───────────────────────────────────────────
 
@@ -196,3 +222,25 @@ class TestInitMultiPlatformWarning:
 
         warning = init_cmd._multi_platform_warning(root, "claude-code", False)
         assert warning is None
+
+    def test_claude_plus_opencode_is_not_a_missing_install(self, tmp_path: Path):
+        root = tmp_path / "project"
+        root.mkdir()
+        (root / ".claude").mkdir()
+        (root / ".opencode").mkdir()
+
+        warning = init_cmd._multi_platform_warning(root, "claude-code", False)
+        assert warning is None
+
+    def test_leftover_opencode_skills_warn_even_when_platform_explicit(self, tmp_path: Path):
+        root = tmp_path / "project"
+        root.mkdir()
+        (root / ".claude").mkdir()
+        leftover = root / ".opencode" / "skills" / "specflow-discover"
+        leftover.mkdir(parents=True)
+        (leftover / "SKILL.md").write_text("# leftover\n", encoding="utf-8")
+
+        warning = init_cmd._multi_platform_warning(root, "claude-code", True)
+        assert warning is not None
+        assert "Leftover SpecFlow skills" in warning
+        assert "specflow-discover" in warning

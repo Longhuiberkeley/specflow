@@ -776,4 +776,11 @@ artifacts:
     - dogfood
     fingerprint: sha256:47c6f1a1171b
     children: []
-next_id: 77
+  DEC-077:
+    id: DEC-077
+    title: OpenCode consumes .claude/skills; AGENTS.md-only; TLDR default
+    status: approved
+    tags: []
+    fingerprint: sha256:5637310ae3f5
+    children: []
+next_id: 78

@@ -1009,4 +1009,11 @@ artifacts:
     - dogfood
     fingerprint: sha256:7642a070b2c7
     children: []
-next_id: 632
+  STORY-632:
+    id: STORY-632
+    title: Dual-host skills + lean AGENTS.md + default TLDR
+    status: approved
+    tags: []
+    fingerprint: sha256:e0b090c6ea29
+    children: []
+next_id: 633

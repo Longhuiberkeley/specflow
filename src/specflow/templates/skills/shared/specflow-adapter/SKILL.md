@@ -186,7 +186,7 @@ After upgrading SpecFlow, refresh copied assets through the universal CLI:
 2. Install missing schemas while preserving local drift: `specflow refresh --schemas`.
 3. Explicitly restore shipped schema defaults: `specflow refresh --schemas --force`.
 4. Refresh checklists or pack assets with `--checklists` / `--packs`.
-5. Synchronize every detected host with `specflow refresh --all-platforms`.
+5. Synchronize hosts that do not share the Claude skill tree with `specflow refresh --all-platforms` (OpenCode reads `.claude/skills`; leftover `.opencode/skills/specflow-*` is a silent override — remove it).
 
 For single-file platform exports, run:
 

@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Highlights
+
+- **One skill tree for Claude Code + OpenCode.** SpecFlow skills install into `.claude/skills` only. OpenCode2 already reads that tree; a second copy in `.opencode/skills` would silently win on ID conflict. `.opencode/agents` and `.opencode/commands` are no longer deleted as "legacy."
+- **Lean always-on context + default TLDR.** Injected `AGENTS.md` block is ~30 lines and leads with the answer. The `tldr-communication` pack is now an optional longer variant, not something you must remember to prompt.
+
+### Changed
+
+- `get_skills_install_dir()` remaps OpenCode (and pack-skill install) to `.claude/skills`. `refresh --all-platforms` installs that tree once and reports leftover `.opencode/skills/specflow-*` instead of copying a fork.
+- Plain `specflow refresh` (not just `init` / `--all-platforms`) also scans every detected remapped host and warns about leftover `.opencode/skills/specflow-*` copies, which silently override `.claude/skills` on OpenCode V2.
+- Instruction injection always targets `AGENTS.md` when that is the platform file. Existing `CLAUDE.md` SpecFlow sentinels are stripped on **any** AGENTS.md host (claude-code, opencode, codex, …) — not just claude-code — and a block (base or pack) is removed from `CLAUDE.md` only once the same sentinel exists in `AGENTS.md`, so guidance migrates instead of being dropped.
+- An `@AGENTS.md` import line is added to an existing `CLAUDE.md` (first line, idempotent, prose preserved): Claude Code reads `CLAUDE.md` only and OpenCode V2 reads `AGENTS.md` only, so the bridge keeps both hosts on one source of truth.
+- Dual-host warning no longer treats OpenCode as a missing install target.
+
+### Decisions / Docs
+
+- DEC-077 / STORY-632 — OpenCode consumes `.claude/skills`; AGENTS.md-only; TLDR default.
+
 ## [1.13.8] - 2026-08-10
 
 Full readiness patch focused on truthful deterministic signals, safe downstream upgrades, complete skill delivery, real distribution validation, and closure of the dogfood qualification ledger. No external model service and no new blocking policy gates.

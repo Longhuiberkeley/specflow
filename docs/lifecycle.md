@@ -176,17 +176,18 @@ These are what a user learns and uses day-to-day in the AI-first lane. Each is d
 
 | # | Slash Command | When to Use |
 |---|---------------|-------------|
-| 1 | `/specflow-init` | Starting a new project; installing skills, packs, CI |
-| 2 | `/specflow-discover` | Capturing a new requirement through conversation |
-| 3 | `/specflow-plan` | Breaking approved REQs into architecture + stories |
-| 4 | `/specflow-execute` | Implementing approved stories with test generation |
-| 5 | `/specflow-artifact-review` | Quality review of one or more specific artifacts |
-| 6 | `/specflow-change-impact-review` | Blast-radius review of recent commits/PRs |
-| 7 | `/specflow-audit` | Periodic full-project health check |
-| 8 | `/specflow-ship` | Cutting a release: baseline + change records + quick audit |
-| 9 | `/specflow-adapter` | Configuring CI workflows, roles/RBAC, and adapters (any time) |
-| 10 | `/specflow-pack-author` | Authoring a standards compliance pack |
-| 11 | `/specflow-doc` | Authoring/citing docs (`@ID`), syncing the docs index, staleness checks |
+| 1 | `/specflow-start` | Vague intent / "what's next?" — runs `specflow brief --next` and routes |
+| 2 | `/specflow-init` | Starting a new project; installing skills, packs, CI |
+| 3 | `/specflow-discover` | Capturing a new requirement through conversation |
+| 4 | `/specflow-plan` | Breaking approved REQs into architecture + stories |
+| 5 | `/specflow-execute` | Implementing approved stories with test generation |
+| 6 | `/specflow-artifact-review` | Quality review of one or more specific artifacts |
+| 7 | `/specflow-change-impact-review` | Blast-radius review of recent commits/PRs |
+| 8 | `/specflow-audit` | Periodic full-project health check |
+| 9 | `/specflow-ship` | Cutting a release: baseline + change records + quick audit |
+| 10 | `/specflow-adapter` | Configuring CI workflows, roles/RBAC, and adapters (any time) |
+| 11 | `/specflow-pack-author` | Authoring a standards compliance pack |
+| 12 | `/specflow-doc` | Authoring/citing docs (`@ID`), syncing the docs index, staleness checks |
 
 ## Tier 2 — The CLI = a standalone ALM (no agent required)
 

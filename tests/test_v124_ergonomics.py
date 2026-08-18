@@ -641,6 +641,17 @@ class TestSkillAndContextDocs:
         assert "_specflow/" in text
         assert "specflow update" in text
 
+    def test_agent_context_is_lean_and_tldr_default(self):
+        text = (self._REPO_ROOT / "src/specflow/templates/agent-context.md").read_text(encoding="utf-8")
+        non_empty = [ln for ln in text.splitlines() if ln.strip()]
+        assert len(non_empty) <= 40, (
+            f"agent-context.md grew to {len(non_empty)} non-empty lines; "
+            f"keep the always-on block near 30 lines"
+        )
+        lowered = text.lower()
+        assert "lead with the answer" in lowered
+        assert "no preamble" in lowered
+
 
 # ── Review-fix hardening (pre-release review findings) ─────────────────
 

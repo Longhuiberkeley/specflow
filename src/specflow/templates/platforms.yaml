@@ -3,7 +3,9 @@
 # Each platform entry defines:
 #   name:             Display name shown to users
 #   preferred:        Whether shown as a recommended option on install
-#   skills_dir:       Where to copy SpecFlow skill directories
+#   skills_dir:       The host's OWN skills directory. SpecFlow + pack skills
+#                     copy to the *install* dir (see get_skills_install_dir) —
+#                     for OpenCode that is .claude/skills, not this path.
 #   instruction_file: Where to inject pack context (AGENTS.md, CLAUDE.md, etc.)
 #   detection:        Directory/file markers used to auto-detect this platform
 #   legacy_dirs:      (optional) Old directories to clean up on reinstall
@@ -63,13 +65,13 @@ platforms:
   opencode:
     name: "OpenCode"
     preferred: true
+    # OpenCode V2 already reads project `.claude/skills`. SpecFlow + pack skills
+    # install there (see platform.get_skills_install_dir). This path is reserved
+    # for OpenCode-only extras with *different* IDs — never a second specflow-*.
     skills_dir: .opencode/skills
     instruction_file: AGENTS.md
     detection:
       - .opencode/
-    legacy_dirs:
-      - .opencode/agents
-      - .opencode/commands
 
   github-copilot:
     name: "GitHub Copilot"
