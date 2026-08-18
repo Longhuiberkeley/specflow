@@ -204,6 +204,9 @@ def _refresh_platform_specific(
 
     # ── Agent-context ───────────────────────────────────────────
     if do_context:
+        # Pending CLAUDE.md actions must be visible even when the AGENTS.md
+        # inject itself is idempotent (dry-run or "up to date").
+        pending = scaffold_lib.pending_claude_md_migration(root, platform_code)
         if dry_run:
             # Check if content would change
             ctx_file = template_dir / "agent-context.md"
@@ -211,6 +214,8 @@ def _refresh_platform_specific(
                 summary.append(("context", "would re-inject (idempotent)"))
             else:
                 summary.append(("context", "template not found"))
+            for action in pending:
+                summary.append(("context-claude-md", f"would {action}"))
         else:
             # Ensure the instruction file's parent dir exists (some platforms
             # nest it, e.g. .cursor/rules/specflow.md) before injecting.
@@ -223,6 +228,8 @@ def _refresh_platform_specific(
                 summary.append(("context", "updated"))
             else:
                 summary.append(("context", "up to date"))
+            for action in pending:
+                summary.append(("context-claude-md", action))
 
     return summary
 

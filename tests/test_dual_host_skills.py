@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from specflow.commands import init as init_cmd
+from specflow.commands import refresh as refresh_cmd
 from specflow.lib import platform as plat_lib
 from specflow.lib import scaffold as scaffold_lib
 
@@ -156,6 +157,23 @@ class TestLegacySentinelMigration:
         assert text.strip() == "@AGENTS.md"
         assert BASE_START not in text
 
+    def test_symlinked_claude_md_is_the_bridge_untouched(self, tmp_path: Path):
+        """`ln -s AGENTS.md CLAUDE.md` is the other documented Claude Code
+        setup. The symlink already IS the bridge — a refresh must not strip
+        the freshly injected block through the link nor prepend @AGENTS.md."""
+        root = tmp_path / "proj"
+        root.mkdir()
+        (root / ".claude").mkdir()
+        assert scaffold_lib.inject_base_context(root, TEMPLATES_DIR, "claude-code")
+        before = (root / "AGENTS.md").read_text(encoding="utf-8")
+        (root / "CLAUDE.md").symlink_to(root / "AGENTS.md")
+
+        # Idempotent re-inject must not corrupt AGENTS.md via the symlink.
+        assert scaffold_lib.inject_base_context(root, TEMPLATES_DIR, "claude-code") is False
+        assert (root / "AGENTS.md").read_text(encoding="utf-8") == before
+        assert (root / "CLAUDE.md").read_text(encoding="utf-8") == before
+        assert scaffold_lib.pending_claude_md_migration(root, "claude-code") == []
+
     def test_pack_sentinels_migrate_not_drop(self, tmp_path: Path):
         """Fix: a pack block in CLAUDE.md survives until it lands in AGENTS.md."""
         root = tmp_path / "proj"
@@ -209,8 +227,6 @@ class TestDefaultRefreshLeftoverScan:
     def test_default_refresh_warns_opencode_leftovers(self, tmp_path: Path, capsys):
         """Fix: plain `specflow refresh` resolves to claude-code on a dual-host
         repo; it must still surface .opencode leftovers (they silently win)."""
-        from specflow.commands import refresh as refresh_cmd
-
         root = tmp_path / "proj"
         root.mkdir()
         (root / ".claude").mkdir()
@@ -228,3 +244,30 @@ class TestDefaultRefreshLeftoverScan:
         assert "specflow-discover" in out
         # Not deleted — reported.
         assert (root / ".opencode" / "skills" / "specflow-discover").is_dir()
+
+    def test_refresh_reports_and_applies_claude_md_migration(self, tmp_path: Path, capsys):
+        """Pending CLAUDE.md actions show in the summary (and dry-run), then apply."""
+        root = tmp_path / "proj"
+        root.mkdir()
+        (root / ".claude").mkdir()
+        _legacy_claude_md(root, with_pack=False)
+        _make_specflow_project(root)
+
+        rc = refresh_cmd.run(root, {"dry_run": True})
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "context-claude-md" in out
+        assert "would strip legacy SpecFlow block" in out
+        assert "would add @AGENTS.md import" in out
+        # Dry-run must not have modified CLAUDE.md.
+        assert BASE_START in (root / "CLAUDE.md").read_text(encoding="utf-8")
+
+        rc = refresh_cmd.run(root, {})
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "strip legacy SpecFlow block" in out
+        assert "add @AGENTS.md import" in out
+        text = (root / "CLAUDE.md").read_text(encoding="utf-8")
+        assert BASE_START not in text
+        assert text.splitlines()[0].strip() == "@AGENTS.md"
+        assert "User prose stays." in text

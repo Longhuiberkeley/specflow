@@ -24,6 +24,8 @@ Dual-host consolidation: one skill tree and one instruction source for Claude Co
 - Plain `specflow refresh` (not just `init` / `--all-platforms`) also scans every detected remapped host and warns about leftover `.opencode/skills/specflow-*` copies, which silently override `.claude/skills` on OpenCode V2.
 - Instruction injection always targets `AGENTS.md` when that is the platform file. Existing `CLAUDE.md` SpecFlow sentinels are stripped on **any** AGENTS.md host (claude-code, opencode, codex, …) — not just claude-code — and a block (base or pack) is removed from `CLAUDE.md` only once the same sentinel exists in `AGENTS.md`, so guidance migrates instead of being dropped.
 - Docs corrections: cross-platform table, `/specflow-init` writes list, `platforms.yaml` header, init/adapter skill guidance on shared trees and leftover overrides.
+- Symlinked `CLAUDE.md → AGENTS.md` (the other documented Claude Code setup) is detected and left untouched — that symlink already *is* the bridge; refresh no longer strips the block it just wrote nor rewrites `AGENTS.md` through the link.
+- `refresh` (and `--dry-run`) now report pending `CLAUDE.md` actions (`context-claude-md` summary rows) instead of editing silently on an otherwise "up to date" context.
 
 ### Decisions / Docs
 
@@ -31,7 +33,7 @@ Dual-host consolidation: one skill tree and one instruction source for Claude Co
 
 ### Tests
 
-- New `tests/test_dual_host_skills.py` (13 tests): skill-install remap, AGENTS.md-only injection, legacy CLAUDE.md sentinel migration, `@AGENTS.md` bridge (idempotent, prose-preserving, gemini-excluded), default-refresh leftover scan. Extended multi-platform, autoresearch, and v1.2.4-ergonomics suites. Total: 1346 tests passing
+- New `tests/test_dual_host_skills.py` (15 tests): skill-install remap, AGENTS.md-only injection, legacy CLAUDE.md sentinel migration, `@AGENTS.md` bridge (idempotent, prose-preserving, gemini-excluded, symlink-safe), default-refresh leftover scan, dry-run migration previews. Extended multi-platform, autoresearch, and v1.2.4-ergonomics suites. Total: 1348 tests passing
 
 ## [1.13.8] - 2026-08-10
 

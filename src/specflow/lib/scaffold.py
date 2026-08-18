@@ -348,6 +348,10 @@ def _ensure_claude_code_bridge(root: Path) -> None:
     agents_md = root / "AGENTS.md"
     if not claude_md.exists() or not agents_md.exists():
         return
+    # The docs also bless `ln -s AGENTS.md CLAUDE.md`. That symlink already IS
+    # the bridge; writing through it would prepend "@AGENTS.md" to AGENTS.md.
+    if claude_md.resolve() == agents_md.resolve():
+        return
     text = claude_md.read_text(encoding="utf-8")
     if any(line.strip() == "@AGENTS.md" for line in text.splitlines()):
         return  # already bridged (idempotent)
@@ -357,6 +361,36 @@ def _ensure_claude_code_bridge(root: Path) -> None:
     else:
         # File held only the old SpecFlow block; the bridge is its whole content.
         claude_md.write_text("@AGENTS.md\n", encoding="utf-8")
+
+
+def pending_claude_md_migration(root: Path, platform_code: str) -> list[str]:
+    """Describe (for --dry-run and refresh summaries) pending CLAUDE.md actions."""
+    cfg = platform.get_platform(platform_code)
+    if not cfg or cfg.get("instruction_file") != "AGENTS.md":
+        return []
+    legacy = root / _LEGACY_INSTRUCTION_FILE
+    target = root / "AGENTS.md"
+    if not legacy.exists():
+        return []
+    if legacy.exists() and target.exists() and legacy.resolve() == target.resolve():
+        return []  # symlinked CLAUDE.md already is the bridge
+    actions: list[str] = []
+    text = legacy.read_text(encoding="utf-8")
+    target_text = target.read_text(encoding="utf-8") if target.exists() else ""
+    # A real refresh runs inject_base_context first, which creates AGENTS.md
+    # with the base sentinel — on a dry-run preview that "will exist" block
+    # counts as present.
+    base_will_exist = (not target.exists()) or (_BASE_SENTINEL_START in target_text)
+    if _BASE_SENTINEL_START in text and base_will_exist:
+        actions.append("strip legacy SpecFlow block from CLAUDE.md")
+    for line in text.splitlines():
+        if line.startswith("<!-- pack:") and "context (auto-generated" in line:
+            pack_name = line[len("<!-- pack:"):].split(" ", 1)[0]
+            if _SENTINEL_START.format(pack_name=pack_name) in target_text:
+                actions.append(f"strip legacy pack block ({pack_name}) from CLAUDE.md")
+    if not any(l.strip() == "@AGENTS.md" for l in text.splitlines()):
+        actions.append("add @AGENTS.md import to CLAUDE.md")
+    return actions
 
 
 def _migrate_legacy_instruction_sentinels(root: Path, platform_code: str) -> None:
@@ -377,6 +411,11 @@ def _migrate_legacy_instruction_sentinels(root: Path, platform_code: str) -> Non
     if not legacy.exists():
         return
     target = root / "AGENTS.md"
+    # `ln -s AGENTS.md CLAUDE.md` is the other documented Claude Code setup.
+    # That symlink already IS the bridge: following it would strip the block
+    # we just injected into AGENTS.md and rewrite AGENTS.md through the link.
+    if legacy.resolve() == target.resolve():
+        return
     target_text = target.read_text(encoding="utf-8") if target.exists() else ""
     if _BASE_SENTINEL_START in target_text:
         _strip_sentinel_block(legacy, _BASE_SENTINEL_START, _BASE_SENTINEL_END)
