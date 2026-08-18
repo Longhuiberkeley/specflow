@@ -1012,7 +1012,7 @@ artifacts:
   STORY-632:
     id: STORY-632
     title: Dual-host skills + lean AGENTS.md + default TLDR
-    status: approved
+    status: implemented
     tags: []
     fingerprint: sha256:e0b090c6ea29
     children: []

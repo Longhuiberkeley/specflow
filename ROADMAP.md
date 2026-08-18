@@ -198,6 +198,14 @@ Focus: **autoresearch methodology depth, escalation/permanence test, and templat
 
 > Delivered: the `spike-lifecycle` lint detector (stale / zombie / repeated-topic SPIKEs) shipped as a first-class `artifact-lint --type spike-lifecycle` check — the work-side complement to the v1.8.0 *Stale Code Detection* item. Still deferred: optional structured multi-output schema (typed per-component fields on COMP/EXPT) if the `component_<name>` convention proves too loose.
 
+## v1.14.0
+
+Dual-host consolidation — one skill tree, one instruction source, lean context:
+
+- **One skill tree:** SpecFlow + pack skills install into `.claude/skills` only; OpenCode V2 consumes that tree natively. A second copy in `.opencode/skills` would silently win on ID conflict, so `refresh` reports leftovers instead of copying a fork. `.opencode/agents` and `.opencode/commands` are preserved as OpenCode-only extras.
+- **AGENTS.md-only + `@AGENTS.md` bridge:** Claude Code reads `CLAUDE.md` only and OpenCode V2 reads `AGENTS.md` only; SpecFlow injects into `AGENTS.md` and bridges an existing `CLAUDE.md` with the documented one-line import so both hosts share one source of truth. Legacy `CLAUDE.md` sentinels migrate (never dropped) on any AGENTS.md host.
+- **Lean always-on context + TLDR default:** injected block shrinks ~98 → ~34 lines with a lead-with-the-answer style; `tldr-communication` pack becomes the optional longer variant.
+
 ## v1.13.8
 
 Full readiness and downstream-upgrade patch:

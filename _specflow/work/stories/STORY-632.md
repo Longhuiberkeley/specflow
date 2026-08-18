@@ -2,7 +2,7 @@
 id: STORY-632
 title: Dual-host skills + lean AGENTS.md + default TLDR
 type: story
-status: approved
+status: implemented
 priority: high
 suspect: false
 links:
