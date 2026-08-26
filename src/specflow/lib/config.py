@@ -27,6 +27,7 @@ def default_config(project_name: str = "") -> dict:
         "lint": {
             "compliance_evidence_strict": False,
             "autoresearch_logging_strict": False,
+            "role_target_strict": False,
         },
         "artifact_types": [
             "requirement",

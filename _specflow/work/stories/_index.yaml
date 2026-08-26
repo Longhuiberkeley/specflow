@@ -1053,9 +1053,73 @@ artifacts:
     id: STORY-637
     title: 'v1.14.2 review fixes: typed refined_by direction, --set guard, IT-038
       truthfulness, lint crash guard'
-    status: implemented
+    status: verified
     tags:
     - review-fix
     fingerprint: sha256:c4ce6f80b91a
     children: []
-next_id: 638
+  STORY-638:
+    id: STORY-638
+    title: 'v1.14.3: atomic create locking (race-safe ID allocation)'
+    status: verified
+    tags:
+    - review-hardening
+    fingerprint: sha256:d2a28767e509
+    children: []
+  STORY-639:
+    id: STORY-639
+    title: 'v1.14.3: role-target semantic matrix (accounting-only)'
+    status: verified
+    tags:
+    - review-hardening
+    fingerprint: sha256:c1449897c460
+    children: []
+  STORY-640:
+    id: STORY-640
+    title: 'v1.14.3: creation-status entry gates (CLI-level, --sanctioned)'
+    status: verified
+    tags:
+    - review-hardening
+    fingerprint: sha256:82063a14c58d
+    children: []
+  STORY-641:
+    id: STORY-641
+    title: 'v1.14.3: guardrail-test assertion hardening (chore)'
+    status: verified
+    tags:
+    - review-hardening
+    fingerprint: sha256:60ef394e36f9
+    children: []
+  STORY-642:
+    id: STORY-642
+    title: 'v1.15.0: unify chain-depth with the typed edge matrix'
+    status: draft
+    tags:
+    - v1.15.0-backlog
+    fingerprint: sha256:f273b7f17a02
+    children: []
+  STORY-643:
+    id: STORY-643
+    title: 'v1.15.0: OpenCode native commands (harness-level, deferred per owner 2026-08-27)'
+    status: draft
+    tags:
+    - v1.15.0-backlog
+    fingerprint: sha256:604529e78bd2
+    children: []
+  STORY-644:
+    id: STORY-644
+    title: 'v1.15.0: ops pack methodology handbook'
+    status: draft
+    tags:
+    - v1.15.0-backlog
+    fingerprint: sha256:b0f640aac6ac
+    children: []
+  STORY-645:
+    id: STORY-645
+    title: 'v1.15.0: skill slimming / lazy reference loading'
+    status: draft
+    tags:
+    - v1.15.0-backlog
+    fingerprint: sha256:239a1f65c6cf
+    children: []
+next_id: 646

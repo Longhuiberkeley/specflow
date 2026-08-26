@@ -178,11 +178,54 @@ def run(root: Path, args: dict) -> int:
         schema = art_lib._read_schema(root / ".specflow" / "schema", norm_type)
         if schema is not None:
             status = art_lib.initial_status(schema)
-            if status is None:
-                allowed = sorted(schema.get("allowed_status", {}).keys())
-                print(f"{RED}✗ Type '{artifact_type}' has no unambiguous initial status. "
-                      f"Specify --status explicitly. Allowed: {', '.join(allowed)}{NC}")
-                return 1
+
+    # Creation-status entry gate (STORY-640). An explicit --status that is
+    # not one of the type's root/entry statuses (empty predecessor list)
+    # asserts an artifact BORN past an approval gate — e.g. `create --status
+    # approved`. That requires a recorded sanction: --sanctioned "why", kept
+    # in frontmatter as sanctioned_justification. Accounting for intent, not
+    # a hard ban: the no-self-approval doctrine says who may approve, this
+    # records WHY the entry state is legitimate. Multi-root types (experiment
+    # outcomes) list all roots, so their explicit --status stays gate-free.
+    explicit_status = args.get("status")
+    if explicit_status is not None:
+        norm_type = art_lib.normalize_type(artifact_type or "")
+        schema = art_lib._read_schema(root / ".specflow" / "schema", norm_type)
+        if schema is not None:
+            allowed = schema.get("allowed_status", {})
+            if isinstance(allowed, dict):
+                roots = {name for name, preds in allowed.items() if not preds}
+                # Only VALID-but-non-entry statuses hit the gate; an invalid
+                # status (typo) falls through to create_artifact's richer
+                # did-you-mean error instead of this blunter message.
+                if (
+                    roots
+                    and explicit_status in allowed
+                    and explicit_status not in roots
+                ):
+                    sanctioned = (args.get("sanctioned") or "").strip()
+                    if not sanctioned:
+                        print(
+                            f"{RED}✗ Status '{explicit_status}' is not a creation-entry "
+                            f"status for type '{norm_type}' (entry: "
+                            f"{', '.join(sorted(roots)) or 'none'}).{NC}\n"
+                            f"  Creating an artifact directly in '{explicit_status}' "
+                            f"bypasses the transitions that gate it.\n"
+                            f"  → Re-run with --sanctioned \"<justification>\" to record "
+                            f"why this entry state is legitimate (kept as "
+                            f"sanctioned_justification in frontmatter), or omit --status."
+                        )
+                        return 1
+                    extra_fields["sanctioned_justification"] = sanctioned
+
+    if status is None:
+        norm_type = art_lib.normalize_type(artifact_type)
+        schema = art_lib._read_schema(root / ".specflow" / "schema", norm_type)
+        if schema is not None:
+            allowed = sorted(schema.get("allowed_status", {}).keys())
+            print(f"{RED}✗ Type '{artifact_type}' has no unambiguous initial status. "
+                  f"Specify --status explicitly. Allowed: {', '.join(allowed)}{NC}")
+            return 1
 
     tags = [t.strip() for t in tags_str.split(",") if t.strip()] if tags_str else None
 
@@ -239,6 +282,10 @@ def run(root: Path, args: dict) -> int:
     if result["ok"]:
         print(f"{GREEN}✓ Created {result['id']}{NC}")
         print(f"  Path: {result['path']}")
+        if links:
+            from specflow.lib import role_targets as rt
+            for hint in rt.advisory_for_entries(art_lib.normalize_type(args.get("type", "")), links):
+                print(f"{YELLOW}  {hint}{NC}")
         return 0
     else:
         print(f"{RED}✗ {result['error']}{NC}")

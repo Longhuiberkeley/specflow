@@ -316,7 +316,7 @@ artifacts:
   IT-038:
     id: IT-038
     title: trace CLI renders real dogfood chains both directions
-    status: draft
+    status: implemented
     tags:
     - backfilled
     - verification-contract
@@ -340,4 +340,44 @@ artifacts:
     - verification-contract
     fingerprint: sha256:ae49264921ac
     children: []
-next_id: 41
+  IT-041:
+    id: IT-041
+    title: STORY-637 real-repo trace integration
+    status: draft
+    tags:
+    - verification-contract
+    fingerprint: sha256:aaebed5a0936
+    children: []
+  IT-042:
+    id: IT-042
+    title: STORY-638 cross-process create race integration
+    status: draft
+    tags:
+    - verification-contract
+    fingerprint: sha256:58a5fae97b5c
+    children: []
+  IT-043:
+    id: IT-043
+    title: STORY-639 role-target check on the real repo via CLI
+    status: draft
+    tags:
+    - verification-contract
+    fingerprint: sha256:5a508322a12f
+    children: []
+  IT-044:
+    id: IT-044
+    title: STORY-640 creation gate at the CLI boundary
+    status: draft
+    tags:
+    - verification-contract
+    fingerprint: sha256:c0278e118147
+    children: []
+  IT-045:
+    id: IT-045
+    title: STORY-641 live skill tree carries the approval gate
+    status: draft
+    tags:
+    - verification-contract
+    fingerprint: sha256:6935ac61165e
+    children: []
+next_id: 46

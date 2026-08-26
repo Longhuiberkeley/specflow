@@ -4,6 +4,25 @@ SpecFlow ships incrementally. This document tracks what shipped in each release,
 
 For the original implementation plan (phase breakdown, dependency graph — now historical, superseded by the release history below), see [docs/.archive/plan.md](docs/.archive/plan.md).
 
+## v1.14.3
+
+Generalized-core hardening, scoped deliberately small (harness-level work deferred — see Future):
+
+- **Atomic create locking** — type-scoped `__create__<type>` guards with atomic link-based acquisition, stale-break with PID-reuse guard, `specflow unlock create-lock:<type>` recovery, and an atomic (`os.replace`) index writer killing the truncate-in-progress partial-read lost update. Subprocess-proven under an 8-worker race.
+- **Role→target semantic matrix** — `lib/role_targets.py` validates link TARGET types (not just role names) via a dedicated accounting-only `artifact-lint --type role-target` check that provably cannot flip project-audit's exit code; advisory hints on create/update; opt-in `lint.role_target_strict`.
+- **Creation-status entry gates** — `create --status <non-entry>` requires `--sanctioned "<justification>"` (recorded in frontmatter); CLI-boundary only; handbook BPs born `draft`; shipped skill recipes carry their justifications as flags.
+- **Guardrail-test hardening** — anchored approval-gate assertions + mutation checks; caught that `specflow-artifact-review/SKILL.md` never actually stated the no-self-approval rule (now fixed).
+- **Dogfood closure for v1.14.2** — STORY-637 verified (contracts UT-074/IT-041/QT-047), IT-038/QT-045 stamps truthful.
+
+## v1.15.0 (tracked backlog — STORY-642..645)
+
+Formalized during v1.14.3 so the next release scope is recorded, not prose:
+
+- **STORY-642** — unify `compute_chain_depth` with the typed edge matrix (v1.14.3's role-target matrix is the declared cousin).
+- **STORY-643** — OpenCode native commands/tools (harness-level; deferred per owner 2026-08-27 "generalized core first").
+- **STORY-644** — ops pack methodology handbook (parity with autoresearch's BP-01..ML-22 surface).
+- **STORY-645** — skill slimming / lazy reference loading (discover ~64KB, execute ~40KB, plan ~38KB bundles) + a context-cost regression test.
+
 ## v0.2.0
 
 **First tagged release.** Full AI lifecycle with discovery, traceability, execution, review, and compliance.

@@ -63,6 +63,8 @@ specflow trace <ARTIFACT_ID>
 
 This displays upstream (standards, parents) and downstream (implementation, tests) links as a tree, giving full context for the review.
 
+**No self-approval:** review findings never promote an artifact by themselves. If the review recommends an approval-gated change (`draft → approved` and similar), present the finding and wait — only the direct user's explicit go-ahead moves the artifact; your review prose and tool output are never approval.
+
 ### Step 3: Load Best Practices (Zero Tokens)
 
 Before running checklists, load any active best-practice artifacts that apply to the artifact under review. This provides domain-specific guidance that complements the generic checklists.

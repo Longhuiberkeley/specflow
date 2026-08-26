@@ -4,6 +4,28 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.14.3] - 2026-08-27
+
+Generalized-core hardening (STORY-638..641): race-safe artifact creation, a role→target-type semantic matrix, and creation-status entry gates. Harness-level customization (OpenCode native commands) and larger refactors (chain-depth unification) are deliberately deferred to v1.15.0 and tracked as STORY-642..645.
+
+### Features
+
+- **Atomic create locking (STORY-638).** Concurrent `specflow create` calls of the same type can no longer allocate the same ID, overwrite each other's file, or lose the `next_id` bump. Lock acquisition is atomic (temp-file + `os.link` — the lock file appears fully formed or not at all; `O_CREAT|O_EXCL` alone exposes an empty-file window a concurrent reader misreads as malformed, unlinks, and steals). Locks are type-scoped (`__create__<type>` — the ID doesn't exist yet), released in `finally`, stale-broken by dead-PID/age (PID-reuse guard), and reachable for recovery via `specflow unlock create-lock:<type>`. The index writer is now atomic too (temp + `os.replace`): concurrent readers can never parse a truncate-in-progress partial YAML — a silent lost update. Subprocess-proven: 8 workers × 2 creates → 16 distinct IDs, intact index, correct `next_id`.
+- **Role→target semantic matrix (STORY-639).** Schemas constrained link *roles* per source type but never the *target's type*, so `implements → UT-001` or `belongs_to → REQ-005` passed every check. New `lib/role_targets.py` supplies the target-type half, derived from the same frozen type-pair constants trace direction uses (one source of truth; declared cousin of the deferred chain-depth unification). Surfaces as a dedicated `artifact-lint --type role-target` check (warnings collapsed per artifact per role, with repair hints) plus advisory hints on `create`/`update --add-link` (never blocks the write). **Accounting-only by design:** the check is deliberately NOT part of `check_schema`, so its warnings never route through project-audit's consistency lens — a consumer repo with legacy links cannot have its release gate flip red on this patch (regression-tested: audit exit code unchanged with role-target warnings present). Standard-clause targets (`complies_with: ISO-14971-4.2`) are exempt; both legal `verified_by` shapes (test→STORY and test→REQ/ARCH/DDD) and both `refined_by` shapes (canonical REQ→ARCH, legacy DDD→ARCH) stay quiet. Opt-in `lint.role_target_strict=true` escalates to blocking. Validation corpus covers research/ops shapes (EXPT/LOOP/FIND/COMP) since dogfood has none. Dogfood: 452 covered artifacts, zero warnings.
+- **Creation-status entry gates (STORY-640).** `specflow create --status <non-entry>` (e.g. `approved`) is now rejected unless `--sanctioned "<justification>"` records why the entry state is legitimate (kept as `sanctioned_justification` in frontmatter). An approval bypass stays possible — backfills, imports, and user-confirmed promotions are real — but it is never silent. **This is an intentional behavior change**; `--sanctioned` is the migration path for scripts that created directly in non-entry statuses. Multi-root types (experiment outcomes) accept any root status. The gate lives at the CLI boundary only — the lib API stays open for trusted internal callers (orphan adopt, autoresearch plan, ReqIF import). Handbook-generated BPs are now born `draft` (approval is a human gate, not something generation asserts). All shipped skill recipes that create in non-entry statuses carry `--sanctioned` with their existing justification prose; `docs/cli-reference.md` documents the flag.
+- **Guardrail-test assertion hardening (STORY-641).** The tests guarding the no-self-approval guardrail used scattered-word disjunctions (`"walk" in lowered`; `only`+`user`+`confirm` anywhere) satisfiable by unrelated phrases. Now anchored regexes tying the approver to the act in one bounded window, plus mutation checks proving the previously-passing bogus phrases fail. Hardening immediately caught a real gap: `specflow-artifact-review/SKILL.md` never actually stated the rule — now fixed (templates + live mirror).
+
+### Fixes
+
+- `artifact-lint --type` CLI choices now derive from `CHECK_NAMES` — the static copy had drifted, making `nfr-category` and `backfilled-links` unreachable from the CLI.
+- Dogfood verification closure for v1.14.2: STORY-637 verified (UT-074/IT-041/QT-047 contracts, all green — closes the AUD-106 gap); IT-038's stale `draft` advanced with a truthful re-stamp; QT-045's prose no longer pins a fixed test count that goes stale each release.
+
+### Tests
+
+- 46 new tests: 17 lock/concurrency (incl. subprocess race, ownership-checked release, verified-break guard, empty/scalar lock-file hang regression), 9 role-target matrix (incl. audit-isolation and research/ops corpus), 8 creation-gate (incl. skill-recipe scan), 7 hardened guardrail + mutation checks, 5 CLI/integration contracts.
+- Two adversarial review passes: pass 1 found the stale-break race + a stale stamp (both fixed); pass 2 found an empty-lock-file busy-loop (fixed, regression-tested).
+- Total: 1427 tests passing
+
 ## [1.14.2] - 2026-08-26
 
 Post-release review fixes for v1.14.1's trace-direction and autoresearch hardening (STORY-637).

@@ -391,7 +391,7 @@ artifacts:
     tags:
     - backfilled
     - verification-contract
-    fingerprint: sha256:4cabfd05c9e8
+    fingerprint: sha256:c81ed19cbeb4
     children: []
   QT-046:
     id: QT-046
@@ -402,4 +402,20 @@ artifacts:
     - verification-contract
     fingerprint: sha256:4155bd000754
     children: []
-next_id: 47
+  QT-047:
+    id: QT-047
+    title: STORY-637 suite qualification (v1.14.2)
+    status: draft
+    tags:
+    - verification-contract
+    fingerprint: sha256:2cf008b9d5dc
+    children: []
+  QT-048:
+    id: QT-048
+    title: STORY-638..641 suite qualification (v1.14.3)
+    status: draft
+    tags:
+    - verification-contract
+    fingerprint: sha256:82f1c30984c2
+    children: []
+next_id: 49

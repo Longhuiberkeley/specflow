@@ -40,7 +40,10 @@ def _create_bp_artifacts(root: Path, handbook: dict) -> int:
         rc = create_run(root, {
             "type": "best-practice",
             "title": p.title,
-            "status": "approved",
+            # Generated BPs are born draft: approving a best practice is a
+            # human gate (no-self-approval), and the v1.14.3 creation-status
+            # gate enforces it at the CLI boundary (STORY-640).
+            "status": "draft",
             "priority": None,
             "rationale": None,
             "tags": tag_str,

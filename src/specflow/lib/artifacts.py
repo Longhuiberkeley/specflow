@@ -967,8 +967,33 @@ def _read_index(index_path: Path) -> dict[str, Any]:
 
 
 def _write_index(index_path: Path, data: dict[str, Any]) -> None:
+    """Atomically replace the index file.
+
+    Writes go to a unique temp file followed by ``os.replace`` (atomic on
+    POSIX): concurrent readers see either the complete old index or the
+    complete new one, never a truncate-in-progress prefix. A plain
+    ``write_text`` rewriter exposes a window where ``yaml.safe_load``
+    succeeds on a well-formed partial document — a silent lost update.
+    """
+    import os as _os
+    import time as _time
+
     index_path.parent.mkdir(parents=True, exist_ok=True)
-    index_path.write_text(yaml.dump(data, default_flow_style=False, sort_keys=False), encoding="utf-8")
+    tmp = index_path.with_name(
+        f"{index_path.name}.{_os.getpid()}.{_time.monotonic_ns()}.tmp"
+    )
+    try:
+        tmp.write_text(
+            yaml.dump(data, default_flow_style=False, sort_keys=False),
+            encoding="utf-8",
+        )
+        _os.replace(tmp, index_path)
+    finally:
+        if tmp.exists():
+            try:
+                tmp.unlink()
+            except FileNotFoundError:
+                pass
 
 
 read_index = _read_index
@@ -1168,53 +1193,73 @@ def create_artifact(
     target_dir = specflow_dir / rel_dir
     target_dir.mkdir(parents=True, exist_ok=True)
 
-    index_path = target_dir / "_index.yaml"
-    index_data = _read_index(index_path)
+    # Type-scoped create lock: the ID does not exist yet, so the guard
+    # namespaces on the artifact type. Held across ID allocation, duplicate
+    # check, file write, and index write so concurrent creates of the same
+    # type cannot collide on one ID or lose the next_id bump.
+    from specflow.lib import locks as locks_lib
 
-    if artifact_id:
-        new_id = artifact_id
-    else:
-        from specflow.lib import draft_ids as draft_lib
-        if draft_lib.is_feature_branch(root):
-            new_id = draft_lib.generate_draft_id(title, prefix)
+    acquired = locks_lib.acquire_create_lock(root, artifact_type)
+    if not acquired.get("ok"):
+        return {
+            "ok": False,
+            "error": (
+                f"Another create of type '{artifact_type}' is in progress "
+                f"(PID {acquired.get('pid', '?')}, holder {acquired.get('held_by', '?')}). "
+                f"Retry shortly, or break a stale guard with "
+                f"'specflow unlock create-lock:{artifact_type}'."
+            ),
+        }
+    try:
+        index_path = target_dir / "_index.yaml"
+        index_data = _read_index(index_path)
+
+        if artifact_id:
+            new_id = artifact_id
         else:
-            next_num = index_data.get("next_id", 1)
-            new_id = f"{prefix}-{next_num:03d}"
+            from specflow.lib import draft_ids as draft_lib
+            if draft_lib.is_feature_branch(root):
+                new_id = draft_lib.generate_draft_id(title, prefix)
+            else:
+                next_num = index_data.get("next_id", 1)
+                new_id = f"{prefix}-{next_num:03d}"
 
-    for existing_id in index_data.get("artifacts", {}):
-        if existing_id == new_id:
-            return {"ok": False, "error": f"Artifact ID '{new_id}' already exists in {rel_dir}"}
+        for existing_id in index_data.get("artifacts", {}):
+            if existing_id == new_id:
+                return {"ok": False, "error": f"Artifact ID '{new_id}' already exists in {rel_dir}"}
 
-    content, fingerprint = _render_artifact_file(
-        artifact_id=new_id,
-        title=title,
-        artifact_type=artifact_type,
-        status=status,
-        priority=priority,
-        rationale=rationale,
-        tags=tags,
-        links=links,
-        body=body,
-        **kwargs,
-    )
+        content, fingerprint = _render_artifact_file(
+            artifact_id=new_id,
+            title=title,
+            artifact_type=artifact_type,
+            status=status,
+            priority=priority,
+            rationale=rationale,
+            tags=tags,
+            links=links,
+            body=body,
+            **kwargs,
+        )
 
-    file_path = target_dir / f"{new_id}.md"
-    file_path.write_text(content, encoding="utf-8")
+        file_path = target_dir / f"{new_id}.md"
+        file_path.write_text(content, encoding="utf-8")
 
-    index_data.setdefault("artifacts", {})[new_id] = {
-        "id": new_id,
-        "title": title,
-        "status": status,
-        "tags": _normalize_str_list(tags),
-        "fingerprint": fingerprint,
-        "children": [],
-    }
-    from specflow.lib import draft_ids as _draft
-    if artifact_id is None and not _draft.is_draft_id(new_id):
-        index_data["next_id"] = next_num + 1
-    _write_index(index_path, index_data)
+        index_data.setdefault("artifacts", {})[new_id] = {
+            "id": new_id,
+            "title": title,
+            "status": status,
+            "tags": _normalize_str_list(tags),
+            "fingerprint": fingerprint,
+            "children": [],
+        }
+        from specflow.lib import draft_ids as _draft
+        if artifact_id is None and not _draft.is_draft_id(new_id):
+            index_data["next_id"] = next_num + 1
+        _write_index(index_path, index_data)
 
-    return {"ok": True, "id": new_id, "path": str(file_path), "fingerprint": fingerprint}
+        return {"ok": True, "id": new_id, "path": str(file_path), "fingerprint": fingerprint}
+    finally:
+        locks_lib.release_create_lock(root, artifact_type)
 
 
 def update_artifact(

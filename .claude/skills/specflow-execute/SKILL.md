@@ -79,6 +79,7 @@ For an unplanned trivial fix that arrives mid-chat ("fix the typo in the README"
 1. **Materialize one backfilled STORY** linked to an existing maintenance/generic REQ (create a generic maintenance REQ first if none exists):
    ```
    specflow create --type story --title "<change>" --status approved \
+     --sanctioned "Backfill record of trivial work the user just requested; moves to implemented in the same pass" \
      --links '[{"target":"<maintenance-REQ>","role":"implements"}]' --tags backfilled
    ```
    (`approved` at create is the backfill exception: the STORY is a *record* of trivial work the user just requested, not a deliverable pending review — it moves to `implemented` in the same pass. Show the created STORY in your reply. This exception is for trivial changes only; anything with behavioral surface goes through the full flow.)

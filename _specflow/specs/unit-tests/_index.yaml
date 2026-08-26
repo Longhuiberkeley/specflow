@@ -696,4 +696,44 @@ artifacts:
     tags: []
     fingerprint: sha256:cd2ebadd80c8
     children: []
-next_id: 74
+  UT-074:
+    id: UT-074
+    title: STORY-637 direction/guard/crash regression tests
+    status: draft
+    tags:
+    - verification-contract
+    fingerprint: sha256:a28f56393477
+    children: []
+  UT-075:
+    id: UT-075
+    title: STORY-638 atomic create locking tests
+    status: draft
+    tags:
+    - verification-contract
+    fingerprint: sha256:fa40fc798675
+    children: []
+  UT-076:
+    id: UT-076
+    title: STORY-639 role-target matrix tests
+    status: draft
+    tags:
+    - verification-contract
+    fingerprint: sha256:5bc42ed39d9d
+    children: []
+  UT-077:
+    id: UT-077
+    title: STORY-640 creation-status gate tests
+    status: draft
+    tags:
+    - verification-contract
+    fingerprint: sha256:2cc1a494f84a
+    children: []
+  UT-078:
+    id: UT-078
+    title: STORY-641 hardened guardrail assertions + mutation checks
+    status: draft
+    tags:
+    - verification-contract
+    fingerprint: sha256:033af7d71f54
+    children: []
+next_id: 79

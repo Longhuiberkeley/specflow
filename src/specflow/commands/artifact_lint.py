@@ -21,7 +21,7 @@ from specflow.lib import role_normalize
 from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC
 from specflow.lib.domain_constants import DOMAIN_RECOMMENDED
 
-CHECK_NAMES = ["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "thinking-techniques", "autoresearch-logging", "spike-lifecycle", "source-drift", "dec-risk-profile", "ac-observable", "nfr-category", "backfilled-links"]
+CHECK_NAMES = ["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "thinking-techniques", "autoresearch-logging", "spike-lifecycle", "source-drift", "dec-risk-profile", "ac-observable", "nfr-category", "backfilled-links", "role-target"]
 
 
 def _run_check(
@@ -88,6 +88,8 @@ def _run_check(
         return _check_nfr_category(artifacts)
     elif check_name == "backfilled-links":
         return _check_backfilled_links(artifacts)
+    elif check_name == "role-target":
+        return _check_role_targets(artifacts, root)
 
     return {"status_icon": "?", "detail": f"Unknown check: {check_name}",
             "blocking_count": 0, "warning_count": 0}
@@ -1939,6 +1941,67 @@ def _check_backfilled_links(
         "status_icon": icon,
         "detail": detail_msg,
         "blocking_count": 0,
+        "warning_count": warnings,
+    }
+
+
+def _check_role_targets(
+    artifacts: list[art_lib.Artifact],
+    root: Path,
+) -> dict[str, str | int]:
+    """Warn when a direction-bearing link points at a semantically wrong TYPE.
+
+    Schemas constrain link roles per SOURCE type but say nothing about target
+    types, so ``implements → UT-001`` or ``belongs_to → REQ-005`` pass every
+    existing check while breaking trace semantics. This check supplies the
+    target-type half via ``lib/role_targets.py`` — derived from the same frozen
+    type-pair constants trace direction uses (one source of truth; the declared
+    cousin of the deferred chain-depth unification).
+
+    Accounting, not policing — WARNING only by default, never an error:
+    this is a DEDICATED check precisely so its warnings never route through
+    ``check_schema`` → project-audit's consistency lens → exit 2 (a consumer
+    repo with legacy links must not have its release gate flip red on a patch
+    upgrade). Standard-clause targets (``complies_with: ISO-14971-4.2``) are
+    exempt — they are not artifacts. Annotation-ish roles and unknown source
+    types emit nothing (no cry-wolf).
+
+    Strict mode (config: lint.role_target_strict=true) escalates to blocking;
+    mirrors compliance_evidence_strict / autoresearch_logging_strict.
+    """
+    from specflow.lib import config as config_lib
+    from specflow.lib import role_targets
+
+    cfg = config_lib.read_config(root) or {}
+    strict = bool(cfg.get("lint", {}).get("role_target_strict", False))
+
+    issues = role_targets.check_role_targets(artifacts, strict=strict)
+    blocking = sum(1 for i in issues if i["severity"] == "blocking")
+    warnings = sum(1 for i in issues if i["severity"] == "warning")
+    details = [
+        f"  {'✗' if i['severity'] == 'blocking' else '⚠'} {i['message']}"
+        for i in issues
+    ]
+    mark = "✗" if blocking else ("⚠" if warnings else "✓")
+    icon = (RED if blocking else (YELLOW if warnings else GREEN)) + mark + NC
+    checked = len(
+        {a.id for a in artifacts if a.type in role_targets.ROLE_TARGET_MATRIX}
+    )
+    detail_msg = (
+        "\n".join(details)
+        if details
+        else (
+            f"All direction-bearing links point at allowed target types "
+            f"({checked} artifact(s) in matrix-covered types)"
+        )
+    )
+    if blocking:
+        detail_msg += "\n  → escalated by lint.role_target_strict=true (set false to downgrade to warnings)"
+
+    return {
+        "status_icon": icon,
+        "detail": detail_msg,
+        "blocking_count": blocking,
         "warning_count": warnings,
     }
 

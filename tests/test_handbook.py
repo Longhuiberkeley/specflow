@@ -208,13 +208,15 @@ class TestHandbookCommand:
         assert "## Rationale" in content
         assert "## Verification" in content
 
-    def test_generate_create_artifact_status_approved(self, project_root: Path):
+    def test_generate_create_artifact_status_draft(self, project_root: Path):
+        """STORY-640: generated BPs are born draft — approval is a human gate,
+        not something handbook generation asserts on the artifact's behalf."""
         rc = handbook_cmd.run(project_root, {"create": True})
         assert rc == 0
         bp_dir = project_root / "_specflow" / "specs" / "best-practices"
         files = list(bp_dir.glob("BP-*.md"))
         content = files[0].read_text()
-        assert "status: approved" in content
+        assert "status: draft" in content
 
     def test_generate_does_not_require_api_key(self, project_root: Path):
         """QT-027 AC3: the command works without any API key env var."""

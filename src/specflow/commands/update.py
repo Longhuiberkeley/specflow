@@ -154,6 +154,7 @@ def run(root: Path, args: dict) -> int:
             return 1
         for entry in parsed_links:
             _warn_if_target_missing(root, entry["target"])
+        _advise_role_targets(root, artifact_id, parsed_links)
         updates["links"] = parsed_links
     elif add_links_raw or remove_links_raw:
         original_links = _load_existing_links(root, artifact_id)
@@ -180,6 +181,10 @@ def run(root: Path, args: dict) -> int:
                             {"target": entry["target"], "role": entry["role"]}
                         )
                         seen.add(key)
+        # Role-target advisory on the effective mutation (added links only).
+        added = [lk for lk in new_links if lk not in original_links]
+        if added:
+            _advise_role_targets(root, artifact_id, added)
         # A no-op mutation (nothing actually added or removed) must not rewrite
         # the file or report "Updated" — that misleads scripts and needlessly
         # bumps `modified`. Only stage the links when they genuinely changed;
@@ -354,3 +359,18 @@ def _warn_if_target_missing(root: Path, target: str) -> None:
     if art_lib.resolve_link_target(root, target) is None:
         print(f"{YELLOW}⚠ Link target '{target}' does not match an existing "
               f"artifact.{NC}")
+
+
+def _advise_role_targets(root: Path, artifact_id: str, entries: list[dict]) -> None:
+    """Advisory (never blocks): freshly written links whose target TYPE is
+    semantically unusual for the role (lib/role_targets.py matrix)."""
+    from specflow.lib import role_targets as rt
+
+    src_path = art_lib.resolve_link_target(root, artifact_id)
+    if src_path is None:
+        return
+    parsed = art_lib.parse_artifact(src_path)
+    if parsed is None:
+        return
+    for hint in rt.advisory_for_entries(parsed.type, entries):
+        print(f"{YELLOW}{hint}{NC}")

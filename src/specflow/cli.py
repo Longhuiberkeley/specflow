@@ -353,6 +353,7 @@ def _add_create_parser(subparsers):
     p.add_argument("--title", help="Artifact title (required unless --from-standard is used)")
     p.add_argument("--from-standard", dest="from_standard", help="Create a REQ from a standard clause ID")
     p.add_argument("--status", default=None, help="Initial status (default: per-type root status, e.g. draft/open)")
+    p.add_argument("--sanctioned", default=None, help="Justification recorded as sanctioned_justification when creating directly in a non-entry status (required by the creation-status gate)")
     p.add_argument("--priority", help="Priority level")
     p.add_argument("--rationale", help="Rationale for this artifact")
     p.add_argument("--tags", help="Comma-separated tags")
@@ -487,7 +488,11 @@ def _add_reconcile_parser(subparsers):
 
 def _add_artifact_lint_parser(subparsers):
     p = subparsers.add_parser("artifact-lint", help="Run deterministic validation checks on artifacts")
-    p.add_argument("--type", choices=["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "thinking-techniques", "autoresearch-logging", "spike-lifecycle", "source-drift", "dec-risk-profile", "ac-observable", "gate"], help="Run only a specific check")
+    # Choices derive from artifact_lint.CHECK_NAMES (single source of truth;
+    # a static copy drifted before — nfr-category/backfilled-links were
+    # unreachable from the CLI) plus the meta "gate" alias handled in run().
+    from specflow.commands.artifact_lint import CHECK_NAMES as _LINT_CHECKS
+    p.add_argument("--type", choices=[*_LINT_CHECKS, "gate"], help="Run only a specific check")
     p.add_argument("--fix", action="store_true", help="Auto-fix (rebuild indexes, recompute fingerprints)")
     p.add_argument("--gate", help="Phase-gate checklist name")
     p.add_argument("--method", choices=["programmatic", "llm"], default="programmatic", help="Validation method")

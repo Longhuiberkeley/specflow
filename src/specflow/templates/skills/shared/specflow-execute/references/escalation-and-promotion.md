@@ -29,18 +29,21 @@ A completed SPIKE that produced something durable (run only after the user confi
 # 1. Capture WHAT it must do (non-technical, verifiable) — link back to the spike.
 specflow create --type requirement --title "Binance historical OHLCV data loader" \
   --status approved \
+  --sanctioned "User confirmed the SPIKE promotion (their confirm is the approval)" \
   --rationale "Promoted from SPIKE-003, which proved the REST klines endpoint can backfill 2y of 1m bars." \
   --links '[{"target":"SPIKE-003","role":"derives_from"}]'
 
 # 2. If it defines an interface other code calls, capture HOW it's structured.
 specflow create --type architecture --title "Market-data ingestion module" \
   --status approved \
+  --sanctioned "User confirmed the SPIKE promotion (their confirm is the approval)" \
   --links '[{"target":"REQ-0NN","role":"derives_from"}]'
 
 # 3. If it has non-trivial internal logic (state, transforms, protocol, retries),
 #    add a DDD (see the plan skill's references/ddd-selection.md for the 6-question test).
 specflow create --type detailed-design --title "Klines backfill + rate-limit handling" \
   --status approved \
+  --sanctioned "User confirmed the SPIKE promotion (their confirm is the approval)" \
   --links '[{"target":"ARCH-0NN","role":"derives_from"}]'
 ```
 

@@ -224,7 +224,10 @@ def validate_artifact_schema(
                           # AUD warn-split stamp (escalating vs accounting,
                           # CHL-344 A1): same global-whitelist rationale.
                           "summary_warns_escalating",
-                          "summary_warns_accounting"}
+                          "summary_warns_accounting",
+                          # Creation-status gate record (STORY-640): why an
+                          # artifact was born in a non-entry status.
+                          "sanctioned_justification"}
             if key not in known_meta:
                 issues.append({
                     "severity": "info",

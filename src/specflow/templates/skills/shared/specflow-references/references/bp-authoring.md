@@ -33,11 +33,12 @@ specflow create \
   --type best-practice \
   --title "<practice title>" \
   --status approved \
+  --sanctioned "Guidance artifact, not a deliverable — surfaced in the reply for user veto/edit" \
   --tags "<domain or phase>" \
   --body "## Practice\n...\n## Rationale\n...\n## Verification\n..."
 ```
 
-BPs are created with `status: approved` by default (they are guidance, not deliverables pending review). Present every BP you generate in your reply so the user can veto or edit it — silent approval-by-convention applies to guidance only, never to deliverables.
+BPs are created with `status: approved` by default (they are guidance, not deliverables pending review). `--sanctioned` records why the non-entry status is legitimate (the creation-status gate requires it). Present every BP you generate in your reply so the user can veto or edit it — silent approval-by-convention applies to guidance only, never to deliverables. Note: `specflow handbook --create` (the deterministic generator) takes the stricter path — generated BPs are born `draft` and are promoted only by explicit user approval.
 
 ## Naming and Tags
 

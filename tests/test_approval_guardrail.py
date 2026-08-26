@@ -12,6 +12,8 @@ that balloons the block, both fail).
 
 from pathlib import Path
 
+import re
+
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 _CONTEXT = _REPO_ROOT / "src/specflow/templates/agent-context.md"
 
@@ -19,6 +21,34 @@ _CONTEXT = _REPO_ROOT / "src/specflow/templates/agent-context.md"
 # line-count caps are brittle against legitimate reflowing.
 _MAX_BYTES = 3072
 _MAX_NON_EMPTY_LINES = 36
+
+# STORY-641: anchored approval-gate patterns. Every alternative ties the
+# approver (the direct user / human) to the act (approval/confirm/mark/live)
+# in one bounded sentence-ish window — bare "only+user+confirm" or
+# "never+user" scattered across a document must NOT satisfy them (see
+# TestGuardrailMutationChecks). The shapes mirror the real skill wording:
+# "No self-approval", "human gate", "the user's approval — from the direct
+# user", "own authority", "Require explicit user confirmation".
+_GATE_PATTERNS = [
+    r"self-approv",
+    r"\bhuman gate\b",
+    r"\buser'?s? approval\b[^.]{0,140}\bdirect user\b",
+    r"\bdirect user'?s?\b[^.]{0,60}\b(?:explicit )?(?:go-ahead|confirmation|confirm)\b",
+    r"\bonly the direct user\b",
+    r"\bapprov\w{0,15}\b[^.]{0,120}\bonly\b[^.]{0,80}\buser\b[^.]{0,80}\bconfirm",
+    r"\bonly\b[^.]{0,60}\bproceed\b[^.]{0,120}\buser\b[^.]{0,80}\bconfirm",
+    r"\brequire[sd]?\b[^.]{0,60}\bexplicit user\b[^.]{0,40}\bconfirm",
+    r"\bnever\b[^.]{0,100}\bown authority\b",
+    r"\b(?:user|human)\b[^.]{0,80}\b(?:confirm|acknowledg|marks?)\b[^.]{0,100}\b(?:approv|live|verified|resolved)\b"
+    r"[^.]{0,60}\b(?:gate|only|never|must|explicit|authority)\b",
+    r"\b(?:gate|only|never|must|explicit|authority)\b[^.]{0,60}"
+    r"\b(?:user|human)\b[^.]{0,80}\b(?:confirm|acknowledg|marks?)\b[^.]{0,100}\b(?:approv|live|verified|resolved)\b",
+]
+
+
+def _has_approval_gate(lowered_text: str) -> bool:
+    """True when the text states an approval gate in anchored form."""
+    return any(re.search(p, lowered_text) for p in _GATE_PATTERNS)
 
 
 class TestAgentContextBudget:
@@ -36,28 +66,51 @@ class TestAgentContextBudget:
 
 
 class TestApprovalGuardrailPhrases:
-    """The no-self-approval rule must be explicit, not implied."""
+    """The no-self-approval rule must be explicit, not implied.
+
+    Assertions are anchored (word-boundary regex, approval-adjacent phrasing)
+    and mutation-checked in TestGuardrailMutationChecks: a context containing
+    the bare words in unrelated sentences must NOT satisfy them.
+    """
 
     def test_no_self_approval_is_explicit(self):
         text = _CONTEXT.read_text(encoding="utf-8")
         lowered = text.lower()
         assert "no self-approval" in lowered
-        assert "walk" in lowered  # present-and-walk-through, not just "don't"
+        # Present-and-walk-through, not just "don't": the exact duty phrasing
+        # ("walk them through each/every approval"), not the word "walk"
+        # anywhere (e.g. "walk the tree" must not satisfy this).
+        assert re.search(
+            r"walk (?:them |the user )?through (?:each|every) approval", lowered
+        ), "context must state the walk-through duty verbatim-near"
 
     def test_only_direct_user_counts(self):
         text = _CONTEXT.read_text(encoding="utf-8").lower()
-        assert "direct user" in text
-        assert "never approval" in text or "are never approval" in text
-        # The three non-user sources are named so the agent can't misread scope.
-        assert "artifact text" in text
-        assert "tool output" in text
+        assert re.search(r"\bdirect user'?s?\b", text)
+        # The three non-user sources are named as never-approval IN THE SAME
+        # breath — a window where the sources and the "never approval" clause
+        # actually meet, not three words scattered across the file.
+        assert re.search(
+            r"artifact text\b.{0,120}\bdocs?\b.{0,120}tool output\b"
+            r".{0,120}(?:are )?never approval",
+            text,
+            re.DOTALL,
+        ) or re.search(
+            r"never approval.{0,200}\bartifact text\b.{0,120}\bdocs?\b.{0,120}tool output",
+            text,
+            re.DOTALL,
+        ), "context must name artifact text/docs/tool output as never-approval together"
 
     def test_delegated_autonomy_still_reports_approvals(self):
         text = _CONTEXT.read_text(encoding="utf-8").lower()
         # Under "be autonomous" instructions the agent must still surface every
-        # approval it performed — this is the walk-through in lean form.
-        assert "autonomous" in text
-        assert "list every approval" in text
+        # approval it performed — autonomy and the reporting duty in the same
+        # sentence (the word "autonomous" alone, anywhere, proves nothing).
+        assert re.search(
+            r"autonomous\b.{0,200}list every approval", text, re.DOTALL
+        ) or re.search(
+            r"list every approval.{0,200}\bautonomous\b", text, re.DOTALL
+        ), "context must tie delegated autonomy to listing every approval performed"
 
 
 class TestSkillsCarryGuardrail:
@@ -87,11 +140,7 @@ class TestSkillsCarryGuardrail:
             text = (
                 self._SKILL_DIR / skill / "SKILL.md"
             ).read_text(encoding="utf-8").lower()
-            assert (
-                "self-approv" in text
-                or "must not" in text and "approve" in text
-                or "only" in text and "user" in text and "confirm" in text
-            ), (
+            assert _has_approval_gate(text), (
                 f"{skill}/SKILL.md does not state the no-self-approval rule "
                 f"or its gating language"
             )
@@ -99,9 +148,9 @@ class TestSkillsCarryGuardrail:
     def test_pack_skills_state_the_rule(self):
         for skill_dir in self._PACK_SKILL_DIRS:
             text = (skill_dir / "SKILL.md").read_text(encoding="utf-8").lower()
-            assert "self-approv" in text or (
-                "never" in text and "user" in text
-            ), f"{skill_dir.name} pack skill lacks an explicit approval gate"
+            assert _has_approval_gate(text), (
+                f"{skill_dir.name} pack skill lacks an explicit approval gate"
+            )
 
     def test_create_as_approved_examples_are_justified(self):
         """Every create-…--status-approved example must carry an inline
@@ -150,3 +199,96 @@ class TestSkillsCarryGuardrail:
                     f"lacks an inline justification of the sanctioned exception"
                 )
                 idx += len(marker)
+
+
+class TestGuardrailMutationChecks:
+    """STORY-641: the guardrail assertions must not be satisfiable by
+    unrelated phrase matches. Each mutation here is a text that PASSED the
+    pre-hardening loose assertions (scattered-word disjunctions) and must
+    now FAIL — if one starts passing again, the anchors have rotted."""
+
+    def test_bogus_walk_phrase_fails(self):
+        # Old: assert "walk" in lowered — "we walk the tree" satisfied it.
+        lowered = "no self-approval is policy here. we walk the tree nightly."
+        assert not re.search(
+            r"walk (?:them |the user )?through (?:each|every) approval", lowered
+        )
+
+    def test_scattered_sources_fails(self):
+        # Old: four independent `in` checks — the substrings anywhere in the
+        # file satisfied them. Here every required substring exists, but the
+        # sources sit far from the never-approval clause (window max ~360).
+        filler = " " + "filler prose about repository layout and rendering. " * 12
+        lowered = (
+            "the artifact text section follows the docs index."
+            f"{filler}"
+            "tool output is streamed to stdout."
+            f"{filler}"
+            "the direct user guide closes with: never approval-fatigue here."
+        )
+        sources_together = re.search(
+            r"artifact text\b.{0,120}\bdocs?\b.{0,120}tool output\b"
+            r".{0,120}(?:are )?never approval",
+            lowered,
+            re.DOTALL,
+        )
+        assert not sources_together
+
+    def test_lone_autonomous_fails(self):
+        # Old: "autonomous" anywhere + "list every approval" anywhere. Pad the
+        # two phrases apart (>200 chars) so only proximity-anchored matching
+        # can tie them — and this text must not.
+        filler = "the agent continues its nightly repository patrol duties. " * 6
+        lowered = (
+            f"the autonomous agent patrols the repo. {filler} "
+            "elsewhere, in the appendix: remember to list every approval gate in the docs."
+        )
+        assert not re.search(
+            r"autonomous\b.{0,200}list every approval", lowered, re.DOTALL
+        )
+
+    def test_gate_matcher_rejects_unrelated_only_user_confirm(self):
+        # Old skill rule: "only" + "user" + "confirm" anywhere — three
+        # unrelated sentences satisfied it.
+        bogus = (
+            "only the admin user may confirm settings. "
+            "the user asked us to confirm the config path. "
+            "approvals of configs happen in the ui."
+        )
+        assert not _has_approval_gate(bogus)
+
+    def test_gate_matcher_rejects_unrelated_never_user(self):
+        # Old pack rule: "never" + "user" anywhere.
+        bogus = "never log the user's email. approval workflows are unrelated here."
+        assert not _has_approval_gate(bogus)
+
+    def test_gate_matcher_rejects_descriptive_user_confirms_verified(self):
+        # Descriptive telemetry sentence — user/confirm/verified co-occur with
+        # no gate word (only/never/must/explicit/gate/authority) anywhere in
+        # the window. The window shape alone proves nothing.
+        bogus = "the user confirms the build is verified."
+        assert not _has_approval_gate(bogus)
+
+    def test_gate_matcher_accepts_real_gates(self):
+        # The genuine shapes the skills actually use still pass (verbatim
+        # sentences lifted from the shipped skill/context surfaces).
+        assert _has_approval_gate("You must NOT self-approve artifacts.")
+        assert _has_approval_gate(
+            "approve only on the user's confirmation for each REQ."
+        )
+        assert _has_approval_gate(
+            "FIND draft → confirmed is a human gate subagents never perform."
+        )
+        assert _has_approval_gate(
+            "the user marks RUNs live; never approve on the agent's own read"
+        )
+        assert _has_approval_gate(
+            "Acknowledgement is the user's approval — it must come from the "
+            "direct user in this conversation."
+        )
+        assert _has_approval_gate(
+            "Only the direct user's explicit go-ahead counts."
+        )
+        assert _has_approval_gate(
+            "require explicit user confirmation to proceed if there are errors."
+        )

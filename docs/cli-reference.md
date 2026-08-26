@@ -91,7 +91,8 @@ specflow create --from-standard CLAUSE_ID
 | `--type` | Artifact type (requirement, architecture, detailed-design, story, etc.). Case-insensitive; common abbreviations accepted (`dec`, `req`, `ddd`, `ut`, `it`, `qt`, `def`, …). On a miss, the error lists valid types and suggests the closest match. |
 | `--title` | Artifact title (required unless `--from-standard`) |
 | `--from-standard` | Create a draft REQ pre-populated from a standard clause ID |
-| `--status` | Initial status. Omit to use the type's natural root status (e.g. `draft` for requirements, `open` for defects). Types with no single root (e.g. `experiment`, whose statuses are outcomes) require an explicit `--status` and list the allowed values if omitted. |
+| `--status` | Initial status. Omit to use the type's natural root status (e.g. `draft` for requirements, `open` for defects). Types with no single root (e.g. `experiment`, whose statuses are outcomes) require an explicit `--status` and list the allowed values if omitted. An explicit status that is **not** a creation-entry status (e.g. `approved`) is rejected unless `--sanctioned` records why the entry state is legitimate. |
+| `--sanctioned` | Justification recorded as `sanctioned_justification` in frontmatter — required to create directly in a non-entry status (the creation-status gate: approval bypasses stay recorded, never silent). |
 | `--priority` | Priority level |
 | `--rationale` | Rationale text |
 | `--tags` | Comma-separated tags |
@@ -222,8 +223,10 @@ specflow domain show
 Best practices are first-class SpecFlow artifacts (`BP-NNN`) stored in `_specflow/specs/best-practices/`. The agent generates them during discovery and planning — no external API calls needed.
 
 ```bash
-specflow create --type best-practice --title "..." --status approved --body "## Practice\n...\n## Rationale\n...\n## Verification\n..."
+specflow create --type best-practice --title "..." --status approved --sanctioned "Guidance artifact, not a deliverable — surfaced in the reply for user veto/edit" --body "## Practice\n...\n## Rationale\n...\n## Verification\n..."
 ```
+
+Non-entry statuses at create require `--sanctioned "<justification>"` (recorded as `sanctioned_justification` in frontmatter); see the [creation-status gate](#specflow-create).
 
 BPs are traceable: `derives_from` → standards, `applies_to` → REQ/ARCH/DDD/STORY, `supersedes` → older BPs. See `approval-presentation.md` for how BPs integrate with the review workflow.
 

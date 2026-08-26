@@ -11,7 +11,7 @@ from typing import Any
 import yaml
 
 from specflow.lib.artifacts import Artifact, discover_artifacts, parse_artifact, resolve_link_target
-from specflow.lib.locks import acquire_lock, check_lock, release_lock
+from specflow.lib.locks import check_lock
 from specflow.lib.waves import compute_waves, filter_executable_stories
 
 

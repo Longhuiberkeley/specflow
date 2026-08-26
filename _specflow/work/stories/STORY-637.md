@@ -3,7 +3,7 @@ id: STORY-637
 title: 'v1.14.2 review fixes: typed refined_by direction, --set guard, IT-038 truthfulness,
   lint crash guard'
 type: story
-status: implemented
+status: verified
 tags:
 - review-fix
 suspect: false
@@ -16,7 +16,7 @@ links:
   role: implements
 created: '2026-08-26'
 fingerprint: sha256:c4ce6f80b91a
-modified: '2026-08-26'
+modified: '2026-08-27'
 output_files:
 - src/specflow/lib/artifacts.py
 - src/specflow/commands/autoresearch.py
@@ -24,6 +24,9 @@ output_files:
 - tests/test_artifacts.py
 - tests/test_autoresearch_cli.py
 - tests/test_trace_integration.py
+authorization_note: Verification contracts UT-074/IT-041/QT-047 created and stamped
+  green (owner-pre-authorized overnight run 2026-08-27); closes the AUD-106 verification-coverage
+  gap. Listed in morning report.
 ---
 
 # v1.14.2 review fixes: typed refined_by direction, --set guard, IT-038 truthfulness, lint crash guard
