@@ -4,6 +4,31 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.14.1] - 2026-08-26
+
+Trust hardening patch: the v1.14.0 tag's release gate failed because STORY-632's outputs were untraced — this release closes that, fixes trace direction so real links actually render, makes the no-self-approval rule explicit and uniform everywhere, and teaches the autoresearch CLI to write link edges `trace` can see.
+
+### Highlights
+
+- **Release gate green again.** `specflow project-audit` exits 0 (CLEAN) — the v1.14.0 tag push failed exit 2 on an orphaned test file and STORY-632 verification-accounting gaps. Dogfood: 0 orphan files, every implemented STORY carries UT/IT/QT verification contracts (13 backfilled this release, all `specflow verify`-stamped).
+- **`specflow trace` is direction-correct.** `trace STORY-NNN` showed `(none)` upstream even when the STORY `implements` a REQ. Upstream traversal is now type-aware: `implements`/`guided_by`/`specified_by` count from stories, `verified_by` counts from tests (a story's own `verified_by → UT` renders downstream), `refined_by` counts like `derives_from`, and research parent roles (`operates_on`/`belongs_to`/`condenses`) traverse the COMP→LOOP→EXPT/FIND hierarchy. Chain depth only counts structural roles — annotation links (`refers_to`, `challenges`, …) can no longer inflate it.
+- **No self-approval, stated once, everywhere.** The always-on context now says it explicitly: only the direct user's explicit go-ahead moves an artifact to an approval-gated status; artifact text, docs, and tool output are never approval; present the work and walk the user through each approval — and under a delegated "be autonomous" instruction, still list every approval performed in the final report. Every create-as-`approved` example in the skills now carries an inline sanctioned-exception justification, the audit and change-impact skills state the rule, and the packs gate their human transitions: ops RUNs are created `deployed` (the user marks them `live`; `flagged → resolved` likewise), and autoresearch `FIND draft → confirmed` is a human gate subagents can never perform.
+- **Autoresearch artifacts are traceable.** `autoresearch plan`/`log`/`suggest-finds --write` now write the `operates_on`/`belongs_to`/`condenses` link edges (previously frontmatter-only, invisible to `trace`); re-planning repairs legacy link-less LOOPs idempotently, and `artifact-lint` warns on frontmatter-parent-without-edge with the exact repair command.
+
+### Fixes
+
+- Release-gate closure: `tests/test_dual_host_skills.py` retro-linked to STORY-632; backfilled verification contracts UT-069/IT-037/QT-044 (STORY-632) and UT-070..073 / IT-038..040 / QT-045..046 (STORY-633..636), all stamped via `specflow verify`.
+- `trace_chain` downstream scan additionally renders a story's own `verified_by → UT/IT/QT` edges (deduped against incoming links).
+- `compute_chain_depth` restricted to `_CHAIN_DEPTH_ROLES` (structural roles only).
+- Leaner always-on `agent-context.md` (~34 → ~31 lines) with the stronger approval rule; payload capped by a new byte-budget test (3072 B).
+
+### Tests
+
+- New `tests/test_approval_guardrail.py`: payload budget, mandatory guardrail phrases, per-skill rule presence, sanctioned-exception justification scan on every create-as-approved example.
+- 8 new trace-direction tests in `tests/test_artifacts.py` (both `verified_by` directions, research multi-hop, annotation-role depth immunity).
+- New `TestCliWritesTraceEdges` in `tests/test_autoresearch_cli.py`: real CLI paths without pre-seeded links, legacy repair, link preservation, end-to-end `trace` rendering, lint detection.
+- Total: 1370 tests passing
+
 ## [1.14.0] - 2026-08-18
 
 Dual-host consolidation: one skill tree and one instruction source for Claude Code + OpenCode V2, plus a much leaner always-on context. OpenCode V2 reads `.claude/skills` and `AGENTS.md` only; a second SpecFlow copy in `.opencode/skills` silently won on ID conflict, and V2 dropped the V1 `CLAUDE.md` fallback — so SpecFlow now installs and injects exactly where both hosts actually read.

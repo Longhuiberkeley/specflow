@@ -19,16 +19,16 @@ Domain-neutral by design. Quant specifics (drift, oos_decay) belong in the quant
 1. **Identify what is being deployed** and the artifact it satisfies/promotes from:
    - A promoted experiment → `links: [{target: EXPT-NNN, role: derives_from}]`.
    - A requirement/architecture it realizes → `links: [{target: REQ-NNN|ARCH-NNN, role: derives_from}]` (or `implements`).
-2. **Freeze the deployment record** — create the RUN with the *exact* `deployed_ref` (path or version + fingerprint) and `environment`. This is immutable intent: a later change to what's live is a **new** RUN, not an edit.
+2. **Freeze the deployment record** — create the RUN with the *exact* `deployed_ref` (path or version + fingerprint) and `environment`. This is immutable intent: a later change to what's live is a **new** RUN, not an edit. Create it at the root status `deployed` — moving it to `live` is a human gate (step 3).
    ```
-   specflow create --type run --title "<system> — <env>" --status live \
+   specflow create --type run --title "<system> — <env>" --status deployed \
      --set environment=<env> \
      --set deployed_ref=<path/version, fingerprint if known> \
      --set deployed_at=<date> \
      --links <REQ-NNN|ARCH-NNN|EXPT-NNN>:derives_from \
      --skip-dedup-check
    ```
-3. **Confirm** `specflow artifact-lint RUN-NNN` passes, then present: TLDR (what went live, from what, satisfying what), one next step.
+3. **Confirm** `specflow artifact-lint RUN-NNN` passes, then present: TLDR (what went live, from what, satisfying what), one next step. Only after the user acknowledges the deployment do you transition the RUN: `specflow update RUN-NNN --status live` — **you never mark a RUN `live` on your own authority; "it deployed" is your claim, "it's live" is the user's call.** Same rule for MONITOR `flagged → resolved`: present the breach evidence and the remediation, the user confirms resolution.
 
 ### Flow B — Observe (record a snapshot / capture ephemeral data)
 

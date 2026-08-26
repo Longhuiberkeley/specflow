@@ -769,7 +769,7 @@ artifacts:
     title: Audit cross-cutting/ac-coverage findings
     status: addressed
     tags: []
-    fingerprint: sha256:dd5d9eace415
+    fingerprint: sha256:ec00fab14fc9
     children: []
   CHL-339:
     id: CHL-339
@@ -830,12 +830,26 @@ artifacts:
     tags: []
     fingerprint: sha256:92b228b33f75
     children: []
+  CHL-347:
+    id: CHL-347
+    title: Audit cross-cutting/orphan-code findings
+    status: addressed
+    tags: []
+    fingerprint: sha256:cdc8c6b4c335
+    children: []
+  CHL-AUDITHOR-af97:
+    id: CHL-AUDITHOR-af97
+    title: Audit horizontal/spike findings
+    status: addressed
+    tags: []
+    fingerprint: sha256:6e55229774bc
+    children: []
   CHL-NONSEMVE-c16b:
     id: CHL-NONSEMVE-c16b
     title: Non-semver baseline names can outrank release baselines
     status: addressed
     tags: []
-    fingerprint: sha256:dfca327579e0
+    fingerprint: sha256:47f860f5616d
     children: []
   CHL-RELEASEB-58c6:
     id: CHL-RELEASEB-58c6
@@ -871,19 +885,5 @@ artifacts:
     status: accepted
     tags: []
     fingerprint: sha256:2a3d1132d093
-    children: []
-  CHL-347:
-    id: CHL-347
-    title: Audit cross-cutting/orphan-code findings
-    status: addressed
-    tags: []
-    fingerprint: sha256:cdc8c6b4c335
-    children: []
-  CHL-AUDITHOR-af97:
-    id: CHL-AUDITHOR-af97
-    title: Audit horizontal/spike findings
-    status: addressed
-    tags: []
-    fingerprint: sha256:6e55229774bc
     children: []
 next_id: 348

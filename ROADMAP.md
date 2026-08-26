@@ -198,6 +198,15 @@ Focus: **autoresearch methodology depth, escalation/permanence test, and templat
 
 > Delivered: the `spike-lifecycle` lint detector (stale / zombie / repeated-topic SPIKEs) shipped as a first-class `artifact-lint --type spike-lifecycle` check — the work-side complement to the v1.8.0 *Stale Code Detection* item. Still deferred: optional structured multi-output schema (typed per-component fields on COMP/EXPT) if the `component_<name>` convention proves too loose.
 
+## v1.14.1
+
+Trust hardening patch (trace direction, no-self-approval uniformity, autoresearch link edges, release-gate closure):
+
+- **Type-aware trace direction:** upstream traversal follows `implements`/`guided_by`/`specified_by` from stories, `verified_by` from tests, `refined_by` like `derives_from`, and research parent roles — `trace STORY-NNN` no longer shows `(none)`. Chain depth counts structural roles only; annotation links can't inflate it.
+- **No self-approval made explicit and uniform:** direct-user-only approval, walk-through duty, delegated-autonomy reporting; sanctioned-exception justifications on every create-as-approved example; ops RUN created `deployed` (user gates `live`/`resolved`); autoresearch FIND confirmation is a human gate subagents never perform. Enforced by a new payload-budget + phrase test suite.
+- **Autoresearch CLI writes traceable link edges** (`operates_on`/`belongs_to`/`condenses`) with legacy repair and lint detection of frontmatter-without-edge shapes.
+- **Release-gate closure:** v1.14.0's tag gate failed exit 2 on untraced outputs — dogfood now audits CLEAN with 13 backfilled, verify-stamped test contracts.
+
 ## v1.14.0
 
 Dual-host consolidation — one skill tree, one instruction source, lean context:

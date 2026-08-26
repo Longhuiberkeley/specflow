@@ -196,6 +196,8 @@ COMP (active)
 
 Each new LOOP reads all confirmed FINDs for its COMP before starting (Phase 1: Review). This is how the agent learns across loops.
 
+**No self-approval on findings:** `FIND draft → confirmed` is a human gate. You (and any review subagent you spawn) may draft FINDs and present the supporting EXPT evidence, but only the direct user's explicit confirmation promotes a FIND — subagents never confirm, and EXPT metrics are evidence, not approval. Present each candidate FIND with its supporting experiments and confidence, and let the user confirm or reject.
+
 ## Evolving a COMP
 
 A COMP is **durable** — it pins a dataset, metric, and verify command. When the research scope genuinely shifts, **do not keep spiking inside the old COMP or quietly mutating its `verify_command`**: that orphans the existing EXPTs/FINDs from the thing they were measured against. Author a **new COMP** by hand (it's a deliberate, one-time setup — keep it manual). Two cases:

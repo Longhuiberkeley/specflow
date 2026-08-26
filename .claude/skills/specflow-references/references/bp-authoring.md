@@ -37,7 +37,7 @@ specflow create \
   --body "## Practice\n...\n## Rationale\n...\n## Verification\n..."
 ```
 
-BPs are created with `status: approved` by default (they are guidance, not deliverables pending review).
+BPs are created with `status: approved` by default (they are guidance, not deliverables pending review). Present every BP you generate in your reply so the user can veto or edit it — silent approval-by-convention applies to guidance only, never to deliverables.
 
 ## Naming and Tags
 

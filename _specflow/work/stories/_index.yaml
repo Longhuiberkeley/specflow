@@ -878,6 +878,67 @@ artifacts:
     tags: []
     fingerprint: sha256:a657f806a0a2
     children: []
+  STORY-630:
+    id: STORY-630
+    title: Enforce semver baseline naming and prefer releases in drift selection
+    status: verified
+    tags:
+    - baselines
+    - semver
+    - CHL-NONSEMVE-c16b
+    - REQ-035
+    fingerprint: sha256:6fc057fe0db5
+    children: []
+  STORY-631:
+    id: STORY-631
+    title: Close v1.13.8 readiness and distribution gaps
+    status: verified
+    tags:
+    - v1.13.8
+    - readiness
+    - dogfood
+    fingerprint: sha256:7642a070b2c7
+    children: []
+  STORY-632:
+    id: STORY-632
+    title: Dual-host skills + lean AGENTS.md + default TLDR
+    status: implemented
+    tags: []
+    fingerprint: sha256:e0b090c6ea29
+    children: []
+  STORY-633:
+    id: STORY-633
+    title: 'Release-gate traceability closure: link STORY-632 outputs and verification'
+    status: implemented
+    tags:
+    - release
+    fingerprint: sha256:75b37f8c459b
+    children: []
+  STORY-634:
+    id: STORY-634
+    title: 'Type-aware trace direction: implements/guided_by/specified_by and test
+      verified_by as upstream'
+    status: implemented
+    tags:
+    - traceability
+    fingerprint: sha256:81166a6a050a
+    children: []
+  STORY-635:
+    id: STORY-635
+    title: Unified no-self-approval guardrail across skills + leaner agent context
+    status: implemented
+    tags:
+    - guardrail
+    fingerprint: sha256:a3a49c250c7c
+    children: []
+  STORY-636:
+    id: STORY-636
+    title: Autoresearch CLI writes traceable link edges (plan/log/suggest-finds)
+    status: implemented
+    tags:
+    - autoresearch
+    fingerprint: sha256:e62fc2d27768
+    children: []
   STORY-ADDAUXIL-c7bd:
     id: STORY-ADDAUXIL-c7bd
     title: Add auxiliary_metrics field to EXPT schema and update test coverage
@@ -988,32 +1049,4 @@ artifacts:
     tags: []
     fingerprint: sha256:a557ed85a54a
     children: []
-  STORY-630:
-    id: STORY-630
-    title: Enforce semver baseline naming and prefer releases in drift selection
-    status: verified
-    tags:
-    - baselines
-    - semver
-    - CHL-NONSEMVE-c16b
-    - REQ-035
-    fingerprint: sha256:6fc057fe0db5
-    children: []
-  STORY-631:
-    id: STORY-631
-    title: Close v1.13.8 readiness and distribution gaps
-    status: verified
-    tags:
-    - v1.13.8
-    - readiness
-    - dogfood
-    fingerprint: sha256:7642a070b2c7
-    children: []
-  STORY-632:
-    id: STORY-632
-    title: Dual-host skills + lean AGENTS.md + default TLDR
-    status: implemented
-    tags: []
-    fingerprint: sha256:e0b090c6ea29
-    children: []
-next_id: 633
+next_id: 637

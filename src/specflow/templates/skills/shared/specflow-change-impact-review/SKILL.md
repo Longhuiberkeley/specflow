@@ -132,3 +132,4 @@ Repeat Steps 3-6 for all unreviewed DECs discovered in Step 2.
 - **Idempotency:** Always check for `review_status: unreviewed`. If none exist, do nothing.
 - **Scoping:** Strictly limit the review to the blast radius computed by `change-impact`. Do not review the entire project.
 - **Traceability:** Ensure all findings (CHLs) are explicitly linked to the source DEC that triggered them.
+- **No self-approval:** resolving a suspect (`--resolve`) and stamping `review_status=reviewed` assert that you presented the evidence to the direct user and they accepted it. Filing CHLs is yours; clearing them is not — walk the user through it.

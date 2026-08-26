@@ -373,4 +373,33 @@ artifacts:
     - REQ-035
     fingerprint: sha256:45a12a7104eb
     children: []
-next_id: 44
+  QT-044:
+    id: QT-044
+    title: 'Dual-host project qualification: one skill tree + bridged instruction
+      surface'
+    status: draft
+    tags:
+    - backfilled
+    - verification-contract
+    - dual-host
+    fingerprint: sha256:249ad0eb45be
+    children: []
+  QT-045:
+    id: QT-045
+    title: v1.14.1 full test suite green
+    status: draft
+    tags:
+    - backfilled
+    - verification-contract
+    fingerprint: sha256:4cabfd05c9e8
+    children: []
+  QT-046:
+    id: QT-046
+    title: 'v1.14.1 release gate: project-audit CLEAN'
+    status: draft
+    tags:
+    - backfilled
+    - verification-contract
+    fingerprint: sha256:4155bd000754
+    children: []
+next_id: 47

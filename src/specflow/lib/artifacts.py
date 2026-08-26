@@ -734,6 +734,39 @@ def find_missing_v_pairs(artifacts: list[Artifact]) -> list[tuple[Artifact, str]
     return missing
 
 
+_TEST_TYPES = {"unit-test", "integration-test", "qualification-test"}
+
+# Roles that point from a work item to the spec that governs it. These are
+# upstream edges *when the source is a story* (a story implements a REQ, is
+# guided by an ARCH, is specified by a DDD).
+_WORK_TO_SPEC_ROLES = {"implements", "guided_by", "specified_by"}
+
+# Research-hierarchy roles: LOOP operates_on COMP, EXPT/FIND belong_to their
+# parent, FIND condenses a LOOP. Upstream for their source types.
+_RESEARCH_PARENT_ROLES = {"operates_on", "belongs_to", "condenses"}
+
+
+def is_upstream_edge(source_type: str | None, role: str) -> bool:
+    """Decide whether a link edge reads upstream (toward governing spec/source).
+
+    Direction is type-aware, not role-only: ``derives_from``/``complies_with``
+    are always upstream; ``implements``/``guided_by``/``specified_by`` are
+    upstream only from a story; ``verified_by`` is upstream only from a test
+    (test → story/spec) — a story's own ``verified_by → UT`` edge points at its
+    verifier and therefore reads downstream; research parent roles are upstream
+    for loop/experiment/finding sources.
+    """
+    if role in ("derives_from", "complies_with", "refined_by"):
+        return True
+    if role in _WORK_TO_SPEC_ROLES and source_type == "story":
+        return True
+    if role == "verified_by" and source_type in _TEST_TYPES:
+        return True
+    if role in _RESEARCH_PARENT_ROLES:
+        return True
+    return False
+
+
 def trace_chain(
     artifact_id: str,
     id_index: dict[str, Artifact],
@@ -754,8 +787,6 @@ def trace_chain(
     upstream: list[dict[str, str]] = []
     downstream: list[dict[str, str]] = []
 
-    UPSTREAM_ROLES = {"derives_from", "complies_with"}
-
     if direction in ("upstream", "both"):
         visited: set[str] = set()
         queue = [artifact_id]
@@ -768,7 +799,10 @@ def trace_chain(
             if not current:
                 continue
             for link in current.links:
-                if link.role in UPSTREAM_ROLES and link.target not in visited:
+                if (
+                    is_upstream_edge(current.type, link.role)
+                    and link.target not in visited
+                ):
                     target = id_index.get(link.target)
                     upstream.append({
                         "id": link.target,
@@ -794,8 +828,33 @@ def trace_chain(
                         "status": art.status,
                         "role": link.role,
                     })
+        # A story's own ``verified_by → UT/IT/QT`` edge points at its
+        # verifier: render it downstream even without a reciprocal link.
+        source = id_index.get(artifact_id)
+        if source is not None and source.type == "story":
+            for link in source.links:
+                if link.role == "verified_by" and link.target not in visited:
+                    visited.add(link.target)
+                    target = id_index.get(link.target)
+                    downstream.append({
+                        "id": link.target,
+                        "type": target.type if target else "standard",
+                        "title": target.title if target else link.target,
+                        "status": target.status if target else "",
+                        "role": "verified_by",
+                    })
 
     return {"upstream": upstream, "downstream": downstream}
+
+
+# Roles that constitute a structural trace edge for chain-depth purposes.
+# Informational/annotation roles (refers_to, exposed_by, fails_to_meet,
+# supersedes, related_to, ...) must not inflate the V-model chain depth.
+_CHAIN_DEPTH_ROLES = frozenset({
+    "derives_from", "complies_with", "refined_by", "implements", "guided_by",
+    "specified_by", "verified_by", "executes",
+    "belongs_to", "operates_on", "condenses",
+})
 
 
 def compute_chain_depth(
@@ -805,6 +864,7 @@ def compute_chain_depth(
     """Compute the traceability chain path from a spec artifact to its deepest verification test.
 
     Returns a list of IDs representing the chain path, or [artifact_id] if no downstream links.
+    Only structural trace roles count as chain edges (see ``_CHAIN_DEPTH_ROLES``).
     """
     visited: set[str] = set()
     deepest: list[str] = [artifact_id]
@@ -818,7 +878,10 @@ def compute_chain_depth(
             if art_id in visited:
                 continue
             for link in art.links:
-                if link.target == current_id:
+                if (
+                    link.target == current_id
+                    and link.role in _CHAIN_DEPTH_ROLES
+                ):
                     new_path = path + [art_id]
                     if len(new_path) > len(deepest):
                         deepest = new_path

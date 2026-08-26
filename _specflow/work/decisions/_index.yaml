@@ -615,24 +615,6 @@ artifacts:
     - auto-generated
     fingerprint: sha256:eac30df8aa14
     children: []
-  DEC-CHANGERE-7c39:
-    id: DEC-CHANGERE-7c39
-    title: 'Change Record: chore: trace v1.13.3 AC boundary patch'
-    status: approved
-    tags:
-    - change-record
-    - auto-generated
-    fingerprint: sha256:6938a165bdf3
-    children: []
-  DEC-CHANGERE-ed18:
-    id: DEC-CHANGERE-ed18
-    title: 'Change Record: chore: dogfood v1.13.2 ergonomics lifecycle'
-    status: approved
-    tags:
-    - change-record
-    - auto-generated
-    fingerprint: sha256:2dd9aae04035
-    children: []
   DEC-065:
     id: DEC-065
     title: 'Change Record: feat: semver baseline naming policy + wired --baseline
@@ -743,29 +725,6 @@ artifacts:
     - auto-generated
     fingerprint: sha256:ff8f9e38258a
     children: []
-  DEC-NORMALIZ-90e0:
-    id: DEC-NORMALIZ-90e0
-    title: Normalize list-valued frontmatter fields to prevent scalar-string corruption
-      (tags char-split, thinking_techniques TypeError)
-    status: approved
-    tags:
-    - bug
-    - tags
-    - learning
-    - prev
-    - data-integrity
-    fingerprint: sha256:aebb8deb1526
-    children: []
-  DEC-CHANGERE-066b:
-    id: DEC-CHANGERE-066b
-    title: 'Change Record: fix: normalize all list-valued frontmatter fields, not
-      just tags'
-    status: approved
-    tags:
-    - change-record
-    - auto-generated
-    fingerprint: sha256:52b829d853cf
-    children: []
   DEC-076:
     id: DEC-076
     title: v1.13.8 readiness sweep implementation policy
@@ -782,5 +741,46 @@ artifacts:
     status: approved
     tags: []
     fingerprint: sha256:5637310ae3f5
+    children: []
+  DEC-CHANGERE-066b:
+    id: DEC-CHANGERE-066b
+    title: 'Change Record: fix: normalize all list-valued frontmatter fields, not
+      just tags'
+    status: approved
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:52b829d853cf
+    children: []
+  DEC-CHANGERE-7c39:
+    id: DEC-CHANGERE-7c39
+    title: 'Change Record: chore: trace v1.13.3 AC boundary patch'
+    status: approved
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:6938a165bdf3
+    children: []
+  DEC-CHANGERE-ed18:
+    id: DEC-CHANGERE-ed18
+    title: 'Change Record: chore: dogfood v1.13.2 ergonomics lifecycle'
+    status: approved
+    tags:
+    - change-record
+    - auto-generated
+    fingerprint: sha256:2dd9aae04035
+    children: []
+  DEC-NORMALIZ-90e0:
+    id: DEC-NORMALIZ-90e0
+    title: Normalize list-valued frontmatter fields to prevent scalar-string corruption
+      (tags char-split, thinking_techniques TypeError)
+    status: approved
+    tags:
+    - bug
+    - tags
+    - learning
+    - prev
+    - data-integrity
+    fingerprint: sha256:aebb8deb1526
     children: []
 next_id: 78

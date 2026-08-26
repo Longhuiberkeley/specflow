@@ -500,3 +500,168 @@ class TestConcurrentLoopGate:
         })
         assert rc == 0
         assert _parse(project_root, "LOOP-001").frontmatter["status"] == "running"
+
+
+# ── STORY-636: CLI writes traceable link edges ─────────────────────────────
+
+class TestCliWritesTraceEdges:
+    """The real CLI paths (plan / log / suggest-finds --write) must write the
+    link edges `specflow trace` traverses — frontmatter parent fields alone
+    are invisible to the trace graph. Older tests pre-seeded links in
+    fixtures, masking this; these tests create everything through the CLI."""
+
+    def test_plan_creates_loop_with_operates_on_edge(self, project_root, monkeypatch, capsys):
+        from specflow import cli
+        monkeypatch.chdir(project_root)
+        rc = cli.main([
+            "autoresearch", "plan",
+            "--competition", "COMP-001",
+            "--mode", "explore", "--budget", "50",
+        ])
+        assert rc == 0
+        loop = _parse(project_root, "LOOP-001")
+        edges = {(l.target, l.role) for l in loop.links}
+        assert ("COMP-001", "operates_on") in edges
+
+    def test_plan_repairs_legacy_loop_missing_edge(self, project_root, capsys):
+        # Legacy shape: frontmatter competition, no link edge (pre-STORY-636 CLI).
+        root = project_root
+        _write_artifact(
+            root, "LOOP-009", "loop", "Legacy loop", status="draft",
+            extra_fm={"created": "2026-05-15", "competition": "COMP-001",
+                      "mode": "explore", "budget": 50},
+        )
+        rc = autoresearch_cmd.run(root, {
+            "autoresearch_subcommand": "plan", "competition": "COMP-001",
+            "mode": "explore", "budget": 60,
+        })
+        assert rc == 0
+        loop = _parse(root, "LOOP-009")
+        edges = {(l.target, l.role) for l in loop.links}
+        assert ("COMP-001", "operates_on") in edges
+
+    def test_plan_update_preserves_unrelated_links(self, project_root, capsys):
+        root = project_root
+        _write_artifact(
+            root, "LOOP-009", "loop", "Loop with extras", status="draft",
+            links=[{"target": "COMP-001", "role": "operates_on"},
+                   {"target": "FIND-001", "role": "guided_by"}],
+            extra_fm={"created": "2026-05-15", "competition": "COMP-001",
+                      "mode": "explore", "budget": 50},
+        )
+        _write_artifact(
+            root, "FIND-001", "finding", "Prior insight", status="confirmed",
+            extra_fm={"created": "2026-05-15", "summary": "s",
+                      "confidence": "high", "competition": "COMP-001"},
+        )
+        rc = autoresearch_cmd.run(root, {
+            "autoresearch_subcommand": "plan", "competition": "COMP-001",
+            "mode": "exploit", "budget": 40,
+        })
+        assert rc == 0
+        loop = _parse(root, "LOOP-009")
+        edges = {(l.target, l.role) for l in loop.links}
+        assert ("COMP-001", "operates_on") in edges  # not duplicated
+        assert ("FIND-001", "guided_by") in edges  # unrelated link survives
+        assert len([e for e in edges if e == ("COMP-001", "operates_on")]) == 1
+
+    def test_log_creates_expt_with_belongs_to_edge(self, project_root, monkeypatch, capsys):
+        from specflow import cli
+        monkeypatch.chdir(project_root)
+        rc = cli.main([
+            "autoresearch", "plan",
+            "--competition", "COMP-001",
+            "--mode", "explore", "--budget", "50",
+        ])
+        assert rc == 0
+        rc = cli.main([
+            "autoresearch", "log",
+            "--loop", "LOOP-001",
+            "--status", "kept",
+            "--metric-value", "0.62",
+            "--change-category", "features",
+            "--summary", "added cross-asset features",
+        ])
+        assert rc == 0
+        expt = _parse(project_root, "EXPT-001")
+        edges = {(l.target, l.role) for l in expt.links}
+        assert ("LOOP-001", "belongs_to") in edges
+
+    def test_suggest_finds_write_creates_find_with_both_edges(self, project_root, capsys):
+        root = project_root
+        rc = autoresearch_cmd.run(root, {
+            "autoresearch_subcommand": "plan", "competition": "COMP-001",
+            "mode": "explore", "budget": 50,
+        })
+        assert rc == 0
+        rc = autoresearch_cmd.run(root, {
+            "autoresearch_subcommand": "log", "loop": "LOOP-001",
+            "status": "kept", "metric_value": 0.6,
+            "change_category": "features", "summary": "s",
+        })
+        assert rc == 0
+        rc = autoresearch_cmd.run(root, {
+            "autoresearch_subcommand": "suggest-finds",
+            "loop": "LOOP-001", "write": True,
+        })
+        assert rc == 0
+        find = _parse(root, "FIND-001")
+        edges = {(l.target, l.role) for l in find.links}
+        assert ("COMP-001", "belongs_to") in edges
+        assert ("LOOP-001", "condenses") in edges
+
+    def test_trace_renders_full_hierarchy_from_cli_created_artifacts(self, project_root, capsys):
+        """End-to-end: artifacts created purely via the CLI appear in
+        `specflow trace` — the production defect STORY-636 fixed."""
+        root = project_root
+        rc = autoresearch_cmd.run(root, {
+            "autoresearch_subcommand": "plan", "competition": "COMP-001",
+            "mode": "explore", "budget": 50,
+        })
+        assert rc == 0
+        rc = autoresearch_cmd.run(root, {
+            "autoresearch_subcommand": "log", "loop": "LOOP-001",
+            "status": "kept", "metric_value": 0.6,
+            "change_category": "features", "summary": "s",
+        })
+        assert rc == 0
+        rc = autoresearch_cmd.run(root, {
+            "autoresearch_subcommand": "suggest-finds",
+            "loop": "LOOP-001", "write": True,
+        })
+        assert rc == 0
+
+        id_index = art_lib.build_id_index(art_lib.discover_artifacts(root))
+        # EXPT traces upstream to LOOP (and, multi-hop, to COMP).
+        chain = art_lib.trace_chain("EXPT-001", id_index, direction="upstream")
+        upstream_ids = {n["id"] for n in chain["upstream"]}
+        assert "LOOP-001" in upstream_ids
+        assert "COMP-001" in upstream_ids
+        # FIND traces upstream to both its COMP and LOOP.
+        chain = art_lib.trace_chain("FIND-001", id_index, direction="upstream")
+        upstream_ids = {n["id"] for n in chain["upstream"]}
+        assert {"COMP-001", "LOOP-001"} <= upstream_ids
+        # COMP's direct downstream: LOOP (operates_on) and FIND (belongs_to).
+        # EXPT hangs off LOOP, not COMP — downstream is direct incoming links.
+        chain = art_lib.trace_chain("COMP-001", id_index, direction="downstream")
+        downstream_ids = {n["id"] for n in chain["downstream"]}
+        assert {"LOOP-001", "FIND-001"} <= downstream_ids
+        # EXPT is direct downstream of LOOP.
+        chain = art_lib.trace_chain("LOOP-001", id_index, direction="downstream")
+        downstream_ids = {n["id"] for n in chain["downstream"]}
+        assert "EXPT-001" in downstream_ids
+
+    def test_lint_flags_legacy_missing_link_edges(self, project_root):
+        from specflow.commands.artifact_lint import _run_check
+        root = project_root
+        _write_artifact(
+            root, "LOOP-009", "loop", "Legacy loop", status="draft",
+            extra_fm={"created": "2026-05-15", "competition": "COMP-001",
+                      "mode": "explore", "budget": 50},
+        )
+        result = _run_check(
+            art_lib.discover_artifacts(root), root, "autoresearch-logging"
+        )
+        assert result["warning_count"] >= 1
+        assert "operates_on" in result["detail"]
+        assert "--add-link COMP-001:operates_on" in result["detail"]

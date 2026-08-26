@@ -23,7 +23,7 @@ Promotion is cheap — it's `specflow create` with a `derives_from` link that ca
 
 ### SPIKE → spec recipe
 
-A completed SPIKE that produced something durable:
+A completed SPIKE that produced something durable (run only after the user confirms the promotion — their confirm is the approval that licenses `--status approved` below):
 
 ```bash
 # 1. Capture WHAT it must do (non-technical, verifiable) — link back to the spike.

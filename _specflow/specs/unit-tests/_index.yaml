@@ -589,13 +589,6 @@ artifacts:
     - ergonomics
     fingerprint: sha256:466dc15c31a3
     children: []
-  UT-EVIDENCE-9a3d:
-    id: UT-EVIDENCE-9a3d
-    title: Evidence RTM includes mixed eligible REQ statuses
-    status: implemented
-    tags: []
-    fingerprint: sha256:cd2ebadd80c8
-    children: []
   UT-064:
     id: UT-064
     title: 'Unit Test for STORY-083: Refresh safety contract'
@@ -650,4 +643,57 @@ artifacts:
     - readiness
     fingerprint: sha256:326b53a92611
     children: []
-next_id: 69
+  UT-069:
+    id: UT-069
+    title: Dual-host skill install remap (platform.get_skills_install_dir / init no-delete)
+    status: draft
+    tags:
+    - backfilled
+    - verification-contract
+    - dual-host
+    fingerprint: sha256:c8e934daa981
+    children: []
+  UT-070:
+    id: UT-070
+    title: Type-aware trace direction semantics (is_upstream_edge / chain-depth roles)
+    status: draft
+    tags:
+    - backfilled
+    - verification-contract
+    fingerprint: sha256:cd2cf0f3e313
+    children: []
+  UT-071:
+    id: UT-071
+    title: No-self-approval guardrail phrases + agent-context budget
+    status: draft
+    tags:
+    - backfilled
+    - verification-contract
+    fingerprint: sha256:651525f22602
+    children: []
+  UT-072:
+    id: UT-072
+    title: Autoresearch CLI writes traceable link edges
+    status: draft
+    tags:
+    - backfilled
+    - verification-contract
+    fingerprint: sha256:96974180f067
+    children: []
+  UT-073:
+    id: UT-073
+    title: 'Release-gate closure: orphan-code zero on the dogfood repo'
+    status: draft
+    tags:
+    - backfilled
+    - verification-contract
+    fingerprint: sha256:484944666519
+    children: []
+  UT-EVIDENCE-9a3d:
+    id: UT-EVIDENCE-9a3d
+    title: Evidence RTM includes mixed eligible REQ statuses
+    status: implemented
+    tags: []
+    fingerprint: sha256:cd2ebadd80c8
+    children: []
+next_id: 74

@@ -1463,6 +1463,69 @@ def _check_autoresearch_logging(
                 f"(supported/not_supported/inconclusive)"
             )
 
+    # STORY-636: link-edge consistency. Frontmatter parent fields
+    # (`competition`, `loop`, `source_loop`) are invisible to `specflow trace`;
+    # the link edge is what makes the research hierarchy traversable. Artifacts
+    # created by older CLIs (or by hand) may carry the field but not the edge —
+    # surface them with the repair command instead of silently vanishing from
+    # the trace graph. Only checked when the parent exists in the artifact set:
+    # a dangling frontmatter reference is the `links` check's broken-target
+    # problem, not a missing-edge problem.
+    id_prefix = art_lib.get_prefix_from_id
+    known_ids = {a.id for a in artifacts}
+    for art in artifacts:
+        prefix = id_prefix(art.id)
+        roles = {(l.target, l.role) for l in art.links}
+        if prefix == "LOOP":
+            comp = art.frontmatter.get("competition")
+            if (
+                comp
+                and comp in known_ids
+                and not any(t == comp and r == "operates_on" for (t, r) in roles)
+            ):
+                _bump(
+                    f"[{art.id}] has `competition: {comp}` but no "
+                    f"`operates_on → {comp}` link edge — `specflow trace` "
+                    f"cannot see it. Repair: `specflow update {art.id} "
+                    f"--add-link {comp}:operates_on`"
+                )
+        elif prefix == "EXPT":
+            loop = art.frontmatter.get("loop")
+            if (
+                loop
+                and loop in known_ids
+                and not any(t == loop and r == "belongs_to" for (t, r) in roles)
+            ):
+                _bump(
+                    f"[{art.id}] has `loop: {loop}` but no "
+                    f"`belongs_to → {loop}` link edge — `specflow trace` "
+                    f"cannot see it. Repair: `specflow update {art.id} "
+                    f"--add-link {loop}:belongs_to`"
+                )
+        elif prefix == "FIND":
+            comp = art.frontmatter.get("competition")
+            loop = art.frontmatter.get("source_loop")
+            if (
+                comp
+                and comp in known_ids
+                and not any(t == comp and r == "belongs_to" for (t, r) in roles)
+            ):
+                _bump(
+                    f"[{art.id}] has `competition: {comp}` but no "
+                    f"`belongs_to → {comp}` link edge. Repair: `specflow update "
+                    f"{art.id} --add-link {comp}:belongs_to`"
+                )
+            if (
+                loop
+                and loop in known_ids
+                and not any(t == loop and r == "condenses" for (t, r) in roles)
+            ):
+                _bump(
+                    f"[{art.id}] has `source_loop: {loop}` but no "
+                    f"`condenses → {loop}` link edge. Repair: `specflow update "
+                    f"{art.id} --add-link {loop}:condenses`"
+                )
+
     if blocking == 0 and warnings == 0:
         icon = GREEN + "✓" + NC
         detail_msg = "All autoresearch EXPTs have recommended logging fields"

@@ -380,6 +380,18 @@ def _run_plan(root: Path, args: dict) -> int:
         if will_run and existing.status == "draft":
             updates["status"] = "running"
             updates["started_at"] = date.today().isoformat()
+        # STORY-636: repair/upkeep — ensure the operates_on link edge exists
+        # even on LOOPs created by older versions that only wrote the
+        # frontmatter field. Merge, never replace.
+        existing_links = [
+            {"target": l.target, "role": l.role} for l in existing.links
+        ]
+        if not any(
+            l["target"] == comp.id and l["role"] == "operates_on"
+            for l in existing_links
+        ):
+            existing_links.append({"target": comp.id, "role": "operates_on"})
+            updates["links"] = existing_links
         result = art_lib.update_artifact(root, existing.id, **updates)
         if not result.get("ok"):
             print(f"{RED}✗ Failed to update {existing.id}: {result.get('error')}{NC}")
@@ -391,7 +403,14 @@ def _run_plan(root: Path, args: dict) -> int:
 
     title = args.get("title") or f"{mode or 'Explore'} loop on {comp.id}"
     create_status = "running" if will_run else "draft"
-    create_kwargs: dict = {"competition": comp.id, **fields}
+    create_kwargs: dict = {
+        "competition": comp.id,
+        # Trace edge: LOOP operates_on COMP. The frontmatter `competition`
+        # field alone is invisible to `specflow trace` — the link edge is
+        # what makes the research hierarchy traversable (STORY-636).
+        "links": [{"target": comp.id, "role": "operates_on"}],
+        **fields,
+    }
     if will_run:
         create_kwargs["started_at"] = date.today().isoformat()
     result = art_lib.create_artifact(
@@ -807,6 +826,9 @@ def _run_log(root: Path, args: dict) -> int:
         "change_category": change_category,
         "summary": summary,
         "competition": comp_id,
+        # STORY-636: trace edge — EXPT belongs_to LOOP (frontmatter `loop`
+        # alone is invisible to `specflow trace`).
+        "links": [{"target": loop_id, "role": "belongs_to"}],
         **extra_fields,
     }
 
@@ -963,6 +985,12 @@ def _run_suggest_finds(root: Path, args: dict) -> int:
             what_worked=draft_fm["what_worked"],
             what_failed=draft_fm["what_failed"],
             next_steps=draft_fm["next_steps"],
+            # STORY-636: trace edges — FIND belongs_to COMP and condenses
+            # LOOP (frontmatter fields alone are invisible to `specflow trace`).
+            links=[
+                {"target": comp_id, "role": "belongs_to"},
+                {"target": loop_id, "role": "condenses"},
+            ],
         )
         if result.get("ok"):
             print(f"{GREEN}✓ Created {result['id']}{NC}")

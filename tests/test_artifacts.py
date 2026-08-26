@@ -246,6 +246,174 @@ class TestFindMissingVPairs:
 
 
 class TestTraceChain:
+    def test_story_implements_shows_upstream(self):
+        a1 = art_lib.Artifact(
+            path=Path("a.md"),
+            frontmatter={"id": "REQ-001", "type": "requirement", "title": "Req", "status": "approved"},
+            body="",
+            links=[],
+        )
+        a2 = art_lib.Artifact(
+            path=Path("b.md"),
+            frontmatter={"id": "STORY-001", "type": "story", "title": "Story", "status": "implemented"},
+            body="",
+            links=[art_lib.Link(target="REQ-001", role="implements")],
+        )
+        index = art_lib.build_id_index([a1, a2])
+        chain = art_lib.trace_chain("STORY-001", index, direction="upstream")
+        assert len(chain["upstream"]) == 1
+        assert chain["upstream"][0]["id"] == "REQ-001"
+        assert chain["upstream"][0]["role"] == "implements"
+
+    def test_story_guided_by_and_specified_by_upstream(self):
+        arch = art_lib.Artifact(
+            path=Path("a.md"),
+            frontmatter={"id": "ARCH-001", "type": "architecture", "title": "Arch", "status": "approved"},
+            body="",
+            links=[],
+        )
+        ddd = art_lib.Artifact(
+            path=Path("b.md"),
+            frontmatter={"id": "DDD-001", "type": "detailed-design", "title": "DDD", "status": "approved"},
+            body="",
+            links=[],
+        )
+        story = art_lib.Artifact(
+            path=Path("c.md"),
+            frontmatter={"id": "STORY-001", "type": "story", "title": "Story", "status": "implemented"},
+            body="",
+            links=[
+                art_lib.Link(target="ARCH-001", role="guided_by"),
+                art_lib.Link(target="DDD-001", role="specified_by"),
+            ],
+        )
+        index = art_lib.build_id_index([arch, ddd, story])
+        chain = art_lib.trace_chain("STORY-001", index, direction="upstream")
+        upstream_ids = {n["id"] for n in chain["upstream"]}
+        assert upstream_ids == {"ARCH-001", "DDD-001"}
+
+    def test_test_verified_by_points_upstream_to_story(self):
+        story = art_lib.Artifact(
+            path=Path("a.md"),
+            frontmatter={"id": "STORY-001", "type": "story", "title": "Story", "status": "implemented"},
+            body="",
+            links=[],
+        )
+        ut = art_lib.Artifact(
+            path=Path("b.md"),
+            frontmatter={"id": "UT-001", "type": "unit-test", "title": "UT", "status": "verified"},
+            body="",
+            links=[art_lib.Link(target="STORY-001", role="verified_by")],
+        )
+        index = art_lib.build_id_index([story, ut])
+        chain = art_lib.trace_chain("UT-001", index, direction="upstream")
+        assert [n["id"] for n in chain["upstream"]] == ["STORY-001"]
+
+    def test_story_verified_by_test_is_not_upstream(self):
+        # A story's own verified_by edge points at its verifier — downstream.
+        story = art_lib.Artifact(
+            path=Path("a.md"),
+            frontmatter={"id": "STORY-001", "type": "story", "title": "Story", "status": "implemented"},
+            body="",
+            links=[art_lib.Link(target="UT-001", role="verified_by")],
+        )
+        ut = art_lib.Artifact(
+            path=Path("b.md"),
+            frontmatter={"id": "UT-001", "type": "unit-test", "title": "UT", "status": "verified"},
+            body="",
+            links=[],
+        )
+        index = art_lib.build_id_index([story, ut])
+        chain = art_lib.trace_chain("STORY-001", index, direction="upstream")
+        assert len(chain["upstream"]) == 0
+        # The verifier still renders downstream via its own incoming link.
+        chain_both = art_lib.trace_chain("STORY-001", index, direction="downstream")
+        assert [n["id"] for n in chain_both["downstream"]] == ["UT-001"]
+
+    def test_implements_not_upstream_from_non_story(self):
+        # Role alone must not decide direction: a non-story source using
+        # implements is not treated as a work→spec edge.
+        a1 = art_lib.Artifact(
+            path=Path("a.md"),
+            frontmatter={"id": "REQ-001", "type": "requirement", "title": "Req", "status": "approved"},
+            body="",
+            links=[art_lib.Link(target="REQ-002", role="implements")],
+        )
+        a2 = art_lib.Artifact(
+            path=Path("b.md"),
+            frontmatter={"id": "REQ-002", "type": "requirement", "title": "Req2", "status": "approved"},
+            body="",
+            links=[],
+        )
+        index = art_lib.build_id_index([a1, a2])
+        chain = art_lib.trace_chain("REQ-001", index, direction="upstream")
+        assert len(chain["upstream"]) == 0
+
+    def test_research_parent_roles_upstream(self):
+        comp = art_lib.Artifact(
+            path=Path("a.md"),
+            frontmatter={"id": "COMP-001", "type": "competition", "title": "Comp", "status": "active"},
+            body="",
+            links=[],
+        )
+        loop = art_lib.Artifact(
+            path=Path("b.md"),
+            frontmatter={"id": "LOOP-001", "type": "loop", "title": "Loop", "status": "draft"},
+            body="",
+            links=[art_lib.Link(target="COMP-001", role="operates_on")],
+        )
+        expt = art_lib.Artifact(
+            path=Path("c.md"),
+            frontmatter={"id": "EXPT-001", "type": "experiment", "title": "Expt", "status": "kept"},
+            body="",
+            links=[art_lib.Link(target="LOOP-001", role="belongs_to")],
+        )
+        index = art_lib.build_id_index([comp, loop, expt])
+        chain = art_lib.trace_chain("EXPT-001", index, direction="upstream")
+        upstream_ids = {n["id"] for n in chain["upstream"]}
+        # Multi-hop: LOOP-001 directly, COMP-001 via LOOP's operates_on edge.
+        assert upstream_ids == {"LOOP-001", "COMP-001"}
+
+    def test_annotation_role_does_not_extend_chain_depth(self):
+        req = art_lib.Artifact(
+            path=Path("a.md"),
+            frontmatter={"id": "REQ-001", "type": "requirement", "title": "Req", "status": "approved"},
+            body="",
+            links=[],
+        )
+        review = art_lib.Artifact(
+            path=Path("b.md"),
+            frontmatter={"id": "REVIEW-001", "type": "review", "title": "Review", "status": "open"},
+            body="",
+            links=[art_lib.Link(target="REQ-001", role="refers_to")],
+        )
+        index = art_lib.build_id_index([req, review])
+        path = art_lib.compute_chain_depth("REQ-001", index)
+        assert path == ["REQ-001"]
+
+    def test_verified_by_edge_extends_chain_depth(self):
+        req = art_lib.Artifact(
+            path=Path("a.md"),
+            frontmatter={"id": "REQ-001", "type": "requirement", "title": "Req", "status": "approved"},
+            body="",
+            links=[],
+        )
+        story = art_lib.Artifact(
+            path=Path("b.md"),
+            frontmatter={"id": "STORY-001", "type": "story", "title": "Story", "status": "implemented"},
+            body="",
+            links=[art_lib.Link(target="REQ-001", role="implements")],
+        )
+        ut = art_lib.Artifact(
+            path=Path("c.md"),
+            frontmatter={"id": "UT-001", "type": "unit-test", "title": "UT", "status": "verified"},
+            body="",
+            links=[art_lib.Link(target="STORY-001", role="verified_by")],
+        )
+        index = art_lib.build_id_index([req, story, ut])
+        path = art_lib.compute_chain_depth("REQ-001", index)
+        assert path == ["REQ-001", "STORY-001", "UT-001"]
+
     def test_upstream_and_downstream(self):
         a1 = art_lib.Artifact(
             path=Path("a.md"),

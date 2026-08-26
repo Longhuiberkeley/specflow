@@ -123,6 +123,7 @@ After each answer, update your readiness assessment silently.
    ```
    specflow create --type best-practice --title "<practice>" --status approved --tags "<domain>" --body "## Practice\n...\n## Rationale\n...\n## Verification\n..."
    ```
+   (BPs are guidance, not deliverables pending review — `approved` at create is the documented convention. Still list every generated BP in your reply so the user can veto or edit any of them.)
    Generate 3-5 BPs covering the most impactful domain practices (e.g., for embedded: memory safety, interrupt handling; for web-app: input validation, CSRF protection). Link each to the domain standard if applicable via `--links`. These BPs guide all downstream plan, execute, and review skills. The agent reads them from `_specflow/specs/best-practices/` — no external API calls needed.
 
    **Deterministic fallback:** Instead of crafting BPs manually, you can generate bundled domain-specific + generic best practices deterministically with no external LLM:
@@ -176,6 +177,7 @@ Present concerns as a quick summary. Let the user confirm, revise, or drop requi
   ```
   specflow create --type decision --title "Dropped: <summary>" --status approved --body "<rationale>"
   ```
+  (`approved` is legitimate here only because the user just made this decision in conversation — quote their drop instruction in the rationale. If the drop originated from you, keep the DEC `draft` and present it.)
 - **Assumption surfaced**: Create a DEC artifact with title "Assumption: \<text\>", status `draft`, body containing the assumption, what happens if wrong, and what validates it.
   ```
   specflow create --type decision --title "Assumption: <text>" --status draft --body "<assumption, consequence if wrong, validation>"

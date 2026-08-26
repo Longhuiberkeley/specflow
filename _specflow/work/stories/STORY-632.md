@@ -16,6 +16,8 @@ created: '2026-08-18'
 fingerprint: sha256:e0b090c6ea29
 modified: '2026-08-18'
 version: 2
+output_files:
+- tests/test_dual_host_skills.py
 ---
 
 # Dual-host skills + lean AGENTS.md + default TLDR

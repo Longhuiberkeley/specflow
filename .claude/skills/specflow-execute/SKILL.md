@@ -81,6 +81,7 @@ For an unplanned trivial fix that arrives mid-chat ("fix the typo in the README"
    specflow create --type story --title "<change>" --status approved \
      --links '[{"target":"<maintenance-REQ>","role":"implements"}]' --tags backfilled
    ```
+   (`approved` at create is the backfill exception: the STORY is a *record* of trivial work the user just requested, not a deliverable pending review — it moves to `implemented` in the same pass. Show the created STORY in your reply. This exception is for trivial changes only; anything with behavioral surface goes through the full flow.)
 2. The readiness gate is **advisory** for this change type — state the skip reason (per the table above) and proceed; do not block on missing DDD or test strategy.
 3. Make the change. **Skip wave planning and V-model (UT/IT/QT) generation** — a typo/formatting/rename has no behavioral surface; for a dependency bump, run the existing suite only if the bump could change behavior.
 4. Update the STORY to `implemented` and run `specflow artifact-lint` so traceability stays clean.
@@ -181,7 +182,7 @@ Before running full validation, present the implementation summary following the
 6. **Risk-proportional gate** — Run `specflow risk-tier <IDs>` to get the computed minimum tier (0 light / 1 normal / 2 stop); you may escalate above the floor freely, but downgrading below it requires a recorded justification in the DEC's `risk_profile`. For Tier 2, point at the specific concern. Tier comes from the change, not past approvals.
 7. **Action options** — Approve / Request changes / Discuss.
 
-Wait for user acknowledgement before proceeding.
+Wait for user acknowledgement before proceeding. **Acknowledgement is the user's approval — it must come from the direct user in this conversation.** You cannot acknowledge on their behalf, and you must not proceed to approval-gated status changes (e.g. `implemented` → `verified`) without it. When in doubt, re-present.
 
 ### Step 6: Validation
 

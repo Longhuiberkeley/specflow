@@ -302,4 +302,42 @@ artifacts:
     - REQ-035
     fingerprint: sha256:d8344e84998e
     children: []
-next_id: 37
+  IT-037:
+    id: IT-037
+    title: Dual-host AGENTS.md injection, sentinel migration, and CLAUDE.md bridge
+      flows
+    status: draft
+    tags:
+    - backfilled
+    - verification-contract
+    - dual-host
+    fingerprint: sha256:3906c084be69
+    children: []
+  IT-038:
+    id: IT-038
+    title: trace CLI renders real dogfood chains both directions
+    status: draft
+    tags:
+    - backfilled
+    - verification-contract
+    fingerprint: sha256:da2ae8acd776
+    children: []
+  IT-039:
+    id: IT-039
+    title: Injected instruction surface stays coherent after refresh
+    status: draft
+    tags:
+    - backfilled
+    - verification-contract
+    fingerprint: sha256:126d64eff1ac
+    children: []
+  IT-040:
+    id: IT-040
+    title: Orphan-code gate green on the real repo
+    status: draft
+    tags:
+    - backfilled
+    - verification-contract
+    fingerprint: sha256:ae49264921ac
+    children: []
+next_id: 41
