@@ -18,10 +18,14 @@ Doctrine:
   consumer release gates on upgrade). Opt-in ``lint.role_target_strict``
   escalates to blocking, mirroring ``compliance_evidence_strict``.
 - **No cry-wolf.** Only direction-bearing roles with defensible semantics
-  get rows. Annotation-ish roles (``refers_to``, ``informs``,
-  ``addresses``, ``applies_to``, ``review_of``, ``exposes``…) and unknown
-  source types emit nothing. Unresolvable targets (unknown prefix,
-  standard-clause IDs like ``ISO-14971-4.2``) are exempt.
+  get rows. ``derives_from`` is deliberately UNJUDGED: it is the generic
+  provenance role (v1.14.4, learned from a consumer repo with 965 artifacts
+  where STORY→STORY lineage, DEC-from-DEF, and DEC-from-SPIKE provenance are
+  legitimate mass usage — 139 false alarms on the v1.14.3 rows). Annotation-
+  ish roles (``refers_to``, ``informs``, ``addresses``, ``applies_to``,
+  ``review_of``, ``exposes``…), unknown source types, and unresolvable
+  targets (unknown prefix, standard-clause IDs like ``ISO-14971-4.2``) all
+  emit nothing.
 - Warnings collapse per artifact per role.
 """
 
@@ -48,10 +52,6 @@ ROLE_TARGET_MATRIX: dict[str, dict[str, frozenset[str]]] = {
         # never warned; artifact-shaped targets fall through to the row.
         "complies_with": frozenset(_SPEC_TYPES),
         "supersedes": frozenset(_SPEC_TYPES | {"best-practice", "finding"}),
-        "derives_from": frozenset(
-            _SPEC_TYPES
-            | {"decision", "audit", "best-practice", "finding", "competition"}
-        ),
     },
     "architecture": {
         # ARCH→ARCH refinement is a real decomposition shape in dogfood
@@ -61,10 +61,6 @@ ROLE_TARGET_MATRIX: dict[str, dict[str, frozenset[str]]] = {
         "verified_by": frozenset(_TEST_TYPES),
         "complies_with": frozenset(_SPEC_TYPES),
         "supersedes": frozenset(_SPEC_TYPES | {"best-practice", "finding"}),
-        "derives_from": frozenset(
-            _SPEC_TYPES
-            | {"decision", "audit", "best-practice", "finding", "competition"}
-        ),
         # guided_by on a spec points at a decision that shaped it.
         "guided_by": frozenset({"decision", "best-practice"}),
     },
@@ -74,10 +70,6 @@ ROLE_TARGET_MATRIX: dict[str, dict[str, frozenset[str]]] = {
         "verified_by": frozenset(_TEST_TYPES),
         "complies_with": frozenset(_SPEC_TYPES),
         "supersedes": frozenset(_SPEC_TYPES | {"best-practice", "finding"}),
-        "derives_from": frozenset(
-            _SPEC_TYPES
-            | {"decision", "audit", "best-practice", "finding", "competition"}
-        ),
         "specified_by": frozenset({"architecture", "requirement"}),
         "guided_by": frozenset({"decision", "best-practice"}),
     },
@@ -90,71 +82,53 @@ ROLE_TARGET_MATRIX: dict[str, dict[str, frozenset[str]]] = {
         ),
         "verified_by": frozenset(_TEST_TYPES),
         "depends_on": frozenset({"story", "spike", "experiment"}),
-        "derives_from": frozenset(
-            _SPEC_TYPES
-            | {"decision", "spike", "finding", "competition", "audit"}
-        ),
     },
     "spike": {
         "guided_by": frozenset({"decision", "best-practice"} | _SPEC_TYPES),
-        "derives_from": frozenset(_SPEC_TYPES | {"decision", "finding", "audit"}),
     },
     "decision": {
-        "derives_from": frozenset(
-            _SPEC_TYPES | {"audit", "review", "decision", "finding", "challenge"}
-        ),
+        # derives_from unjudged (see module docstring) — a DEC's only
+        # direction-bearing role is derives_from, so DEC carries no rows.
     },
     "defect": {
         "fails_to_meet": frozenset(_SPEC_TYPES),
-        "derives_from": frozenset(_SPEC_TYPES | {"decision", "finding", "audit"}),
     },
     # --- tests (both legal verified_by shapes) -----------------------------
     "unit-test": {
         "verified_by": frozenset({"story"} | _SPEC_TYPES),
-        "derives_from": frozenset(_SPEC_TYPES | {"detailed-design"}),
     },
     "integration-test": {
         "verified_by": frozenset({"story"} | _SPEC_TYPES),
-        "derives_from": frozenset(_SPEC_TYPES),
     },
     "qualification-test": {
         "verified_by": frozenset({"story"} | _SPEC_TYPES),
-        "derives_from": frozenset(_SPEC_TYPES),
     },
     # --- research hierarchy -------------------------------------------------
     "competition": {
         "operates_on": frozenset({"competition"}),
         "guided_by": frozenset({"decision", "best-practice"} | _SPEC_TYPES),
-        "derives_from": frozenset(_SPEC_TYPES | {"decision", "finding", "audit"}),
     },
     "loop": {
-        "derives_from": frozenset({"competition", "finding", "decision", "audit"}),
+        # derives_from unjudged (see module docstring) — LOOP's only
+        # direction-bearing role is derives_from, so LOOP carries no rows.
     },
     "experiment": {
         "belongs_to": frozenset({"loop", "competition", "experiment"}),
-        "derives_from": frozenset({"finding", "loop", "decision"}),
     },
     "finding": {
         "belongs_to": frozenset({"loop", "competition", "experiment"}),
         "condenses": frozenset({"loop", "experiment"}),
         "validated_by": frozenset({"experiment"} | _TEST_TYPES),
         "supersedes": frozenset({"finding", "best-practice"} | _SPEC_TYPES),
-        "derives_from": frozenset(
-            _SPEC_TYPES | {"decision", "experiment", "loop", "competition", "audit"}
-        ),
     },
     # --- ops ------------------------------------------------------------------
     "run": {
         "implements": frozenset(_SPEC_TYPES),
         "complies_with": frozenset(_SPEC_TYPES),
         "guided_by": frozenset({"decision", "best-practice"} | _SPEC_TYPES),
-        "derives_from": frozenset(
-            _SPEC_TYPES | {"experiment", "finding", "decision", "run"}
-        ),
     },
     "monitor": {
         "belongs_to": frozenset({"run", "monitor"}),
-        "derives_from": frozenset({"run", "finding", "decision"}),
     },
 }
 

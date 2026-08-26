@@ -4,6 +4,10 @@ SpecFlow ships incrementally. This document tracks what shipped in each release,
 
 For the original implementation plan (phase breakdown, dependency graph — now historical, superseded by the release history below), see [docs/.archive/plan.md](docs/.archive/plan.md).
 
+## v1.14.4
+
+- **`derives_from` unjudged by the role-target matrix** — learned from the first live consumer run (965-artifact repo, 139 false alarms on legitimate provenance shapes: STORY→STORY lineage, DEC-from-DEF/SPIKE). Rationale + provenance-zoo regression test in `lib/role_targets.py`.
+
 ## v1.14.3
 
 Generalized-core hardening, scoped deliberately small (harness-level work deferred — see Future):

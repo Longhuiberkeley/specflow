@@ -195,14 +195,42 @@ class TestMatrixSemantics:
         _mk(root, "run", "RUN-001", [_link("REQ-001", "implements")])
         _mk(root, "monitor", "MONITOR-001", [_link("RUN-001", "belongs_to")])
         # Bad research/ops shapes DO warn:
-        _mk(root, "loop", "LOOP-002", [_link("REQ-001", "derives_from")])
         _mk(root, "run", "RUN-002", [_link("UT-001", "implements")])
+        _mk(root, "monitor", "MONITOR-002", [_link("REQ-001", "belongs_to")])
         arts = art_lib.discover_artifacts(root)
         issues = rt.check_role_targets(arts)
         flagged = [i["message"] for i in issues]
         assert len(flagged) == 2, flagged
-        assert any("LOOP-002" in m for m in flagged)
         assert any("RUN-002" in m for m in flagged)
+        assert any("MONITOR-002" in m for m in flagged)
+
+    def test_derives_from_is_generic_provenance_never_warns(self, tmp_path: Path):
+        """v1.14.4: derives_from is the generic provenance role — UNJUDGED.
+
+        Learned from a live consumer repo (965 artifacts): STORY→STORY
+        lineage, DEC-from-DEF, DEC-from-SPIKE, REQ-from-SPIKE/DEF, and
+        COMP/LOOP provenance are legitimate mass usage. The v1.14.3 rows
+        produced 139 false alarms there (cry-wolf). Any artifact-shape
+        target must stay quiet under derives_from.
+        """
+        root = _project(tmp_path)
+        # A provenance zoo: every derives_from shape a real repo uses.
+        _mk(root, "story", "STORY-001", [_link("STORY-002", "derives_from")])
+        _mk(root, "story", "STORY-002", [_link("DEF-001", "derives_from")])
+        _mk(root, "decision", "DEC-001", [_link("DEF-001", "derives_from")])
+        _mk(root, "decision", "DEC-002", [_link("SPIKE-001", "derives_from")])
+        _mk(root, "requirement", "REQ-001", [
+            _link("SPIKE-002", "derives_from"),
+            _link("DEF-001", "derives_from"),
+        ])
+        _mk(root, "spike", "SPIKE-001", [])
+        _mk(root, "spike", "SPIKE-002", [])
+        _mk(root, "defect", "DEF-001", [_link("REQ-002", "derives_from")])
+        _mk(root, "requirement", "REQ-002", [])
+        _mk(root, "competition", "COMP-001", [_link("REQ-001", "derives_from")])
+        _mk(root, "loop", "LOOP-001", [_link("COMP-001", "derives_from")])
+        issues = rt.check_role_targets(art_lib.discover_artifacts(root))
+        assert [i for i in issues if "derives_from" in i["message"]] == []
 
     def test_clause_targets_exempt_but_artifact_complies_warns(self, tmp_path: Path):
         root = _project(tmp_path)

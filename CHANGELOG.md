@@ -4,6 +4,19 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.14.4] - 2026-08-27
+
+Post-release matrix tuning, learned from a live consumer repo (STORY-639 follow-up):
+
+### Fixes
+
+- **`derives_from` is unjudged by the role-target matrix.** v1.14.3's rows treated it as a spec-chain role; a real 965-artifact consumer repo uses it as the *generic provenance* role — STORY→STORY lineage, DEC-from-DEF, DEC-from-SPIKE, REQ-from-SPIKE — producing 139 false warnings on the first live run (exactly the cry-wolf this check exists to avoid). All `derives_from` rows removed with the rationale documented in `lib/role_targets.py`; a provenance-zoo regression test pins every real-world shape quiet. Types whose only direction-bearing role was `derives_from` (decision, loop) now carry no rows. The genuinely wrong shapes found on that repo (9 findings: `DDD refined_by → DEC`, `complies_with → DEC`, `STORY specified_by → DEC`, …) still warn.
+
+### Tests
+
+- +1 provenance-zoo regression test; corpus test updated for the unjudged role.
+- Total: 1428 tests passing
+
 ## [1.14.3] - 2026-08-27
 
 Generalized-core hardening (STORY-638..641): race-safe artifact creation, a role→target-type semantic matrix, and creation-status entry gates. Harness-level customization (OpenCode native commands) and larger refactors (chain-depth unification) are deliberately deferred to v1.15.0 and tracked as STORY-642..645.
