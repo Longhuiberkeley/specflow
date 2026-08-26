@@ -1049,4 +1049,13 @@ artifacts:
     tags: []
     fingerprint: sha256:a557ed85a54a
     children: []
-next_id: 637
+  STORY-637:
+    id: STORY-637
+    title: 'v1.14.2 review fixes: typed refined_by direction, --set guard, IT-038
+      truthfulness, lint crash guard'
+    status: implemented
+    tags:
+    - review-fix
+    fingerprint: sha256:c4ce6f80b91a
+    children: []
+next_id: 638

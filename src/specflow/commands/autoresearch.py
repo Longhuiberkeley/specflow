@@ -805,6 +805,10 @@ def _run_log(root: Path, args: dict) -> int:
 
     extra_fields = {}
     set_fields = args.get("set_fields") or []
+    # Reserved: these keys are owned by the command itself (traceability edges
+    # and parent fields — STORY-636/637). A --set override could silently
+    # strip the belongs_to link edge or desync frontmatter from it.
+    reserved = {"links", "loop", "competition", "status", "id", "type", "title"}
     for entry in set_fields:
         if "=" not in entry:
             print(f"{RED}✗ Invalid --set value '{entry}'. Expected KEY=VALUE.{NC}")
@@ -813,6 +817,12 @@ def _run_log(root: Path, args: dict) -> int:
         key = key.strip()
         if not key:
             print(f"{RED}✗ Invalid --set value '{entry}'. Empty key.{NC}")
+            return 1
+        if key in reserved:
+            print(
+                f"{RED}✗ --set {key} is reserved (owned by 'autoresearch log'; "
+                f"use the dedicated flags or 'specflow update <ID> --add-link').{NC}"
+            )
             return 1
         try:
             extra_fields[key] = json.loads(raw)

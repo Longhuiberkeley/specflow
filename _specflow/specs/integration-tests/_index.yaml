@@ -320,7 +320,7 @@ artifacts:
     tags:
     - backfilled
     - verification-contract
-    fingerprint: sha256:da2ae8acd776
+    fingerprint: sha256:c346455c391c
     children: []
   IT-039:
     id: IT-039

@@ -4,6 +4,24 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.14.2] - 2026-08-26
+
+Post-release review fixes for v1.14.1's trace-direction and autoresearch hardening (STORY-637).
+
+### Fixes
+
+- **`refined_by` direction is now type-pair aware.** Dogfood uses both shapes: canonical `REQ refined_by → ARCH` (the target refines the source — downstream) and legacy `DDD refined_by → ARCH` (concrete → abstract — upstream). v1.14.1 treated it as unconditionally upstream, wrongly rendering REQ-005's refining ARCHs as its sources. Direction now compares V-model abstraction levels when both types are known; canonical-shape refiners also render downstream via the owned-edge path.
+- **Spec-owned `verified_by` edges render downstream.** `REQ/ARCH/DDD verified_by → QT/IT/UT` (e.g. REQ-019 → QT-020) now render downstream for any non-test source, not just stories.
+- **`RUN implements → REQ/ARCH` traces upstream** (the ops run schema allows `implements`; a deployment now traces to its governing spec).
+- **`autoresearch log --set` reserves the keys it owns.** `--set links=…`, `loop`, `competition`, `status`, `id`, `type`, `title` are rejected with a clear error — previously `--set 'links=[]'` could silently strip the required `belongs_to` edge (defeating STORY-636). Rejected sets leave no partial artifact.
+- **`autoresearch-logging` lint survives malformed parents.** A non-string parent field (e.g. hand-edited `loop: [LOOP-001]`) now produces a `malformed` warning instead of a TypeError crash; the check's comment no longer misattributes dangling frontmatter refs to the links check.
+- **IT-038 verification contract made truthful.** Its `verify_command` now runs assertion-bearing integration tests (`tests/test_trace_integration.py`: real CLI on the real repo asserts STORY-632 renders REQ-005/REQ-001 `(implements)` + DEC-077 `(guided_by)` upstream and UT-069/IT-037/QT-044 downstream, plus the CLI-created research-hierarchy trace test) instead of an exit-code-only `specflow trace`.
+
+### Tests
+
+- 5 new direction tests (canonical/legacy `refined_by`, RUN `implements`, spec-owned `verified_by`), 4 reserved-key regression tests, 1 malformed-parent lint test, 3 real-repo trace integration tests.
+- Total: 1381 tests passing
+
 ## [1.14.1] - 2026-08-26
 
 Trust hardening patch: the v1.14.0 tag's release gate failed because STORY-632's outputs were untraced — this release closes that, fixes trace direction so real links actually render, makes the no-self-approval rule explicit and uniform everywhere, and teaches the autoresearch CLI to write link edges `trace` can see.

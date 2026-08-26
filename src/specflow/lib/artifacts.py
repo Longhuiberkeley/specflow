@@ -736,34 +736,88 @@ def find_missing_v_pairs(artifacts: list[Artifact]) -> list[tuple[Artifact, str]
 
 _TEST_TYPES = {"unit-test", "integration-test", "qualification-test"}
 
-# Roles that point from a work item to the spec that governs it. These are
-# upstream edges *when the source is a story* (a story implements a REQ, is
-# guided by an ARCH, is specified by a DDD).
+# Roles that point from a work item to the spec that governs it. Upstream
+# edges for work-ish sources (a STORY or an ops RUN implements a REQ, a story
+# is guided by an ARCH / specified by a DDD).
 _WORK_TO_SPEC_ROLES = {"implements", "guided_by", "specified_by"}
+_WORK_TO_SPEC_SOURCES = {"story", "run"}
+
+# V-model abstraction level for refined_by direction (higher = more concrete).
+_SPEC_LEVEL = {"requirement": 0, "architecture": 1, "detailed-design": 2}
 
 # Research-hierarchy roles: LOOP operates_on COMP, EXPT/FIND belong_to their
 # parent, FIND condenses a LOOP. Upstream for their source types.
 _RESEARCH_PARENT_ROLES = {"operates_on", "belongs_to", "condenses"}
 
 
-def is_upstream_edge(source_type: str | None, role: str) -> bool:
+def is_upstream_edge(
+    source_type: str | None,
+    role: str,
+    target_type: str | None = None,
+) -> bool:
     """Decide whether a link edge reads upstream (toward governing spec/source).
 
-    Direction is type-aware, not role-only: ``derives_from``/``complies_with``
-    are always upstream; ``implements``/``guided_by``/``specified_by`` are
-    upstream only from a story; ``verified_by`` is upstream only from a test
-    (test → story/spec) — a story's own ``verified_by → UT`` edge points at its
-    verifier and therefore reads downstream; research parent roles are upstream
-    for loop/experiment/finding sources.
+    Direction is type-aware, not role-only:
+
+    - ``derives_from``/``complies_with`` are always upstream.
+    - ``implements``/``guided_by``/``specified_by`` are upstream from work-ish
+      sources (story, ops run).
+    - ``verified_by`` is upstream only from a test (test → story/spec); a
+      spec/story's own ``verified_by → UT/IT/QT`` edge points at its verifier
+      and reads downstream.
+    - ``refined_by`` is direction-ambiguous by role alone because dogfood has
+      both shapes: canonical ``REQ refined_by → ARCH`` (the target refines the
+      source, so the target is downstream) and legacy ``DDD refined_by → ARCH``
+      (concrete → abstract, upstream). Disambiguated by abstraction level when
+      both types are known specs: target more abstract → upstream; target more
+      concrete (or equal/unknown) → not upstream.
+    - Research parent roles are upstream for their source types.
     """
-    if role in ("derives_from", "complies_with", "refined_by"):
+    if role in ("derives_from", "complies_with"):
         return True
-    if role in _WORK_TO_SPEC_ROLES and source_type == "story":
+    if role == "refined_by":
+        if (
+            source_type in _SPEC_LEVEL
+            and target_type is not None
+            and target_type in _SPEC_LEVEL
+        ):
+            return _SPEC_LEVEL[target_type] < _SPEC_LEVEL[source_type]
+        return True  # unknown types: legacy concrete→abstract shape
+    if role in _WORK_TO_SPEC_ROLES and source_type in _WORK_TO_SPEC_SOURCES:
         return True
     if role == "verified_by" and source_type in _TEST_TYPES:
         return True
     if role in _RESEARCH_PARENT_ROLES:
         return True
+    return False
+
+
+def is_downstream_owned_edge(
+    source_type: str | None,
+    role: str,
+    target_type: str | None,
+) -> bool:
+    """Outgoing edges on the traced artifact that name their own downstream.
+
+    Two shapes exist where the *source* stores the link to something
+    downstream of it and no reciprocal edge is guaranteed:
+
+    - a spec/story naming its verifier (``verified_by → UT/IT/QT``), and
+    - a spec naming the more-concrete spec that refines it
+      (canonical ``REQ refined_by → ARCH``).
+
+    These render downstream so the trace shows them without requiring the
+    (often missing) reciprocal link.
+    """
+    if role == "verified_by" and source_type not in _TEST_TYPES:
+        return True
+    if role == "refined_by":
+        if (
+            source_type in _SPEC_LEVEL
+            and target_type in _SPEC_LEVEL
+            and _SPEC_LEVEL[target_type] > _SPEC_LEVEL[source_type]
+        ):
+            return True
     return False
 
 
@@ -799,11 +853,13 @@ def trace_chain(
             if not current:
                 continue
             for link in current.links:
+                target = id_index.get(link.target)
                 if (
-                    is_upstream_edge(current.type, link.role)
+                    is_upstream_edge(
+                        current.type, link.role, target.type if target else None
+                    )
                     and link.target not in visited
                 ):
-                    target = id_index.get(link.target)
                     upstream.append({
                         "id": link.target,
                         "type": target.type if target else "standard",
@@ -828,20 +884,27 @@ def trace_chain(
                         "status": art.status,
                         "role": link.role,
                     })
-        # A story's own ``verified_by → UT/IT/QT`` edge points at its
-        # verifier: render it downstream even without a reciprocal link.
+        # Outgoing edges the traced artifact owns that name its own
+        # downstream: a spec/story pointing at its verifier
+        # (``verified_by → UT/IT/QT``) or a spec pointing at the more-concrete
+        # spec that refines it (canonical ``REQ refined_by → ARCH``). Rendered
+        # downstream even without a reciprocal link.
         source = id_index.get(artifact_id)
-        if source is not None and source.type == "story":
+        if source is not None:
             for link in source.links:
-                if link.role == "verified_by" and link.target not in visited:
+                if link.target in visited:
+                    continue
+                target = id_index.get(link.target)
+                if is_downstream_owned_edge(
+                    source.type, link.role, target.type if target else None
+                ):
                     visited.add(link.target)
-                    target = id_index.get(link.target)
                     downstream.append({
                         "id": link.target,
                         "type": target.type if target else "standard",
                         "title": target.title if target else link.target,
                         "status": target.status if target else "",
-                        "role": "verified_by",
+                        "role": link.role,
                     })
 
     return {"upstream": upstream, "downstream": downstream}

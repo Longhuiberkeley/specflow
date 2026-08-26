@@ -198,6 +198,14 @@ Focus: **autoresearch methodology depth, escalation/permanence test, and templat
 
 > Delivered: the `spike-lifecycle` lint detector (stale / zombie / repeated-topic SPIKEs) shipped as a first-class `artifact-lint --type spike-lifecycle` check — the work-side complement to the v1.8.0 *Stale Code Detection* item. Still deferred: optional structured multi-output schema (typed per-component fields on COMP/EXPT) if the `component_<name>` convention proves too loose.
 
+## v1.14.2
+
+Post-release review fixes (STORY-637):
+
+- **Type-pair-aware `refined_by`** — canonical `REQ→ARCH` renders downstream, legacy `DDD→ARCH` stays upstream; spec-owned `verified_by` edges and `RUN implements` trace correctly; new real-repo trace integration tests.
+- **`autoresearch log --set` reserved-key guard** — traceability edges can no longer be silently stripped via `--set`.
+- **Lint survives malformed parent fields** and reports them as warnings instead of crashing.
+
 ## v1.14.1
 
 Trust hardening patch (trace direction, no-self-approval uniformity, autoresearch link edges, release-gate closure):

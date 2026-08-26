@@ -1463,21 +1463,33 @@ def _check_autoresearch_logging(
                 f"(supported/not_supported/inconclusive)"
             )
 
-    # STORY-636: link-edge consistency. Frontmatter parent fields
+    # STORY-636/637: link-edge consistency. Frontmatter parent fields
     # (`competition`, `loop`, `source_loop`) are invisible to `specflow trace`;
     # the link edge is what makes the research hierarchy traversable. Artifacts
     # created by older CLIs (or by hand) may carry the field but not the edge —
     # surface them with the repair command instead of silently vanishing from
-    # the trace graph. Only checked when the parent exists in the artifact set:
-    # a dangling frontmatter reference is the `links` check's broken-target
-    # problem, not a missing-edge problem.
+    # the trace graph. Non-string parent values (hand-edited YAML corruption,
+    # e.g. `loop: [LOOP-001]`) are reported as malformed rather than crashing
+    # the check; a *dangling* string reference to a nonexistent artifact is
+    # likewise reported here because the generic links check only inspects
+    # `links[]` entries.
     id_prefix = art_lib.get_prefix_from_id
     known_ids = {a.id for a in artifacts}
+
+    def _parent(art: art_lib.Artifact, key: str) -> str | None:
+        value = art.frontmatter.get(key)
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            _bump(f"[{art.id}] has malformed `{key}` (expected an ID string, got {type(value).__name__})")
+            return None
+        return value
+
     for art in artifacts:
         prefix = id_prefix(art.id)
         roles = {(l.target, l.role) for l in art.links}
         if prefix == "LOOP":
-            comp = art.frontmatter.get("competition")
+            comp = _parent(art, "competition")
             if (
                 comp
                 and comp in known_ids
@@ -1490,7 +1502,7 @@ def _check_autoresearch_logging(
                     f"--add-link {comp}:operates_on`"
                 )
         elif prefix == "EXPT":
-            loop = art.frontmatter.get("loop")
+            loop = _parent(art, "loop")
             if (
                 loop
                 and loop in known_ids
@@ -1503,8 +1515,8 @@ def _check_autoresearch_logging(
                     f"--add-link {loop}:belongs_to`"
                 )
         elif prefix == "FIND":
-            comp = art.frontmatter.get("competition")
-            loop = art.frontmatter.get("source_loop")
+            comp = _parent(art, "competition")
+            loop = _parent(art, "source_loop")
             if (
                 comp
                 and comp in known_ids

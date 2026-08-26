@@ -665,3 +665,91 @@ class TestCliWritesTraceEdges:
         assert result["warning_count"] >= 1
         assert "operates_on" in result["detail"]
         assert "--add-link COMP-001:operates_on" in result["detail"]
+
+
+class TestLogSetReservedKeys:
+    """STORY-637 (v1.14.2): --set must not be able to strip the traceability
+    edge or desync parent fields that `autoresearch log` owns."""
+
+    def test_set_links_is_rejected(self, project_root, monkeypatch, capsys):
+        from specflow import cli
+        monkeypatch.chdir(project_root)
+        cli.main([
+            "autoresearch", "plan",
+            "--competition", "COMP-001", "--mode", "explore", "--budget", "50",
+        ])
+        rc = cli.main([
+            "autoresearch", "log", "--loop", "LOOP-001",
+            "--status", "kept", "--metric-value", "0.5",
+            "--change-category", "features", "--summary", "s",
+            "--set", "links=[]",
+        ])
+        assert rc == 1
+        out = capsys.readouterr().out
+        assert "reserved" in out
+
+    def test_set_loop_and_competition_rejected(self, project_root, monkeypatch, capsys):
+        from specflow import cli
+        monkeypatch.chdir(project_root)
+        cli.main([
+            "autoresearch", "plan",
+            "--competition", "COMP-001", "--mode", "explore", "--budget", "50",
+        ])
+        for reserved_key in ("loop", "competition", "status"):
+            rc = cli.main([
+                "autoresearch", "log", "--loop", "LOOP-001",
+                "--status", "kept", "--metric-value", "0.5",
+                "--change-category", "features", "--summary", "s",
+                "--set", f"{reserved_key}=X",
+            ])
+            assert rc == 1, f"--set {reserved_key} should be rejected"
+
+    def test_log_after_rejected_set_still_writes_edge(self, project_root, monkeypatch, capsys):
+        # The guard must not corrupt state: a rejected --set leaves no partial
+        # EXPT; a clean retry writes the belongs_to edge.
+        from specflow import cli
+        monkeypatch.chdir(project_root)
+        cli.main([
+            "autoresearch", "plan",
+            "--competition", "COMP-001", "--mode", "explore", "--budget", "50",
+        ])
+        cli.main([
+            "autoresearch", "log", "--loop", "LOOP-001",
+            "--status", "kept", "--metric-value", "0.5",
+            "--change-category", "features", "--summary", "s",
+            "--set", "links=[]",
+        ])
+        rc = cli.main([
+            "autoresearch", "log", "--loop", "LOOP-001",
+            "--status", "kept", "--metric-value", "0.6",
+            "--change-category", "features", "--summary", "s2",
+        ])
+        assert rc == 0
+        expts = [a for a in art_lib.discover_artifacts(project_root)
+                 if art_lib.get_prefix_from_id(a.id) == "EXPT"]
+        assert len(expts) == 1  # the rejected --set created nothing
+        edges = {(l.target, l.role) for l in expts[0].links}
+        assert ("LOOP-001", "belongs_to") in edges
+
+
+class TestLintMalformedParentFields:
+    """STORY-637: a non-string parent field (hand-edit YAML corruption) must
+    produce a lint warning, not a TypeError crash."""
+
+    def test_list_valued_loop_field_warns_not_crashes(self, project_root):
+        from specflow.commands.artifact_lint import _run_check
+        root = project_root
+        # Hand-corrupted shape: loop is a list, not an ID string.
+        path = _write_artifact(
+            root, "EXPT-009", "experiment", "Corrupt expt", status="kept",
+            extra_fm={"created": "2026-05-15", "loop": ["LOOP-001"],
+                      "metric_value": 0.5, "change_category": "features",
+                      "summary": "s", "competition": "COMP-001"},
+        )
+        # Ensure the file parses with the list field intact.
+        assert path.exists()
+        result = _run_check(
+            art_lib.discover_artifacts(root), root, "autoresearch-logging"
+        )
+        assert result["warning_count"] >= 1
+        assert "malformed `loop`" in result["detail"]

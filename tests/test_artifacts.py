@@ -414,6 +414,88 @@ class TestTraceChain:
         path = art_lib.compute_chain_depth("REQ-001", index)
         assert path == ["REQ-001", "STORY-001", "UT-001"]
 
+    def test_canonical_refined_by_on_req_is_downstream(self):
+        # Canonical shape: REQ names the ARCH that refines it — the ARCH is
+        # downstream, NOT upstream (v1.14.2 fix; dogfood REQ-005 shape).
+        req = art_lib.Artifact(
+            path=Path("a.md"),
+            frontmatter={"id": "REQ-001", "type": "requirement", "title": "Req", "status": "approved"},
+            body="",
+            links=[art_lib.Link(target="ARCH-001", role="refined_by")],
+        )
+        arch = art_lib.Artifact(
+            path=Path("b.md"),
+            frontmatter={"id": "ARCH-001", "type": "architecture", "title": "Arch", "status": "approved"},
+            body="",
+            links=[],
+        )
+        index = art_lib.build_id_index([req, arch])
+        chain = art_lib.trace_chain("REQ-001", index, direction="upstream")
+        assert len(chain["upstream"]) == 0
+        chain = art_lib.trace_chain("REQ-001", index, direction="downstream")
+        assert [n["id"] for n in chain["downstream"]] == ["ARCH-001"]
+        assert chain["downstream"][0]["role"] == "refined_by"
+
+    def test_legacy_refined_by_on_ddd_stays_upstream(self):
+        # Legacy shape: DDD points at the ARCH it refines — upstream
+        # (dogfood DDD-001/DDD-016 shape).
+        ddd = art_lib.Artifact(
+            path=Path("a.md"),
+            frontmatter={"id": "DDD-001", "type": "detailed-design", "title": "DDD", "status": "approved"},
+            body="",
+            links=[art_lib.Link(target="ARCH-001", role="refined_by")],
+        )
+        arch = art_lib.Artifact(
+            path=Path("b.md"),
+            frontmatter={"id": "ARCH-001", "type": "architecture", "title": "Arch", "status": "approved"},
+            body="",
+            links=[],
+        )
+        index = art_lib.build_id_index([ddd, arch])
+        chain = art_lib.trace_chain("DDD-001", index, direction="upstream")
+        assert [n["id"] for n in chain["upstream"]] == ["ARCH-001"]
+
+    def test_run_implements_req_upstream(self):
+        # ops RUN schema allows implements → REQ/ARCH: a deployment must trace
+        # to its governing spec (v1.14.2 fix).
+        run = art_lib.Artifact(
+            path=Path("a.md"),
+            frontmatter={"id": "RUN-001", "type": "run", "title": "Run", "status": "deployed"},
+            body="",
+            links=[art_lib.Link(target="REQ-001", role="implements")],
+        )
+        req = art_lib.Artifact(
+            path=Path("b.md"),
+            frontmatter={"id": "REQ-001", "type": "requirement", "title": "Req", "status": "approved"},
+            body="",
+            links=[],
+        )
+        index = art_lib.build_id_index([run, req])
+        chain = art_lib.trace_chain("RUN-001", index, direction="upstream")
+        assert [n["id"] for n in chain["upstream"]] == ["REQ-001"]
+
+    def test_spec_owned_verified_by_renders_downstream(self):
+        # Spec-side edge: REQ names its qualifying test (dogfood REQ-019 →
+        # QT-020 shape) — the verifier renders downstream.
+        req = art_lib.Artifact(
+            path=Path("a.md"),
+            frontmatter={"id": "REQ-001", "type": "requirement", "title": "Req", "status": "approved"},
+            body="",
+            links=[art_lib.Link(target="QT-001", role="verified_by")],
+        )
+        qt = art_lib.Artifact(
+            path=Path("b.md"),
+            frontmatter={"id": "QT-001", "type": "qualification-test", "title": "QT", "status": "verified"},
+            body="",
+            links=[],
+        )
+        index = art_lib.build_id_index([req, qt])
+        chain = art_lib.trace_chain("REQ-001", index, direction="upstream")
+        assert len(chain["upstream"]) == 0
+        chain = art_lib.trace_chain("REQ-001", index, direction="downstream")
+        assert [n["id"] for n in chain["downstream"]] == ["QT-001"]
+
+
     def test_upstream_and_downstream(self):
         a1 = art_lib.Artifact(
             path=Path("a.md"),
