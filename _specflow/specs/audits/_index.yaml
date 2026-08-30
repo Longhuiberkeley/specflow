@@ -1055,7 +1055,7 @@ artifacts:
   AUD-119:
     id: AUD-119
     title: Project Audit 20260830T141737Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
