@@ -295,17 +295,21 @@ def _outcome_feedback_note(artifacts: list[art_lib.Artifact], active_packs: list
 
     Closes the traceability gap where a breached MONITOR can be hand-resolved
     leaving zero defect record (and thus zero prevention pattern downstream).
-    Two deterministic counts over MONITOR artifacts via a TWO-DIRECTION graph
-    walk — both directions must be checked or this crys-wolf:
+    Three credit wires over MONITOR artifacts — all must be checked or this
+    crys-wolf:
 
       Forward (MONITOR's own links): does the MONITOR have an outgoing `informs`
         edge (e.g., → LOOP/DEC) recording a follow-up?
       Backward (any DEF's links): does a DEF point back at the MONITOR via
         `exposed_by` (the defect-from-monitor wire)?
+      Incoming (any artifact's links): does anything point at the MONITOR via
+        `derives_from` (e.g., a LOOP escalated from the breach, or a successor
+        MON correcting a wrong one)?
 
     (i)  flagged/breached MONITORs with NO DEF backlink AND NO outgoing informs
-         edge → "breach unaccountable" (routes to `specflow defect-from-monitor`).
-    (ii) resolved MONITORs that were never linked to any DEF → "vanished without
+         edge AND NO incoming derives_from edge → "breach unaccountable"
+         (routes to `specflow defect-from-monitor`).
+    (ii) resolved MONITORs with none of those three credits → "vanished without
          prevention record" (the breach left no closed-DEF → PREV trace).
 
     Gated on the ops pack being active AND at least one MONITOR existing, so
@@ -348,7 +352,8 @@ def _outcome_feedback_note(artifacts: list[art_lib.Artifact], active_packs: list
     ]
     vanished = [
         m for m in monitors
-        if m.status == "resolved" and m.id not in backed_by_def and m.id not in has_derives
+        if m.status == "resolved" and m.id not in backed_by_def
+        and m.id not in has_informs and m.id not in has_derives
     ]
 
     notes: list[str] = []

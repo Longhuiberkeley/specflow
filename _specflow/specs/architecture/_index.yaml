@@ -244,6 +244,13 @@ artifacts:
     - v1.12
     fingerprint: sha256:174bed332720
     children: []
+  ARCH-029:
+    id: ARCH-029
+    title: 'Privacy gate: denylist release check + sanctioned-exception model'
+    status: approved
+    tags: []
+    fingerprint: sha256:52b000665f0a
+    children: []
   ARCH-LOUDFAIL-d87a:
     id: ARCH-LOUDFAIL-d87a
     title: Loud-failure and advisory ergonomics command surfaces (v1.13.2)
@@ -254,12 +261,5 @@ artifacts:
     - architecture
     - accounting-not-policing
     fingerprint: sha256:f9a476477150
-    children: []
-  ARCH-029:
-    id: ARCH-029
-    title: 'Privacy gate: denylist release check + sanctioned-exception model'
-    status: approved
-    tags: []
-    fingerprint: sha256:52b000665f0a
     children: []
 next_id: 30

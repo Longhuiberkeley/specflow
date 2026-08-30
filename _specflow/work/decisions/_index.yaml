@@ -742,6 +742,13 @@ artifacts:
     tags: []
     fingerprint: sha256:5637310ae3f5
     children: []
+  DEC-078:
+    id: DEC-078
+    title: Domain checklists teach SpecFlow mapping, not domain methodology
+    status: approved
+    tags: []
+    fingerprint: sha256:697ac3442a13
+    children: []
   DEC-CHANGERE-066b:
     id: DEC-CHANGERE-066b
     title: 'Change Record: fix: normalize all list-valued frontmatter fields, not
@@ -783,4 +790,4 @@ artifacts:
     - data-integrity
     fingerprint: sha256:aebb8deb1526
     children: []
-next_id: 78
+next_id: 79

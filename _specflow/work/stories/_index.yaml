@@ -755,15 +755,14 @@ artifacts:
     children: []
   STORY-075:
     id: STORY-075
-    title: Test autoresearch pack end-to-end and pilot with a personal quant research
-      project
+    title: Validate the autoresearch pack end-to-end in a real research project
     status: implemented
     tags:
     - autoresearch
     - wave-4
     - test
     - pilot
-    fingerprint: sha256:bb84e5eee69f
+    fingerprint: sha256:96ff3242dc57
     children: []
   STORY-076:
     id: STORY-076
@@ -1021,6 +1020,21 @@ artifacts:
     tags: []
     fingerprint: sha256:f87f81bbc5b2
     children: []
+  STORY-647:
+    id: STORY-647
+    title: "v1.14.6: privacy completion \u2014 working-tree polish, denylist gate\
+      \ automation (CI+pytest), brief vanished symmetry + locking tests"
+    status: implemented
+    tags: []
+    fingerprint: sha256:1d4bbe3ef7ea
+    children: []
+  STORY-648:
+    id: STORY-648
+    title: "v1.14.6: quant domain checklist thin rewrite \u2014 mapping, not finance"
+    status: implemented
+    tags: []
+    fingerprint: sha256:fd215569cc2f
+    children: []
   STORY-ADDAUXIL-c7bd:
     id: STORY-ADDAUXIL-c7bd
     title: Add auxiliary_metrics field to EXPT schema and update test coverage
@@ -1131,4 +1145,4 @@ artifacts:
     tags: []
     fingerprint: sha256:a557ed85a54a
     children: []
-next_id: 647
+next_id: 649

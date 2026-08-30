@@ -21,6 +21,19 @@ jobs:
         run: uv sync
       - name: Validate artifacts (deterministic, zero tokens)
         run: uv run specflow artifact-lint --method programmatic
+  privacy-denylist-gate:
+    # REQ-038 / DDD-029: the public repo must not contain personal project
+    # context. Single source of truth: scripts/denylist_gate.py (also pinned
+    # by tests/test_denylist_gate.py). Runs on every PR and branch push.
+    name: Privacy denylist gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Denylist scan (DDD-029 scope)
+        run: python3 scripts/denylist_gate.py
   pytest:
     name: Run tests (${{ matrix.python-version }})
     runs-on: ubuntu-latest
@@ -140,3 +153,5 @@ jobs:
         run: uv sync
       - name: Release gate check
         run: uv run specflow project-audit && echo "Release gate passed"
+      - name: Privacy denylist gate (release-authoritative)
+        run: python3 scripts/denylist_gate.py

@@ -4,6 +4,35 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.14.6] - 2026-08-30
+
+Privacy-gate automation + evidentiary closure for v1.14.5 (STORY-647, STORY-648, REQ-038). The v1.14.5 post-release audit found the denylist gate existed only as prose and half the wiring changes had zero locking tests; this release closes both.
+
+### Highlights
+
+- **The privacy gate is now executable and enforced in CI** — `scripts/denylist_gate.py` (single source of truth per DDD-029) runs on every PR/push and authoritatively on tag pushes; a pytest guard pins it. Contributors can no longer reintroduce personal fingerprints without CI going red.
+
+### Features
+
+- **Denylist gate automation (DDD-029, now approved).** `scripts/denylist_gate.py`: frozen scope (src/ tests/ docs/ scripts/ _specflow/ CHANGELOG README ROADMAP; `.specflow/` excluded), case-sensitive word-bounded pattern with anchored numeric tokens, enumerated path allowlist per ARCH-029 ("enumerated, not pattern-based"): REQ-038/DDD-029 (quote the denylist), `domain-research-checklists.md` (model-family vocabulary), the gate + its test (carry the pattern). Bytecode skipped (untracked `__pycache__` embeds absolute paths). Wired into `.github/workflows/specflow.yml` twice: a `privacy-denylist-gate` job (PR + branch push) and a release-authoritative step in the tag-push release gate.
+- **Quant domain checklist rewritten thin (DEC-078, STORY-648).** "Quant / Algo-Betting" personal framing → "Quantitative Research"; house-methodology verdicts ("OOS is the only number that matters", mandatory point-in-time, Kelly/Bonferroni/PBO menus) deleted; the concept→artifact map kept and generalized; five short universal question sections (data reality, split & leakage, costs, regime robustness, multiple testing). Principle recorded as DEC-078: *checklists teach SpecFlow mapping, not domain methodology* — modern LLMs carry the domain knowledge; the other 8 domain checklists to be audited against it in v1.15.0. Template + `.claude` mirror byte-identical (equality guard green).
+
+### Fixes
+
+- **`brief.py` vanished-monitor symmetry.** The resolved-MONITOR "vanished without prevention record" check credited `derives_from` edges but omitted the MONITOR's own `informs` edge — legacy monitors (pre-`derives_from` convention) that did record a follow-up read as vanished, the exact cry-wolf this note exists to avoid. Both lists now apply all three credit wires (outgoing `informs`, DEF `exposed_by` backlink, incoming `derives_from`); the stale two-direction docstring rewritten to match.
+- **Residual descriptive context neutralized (STORY-647).** STORY-075 retitled "Validate the autoresearch pack end-to-end in a real research project" (title/h1/body/section headers + story index); DEC-059's rationale now reads "an external research project corpus" (was "personal betting-analytics"). Within REQ-038's letter already, now beyond reproach.
+- **Hygiene from the v1.14.5 audit.** CHL-348 closed as addressed (its finding — REQ-038 lacking an ARCH `derives_from` — was fixed by ARCH-029 in 729ed5a but the flag sat open). QT-049's duplicate `derives_from REQ-038` link dropped (kept `verified_by`). CHANGELOG's 1.14.5 baseline claim corrected to the derived count: 12 baseline files × 3 title strings (36 lines), neutralized in place per ARCH-029 write-once.
+
+### Decisions / Docs
+
+- DEC-078 (domain checklists teach mapping, not methodology); DDD-029 approved with the implemented-gate summary; ROADMAP v1.15.0 section expanded with the operator-ratified lead designs (rolling-evaluation/split-R&D with the COMP churn rule; orchestration pack with user-definable workflows).
+- UT-080 / IT-047 / QT-050 verification contracts created and verified green (locking tests; gate integration; full suite).
+
+### Tests
+
+- +4 locking tests for the v1.14.5 schema/lint registrations (EXPT `competition`, COMP `custom_categories`, LOOP numbered `condensation_brief_<N>`, LOOP `derives_from` role) — previously zero coverage despite green UT-079/IT-046 stamps; +5 denylist-gate tests (repo-clean scan, detection, anchored numerics, allowlist, bytecode skip); +1 brief vanished-symmetry regression.
+- Total: 1439 tests passing
+
 ## [1.14.5] - 2026-08-30
 
 Privacy scrub of personal project context from the public repo, plus the autoresearch↔ops flywheel wiring fixes found during the scrub's design reviews (STORY-646, REQ-038).
@@ -20,7 +49,7 @@ Privacy scrub of personal project context from the public repo, plus the autores
 
 - **Retrain edge corrected (`informs` → `derives_from`).** The ops skill's retrain instruction linked `MON-NNN:informs`, which is (a) semantically inverted and (b) invisible to `specflow trace` from the LOOP side. Now `derives_from` — renders upstream, direction-correct. The quant domain checklist names the explicit role (it previously named none).
 - **Schema registrations killing lint noise.** `experiment` schema registers `competition` (the CLI stamps it on every logged EXPT; omission produced an unknown-field info finding per experiment, ~50 per LOOP); `competition` registers `custom_categories` (protocol-instructed); `loop` lists `derives_from` in allowed link roles (matches finding/run/monitor siblings); lint accepts protocol-shaped `condensation_brief_<N>` fields alongside the plural form.
-- **Privacy scrub (REQ-038).** Autoresearch skill docs' worked examples rewritten from the author's crypto/quant pilot to a synthetic tabular-ML churn / A-B-test domain (protocol shape — what_worked/what_failed tags, explore/exploit/validate, EXPT refs, thesis links — preserved byte-for-byte in spirit; verified by adversarial review). Test fixtures and 12 baseline title strings neutralized. Dogfood artifacts scrubbed (DEC-046/059, REQ-029, QT-030, STORY-071/074/075, SPIKE-001). `docs/.archive/plan-autoresearch-integration.md` (concrete pilot strategy results) deleted. `.antigravitycli` tracked symlink exposing `/Users/...` paths untracked + ignored; `.gemini/settings.json` untracked (already ignored). Stale `ux/v1.13.2-ergonomics` branch and 7 abandoned agent worktrees removed. Conscious exceptions kept: attribution email and upstream fork URLs.
+- **Privacy scrub (REQ-038).** Autoresearch skill docs' worked examples rewritten from the author's crypto/quant pilot to a synthetic tabular-ML churn / A-B-test domain (protocol shape — what_worked/what_failed tags, explore/exploit/validate, EXPT refs, thesis links — preserved byte-for-byte in spirit; verified by adversarial review). Test fixtures neutralized; 12 baseline files neutralized in place (3 title strings each, 36 lines — ARCH-029 write-once policy, fingerprints untouched). Dogfood artifacts scrubbed (DEC-046/059, REQ-029, QT-030, STORY-071/074/075, SPIKE-001). `docs/.archive/plan-autoresearch-integration.md` (concrete pilot strategy results) deleted. `.antigravitycli` tracked symlink exposing `/Users/...` paths untracked + ignored; `.gemini/settings.json` untracked (already ignored). Stale `ux/v1.13.2-ergonomics` branch and 7 abandoned agent worktrees removed. Conscious exceptions kept: attribution email and upstream fork URLs.
 
 ### Decisions / Docs
 

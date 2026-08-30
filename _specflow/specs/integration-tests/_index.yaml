@@ -388,4 +388,18 @@ artifacts:
     tags: []
     fingerprint: sha256:f88b33faa16a
     children: []
-next_id: 47
+  IT-047:
+    id: IT-047
+    title: 'Privacy denylist gate: script + CI wiring + pytest guard (DDD-029)'
+    status: draft
+    tags: []
+    fingerprint: sha256:07cf1cc27603
+    children: []
+  IT-048:
+    id: IT-048
+    title: 'Quant checklist thin rewrite: privacy gate + skill surfaces clean'
+    status: draft
+    tags: []
+    fingerprint: sha256:0cc4367cbf50
+    children: []
+next_id: 49

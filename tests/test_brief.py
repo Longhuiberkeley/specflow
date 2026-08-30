@@ -572,6 +572,19 @@ def test_outcome_note_suppressed_by_incoming_derives_from():
     assert "vanished" not in out2
 
 
+def test_outcome_note_vanished_suppressed_by_informs_edge():
+    """Symmetry fix (STORY-647): a resolved MONITOR whose ONLY credit is its
+    own outgoing `informs` edge must not read as vanished — the vanished check
+    previously credited derives_from alone, false-alarming legacy monitors
+    (pre-derives_from convention) that did record a follow-up."""
+    resolved = _mon(
+        "MON-001", status="resolved", health="ok",
+        links=[_OLink("LOOP-001", "informs")],
+    )
+    out = brief_cmd._outcome_feedback_note([resolved], active_packs=["ops"])
+    assert "vanished" not in out
+
+
 def test_outcome_note_resolved_vanished_count():
     """A resolved MONITOR never linked to any DEF → 'vanished without prevention
     record'."""

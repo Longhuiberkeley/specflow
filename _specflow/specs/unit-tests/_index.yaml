@@ -729,13 +729,6 @@ artifacts:
     - verification-contract
     fingerprint: sha256:033af7d71f54
     children: []
-  UT-EVIDENCE-9a3d:
-    id: UT-EVIDENCE-9a3d
-    title: Evidence RTM includes mixed eligible REQ statuses
-    status: implemented
-    tags: []
-    fingerprint: sha256:cd2ebadd80c8
-    children: []
   UT-079:
     id: UT-079
     title: 'STORY-646 unit contracts: brief escalation credit + condensation lint
@@ -744,4 +737,25 @@ artifacts:
     tags: []
     fingerprint: sha256:cabd35718053
     children: []
-next_id: 80
+  UT-080:
+    id: UT-080
+    title: 'v1.14.6 locking tests: lint/schema registrations + brief vanished symmetry'
+    status: draft
+    tags: []
+    fingerprint: sha256:b0522145db4c
+    children: []
+  UT-EVIDENCE-9a3d:
+    id: UT-EVIDENCE-9a3d
+    title: Evidence RTM includes mixed eligible REQ statuses
+    status: implemented
+    tags: []
+    fingerprint: sha256:cd2ebadd80c8
+    children: []
+  UT-081:
+    id: UT-081
+    title: "Quant checklist thin rewrite: template\u2194mirror byte-equality (DEC-078)"
+    status: draft
+    tags: []
+    fingerprint: sha256:6bec605ade90
+    children: []
+next_id: 82

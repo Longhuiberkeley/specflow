@@ -234,6 +234,13 @@ artifacts:
     - v1.12
     fingerprint: sha256:53ef7bdc86bb
     children: []
+  DDD-029:
+    id: DDD-029
+    title: 'Privacy gate implementation: denylist grep command + checklist wiring'
+    status: approved
+    tags: []
+    fingerprint: sha256:1c2251ade073
+    children: []
   DDD-LOUDFAIL-3e02:
     id: DDD-LOUDFAIL-3e02
     title: "Loud-failure and advisory ergonomics \u2014 detailed design (v1.13.2)"
@@ -243,12 +250,5 @@ artifacts:
     - ergonomics
     - detailed-design
     fingerprint: sha256:87c9b2fa14a6
-    children: []
-  DDD-029:
-    id: DDD-029
-    title: 'Privacy gate implementation: denylist grep command + checklist wiring'
-    status: draft
-    tags: []
-    fingerprint: sha256:1c2251ade073
     children: []
 next_id: 30

@@ -23,14 +23,17 @@ Generalized-core hardening, scoped deliberately small (harness-level work deferr
 - **Guardrail-test hardening** — anchored approval-gate assertions + mutation checks; caught that `specflow-artifact-review/SKILL.md` never actually stated the no-self-approval rule (now fixed).
 - **Dogfood closure for v1.14.2** — STORY-637 verified (contracts UT-074/IT-041/QT-047), IT-038/QT-045 stamps truthful.
 
-## v1.15.0 (tracked backlog — STORY-642..645)
+## v1.15.0 (tracked backlog — STORY-642..645 + operator-ratified designs)
 
-Formalized during v1.14.3 so the next release scope is recorded, not prose:
+Formalized during v1.14.3 so the next release scope is recorded, not prose. Lead item and pack design ratified by the operator 2026-08-30:
 
+- **Rolling-evaluation / split-R&D (lead)** — `rolling-evaluation.md` recipe + DEC: fixed train:val:test vs rolling/walk-forward as a first-class design choice; split-methodology itself as a researchable object (EXPTs over split configs; COMP-per-window chain vs successor COMP); retrain-window sizing and historical→live transition as named research tracks. COMP churn rule: a new COMP only when the protocol (exam) changes — never per window/retrain. `window_end` auto-advance MUST be successor-COMP creation (chained-frozen-COMPs decision forbids mutation).
+- **Orchestration pack** — conductor over existing lifecycle skills; workflows are user-definable YAML stage contracts (plan/review/implement/review/fix as stage types); the operator's sequential flow ships as the reference recipe; no hardcoded pipeline; `adds_artifact_types: none`; link-role additions stated explicitly. First deliverable: persist the rev-3 design in-repo (DEC + REQ/ARCH), reconciled with DEC-049/DEC-045.
 - **STORY-642** — unify `compute_chain_depth` with the typed edge matrix (v1.14.3's role-target matrix is the declared cousin).
 - **STORY-643** — OpenCode native commands/tools (harness-level; deferred per owner 2026-08-27 "generalized core first").
-- **STORY-644** — ops pack methodology handbook (parity with autoresearch's BP-01..ML-22 surface).
+- **STORY-644** — ops pack methodology handbook (parity with autoresearch's BP-01..ML-22 surface), documenting the two ops↔autoresearch escalation doors.
 - **STORY-645** — skill slimming / lazy reference loading (discover ~64KB, execute ~40KB, plan ~38KB bundles) + a context-cost regression test.
+- **Frozen extras** — `role_targets.py` dead `competition.operates_on` row; `domain_constants.py` sync all five domains; `trace.py` renderers (COMP lineage + LOOP escalation source); LOW pack defects (float coercion guards, `--show-family` doc drift, ops SKILL.md edge form, metric_value-when-kept refusal); audit the remaining 8 domain checklists against DEC-078 (thin, mapping-not-methodology).
 
 ## v0.2.0
 

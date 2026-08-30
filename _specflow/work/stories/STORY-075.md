@@ -1,7 +1,6 @@
 ---
 id: STORY-075
-title: Test autoresearch pack end-to-end and pilot with a personal quant research
-  project
+title: Validate the autoresearch pack end-to-end in a real research project
 type: story
 status: implemented
 priority: high
@@ -21,16 +20,16 @@ links:
 - target: REQ-032
   role: implements
 created: '2026-05-15'
-fingerprint: sha256:bb84e5eee69f
+fingerprint: sha256:96ff3242dc57
 modified: '2026-08-30'
-version: 1
+version: 2
 ---
 
-# Test autoresearch pack end-to-end and pilot with a personal quant research project
+# Validate the autoresearch pack end-to-end in a real research project
 
 ## Outcome
 
-The autoresearch pack is validated through automated tests and a real pilot.
+The autoresearch pack is validated through automated tests and a real research project.
 
 ## Test scope
 
@@ -42,9 +41,9 @@ The autoresearch pack is validated through automated tests and a real pilot.
 | End-to-end chain test | Create COMP → LOOP → 3 EXPTs → 1 FIND; `specflow trace COMP-NNN` walks all of them |
 | Skill no-overwrite test | Reinstall pack does not clobber edited skill files |
 
-## Pilot scope
+## Validation scope
 
-Install the autoresearch pack into a personal quant research project:
+Install the autoresearch pack into a real research project:
 
 1. Run `specflow init --with-pack autoresearch` (or apply to existing init)
 2. Create COMP-001 for the first research campaign (single split) and COMP-002 for the second (walk-forward)
@@ -59,5 +58,5 @@ Install the autoresearch pack into a personal quant research project:
 ## Acceptance Criteria
 
 1. All 5 tests pass in CI
-2. Pilot produces at least one COMP, one LOOP, ≥10 EXPTs, and one FIND
-3. User confirms the workflow feels natural for their backtesting use case
+2. Validation produces at least one COMP, one LOOP, ≥10 EXPTs, and one FIND
+3. User confirms the workflow feels natural for their research use case

@@ -840,7 +840,7 @@ artifacts:
   CHL-348:
     id: CHL-348
     title: Audit cross-cutting/completeness findings
-    status: open
+    status: addressed
     tags: []
     fingerprint: sha256:d96f573e8c28
     children: []
