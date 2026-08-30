@@ -736,4 +736,12 @@ artifacts:
     tags: []
     fingerprint: sha256:cd2ebadd80c8
     children: []
-next_id: 79
+  UT-079:
+    id: UT-079
+    title: 'STORY-646 unit contracts: brief escalation credit + condensation lint
+      acceptance'
+    status: draft
+    tags: []
+    fingerprint: sha256:cabd35718053
+    children: []
+next_id: 80

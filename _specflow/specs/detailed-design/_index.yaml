@@ -244,4 +244,11 @@ artifacts:
     - detailed-design
     fingerprint: sha256:87c9b2fa14a6
     children: []
-next_id: 29
+  DDD-029:
+    id: DDD-029
+    title: 'Privacy gate implementation: denylist grep command + checklist wiring'
+    status: draft
+    tags: []
+    fingerprint: sha256:1c2251ade073
+    children: []
+next_id: 30

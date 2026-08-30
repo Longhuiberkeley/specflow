@@ -380,4 +380,12 @@ artifacts:
     - verification-contract
     fingerprint: sha256:6935ac61165e
     children: []
-next_id: 46
+  IT-046:
+    id: IT-046
+    title: 'STORY-646 integration contracts: skill mirror byte-equality + schema/pack
+      integration'
+    status: draft
+    tags: []
+    fingerprint: sha256:f88b33faa16a
+    children: []
+next_id: 47

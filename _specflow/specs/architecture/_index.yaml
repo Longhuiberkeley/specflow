@@ -255,4 +255,11 @@ artifacts:
     - accounting-not-policing
     fingerprint: sha256:f9a476477150
     children: []
-next_id: 29
+  ARCH-029:
+    id: ARCH-029
+    title: 'Privacy gate: denylist release check + sanctioned-exception model'
+    status: approved
+    tags: []
+    fingerprint: sha256:52b000665f0a
+    children: []
+next_id: 30
