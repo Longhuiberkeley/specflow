@@ -65,7 +65,7 @@ class TestCreateBaseline:
     def test_fingerprint_recomputed_from_body_not_stored(self, tmp_path: Path):
         # An artifact whose stored frontmatter fingerprint is empty/stale must
         # still produce a correct baseline — recompute from the body, don't trust
-        # the stored value (the cs2_bet adoption-v0 baseline was all empty hashes).
+        # the stored value (the example_bets adoption-v0 baseline was all empty hashes).
         _scaffold(tmp_path)
         art_dir = tmp_path / "_specflow" / "specs" / "requirements"
         art_dir.mkdir(parents=True)

@@ -229,6 +229,11 @@ def validate_artifact_schema(
                           # artifact was born in a non-entry status.
                           "sanctioned_justification"}
             if key not in known_meta:
+                # Protocol stamps numbered briefs on LOOP (condensation_brief_10,
+                # condensation_brief_20, …); the schema lists the plural form.
+                if (schema.get("type") == "loop"
+                        and re.fullmatch(r"condensation_brief_\d+", key)):
+                    continue
                 issues.append({
                     "severity": "info",
                     "message": f'Unknown field "{key}"',

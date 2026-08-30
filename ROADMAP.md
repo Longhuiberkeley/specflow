@@ -4,6 +4,11 @@ SpecFlow ships incrementally. This document tracks what shipped in each release,
 
 For the original implementation plan (phase breakdown, dependency graph — now historical, superseded by the release history below), see [docs/.archive/plan.md](docs/.archive/plan.md).
 
+## v1.14.5
+
+- **Privacy scrub of personal-context fingerprints (REQ-038)** — pack-wide sweep of the autoresearch skill docs (worked examples rewritten to a synthetic tabular-ML churn / A-B-test domain; protocol shape preserved), neutralized test fixtures + baseline titles, doc scrubs across dogfood artifacts, deleted an archived plan doc carrying pilot strategy results, untracked `.antigravitycli`/`.gemini` leftovers exposing home-dir paths. A denylist grep gate now guards the release checklist. Conscious exceptions kept: attribution email + upstream fork URLs.
+- **Flywheel wiring fixes** — ops retrain edge `MON:informs` → `MON:derives_from` (trace-visible, direction-correct; `informs` was invisible from the LOOP side); quant checklist names the explicit role; `brief` now credits MON-escalated follow-ups via incoming `derives_from` (previously always "unaccountable" → nagged spurious DEFs); `loop` schema lists `derives_from`; `experiment` schema registers `competition` (kills per-EXPT lint noise); `competition` schema registers `custom_categories`; lint accepts `condensation_brief_<N>` matching protocol usage.
+
 ## v1.14.4
 
 - **`derives_from` unjudged by the role-target matrix** — learned from the first live consumer run (965-artifact repo, 139 false alarms on legitimate provenance shapes: STORY→STORY lineage, DEC-from-DEF/SPIKE). Rationale + provenance-zoo regression test in `lib/role_targets.py`.

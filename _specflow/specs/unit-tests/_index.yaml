@@ -689,13 +689,6 @@ artifacts:
     - verification-contract
     fingerprint: sha256:484944666519
     children: []
-  UT-EVIDENCE-9a3d:
-    id: UT-EVIDENCE-9a3d
-    title: Evidence RTM includes mixed eligible REQ statuses
-    status: implemented
-    tags: []
-    fingerprint: sha256:cd2ebadd80c8
-    children: []
   UT-074:
     id: UT-074
     title: STORY-637 direction/guard/crash regression tests
@@ -735,5 +728,12 @@ artifacts:
     tags:
     - verification-contract
     fingerprint: sha256:033af7d71f54
+    children: []
+  UT-EVIDENCE-9a3d:
+    id: UT-EVIDENCE-9a3d
+    title: Evidence RTM includes mixed eligible REQ statuses
+    status: implemented
+    tags: []
+    fingerprint: sha256:cd2ebadd80c8
     children: []
 next_id: 79

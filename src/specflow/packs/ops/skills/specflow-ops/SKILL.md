@@ -47,7 +47,7 @@ Domain-neutral by design. Quant specifics (drift, oos_decay) belong in the quant
    ```
 3. **On a breach** (`health: breached` or a signal crosses a threshold defined in a REQ):
    - Set the MONITOR `status: flagged` (`specflow update MON-NNN --status flagged`).
-   - Propose the domain's next action and link it back to the MONITOR: a retrain → create a new LOOP linked `--links MON-NNN:informs`; a rollback/fix → file a DEF that freezes the MONITOR's evidence at the breach:
+   - Propose the domain's next action and link it back to the MONITOR: a retrain → create a new LOOP linked `--links MON-NNN:derives_from`; a rollback/fix → file a DEF that freezes the MONITOR's evidence at the breach:
      ```
      specflow defect-from-monitor MON-NNN --req <REQ-NNN> [--severity high]
      ```

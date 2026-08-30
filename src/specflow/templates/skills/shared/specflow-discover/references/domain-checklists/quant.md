@@ -16,7 +16,7 @@ The single most useful reference for this domain. Pick the artifact by what the 
 | Live odds / ephemeral data capture (only online briefly) | **RUN** + **MONITOR** (ops pack) | Not reproducible — its own memory class; MONITOR.captures records what you grabbed + freshness. |
 | A deployed model/bot going live | **RUN** (ops pack) | Deployment frozen at deploy-time; `derives_from` the EXPT/REQ it promotes/satisfies. |
 | Performance / drift over time | **MONITOR** (ops pack) with `signals` | Append-only journal; drift is one signal type among many. |
-| "Retrain when oos_decay > X" / kill-switch | **REQ** (threshold) + MONITOR breach → new LOOP | The threshold is specifiable; the trigger fires via monitoring. |
+| "Retrain when oos_decay > X" / kill-switch | **REQ** (threshold) + MONITOR breach → new LOOP with `derives_from MON-NNN` | The threshold is specifiable; the trigger fires via monitoring. |
 
 Rule of thumb: *can you write a test that fails if it's wrong?* → REQ/STORY/EXPT. *Is it a number you're trying to move?* → autoresearch metric. *Does it only exist while running?* → RUN/MONITOR.
 

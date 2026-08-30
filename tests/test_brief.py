@@ -556,6 +556,22 @@ def test_outcome_note_suppressed_by_informs_edge():
     assert "unaccountable" not in out
 
 
+def test_outcome_note_suppressed_by_incoming_derives_from():
+    """Incoming derives_from (LOOP escalated from the MON) also credits a
+    follow-up → not unaccountable; resolved must not read as vanished."""
+    mon = _mon("MON-001")
+    loop = SimpleNamespace(
+        id="LOOP-001", status="draft", suspect=False, frontmatter={},
+        links=[_OLink("MON-001", "derives_from")],
+    )
+    out = brief_cmd._outcome_feedback_note([mon, loop], active_packs=["ops"])
+    assert "unaccountable" not in out
+
+    resolved = _mon("MON-001", status="resolved", health="ok")
+    out2 = brief_cmd._outcome_feedback_note([resolved, loop], active_packs=["ops"])
+    assert "vanished" not in out2
+
+
 def test_outcome_note_resolved_vanished_count():
     """A resolved MONITOR never linked to any DEF → 'vanished without prevention
     record'."""

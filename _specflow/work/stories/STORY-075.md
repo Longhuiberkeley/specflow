@@ -1,6 +1,7 @@
 ---
 id: STORY-075
-title: Test autoresearch pack end-to-end and pilot with quant_trade_rnd
+title: Test autoresearch pack end-to-end and pilot with a personal quant research
+  project
 type: story
 status: implemented
 priority: high
@@ -20,10 +21,12 @@ links:
 - target: REQ-032
   role: implements
 created: '2026-05-15'
-fingerprint: sha256:b687d7ca14f1
+fingerprint: sha256:bb84e5eee69f
+modified: '2026-08-30'
+version: 1
 ---
 
-# Test autoresearch pack end-to-end and pilot with quant_trade_rnd
+# Test autoresearch pack end-to-end and pilot with a personal quant research project
 
 ## Outcome
 
@@ -41,11 +44,11 @@ The autoresearch pack is validated through automated tests and a real pilot.
 
 ## Pilot scope
 
-Install the autoresearch pack into the user's `quant_trade_rnd` project:
+Install the autoresearch pack into a personal quant research project:
 
 1. Run `specflow init --with-pack autoresearch` (or apply to existing init)
-2. Create COMP-001 for Track A (single split) and COMP-002 for Track B (walk-forward)
-3. Migrate any existing autoresearch_fork state into the artifact model (best-effort)
+2. Create COMP-001 for the first research campaign (single split) and COMP-002 for the second (walk-forward)
+3. Migrate any existing upstream research-fork state into the artifact model (best-effort)
 4. Run one LOOP end-to-end and confirm:
    - EXPT artifacts populate as expected
    - Loop reaches plateau or budget cleanly
@@ -57,4 +60,4 @@ Install the autoresearch pack into the user's `quant_trade_rnd` project:
 
 1. All 5 tests pass in CI
 2. Pilot produces at least one COMP, one LOOP, ≥10 EXPTs, and one FIND
-3. User confirms the workflow feels natural for their backtesting use case (CS2 / HKJC / crypto)
+3. User confirms the workflow feels natural for their backtesting use case

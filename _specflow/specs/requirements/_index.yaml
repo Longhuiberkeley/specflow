@@ -360,6 +360,13 @@ artifacts:
     - accounting-not-policing
     fingerprint: sha256:59176d30e4d0
     children: []
+  REQ-038:
+    id: REQ-038
+    title: Public repo must not contain personal project context
+    status: approved
+    tags: []
+    fingerprint: sha256:9f6ceeee33b6
+    children: []
   REQ-AUTORESE-d684:
     id: REQ-AUTORESE-d684
     title: 'Autoresearch pack v0.2.0: multi-criteria support, CLI subcommand, and
@@ -386,4 +393,4 @@ artifacts:
     - accounting-not-policing
     fingerprint: sha256:7e2a7a6434b9
     children: []
-next_id: 38
+next_id: 39

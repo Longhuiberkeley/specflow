@@ -333,15 +333,23 @@ def _outcome_feedback_note(artifacts: list[art_lib.Artifact], active_packs: list
         for lk in m.links:
             if lk.role == "informs":
                 has_informs.add(m.id)
+    # Incoming derives_from (e.g. LOOP escalated from the MON) also counts.
+    has_derives: set[str] = {
+        lk.target for a in artifacts for lk in a.links if lk.role == "derives_from"
+    }
 
     def _is_breached(m: art_lib.Artifact) -> bool:
         return m.status == "flagged" or (m.frontmatter or {}).get("health") == "breached"
 
     unaccountable = [
         m for m in monitors
-        if _is_breached(m) and m.id not in backed_by_def and m.id not in has_informs
+        if _is_breached(m) and m.id not in backed_by_def
+        and m.id not in has_informs and m.id not in has_derives
     ]
-    vanished = [m for m in monitors if m.status == "resolved" and m.id not in backed_by_def]
+    vanished = [
+        m for m in monitors
+        if m.status == "resolved" and m.id not in backed_by_def and m.id not in has_derives
+    ]
 
     notes: list[str] = []
     if unaccountable:

@@ -4,6 +4,33 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.14.5] - 2026-08-30
+
+Privacy scrub of personal project context from the public repo, plus the autoresearch↔ops flywheel wiring fixes found during the scrub's design reviews (STORY-646, REQ-038).
+
+### Highlights
+
+- **The public repo no longer carries the maintainer's personal project fingerprints** — strategy specifics, pilot results, project names, home-dir paths — and a denylist grep gate now guards future releases.
+
+### Features
+
+- **MON-escalation accounting in `brief` (flywheel door closed).** A monitor breach escalated to a research loop (`LOOP --links MON-NNN:derives_from`) is now credited as accounted-for in `specflow brief` — previously every loop-escalated breach read "unaccountable" (and post-resolution "vanished"), nagging agents toward spurious DEFs. The brief scan credits incoming `derives_from` links on any artifact, in addition to the legacy monitor-side `informs`.
+
+### Fixes
+
+- **Retrain edge corrected (`informs` → `derives_from`).** The ops skill's retrain instruction linked `MON-NNN:informs`, which is (a) semantically inverted and (b) invisible to `specflow trace` from the LOOP side. Now `derives_from` — renders upstream, direction-correct. The quant domain checklist names the explicit role (it previously named none).
+- **Schema registrations killing lint noise.** `experiment` schema registers `competition` (the CLI stamps it on every logged EXPT; omission produced an unknown-field info finding per experiment, ~50 per LOOP); `competition` registers `custom_categories` (protocol-instructed); `loop` lists `derives_from` in allowed link roles (matches finding/run/monitor siblings); lint accepts protocol-shaped `condensation_brief_<N>` fields alongside the plural form.
+- **Privacy scrub (REQ-038).** Autoresearch skill docs' worked examples rewritten from the author's crypto/quant pilot to a synthetic tabular-ML churn / A-B-test domain (protocol shape — what_worked/what_failed tags, explore/exploit/validate, EXPT refs, thesis links — preserved byte-for-byte in spirit; verified by adversarial review). Test fixtures and 12 baseline title strings neutralized. Dogfood artifacts scrubbed (DEC-046/059, REQ-029, QT-030, STORY-071/074/075, SPIKE-001). `docs/.archive/plan-autoresearch-integration.md` (concrete pilot strategy results) deleted. `.antigravitycli` tracked symlink exposing `/Users/...` paths untracked + ignored; `.gemini/settings.json` untracked (already ignored). Stale `ux/v1.13.2-ergonomics` branch and 7 abandoned agent worktrees removed. Conscious exceptions kept: attribution email and upstream fork URLs.
+
+### Decisions / Docs
+
+- REQ-038 (public repo must not contain personal project context) with the denylist release gate; STORY-646; QT-049 qualification (suite exit 0). DESIGN REVIEWS ONLY, no code: living-R&D = chained frozen COMPs + `derives_from` edges (a mutable "living benchmark" artifact type was rejected as mode-like); the orchestration pack (conductor over existing lifecycle skills) is designed and queued for v1.15.0.
+
+### Tests
+
+- +1 brief escalation-credit test; denylist grep gate added to the release checklist (clean); live skill mirror re-synced after template edit (byte-equality guards green).
+- Total: 1429 tests passing
+
 ## [1.14.4] - 2026-08-27
 
 Post-release matrix tuning, learned from a live consumer repo (STORY-639 follow-up):
@@ -605,7 +632,7 @@ core is unchanged.
   "structural gates (not advisory)" — they always had zero code backing.
   Protocol substance unchanged. (A warn-only deterministic diversity lint
   was prototyped and dropped after false-positiving on legitimate
-  single-category exploration in the cs2-bet corpus — cry-wolf, per BP-005.)
+  single-category exploration in the example-bets corpus — cry-wolf, per BP-005.)
 - **ROADMAP** — the SPIKE-lifecycle detector moved from Deferred to
   Delivered (it shipped; `artifact-lint --type spike-lifecycle`).
 - **Docs** — `docs/cli-reference.md` documents the full new surface

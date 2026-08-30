@@ -1150,7 +1150,7 @@ artifacts:
   STORY-071:
     status: implemented
     fingerprint: ''
-    title: Adapt autonomous-loop-protocol.md from autoresearch_fork
+    title: Adapt autonomous-loop-protocol.md from example_research
     type: story
   STORY-072:
     status: implemented
@@ -1170,7 +1170,7 @@ artifacts:
   STORY-075:
     status: implemented
     fingerprint: ''
-    title: Test autoresearch pack end-to-end and pilot with quant_trade_rnd
+    title: Test autoresearch pack end-to-end and pilot with example_quant
     type: story
   STORY-076:
     status: draft
@@ -1205,7 +1205,7 @@ artifacts:
   SPIKE-001:
     status: completed
     fingerprint: ''
-    title: "autoresearch_fork inventory \u2014 diff list before Wave 3"
+    title: "example_research inventory \u2014 diff list before Wave 3"
     type: spike
   DEC-001:
     status: approved

@@ -1,6 +1,6 @@
 ---
 id: STORY-071
-title: Adapt autonomous-loop-protocol.md from autoresearch_fork
+title: Adapt autonomous-loop-protocol.md from the upstream research fork
 type: story
 status: implemented
 priority: high
@@ -18,6 +18,8 @@ links:
   role: depends_on
 created: '2026-05-15'
 fingerprint: sha256:fc2d3e819e8b
+modified: '2026-08-30'
+version: 1
 ---
 
 # Adapt autonomous-loop-protocol.md from autoresearch_fork

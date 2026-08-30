@@ -2,6 +2,8 @@
 
 Playbook for authoring and updating FIND artifacts after a LOOP completes. Read this when the agent finishes a LOOP and needs to condense experiment results into structured knowledge.
 
+Examples below are illustrative, drawn from a synthetic tabular-ML competition; substitute your domain's vocabulary.
+
 ## When to Create vs Update
 
 | Situation | Action |
@@ -40,14 +42,14 @@ Categories with high kept rates drove improvement. Categories with all discards 
 
 For each category that drove improvement, ask:
 - What specific changes produced the best metrics?
-- What was the progression? (e.g., "started with XGBoost, switched to Kalman, improved further with Q tuning")
-- Are there patterns across iterations? (e.g., "smaller time windows consistently beat larger ones")
+- What was the progression? (e.g., "started with logistic regression, switched to gradient boosting, improved further with feature engineering")
+- Are there patterns across iterations? (e.g., "tenure and usage features consistently beat recency-only features")
 
 For categories that did not pan out, ask: what is the *honest* outcome? Falsifying an approach cleanly is often hard, and "it didn't work" is usually too strong. Classify each into one of:
 
-- **falsified** — a clear, repeatable negative across parameters and seeds ("all mean-reversion variants lost money regardless of threshold")
-- **conditional** — works only under stated conditions ("profitable on ETH but not ADA"; "needs >2 years of history")
-- **sensitive** — the result hinges on a knob or on noise, so it can't be trusted as-is. Prefer *"sensitive to parameter/noise — 0.020 vs 0.021 flips the outcome; may or may not be useful downstream"* over *"the algorithm doesn't work."* This is a robustness statement, not a verdict.
+- **falsified** — a clear, repeatable negative across parameters and seeds ("all class-weighting variants dropped AUC regardless of the positive-class weight")
+- **conditional** — works only under stated conditions ("variant B lifted conversion +0.8pp on mobile but not desktop"; "needs >2 years of history")
+- **sensitive** — the result hinges on a knob or on noise, so it can't be trusted as-is. Prefer *"sensitive to parameter/noise — cutoff 0.35 vs 0.36 flips the outcome; may or may not be useful downstream"* over *"the algorithm doesn't work."* This is a robustness statement, not a verdict.
 - **inconclusive** — couldn't separate signal from the noise floor within the budget; genuinely unknown
 
 Recording the right one of these is more useful to the next LOOP than forcing a thumbs-down. A sensitive or inconclusive result is a pointer to *where to look next*, not a dead end.
@@ -60,12 +62,12 @@ FIND-specific fields use the generic `--set KEY=VALUE` flag; only `--type`, `--t
 
 ```bash
 specflow create --type finding \
-  --title "Basket specialization outperforms broad baskets" \
+  --title "Feature engineering outperforms model tuning" \
   --status draft \
   --set competition=COMP-001 \
   --set source_loop=LOOP-001 \
   --set confidence=medium \
-  --set summary="Specializing on single assets (ADA, ETH) consistently outperforms multi-asset baskets. Broad basket approaches produce noisy signals."
+  --set summary="Tenure, usage, and contract features consistently outperform architecture changes. Broad hyperparameter sweeps produce noisy, non-reproducible gains."
 ```
 
 ## Field Guidance
@@ -76,10 +78,10 @@ Concrete approaches that improved the metric. Each entry references specific EXP
 
 Example:
 ```
-- Single-asset specialization on ADA (EXPT-005, EXPT-012) — supports thesis: "basket narrowing improves Sharpe on this universe"
-- Kalman filter with Q=0.001 (EXPT-003, EXPT-021) — supports thesis: "Kalman filters outperform OLS on intraday bars"
-- Feature engineering: cross-asset momentum (EXPT-008, EXPT-015) — supports thesis: "cross-asset regime signals lift Sharpe"
-- Threshold optimization: 0.03 entry threshold (EXPT-023) — no thesis link (parameter-level finding)
+- Tenure + usage feature set (EXPT-005, EXPT-012) — supports thesis: "feature engineering outperforms model tuning on this churn benchmark"
+- Gradient boosting vs logistic regression (EXPT-003, EXPT-021) — supports thesis: "tree ensembles beat linear models on mixed-type tabular features"
+- Calibration-aware training (EXPT-008, EXPT-015) — supports thesis: "calibration error alongside AUC is the right deploy-fit pair"
+- Probability cutoff 0.35 (EXPT-023) — no thesis link (parameter-level finding)
 ```
 
 ### what_failed
@@ -88,9 +90,9 @@ Approaches that didn't pan out, each tagged with its honest outcome (falsified /
 
 Example:
 ```
-- Trailing stops [falsified]: all variants degraded performance (EXPT-004, EXPT-009, EXPT-014)
-- Threshold=0.03 entry [sensitive]: optimal at 0.030 but 0.020↔0.021 flips P&L sign — fragile, not deployable as-is (EXPT-023, EXPT-031)
-- Mean-reversion on daily timeframe [conditional]: works on ETH, fails on ADA (EXPT-007, EXPT-011)
+- Class-weight grid on logistic regression [falsified]: all variants degraded AUC (EXPT-004, EXPT-009, EXPT-014)
+- Probability cutoff 0.35 [sensitive]: optimal at 0.35 but 0.34↔0.36 flips precision/recall — fragile, not deployable as-is (EXPT-023, EXPT-031)
+- Device-type interaction [conditional]: variant B lifted conversion +0.8pp on mobile, flat on desktop (EXPT-007, EXPT-011)
 - LSTM depth sweep [inconclusive]: gains within the noise floor at this budget (EXPT-016, EXPT-018)
 ```
 
@@ -100,9 +102,9 @@ Suggested directions for the next LOOP. These inform the user's mode selection.
 
 Example:
 ```
-- Explore: try LSTM or Transformer architectures (not yet attempted)
-- Exploit: tune Kalman parameters further — Q and R grids around current best
-- Validate: re-run top 3 strategies on COMP-002 (walk-forward split)
+- Explore: try neural nets or Transformers on tabular inputs (not yet attempted)
+- Exploit: tune boosting depth and learning rate around current best
+- Validate: re-run top 3 models on COMP-002 (held-out time split)
 ```
 
 ### confidence
@@ -117,12 +119,12 @@ Example:
 
 ### deployability
 
-Not all "what worked" findings are deployable. A high-Sharpe strategy with 1,000 micro-trades per day may be "what worked" but `not_deployable` due to transaction costs. Use this field to separate "works on paper" from "works in production."
+Not all "what worked" findings are deployable. A high-AUC model with extreme inference cost may be "what worked" but `not_deployable` in production. Use this field to separate "works on paper" from "works in production."
 
 | Level | When to use |
 |-------|-------------|
 | **deployable** | Meets all COMP goals; post-checks pass; ready for live or production use |
-| **conditional** | Promising but needs additional guard (e.g., "deployable only with <0.1% slippage") |
+| **conditional** | Promising but needs additional guard (e.g., "deployable only with calibration error < 0.05") |
 | **not_deployable** | Metric looks good but post-checks fail; too fragile; not cost-effective |
 
 > **Promote deployable findings back to core.** A `deployable` FIND (with `confidence` ≥ medium) should be promoted to a core REQ via `/specflow-discover`, linked `derives_from` the FIND so the evidence chain carries forward — see `SKILL.md` § "Promote Research Output" and `protocol-integrations.md` § "Autoresearch → Core SpecFlow". A deployable finding that stays on the research island is a lost production result.
@@ -146,7 +148,7 @@ Auxiliary metrics are logged on every EXPT but are rarely analyzed systematicall
 
 Auxiliary metrics matter when:
 
-1. **Primary is flat but auxiliary moves.** This is the canonical buried signal. A LOOP could produce 50 EXPTs where Sharpe (primary) is flat but max drawdown steadily decreases. The primary-only view says "no progress"; the auxiliary view says "the strategy is getting safer."
+1. **Primary is flat but auxiliary moves.** This is the canonical buried signal. A LOOP could produce 50 EXPTs where AUC (primary) is flat but calibration error steadily decreases. The primary-only view says "no progress"; the auxiliary view says "the model is getting more deployable."
 
 2. **Auxiliary trend contradicts primary.** If the primary metric improves but an auxiliary metric degrades (e.g., accuracy up but calibration down), the improvement may be gaming the metric. Flag this in `what_failed` as a `conditional` finding.
 
@@ -192,12 +194,12 @@ specflow update FIND-001 --status superseded
 
 # Create a refined finding
 specflow create --type finding \
-  --title "Threshold sensitivity is knife-edge at 0.03, not robust" \
+  --title "Probability cutoff is knife-edge at 0.35, not robust" \
   --status draft \
   --set competition=COMP-001 \
   --set source_loop=LOOP-003 \
   --set confidence=medium \
-  --set summary="LOOP-001 found threshold=0.03 optimal, but LOOP-003 shows ±0.005 variation degrades performance by 40%. The optimum is real but fragile."
+  --set summary="LOOP-001 found cutoff=0.35 optimal, but LOOP-003 shows ±0.02 variation degrades F1 by 40%. The optimum is real but fragile."
 ```
 
 ## Cross-EXPT Pattern Detection

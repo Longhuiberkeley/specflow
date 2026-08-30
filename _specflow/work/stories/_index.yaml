@@ -713,7 +713,7 @@ artifacts:
     children: []
   STORY-071:
     id: STORY-071
-    title: Adapt autonomous-loop-protocol.md from autoresearch_fork
+    title: Adapt autonomous-loop-protocol.md from the upstream research fork
     status: implemented
     tags:
     - autoresearch
@@ -751,18 +751,19 @@ artifacts:
     - wave-3
     - protocol
     - competition
-    fingerprint: sha256:fac1f62f511d
+    fingerprint: sha256:bf392702fde1
     children: []
   STORY-075:
     id: STORY-075
-    title: Test autoresearch pack end-to-end and pilot with quant_trade_rnd
+    title: Test autoresearch pack end-to-end and pilot with a personal quant research
+      project
     status: implemented
     tags:
     - autoresearch
     - wave-4
     - test
     - pilot
-    fingerprint: sha256:b687d7ca14f1
+    fingerprint: sha256:bb84e5eee69f
     children: []
   STORY-076:
     id: STORY-076
@@ -939,6 +940,87 @@ artifacts:
     - autoresearch
     fingerprint: sha256:e62fc2d27768
     children: []
+  STORY-637:
+    id: STORY-637
+    title: 'v1.14.2 review fixes: typed refined_by direction, --set guard, IT-038
+      truthfulness, lint crash guard'
+    status: verified
+    tags:
+    - review-fix
+    fingerprint: sha256:c4ce6f80b91a
+    children: []
+  STORY-638:
+    id: STORY-638
+    title: 'v1.14.3: atomic create locking (race-safe ID allocation)'
+    status: verified
+    tags:
+    - review-hardening
+    fingerprint: sha256:d2a28767e509
+    children: []
+  STORY-639:
+    id: STORY-639
+    title: 'v1.14.3: role-target semantic matrix (accounting-only)'
+    status: verified
+    tags:
+    - review-hardening
+    fingerprint: sha256:c1449897c460
+    children: []
+  STORY-640:
+    id: STORY-640
+    title: 'v1.14.3: creation-status entry gates (CLI-level, --sanctioned)'
+    status: verified
+    tags:
+    - review-hardening
+    fingerprint: sha256:82063a14c58d
+    children: []
+  STORY-641:
+    id: STORY-641
+    title: 'v1.14.3: guardrail-test assertion hardening (chore)'
+    status: verified
+    tags:
+    - review-hardening
+    fingerprint: sha256:60ef394e36f9
+    children: []
+  STORY-642:
+    id: STORY-642
+    title: 'v1.15.0: unify chain-depth with the typed edge matrix'
+    status: draft
+    tags:
+    - v1.15.0-backlog
+    fingerprint: sha256:f273b7f17a02
+    children: []
+  STORY-643:
+    id: STORY-643
+    title: 'v1.15.0: OpenCode native commands (harness-level, deferred per owner 2026-08-27)'
+    status: draft
+    tags:
+    - v1.15.0-backlog
+    fingerprint: sha256:604529e78bd2
+    children: []
+  STORY-644:
+    id: STORY-644
+    title: 'v1.15.0: ops pack methodology handbook'
+    status: draft
+    tags:
+    - v1.15.0-backlog
+    fingerprint: sha256:b0f640aac6ac
+    children: []
+  STORY-645:
+    id: STORY-645
+    title: 'v1.15.0: skill slimming / lazy reference loading'
+    status: draft
+    tags:
+    - v1.15.0-backlog
+    fingerprint: sha256:239a1f65c6cf
+    children: []
+  STORY-646:
+    id: STORY-646
+    title: 'v1.14.5: privacy scrub of personal fingerprints + autoresearch/ops wiring
+      fixes'
+    status: implemented
+    tags: []
+    fingerprint: sha256:f87f81bbc5b2
+    children: []
   STORY-ADDAUXIL-c7bd:
     id: STORY-ADDAUXIL-c7bd
     title: Add auxiliary_metrics field to EXPT schema and update test coverage
@@ -1049,77 +1131,4 @@ artifacts:
     tags: []
     fingerprint: sha256:a557ed85a54a
     children: []
-  STORY-637:
-    id: STORY-637
-    title: 'v1.14.2 review fixes: typed refined_by direction, --set guard, IT-038
-      truthfulness, lint crash guard'
-    status: verified
-    tags:
-    - review-fix
-    fingerprint: sha256:c4ce6f80b91a
-    children: []
-  STORY-638:
-    id: STORY-638
-    title: 'v1.14.3: atomic create locking (race-safe ID allocation)'
-    status: verified
-    tags:
-    - review-hardening
-    fingerprint: sha256:d2a28767e509
-    children: []
-  STORY-639:
-    id: STORY-639
-    title: 'v1.14.3: role-target semantic matrix (accounting-only)'
-    status: verified
-    tags:
-    - review-hardening
-    fingerprint: sha256:c1449897c460
-    children: []
-  STORY-640:
-    id: STORY-640
-    title: 'v1.14.3: creation-status entry gates (CLI-level, --sanctioned)'
-    status: verified
-    tags:
-    - review-hardening
-    fingerprint: sha256:82063a14c58d
-    children: []
-  STORY-641:
-    id: STORY-641
-    title: 'v1.14.3: guardrail-test assertion hardening (chore)'
-    status: verified
-    tags:
-    - review-hardening
-    fingerprint: sha256:60ef394e36f9
-    children: []
-  STORY-642:
-    id: STORY-642
-    title: 'v1.15.0: unify chain-depth with the typed edge matrix'
-    status: draft
-    tags:
-    - v1.15.0-backlog
-    fingerprint: sha256:f273b7f17a02
-    children: []
-  STORY-643:
-    id: STORY-643
-    title: 'v1.15.0: OpenCode native commands (harness-level, deferred per owner 2026-08-27)'
-    status: draft
-    tags:
-    - v1.15.0-backlog
-    fingerprint: sha256:604529e78bd2
-    children: []
-  STORY-644:
-    id: STORY-644
-    title: 'v1.15.0: ops pack methodology handbook'
-    status: draft
-    tags:
-    - v1.15.0-backlog
-    fingerprint: sha256:b0f640aac6ac
-    children: []
-  STORY-645:
-    id: STORY-645
-    title: 'v1.15.0: skill slimming / lazy reference loading'
-    status: draft
-    tags:
-    - v1.15.0-backlog
-    fingerprint: sha256:239a1f65c6cf
-    children: []
-next_id: 646
+next_id: 647

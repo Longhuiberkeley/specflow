@@ -1204,7 +1204,7 @@ artifacts:
   STORY-071:
     status: implemented
     fingerprint: sha256:fc2d3e819e8b
-    title: Adapt autonomous-loop-protocol.md from autoresearch_fork
+    title: Adapt autonomous-loop-protocol.md from example_research
     type: story
   STORY-072:
     status: implemented
@@ -1224,7 +1224,7 @@ artifacts:
   STORY-075:
     status: implemented
     fingerprint: sha256:b687d7ca14f1
-    title: Test autoresearch pack end-to-end and pilot with quant_trade_rnd
+    title: Test autoresearch pack end-to-end and pilot with example_quant
     type: story
   STORY-076:
     status: verified
@@ -1299,7 +1299,7 @@ artifacts:
   SPIKE-001:
     status: completed
     fingerprint: sha256:5b2ae2442cd9
-    title: "autoresearch_fork inventory \u2014 diff list before Wave 3"
+    title: "example_research inventory \u2014 diff list before Wave 3"
     type: spike
   DEC-001:
     status: approved

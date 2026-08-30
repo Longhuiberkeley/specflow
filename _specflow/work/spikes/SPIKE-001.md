@@ -16,7 +16,8 @@ links:
 - target: REQ-028
   role: derives_from
 created: '2026-05-15'
-fingerprint: sha256:5b2ae2442cd9
+fingerprint: sha256:2f161b739cc8
+version: 1
 ---
 
 # autoresearch_fork inventory — diff list before Wave 3
@@ -27,7 +28,7 @@ Produce a concrete, file-by-file diff list specifying exactly what changes when 
 
 ## Inputs
 
-`/Volumes/ExternalDrive/Documents_external/githubcode/autoresearch_fork/.claude/skills/autoresearch/`
+`../autoresearch_fork/.claude/skills/autoresearch/` (local autoresearch fork checkout)
 
 | Source file | Lines | Adaptation target |
 |---|---|---|

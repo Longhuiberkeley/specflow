@@ -16,7 +16,8 @@ links:
 - target: SPIKE-001
   role: depends_on
 created: '2026-05-15'
-fingerprint: sha256:fac1f62f511d
+fingerprint: sha256:bf392702fde1
+version: 1
 ---
 
 # Write competition-setup-protocol.md
@@ -34,7 +35,7 @@ fingerprint: sha256:fac1f62f511d
   4. Dry-run the verify_command, confirm it returns a parseable number
   5. `specflow create --type competition ...`
 - **Trust boundary note**: `verify_command` is executed by the agent; only the project owner should edit COMP artifacts
-- **Multi-competition setup**: screener + validator pattern (Track A fast / Track B walk-forward)
+- **Multi-competition setup**: screener + validator pattern (screener fast / validator walk-forward)
 - Common pitfalls: non-deterministic verify, metrics that randomly diverge, no split method documented
 
 ## Acceptance Criteria

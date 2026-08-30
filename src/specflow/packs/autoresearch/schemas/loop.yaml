@@ -10,5 +10,5 @@ allowed_status:
   completed: [running]
   plateaued: [running]
   aborted: [running, draft]
-allowed_link_roles: [operates_on, informs, guided_by]
+allowed_link_roles: [operates_on, informs, guided_by, derives_from]
 directory: _specflow/specs/loops/

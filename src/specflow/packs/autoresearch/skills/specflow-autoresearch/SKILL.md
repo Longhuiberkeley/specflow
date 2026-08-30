@@ -61,7 +61,7 @@ specflow trace COMP-NNN
 
 From that output, read two things into context before acting:
 
-- **COMP metadata** — `verify_command`, `metric_name`, `metric_direction`, `objective_type`, `goals`, `constraints`, `success_criteria`, `domain`. These pin what "better" means and the rules of engagement.
+- **COMP frontmatter** — `verify_command`, `metric_name`, `metric_direction`, `objective_type`, `goals`, `constraints`, `success_criteria`, `domain`. These pin what "better" means and the rules of engagement.
 - **LOOP state** — `status`, `iteration_count` / `budget`, `best_metric`, `mode`, `active_research_questions`, `knowledge_input`. These pin where the loop is and what it already knows.
 
 Only then choose the subcommand. If `status` reports a running LOOP, attach rather than spawn a second one (see Setup Gate). If no COMP exists, walk `references/competition-setup-protocol.md`. The pack's standing context block — injected into this repo's agent instructions under the `<!-- pack:autoresearch context -->` sentinel in AGENTS.md/CLAUDE.md at install time — is the reminder that this subsystem exists and how to trigger it; the `status` command above is how you load its live state per invocation.
@@ -111,7 +111,7 @@ specflow trace COMP-NNN
 
 - If COMP exists → continue to the concurrent-LOOP check below
 - If no COMP exists → walk user through `references/competition-setup-protocol.md`
-- If user provides domain description (e.g., "BTC/USDT 30m sharpe") → extract COMP parameters and create it
+- If user provides domain description (e.g., "telco churn ROC-AUC") → extract COMP parameters and create it
 
 **Concurrent-LOOP check.** Inspect the trace output above. If any LOOP under COMP-NNN has `status: running`, do NOT silently start another one — Phase 4 commits will race on the same branch. Present the user with three options:
 
@@ -143,7 +143,7 @@ specflow create --type loop \
   --set competition=COMP-001 \
   --set mode=explore \
   --set budget=50 \
-  --set goal="Pursue COMP-001 goal #1: find a first uncorrelated strategy with Sharpe > 2.0"
+  --set goal="Pursue COMP-001 goal #1: reach AUC ≥ 0.85 with calibration error < 0.05"
 ```
 
 **Walk the research ladder once, here.** This is the only place the full Goal → Thesis → Research Question chain gets explicitly stepped through. After LOOP creation it's pinned in the artifacts and Phase 2a just stays mindful of it.
@@ -153,7 +153,7 @@ specflow create --type loop \
 3. `LOOP.active_research_questions` is the concrete, falsifiable operationalization of one or more `COMP.theses` on *this* dataset/verify command. Write 1–3:
 
 ```bash
-specflow update LOOP-001 --set active_research_questions='["Does 30m cross-asset rolling correlation predict 1h regime shifts in this universe?", "Does narrowing the basket to ADA/ETH improve Sharpe vs the full universe?"]'
+specflow update LOOP-001 --set active_research_questions='["Do tenure and usage features lift AUC vs a recency-only baseline?", "Does a 0.35 probability cutoff beat the default 0.50 on precision/recall?"]'
 ```
 
 4. Load confirmed FINDs into the LOOP's `knowledge_input`:
@@ -169,9 +169,9 @@ If the user uses `/specflow-autoresearch:plan`, guide them through mode selectio
 Present the setup summary:
 
 ```
-Competition:  COMP-001 (Track A: single split)
-Metric:       Sharpe ratio (higher is better)
-Verify:       python scripts/track_a.py --strategy {strategy}
+Competition:  COMP-001 (Screener: single split)
+Metric:       ROC-AUC (higher is better)
+Verify:       python scripts/screener.py --strategy {strategy}
 LOOP:         LOOP-001, explore mode, 50 iterations
 Knowledge:    FIND-001, FIND-002 (2 confirmed findings loaded)
 ```
@@ -204,8 +204,8 @@ A COMP is **durable** — it pins a dataset, metric, and verify command. When th
 
 - **Builds on a prior COMP** (same problem, refined — e.g. COMP-001 → COMP-002 adds a data source or tightens the split). Create the new COMP, link it to the old one, and carry forward the proven knowledge so the first LOOP doesn't re-derive it:
   ```bash
-  specflow create --type competition --title "Track A v2: + cross-asset features" \
-    --set verify_command="..." --set metric_name="Sharpe" --set metric_direction=higher_is_better \
+  specflow create --type competition --title "Screener v2: + tenure and usage features" \
+    --set verify_command="..." --set metric_name="ROC-AUC" --set metric_direction=higher_is_better \
     --links '[{"target":"COMP-001","role":"derives_from"}]'
   # then the first LOOP on COMP-002 loads confirmed FINDs from COMP-001:
   specflow create --type loop --title "..." --set competition=COMP-002 \
@@ -238,7 +238,7 @@ LOOP (budget iterations):
   Phase 8: Repeat or Complete — Check budget, update FINDs on completion
 ```
 
-**Phase 7 titling — descriptive, not ordinal.** Title each EXPT by *what the change was* (e.g. `"add cross-asset volatility ratio feature"`), and record its per-loop position in the `iteration` field (`specflow create --type experiment --status kept --set iteration=<n> ...` — `experiment` has no default status, so `--status` is mandatory), not in the title. Per-loop ordinals like `"EXPT-001: ..."` collide across loops (every LOOP reuses EXPT-001/002/…), producing visually-identical draft IDs that are distinguishable only by hash and outright ID collisions across sessions. The `iteration` field plus the EXPT's `loop` field give the machine-readable position; the title carries the human-readable content. `specflow autoresearch leaderboard --group-by loop` then slices a multi-loop competition cleanly.
+**Phase 7 titling — descriptive, not ordinal.** Title each EXPT by *what the change was* (e.g. `"add tenure and usage features"`), and record its per-loop position in the `iteration` field (`specflow create --type experiment --status kept --set iteration=<n> ...` — `experiment` has no default status, so `--status` is mandatory), not in the title. Per-loop ordinals like `"EXPT-001: ..."` collide across loops (every LOOP reuses EXPT-001/002/…), producing visually-identical draft IDs that are distinguishable only by hash and outright ID collisions across sessions. The `iteration` field plus the EXPT's `loop` field give the machine-facing position; the title carries the prose. `specflow autoresearch leaderboard --group-by loop` then slices a multi-loop competition cleanly.
 
 **Protocol gates (enforced by the agent following the loop protocol; the CLI prints the protocol and offers deterministic detection where noted, but does not hard-block iterations):**
 
@@ -271,7 +271,7 @@ specflow create --type finding \
   --set competition=COMP-001 \
   --set source_loop=LOOP-001 \
   --set confidence=medium \
-  --set summary="Cross-asset features drove largest improvements. Model changes had minimal impact."
+  --set summary="Tenure and usage features drove largest improvements. Model changes had minimal impact."
 ```
 
 For small loops (< 10 EXPTs), you may author FINDs directly instead of delegating. In that case, follow `references/finding-generation-protocol.md` manually.
@@ -324,7 +324,7 @@ The CLI renders the ranked leaderboard with auxiliary metrics. No additional ski
 | Make multiple unrelated changes | Can't attribute metric delta | Split into separate iterations |
 | Ignore git history | Repeats known failures | Read `git log` before every ideation phase |
 | Subjective evaluation | "Looks good" kills autonomy | Only mechanical metrics count |
-| Modify guard/test files | Defeats the safety net | Adapt implementation, never the tests |
+| Modify guard/test files | Defeats the safety net | Change the implementation, never the tests |
 | Silent failures | `catch {}` hides problems | Log at minimum; handle or re-throw |
 
 ### Principles (from Karpathy's Autoresearch)

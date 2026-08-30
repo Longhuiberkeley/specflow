@@ -445,7 +445,7 @@ artifacts:
     - autoresearch
     - scope
     - decision
-    fingerprint: sha256:bb2395033f92
+    fingerprint: sha256:bbaa427ef75f
     children: []
   DEC-047:
     id: DEC-047

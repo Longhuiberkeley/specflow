@@ -837,6 +837,13 @@ artifacts:
     tags: []
     fingerprint: sha256:cdc8c6b4c335
     children: []
+  CHL-348:
+    id: CHL-348
+    title: Audit cross-cutting/completeness findings
+    status: open
+    tags: []
+    fingerprint: sha256:d96f573e8c28
+    children: []
   CHL-AUDITHOR-af97:
     id: CHL-AUDITHOR-af97
     title: Audit horizontal/spike findings
@@ -886,4 +893,4 @@ artifacts:
     tags: []
     fingerprint: sha256:2a3d1132d093
     children: []
-next_id: 348
+next_id: 349

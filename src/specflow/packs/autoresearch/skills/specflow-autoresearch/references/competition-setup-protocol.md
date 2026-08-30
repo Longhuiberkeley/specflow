@@ -6,7 +6,7 @@ Walks the user through creating a COMP artifact. Read this when the user invokes
 
 Ask the user:
 
-- **What dataset are you optimizing against?** (e.g., "BTC/USDT 30m candles", "ImageNet validation split", "Kaggle titanic train.csv")
+- **What dataset are you optimizing against?** (e.g., "telco churn train.csv", "ImageNet validation split", "Kaggle titanic train.csv")
 - **What split method separates training from evaluation?** (e.g., "walk-forward with 80/20 gap", "5-fold cross-validation", "single temporal split")
 
 Record these in COMP's optional fields: `dataset`, `split_method`.
@@ -86,8 +86,8 @@ Record as COMP's `objective_type` field. Default to `single_best` if the user is
 
 | Extracted Value | Problem | Fix |
 |---|---|---|
-| `85.2%` | Trailing `%` | Add `\| tr -d '%'` |
-| `342ms` | Trailing unit | Add `\| grep -oE '[0-9]+\.?[0-9]*'` |
+| `85.2%` | Extra `%` suffix | Add `\| tr -d '%'` |
+| `342ms` | Extra unit suffix | Add `\| grep -oE '[0-9]+\.?[0-9]*'` |
 | *(empty)* | grep matched nothing | Check grep pattern |
 | Two numbers | Pipeline too broad | Add `head -1` or tighten grep |
 
@@ -108,10 +108,10 @@ COMP-specific fields are written with the generic `--set KEY=VALUE` flag (repeat
 
 ```bash
 specflow create --type competition \
-  --title "Track A: single split" \
+  --title "Screener: single split" \
   --status active \
-  --set verify_command="python scripts/track_a.py --strategy {strategy}" \
-  --set metric_name="Sharpe ratio" \
+  --set verify_command="python scripts/screener.py --strategy {strategy}" \
+  --set metric_name="ROC-AUC" \
   --set metric_direction=higher_is_better \
   --set guard_command="pytest tests/ -x" \
   --set guard_mode=pass_fail
@@ -123,10 +123,10 @@ If no guard is defined, the loop skips Phase 5.5 entirely.
 
 ```bash
 specflow create --type competition \
-  --title "Track A: single split" \
+  --title "Screener: single split" \
   --status active \
-  --set verify_command="python scripts/track_a.py --strategy {strategy}" \
-  --set metric_name="Sharpe ratio" \
+  --set verify_command="python scripts/screener.py --strategy {strategy}" \
+  --set metric_name="ROC-AUC" \
   --set metric_direction=higher_is_better
 ```
 
@@ -139,7 +139,7 @@ A COMP is not just a metric — it is a research question. Capture the goals exp
 `goals` is a list of freeform strings — pass it as a JSON array:
 
 ```bash
-specflow update COMP-001 --set goals='["Find 3 uncorrelated strategies with Sharpe > 2.0", "Walk-forward Sharpe degrades < 15% from in-sample", "Max drawdown < 10% across all candidates"]'
+specflow update COMP-001 --set goals='["Reach AUC ≥ 0.85 on the held-out split", "Calibration error < 0.05", "Precision at 0.35 cutoff ≥ 0.60"]'
 ```
 
 Goals are what the loop steers toward: they drive hypothesis framing (Phase 2a), Dynamic Termination (Phase 8), and what the post-check should validate (Step 7). The agent uses them to decide whether to stop early or continue.
@@ -147,7 +147,7 @@ Goals are what the loop steers toward: they drive hypothesis framing (Phase 2a),
 Also set `success_criteria` — a sentence explaining why a high metric might still fail. This is the deploy-fit definition the post-check enforces:
 
 ```bash
-specflow update COMP-001 --set success_criteria="High Sharpe alone is not enough; strategy must be profitable after transaction costs and deployable with <5min setup time."
+specflow update COMP-001 --set success_criteria="High AUC alone is not enough; the model must stay calibrated (error < 0.05) and serve predictions within the latency budget."
 ```
 
 ## Step 6.6: Define Boundaries and Constraints
@@ -172,14 +172,14 @@ Ask the user:
 
 Examples to seed the conversation:
 
-- quant: *"Cross-asset regime signals lift risk-adjusted return"*, *"Mean-reversion dominates on intraday bars for this universe"*
+- quant: *"Cross-asset regime signals lift risk-adjusted return"*, *"Mean-reversion dominates on short-horizon bars for this universe"*
 - ML: *"Data augmentation beats architecture changes on this dataset"*, *"Pretraining on unlabeled domain data closes the labeled-data gap"*
 - systems: *"Tail latency is bound by GC, not network"*, *"Read-heavy workloads benefit more from caching than indexing"*
 
 Record:
 
 ```bash
-specflow update COMP-001 --set theses='["Cross-asset regime signals lift Sharpe", "Kalman filters outperform OLS on intraday bars for this universe"]'
+specflow update COMP-001 --set theses='["Feature engineering outperforms model tuning", "Gradient boosting beats logistic regression on mixed-type tabular features"]'
 ```
 
 Theses are *not* hypotheses — they're broader claims that hypotheses test. They evolve: add new ones as loops surface them, refute old ones with evidence, supersede when refined. The agent surfaces them at the start of every LOOP and links FINDs back to them in `what_worked` / `what_failed`.
@@ -194,12 +194,12 @@ Instead of a single monolithic verify script, use a **unified runner with phase 
 ```bash
 # The same script handles all three phases
 specflow create --type competition \
-  --title "Pair-trading with Kalman" \
+  --title "Telco churn: gradient boosting" \
   --status active \
-  --set verify_command="uv run python run_comp002.py {strategy} --phase=verify" \
-  --set pre_check_command="uv run python run_comp002.py {strategy} --phase=pre-check" \
-  --set post_check_command="uv run python run_comp002.py {strategy} --phase=post-check" \
-  --set metric_name="Sharpe ratio" \
+  --set verify_command="uv run python run_comp.py {strategy} --phase=verify" \
+  --set pre_check_command="uv run python run_comp.py {strategy} --phase=pre-check" \
+  --set post_check_command="uv run python run_comp.py {strategy} --phase=post-check" \
+  --set metric_name="ROC-AUC" \
   --set metric_direction=higher_is_better
 ```
 
@@ -221,10 +221,10 @@ Run the verify command 3x back-to-back on unchanged code. Record the results on 
 
 ```bash
 # Run 3 times and capture
-for i in 1 2 3; do python run_comp002.py baseline --phase=verify; done
-# Results: 1.23, 1.31, 1.15
+for i in 1 2 3; do python run_comp.py baseline --phase=verify; done
+# Results: 0.82, 0.83, 0.80
 
-specflow update COMP-001 --set noise_characterization='{"metric": "sharpe", "mean": 1.23, "stdev": 0.08, "min": 1.15, "max": 1.31, "strategy": "multi_run_median"}'
+specflow update COMP-001 --set noise_characterization='{"metric": "auc", "mean": 0.82, "stdev": 0.01, "min": 0.80, "max": 0.83, "strategy": "multi_run_median"}'
 ```
 
 This prevents false-positive "keeps" when the improvement is within the noise floor.
@@ -516,7 +516,7 @@ SpecFlow EXPT artifacts are the source of truth for the research loop, but they 
      mlflow_experiment_id: 42
    ```
 
-**Why both?** The loop needs a deterministic, git-linked, human-readable record (EXPT). The tracker needs high-frequency, high-dimensional telemetry. Don't force the EXPT to carry per-epoch data — that's context bloat. Don't force the tracker to carry hypothesis narrative — that's its weakness. Use each for what it's good at.
+**Why both?** The loop needs a deterministic, git-linked, inspectable record (EXPT). The tracker needs high-frequency, high-dimensional telemetry. Don't force the EXPT to carry per-epoch data — that's context bloat. Don't force the tracker to carry hypothesis narrative — that's its weakness. Use each for what it's good at.
 
 ## Common Pitfalls
 

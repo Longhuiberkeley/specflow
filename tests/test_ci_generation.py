@@ -1,6 +1,6 @@
 """Tests for GitHub Actions CI workflow generation.
 
-Locks in the fixes for the CI bootstrap bug (cs2_bet-class failure): generated
+Locks in the fixes for the CI bootstrap bug (example_bets-class failure): generated
 specflow-only jobs must bootstrap specflow from its Git source
 (``uvx --from git+...``) and must NOT use ``uv run specflow`` — which fails in a
 clean CI runner because a consuming project does not declare specflow as a
@@ -104,7 +104,7 @@ def test_pass1_always_present():
 def test_hook_script_uses_bare_specflow():
     # The pre-commit hook installed into consuming projects must invoke bare
     # `specflow` (on PATH via `uv tool install git+...`), NOT `uv run specflow`
-    # (which fails where specflow isn't a declared dependency — the cs2_bet bug
+    # (which fails where specflow isn't a declared dependency — the example_bets bug
     # class). `_DEFAULT_HOOK_SCRIPT` is the single source of truth shared by
     # get_hook_script(), `specflow hook install`, and `specflow init`.
     script = GitHubActionsAdapter().get_hook_script()

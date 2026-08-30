@@ -141,13 +141,13 @@ If a prior LOOP on the same COMP has `eda_completed: true` AND the data has not 
 
 ```bash
 specflow create --type experiment \
-  --title "Pre-check failed: cointegration p-value 0.12" \
+  --title "Pre-check failed: class-balance p-value 0.12" \
   --status discarded \
   --set loop=LOOP-001 \
   --set metric_value=0.0 \
   --set change_category=pre_check \
-  --set summary="ADF test failed; pair not stationary" \
-  --set failure_analysis="Pair ADA/ETH showed p=0.12 on cointegration test. Skipped verify."
+  --set summary="Chi-square test failed; train/val class mix diverges" \
+  --set failure_analysis="Train vs val churn-rate chi-square showed p=0.12. Skipped verify."
 ```
 
 ## Phase 0.7: First-Principles Decomposition (required protocol step, before first iteration)
@@ -276,7 +276,7 @@ The full research ladder (Goal → Thesis → RQ) was walked at LOOP creation an
 
 Read `LOOP.active_research_questions`, `COMP.constraints`, the open FINDs, and the `research_agenda` from Phase 0.7. Write a **one-line hypothesis with a predicted effect and a reason**, tied to one of the active RQs:
 
-> *"If I add cross-asset rolling-correlation features, walk-forward Sharpe should rise toward the >2.0 goal, because the current model has no regime signal."*
+> *"If I add tenure and usage features, validation AUC should rise toward the 0.85 goal, because the current model has no behavioral signal."*
 
 Before committing to it, answer **four** questions in working context (no artifacts — speed matters). The first three are quick; the fourth is the forcing step:
 
@@ -295,7 +295,7 @@ A good hypothesis is falsifiable in principle and tied to a goal — not "try le
 
 ### 2b. Is the metric still a faithful proxy for the goal?
 
-Every ~10 iterations (and at each condense point), pause and ask: **does the primary metric still reflect `COMP.goals`?** If the agent is gaming the metric without serving the goal (e.g. Sharpe climbing on 3 curve-fit trades, accuracy rising while calibration rots), that is itself a finding — log it and adjust: add an auxiliary metric, tighten `success_criteria`, or switch `objective_type`. A metric that has drifted from intent is worse than no metric.
+Every ~10 iterations (and at each condense point), pause and ask: **does the primary metric still reflect `COMP.goals`?** If the agent is gaming the metric without serving the goal (e.g. AUC climbing on 3 overfit folds, accuracy rising while calibration rots), that is itself a finding — log it and adjust: add an auxiliary metric, tighten `success_criteria`, or switch `objective_type`. A metric that has drifted from intent is worse than no metric.
 
 **Multi-output / vector targets (ML-19).** When the goal is a vector `[x, y, z]` or the primary metric is an aggregate over components, the single scalar can rise while a component regresses (Simpson's paradox, ML-16). Record each component as its own auxiliary metric using the convention `component_<name>` and check **every** component, not just the aggregate:
 
@@ -500,7 +500,7 @@ git commit -m "experiment(<scope>): <one-sentence description of what you change
 
 **WARNING:** NEVER use `git add -A` — it stages ALL files including .env, credentials, and user's unrelated work. Always use `git add <file1> <file2> ...` with explicit file paths.
 
-**Commit message format:** `experiment(<scope>): <description>`. Example: `experiment(strategy): increase Kalman Q from 0.01 to 0.001`.
+**Commit message format:** `experiment(<scope>): <description>`. Example: `experiment(model): decrease learning_rate from 0.10 to 0.01`.
 
 **Hook failure handling:** If a pre-commit hook blocks the commit:
 1. Read the hook's error output to understand WHY it blocked
@@ -571,7 +571,7 @@ If a guard command was defined on the COMP artifact (`guard_command` field), run
 
 - Run AFTER verify — no point checking guard if the metric didn't improve
 - If guard fails, revert the optimization and try to rework it (max 2 attempts)
-- NEVER modify guard/test files — always adapt the implementation instead
+- NEVER modify guard/test files — always change the implementation instead
 - Log guard failures distinctly so the agent can learn what changes cause regressions
 
 **Guard failure recovery (max 2 rework attempts):**
@@ -776,13 +776,13 @@ EXPT-specific fields are written with the generic `--set KEY=VALUE` flag (repeat
 
 ```bash
 specflow create --type experiment \
-  --title "Added cross-asset momentum features" \
+  --title "Added tenure and usage features" \
   --status kept \
   --set loop=LOOP-001 \
-  --set metric_value=1.83 \
+  --set metric_value=0.84 \
   --set change_category=features \
-  --set summary="Added BTC/ETH cross-asset rolling correlation features to the feature pipeline" \
-  --set hypothesis="Cross-asset features add regime signal, lifting walk-forward Sharpe toward the >2.0 goal" \
+  --set summary="Added tenure, contract-type, and monthly-usage features to the churn pipeline" \
+  --set hypothesis="Behavioral features add signal, lifting validation AUC toward the 0.85 goal" \
   --set hypothesis_outcome=supported
 ```
 
@@ -790,13 +790,13 @@ If the verify command or guard produced additional metrics, include them as a JS
 
 ```bash
 specflow create --type experiment \
-  --title "Added cross-asset momentum features" \
+  --title "Added tenure and usage features" \
   --status kept \
   --set loop=LOOP-001 \
-  --set metric_value=1.83 \
+  --set metric_value=0.84 \
   --set change_category=features \
-  --set summary="Added BTC/ETH cross-asset rolling correlation features to the feature pipeline" \
-  --set auxiliary_metrics='{"max_drawdown": 0.12, "total_trades": 340, "win_rate": 0.54, "runtime_seconds": 12.4}'
+  --set summary="Added tenure, contract-type, and monthly-usage features to the churn pipeline" \
+  --set auxiliary_metrics='{"calibration_error": 0.04, "precision": 0.62, "recall": 0.71, "runtime_seconds": 12.4}'
 ```
 
 Field mapping from iteration data:
@@ -883,8 +883,8 @@ In `family_of_good` competitions, log how diverse this experiment is from the cu
 
 ```yaml
 diversity_metrics:
-  equity_correlation_to_best: 0.31
-  strategy_family: kalman_filter
+  prediction_correlation_to_best: 0.31
+  strategy_family: gradient_boosting
   feature_overlap_ratio: 0.15
 ```
 
@@ -895,7 +895,7 @@ The agent decides what "diversity" means per domain. In quant: correlation betwe
 When `status` is `discarded` or `crashed` (including a discard with `failure_stage: pre_check`), populate `failure_analysis` with a one-sentence root cause before creating the EXPT artifact:
 
 ```yaml
-failure_analysis: "Kalman Q=0.0001 caused over-aggressive reversion; 12 whipsaw trades in 3 days"
+failure_analysis: "max_depth=12 caused overfit on rare prepaid segments; calibration error 0.18 on the holdout"
 ```
 
 This is the raw data that FIND `what_failed` synthesis will read. Be specific, reference exact parameter values, and avoid vague language like "didn't work."
@@ -909,7 +909,7 @@ specflow update LOOP-001 \
   --set iteration_count=23 \
   --set kept_count=8 \
   --set discarded_count=13 \
-  --set best_metric=1.83 \
+  --set best_metric=0.84 \
   --set best_experiment=EXPT-047
 ```
 
@@ -935,7 +935,7 @@ Every 10 iterations (or at loop completion), print a brief summary:
 
 ```
 === Autoresearch Progress (iteration 20/50) ===
-Baseline: -6.62 → Current best: +1.83 (delta: +8.45)
+Baseline: 0.72 → Current best: 0.84 (delta: +0.12)
 Keeps: 8 | Discards: 10 | Crashes: 2
 ```
 
@@ -1032,7 +1032,7 @@ IF plateau_patience triggered AND goals_met:
     Go to FIND Authoring
 ```
 
-**Why dynamic?** A quant project might have a goal "Find 3 uncorrelated strategies with Sharpe > 2.0." If the agent finds strategy #3 at iteration 30/50, it should stop — not burn 20 more iterations chasing marginal gains. Conversely, if Sharpe is 1.9 at iteration 48/50, the agent should not stop just because plateau_patience triggered; the user may want to extend budget.
+**Why dynamic?** A tabular-ML project might have a goal "Reach AUC ≥ 0.85 with calibration error < 0.05." If the agent hits both at iteration 30/50, it should stop — not burn 20 more iterations chasing marginal gains. Conversely, if AUC is 0.84 at iteration 48/50, the agent should not stop just because plateau_patience triggered; the user may want to extend budget.
 
 **Post-check weighting:** Even if the primary metric looks good, post-check failures (e.g., walk-forward Sharpe collapsed) are signals that the "kept" experiment may not actually satisfy the COMP's real-world goals. Require a healthy post-check pass rate before declaring victory.
 
@@ -1065,11 +1065,11 @@ specflow update LOOP-001 --status plateaued
 
 ```
 === Autoresearch Complete (50/50 iterations) ===
-Competition: COMP-001 (Track A: single split)
+Competition: COMP-001 (Screener: single split)
 Mode: explore
-Baseline: -6.62 → Best: +1.83 (delta: +8.45)
+Baseline: 0.72 → Best: 0.84 (delta: +0.12)
 Keeps: 12 | Discards: 33 | Crashes: 5
-Best iteration: EXPT-047 "Added cross-asset momentum features"
+Best iteration: EXPT-047 "Added tenure and usage features"
 ```
 
 ### FIND Authoring (Post-Loop)
