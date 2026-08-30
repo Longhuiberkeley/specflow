@@ -402,4 +402,11 @@ artifacts:
     tags: []
     fingerprint: sha256:0cc4367cbf50
     children: []
-next_id: 49
+  IT-049:
+    id: IT-049
+    title: Gate script consumes the shared pattern (no embedded drift)
+    status: draft
+    tags: []
+    fingerprint: sha256:989a5e419b94
+    children: []
+next_id: 50

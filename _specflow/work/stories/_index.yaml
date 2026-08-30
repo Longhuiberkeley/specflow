@@ -1035,6 +1035,14 @@ artifacts:
     tags: []
     fingerprint: sha256:fd215569cc2f
     children: []
+  STORY-649:
+    id: STORY-649
+    title: Audit-report privacy redaction at generation time + single-source denylist
+      pattern
+    status: implemented
+    tags: []
+    fingerprint: sha256:05b68d748f71
+    children: []
   STORY-ADDAUXIL-c7bd:
     id: STORY-ADDAUXIL-c7bd
     title: Add auxiliary_metrics field to EXPT schema and update test coverage
@@ -1145,4 +1153,4 @@ artifacts:
     tags: []
     fingerprint: sha256:a557ed85a54a
     children: []
-next_id: 649
+next_id: 650

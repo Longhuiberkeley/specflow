@@ -751,6 +751,13 @@ artifacts:
     tags: []
     fingerprint: sha256:6bec605ade90
     children: []
+  UT-082:
+    id: UT-082
+    title: 'redact_text: token classes, idempotence, prose-safety'
+    status: draft
+    tags: []
+    fingerprint: sha256:a8b6ddd80b25
+    children: []
   UT-EVIDENCE-9a3d:
     id: UT-EVIDENCE-9a3d
     title: Evidence RTM includes mixed eligible REQ statuses
@@ -758,4 +765,4 @@ artifacts:
     tags: []
     fingerprint: sha256:cd2ebadd80c8
     children: []
-next_id: 82
+next_id: 83

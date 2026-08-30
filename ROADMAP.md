@@ -23,17 +23,29 @@ Generalized-core hardening, scoped deliberately small (harness-level work deferr
 - **Guardrail-test hardening** — anchored approval-gate assertions + mutation checks; caught that `specflow-artifact-review/SKILL.md` never actually stated the no-self-approval rule (now fixed).
 - **Dogfood closure for v1.14.2** — STORY-637 verified (contracts UT-074/IT-041/QT-047), IT-038/QT-045 stamps truthful.
 
-## v1.15.0 (tracked backlog — STORY-642..645 + operator-ratified designs)
+## v1.15.0 (operator re-scope 2026-08-30: robustness first — defer per-harness customization)
 
-Formalized during v1.14.3 so the next release scope is recorded, not prose. Lead item and pack design ratified by the operator 2026-08-30:
+Operator directive (2026-08-30): **stop before per-harness customization; make the existing offering very nice and robust first.** Ordering below reflects it.
 
-- **Rolling-evaluation / split-R&D (lead)** — `rolling-evaluation.md` recipe + DEC: fixed train:val:test vs rolling/walk-forward as a first-class design choice; split-methodology itself as a researchable object (EXPTs over split configs; COMP-per-window chain vs successor COMP); retrain-window sizing and historical→live transition as named research tracks. COMP churn rule: a new COMP only when the protocol (exam) changes — never per window/retrain. `window_end` auto-advance MUST be successor-COMP creation (chained-frozen-COMPs decision forbids mutation).
-- **Orchestration pack** — conductor over existing lifecycle skills; workflows are user-definable YAML stage contracts (plan/review/implement/review/fix as stage types); the operator's sequential flow ships as the reference recipe; no hardcoded pipeline; `adds_artifact_types: none`; link-role additions stated explicitly. First deliverable: persist the rev-3 design in-repo (DEC + REQ/ARCH), reconciled with DEC-049/DEC-045.
+### Robustness & polish (priority)
+- **Denylist gate scope extension** — cover `.claude/` (the live skill mirror — highest-risk reintroduction surface), `.github/`, root `AGENTS.md`; `.specflow/` stays consciously excluded (generated state, redacted at write time since STORY-649).
+- **Audit the remaining 8 domain checklists against DEC-078** (thin, mapping-not-methodology).
+- **lint schema-bypass cleanup** — move the hardcoded `condensation_brief_<N>` regex (lint.py) to schema-level pattern support, killing the last code-side special case.
 - **STORY-642** — unify `compute_chain_depth` with the typed edge matrix (v1.14.3's role-target matrix is the declared cousin).
-- **STORY-643** — OpenCode native commands/tools (harness-level; deferred per owner 2026-08-27 "generalized core first").
-- **STORY-644** — ops pack methodology handbook (parity with autoresearch's BP-01..ML-22 surface), documenting the two ops↔autoresearch escalation doors.
 - **STORY-645** — skill slimming / lazy reference loading (discover ~64KB, execute ~40KB, plan ~38KB bundles) + a context-cost regression test.
-- **Frozen extras** — `role_targets.py` dead `competition.operates_on` row; `domain_constants.py` sync all five domains; `trace.py` renderers (COMP lineage + LOOP escalation source); LOW pack defects (float coercion guards, `--show-family` doc drift, ops SKILL.md edge form, metric_value-when-kept refusal); audit the remaining 8 domain checklists against DEC-078 (thin, mapping-not-methodology); **DDD-029/REQ-038 scope amendment** — extend the denylist gate to `.claude/`, `.github/`, and root `AGENTS.md` (the live skill mirror is the highest-risk reintroduction surface; exclusion of `.specflow/` stays conscious — generated state, not source).
+- **`trace.py` renderers** — COMP lineage + LOOP escalation-source sections (make existing edges visible where users look).
+- **LOW pack defects** — float coercion guards (:624/:728/:950), `--show-family` doc drift, ops SKILL.md:162 edge form, metric_value-when-kept refusal.
+- **Review-finding burn-down** — 113 open / 7 stale review findings; docs-staleness sweep (only 2 docs cite artifacts).
+- **brief.py derives_from credit doc** — the suppression surface (any incoming derives_from, incl. MON corrections) is broader than the CHANGELOG wording; document the semantics in the docstring/ops handbook.
+
+### Methodology (after robustness)
+- **Rolling-evaluation / split-R&D** — `rolling-evaluation.md` recipe + DEC: fixed train:val:test vs rolling/walk-forward as a first-class design choice; split-methodology itself as a researchable object (EXPTs over split configs; COMP-per-window chain vs successor COMP); retrain-window sizing and historical→live transition as named research tracks. COMP churn rule: a new COMP only when the protocol (exam) changes — never per window/retrain. `window_end` auto-advance MUST be successor-COMP creation (chained-frozen-COMPs decision forbids mutation).
+- **STORY-644** — ops pack methodology handbook (parity with autoresearch's BP-01..ML-22 surface), documenting the two ops↔autoresearch escalation doors.
+
+### Deferred — per-harness customization (explicitly out until the offering is robust)
+- **STORY-643** — OpenCode native commands/tools. Deferred per owner 2026-08-27, re-affirmed 2026-08-30.
+- **Orchestration pack** — conductor + host bindings. The workflows-as-data design (user-definable YAML stage contracts; the operator's plan→review→implement→review→fix flow as reference recipe) stays recorded here and in DEC-078's session notes; implementation waits until the robustness block lands. No new artifact types; link-role additions to be stated when revived.
+- **Frozen extras** — `role_targets.py` dead `competition.operates_on` row; `domain_constants.py` sync all five domains.
 
 ## v0.2.0
 

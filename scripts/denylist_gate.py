@@ -22,34 +22,29 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
+# Single source of truth: the pattern lives in the shipped package
+# (specflow.lib.privacy). Bootstrap src/ onto sys.path so this script runs
+# standalone in a bare CI checkout (no uv sync needed by the privacy job).
+_SRC = REPO_ROOT / "src"
+if _SRC.is_dir() and str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
+
+from specflow.lib.privacy import PATTERN  # noqa: E402
+
 SCOPE_DIRS = ("src", "tests", "docs", "scripts", "_specflow")
 SCOPE_FILES = ("CHANGELOG.md", "README.md", "ROADMAP.md")
 
 ALLOWLIST_PATHS = (
     "src/specflow/packs/autoresearch/skills/specflow-autoresearch/references/"
     "domain-research-checklists.md",
+    "src/specflow/lib/privacy.py",
     "scripts/denylist_gate.py",
     "tests/test_denylist_gate.py",
+    "tests/test_privacy_redaction.py",
 )
 
 _REQUIREMENT_SPEC = "_specflow/specs/requirements/REQ-038.md"
 _DESIGN_SPEC = "_specflow/specs/detailed-design/DDD-029.md"
-
-# Word-bounded per DDD-029; case-sensitive (a case-insensitive ETH/ADA would
-# false-positive on ordinary prose). Numeric tokens anchored so e.g. 0.0207
-# does not trip 0.020.
-PATTERN = re.compile(
-    r"\b(?:cs2|HKJC|quant_trade|arbitrage|run_comp002|track_a|Kalman|BTC|ADA|ETH)\b"
-    r"|\bTrack\s+[AB]\b"
-    r"|\btrailing\s+stop\b"
-    r"|/Volumes/ExternalDrive"
-    r"|/Users/longhui"
-    r"|Sharpe\s*>\s*2"
-    r"|\b0\.020\b"
-    r"|\b0\.021\b"
-    r"|\b6\.62\b"
-    r"|\b8\.45\b"
-)
 
 
 def _allowlisted(rel: str) -> bool:

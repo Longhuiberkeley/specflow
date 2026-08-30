@@ -29,6 +29,7 @@ from specflow.lib import challenges as chl_lib
 from specflow.lib import lint as lint_lib
 from specflow.lib import standards as standards_lib
 from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC, BOLD
+from specflow.lib.privacy import redact_text
 from specflow.lib.techniques import TechniqueFinding
 
 _SEP = "─" * 58
@@ -210,7 +211,9 @@ def _load_cached_findings(cache_dir: Path, fingerprint: str) -> list[dict[str, s
 def _save_cached_findings(cache_dir: Path, fingerprint: str, findings: list[dict[str, str]]) -> None:
     fm = {"fingerprint": fingerprint, "cached_at": _ts(), "findings": findings}
     content = "---\n" + yaml.dump(fm, default_flow_style=False, sort_keys=False) + "---\n"
-    (cache_dir / f"{fingerprint}.md").write_text(content, encoding="utf-8")
+    # Generated state never carries fingerprints (REQ-038): findings quote
+    # spec text, and REQ-038's own AC enumerates the denylist.
+    (cache_dir / f"{fingerprint}.md").write_text(redact_text(content), encoding="utf-8")
 
 
 def _apply_fingerprint_cache(
@@ -1494,7 +1497,9 @@ def run(root: Path, args: dict[str, Any]) -> int:
     )
     report_path = audit_dir / "report.md"
     if not dry_run:
-        report_path.write_text(report, encoding="utf-8")
+        # Generated reports never carry fingerprints (REQ-038) — redact at
+        # the write choke point; quoting REQ-038's AC must not re-leak it.
+        report_path.write_text(redact_text(report), encoding="utf-8")
 
         sub_horiz_path = audit_dir / "subagent-horizontal.md"
         sub_horiz_lines = ["# Horizontal Analysis Details\n"]
@@ -1503,13 +1508,13 @@ def run(root: Path, args: dict[str, Any]) -> int:
             for item in items:
                 sub_horiz_lines.append(f"- [{item['severity']}] {item['message']}")
             sub_horiz_lines.append("")
-        sub_horiz_path.write_text("\n".join(sub_horiz_lines), encoding="utf-8")
+        sub_horiz_path.write_text(redact_text("\n".join(sub_horiz_lines)), encoding="utf-8")
 
         sub_vert_path = audit_dir / "subagent-vertical.md"
         sub_vert_lines = ["# Vertical Analysis Details\n"]
         for item in vertical:
             sub_vert_lines.append(f"- [{item['severity']}] {item['message']}")
-        sub_vert_path.write_text("\n".join(sub_vert_lines), encoding="utf-8")
+        sub_vert_path.write_text(redact_text("\n".join(sub_vert_lines)), encoding="utf-8")
 
         sub_cross_path = audit_dir / "subagent-cross-cutting.md"
         sub_cross_lines = ["# Cross-cutting Analysis Details\n"]
@@ -1544,7 +1549,7 @@ def run(root: Path, args: dict[str, Any]) -> int:
                 for it in r["items"]:
                     sub_cross_lines.append(f"- [{it['classification']}] {it['text']}")
                 sub_cross_lines.append("")
-        sub_cross_path.write_text("\n".join(sub_cross_lines), encoding="utf-8")
+        sub_cross_path.write_text(redact_text("\n".join(sub_cross_lines)), encoding="utf-8")
 
     all_findings = _collect_all_findings(horizontal, vertical, cross_cutting)
     errors = sum(1 for f in all_findings if f["severity"] == "error")
