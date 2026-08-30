@@ -33,7 +33,7 @@ Formalized during v1.14.3 so the next release scope is recorded, not prose. Lead
 - **STORY-643** — OpenCode native commands/tools (harness-level; deferred per owner 2026-08-27 "generalized core first").
 - **STORY-644** — ops pack methodology handbook (parity with autoresearch's BP-01..ML-22 surface), documenting the two ops↔autoresearch escalation doors.
 - **STORY-645** — skill slimming / lazy reference loading (discover ~64KB, execute ~40KB, plan ~38KB bundles) + a context-cost regression test.
-- **Frozen extras** — `role_targets.py` dead `competition.operates_on` row; `domain_constants.py` sync all five domains; `trace.py` renderers (COMP lineage + LOOP escalation source); LOW pack defects (float coercion guards, `--show-family` doc drift, ops SKILL.md edge form, metric_value-when-kept refusal); audit the remaining 8 domain checklists against DEC-078 (thin, mapping-not-methodology).
+- **Frozen extras** — `role_targets.py` dead `competition.operates_on` row; `domain_constants.py` sync all five domains; `trace.py` renderers (COMP lineage + LOOP escalation source); LOW pack defects (float coercion guards, `--show-family` doc drift, ops SKILL.md edge form, metric_value-when-kept refusal); audit the remaining 8 domain checklists against DEC-078 (thin, mapping-not-methodology); **DDD-029/REQ-038 scope amendment** — extend the denylist gate to `.claude/`, `.github/`, and root `AGENTS.md` (the live skill mirror is the highest-risk reintroduction surface; exclusion of `.specflow/` stays conscious — generated state, not source).
 
 ## v0.2.0
 

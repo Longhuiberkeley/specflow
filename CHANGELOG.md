@@ -22,6 +22,7 @@ Privacy-gate automation + evidentiary closure for v1.14.5 (STORY-647, STORY-648,
 - **`brief.py` vanished-monitor symmetry.** The resolved-MONITOR "vanished without prevention record" check credited `derives_from` edges but omitted the MONITOR's own `informs` edge — legacy monitors (pre-`derives_from` convention) that did record a follow-up read as vanished, the exact cry-wolf this note exists to avoid. Both lists now apply all three credit wires (outgoing `informs`, DEF `exposed_by` backlink, incoming `derives_from`); the stale two-direction docstring rewritten to match.
 - **Residual descriptive context neutralized (STORY-647).** STORY-075 retitled "Validate the autoresearch pack end-to-end in a real research project" (title/h1/body/section headers + story index); DEC-059's rationale now reads "an external research project corpus" (was "personal betting-analytics"). Within REQ-038's letter already, now beyond reproach.
 - **Hygiene from the v1.14.5 audit.** CHL-348 closed as addressed (its finding — REQ-038 lacking an ARCH `derives_from` — was fixed by ARCH-029 in 729ed5a but the flag sat open). QT-049's duplicate `derives_from REQ-038` link dropped (kept `verified_by`). CHANGELOG's 1.14.5 baseline claim corrected to the derived count: 12 baseline files × 3 title strings (36 lines), neutralized in place per ARCH-029 write-once.
+- **Pre-release review pass (second opinion) applied.** Generated audit reports under `.specflow/audits/` that restated REQ-038's denylist verbatim redacted (8 files); `.specflow/audits/.cache/` untracked + ignored; denylist allowlist switched from suffix to exact-path matching (a same-named decoy file must not bypass — pinned by test); CI wiring pinned by a test asserting both `specflow.yml` invocations; ROADMAP gains the v1.15.0 scope amendment (extend the gate to `.claude/`, `.github/`, root `AGENTS.md`).
 
 ### Decisions / Docs
 
@@ -30,8 +31,8 @@ Privacy-gate automation + evidentiary closure for v1.14.5 (STORY-647, STORY-648,
 
 ### Tests
 
-- +4 locking tests for the v1.14.5 schema/lint registrations (EXPT `competition`, COMP `custom_categories`, LOOP numbered `condensation_brief_<N>`, LOOP `derives_from` role) — previously zero coverage despite green UT-079/IT-046 stamps; +5 denylist-gate tests (repo-clean scan, detection, anchored numerics, allowlist, bytecode skip); +1 brief vanished-symmetry regression.
-- Total: 1439 tests passing
+- +4 locking tests for the v1.14.5 schema/lint registrations (EXPT `competition`, COMP `custom_categories`, LOOP numbered `condensation_brief_<N>`, LOOP `derives_from` role) — previously zero coverage despite green UT-079/IT-046 stamps; +6 denylist-gate tests (repo-clean scan, detection, anchored numerics, exact-path allowlist incl. suffix-trick decoy, bytecode skip, CI-wiring pin); +1 brief vanished-symmetry regression.
+- Total: 1440 tests passing
 
 ## [1.14.5] - 2026-08-30
 

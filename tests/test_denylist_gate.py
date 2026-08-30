@@ -39,10 +39,20 @@ def test_anchored_numbers_do_not_overmatch(tmp_path: Path):
     assert gate.scan_files([f], tmp_path) == []
 
 
-def test_allowlisted_paths_skipped(tmp_path: Path):
-    f = tmp_path / "domain-research-checklists.md"
-    f.write_text("Kalman filter family vocabulary\n")
-    assert gate.scan_files([f], tmp_path) == []
+def test_allowlisted_exact_paths_skipped(tmp_path: Path):
+    """Exact-path allowlist (ARCH-029): the sanctioned checklist is skipped,
+    but a same-named file in ANY other directory is still scanned — a suffix
+    trick must not bypass the gate."""
+    allowed = tmp_path / "src/specflow/packs/autoresearch/skills/specflow-autoresearch/references/domain-research-checklists.md"
+    allowed.parent.mkdir(parents=True)
+    allowed.write_text("Kalman filter family vocabulary\n")
+    assert gate.scan_files([allowed], tmp_path) == []
+
+    decoy = tmp_path / "docs" / "domain-research-checklists.md"
+    decoy.parent.mkdir()
+    decoy.write_text("Kalman filter family vocabulary\n")
+    hits = gate.scan_files([decoy], tmp_path)
+    assert len(hits) == 1 and hits[0][0] == Path("docs/domain-research-checklists.md")
 
 
 def test_bytecode_skipped(tmp_path: Path):
@@ -50,3 +60,18 @@ def test_bytecode_skipped(tmp_path: Path):
     pyc.parent.mkdir()
     pyc.write_bytes(b"/Volumes/ExternalDrive/leaked/absolute/path")
     assert gate.scan_files([pyc], tmp_path) == []
+
+
+def test_ci_wiring_pinned():
+    """The headline feature: the gate MUST stay wired into CI — deleting
+    either invocation from the workflow fails this test (reviewer finding:
+    nothing asserted the YAML)."""
+    wf = (
+        Path(__file__).resolve().parents[1]
+        / ".github" / "workflows" / "specflow.yml"
+    ).read_text(encoding="utf-8")
+    assert wf.count("python3 scripts/denylist_gate.py") == 2, (
+        "specflow.yml must invoke the denylist gate in BOTH the PR/push job "
+        "and the release-authoritative tag job"
+    )
+    assert "privacy-denylist-gate" in wf

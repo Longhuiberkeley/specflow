@@ -1,5 +1,5 @@
 version: 1.14.4
-rebuilt_at: '2026-08-30T13:49:25+00:00'
+rebuilt_at: '2026-08-30T14:03:41+00:00'
 docs:
   AGENTS.md:
     title: AGENTS.md
@@ -9,7 +9,7 @@ docs:
     audience: ''
   CHANGELOG.md:
     title: Changelog
-    fingerprint: sha256:413a52864929
+    fingerprint: sha256:606735038449
     cites: []
     last_reviewed: ''
     audience: ''
@@ -21,7 +21,7 @@ docs:
     audience: ''
   ROADMAP.md:
     title: SpecFlow Roadmap
-    fingerprint: sha256:351d776c86fb
+    fingerprint: sha256:57aacfd6780e
     cites: []
     last_reviewed: ''
     audience: ''

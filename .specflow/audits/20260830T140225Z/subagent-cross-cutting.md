@@ -83,7 +83,7 @@
 
 ## orphan-code
 
-- [info] All 245 source files traced to a STORY/REQ.
+- [info] All 248 source files traced to a STORY/REQ.
 
 ## verification
 
@@ -430,7 +430,7 @@ All 249 AC item(s) across 40 REQ(s) with ACs, by observability class (88 observa
 
 ### REQ-038 — 2/3 observable, 0 aspirational, 1 unclassified
 
-- [observable] Denylist grep (personal names, paths, strategy fingerprints: [REDACTED — enumerated in REQ-038 AC]) over src/, tests/, docs/, scripts/, _specflow/, CHANGELOG, README, ROADMAP returns zero hits outside the sanctioned exceptions.
+- [observable] Denylist grep (personal names, paths, strategy fingerprints: cs2/HKJC/quant_trade/arbitrage/ExternalDrive/longhui/ADA/ETH/BTC/Kalman/0.020/0.021/trailing stop/Track A/run_comp002/Sharpe>2/6.62/8.45) over src/, tests/, docs/, scripts/, _specflow/, CHANGELOG, README, ROADMAP returns zero hits outside the sanctioned exceptions.
 - [observable] pytest tests/ passes at or above the v1.14.4 baseline (1428 tests).
 - [unclassified] specflow artifact-lint and specflow project-audit report no new finding kinds vs the pre-change baseline (new-artifact accounting warnings permitted).
 

@@ -25,13 +25,15 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 SCOPE_DIRS = ("src", "tests", "docs", "scripts", "_specflow")
 SCOPE_FILES = ("CHANGELOG.md", "README.md", "ROADMAP.md")
 
-ALLOWLIST_SUFFIXES = (
-    "_specflow/specs/requirements/REQ-038.md",
-    "_specflow/specs/detailed-design/DDD-029.md",
+ALLOWLIST_PATHS = (
+    "src/specflow/packs/autoresearch/skills/specflow-autoresearch/references/"
     "domain-research-checklists.md",
     "scripts/denylist_gate.py",
     "tests/test_denylist_gate.py",
 )
+
+_REQUIREMENT_SPEC = "_specflow/specs/requirements/REQ-038.md"
+_DESIGN_SPEC = "_specflow/specs/detailed-design/DDD-029.md"
 
 # Word-bounded per DDD-029; case-sensitive (a case-insensitive ETH/ADA would
 # false-positive on ordinary prose). Numeric tokens anchored so e.g. 0.0207
@@ -50,9 +52,15 @@ PATTERN = re.compile(
 )
 
 
-def _allowlisted(path: Path) -> bool:
-    rel = path.as_posix()
-    return any(rel.endswith(suffix) for suffix in ALLOWLIST_SUFFIXES)
+def _allowlisted(rel: str) -> bool:
+    """Exact-path matching on the scan-root-relative path — ARCH-029:
+    'enumerated, not pattern-based'. A suffix trick
+    (docs/domain-research-checklists.md, other/REQ-038.md) must NOT bypass."""
+    return (
+        rel == _REQUIREMENT_SPEC
+        or rel == _DESIGN_SPEC
+        or rel in ALLOWLIST_PATHS
+    )
 
 
 def scan_files(files: list[Path], root: Path) -> list[tuple[Path, int, str]]:
@@ -60,7 +68,8 @@ def scan_files(files: list[Path], root: Path) -> list[tuple[Path, int, str]]:
     skip_suffixes = {".pyc", ".pyo", ".so"}
     violations: list[tuple[Path, int, str]] = []
     for path in sorted(files):
-        if _allowlisted(path):
+        rel = path.relative_to(root).as_posix()
+        if _allowlisted(rel):
             continue
         if path.suffix in skip_suffixes or "__pycache__" in path.parts:
             continue  # build artifacts embed absolute paths; never tracked
