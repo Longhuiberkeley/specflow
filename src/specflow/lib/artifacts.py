@@ -298,20 +298,46 @@ def normalize_type(s: str) -> str:
     return s
 
 
-def initial_status(schema: dict) -> str | None:
-    """Return the unique root status for a schema, or None if not unique.
+def entry_statuses(schema: dict) -> list[str]:
+    """Return creation-entry statuses for a schema (order preserved).
 
-    A "root" status is one whose allowed_status predecessor list is empty
-    (``status: []`` in the schema). Most core schemas have exactly one root
-    (e.g. defect -> ``open``, requirement -> ``draft``); ``experiment.yaml`` is
-    the exception with four outcome-roots (kept/discarded/crashed/no_op). When
-    there is not exactly one root, this returns None so the caller can require
-    an explicit ``--status``.
+    When ``initial_statuses`` is a list, it overrides computed roots: listed
+    names that are keys in ``allowed_status`` are kept (unknown names ignored;
+    duplicates dropped). If that filter yields nothing, fall back to computed
+    roots — fail-safe so a typo cannot strand create. When the key is absent
+    or not a list, return computed roots (statuses whose predecessor list is
+    empty). An empty return means there is no creation entry point.
     """
     allowed = schema.get("allowed_status", {})
     if not isinstance(allowed, dict):
-        return None
-    roots = [name for name, preds in allowed.items() if not preds]
+        return []
+    computed = [name for name, preds in allowed.items() if not preds]
+    declared = schema.get("initial_statuses")
+    if isinstance(declared, list):
+        seen: set[str] = set()
+        valid: list[str] = []
+        for name in declared:
+            if name in allowed and name not in seen:
+                valid.append(name)
+                seen.add(name)
+        if valid:
+            return valid
+    return computed
+
+
+def initial_status(schema: dict) -> str | None:
+    """Return the unique creation-entry status, or None if not unique.
+
+    Prefers ``initial_statuses`` when present (see :func:`entry_statuses`);
+    otherwise a "root" is a status whose allowed_status predecessor list is
+    empty (``status: []`` in the schema). Most core schemas have exactly one
+    root (e.g. defect -> ``open``, requirement -> ``draft``);
+    ``experiment.yaml`` is the exception with four outcome-roots
+    (kept/discarded/crashed/no_op). When there is not exactly one entry
+    status, this returns None so the caller can require an explicit
+    ``--status``.
+    """
+    roots = entry_statuses(schema)
     if len(roots) == 1:
         return roots[0]
     return None

@@ -67,7 +67,16 @@ def run(root: Path, args: dict) -> int:
                 preds = [preds] if preds else []
             pred_str = ", ".join(str(p) for p in preds) if preds else "(root)"
             print(f"  {tgt} <- {pred_str}")
-        if roots:
+        # Mirror entry_statuses() exactly: a declared initial_statuses list
+        # filters to valid entries; an empty/all-invalid list falls back to
+        # computed roots so the display never disagrees with create behavior.
+        entries = art_lib.entry_statuses(schema)
+        declared = schema.get("initial_statuses")
+        if isinstance(declared, list) and entries and entries != roots:
+            print()
+            print(f"{YELLOW_DIM}Initial status(es) — the natural entry point(s): "
+                  f"{', '.join(str(s) for s in entries)}{NC}")
+        elif roots:
             print()
             print(f"{YELLOW_DIM}Root status(es) — the natural entry point(s): "
                   f"{', '.join(sorted(roots))}{NC}")

@@ -785,6 +785,64 @@ class TestInitialStatus:
     def test_non_dict_allowed_status_returns_none(self):
         assert art_lib.initial_status({"allowed_status": ["open", "closed"]}) is None
 
+    def test_initial_statuses_single_overrides_computed_roots(self):
+        schema = {
+            "initial_statuses": ["active"],
+            "allowed_status": {
+                "active": ["paused"],
+                "paused": ["active"],
+                "completed": ["active"],
+            },
+        }
+        assert art_lib.entry_statuses(schema) == ["active"]
+        assert art_lib.initial_status(schema) == "active"
+
+    def test_initial_statuses_multi_returns_none(self):
+        schema = {
+            "initial_statuses": ["draft", "open"],
+            "allowed_status": {
+                "draft": ["open"],
+                "open": ["draft"],
+                "closed": ["open"],
+            },
+        }
+        assert art_lib.entry_statuses(schema) == ["draft", "open"]
+        assert art_lib.initial_status(schema) is None
+
+    def test_absent_initial_statuses_unchanged_including_multi_root(self):
+        single = {"allowed_status": {"open": [], "closed": ["open"]}}
+        assert art_lib.initial_status(single) == "open"
+        multi = {
+            "allowed_status": {
+                "kept": [], "discarded": [], "crashed": [], "no_op": [],
+            }
+        }
+        assert art_lib.initial_status(multi) is None
+        assert art_lib.entry_statuses(multi) == ["kept", "discarded", "crashed", "no_op"]
+
+    def test_initial_statuses_ignores_invalid_and_falls_back(self):
+        # Unknown names dropped; remaining unique entry is used.
+        mixed = {
+            "initial_statuses": ["bogus", "active"],
+            "allowed_status": {
+                "active": ["paused"],
+                "paused": ["active"],
+            },
+        }
+        assert art_lib.initial_status(mixed) == "active"
+        # All-invalid → fall back to computed roots (fail-safe).
+        all_bad = {
+            "initial_statuses": ["nope"],
+            "allowed_status": {"open": [], "closed": ["open"]},
+        }
+        assert art_lib.initial_status(all_bad) == "open"
+        # Non-list key is ignored (same as absent).
+        not_list = {
+            "initial_statuses": "active",
+            "allowed_status": {"open": [], "closed": ["open"]},
+        }
+        assert art_lib.initial_status(not_list) == "open"
+
 
 _STD_FLOW = {"draft": [], "approved": ["draft"], "implemented": ["approved"], "verified": ["implemented"]}
 

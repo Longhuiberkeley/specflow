@@ -167,12 +167,13 @@ def run(root: Path, args: dict) -> int:
               f"Usage: specflow create --type <type> --title <title>{NC}")
         return 1
 
-    # Resolve the per-type initial status when --status is omitted (A7). Each
-    # schema's root status (empty predecessor list) is the natural entry point;
-    # when a type has no unique root (e.g. experiment's four outcomes), require
-    # an explicit --status rather than guessing. When no schema exists at all,
-    # leave status as None and let create_artifact emit the enriched no-schema
-    # error (its schema check runs before status validation).
+    # Resolve the per-type initial status when --status is omitted (A7).
+    # entry_statuses honors schema `initial_statuses` when present, else
+    # computed empty-predecessor roots. When a type has no unique entry
+    # (e.g. experiment's four outcomes), require an explicit --status rather
+    # than guessing. When no schema exists at all, leave status as None and
+    # let create_artifact emit the enriched no-schema error (its schema check
+    # runs before status validation).
     if status is None:
         norm_type = art_lib.normalize_type(artifact_type)
         schema = art_lib._read_schema(root / ".specflow" / "schema", norm_type)
@@ -180,13 +181,15 @@ def run(root: Path, args: dict) -> int:
             status = art_lib.initial_status(schema)
 
     # Creation-status entry gate (STORY-640). An explicit --status that is
-    # not one of the type's root/entry statuses (empty predecessor list)
-    # asserts an artifact BORN past an approval gate — e.g. `create --status
-    # approved`. That requires a recorded sanction: --sanctioned "why", kept
-    # in frontmatter as sanctioned_justification. Accounting for intent, not
-    # a hard ban: the no-self-approval doctrine says who may approve, this
-    # records WHY the entry state is legitimate. Multi-root types (experiment
-    # outcomes) list all roots, so their explicit --status stays gate-free.
+    # not one of the type's entry statuses (initial_statuses, else empty
+    # predecessor list) asserts an artifact BORN past an approval gate —
+    # e.g. `create --status approved`. That requires a recorded sanction:
+    # --sanctioned "why", kept in frontmatter as sanctioned_justification.
+    # Accounting for intent, not a hard ban: the no-self-approval doctrine
+    # says who may approve, this records WHY the entry state is legitimate.
+    # Multi-entry types (experiment outcomes, or a multi-item
+    # initial_statuses list) list all entries, so their explicit --status
+    # stays gate-free.
     explicit_status = args.get("status")
     if explicit_status is not None:
         norm_type = art_lib.normalize_type(artifact_type or "")
@@ -194,7 +197,7 @@ def run(root: Path, args: dict) -> int:
         if schema is not None:
             allowed = schema.get("allowed_status", {})
             if isinstance(allowed, dict):
-                roots = {name for name, preds in allowed.items() if not preds}
+                roots = set(art_lib.entry_statuses(schema))
                 # Only VALID-but-non-entry statuses hit the gate; an invalid
                 # status (typo) falls through to create_artifact's richer
                 # did-you-mean error instead of this blunter message.

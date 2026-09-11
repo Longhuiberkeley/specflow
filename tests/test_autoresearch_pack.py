@@ -236,7 +236,8 @@ class TestSchemaLifecycle:
         schema_path = project_root / ".specflow" / "schema" / "competition.yaml"
         schema = yaml.safe_load(schema_path.read_text())
         allowed = schema["allowed_status"]
-        assert allowed["active"] == [], "active is an initial status"
+        assert allowed["active"] == ["paused"], "paused→active is legal (reversible pause)"
+        assert schema["initial_statuses"] == ["active"], "create still enters at active"
         assert "active" in allowed["paused"], "active→paused allowed"
         assert "active" in allowed["completed"], "active→completed allowed"
         assert "paused" not in allowed["completed"], "paused→completed NOT allowed (must resume first)"
@@ -723,6 +724,8 @@ class TestAutoresearchCLI:
         })
         assert rc == 0
         out = capsys.readouterr().out
+        assert "Closure-readiness" in out
+        assert "LOOP-001" in out
         assert "Deterministic accounting" in out
         assert "No completed EDA" in out
         assert "Research agenda" in out
@@ -770,6 +773,240 @@ class TestAutoresearchCLI:
             art_lib.resolve_link_target(project_root, "LOOP-001")
         )
         assert loop.frontmatter["category_coverage"]["params"] == 1
+
+
+# ── 6b. STORY-651: COMP-level closure-readiness on `status` ──────────────
+
+class TestStatusClosureReadiness:
+    """Closure-readiness prints even when no running/draft LOOP resolves."""
+
+    def _make_comp(self, root: Path, extra: dict | None = None) -> None:
+        fm = {
+            "created": "2026-05-15",
+            "verify_command": "pytest",
+            "metric_name": "accuracy",
+            "metric_direction": "higher_is_better",
+        }
+        if extra:
+            fm.update(extra)
+        _write_artifact(
+            root, "COMP-001", "competition", "Closure Comp",
+            status="active", extra_fm=fm,
+        )
+
+    def _make_loop(
+        self, root: Path, loop_id: str, status: str,
+        agenda: list[dict] | None = None,
+    ) -> None:
+        extra: dict = {
+            "created": "2026-05-15",
+            "competition": "COMP-001",
+            "mode": "explore",
+            "budget": 20,
+        }
+        if agenda is not None:
+            extra["research_agenda"] = agenda
+        _write_artifact(
+            root, loop_id, "loop", f"Loop {loop_id}",
+            status=status,
+            links=[{"target": "COMP-001", "role": "operates_on"}],
+            extra_fm=extra,
+        )
+
+    def _make_find(
+        self, root: Path, find_id: str, status: str, *,
+        via_competition: bool = False,
+        via_belongs_to: bool = False,
+    ) -> None:
+        extra: dict = {"created": "2026-05-15", "summary": f"Finding {find_id}"}
+        links: list[dict] = []
+        if via_competition:
+            extra["competition"] = "COMP-001"
+        if via_belongs_to:
+            links.append({"target": "COMP-001", "role": "belongs_to"})
+        _write_artifact(
+            root, find_id, "finding", f"Finding {find_id}",
+            status=status, links=links, extra_fm=extra,
+        )
+
+    def test_closure_block_with_only_completed_loops_exits_zero(
+        self, project_root: Path, capsys,
+    ):
+        self._make_comp(project_root, extra={"goals": ["beat baseline", "hold walk-forward"]})
+        self._make_loop(
+            project_root, "LOOP-001", "completed",
+            agenda=[{"direction": "feature mix", "status": "exhausted", "expected_impact": "high", "rationale": "tried"}],
+        )
+        self._make_loop(project_root, "LOOP-002", "plateaued")
+        rc = autoresearch_cmd.run(project_root, {
+            "autoresearch_subcommand": "status",
+            "competition": "COMP-001",
+        })
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "Closure-readiness" in out
+        assert "COMP-001" in out
+        assert "Closure Comp" in out
+        assert "[active]" in out
+        assert "beat baseline" in out
+        assert "hold walk-forward" in out
+        assert "completed=1" in out
+        assert "plateaued=1" in out
+        assert "running=0" in out
+        assert "no active LOOP" in out
+        assert "COMP idle" in out
+        assert "Deterministic accounting" not in out
+
+    def test_status_no_comp_still_errors(self, project_root: Path, capsys):
+        rc = autoresearch_cmd.run(project_root, {
+            "autoresearch_subcommand": "status",
+        })
+        assert rc == 1
+        out = capsys.readouterr().out
+        assert "No competitions found" in out
+        assert "Closure-readiness" not in out
+
+    def test_confirmed_find_count_uses_both_resolver_paths(
+        self, project_root: Path, capsys,
+    ):
+        self._make_comp(project_root)
+        self._make_loop(project_root, "LOOP-001", "completed")
+        self._make_find(
+            project_root, "FIND-001", "confirmed", via_competition=True,
+        )
+        self._make_find(
+            project_root, "FIND-002", "confirmed", via_belongs_to=True,
+        )
+        self._make_find(
+            project_root, "FIND-003", "draft", via_competition=True,
+        )
+        rc = autoresearch_cmd.run(project_root, {
+            "autoresearch_subcommand": "status",
+            "competition": "COMP-001",
+        })
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "2 confirmed / 3 total" in out
+
+    def test_open_directions_dedupe_across_loops_and_exclude_exhausted(
+        self, project_root: Path, capsys,
+    ):
+        self._make_comp(project_root)
+        self._make_loop(
+            project_root, "LOOP-001", "completed",
+            agenda=[
+                {"direction": "feature mix", "status": "unexplored", "expected_impact": "high", "rationale": "a"},
+                {"direction": "leakage audit", "status": "exhausted", "expected_impact": "high", "rationale": "b"},
+                {"direction": "regime split", "status": "promising", "expected_impact": "medium", "rationale": "c"},
+            ],
+        )
+        self._make_loop(
+            project_root, "LOOP-002", "plateaued",
+            agenda=[
+                {"direction": "feature mix", "status": "in_progress", "expected_impact": "high", "rationale": "dup"},
+                {"direction": "exit logic", "status": "in_progress", "expected_impact": "low", "rationale": "d"},
+                {"direction": "noise floor", "status": "exhausted", "expected_impact": "low", "rationale": "e"},
+            ],
+        )
+        rc = autoresearch_cmd.run(project_root, {
+            "autoresearch_subcommand": "status",
+            "competition": "COMP-001",
+        })
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "Open directions (3):" in out
+        assert "feature mix" in out
+        assert "regime split" in out
+        assert "exit logic" in out
+        assert "leakage audit" not in out
+        assert "noise floor" not in out
+
+    def test_open_directions_cap_overflow_line(self, project_root: Path, capsys):
+        self._make_comp(project_root)
+        agenda = [
+            {"direction": f"direction-{i}", "status": "unexplored",
+             "expected_impact": "low", "rationale": "x"}
+            for i in range(1, 11)
+        ]
+        self._make_loop(project_root, "LOOP-001", "completed", agenda=agenda)
+        rc = autoresearch_cmd.run(project_root, {
+            "autoresearch_subcommand": "status",
+            "competition": "COMP-001",
+        })
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "Open directions (10):" in out
+        assert "direction-1" in out
+        assert "direction-8" in out
+        assert "direction-9" not in out
+        assert "+2 more" in out
+
+    def test_no_goals_and_no_open_directions_echo(self, project_root: Path, capsys):
+        self._make_comp(project_root)
+        self._make_loop(project_root, "LOOP-001", "completed")
+        rc = autoresearch_cmd.run(project_root, {
+            "autoresearch_subcommand": "status",
+            "competition": "COMP-001",
+        })
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "no goals recorded" in out
+        assert "no open agenda directions" in out
+
+    def test_window_elapsed_advisory(self, project_root: Path, capsys):
+        self._make_comp(project_root, extra={"window_end": "2020-01-01"})
+        rc = autoresearch_cmd.run(project_root, {
+            "autoresearch_subcommand": "status",
+            "competition": "COMP-001",
+        })
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "Evaluation window elapsed 2020-01-01" in out
+        assert "successor COMP" in out
+
+    def test_window_future_informational(self, project_root: Path, capsys):
+        self._make_comp(project_root, extra={"window_end": "2999-01-01"})
+        rc = autoresearch_cmd.run(project_root, {
+            "autoresearch_subcommand": "status",
+            "competition": "COMP-001",
+        })
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "Evaluation window: ends 2999-01-01" in out
+        assert "elapsed" not in out
+
+    def test_window_unparsed_format_flagged(self, project_root: Path, capsys):
+        self._make_comp(project_root, extra={"window_end": "soon"})
+        rc = autoresearch_cmd.run(project_root, {
+            "autoresearch_subcommand": "status",
+            "competition": "COMP-001",
+        })
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "unparsed" in out
+        assert "ISO YYYY-MM-DD" in out
+
+    def test_running_loop_still_renders_loop_accounting(
+        self, project_root: Path, capsys,
+    ):
+        self._make_comp(project_root, extra={"goals": ["beat baseline"]})
+        self._make_loop(
+            project_root, "LOOP-001", "running",
+            agenda=[{"direction": "feature mix", "status": "unexplored",
+                     "expected_impact": "high", "rationale": "a"}],
+        )
+        rc = autoresearch_cmd.run(project_root, {
+            "autoresearch_subcommand": "status",
+            "competition": "COMP-001",
+        })
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "Closure-readiness" in out
+        assert "beat baseline" in out
+        assert "LOOP:        " in out or "LOOP-001" in out
+        assert "[running]" in out
+        assert "Deterministic accounting" in out
+        assert "no active LOOP" not in out
 
 
 # ── 7. Pack context injection ────────────────────────────────────────────

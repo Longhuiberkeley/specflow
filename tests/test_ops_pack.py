@@ -99,11 +99,71 @@ class TestSchemaLifecycle:
         schema = yaml.safe_load((ops_project / ".specflow" / "schema" / "run.yaml").read_text())
         allowed = schema["allowed_status"]
         assert allowed["deployed"] == [], "deployed is initial"
-        assert "deployed" in allowed["live"], "deployed→live allowed"
+        assert allowed["live"] == ["deployed", "paused"], "deployed→live and paused→live allowed"
         assert "live" in allowed["paused"], "live→paused allowed"
         assert "paused" in allowed["retired"], "paused→retired allowed"
         assert "live" in allowed["retired"], "live→retired allowed"
         assert "deployed" not in allowed["retired"], "deployed→retired NOT allowed"
+        assert "paused" not in allowed["deployed"], "paused cannot go back to deployed"
+
+    def test_run_paused_to_live_succeeds(self, ops_project: Path):
+        created = art_lib.create_artifact(
+            ops_project, "run", title="Paused RUN", status="paused", body="b",
+            environment="prod", deployed_ref="v1",
+        )
+        assert created["ok"], created
+        result = art_lib.update_artifact(ops_project, created["id"], status="live")
+        assert result["ok"] is True, result
+        art = art_lib.parse_artifact(Path(result["path"]))
+        assert art is not None
+        assert art.status == "live"
+
+    def test_run_retired_to_live_rejected(self, ops_project: Path):
+        created = art_lib.create_artifact(
+            ops_project, "run", title="Retired RUN", status="retired", body="b",
+            environment="prod", deployed_ref="v1",
+        )
+        assert created["ok"], created
+        rejected = art_lib.update_artifact(ops_project, created["id"], status="live")
+        assert rejected["ok"] is False
+        assert "Cannot transition" in rejected["error"]
+
+    def test_run_deployed_to_paused_rejected(self, ops_project: Path):
+        created = art_lib.create_artifact(
+            ops_project, "run", title="Deployed RUN", status="deployed", body="b",
+            environment="prod", deployed_ref="v1",
+        )
+        assert created["ok"], created
+        rejected = art_lib.update_artifact(ops_project, created["id"], status="paused")
+        assert rejected["ok"] is False
+        assert "Cannot transition" in rejected["error"]
+
+    def test_run_create_defaults_to_deployed(self, ops_project: Path):
+        """create --type run without --status still lands on deployed."""
+        from specflow.commands import create as create_cmd
+
+        rc = create_cmd.run(ops_project, {
+            "type": "run",
+            "title": "Default RUN",
+            "status": None,
+            "priority": None,
+            "rationale": None,
+            "tags": "",
+            "links": "",
+            "add_link": [],
+            "body": "b",
+            "from_standard": None,
+            "force": True,
+            "skip_dedup_check": True,
+            "nfr_category": None,
+            "sanctioned": None,
+            "set_fields": ["environment=prod", "deployed_ref=v1"],
+        })
+        assert rc == 0
+        arts = art_lib.discover_artifacts(ops_project)
+        runs = [a for a in arts if a.frontmatter.get("type") == "run"]
+        assert len(runs) == 1
+        assert runs[0].status == "deployed"
 
     def test_monitor_transition_structure(self, ops_project: Path):
         schema = yaml.safe_load((ops_project / ".specflow" / "schema" / "monitor.yaml").read_text())

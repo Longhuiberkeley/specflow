@@ -37,7 +37,7 @@ All subcommands have a CLI backend. Use the CLI for deterministic operations (ar
 |---|---|---|
 | `/specflow-autoresearch` | `specflow autoresearch run` | Run an autonomous LOOP on a COMP |
 | `/specflow-autoresearch:plan` | `specflow autoresearch plan` | Plan a LOOP before running |
-| `/specflow-autoresearch:status` | `specflow autoresearch status` | Deterministic LOOP readiness, budget, diversity, and stuck accounting |
+| `/specflow-autoresearch:status` | `specflow autoresearch status` | Deterministic LOOP readiness, budget, diversity, stuck accounting, and COMP closure-readiness |
 | `/specflow-autoresearch:review` | `specflow autoresearch review` | Review FINDs and EXPTs for a COMP |
 | `/specflow-autoresearch:leaderboard` | `specflow autoresearch leaderboard` | Top EXPTs ranked by metric |
 | `/specflow-autoresearch:log` | `specflow autoresearch log` | Log an EXPT and auto-update LOOP counters |
@@ -181,7 +181,7 @@ Ask user to confirm before starting the loop.
 ## Autoresearch Lifecycle
 
 ```
-COMP (active)
+COMP (active ⇄ paused; active → completed (user-gated))
  └→ LOOP-NNN (draft → running → completed)
        └→ EXPT-001..N (kept/discarded/crashed per iteration)
               ↓
@@ -213,7 +213,17 @@ A COMP is **durable** — it pins a dataset, metric, and verify command. When th
   ```
 - **A genuinely new thing** (different dataset, different metric, different target). Create a fresh COMP with **no link** — a clean research scope. Don't contort the old COMP to host it.
 
-Rule of thumb: if the `verify_command`, `metric_name`, dataset, or target would change, that's a **new COMP**, not a new SPIKE and not an in-place edit. (This is the research-side mirror of the Permanence Test — see the SpecFlow base context.)
+Rule of thumb: if the `verify_command`, `metric_name`, dataset, or target would change, that's a **new COMP**, not a new SPIKE and not an in-place edit. (This is the research-side mirror of the Permanence Test — see the SpecFlow base context.) Window advance is a successor COMP (`derives_from`); never per-retrain COMP churn — see the churn rule in `references/rolling-evaluation.md`.
+
+## Closing a COMP
+
+A COMP reaches `completed` only when **every entry in `COMP.goals` is either satisfied-with-evidence (cite the confirming FIND(s)) or explicitly abandoned with a one-line reason**. Record the per-goal disposition in the COMP's `closure_disposition` frontmatter field (`specflow update COMP-NNN --set closure_disposition="goal 1: satisfied via FIND-003; goal 2: abandoned — scope moved to successor"`) — `artifact-lint` warns on a completed COMP without it.
+
+**No self-approval on competitions:** `COMP active → completed` is a human gate. You (and any subagent you spawn) may assemble the goal-by-goal disposition and present the `specflow autoresearch status` Closure-readiness block (goals echo, confirmed FIND count, open agenda directions), but only the direct user's explicit go-ahead moves the COMP to `completed` — subagents never close COMPs, and metrics are evidence, not approval. Present the disposition and the status block, and let the user confirm or reject.
+
+`completed` is **frozen**: the leaderboard and evidence chain are immutable. Continuing research is a new LOOP on a still-active COMP, or a successor COMP (`derives_from`, FINDs carried) when the evaluation protocol changes. Never mutate `verify_command`, metric, or dataset of a completed COMP.
+
+`paused` is **reversible** (`paused → active`): pausing parks a COMP without stranding it; resuming is a normal transition.
 
 ## The Loop
 
@@ -249,7 +259,7 @@ LOOP (budget iterations):
 | Category Diversity Gate | 2c | Do not run 3+ consecutive EXPTs in the same change_category (2 in explore mode); uses canonical category set |
 | Idea Diversity Check | 2d | Avoid same-approach repetition even within a category |
 | Stuck Detector | 8 | Switch category after 5+ consecutive discards |
-| Domain Research Checklist | 0.7 | Load domain-specific research checklists with common traps per domain |
+| Domain Research Checklist | 0.7 | Load universal research questions per domain; the model supplies the domain methodology |
 | Direction Status Tracking | 6.6 | Update research agenda direction status (unexplored/in_progress/exhausted/promising) after each EXPT |
 ## Post-Loop: Delegate Review
 
@@ -383,6 +393,7 @@ Subagents MUST return structured output (bullet lists, JSON, or YAML). The paren
 - EXPT status is terminal — once created (kept/discarded/crashed/no_op), it never changes
 - LOOP status follows: `draft` → `running` → `completed`/`plateaued`/`aborted`
 - FIND status follows: `draft` → `confirmed` → `superseded`/`falsified`
+- COMP reaches `completed` only via the Closing a COMP human gate (every goal satisfied-with-FIND-evidence or abandoned-with-reason); `paused` is reversible
 - Run `specflow artifact-lint` after creating or updating artifacts
 - Never modify files under `.specflow/` — these are managed by CLI commands
 - After LOOP completion, delegate review via `/specflow-autoresearch:delegate-review`. The review subagent synthesizes EXPTs into FINDs and finalizes LOOP status. For small loops (< 10 EXPTs), you may author FINDs directly per `references/finding-generation-protocol.md`
@@ -393,9 +404,10 @@ Subagents MUST return structured output (bullet lists, JSON, or YAML). The paren
 - `references/autonomous-loop-protocol.md` — Full 8-phase loop protocol with atomicity rules, goal-mindful ideation check, first-principles decomposition (Phase 0.7), category diversity gate, canonical change_category set, surprise budget, direction status tracking, and stuck detector — referenced from Step 2 (run LOOP)
 - `references/noise-handling-protocol.md` — Strategy menu for volatile metrics (multi-run, confirmation, env pinning, min-delta) — referenced from Phase 5
 - `references/crash-recovery-protocol.md` — Recovery rules for verify failures and session crashes — referenced from Phase 0 and Phase 5
-- `references/competition-setup-protocol.md` — Walkthrough for creating COMP artifacts with verify command, metric direction, goals/theses/constraints, and dry-run validation — referenced from Step 0 (setup)
+- `references/competition-setup-protocol.md` — Walkthrough for creating COMP artifacts with verify command, metric direction, goals/theses/constraints, dry-run validation, and COMP closure — referenced from Step 0 (setup) and Closing a COMP
+- `references/rolling-evaluation.md` — Fixed vs rolling split as a design choice, split-R&D (`validation` vs LOOP `validate`), COMP churn rule, `window_end` successor-COMP advance — referenced from Evolving a COMP and setup Step 1
 - `references/protocol-integrations.md` — Maps all producer-consumer relationships across protocols: COMP→LOOP, LOOP→EXPT, EXPT→FIND, cross-loop feedback, skill-to-protocol mapping, cross-cutting concerns — referenced from all steps for dependency context
 - `references/explore-exploit-protocol.md` — Mode behavior (explore/exploit/validate) and how each influences Phase 2 ideation — referenced from Phase 2c
 - `references/finding-generation-protocol.md` — Playbook for authoring and updating FIND artifacts after LOOP completion — referenced from Step 3 (review)
 - `references/methodology-handbook.md` — Domain-specific ML best practices (ML-01/02 mandatory, ML-05/07 gated, ML-03..09 advisory) — referenced from Phase 2
-- `references/domain-research-checklists.md` — Per-domain first-principles research checklists (quant, tabular_ml, vision, nlp, generic) with common traps per domain — loaded during Phase 0.7 for structured ideation breadth and trap awareness
+- `references/domain-research-checklists.md` — Universal research questions per domain (quant, tabular_ml, vision, nlp, generic); the model supplies the domain methodology — loaded during Phase 0.7 for structured ideation breadth

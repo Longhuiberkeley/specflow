@@ -792,6 +792,79 @@ class TestCheckAutoresearchLogging:
         assert "failure_analysis" in result["detail"]
 
 
+# ── _check_autoresearch_comp_closure ─────────────────────────────────────────
+
+
+class TestCheckAutoresearchCompClosure:
+    """completed COMP + zero confirmed FINDs is warn-only; never blocking.
+    Dual-path FIND association (frontmatter competition or belongs_to)."""
+
+    def test_completed_comp_zero_confirmed_finds_warns(self):
+        comp = _make_art("COMP-001", "competition", status="completed")
+        result = lint_cmd._check_autoresearch_comp_closure([comp])
+        assert result["blocking_count"] == 0
+        assert result["warning_count"] == 2
+        assert "completed competition has no confirmed findings" in result["detail"]
+        assert "premature closure" in result["detail"]
+        assert "no closure_disposition" in result["detail"]
+
+    def test_completed_comp_confirmed_find_via_competition_field_no_warn(self):
+        comp = _make_art(
+            "COMP-001", "competition", status="completed",
+            extra_fm={"closure_disposition": "goal 1: satisfied via FIND-001"},
+        )
+        find = _make_art(
+            "FIND-001", "finding", status="confirmed",
+            extra_fm={"competition": "COMP-001"},
+        )
+        result = lint_cmd._check_autoresearch_comp_closure([comp, find])
+        assert result["blocking_count"] == 0
+        assert result["warning_count"] == 0
+
+    def test_completed_comp_confirmed_find_via_belongs_to_no_warn(self):
+        comp = _make_art(
+            "COMP-001", "competition", status="completed",
+            extra_fm={"closure_disposition": "goal 1: satisfied via FIND-001"},
+        )
+        find = _make_art(
+            "FIND-001", "finding", status="confirmed",
+            links=[art_lib.Link(target="COMP-001", role="belongs_to")],
+        )
+        result = lint_cmd._check_autoresearch_comp_closure([comp, find])
+        assert result["blocking_count"] == 0
+        assert result["warning_count"] == 0
+
+    def test_completed_comp_missing_disposition_warns(self):
+        comp = _make_art("COMP-001", "competition", status="completed")
+        find = _make_art(
+            "FIND-001", "finding", status="confirmed",
+            extra_fm={"competition": "COMP-001"},
+        )
+        result = lint_cmd._check_autoresearch_comp_closure([comp, find])
+        assert result["blocking_count"] == 0
+        assert result["warning_count"] == 1
+        assert "no closure_disposition" in result["detail"]
+        assert "per-goal disposition missing" in result["detail"]
+
+    def test_active_comp_zero_finds_no_warn(self):
+        comp = _make_art("COMP-001", "competition", status="active")
+        result = lint_cmd._check_autoresearch_comp_closure([comp])
+        assert result["blocking_count"] == 0
+        assert result["warning_count"] == 0
+
+    def test_no_comps_noops(self):
+        req = _make_art("REQ-001", "requirement", status="draft")
+        result = lint_cmd._check_autoresearch_comp_closure([req])
+        assert result["blocking_count"] == 0
+        assert result["warning_count"] == 0
+        empty = lint_cmd._check_autoresearch_comp_closure([])
+        assert empty["blocking_count"] == 0
+        assert empty["warning_count"] == 0
+
+    def test_registered_in_check_names(self):
+        assert "autoresearch-comp-closure" in lint_cmd.CHECK_NAMES
+
+
 # ── _check_story_linkage ─────────────────────────────────────────────────────
 
 class TestCheckStoryLinkage:

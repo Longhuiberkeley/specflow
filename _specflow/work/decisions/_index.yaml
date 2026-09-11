@@ -790,4 +790,25 @@ artifacts:
     - data-integrity
     fingerprint: sha256:aebb8deb1526
     children: []
-next_id: 79
+  DEC-079:
+    id: DEC-079
+    title: 'COMP churn rule: frozen competitions, successor chains, window advance'
+    status: approved
+    tags: []
+    fingerprint: sha256:78bf6bb53e3a
+    children: []
+  DEC-080:
+    id: DEC-080
+    title: Pack research checklists teach mapping, not methodology (DEC-078 extended)
+    status: approved
+    tags: []
+    fingerprint: sha256:776a44bde429
+    children: []
+  DEC-081:
+    id: DEC-081
+    title: RUN pause is reversible; transitions into live stay user-gated
+    status: approved
+    tags: []
+    fingerprint: sha256:ccfb3f675dd5
+    children: []
+next_id: 82

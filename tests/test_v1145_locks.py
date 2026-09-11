@@ -30,6 +30,9 @@ from specflow.lib import lint as lint_lib
 PACK_SCHEMAS = (
     Path(__file__).parent.parent / "src" / "specflow" / "packs" / "autoresearch" / "schemas"
 )
+OPS_PACK_SCHEMAS = (
+    Path(__file__).parent.parent / "src" / "specflow" / "packs" / "ops" / "schemas"
+)
 
 
 def _schema(name: str) -> dict:
@@ -138,3 +141,194 @@ def test_loop_derives_from_link_role_allowed():
     links = [art_lib.Link(target="MON-007", role="derives_from")]
     issues = lint_lib.validate_artifact_schema(_art(fm, links=links), schema)
     _no_unknown_field_or_role_issues(issues)
+
+
+# ── STORY-652: reversible COMP pause (initial_statuses) ──────────────────────
+
+
+def test_comp_reversible_pause_schema_pin():
+    """AC: competition.yaml keeps paused→active legal while create still
+    enters at active via initial_statuses (not an empty-predecessor root)."""
+    schema = _schema("competition.yaml")
+    assert schema["allowed_status"]["active"] == ["paused"], (
+        "competition.yaml lost paused→active (reversible pause)"
+    )
+    assert schema.get("initial_statuses") == ["active"], (
+        "competition.yaml lost initial_statuses: [active]"
+    )
+
+
+def _restore_type_registry():
+    dirs = dict(art_lib.TYPE_TO_DIR)
+    prefixes = dict(art_lib.TYPE_TO_PREFIX)
+    reverse = dict(art_lib.PREFIX_TO_TYPE)
+    aliases = dict(art_lib.TYPE_ALIASES)
+
+    def restore() -> None:
+        art_lib.TYPE_TO_DIR.clear()
+        art_lib.TYPE_TO_DIR.update(dirs)
+        art_lib.TYPE_TO_PREFIX.clear()
+        art_lib.TYPE_TO_PREFIX.update(prefixes)
+        art_lib.PREFIX_TO_TYPE.clear()
+        art_lib.PREFIX_TO_TYPE.update(reverse)
+        art_lib.TYPE_ALIASES.clear()
+        art_lib.TYPE_ALIASES.update(aliases)
+
+    return restore
+
+
+def _comp_project(tmp: Path) -> Path:
+    """Temp project whose competition schema is the shipped pack file."""
+    root = tmp / "project"
+    schema_dir = root / ".specflow" / "schema"
+    schema_dir.mkdir(parents=True, exist_ok=True)
+    (root / ".specflow" / "standards").mkdir(parents=True, exist_ok=True)
+    src = PACK_SCHEMAS / "competition.yaml"
+    (schema_dir / "competition.yaml").write_text(
+        src.read_text(encoding="utf-8"), encoding="utf-8"
+    )
+    config = {
+        "project": {"name": "comp-lock", "created": "2026-01-01"},
+        "artifact_types": ["competition"],
+        "active_packs": [],
+    }
+    (root / ".specflow" / "config.yaml").write_text(
+        yaml.dump(config), encoding="utf-8"
+    )
+    (root / ".specflow" / "state.yaml").write_text(
+        yaml.dump({"current": "idle", "history": []}), encoding="utf-8"
+    )
+    (root / "_specflow" / "specs" / "competitions").mkdir(parents=True, exist_ok=True)
+    return root
+
+
+def _create_args(**over) -> dict:
+    base = {
+        "type": "competition",
+        "title": "Lock COMP",
+        "status": None,
+        "priority": None,
+        "rationale": None,
+        "tags": "",
+        "links": "",
+        "add_link": [],
+        "body": "b",
+        "from_standard": None,
+        "force": True,
+        "skip_dedup_check": True,
+        "nfr_category": None,
+        "sanctioned": None,
+        "set_fields": [],
+    }
+    base.update(over)
+    return base
+
+
+def test_comp_create_defaults_to_active_without_sanction(tmp_path: Path):
+    """AC: creating a competition without --status lands on active;
+    --status active needs no --sanctioned."""
+    from specflow.commands import create as create_cmd
+
+    restore = _restore_type_registry()
+    try:
+        root = _comp_project(tmp_path)
+        rc = create_cmd.run(root, _create_args())
+        assert rc == 0
+        arts = art_lib.discover_artifacts(root)
+        assert len(arts) == 1
+        assert arts[0].status == "active"
+
+        root2 = _comp_project(tmp_path / "explicit")
+        rc = create_cmd.run(root2, _create_args(status="active"))
+        assert rc == 0
+        arts2 = art_lib.discover_artifacts(root2)
+        assert arts2[0].status == "active"
+        assert "sanctioned_justification" not in arts2[0].frontmatter
+    finally:
+        restore()
+
+
+def test_comp_create_completed_still_requires_sanction(tmp_path: Path, capsys):
+    """AC: --status completed at create still requires --sanctioned."""
+    from specflow.commands import create as create_cmd
+
+    restore = _restore_type_registry()
+    try:
+        root = _comp_project(tmp_path)
+        rc = create_cmd.run(root, _create_args(status="completed"))
+        out = capsys.readouterr().out
+        assert rc == 1
+        assert "--sanctioned" in out
+        assert art_lib.discover_artifacts(root) == []
+    finally:
+        restore()
+
+
+def test_comp_paused_to_active_succeeds_completed_to_active_rejected(tmp_path: Path):
+    """AC: paused→active update succeeds; completed→active is still rejected."""
+    restore = _restore_type_registry()
+    try:
+        root = _comp_project(tmp_path)
+        paused = art_lib.create_artifact(
+            root, "competition", title="Paused COMP", status="paused", body="b"
+        )
+        assert paused["ok"], paused
+        result = art_lib.update_artifact(root, paused["id"], status="active")
+        assert result["ok"] is True, result
+        art = art_lib.parse_artifact(Path(result["path"]))
+        assert art is not None
+        assert art.status == "active"
+
+        done = art_lib.create_artifact(
+            root, "competition", title="Done COMP", status="completed", body="b"
+        )
+        assert done["ok"], done
+        rejected = art_lib.update_artifact(root, done["id"], status="active")
+        assert rejected["ok"] is False
+        assert "Cannot transition" in rejected["error"]
+    finally:
+        restore()
+
+
+# ── STORY-653: window_end on competition.yaml ────────────────────────────────
+
+
+def test_comp_closure_disposition_field_registered():
+    """AC: a completed COMP stamped with `closure_disposition` (closure
+    protocol) produces zero unknown-field findings."""
+    schema = _schema("competition.yaml")
+    assert "closure_disposition" in schema["optional_fields"], (
+        "competition.yaml lost the `closure_disposition` optional field"
+    )
+
+
+def test_comp_window_end_field_registered():
+    """AC: a COMP stamped with `window_end` (rolling-evaluation recipe) produces
+    zero unknown-field findings."""
+    schema = _schema("competition.yaml")
+    assert "window_end" in schema["optional_fields"], (
+        "competition.yaml lost the `window_end` optional field"
+    )
+    fm = {
+        "id": "COMP-001",
+        "title": "Locked COMP",
+        "type": "competition",
+        "status": "active",
+        "created": "2026-08-30",
+        "verify_command": "uv run pytest -q",
+        "metric_name": "auc",
+        "metric_direction": "maximize",
+        "window_end": "2026-12-31",
+    }
+    _no_unknown_field_or_role_issues(lint_lib.validate_artifact_schema(_art(fm), schema))
+
+
+# ── STORY-655: reversible RUN pause ──────────────────────────────────────────
+
+
+def test_run_reversible_pause_schema_pin():
+    """AC: run.yaml keeps paused→live legal (reversible pause)."""
+    schema = yaml.safe_load((OPS_PACK_SCHEMAS / "run.yaml").read_text(encoding="utf-8"))
+    assert schema["allowed_status"]["live"] == ["deployed", "paused"], (
+        "run.yaml lost paused→live (reversible pause)"
+    )

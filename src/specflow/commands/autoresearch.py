@@ -237,15 +237,114 @@ def _has_structural(signals: list[dict[str, str]]) -> bool:
     return any(signal["state"] == "structural" for signal in signals)
 
 
+_OPEN_AGENDA_STATUSES = frozenset({"unexplored", "in_progress", "promising"})
+_LOOP_CENSUS_STATUSES = ("draft", "running", "completed", "plateaued", "aborted")
+_OPEN_DIRECTION_LIST_CAP = 8
+
+
+def _open_agenda_directions(loops: list[art_lib.Artifact]) -> list[str]:
+    """Deduped open research_agenda direction strings across all LOOPs."""
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for loop in sorted(loops, key=lambda a: a.id):
+        agenda = loop.frontmatter.get("research_agenda") or []
+        if not isinstance(agenda, list):
+            continue
+        for entry in agenda:
+            if not isinstance(entry, dict):
+                continue
+            if entry.get("status") not in _OPEN_AGENDA_STATUSES:
+                continue
+            direction = entry.get("direction")
+            if not isinstance(direction, str) or not direction.strip():
+                continue
+            if direction in seen:
+                continue
+            seen.add(direction)
+            ordered.append(direction)
+    return ordered
+
+
+def _render_closure_readiness(root: Path, comp: art_lib.Artifact) -> None:
+    """Print COMP-level closure facts. No goal-met / ready-to-close judgment."""
+    print(f"Competition: {CYAN}{comp.id}{NC}  {comp.title}  [{comp.status}]")
+    print()
+    print(f"{BOLD}Closure-readiness:{NC}")
+
+    goals = comp.frontmatter.get("goals")
+    if isinstance(goals, list) and goals:
+        print("  Goals:")
+        for goal in goals:
+            print(f"    - {goal}")
+    else:
+        print("  Goals: no goals recorded")
+
+    findings = _find_findings_for_comp(root, comp.id)
+    confirmed = [finding for finding in findings if finding.status == "confirmed"]
+    print(f"  Findings: {len(confirmed)} confirmed / {len(findings)} total")
+
+    window_end = comp.frontmatter.get("window_end")
+    if window_end:
+        try:
+            end = date.fromisoformat(str(window_end))
+        except ValueError:
+            end = None
+        if end is None:
+            print(f"  Evaluation window: ends {window_end} "
+                  f"(unparsed — use ISO YYYY-MM-DD)")
+        elif date.today() > end:
+            print(f"{YELLOW}⚠{NC}   Evaluation window elapsed {window_end} — advance "
+                  f"via a successor COMP (churn rule; see rolling-evaluation.md)")
+        else:
+            print(f"  Evaluation window: ends {window_end}")
+
+    loops = _find_loops_for_comp(root, comp.id)
+    directions = _open_agenda_directions(loops)
+    if not directions:
+        print("  Open directions: no open agenda directions")
+    else:
+        print(f"  Open directions ({len(directions)}):")
+        shown = directions[:_OPEN_DIRECTION_LIST_CAP]
+        for direction in shown:
+            print(f"    - {direction}")
+        overflow = len(directions) - len(shown)
+        if overflow:
+            print(f"    +{overflow} more")
+
+    counts = {status: 0 for status in _LOOP_CENSUS_STATUSES}
+    for loop in loops:
+        if loop.status in counts:
+            counts[loop.status] += 1
+    census = "  ".join(
+        f"{status}={counts[status]}" for status in _LOOP_CENSUS_STATUSES
+    )
+    print(f"  LOOPs: {census}")
+    print()
+
+
 def _run_status(root: Path, args: dict) -> int:
+    """COMP-level closure-readiness first; LOOP accounting only if a LOOP resolves."""
     comp = _resolve_comp(root, args)
     if not comp:
         return 1
+
+    print(f"\n{BOLD}=== Autoresearch Status ==={NC}\n")
+    _render_closure_readiness(root, comp)
+
+    loops = _find_loops_for_comp(root, comp.id)
+    explicit = args.get("loop")
+    has_resolvable = explicit or any(
+        loop.status in ("running", "draft") for loop in loops
+    )
+    if not has_resolvable:
+        print(f"{YELLOW}⚠{NC} no active LOOP — COMP idle; create a LOOP to continue")
+        print()
+        return 0
+
     loop = _resolve_loop(root, comp, args)
     if not loop:
-        return 1
-    print(f"\n{BOLD}=== Autoresearch Status ==={NC}\n")
-    print(f"Competition: {CYAN}{comp.id}{NC}  {comp.title}")
+        return 1 if explicit else 0
+
     print(f"LOOP:        {CYAN}{loop.id}{NC}  [{loop.status}]\n")
     signals = _assess_loop(root, comp, loop)
     _render_signals(signals)

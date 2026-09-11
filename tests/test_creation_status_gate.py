@@ -161,6 +161,16 @@ class TestCreationStatusGate:
         arts = art_lib.discover_artifacts(root)
         assert arts[0].status == "kept"
 
+    def test_multi_root_omitted_status_requires_explicit(self, tmp_path, capsys):
+        """experiment.yaml has four roots and no initial_statuses — --status
+        stays mandatory (STORY-652: schemas without the key are unchanged)."""
+        root = _project(tmp_path)
+        rc = create_cmd.run(root, _args(type="experiment"))
+        out = capsys.readouterr().out
+        assert rc == 1
+        assert "no unambiguous initial status" in out
+        assert _created_ids(root) == set()
+
     def test_lib_api_stays_ungated_for_internal_callers(self, tmp_path):
         """Trusted internal paths (orphans adopt, autoresearch plan, reqif
         import) call create_artifact directly — the gate is CLI-only."""

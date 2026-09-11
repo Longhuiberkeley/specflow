@@ -19,10 +19,11 @@ Each schema YAML file defines a new artifact type that SpecFlow can create, vali
 |-------|------|-------------|
 | `optional_fields` | list | YAML frontmatter fields that may be present |
 | `allowed_link_roles` | list | Valid link roles for `links:` frontmatter entries |
+| `initial_statuses` | list | Creation entry point(s). Overrides computed empty-predecessor roots when present; omitted → today's computed-root behavior |
 
 ## Status Transitions
 
-The `allowed_status` dict maps each status to a list of valid next statuses:
+The `allowed_status` dict maps each status to the statuses it may be entered *from* (target → predecessors):
 
 ```yaml
 allowed_status:
@@ -33,7 +34,21 @@ allowed_status:
     - approved           # mitigated can revert to approved
 ```
 
-An empty list means the status is a valid terminal state (no further transition required from this status alone — transitions are validated by the artifact update logic).
+An empty predecessor list marks a computed creation root (the default `--status` when exactly one such status exists).
+
+### `initial_statuses`
+
+When a status must both be a creation default *and* have a predecessor — for example a reversible pause — declare `initial_statuses` so create still lands on that entry point:
+
+```yaml
+initial_statuses: [active]
+allowed_status:
+  active: [paused]       # paused → active is legal
+  paused: [active]
+  completed: [active]
+```
+
+Without `initial_statuses`, `active: [paused]` has no empty-predecessor root, so implicit create would require `--status`. A multi-entry list behaves like today's multi-root schemas (explicit `--status` required; each listed status is sanction-free at creation). Unknown names in the list are ignored; if none remain, SpecFlow falls back to computed roots.
 
 ## Example: Hazard Schema
 

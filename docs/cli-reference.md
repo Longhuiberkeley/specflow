@@ -419,7 +419,7 @@ specflow autoresearch suggest-finds --loop LOOP-001
 |------------|---------|
 | `plan` | Create/update a LOOP or print the setup checklist; `--profile` includes the host-run three-sample noise probe in that checklist |
 | `run` | Print the loop protocol and start a draft LOOP unless `--no-start`; refuses a second concurrent running LOOP |
-| `status` | Show readiness, budget use, and best metric for one resolved competition and LOOP |
+| `status` | Print COMP-level closure-readiness (goals echo, confirmed FIND count, open agenda directions, LOOP census) even when every LOOP is completed/plateaued, then LOOP readiness/budget accounting when a running or draft LOOP resolves |
 | `review` | Summarize all loops, experiments, and candidate findings for one competition |
 | `leaderboard` | Rank experiments for one competition or all competitions |
 | `log` | Record an experiment outcome and optional structured fields (`--set KEY=VALUE`) |

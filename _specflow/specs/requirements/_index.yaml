@@ -393,4 +393,26 @@ artifacts:
     - accounting-not-policing
     fingerprint: sha256:7e2a7a6434b9
     children: []
-next_id: 39
+  REQ-039:
+    id: REQ-039
+    title: 'COMP lifecycle: closure gate, reversible pause, closure accounting'
+    status: approved
+    tags: []
+    fingerprint: sha256:feaca0e733b0
+    children: []
+  REQ-040:
+    id: REQ-040
+    title: 'Autoresearch methodology context: thin pack checklists, rolling-evaluation
+      recipe'
+    status: approved
+    tags: []
+    fingerprint: sha256:8490ae1cadcf
+    children: []
+  REQ-041:
+    id: REQ-041
+    title: 'Ops RUN lifecycle: reversible pause'
+    status: approved
+    tags: []
+    fingerprint: sha256:9ae17684507c
+    children: []
+next_id: 42

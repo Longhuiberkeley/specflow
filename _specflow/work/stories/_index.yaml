@@ -1153,4 +1153,46 @@ artifacts:
     tags: []
     fingerprint: sha256:a557ed85a54a
     children: []
-next_id: 650
+  STORY-650:
+    id: STORY-650
+    title: 'COMP closure gate: criteria, human gate, lint warn'
+    status: implemented
+    tags: []
+    fingerprint: sha256:d358898fe0e5
+    children: []
+  STORY-651:
+    id: STORY-651
+    title: Closure-readiness accounting in autoresearch status
+    status: implemented
+    tags: []
+    fingerprint: sha256:b76d322edefe
+    children: []
+  STORY-652:
+    id: STORY-652
+    title: 'Reversible pause: initial_statuses schema key, paused-to-active'
+    status: implemented
+    tags: []
+    fingerprint: sha256:044c1db2f9c5
+    children: []
+  STORY-653:
+    id: STORY-653
+    title: Rolling-evaluation recipe, churn rule, window_end registration
+    status: implemented
+    tags: []
+    fingerprint: sha256:08c73c1f3f96
+    children: []
+  STORY-654:
+    id: STORY-654
+    title: Thin pack domain-research checklists per DEC-079
+    status: implemented
+    tags: []
+    fingerprint: sha256:bec53294fcc3
+    children: []
+  STORY-655:
+    id: STORY-655
+    title: 'Ops RUN reversible pause: schema, doctrine line, tests'
+    status: implemented
+    tags: []
+    fingerprint: sha256:1ab9654b45c6
+    children: []
+next_id: 656

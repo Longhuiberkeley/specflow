@@ -9,7 +9,7 @@ Ask the user:
 - **What dataset are you optimizing against?** (e.g., "telco churn train.csv", "ImageNet validation split", "Kaggle titanic train.csv")
 - **What split method separates training from evaluation?** (e.g., "walk-forward with 80/20 gap", "5-fold cross-validation", "single temporal split")
 
-Record these in COMP's optional fields: `dataset`, `split_method`.
+Record these in COMP's optional fields: `dataset`, `split_method`. Fixed train:val:test vs rolling/walk-forward is a first-class design choice — see `references/rolling-evaluation.md`.
 
 ## Step 2: Choose the Verify Command
 
@@ -228,6 +228,37 @@ specflow update COMP-001 --set noise_characterization='{"metric": "auc", "mean":
 ```
 
 This prevents false-positive "keeps" when the improvement is within the noise floor.
+
+## Step 9: Closing the Competition
+
+A COMP is not done when a LOOP completes. Close it only when every `goals` entry is disposed.
+
+**Goal-disposition checklist.** For each entry in `COMP.goals`:
+
+- **Satisfied** — cite the confirming FIND(s) (`status: confirmed`) that evidence it
+- **Abandoned** — one-line reason (scope change, infeasible, superseded by a successor COMP)
+
+Record the per-goal disposition in the COMP's `closure_disposition` frontmatter field — `artifact-lint` warns on a completed COMP without it. Un-disposed goals mean the COMP stays `active` (or `paused`).
+
+**User gate.** `COMP active → completed` is a human gate. Present:
+
+1. The goal-by-goal disposition
+2. The Closure-readiness block from `specflow autoresearch status` (goals echo, confirmed FIND count, open agenda directions)
+
+Only the direct user's explicit go-ahead moves the COMP to `completed`. Subagents never close COMPs; metrics are evidence, not approval.
+
+```bash
+specflow autoresearch status --competition COMP-NNN
+# after user confirmation:
+specflow update COMP-NNN --status completed
+specflow artifact-lint
+```
+
+**Frozen after close.** `completed` is immutable: leaderboard and evidence chain stay as they were. Never mutate `verify_command`, metric, or dataset of a completed COMP.
+
+**Successor COMP.** Still-active research on the same protocol → new LOOP on the same COMP. Evaluation protocol, window, metric, or dataset changes → successor COMP (`derives_from`, carry confirmed FINDs). See Closing a COMP / Evolving a COMP in the pack skill.
+
+`paused` is reversible (`paused → active`); use it to park a COMP without closing it.
 
 ## Domain-Specific Auxiliary Metric Recommendations
 

@@ -7,7 +7,7 @@ description: Live-operations workflow for the ops pack (RUN + MONITOR). Use when
 
 Track **what is live** and **how it is doing over time**. Two artifact types, both in `_specflow/ops/`:
 
-- **RUN** — a deployment frozen at deploy-time. *What* is deployed (`deployed_ref`: path/version/fingerprint), *where* (`environment`), *when* (`deployed_at`), and *what it satisfies* (links `derives_from` the REQ/ARCH, optionally the EXPT/STORY output it promoted). Like a baseline, but for a live system. Status: `deployed → live → paused → retired`.
+- **RUN** — a deployment frozen at deploy-time. *What* is deployed (`deployed_ref`: path/version/fingerprint), *where* (`environment`), *when* (`deployed_at`), and *what it satisfies* (links `derives_from` the REQ/ARCH, optionally the EXPT/STORY output it promoted). Like a baseline, but for a live system. Status: `deployed → live ⇄ paused → retired`.
 - **MONITOR** — an append-only, timestamped observation of a RUN. A `metrics` snapshot, free-form `signals` (drift for quant, latency/error-rate for web, sensor values for embedded — domain-neutral), `health` (ok/degraded/breached), and `captures` (ephemeral-data refs + freshness for live/short-lived data). Over time, MONITORs **are** the observation/metric ledger. Status: `logged → flagged → resolved`.
 
 Domain-neutral by design. Quant specifics (drift, oos_decay) belong in the quant concept→artifact map, not in these fields.
@@ -28,7 +28,7 @@ Domain-neutral by design. Quant specifics (drift, oos_decay) belong in the quant
      --links <REQ-NNN|ARCH-NNN|EXPT-NNN>:derives_from \
      --skip-dedup-check
    ```
-3. **Confirm** `specflow artifact-lint RUN-NNN` passes, then present: TLDR (what went live, from what, satisfying what), one next step. Only after the user acknowledges the deployment do you transition the RUN: `specflow update RUN-NNN --status live` — **you never mark a RUN `live` on your own authority; "it deployed" is your claim, "it's live" is the user's call.** Same rule for MONITOR `flagged → resolved`: present the breach evidence and the remediation, the user confirms resolution.
+3. **Confirm** `specflow artifact-lint RUN-NNN` passes, then present: TLDR (what went live, from what, satisfying what), one next step. Only after the user acknowledges the deployment do you transition the RUN: `specflow update RUN-NNN --status live` — **you never mark a RUN `live` on your own authority; "it deployed" is your claim, "it's live" is the user's call — including resuming a paused RUN.** Same rule for MONITOR `flagged → resolved`: present the breach evidence and the remediation, the user confirms resolution.
 
 ### Flow B — Observe (record a snapshot / capture ephemeral data)
 

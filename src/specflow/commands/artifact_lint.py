@@ -21,7 +21,7 @@ from specflow.lib import role_normalize
 from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC
 from specflow.lib.domain_constants import DOMAIN_RECOMMENDED
 
-CHECK_NAMES = ["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "thinking-techniques", "autoresearch-logging", "spike-lifecycle", "source-drift", "dec-risk-profile", "ac-observable", "nfr-category", "backfilled-links", "role-target"]
+CHECK_NAMES = ["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "thinking-techniques", "autoresearch-logging", "autoresearch-comp-closure", "spike-lifecycle", "source-drift", "dec-risk-profile", "ac-observable", "nfr-category", "backfilled-links", "role-target"]
 
 
 def _run_check(
@@ -75,6 +75,8 @@ def _run_check(
         return _check_thinking_techniques(artifacts)
     elif check_name == "autoresearch-logging":
         return _check_autoresearch_logging(artifacts, root)
+    elif check_name == "autoresearch-comp-closure":
+        return _check_autoresearch_comp_closure(artifacts)
     elif check_name == "spike-lifecycle":
         return _check_spike_lifecycle(artifacts, root)
     elif check_name == "source-drift":
@@ -1554,6 +1556,81 @@ def _check_autoresearch_logging(
         "status_icon": icon,
         "detail": detail_msg,
         "blocking_count": blocking,
+        "warning_count": warnings,
+    }
+
+
+def _findings_for_comp(
+    artifacts: list[art_lib.Artifact],
+    comp_id: str,
+) -> list[art_lib.Artifact]:
+    """FINDs associated with a COMP via frontmatter ``competition`` or a
+    ``belongs_to`` link (same dual-path as autoresearch status)."""
+    results: list[art_lib.Artifact] = []
+    for art in artifacts:
+        if art_lib.get_prefix_from_id(art.id) != "FIND":
+            continue
+        if art.frontmatter.get("competition") == comp_id:
+            results.append(art)
+            continue
+        if any(link.target == comp_id and link.role == "belongs_to" for link in art.links):
+            results.append(art)
+    return results
+
+
+def _check_autoresearch_comp_closure(
+    artifacts: list[art_lib.Artifact],
+) -> dict[str, str | int]:
+    """Warn when a completed COMP lacks closure evidence.
+
+    Two warn-only signals, both named in the pack's closure protocol:
+    zero confirmed FINDs (dual-path association: frontmatter ``competition``
+    or a ``belongs_to`` link) and a missing ``closure_disposition``
+    frontmatter record (the per-goal satisfied/abandoned disposition).
+    Never blocking. No-op when the repo has no COMPs (premature-closure
+    signal is meaningless there).
+    """
+    warnings = 0
+    details: list[str] = []
+
+    comps = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "COMP"]
+    if not comps:
+        return {
+            "status_icon": GREEN + "✓" + NC,
+            "detail": "No competitions to check",
+            "blocking_count": 0,
+            "warning_count": 0,
+        }
+
+    for comp in comps:
+        if comp.status != "completed":
+            continue
+        confirmed = [
+            f for f in _findings_for_comp(artifacts, comp.id) if f.status == "confirmed"
+        ]
+        if not confirmed:
+            warnings += 1
+            details.append(
+                f"  ⚠ {comp.id} completed competition has no confirmed findings "
+                f"— premature closure?"
+            )
+        if not comp.frontmatter.get("closure_disposition"):
+            warnings += 1
+            details.append(
+                f"  ⚠ {comp.id} completed competition has no closure_disposition "
+                f"recorded — per-goal disposition missing"
+            )
+
+    icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
+    detail_msg = (
+        "\n".join(details) if details
+        else "All completed competitions have confirmed findings "
+             "and a recorded closure disposition"
+    )
+    return {
+        "status_icon": icon,
+        "detail": detail_msg,
+        "blocking_count": 0,
         "warning_count": warnings,
     }
 

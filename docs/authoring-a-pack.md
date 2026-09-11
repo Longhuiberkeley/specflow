@@ -141,10 +141,11 @@ directory: _specflow/specs/security-findings/
 | `prefix` | Yes | Uppercase prefix for artifact IDs (2-4 letters). |
 | `id_format` | Yes | Regex pattern for valid IDs. Escape backslashes in YAML (`\\d`). |
 | `required_fields` | Yes | Frontmatter fields that must be present on every artifact. |
-| `allowed_status` | Yes | Map of valid statuses to their allowed next statuses. |
+| `allowed_status` | Yes | Map of each status to the statuses it may be entered *from* (target → predecessors). An empty list is a computed creation root. |
 | `directory` | Yes | `_specflow/specs/` subdirectory for this type's artifacts. |
 | `optional_fields` | No | Additional fields that may appear. |
 | `allowed_link_roles` | No | Valid link roles for `links:` entries. |
+| `initial_statuses` | No | Creation entry point(s). When present, overrides computed empty-predecessor roots for default `--status` resolution and the create sanction gate. When absent, behavior is unchanged (computed roots). Use this for reversible cycles — e.g. `active: [paused]` so paused→active is legal, plus `initial_statuses: [active]` so create still defaults to / sanction-freely accepts `active`. A multi-entry list is ambiguous for implicit create (explicit `--status` required); each listed status is sanction-free at creation. Unknown names in the list are ignored; if none remain, SpecFlow falls back to computed roots. |
 
 ### Registering the Type
 
