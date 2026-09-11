@@ -26,7 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Decisions / Docs
 - DEC-079 (COMP churn rule: frozen competitions, successor chains, reversible pause), DEC-080 (pack checklists teach mapping, not methodology), DEC-081 (RUN pause reversible; transitions into `live` stay user-gated). REQ-039/040/041 approved; STORY-650–655 implemented.
 - Docs: `authoring-a-pack.md` (`initial_statuses`), `cli-reference.md` (status closure block), pack-author schema-template + mirror.
-- **Upgrade note:** pack schema/skill changes reach existing installs via `specflow refresh --force` (plain refresh preserves drifted pack assets as user edits); CLI-side changes (status closure block, exit-code 1→0, new lint check) apply on tool upgrade. Note the `autoresearch status` exit-code change when scripting.
+- **Upgrade note:** pack schema/skill changes reach existing installs via `specflow refresh --packs --force` (pack assets refresh only with `--packs`; plain refresh covers shared skills/context); CLI-side changes (status closure block, exit-code 1→0, new lint check) apply on tool upgrade. Note the `autoresearch status` exit-code change when scripting.
 
 ### Tests
 - +37 (1444 → 1481): reversible pause both packs (both directions + terminal rejections + sanction-gate wiring), closure lint (dual-path + disposition), status closure block (+ window elapsed/future/unparsed advisories), schema display fallback, `window_end`/`closure_disposition` registration locks, create-default roots.
