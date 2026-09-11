@@ -4,6 +4,34 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.14.7] - 2026-09-11
+
+### Highlights
+- **Autoresearch lifecycle governance (REQ-039/040/041, STORY-650–655):** COMP closure becomes a user-gated protocol with deterministic signals, pause is reversible on both COMP and ops RUN, the rolling-evaluation/split-R&D design ships as a pack recipe, and the pack's research checklists go thin per DEC-078's principle.
+
+### Features
+- **Reversible COMP pause via `initial_statuses` schema key (STORY-652).** New optional schema key declaring creation entry points, overriding computed roots — wired into implicit `--status` resolution and the creation sanction gate, displayed by `specflow schema`, fail-safe (unknown entries ignored; falls back to computed roots). `competition.yaml` moves to `active: [paused]` + `initial_statuses: [active]`: `paused → active` is legal, creation still lands on `active`. Documented in `docs/authoring-a-pack.md` + pack-author schema-template (`.claude` mirror byte-identical).
+- **COMP closure gate (STORY-650).** "Closing a COMP" protocol + setup Step 9: every `COMP.goals` entry satisfied-with-confirmed-FIND-evidence or abandoned-with-reason, recorded in the new `closure_disposition` frontmatter field; `active → completed` is a direct-user gate (mirrors the FIND gate); `completed` stays frozen. Deterministic warn-only lint `autoresearch-comp-closure` flags completed COMPs with zero confirmed FINDs (dual-path association) or a missing disposition record.
+- **Closure-readiness accounting (STORY-651).** `specflow autoresearch status` renders a COMP-level closure block (goals echo, confirmed/total FINDs, open agenda directions across all LOOPs, LOOP census, evaluation-window line with elapsed-window advisory) independent of LOOP resolution — including when every LOOP is completed/plateaued, where it previously exited blind. Exit 0 when a COMP exists (was 1).
+- **Rolling-evaluation recipe (STORY-653, DEC-079).** New `references/rolling-evaluation.md`: fixed vs rolling/walk-forward as a first-class COMP design choice, split methodology as a researchable object (`change_category: validation`, the `validation`-category vs `validate`-mode distinction, leakage discipline while researching splits), retrain-window sizing + historical→live as named tracks, the COMP churn rule (new COMP only when the exam changes; `window_end` advance = successor COMP with carried FINDs). `window_end` registered in `competition.yaml`.
+- **Thin pack research checklists (STORY-654, DEC-080).** `domain-research-checklists.md` rewritten 229 → 120 lines: concept-to-artifact mapping + universal open questions per domain (quant, tabular_ml, vision, nlp, generic keys preserved); house-methodology menus removed per the DEC-078 principle extended to the pack.
+- **Ops RUN reversible pause (STORY-655, DEC-081).** `run.yaml` `live: [deployed, paused]`: resuming a paused RUN is legal and explicitly the user's call; `deployed` stays the sole creation root, `retired` terminal, frozen-at-deploy untouched.
+- Packs bumped: autoresearch 0.2.0 → 0.3.0, ops 0.1.0 → 0.2.0.
+
+### Fixes
+- **One-way `paused` door eliminated** on both competition and run schemas — pausing no longer strands the artifact.
+- **`specflow schema` display** now mirrors `entry_statuses()` exactly (empty/all-invalid `initial_statuses` falls back to root display instead of showing entries create would never use).
+- **`rolling-evaluation.md` example** corrected to pass the required `--loop` flag.
+
+### Decisions / Docs
+- DEC-079 (COMP churn rule: frozen competitions, successor chains, reversible pause), DEC-080 (pack checklists teach mapping, not methodology), DEC-081 (RUN pause reversible; transitions into `live` stay user-gated). REQ-039/040/041 approved; STORY-650–655 implemented.
+- Docs: `authoring-a-pack.md` (`initial_statuses`), `cli-reference.md` (status closure block), pack-author schema-template + mirror.
+- **Upgrade note:** pack schema/skill changes reach existing installs via `specflow refresh --force` (plain refresh preserves drifted pack assets as user edits); CLI-side changes (status closure block, exit-code 1→0, new lint check) apply on tool upgrade. Note the `autoresearch status` exit-code change when scripting.
+
+### Tests
+- +37 (1444 → 1481): reversible pause both packs (both directions + terminal rejections + sanction-gate wiring), closure lint (dual-path + disposition), status closure block (+ window elapsed/future/unparsed advisories), schema display fallback, `window_end`/`closure_disposition` registration locks, create-default roots.
+- Total: 1481 tests passing
+
 ## [1.14.6] - 2026-08-30
 
 Privacy-gate automation + evidentiary closure for v1.14.5 (STORY-647, STORY-648, REQ-038). The v1.14.5 post-release audit found the denylist gate existed only as prose and half the wiring changes had zero locking tests; this release closes both.

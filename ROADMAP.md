@@ -4,6 +4,11 @@ SpecFlow ships incrementally. This document tracks what shipped in each release,
 
 For the original implementation plan (phase breakdown, dependency graph — now historical, superseded by the release history below), see [docs/.archive/plan.md](docs/.archive/plan.md).
 
+## v1.14.7
+
+- **Autoresearch lifecycle governance (REQ-039/040/041, STORY-650–655)** — reversible pause on COMP (new core `initial_statuses` schema key) and ops RUN; COMP closure becomes a user-gated protocol (`closure_disposition` field + warn-only `autoresearch-comp-closure` lint); `autoresearch status` gains a closure-readiness block with evaluation-window elapsedness; rolling-evaluation/split-R&D shipped ahead of v1.15.0 as `references/rolling-evaluation.md` + DEC-079 churn rule + `window_end` registration; pack research checklists thinned per DEC-080 (DEC-078 principle extended to the pack).
+- **Docs** — `initial_statuses` documented for pack authors (authoring-a-pack + schema-template + `.claude` mirror); cli-reference status row.
+
 ## v1.14.5
 
 - **Privacy scrub of personal-context fingerprints (REQ-038)** — pack-wide sweep of the autoresearch skill docs (worked examples rewritten to a synthetic tabular-ML churn / A-B-test domain; protocol shape preserved), neutralized test fixtures + baseline titles, doc scrubs across dogfood artifacts, deleted an archived plan doc carrying pilot strategy results, untracked `.antigravitycli`/`.gemini` leftovers exposing home-dir paths. A denylist grep gate now guards the release checklist. Conscious exceptions kept: attribution email + upstream fork URLs.
@@ -39,7 +44,7 @@ Operator directive (2026-08-30): **stop before per-harness customization; make t
 - **brief.py derives_from credit doc** — the suppression surface (any incoming derives_from, incl. MON corrections) is broader than the CHANGELOG wording; document the semantics in the docstring/ops handbook.
 
 ### Methodology (after robustness)
-- **Rolling-evaluation / split-R&D** — `rolling-evaluation.md` recipe + DEC: fixed train:val:test vs rolling/walk-forward as a first-class design choice; split-methodology itself as a researchable object (EXPTs over split configs; COMP-per-window chain vs successor COMP); retrain-window sizing and historical→live transition as named research tracks. COMP churn rule: a new COMP only when the protocol (exam) changes — never per window/retrain. `window_end` auto-advance MUST be successor-COMP creation (chained-frozen-COMPs decision forbids mutation).
+- **Rolling-evaluation / split-R&D** — *shipped ahead of schedule in v1.14.7* (`references/rolling-evaluation.md` + DEC-079 churn rule + `window_end` registration). Remaining v1.15.0 follow-ups: surface `window_end` elapsedness in more consumption paths; split-R&D adoption feedback from live competitions.
 - **STORY-644** — ops pack methodology handbook (parity with autoresearch's BP-01..ML-22 surface), documenting the two ops↔autoresearch escalation doors.
 
 ### Deferred — per-harness customization (explicitly out until the offering is robust)
