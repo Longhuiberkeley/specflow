@@ -11,7 +11,7 @@ tags:
 suspect: false
 links: []
 created: '2026-09-13'
-fingerprint: sha256:13c21e23971e
+fingerprint: sha256:0ec50ff5c587
 modified: '2026-09-13'
 ---
 
@@ -137,3 +137,7 @@ Working drafts for all of the above are in the original session's run record.
   brownfield → adopt + no STORY backfill.
 - Release when ready: CHANGELOG entry, version bump (pyproject + __init__), pytest, self-audit,
   commit, tag, push --follow-tags, GitHub release.
+
+## Sequencing (user-directed, 2026-09-13)
+
+Upgrade thoroughly first: STORY-658..664 in order (663 CLI backstops gates 664), then ONE live eval of the finished context in a fresh consuming session, then release. No intermediate evals, no release before the eval.
