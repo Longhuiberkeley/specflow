@@ -3,245 +3,58 @@ name: specflow-execute
 description: "Implement approved STORYs, or a trivial code change that still needs a STORY."
 ---
 
-## Freeform Input Handling
-
-This skill accepts freeform user input alongside the command. Interpret the user's message to determine scope and depth:
-
-- **No additional context** → run the standard workflow (deterministic core only)
-- **A question or concern** → run the deterministic core, then address the question directly using the results
-- **A request for depth** ("go deep", "be thorough", "all lenses") → run deterministic core + full agent-driven analysis
-- **A specific focus** ("focus on REQ-003", "check compliance only") → narrow scope to the request, still run deterministic core first
-
-Always run the deterministic core regardless of input. It costs zero tokens and provides the foundation for any analysis.
-
----
+Extra text narrows scope — still run the deterministic core first.
 
 # SpecFlow Execute
 
-Orchestrate the implementation of planned stories and update tracking artifacts.
+Implement approved STORYs and keep traceability green.
 
 ## Workflow
 
-### Step 0: Reverse Lifecycle Check
-
-If the user said "rethink the implementation," "this approach isn't working," or "go back to architecture" (or if you detect the user wants to revisit architecture/requirements after executing), ask: "Do you want to (a) revise the current STORY's implementation, (b) go back to architecture (run /specflow-plan), or (c) go back to requirements (run /specflow-discover)?" If revising a STORY, read the existing STORY and DDD and offer targeted edits rather than starting from scratch, and record the rewind: `specflow phase-set executing --reason "<why>"` so `brief --next` stays honest. If going back to architecture or requirements, route the user to the appropriate skill — it records its own phase-set.
-
-### Step 1: Implementation-Readiness Gate
-
-The planning-to-executing phase gate IS the readiness check. Run it before any implementation work. The gate adapts to change scope:
-
-| Change type | Minimum bar |
-|-------------|-------------|
-| New feature / new component | Full gate pass (no blocking items). All warnings reviewed. |
-| Bug fix (unknown root cause) | REQ must exist. STORY must have acceptance criteria. |
-| Bug fix (clear scope, existing REQ) | STORY linked to REQ. DDD optional. |
-| Refactoring (no behavior change) | STORY linked to affected ARCH. Warnings advisory. |
-| Typo / formatting / dependency updates | Gate is advisory. State skip reason and proceed. |
-
-**Escalation check.** If you arrived here mid-chat on work that started as a SPIKE or ad-hoc experiment, apply the **Permanence Test** before treating it as throwaway — work that will be reused, is on its second pass, defines an interface, or must outlive the session should be **promoted** to a durable REQ/ARCH/DDD (or a research COMP) first. See `references/escalation-and-promotion.md` for the recipe.
-
-1. **Run the deterministic gate:**
+1. **Readiness gate** (before any code):
    ```
    specflow artifact-lint --type gate --gate planning-to-executing
    ```
-   - Exit 1 → at least one automated blocking item failed (missing ARCH, broken links, etc.). **Stop. Do not proceed.** Report the failures verbatim and ask the user to address them. Re-run the gate after fixes.
-   - Exit 0 → automated checks pass; agent-judged items show as `○` (skipped by the deterministic runner).
-
-2. **Evaluate the agent-judged items yourself.** Read `.specflow/checklists/phase-gates/planning-to-executing.yaml`. For every item with `automated: false`, scope artifact reads narrowly:
-   - Use `_index.yaml` files in `_specflow/work/stories/` and `_specflow/specs/architecture/` to enumerate IDs, statuses, and link metadata without opening every artifact body.
-   - Open full artifact bodies only for the subset that needs agent judgement (e.g., the STORYs in the current wave, ARCHs referenced by those STORYs). At 100+ stories, sample by wave or by suspect/recently-modified flags rather than reading every file.
-   - Then answer the `llm_prompt` against the scoped subset and report findings as:
-     - `blocking` severity items → these MUST be addressed before proceeding.
-     - `warning` severity items → present them and ask the user whether to proceed anyway. Do not proceed silently.
-
-3. **Identify the in-scope STORY set.** Use `specflow go --dry-run` to compute the next wave; that's the read-set for this run. Avoid reading STORYs outside the upcoming wave unless an agent-judged item explicitly requires cross-story analysis.
-
-4. **Check `suspect: true` flags** on ALL linked artifacts in the in-scope set. Run `specflow status` and scan for suspect markers. If upstream specs are suspect, do NOT just warn — **actively propose resolution**:
-   - "ARCH-001 is suspect (REQ-001 changed on 2026-06-01). Options: (a) Create DEF — the ARCH genuinely no longer satisfies the REQ. (b) Mark resolved — the change was cosmetic. (c) Update ARCH to match the new REQ."
-   - The human picks. You execute. Do not let suspect flags sit unresolved.
-   - If the human chooses (a): run `specflow defect-from-suspect <SUSPECT_ID> --req <REQ_ID> [--severity ...]`. This creates a DEF with auto-linked `fails_to_meet` → REQ and `exposed_by` → the suspect artifact, registered in the index. Then `specflow change-impact --resolve <SUSPECT_ID>` once addressed.
-   - If the human chooses (b): `specflow change-impact --resolve <SUSPECT_ID>`.
-
-5. Run `specflow status` silently for the state overview.
-
-6. **Authorization note (if `.specflow/adapters.yaml` has team config):** Authorization is enforced at commit time by the pre-commit hook (advisory) and by branch protection on the hosting platform (the real enforcement). There is **no meaningful pre-code authorization check** — `specflow hook pre-commit` inspects `git diff --cached`, which is empty before any code is written, so a dry-run here always passes vacuously. If you are on a team project and unsure whether you hold the implementer role, run `specflow rbac check` now to resolve your roles (add `--type <type> --to-status <status>` to test a specific transition); otherwise skip and let the commit hook enforce at commit time.
-
- **Why the gate is mandatory:** the gate verifies the task is sufficiently specified to start coding (ARCH exists, links resolve, AC are clear, interfaces defined, test strategy specified, dependencies approved). Skipping it lets implementation start against draft specs and produces rework.
-
-7. **Load best practices** as context for implementation. Read BP artifacts from `_specflow/specs/best-practices/`. If execution-phase BPs don't exist yet, generate them covering implementation patterns relevant to the project domain.
-
-**Proactive Enforcement Loop:** Actively audit your implementation strategy against these BPs before writing code. If a BP suggests a specific pattern (e.g., defensive copies for data pipelines, dependency injection for web apps), ensure your code uses it, and briefly tell the user that you applied it.
-
-### Step 1L: Trivial-change lean path (typo / formatting / dependency bump / rename)
-
-For an unplanned trivial fix that arrives mid-chat ("fix the typo in the README", "bump requests", "rename foo → bar"), the full wave flow is overkill — but the change still must trace to a STORY. When no STORY exists yet for the change:
-
-1. **Materialize one backfilled STORY** linked to an existing maintenance/generic REQ (create a generic maintenance REQ first if none exists):
+   Exit 1 → report the blockers and stop. Exit 0 → evaluate the `automated: false` items yourself (`.specflow/checklists/phase-gates/planning-to-executing.yaml`) against the in-scope STORY set only. The bar scales with change type (bug fix needs a REQ + acceptance criteria; refactor links the ARCH; typo/formatting/dependency bump makes the gate advisory — state the skip reason and proceed). Work that started as a SPIKE or ad-hoc experiment: apply the Permanence Test first (`references/escalation-and-promotion.md`).
+2. **Scope the wave:** `specflow go --dry-run` computes it (`references/wave-computation.md`). Resolve suspect flags on in-scope artifacts — propose the options (`specflow defect-from-suspect <ID> --req <REQ>`, `specflow change-impact --resolve <ID>`, or update the spec); the human picks, you execute.
+3. **Baseline first:** run the test suite (or `specflow artifact-lint` if there is no suite — say so) and record pass/fail counts plus the names of failing tests. This is the diff point for step 6.
+4. **Implement** per the STORY and its linked REQ/ARCH/DDD, following each acceptance criterion. Apply worst-case-user and composition lenses and record them: `specflow update <STORY-ID> --thinking-techniques worst_case_user,composition`.
+5. **Status:** after each STORY:
    ```
-   specflow create --type story --title "<change>" --status approved \
-     --sanctioned "Backfill record of trivial work the user just requested; moves to implemented in the same pass" \
-     --links '[{"target":"<maintenance-REQ>","role":"implements"}]' --tags backfilled
+   specflow update STORY-001 --status implemented
+   specflow cascade-status STORY-001
    ```
-   (`approved` at create is the backfill exception: the STORY is a *record* of trivial work the user just requested, not a deliverable pending review — it moves to `implemented` in the same pass. Show the created STORY in your reply. This exception is for trivial changes only; anything with behavioral surface goes through the full flow.)
-2. The readiness gate is **advisory** for this change type — state the skip reason (per the table above) and proceed; do not block on missing DDD or test strategy.
-3. Make the change. **Skip wave planning and V-model (UT/IT/QT) generation** — a typo/formatting/rename has no behavioral surface; for a dependency bump, run the existing suite only if the bump could change behavior.
-4. Update the STORY to `implemented` and run `specflow artifact-lint` so traceability stays clean.
+   (`cascade-status` moves linked ARCH/DDD along; `--include-req` also cascades to the REQ. Locks and execution state under `.specflow/` are machine-managed — never edit them.)
+6. **Tests & delta:** `specflow generate-tests` for V-model pairs (`references/test-pairing.md`); run `specflow verify <ID>` before any artifact moves to `verified` (`references/verification-contracts.md`). Re-run the step-3 gate and report the baseline → final delta (caused/fixed/unchanged); record it on the STORY. Finish with `specflow artifact-lint`.
+7. **Present the implementation summary** per `../specflow-references/references/approval-presentation.md`, then offer phase closure: `specflow phase-status` (advisory), and `specflow done` only if the user accepts.
 
-This owns the trivial case end-to-end instead of stranding it between `/specflow-discover` (which excludes it) and execute (which previously had no way to create the required STORY).
+## Step 1L — trivial changes still get a STORY
 
-### Step 2: Wave Planning
-
-1. Run `specflow go --dry-run` to compute the execution wave plan.
-2. Review the wave groupings -- stories in the same wave can run in parallel.
-3. If the wave plan looks wrong, check story dependencies (`derives_from`, shared `specified_by`).
-4. Read `references/wave-computation.md` for algorithm details.
-
-### Step 3: Implementation
-
-**Capture the gate baseline first (once per run).** Before writing any code, run the project's test suite and record the baseline — pass/fail counts and the names of currently-failing tests. This is the diff point for later "no regressions" claims. If the project has no test runner yet, capture the `artifact-lint` baseline instead and say so explicitly. You will re-run this same gate in Step 6 (Validation) and report the delta.
-
-For each story (or wave of stories):
-
-1. Run `specflow go` to compute wave context, or implement manually:
-   a. **Load context:** Run `specflow brief` for a one-call digest (phase, inventory, suspects, next wave, recent changes), then read the story and its linked REQ, ARCH, and DDD artifacts. Use the brief's inventory and `_index.yaml` to scope what to open — read full bodies only for the in-scope set.
-   b. **Verify spec approval:** All linked spec artifacts (REQ/ARCH/DDD) must be `approved` or later. If any linked spec is still `draft`, STOP and ask the human: "STORY-NNN links to ARCH-NNN which is still `draft`. I need approval before implementing against it. Approve ARCH-NNN? (y/n)" Do not implement against unapproved specs.
-   c. **Decompose and Validate:** For complex stories (especially ML/quant data pipelines, trading logic, or multi-step algorithms), **do not write monolithic code immediately**.
-      - Present a logical decomposition first (e.g., "1. Data ingestion, 2. Signal generation, 3. Portfolio allocation").
-      - Propose internal sanity checks (e.g., "I will assert that the resulting weights sum to 1.0").
-      - Ask the user: *"Does this flow and these checks look correct before I implement the code?"*
-   c. **Implement the code** per the detailed design and your validated decomposition.
-   d. **Follow the acceptance criteria** -- implement each criterion from the story.
-   e. **Thinking during implementation** (from `references/thinking-techniques.md`):
-      - **Mental prompts (reflection only, not recorded):** before writing each function, ask "what's the most unexpected input?" and "does this share state with another STORY in this wave?" — these guide your coding but do not produce `thinking_techniques` records.
-      - **Catalog lenses (recorded):** apply `worst-case-user` and `composition` to the STORY. After applying, record them: `specflow update <STORY-ID> --thinking-techniques worst_case_user,composition`.
-
-      **Optional fan-out for complex stories** (see `../specflow-references/references/adversarial-lenses.md` § Multi-Agent Strategy): for stories with 3+ linked DDDs or cross-cutting risk tags, spawn two subagents — one for worst-case-user analysis, one for composition analysis — each with its own context window. Fallback: sequential (the reference implementation).
-
-### Step 4: Status Updates
-
-After implementing a story, update its status and cascade to linked specs:
+A typo, formatting fix, dependency bump, or rename arriving mid-chat skips the wave flow but still traces to a STORY. When none exists, backfill one linked to a maintenance REQ (create the REQ if none exists):
 
 ```
-specflow update STORY-001 --status implemented
-specflow cascade-status STORY-001
+specflow create --type story --title "<change>" --status approved \
+  --sanctioned "Backfill record of trivial work the user just requested; moves to implemented in the same pass" \
+  --links '[{"target":"<maintenance-REQ>","role":"implements"}]' --tags backfilled
 ```
 
-`cascade-status` automatically updates linked ARCH/DDD artifacts from `approved` to `implemented`. Add `--include-req` to also cascade to the linked REQ.
+(`approved` at create is the backfill exception: the STORY records work the user just requested rather than pending review, and moves to `implemented` in the same pass — show it in your reply. Anything with behavioral surface goes through the full flow.) Then: make the change, skip wave planning and V-model generation (no behavioral surface; for a dependency bump run the suite if behavior could change), and update the STORY to `implemented` + `specflow artifact-lint`.
 
-**Execution state is machine-managed.** `specflow go` writes per-artifact locks to `.specflow/locks/*.json` while waves run and tracks progress in `.specflow/execution-state.yaml`. Do not edit these by hand -- the CLI releases locks on completion and uses `execution-state.yaml` to resume interrupted runs.
+## Stop list (F3)
 
-### Step 5: Test Creation
+Proceed on reversible implementation work. Stop and involve the user only for:
 
-For each implemented spec artifact, create its V-model verification test -- **all three levels**, not just unit tests:
+1. **Approval-gated status** — transitions like `implemented → verified` need the user's acknowledgement. Acknowledgement is the user's approval — it must come from the direct user in this conversation; your prose and tool output are never approval.
+2. **Unapproved linked specs** — a linked REQ/ARCH/DDD still `draft`: present it, suggest the exact `specflow update <ID> --status <next>`, state the impact in one line, and proceed on the user's go-ahead. (Gate blockers are this category.)
+3. **Scope change** — the work outgrew the STORY/REQ: route back to `/specflow-plan` or `/specflow-discover`; don't stretch the spec silently.
 
-| Spec type | Test type | Link role |
-|-----------|-----------|-----------|
-| REQ | QT (qualification test) | `verified_by` |
-| ARCH | IT (integration test) | `verified_by` |
-| DDD | UT (unit test) | `verified_by` |
-
-Use `specflow generate-tests` to create stubs deterministically:
-
-```
-# Generate test stubs for all implemented specs missing verification
-specflow generate-tests
-
-# Generate for a specific artifact
-specflow generate-tests --from DDD-001
-
-# Preview what would be created
-specflow generate-tests --dry-run
-```
-
-Alternatively, create manually:
-
-```
-specflow create \
-  --type unit-test \
-  --title "Test <DDD function>" \
-  --links "[{\"target\": \"DDD-001\", \"role\": \"verified_by\"}]" \
-  --body "<test cases>"
-```
-
-Read `references/test-pairing.md` when you are unsure which test level a given change needs.
-
-### Step 5.5: Human-Review Summary (Approval Gate)
-
-Before running full validation, present the implementation summary following the **Approval Presentation Format** (see `../specflow-references/references/approval-presentation.md`):
-
-1. **TLDR** — What was implemented and what changed (1-3 sentences).
-2. **What this does (functional)** — The implemented behavior in plain terms (purpose · what's in · what's out), so the human grasps what changed before reading STORY IDs.
-3. **Changes inline** — For each STORY implemented: what code was written, what tests were created, any deviations from ARCH/DDD. The human should not need to open files.
-4. **Assessment lenses** — Apply coverage, traceability, and staleness lenses, then a **Risk Profile per change** (run `specflow risk-tier <IDs>` for the computed tier + reversibility + blast-radius count, then add your confidence + why it isn't higher).
-5. **Key decisions (2–3)** — The decisions that determine whether this implementation is right (what was chosen · alternative · tradeoff · what validates it). **Fold the coverage checks in here**, not after the gate:
-   - For each STORY: does every acceptance criterion map to at least one test (UT/IT/QT)?
-   - Any STORY marked `implemented` whose linked ARCH/DDD is still `approved`?
-   - Any code file NOT referenced by a test artifact?
-   - Implementation choices not pre-specified by DDD (library picks, file layout)
-
-   Make the gate the approve-or-improve loop: proceed · discuss #N · revise and re-present.
-6. **Risk-proportional gate** — Run `specflow risk-tier <IDs>` to get the computed minimum tier (0 light / 1 normal / 2 stop); you may escalate above the floor freely, but downgrading below it requires a recorded justification in the DEC's `risk_profile`. For Tier 2, point at the specific concern. Tier comes from the change, not past approvals.
-7. **Action options** — Approve / Request changes / Discuss.
-
-Wait for user acknowledgement before proceeding. **Acknowledgement is the user's approval — it must come from the direct user in this conversation.** You cannot acknowledge on their behalf, and you must not proceed to approval-gated status changes (e.g. `implemented` → `verified`) without it. When in doubt, re-present.
-
-### Step 6: Validation
-
-Run full validation after all changes:
-```
-specflow artifact-lint
-```
-
-Report results and fix any issues.
-
-**Verification-gate delta.** Re-run the *same* gate you baselined at the top of Step 3 (the test suite, or `artifact-lint` if that was the baseline). Report the delta vs baseline: "baseline N failing {a,b} → now M failing {…}: +c I caused it / -d I fixed it / unchanged." Read a real exit code — don't grep narrowed to your own files. If the count rose, you caused a regression: revert the offending step, re-diagnose, re-sequence — don't stack a fix on a broken base.
-
-**Verification contracts.** Before transitioning any test artifact (UT/IT/QT) or STORY to `verified`, run its declared verification contract so the `verified` status carries machine-checkable evidence — mirroring how this step already runs `specflow artifact-lint`:
-
-```
-specflow verify <ID>              # run one artifact's verify_command; records verify_run_* evidence
-specflow verify --all             # run every declared contract in one pass
-specflow verify <ID> --dry-run    # confirm the contract wiring without executing
-specflow verify <ID> --evidence-file PATH   # capture long output into a file
-```
-
-This is an evidence recorder, **not** a gate: a failing `verify_command` is **recorded** (truthful `verify_run_exit_code`) and **never blocks** — accounting, not policing. You record the real result and let the human decide what a failure means (fix the code, fix the command, or accept the gap on record). Run `specflow verify <ID>` (or `--all`) before transitioning test/story artifacts to `verified`. Artifacts that declare no `verify_command` are unaffected. Read `references/verification-contracts.md` for the contract fields, the recorded run fields, and the keystone invariant.
-
-Record the gate result (baseline + final + delta) in the STORY or its linked UT/IT/QT artifact so `verified` is traced, not asserted. Do not move a STORY or test artifact to `verified` without this delta on record.
-
-**Exit message:** Report the count of stories marked `implemented`, tests created (UT/IT/QT), and the verification-gate delta. Recommend the next skill -- `/specflow-artifact-review`.
-
-### Step 7: Phase Closure (Optional)
-
-1. After all stories are implemented and validated, check readiness with `specflow phase-status` — a read-only advisory that reports whether the phase is ready to close (suspects resolved, gate green). Then offer closure: "All planned stories are implemented and the phase is ready to close. Close it now and extract prevention patterns?" If `phase-status` reports blockers, address those first rather than offering closure.
-2. If the user declines ("not yet", "skip"), do not force closure.
-3. If accepted, run `specflow done`. Options:
-   - `--no-patterns` -- skip prevention-pattern extraction.
-   - `--auto` -- accept defaults without interactive prompts.
-4. Engage in a conversational review:
-   - Summarize the accomplishments (count of stories, tests).
-   - Review any extracted prevention patterns with the user to ensure they are actionable.
-   - Recommend archiving or cleaning up any temporary context files from the implementation phase.
-
-**Final Exit message:** If the phase was closed, recommend the next logical skill: `/specflow-ship`.
-
-## Rules
-
-- **Gate severity:**
-  - `blocking` → Stop. Report the failure. Ask the user to fix before proceeding.
-  - `warning` → Present. Ask whether to proceed. Do not proceed silently.
-  - `info` → Note for awareness. Proceed.
-- **Escape hatch:** The user can always override. When the user says "skip," "proceed anyway," or "move on," do exactly that. But before proceeding past a `blocking` item, articulate: "Proceeding past [specific blocking item]. Risk: [what could go wrong]. Noted."
-- Always update `status` and `modified` timestamp via `specflow update` -- never edit artifact files directly.
-- Link tests to what they verify using `verified_by` role.
-- Run `specflow artifact-lint` after status changes.
-- When unsure about valid status transitions, read `references/status-lifecycle.md`.
-- When unsure about V-model test pairing, read `references/test-pairing.md`.
+If the user says "skip" or "proceed anyway", do it and name the risk.
 
 ## References
 
-- `references/status-lifecycle.md` -- Valid status transitions for all artifact types.
-- `references/test-pairing.md` -- V-model verification test pairing rules.
-- `references/verification-contracts.md` -- Machine-checkable verify_command contracts: field meanings, recorded run evidence, the never-blocking invariant.
-- `references/wave-computation.md` -- Wave computation algorithm and context isolation.
-- `references/thinking-techniques.md` -- Quick execution-stage thinking checks (points to shared catalog at `../specflow-references/references/adversarial-lenses.md`).
+- `references/status-lifecycle.md` — terminal statuses, DEF cycle; run `specflow transitions <ID>` for type-specific maps.
+- `references/escalation-and-promotion.md` — Permanence Test, SPIKE → durable artifact promotion.
+- `references/test-pairing.md` — V-model test pairing rules.
+- `references/verification-contracts.md` — `verify_command` contracts and recorded run evidence.
+- `references/wave-computation.md` — hard/soft/none dependency rules behind `specflow go`.
+- `references/thinking-techniques.md` — execution-stage lenses (points to `../specflow-references/references/adversarial-lenses.md`).

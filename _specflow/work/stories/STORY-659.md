@@ -2,13 +2,14 @@
 id: STORY-659
 title: Trim on-demand reference files to consult-when pointers
 type: story
-status: draft
+status: implemented
 suspect: false
 links:
 - target: REQ-042
   role: implements
 created: '2026-09-13'
 fingerprint: sha256:eca9f009f24b
+modified: '2026-09-13'
 ---
 
 # Trim on-demand reference files to consult-when pointers

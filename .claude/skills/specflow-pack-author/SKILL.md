@@ -3,16 +3,7 @@ name: specflow-pack-author
 description: "Author a standards compliance pack from a PDF, URL, or pasted text."
 ---
 
-## Freeform Input Handling
-
-This skill accepts freeform user input alongside the command. Interpret the user's message to determine scope and depth:
-
-- **No additional context** → run the standard workflow (deterministic core only)
-- **A question or concern** → run the deterministic core, then address the question directly using the results
-- **A request for depth** ("go deep", "be thorough", "all lenses") → run deterministic core + full agent-driven analysis
-- **A specific focus** ("focus on REQ-003", "check compliance only") → narrow scope to the request, still run deterministic core first
-
-Always run the deterministic core regardless of input. It costs zero tokens and provides the foundation for any analysis.
+Extra text narrows scope — still run the deterministic core first.
 
 ---
 

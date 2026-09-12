@@ -1212,49 +1212,49 @@ artifacts:
   STORY-658:
     id: STORY-658
     title: Collapse lifecycle skill bodies into lean routers
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:7fdb521628fd
     children: []
   STORY-659:
     id: STORY-659
     title: Trim on-demand reference files to consult-when pointers
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:eca9f009f24b
     children: []
   STORY-660:
     id: STORY-660
     title: 'brief.py: hoist --next + IDs; approve lists exact draft IDs and impact'
-    status: draft
+    status: approved
     tags: []
     fingerprint: sha256:0cc1ae3bf513
     children: []
   STORY-661:
     id: STORY-661
     title: 'handbook.py: drop generic practice bodies; index-only default stdout'
-    status: draft
+    status: approved
     tags: []
     fingerprint: sha256:c88255a10bde
     children: []
   STORY-662:
     id: STORY-662
     title: 'hook.py: route failures to artifact-lint subcommands; fix RBAC copy'
-    status: draft
+    status: approved
     tags: []
     fingerprint: sha256:d7ef1f9bc166
     children: []
   STORY-663:
     id: STORY-663
     title: 'CLI backstops: 3-run escalation, pack-validate, autoresearch status codes'
-    status: draft
+    status: approved
     tags: []
     fingerprint: sha256:942484ab5004
     children: []
   STORY-664:
     id: STORY-664
     title: Autoresearch invariant sheets; skill-standards becomes DEC/ARCH
-    status: draft
+    status: approved
     tags: []
     fingerprint: sha256:7821fe316936
     children: []

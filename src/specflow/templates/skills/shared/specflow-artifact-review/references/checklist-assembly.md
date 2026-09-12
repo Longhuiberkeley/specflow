@@ -1,79 +1,15 @@
 # Checklist Assembly
 
-## Assembly Algorithm
+**Assembly is owned by `specflow checklist-run`** — the command assembles the full set (artifact-type, shared/tag-matched, phase-gate, learned, and matching best-practice sources), deduplicates, sorts automated-first, runs, persists to `.specflow/checklist-log/`, and updates `checklists_applied`. This file documents what it composes from and how to author items — it does not restate the algorithm.
 
-When reviewing artifacts, checklists are assembled from four sources in priority order:
+- `specflow checklist-run <ID>` — assembled checklist for one artifact; `--all` for every artifact; `--proactive` adds challenge items; `--dedup` runs the tier-1 + tier-2 duplicate-detection pipeline (review the generated candidates — similarity is not automatic duplication).
+- Sources live in `.specflow/checklists/`: `in-process/` (per artifact type), `shared/` (matched via `applies_to` tags/types), `phase-gates/` (matched via `phase_from`/`phase_to`, loaded with `--gate` or before a transition), `learned/` (prevention patterns from past defects).
 
-### 1. Artifact Type Checklists (In-Process)
+## Item Modes
 
-Load from `.specflow/checklists/in-process/` based on the artifact type being reviewed:
-
-| Artifact type | Checklist file |
-|---------------|---------------|
-| requirement | `requirement-writing.yaml` |
-| architecture | `architecture-writing.yaml` |
-| detailed-design | `design-writing.yaml` |
-| story | `story-writing.yaml` |
-
-These enforce level boundaries and writing quality for each artifact type.
-
-### 2. Shared Checklists (Tag-Matched)
-
-Load from `.specflow/checklists/shared/`. Each shared checklist declares `applies_to` with `tags` and `types`:
-
-```yaml
-id: CKL-HTTP-001
-name: "HTTP Client Requirements"
-applies_to:
-  tags: [http, api-client, web-scraping]
-  types: [story, detailed-design]
-```
-
-A checklist matches if the artifact has ANY overlapping tags AND the artifact type is in the `types` list.
-
-### 3. Phase-Gate Checklists (If Transition Pending)
-
-Load from `.specflow/checklists/phase-gates/`. Only loaded if:
-- The review is happening before a phase transition
-- The user explicitly requests a gate check
-
-Gate checklists have `phase_from` and `phase_to` fields that match `.specflow/state.yaml`.
-
-### 4. Learned Checklists (Prevention Patterns)
-
-Load from `.specflow/checklists/learned/`. These are auto-generated from past defects and corrections. They are always included as `info` severity unless the pattern matches exactly.
-
-## Assembly Order
-
-1. Start with artifact type checklist (blocking items)
-2. Add matching shared checklists (warning items by default)
-3. Add phase-gate checklist if applicable (blocking items)
-4. Add learned checklists (info items by default)
-5. Deduplicate overlapping items (keep the higher severity)
-
-## Running Order
-
-```
-For each artifact being reviewed:
-  1. Load all applicable checklists
-  2. Deduplicate (identical check text → keep higher severity)
-  3. Sort: automated first, then proactive, then reactive/standard
-  4. Pass 1: Run automated items (zero tokens)
-  5. If any blocking automated item fails → STOP, skip agent-judged items
-  6. Agent-judged: evaluate non-automated items (proactive mode items first)
-  7. Collect results, organize by severity
-  8. Persist to .specflow/checklist-log/
-  9. Update artifact's checklists_applied frontmatter
-```
-
-## Proactive & Reactive Modes
-
-Checklist items can have a `mode` field:
-- **standard** (default): Normal review items
-- **proactive**: Edge case discovery items — "What could go wrong?"
-- **reactive**: Prevention patterns learned from past work
-
-Proactive items are included when `--proactive` flag is used. Reactive items (from `learned/PREV-*.yaml`) auto-load based on tag matching.
+- **standard** (default) — normal review items
+- **proactive** — edge-case discovery ("what could go wrong?"); included with `--proactive`
+- **reactive** — prevention patterns learned from past work; auto-load by tag match
 
 ## Checklist File Format
 
@@ -89,12 +25,6 @@ items:
     automated: false
     llm_prompt: "Scan the requirement body for technology names, code snippets, or algorithmic detail. These belong in ARCH or DDD."
     severity: blocking
-
-  - id: CKL-REQ-001-02
-    check: "Uses normative language (SHALL/SHOULD/MAY)"
-    automated: false
-    llm_prompt: "Check for informal phrases like 'needs to', 'has to', 'should be able to'. These should use RFC 2119 keywords."
-    severity: warning
 
   - id: CKL-REQ-001-03
     check: "Has acceptance criteria section"

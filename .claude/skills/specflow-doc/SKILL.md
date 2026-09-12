@@ -3,67 +3,41 @@ name: specflow-doc
 description: "Maintain artifact-embedded knowledge, or generate/sync a derived rendering from artifacts."
 ---
 
-## Freeform Input Handling
-
-This skill accepts freeform user input alongside the command. Interpret the message to choose the mode:
-
-- **"write/document/update the docs"** → author or revise the doc; add `@ID` citations where it references a spec.
-- **"cite the spec / link this doc"** → add `@ID` markers, then sync the index.
-- **"sync / refresh the docs index"** → run `specflow rebuild-index`.
-- **"are the docs stale / what's outdated"** → run `specflow detect stale-docs`.
-- **A question** ("how do docs relate to specs?") → answer from the deterministic core, no edits.
-
-## Disambiguation
-
-If the user's intent is really one of these, redirect (one question if unsure):
-
-- **A decision / "why we chose X"** → `/specflow-plan` and a **DEC** (a doc can *cite* `@DEC-018`, but the decision itself is a DEC).
-- **A requirement / "the system must do X"** → `/specflow-discover` and a **REQ**.
-- **Throwaway research / a spike** → a **SPIKE**.
-- **A reproducible experiment** → the **autoresearch pack** (`/specflow-autoresearch`, if installed — EXPT/LOOP/FIND).
-- **Reviewing an artifact** → `/specflow-artifact-review`.
-
-Docs are prose that *explains and cites* the spec graph; they are not part of it.
-
----
+Extra text narrows scope — still run the deterministic core first.
 
 # SpecFlow Doc
 
-`docs/` (and root markdown — README, AGENTS, CHANGELOG, …) is a recognized **knowledge surface**: indexed and shown in `specflow brief`, citable both ways with the spec graph, and flagged when stale — but **never** a lifecycle artifact. This is "accounting, not policing" extended to prose.
+Per DEC-082, durable knowledge lives **in artifacts** (DEC, ARCH, DDD, artifact-attached references) — never only in docs. `docs/` and root markdown (README, AGENTS, CHANGELOG, …) are a **derived rendering** of the artifact graph: indexed in `specflow brief`, citable both ways, flagged when stale — never a lifecycle artifact, never the source of truth.
 
-## Two rules
+## What this skill does
 
-1. **Doc edits are git-history-only.** Editing a doc never creates a REQ/ARCH/DEC, never writes an artifact `_index.yaml` entry, and never emits a change record. You just edit and commit. Git is the change log.
-2. **Staleness is surfaced, never enforced.** `specflow detect stale-docs` and `/specflow-audit` warn when a doc cites a superseded/cancelled/deprecated artifact. Staleness is an *accounting* lens — those warnings never block a commit and never escalate an audit exit code. (Structural signals like coverage gaps or orphan code do escalate to exit 2; see BP-006.)
+- **Maintain artifact-embedded knowledge:** the decision/requirement content itself belongs in a DEC/REQ — create it there first; a doc may then *cite* it.
+- **Generate/sync derived docs:** render human-facing output from artifacts, keeping docs downstream of the graph so drift is detectable rather than silent.
+- **Cite:** where a doc references a spec, mark it inline — `@ARCH-007`, `@DEC-018.2` (sub-id); backtick'd and fenced `@ID`s don't count. See `references/citation-syntax.md`.
 
-## Workflow
+## Commands
 
-1. **Author / revise.** Edit the doc normally. Wherever it references a spec, cite the artifact with an inline marker: `@ARCH-007`, `@DEC-018`, `@REQ-001`, `@DEC-018.2` (sub-id). See `references/citation-syntax.md`.
-2. **(Optional) metadata.** A doc may carry a tiny `specflow-doc:` frontmatter block (`title`, `audience`, `last_reviewed`) — purely metadata, no status/lifecycle. Plain docs work fully without it. See `references/docs-frontmatter.md`.
-3. **Sync the index.**
-   ```bash
-   specflow rebuild-index
-   ```
-   Writes the derived `_specflow/docs-index.yaml` (doc → citations reverse index) — an inspectable, greppable, git-diffable materialization. Every command recomputes live from disk, so files on disk remain the source of truth.
-4. **Check recall.**
-   ```bash
-   specflow brief
-   ```
-   Shows a **Docs surface** block: count, areas, how many cite an artifact, top-cited docs.
-5. **Check staleness.**
-   ```bash
-   specflow detect stale-docs      # names docs citing superseded artifacts
-   specflow project-audit          # same, as a non-blocking audit concern
-   ```
-   Resolve by updating the citation or re-confirming the reference. See `references/staleness-rules.md`.
+```bash
+specflow rebuild-index        # write the derived _specflow/docs-index.yaml (doc → citations reverse index)
+specflow brief                # Docs surface block: counts, areas, top-cited docs
+specflow detect stale-docs    # docs citing superseded/cancelled/deprecated artifacts (warning only)
+specflow project-audit        # same staleness signal inside a whole-project audit
+```
 
-## Configuring the surface
+Staleness is surfaced, never enforced: warnings never block a commit and never escalate an audit exit code. Resolve by updating the citation or re-confirming the reference (`references/staleness-rules.md`). Docs carry no status; doc edits are git-history-only.
 
-The `docs:` block in `.specflow/config.yaml` sets `roots` (default `docs/`), `extra_files`, and `exclude`. Root-level `*.md` is always recognized. A project using `doc/` or `wiki/` overrides `roots`. See `references/docs-config.md`.
+Optional per-doc metadata: a tiny `specflow-doc:` frontmatter block (`title`, `audience`, `last_reviewed`) — metadata only (`references/docs-frontmatter.md`). The surface itself is configured via the `docs:` block in `.specflow/config.yaml` (`roots`, `extra_files`, `exclude` — `references/docs-config.md`).
+
+## Disambiguation
+
+- A decision / "why we chose X" → `/specflow-plan` and a **DEC** (a doc can cite `@DEC-018`; the decision is not a doc).
+- A requirement → `/specflow-discover` and a **REQ**.
+- Throwaway research → a **SPIKE**; reproducible experiments → the autoresearch pack.
+- Reviewing an artifact → `/specflow-artifact-review`.
 
 ## References
 
 - `references/citation-syntax.md` — the `@ID` grammar, code-fence exclusion, reverse-index behavior.
-- `references/staleness-rules.md` — which statuses trigger a warning; warning-only; how to resolve.
-- `references/docs-config.md` — the `docs:` config block; pointing at `doc/`/`wiki/`; `extra_files`/`exclude`.
-- `references/docs-frontmatter.md` — the optional `specflow-doc:` block shape (metadata only).
+- `references/staleness-rules.md` — which statuses trigger a warning; how to resolve.
+- `references/docs-config.md` — the `docs:` config block (`roots`, `extra_files`, `exclude`).
+- `references/docs-frontmatter.md` — the optional `specflow-doc:` metadata block.

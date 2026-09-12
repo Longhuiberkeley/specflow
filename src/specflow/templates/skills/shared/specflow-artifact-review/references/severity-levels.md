@@ -4,62 +4,25 @@
 
 ### Blocking (must fix)
 
-The artifact violates a core rule and cannot proceed in its lifecycle until fixed.
+The artifact violates a core rule and cannot proceed in its lifecycle until fixed — missing required frontmatter fields, broken links, invalid status, REQ with no acceptance criteria, implementation detail in a requirement, missing public interface in an architecture.
 
-**Examples:**
-- Missing required frontmatter fields
-- Broken links (target artifact doesn't exist)
-- Invalid status value
-- REQ with no acceptance criteria
-- Implementation detail in a requirement
-- Missing public interface in architecture
-
-**Action required:** Fix before moving forward. `specflow artifact-lint` will return exit code 1.
+**Action required:** fix before moving forward. `specflow artifact-lint` returns exit code 1.
 
 ### Warning (should fix)
 
-The artifact has a quality issue that should be addressed but doesn't block progress.
+A quality issue that doesn't block progress — unquantified non-functional terms ("fast", "reliable"), story with fewer than 3 acceptance criteria, orphaned artifact with no links, missing V-model verification pair, stale fingerprint.
 
-**Examples:**
-- Non-functional requirement uses qualitative terms ("fast", "reliable") without measurable thresholds
-- Story has fewer than 3 acceptance criteria
-- Orphaned artifact with no links
-- Missing V-model verification pair (no test linked to a spec)
-- Stale fingerprint (content changed but fingerprint not recomputed)
-
-**Action recommended:** Fix when convenient. Warnings accumulate and should be resolved before baselines and phase transitions.
+**Action recommended:** fix when convenient; resolve warnings before baselines and phase transitions.
 
 ### Info (nice to know)
 
-Observations that may improve quality but have no compliance impact.
+Observations that may improve quality with no compliance impact — "should" where "shall" fits better, consolidation candidates, an applicable learned pattern, naming suggestions.
 
-**Examples:**
-- Uses "should" where "shall" may be more appropriate (context-dependent)
-- Similar artifacts could benefit from consolidation
-- Learned pattern from past defects applies here
-- Naming convention suggestion
+**Action optional:** review and decide.
 
-**Action optional:** Review and decide.
+## Escalation & Override
 
-## Escalation Rules
-
-1. Warnings from phase-gate checklists are **escalated to blocking** during phase transitions.
-2. Warnings that persist across 3+ validation runs are **escalated to blocking**.
+1. Warnings from phase-gate checklists escalate to **blocking** during phase transitions.
+2. Warnings persisting across 3+ validation runs escalate to **blocking**.
 3. Info items never escalate automatically.
-4. The user can manually escalate or de-escalate any finding.
-
-## Report Format
-
-```markdown
-## Blocking Issues (must fix)
-1. [ARTIFACT-ID] Description of the issue
-
-## Warnings (should fix)
-1. [ARTIFACT-ID] Description of the warning
-
-## Info (nice to know)
-1. [ARTIFACT-ID] Observation or suggestion
-
-## Passed
-- Check type: X/Y artifacts pass
-```
+4. **User override:** the user can manually escalate or de-escalate any finding.
