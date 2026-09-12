@@ -1195,4 +1195,18 @@ artifacts:
     tags: []
     fingerprint: sha256:1ab9654b45c6
     children: []
-next_id: 656
+  STORY-656:
+    id: STORY-656
+    title: Replace always-on context and pack snippets with audit drafts
+    status: implemented
+    tags: []
+    fingerprint: sha256:f828969e5a0e
+    children: []
+  STORY-657:
+    id: STORY-657
+    title: Rewrite all 15 skill catalog descriptions to narrow one-liners
+    status: implemented
+    tags: []
+    fingerprint: sha256:befdf131b7ca
+    children: []
+next_id: 658

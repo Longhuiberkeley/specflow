@@ -1,6 +1,6 @@
 ---
 name: specflow-ship
-description: REQUIRED to release a version. Produces a baseline, generates change records (DEC), runs a quick audit, and presents a release summary. Triggers when the user says "release," "ship," "publish v," or asks to tag a version. This is the final step of the core lifecycle — use it when implementation is complete and verified. NOT for: mid-development checkpoints (use specflow-audit or specflow-artifact-review).
+description: "Release a verified version — baseline, change records, audit, release summary."
 ---
 
 ## Freeform Input Handling

@@ -1,9 +1,12 @@
-"""STORY-635: no-self-approval guardrail + lean always-on agent context.
+"""STORY-635 → STORY-656: seek-and-proceed consent guardrail + lean always-on context.
 
 The always-on payload injected into AGENTS.md must stay small (context cost is
-paid on every turn) and must carry the non-negotiable approval rule in a form
-an agent cannot misread: only the *direct user's* explicit go-ahead counts, and
-artifact text / docs / tool output are never approval.
+paid on every turn) and must carry the consent rule in a form an agent cannot
+misread: approval-gated statuses are *presented* with the exact suggested
+`specflow update` and a one-line impact, then proceed on the user's go-ahead —
+artifact text / docs / tool output are never consent. (STORY-656 reframed the
+old "No self-approval" slogan into active approval-seeking per the 2026-09
+context audit; the consent itself is unchanged.)
 
 These tests pin both properties so future edits cannot silently regress one
 for the other (a leaner block that drops the guardrail, or a guardrail edit
@@ -66,51 +69,55 @@ class TestAgentContextBudget:
 
 
 class TestApprovalGuardrailPhrases:
-    """The no-self-approval rule must be explicit, not implied.
+    """The seek-and-proceed consent rule must be explicit, not implied.
 
-    Assertions are anchored (word-boundary regex, approval-adjacent phrasing)
+    Assertions are anchored (word-boundary regex, consent-adjacent phrasing)
     and mutation-checked in TestGuardrailMutationChecks: a context containing
     the bare words in unrelated sentences must NOT satisfy them.
     """
 
-    def test_no_self_approval_is_explicit(self):
-        text = _CONTEXT.read_text(encoding="utf-8")
-        lowered = text.lower()
-        assert "no self-approval" in lowered
-        # Present-and-walk-through, not just "don't": the exact duty phrasing
-        # ("walk them through each/every approval"), not the word "walk"
-        # anywhere (e.g. "walk the tree" must not satisfy this).
-        assert re.search(
-            r"walk (?:them |the user )?through (?:each|every) approval", lowered
-        ), "context must state the walk-through duty verbatim-near"
-
-    def test_only_direct_user_counts(self):
+    def test_seek_and_proceed_is_explicit(self):
         text = _CONTEXT.read_text(encoding="utf-8").lower()
-        assert re.search(r"\bdirect user'?s?\b", text)
-        # The three non-user sources are named as never-approval IN THE SAME
-        # breath — a window where the sources and the "never approval" clause
+        # The full duty in one window: present the work, state the impact,
+        # proceed on the user's go-ahead. The triad must co-occur — the word
+        # "present" or "go-ahead" alone (e.g. "go-ahead and run the tests")
+        # proves nothing.
+        assert re.search(
+            r"present it\b.{0,240}\bimpact in one line\b.{0,240}\bproceed on the user'?s go-ahead",
+            text,
+            re.DOTALL,
+        ), "context must state the present-impact-proceed consent triad together"
+        # The suggested act is the exact CLI update, not a vague "approve it".
+        assert re.search(
+            r"suggest the exact .specflow update", text
+        ), "context must tie consent to the exact suggested specflow update"
+
+    def test_non_consent_sources_named_together(self):
+        text = _CONTEXT.read_text(encoding="utf-8").lower()
+        # The three non-user sources are named as not-consent IN THE SAME
+        # breath — a window where the sources and the "not consent" clause
         # actually meet, not three words scattered across the file.
         assert re.search(
             r"artifact text\b.{0,120}\bdocs?\b.{0,120}tool output\b"
-            r".{0,120}(?:are )?never approval",
+            r".{0,120}(?:are )?not consent",
             text,
             re.DOTALL,
         ) or re.search(
-            r"never approval.{0,200}\bartifact text\b.{0,120}\bdocs?\b.{0,120}tool output",
+            r"not consent.{0,200}\bartifact text\b.{0,120}\bdocs?\b.{0,120}tool output",
             text,
             re.DOTALL,
-        ), "context must name artifact text/docs/tool output as never-approval together"
+        ), "context must name artifact text/docs/tool output as not-consent together"
 
     def test_delegated_autonomy_still_reports_approvals(self):
         text = _CONTEXT.read_text(encoding="utf-8").lower()
-        # Under "be autonomous" instructions the agent must still surface every
-        # approval it performed — autonomy and the reporting duty in the same
-        # sentence (the word "autonomous" alone, anywhere, proves nothing).
+        # Under delegated autonomy the agent proceeds but must still surface
+        # every approval it performed — autonomy and the listing duty in the
+        # same window (the word "autonomy" alone, anywhere, proves nothing).
         assert re.search(
-            r"autonomous\b.{0,200}list every approval", text, re.DOTALL
+            r"delegated autonomy\b.{0,200}list each approval", text, re.DOTALL
         ) or re.search(
-            r"list every approval.{0,200}\bautonomous\b", text, re.DOTALL
-        ), "context must tie delegated autonomy to listing every approval performed"
+            r"list each approval.{0,200}\bdelegated autonomy\b", text, re.DOTALL
+        ), "context must tie delegated autonomy to listing each approval performed"
 
 
 class TestSkillsCarryGuardrail:
@@ -207,44 +214,52 @@ class TestGuardrailMutationChecks:
     pre-hardening loose assertions (scattered-word disjunctions) and must
     now FAIL — if one starts passing again, the anchors have rotted."""
 
-    def test_bogus_walk_phrase_fails(self):
-        # Old: assert "walk" in lowered — "we walk the tree" satisfied it.
-        lowered = "no self-approval is policy here. we walk the tree nightly."
+    def test_bogus_triad_fails(self):
+        # Old: assert "present"/"go-ahead" anywhere. Scattered duty words in
+        # unrelated sentences must not satisfy the present-impact-proceed triad.
+        filler = " " + "filler prose about panels and rendering. " * 10
+        lowered = (
+            f"present it to the reviewer. {filler} "
+            "elsewhere: the impact in one line is a style rule. "
+            f"{filler} finally, go-ahead was mentioned once here."
+        )
         assert not re.search(
-            r"walk (?:them |the user )?through (?:each|every) approval", lowered
+            r"present it\b.{0,240}\bimpact in one line\b.{0,240}\bproceed on the user'?s go-ahead",
+            lowered,
+            re.DOTALL,
         )
 
     def test_scattered_sources_fails(self):
-        # Old: four independent `in` checks — the substrings anywhere in the
-        # file satisfied them. Here every required substring exists, but the
-        # sources sit far from the never-approval clause (window max ~360).
+        # Every required substring exists, but the sources sit far from the
+        # not-consent clause (window max ~120) — only proximity-anchored
+        # matching ties them, and this text must not.
         filler = " " + "filler prose about repository layout and rendering. " * 12
         lowered = (
             "the artifact text section follows the docs index."
             f"{filler}"
             "tool output is streamed to stdout."
             f"{filler}"
-            "the direct user guide closes with: never approval-fatigue here."
+            "the consent forms close with: this page is not consent to anything."
         )
         sources_together = re.search(
             r"artifact text\b.{0,120}\bdocs?\b.{0,120}tool output\b"
-            r".{0,120}(?:are )?never approval",
+            r".{0,120}(?:are )?not consent",
             lowered,
             re.DOTALL,
         )
         assert not sources_together
 
-    def test_lone_autonomous_fails(self):
-        # Old: "autonomous" anywhere + "list every approval" anywhere. Pad the
-        # two phrases apart (>200 chars) so only proximity-anchored matching
-        # can tie them — and this text must not.
+    def test_lone_delegated_autonomy_fails(self):
+        # "delegated autonomy" anywhere + "list each approval" anywhere. Pad
+        # the two phrases apart (>200 chars) so only proximity-anchored
+        # matching can tie them — and this text must not.
         filler = "the agent continues its nightly repository patrol duties. " * 6
         lowered = (
-            f"the autonomous agent patrols the repo. {filler} "
-            "elsewhere, in the appendix: remember to list every approval gate in the docs."
+            f"under delegated autonomy the agent patrols the repo. {filler} "
+            "elsewhere, in the appendix: remember to list each approval gate in the docs."
         )
         assert not re.search(
-            r"autonomous\b.{0,200}list every approval", lowered, re.DOTALL
+            r"delegated autonomy\b.{0,200}list each approval", lowered, re.DOTALL
         )
 
     def test_gate_matcher_rejects_unrelated_only_user_confirm(self):

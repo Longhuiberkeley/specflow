@@ -252,7 +252,7 @@ class TestInitPresetSkillOrdering:
         # Pack schemas + context snippet land too (unchanged behavior).
         for name in ("run.yaml", "monitor.yaml"):
             assert (root / ".specflow" / "schema" / name).exists(), f"pack schema {name} missing"
-        assert "Ops Pack" in (root / "AGENTS.md").read_text(encoding="utf-8")
+        assert "Ops pack" in (root / "AGENTS.md").read_text(encoding="utf-8")
 
         # Shared skills still install alongside the pack skill.
         assert (root / ".claude" / "skills" / "specflow-start" / "SKILL.md").exists()

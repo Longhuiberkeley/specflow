@@ -1,6 +1,6 @@
 ---
 name: specflow-discover
-description: Use to start the SpecFlow requirements discovery workflow — the entry point for any new feature, enhancement, or specification task. Triggers when the user wants to start something NEW — "add a feature," "build a NEW [X]," "I want to create [Z]," "we need [capability]," "capture requirements for," or "what should the system do?" Use this FIRST when the idea is new and no REQ exists yet (if REQs are already approved and stories are queued for coding, use specflow-execute). Also triggers for reverse lifecycle: "rethink the requirements," "revise the requirements," "go back to requirements," or when the user wants to revisit specs after planning or executing. This is step 1 of the core lifecycle — use it FIRST for any new feature or change that needs specification, BEFORE specflow-plan and specflow-execute. NOT for: data exploration, data cleaning, researching technologies, prototyping, running experiments, or technical prep work unrelated to requirements authoring.
+description: "Author or revise REQs when the requested change has no approved requirements yet, or rewind to requirements."
 ---
 
 ## Freeform Input Handling

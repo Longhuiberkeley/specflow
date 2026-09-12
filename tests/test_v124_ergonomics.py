@@ -650,7 +650,10 @@ class TestSkillAndContextDocs:
         )
         lowered = text.lower()
         assert "lead with the answer" in lowered
-        assert "no preamble" in lowered
+        # STORY-656: conditional style guidance replaced the hard anti-
+        # formatting bans (F1/F2 of the 2026-09 context audit).
+        assert "progress update" in lowered
+        assert "when they aid scan" in lowered
 
 
 # ── Review-fix hardening (pre-release review findings) ─────────────────

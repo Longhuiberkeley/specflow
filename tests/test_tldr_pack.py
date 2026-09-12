@@ -62,8 +62,9 @@ class TestTldrPack:
     def test_snippet_carries_action_first_levers(self, fresh_project: Path):
         result = scaffold_lib.apply_pack(fresh_project, "tldr-communication", PACKS_DIR)
         snippet = result["context_snippet"].lower()
-        # The reader-model lever + the highest-leverage rules + the pre-send check.
-        for needle in ("lead", "next action", "preamble", "pre-send check", "eli5"):
+        # The reader-model lever + the conditional style rules (STORY-656
+        # replaced the hard anti-formatting bans with when-it-helps wording).
+        for needle in ("lead", "action or answer", "compacted", "format when it helps", "eli5"):
             assert needle in snippet, f"snippet missing lever '{needle}'"
 
     def test_snippet_is_concise(self, fresh_project: Path):

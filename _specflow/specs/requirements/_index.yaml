@@ -415,4 +415,11 @@ artifacts:
     tags: []
     fingerprint: sha256:9ae17684507c
     children: []
-next_id: 42
+  REQ-042:
+    id: REQ-042
+    title: Model-facing context is minimal, tool-enforced, and artifact-native
+    status: approved
+    tags: []
+    fingerprint: sha256:6e6765cb4ad7
+    children: []
+next_id: 43

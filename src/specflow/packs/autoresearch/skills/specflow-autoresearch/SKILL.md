@@ -1,11 +1,6 @@
 ---
 name: specflow-autoresearch
-description: >
-  Use when the user wants to run autonomous research loops, set up competitions,
-  review experiment findings, explore competitions, run experiments overnight,
-  set up a benchmark, or promote a deployable finding / productionize a winning
-  experiment back into core requirements. Activates the autoresearch pack's
-  competition-scoped experimentation with knowledge condensation.
+description: "Run a research loop, competition, or experiment — or promote a winning finding into core requirements."
 ---
 
 ## Freeform Input Handling

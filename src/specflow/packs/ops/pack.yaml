@@ -14,9 +14,5 @@ adds_directories:
 adds_skills:
   - specflow-ops
 context_snippet: |
-  ### Ops Pack (optional)
-  This project has the **ops** pack installed — a separate subsystem from core SpecFlow engineering.
-  **Artifact types:** RUN (a deployment frozen at deploy-time), MONITOR (an append-only timestamped observation of a RUN).
-  **Trigger only when** the user deploys/runs something live, monitors a live system, captures ephemeral data, or investigates drift/health.
-  **Never use for:** offline experiments (use autoresearch EXPT), writing app code (use STORY), or requirements authoring (use discover).
-  For the deploy/observe workflow, invoke `/specflow-ops`.
+  ### Ops pack
+  Installed. Create or update RUN/MONITOR for a live deployed system → `/specflow-ops`.

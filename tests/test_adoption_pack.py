@@ -151,7 +151,7 @@ class TestAdoptionContextInjection:
         content = agents_md.read_text(encoding="utf-8")
         assert "# Existing content" in content
         assert "<!-- pack:adoption context" in content
-        assert "Adoption Pack" in content
+        assert "Adoption pack" in content
 
     def test_inject_is_idempotent(self, fresh_project: Path):
         agents_md = fresh_project / "AGENTS.md"
@@ -254,7 +254,13 @@ class TestAdoptionD20Content:
             (PACKS_DIR / "adoption" / "pack.yaml").read_text(encoding="utf-8")
         )
         snippet = manifest.get("context_snippet", "")
-        # D-20 signals the user sees in AGENTS.md routing:
-        assert "adopt status" in snippet
+        # STORY-656: the always-on snippet only routes + reserves STORY; the
+        # D-20 depth (adopt status dashboard, skeleton-first, output_files
+        # globs) lives in the skill body, loaded on demand.
+        assert "/specflow-adopt" in snippet
         assert "STORY" in snippet  # context explains the reservation
-        assert "skeleton-first" in snippet or "skeleton first" in snippet.lower()
+        skill = (PACKS_DIR / "adoption" / "skills" / "specflow-adopt" / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        assert "adopt status" in skill
+        assert "skeleton-first" in skill or "skeleton first" in skill.lower()

@@ -1,12 +1,6 @@
 ---
 name: specflow-adopt
-description: >
-  Use when bringing an EXISTING codebase into SpecFlow (brownfield adoption) —
-  inventory current code/docs/tests, backfill REQ/ARCH/DDD/DEC describing what
-  already exists (code is linked to ARCH/DDD via output_files globs), cut an
-  as-built baseline, and steer deepening with `specflow adopt status`. STORY is
-  NOT backfilled — it is reserved for forward action. Incremental and resumable
-  for large codebases. NOT for greenfield projects (use /specflow-discover).
+description: "Backfill an existing codebase into SpecFlow (brownfield): inventory, as-built baseline, retro-link code."
 ---
 
 ## Freeform Input Handling

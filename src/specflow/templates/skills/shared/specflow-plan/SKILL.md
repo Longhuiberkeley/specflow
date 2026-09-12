@@ -1,6 +1,6 @@
 ---
 name: specflow-plan
-description: REQUIRED after discover when REQs are approved. Breaks approved requirements into architecture (ARCH), detailed design (DDD), and stories (STORY). Triggers when the user says "design the architecture," "plan the implementation," "break this down," or when REQs are approved and the user is ready to move forward. Also triggers for reverse lifecycle: "rethink the architecture," "revise the plan," "go back to planning," or when the user wants to revisit architecture after executing. This is step 2 of the core lifecycle — use it BEFORE any implementation begins. NOT for: quick bug fixes (use specflow-execute with lean path), research tasks, or infrastructure setup.
+description: "Decompose approved REQs into ARCH/DDD/STORY, or revisit architecture after execute."
 ---
 
 ## Freeform Input Handling

@@ -1018,8 +1018,15 @@ class TestPackContextInjection:
         assert result["ok"]
         assert "context_snippet" in result
         assert "autoresearch" in result["context_snippet"].lower()
-        assert "COMP" in result["context_snippet"]
-        assert "LOOP" in result["context_snippet"]
+        # STORY-656: artifact types moved to the skill body (on demand); the
+        # always-on snippet only routes.
+        assert "/specflow-autoresearch" in result["context_snippet"]
+        assert "COMP" in (
+            PACKS_DIR / "autoresearch" / "skills" / "specflow-autoresearch" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        assert "LOOP" in (
+            PACKS_DIR / "autoresearch" / "skills" / "specflow-autoresearch" / "SKILL.md"
+        ).read_text(encoding="utf-8")
 
     def test_inject_pack_context_creates_section(self, fresh_project: Path):
         agents_md = fresh_project / "AGENTS.md"
@@ -1039,7 +1046,7 @@ class TestPackContextInjection:
         content = agents_md.read_text(encoding="utf-8")
         assert "# Existing content" in content
         assert "<!-- pack:autoresearch context" in content
-        assert "Autoresearch Pack" in content
+        assert "Autoresearch pack" in content
 
     def test_inject_pack_context_idempotent(self, fresh_project: Path):
         agents_md = fresh_project / "AGENTS.md"
