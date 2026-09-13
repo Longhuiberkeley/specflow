@@ -2,7 +2,7 @@
 id: STORY-660
 title: 'brief.py: hoist --next + IDs; approve lists exact draft IDs and impact'
 type: story
-status: implemented
+status: verified
 suspect: false
 links:
 - target: REQ-042

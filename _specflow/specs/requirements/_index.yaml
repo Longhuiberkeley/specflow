@@ -392,7 +392,7 @@ artifacts:
   REQ-042:
     id: REQ-042
     title: Model-facing context is minimal, tool-enforced, and artifact-native
-    status: approved
+    status: implemented
     tags: []
     fingerprint: sha256:6e6765cb4ad7
     children: []

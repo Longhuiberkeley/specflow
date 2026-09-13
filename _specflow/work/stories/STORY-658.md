@@ -2,7 +2,7 @@
 id: STORY-658
 title: Collapse lifecycle skill bodies into lean routers
 type: story
-status: implemented
+status: verified
 suspect: false
 links:
 - target: REQ-042

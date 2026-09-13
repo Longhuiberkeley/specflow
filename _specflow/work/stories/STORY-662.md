@@ -2,7 +2,7 @@
 id: STORY-662
 title: 'hook.py: route failures to artifact-lint subcommands; fix RBAC copy'
 type: story
-status: implemented
+status: verified
 suspect: false
 links:
 - target: REQ-042

@@ -2,7 +2,7 @@
 id: STORY-661
 title: 'handbook.py: drop generic practice bodies; index-only default stdout'
 type: story
-status: implemented
+status: verified
 suspect: false
 links:
 - target: REQ-042

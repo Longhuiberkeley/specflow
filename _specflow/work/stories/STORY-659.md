@@ -2,7 +2,7 @@
 id: STORY-659
 title: Trim on-demand reference files to consult-when pointers
 type: story
-status: implemented
+status: verified
 suspect: false
 links:
 - target: REQ-042
