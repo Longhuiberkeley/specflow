@@ -20,4 +20,4 @@ adds_skills:
   - specflow-autoresearch
 context_snippet: |
   ### Autoresearch pack
-  Installed. User asked for a research loop, competition, or experiment → `/specflow-autoresearch`. Consult `specflow autoresearch status` when acting.
+  Installed. User asked for a research loop, competition, or experiment → `/specflow-autoresearch`. Consult `specflow autoresearch status` when acting — stop when it fails (exit 3 = warnings only).

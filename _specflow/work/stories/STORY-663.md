@@ -2,7 +2,7 @@
 id: STORY-663
 title: 'CLI backstops: 3-run escalation, pack-validate, autoresearch status codes'
 type: story
-status: approved
+status: implemented
 suspect: false
 links:
 - target: REQ-042

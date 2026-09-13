@@ -18,6 +18,7 @@ ledger. They exercise the real CLI parser path (cli.main) where useful.
 from __future__ import annotations
 
 import re
+import subprocess
 from pathlib import Path
 
 import yaml
@@ -753,3 +754,148 @@ class TestLintMalformedParentFields:
         )
         assert result["warning_count"] >= 1
         assert "malformed `loop`" in result["detail"]
+
+
+# ── STORY-663: `autoresearch status` fail/warn exit codes ─────────────────
+
+def _git_ok(root: Path, *argv: str) -> None:
+    proc = subprocess.run(
+        ["git", *argv], cwd=str(root), capture_output=True, text=True, check=False
+    )
+    assert proc.returncode == 0, f"git {' '.join(argv)} failed: {proc.stderr}"
+
+
+@pytest.fixture
+def git_project_root(project_root: Path) -> Path:
+    """project_root + a committed git repo. Phase 0 checks (STORY-663) make
+    `status` fail outside a git repo — the loop protocol commits per
+    iteration, so the pack's contract is git-backed projects."""
+    _git_ok(project_root, "init")
+    _git_ok(project_root, "add", ".specflow")
+    _git_ok(
+        project_root,
+        "-c", "user.email=agent@example.com", "-c", "user.name=agent",
+        "commit", "-m", "fixture init",
+    )
+    return project_root
+
+
+def _make_healthy_loop(root: Path) -> None:
+    """A running LOOP with every STORY-663 exit-code gate satisfied."""
+    _make_loop(
+        root, "LOOP-001", "COMP-001", status="running", mode="explore", budget=5,
+        extra={
+            "research_agenda": [
+                {"direction": "feature mix", "status": "in_progress"},
+                {"direction": "calibration", "status": "unexplored"},
+            ],
+            "iteration_count": 0,
+            "eda_completed": True,
+        },
+    )
+
+
+class TestStatusExitCodes:
+    """STORY-663: 0 = clear · 3 = warn · 1/2 = fail. The skill prompt rule is
+    "if status fails, stop" — these tests pin what fails and what warns."""
+
+    def _status(self, root: Path, **extra) -> int:
+        args = {"autoresearch_subcommand": "status", "competition": "COMP-001"}
+        args.update(extra)
+        return autoresearch_cmd.run(root, args)
+
+    def test_clean_repo_healthy_loop_exits_zero(self, git_project_root, capsys):
+        _make_healthy_loop(git_project_root)
+        assert self._status(git_project_root) == 0
+        out = capsys.readouterr().out
+        assert "Phase 0 preconditions" in out
+        assert "Deterministic accounting" in out
+
+    def test_not_a_git_repo_fails(self, project_root, capsys):
+        # project_root (no git) — rev-parse failure is a hard fail (exit 2).
+        _make_healthy_loop(project_root)
+        assert self._status(project_root) == 2
+        out = capsys.readouterr().out
+        assert "Not a git repository" in out
+
+    def test_dirty_tree_warns(self, git_project_root, capsys):
+        _make_healthy_loop(git_project_root)
+        config = git_project_root / ".specflow" / "config.yaml"
+        config.write_text(config.read_text() + "# dirty\n", encoding="utf-8")
+        assert self._status(git_project_root) == 3
+        out = capsys.readouterr().out
+        assert "uncommitted change(s) to tracked files" in out
+
+    def test_stale_index_lock_warns(self, git_project_root, capsys):
+        _make_healthy_loop(git_project_root)
+        (git_project_root / ".git" / "index.lock").write_text("", encoding="utf-8")
+        assert self._status(git_project_root) == 3
+        out = capsys.readouterr().out
+        assert "index.lock" in out
+
+    def test_detached_head_warns(self, git_project_root, capsys):
+        _make_healthy_loop(git_project_root)
+        _git_ok(git_project_root, "checkout", "--detach")
+        assert self._status(git_project_root) == 3
+        out = capsys.readouterr().out
+        assert "detached" in out
+
+    def test_draft_loop_warns(self, git_project_root, capsys):
+        _make_loop(
+            git_project_root, "LOOP-001", "COMP-001", status="draft",
+            mode="explore", budget=5,
+            extra={"research_agenda": [
+                {"direction": "a", "status": "unexplored"},
+                {"direction": "b", "status": "unexplored"},
+            ]},
+        )
+        assert self._status(git_project_root) == 3
+        out = capsys.readouterr().out
+        assert "still draft" in out
+
+    def test_discard_streak_warns(self, git_project_root, capsys):
+        _make_healthy_loop(git_project_root)
+        for i in range(5):
+            _make_expt(
+                git_project_root, f"EXPT-00{i + 1}", "LOOP-001",
+                "discarded", 0.1, category="features",
+            )
+        assert self._status(git_project_root) == 3
+        out = capsys.readouterr().out
+        assert "consecutive discarded/crashed experiments" in out
+
+    def test_category_run_length_warns(self, git_project_root, capsys):
+        _make_healthy_loop(git_project_root)
+        _make_expt(git_project_root, "EXPT-001", "LOOP-001", "kept", 0.7,
+                   category="features")
+        _make_expt(git_project_root, "EXPT-002", "LOOP-001", "kept", 0.8,
+                   category="features")
+        assert self._status(git_project_root) == 3
+        out = capsys.readouterr().out
+        assert "consecutive 'features' experiments" in out
+
+    def test_missing_research_agenda_warns(self, git_project_root, capsys):
+        # budget 50 → full Phase 0.7 rigor: 5-direction agenda required.
+        _make_loop(git_project_root, "LOOP-001", "COMP-001", status="running",
+                   mode="explore", budget=50, extra={"iteration_count": 0})
+        assert self._status(git_project_root) == 3
+        out = capsys.readouterr().out
+        assert "fewer than 5 directions" in out
+
+    def test_structural_beats_warn(self, git_project_root, capsys):
+        # Multiple running LOOPs (structural fail) + missing agenda (warn):
+        # fail dominates → exit 2.
+        _make_loop(git_project_root, "LOOP-001", "COMP-001", status="running",
+                   mode="explore", budget=50)
+        _make_loop(git_project_root, "LOOP-002", "COMP-001", status="running",
+                   mode="exploit", budget=50)
+        assert self._status(git_project_root) == 2
+        out = capsys.readouterr().out
+        assert "Multiple running LOOPs" in out
+
+    def test_idle_comp_clean_git_exits_zero(self, git_project_root, capsys):
+        # No active LOOP: closure-readiness + Phase 0 only; clean → 0.
+        assert self._status(git_project_root) == 0
+        out = capsys.readouterr().out
+        assert "no active LOOP" in out
+        assert "Phase 0 preconditions" in out

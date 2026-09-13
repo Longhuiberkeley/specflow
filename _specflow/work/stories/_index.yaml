@@ -1247,7 +1247,7 @@ artifacts:
   STORY-663:
     id: STORY-663
     title: 'CLI backstops: 3-run escalation, pack-validate, autoresearch status codes'
-    status: approved
+    status: implemented
     tags: []
     fingerprint: sha256:942484ab5004
     children: []

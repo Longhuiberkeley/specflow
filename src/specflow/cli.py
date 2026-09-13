@@ -41,6 +41,12 @@ def cmd_artifact_lint(args: argparse.Namespace) -> int:
     return cmd.run(root, vars(args))
 
 
+def cmd_pack_validate(args: argparse.Namespace) -> int:
+    from specflow.commands import pack_validate as cmd
+    root = _find_project_root()
+    return cmd.run(root, vars(args))
+
+
 def cmd_brief(args: argparse.Namespace) -> int:
     from specflow.commands import brief as cmd
     root = _find_project_root()
@@ -502,6 +508,15 @@ def _add_artifact_lint_parser(subparsers):
     p.add_argument("--method", choices=["programmatic", "llm"], default="programmatic", help="Validation method")
 
 
+def _add_pack_validate_parser(subparsers):
+    p = subparsers.add_parser(
+        "pack-validate",
+        help="Validate a pack directory: pack.yaml schema, referenced skills exist, "
+             "no 'uv run' in shipped skill scripts",
+    )
+    p.add_argument("pack_dir", help="Path to the pack directory (e.g. .specflow/packs/<name>/)")
+
+
 def _add_checklist_run_parser(subparsers):
     p = subparsers.add_parser("checklist-run", help="Run context-specific review on artifacts")
     p.add_argument("artifact_id", nargs="?", help="Artifact ID to check")
@@ -761,7 +776,11 @@ def _add_autoresearch_parser(subparsers):
     run_p.add_argument("--no-start", action="store_true", dest="no_start",
                        help="Do not transition a draft LOOP to running; just print the protocol")
 
-    status_p = sub.add_parser("status", help="Show deterministic LOOP readiness and progress accounting")
+    status_p = sub.add_parser(
+        "status",
+        help="Show deterministic LOOP readiness and progress accounting "
+             "(exit 0=clear, 3=warn, 1/2=fail — stop on fail)",
+    )
     status_p.add_argument("--competition", help="Competition ID (default: auto-detect)")
     status_p.add_argument("--loop", help="LOOP ID (default: running or draft LOOP for the COMP)")
 
@@ -817,6 +836,7 @@ commands by workflow phase:
   Recovery:   unlock, locks, rebuild-index, split, merge
   Research:   autoresearch
   Adoption:   adopt (brownfield; install via /specflow-init --preset adoption)
+  Packs:      pack-validate (pack structure; no 'uv run' in shipped scripts)
 """
 
 
@@ -1114,6 +1134,9 @@ def build_parser() -> argparse.ArgumentParser:
     # ── Research ────────────────────────────────────────────────
     _add_autoresearch_parser(subparsers)
 
+    # ── Packs ───────────────────────────────────────────────────
+    _add_pack_validate_parser(subparsers)
+
     return parser
 
 
@@ -1178,6 +1201,7 @@ def main(argv: list[str] | None = None) -> int:
         "verify": cmd_verify,
         "autoresearch": cmd_autoresearch,
         "adopt": cmd_adopt,
+        "pack-validate": cmd_pack_validate,
     }
 
     handler = commands.get(args.command)

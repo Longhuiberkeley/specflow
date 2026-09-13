@@ -223,3 +223,145 @@ class TestLintPublicAPI:
 
     def test_check_coverage_public(self):
         assert callable(lint_cmd.check_coverage)
+
+
+# ── STORY-663: specflow pack-validate ──────────────────────────────────────
+
+PACKS_SRC_DIR = Path(__file__).parent.parent / "src" / "specflow" / "packs"
+
+
+class TestPackValidate:
+    """`specflow pack-validate` is the deterministic backstop the pack-author
+    skill's validate-pack.sh forwards to (STORY-663): pack.yaml schema,
+    referenced skill files exist, and no 'uv run' in shipped skill scripts."""
+
+    def _make_pack(self, tmp_path: Path, name: str = "demo") -> Path:
+        pack_dir = tmp_path / name
+        pack_dir.mkdir(parents=True)
+        (pack_dir / "pack.yaml").write_text(
+            yaml.dump({
+                "name": name,
+                "version": "0.1.0",
+                "description": "demo pack",
+                "adds_skills": ["demo-skill"],
+            }),
+            encoding="utf-8",
+        )
+        skill = pack_dir / "skills" / "demo-skill"
+        skill.mkdir(parents=True)
+        (skill / "SKILL.md").write_text("# demo skill\n", encoding="utf-8")
+        return pack_dir
+
+    def test_valid_pack_passes(self, tmp_path: Path, capsys):
+        from specflow.commands import pack_validate as pv
+        pack_dir = self._make_pack(tmp_path)
+        rc = pv.run(tmp_path, {"pack_dir": str(pack_dir)})
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "Success: Pack validation passed" in out
+
+    def test_missing_pack_dir_fails(self, tmp_path: Path, capsys):
+        from specflow.commands import pack_validate as pv
+        rc = pv.run(tmp_path, {"pack_dir": str(tmp_path / "nope")})
+        assert rc == 1
+        assert "Not a directory" in capsys.readouterr().out
+
+    def test_missing_pack_yaml_fails(self, tmp_path: Path, capsys):
+        from specflow.commands import pack_validate as pv
+        empty = tmp_path / "empty-pack"
+        empty.mkdir()
+        rc = pv.run(tmp_path, {"pack_dir": str(empty)})
+        assert rc == 1
+        assert "pack.yaml" in capsys.readouterr().out
+
+    def test_missing_required_field_fails(self, tmp_path: Path, capsys):
+        from specflow.commands import pack_validate as pv
+        pack_dir = self._make_pack(tmp_path)
+        manifest = yaml.safe_load((pack_dir / "pack.yaml").read_text())
+        del manifest["version"]
+        (pack_dir / "pack.yaml").write_text(yaml.dump(manifest), encoding="utf-8")
+        rc = pv.run(tmp_path, {"pack_dir": str(pack_dir)})
+        assert rc == 1
+        assert "version" in capsys.readouterr().out
+
+    def test_referenced_skill_missing_fails(self, tmp_path: Path, capsys):
+        from specflow.commands import pack_validate as pv
+        pack_dir = self._make_pack(tmp_path)
+        (pack_dir / "skills" / "demo-skill" / "SKILL.md").unlink()
+        rc = pv.run(tmp_path, {"pack_dir": str(pack_dir)})
+        assert rc == 1
+        out = capsys.readouterr().out
+        assert "Referenced skill missing" in out
+        assert "demo-skill" in out
+
+    def test_standards_missing_clauses_fails(self, tmp_path: Path, capsys):
+        from specflow.commands import pack_validate as pv
+        pack_dir = self._make_pack(tmp_path)
+        std = pack_dir / "standards"
+        std.mkdir()
+        (std / "demo.yaml").write_text(
+            yaml.dump({"standard": "demo", "title": "Demo"}), encoding="utf-8"
+        )
+        rc = pv.run(tmp_path, {"pack_dir": str(pack_dir)})
+        assert rc == 1
+        assert "clauses" in capsys.readouterr().out
+
+    def test_schema_missing_directory_field_fails(self, tmp_path: Path, capsys):
+        from specflow.commands import pack_validate as pv
+        pack_dir = self._make_pack(tmp_path)
+        schemas = pack_dir / "schemas"
+        schemas.mkdir()
+        (schemas / "demo.yaml").write_text(
+            yaml.dump({
+                "type": "demo", "prefix": "DEM", "id_format": "DEM-###",
+                "required_fields": ["id"], "allowed_status": {"draft": []},
+            }),
+            encoding="utf-8",
+        )
+        rc = pv.run(tmp_path, {"pack_dir": str(pack_dir)})
+        assert rc == 1
+        assert "directory" in capsys.readouterr().out
+
+    def test_uv_run_in_shipped_script_fails(self, tmp_path: Path, capsys):
+        from specflow.commands import pack_validate as pv
+        pack_dir = self._make_pack(tmp_path)
+        scripts = pack_dir / "skills" / "demo-skill" / "scripts"
+        scripts.mkdir(parents=True)
+        (scripts / "check.sh").write_text(
+            "#!/usr/bin/env bash\nuv run python3 -c 'pass'\n", encoding="utf-8"
+        )
+        rc = pv.run(tmp_path, {"pack_dir": str(pack_dir)})
+        assert rc == 1
+        out = capsys.readouterr().out
+        assert "uv run" in out
+        assert "check.sh" in out
+
+    def test_cli_parser_routes_pack_validate(self, tmp_path: Path, monkeypatch, capsys):
+        from specflow import cli
+        pack_dir = self._make_pack(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        rc = cli.main(["pack-validate", str(pack_dir)])
+        assert rc == 0
+        assert "Success: Pack validation passed" in capsys.readouterr().out
+
+    @pytest.mark.parametrize("pack_name", [
+        "autoresearch", "adoption", "ops", "tldr-communication", "iso26262-demo",
+    ])
+    def test_builtin_packs_validate(self, tmp_path: Path, pack_name: str, capsys):
+        from specflow.commands import pack_validate as pv
+        rc = pv.run(tmp_path, {"pack_dir": str(PACKS_SRC_DIR / pack_name)})
+        assert rc == 0, capsys.readouterr().out
+
+    def test_shipped_validate_pack_shells_forward_without_uv_run(self):
+        """Both shipped copies of validate-pack.sh forward to
+        `specflow pack-validate` and contain no 'uv run' (STORY-663)."""
+        repo_root = Path(__file__).parent.parent
+        copies = [
+            repo_root / ".claude" / "skills" / "specflow-pack-author" / "scripts" / "validate-pack.sh",
+            repo_root / "src" / "specflow" / "templates" / "skills" / "shared"
+            / "specflow-pack-author" / "scripts" / "validate-pack.sh",
+        ]
+        for path in copies:
+            text = path.read_text(encoding="utf-8")
+            assert "uv run" not in text, f"{path} still contains 'uv run'"
+            assert "pack-validate" in text, f"{path} must forward to specflow pack-validate"

@@ -9,6 +9,7 @@ protocol checklists that any harness can follow.
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 from datetime import date
 from pathlib import Path
@@ -16,6 +17,82 @@ from pathlib import Path
 from specflow.lib import artifacts as art_lib
 from specflow.lib.display import RED, GREEN, CYAN, YELLOW, NC, BOLD, DIM
 from specflow.lib.domain_constants import DOMAIN_RECOMMENDED
+
+# STORY-663: deterministic `autoresearch status` exit codes. The skill prompt
+# rule is "if status fails, stop" — these codes are what "fails" means:
+#   0 = clear · 3 = warn (proceed with caution) · 1/2 = fail (stop)
+_STATUS_EXIT_FAIL = 2
+_STATUS_EXIT_WARN = 3
+
+
+def _git(root: Path, *argv: str) -> tuple[int, str]:
+    """Run git in the project root; returns (returncode, combined output)."""
+    try:
+        proc = subprocess.run(
+            ["git", *argv], cwd=str(root), capture_output=True, text=True,
+            timeout=15, check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return 1, "git unavailable"
+    return proc.returncode, (proc.stdout + proc.stderr).strip()
+
+
+def _phase0_git_signals(root: Path) -> list[dict[str, str]]:
+    """Phase 0 precondition checks (autonomous-loop-protocol.md), as signals.
+
+    rev-parse failure is a FAIL (the loop commits every iteration — no git
+    repo, no loop). Dirty tree / stale index.lock / detached HEAD are WARNs,
+    matching the protocol's "log the warning, proceed with caution".
+    """
+    signals: list[dict[str, str]] = []
+
+    def add(state: str, name: str, message: str, pointer: str = "") -> None:
+        signals.append({"state": state, "name": name, "message": message, "pointer": pointer})
+
+    rc, out = _git(root, "rev-parse", "--git-dir")
+    if rc != 0:
+        add("structural", "git-repo", "Not a git repository (git rev-parse failed)",
+            "The loop commits every iteration — initialize git before research.")
+        return signals
+    add("ok", "git-repo", "Git repository present")
+
+    rc, out = _git(root, "status", "--porcelain", "--untracked-files=no")
+    if rc == 0 and out:
+        changed = out.splitlines()
+        add("warn", "dirty-tree",
+            f"{len(changed)} uncommitted change(s) to tracked files "
+            f"(e.g. {changed[0].strip()})",
+            "Commit or stash before the loop's Phase 4 commits.")
+    else:
+        add("ok", "dirty-tree", "No uncommitted changes to tracked files")
+
+    rc, git_dir_raw = _git(root, "rev-parse", "--absolute-git-dir")
+    git_dir = Path(git_dir_raw) if rc == 0 and git_dir_raw else root / ".git"
+    if (git_dir / "index.lock").exists():
+        add("warn", "index-lock",
+            f"{git_dir / 'index.lock'} exists — a git operation may be stuck",
+            "Remove it only after confirming no git process is running.")
+    else:
+        add("ok", "index-lock", "No stale index lock")
+
+    rc, out = _git(root, "symbolic-ref", "HEAD")
+    if rc != 0:
+        add("warn", "detached-head", "HEAD is detached",
+            "Checkout a branch before iterating (commits must be reachable).")
+    else:
+        add("ok", "detached-head", f"On branch {out}")
+
+    return signals
+
+
+def _status_exit_code(signals: list[dict[str, str]]) -> int:
+    """Fail dominates warn dominates clear."""
+    states = {signal["state"] for signal in signals}
+    if "structural" in states:
+        return _STATUS_EXIT_FAIL
+    if "warn" in states:
+        return _STATUS_EXIT_WARN
+    return 0
 
 
 def _domain_recommended_fields(domain: str) -> list[str]:
@@ -186,7 +263,9 @@ def _assess_loop(
     if isinstance(agenda, list) and len(agenda) >= agenda_min:
         add("ok", "agenda", f"Research agenda has {len(agenda)} directions")
     else:
-        add("advisory", "agenda", f"Research agenda has fewer than {agenda_min} directions",
+        # STORY-663: exit-code-bearing warn — status exits 3 while the
+        # Phase 0.7 agenda is missing.
+        add("warn", "agenda", f"Research agenda has fewer than {agenda_min} directions",
             f"specflow update {loop.id} --set research_agenda='[...]'")
 
     if fm.get("knowledge_input"):
@@ -201,7 +280,8 @@ def _assess_loop(
     category, category_count = _consecutive_tail(expts, "change_category")
     threshold = 2 if fm.get("mode", "explore") == "explore" else 3
     if category and category_count >= threshold:
-        add("advisory", "diversity", f"{category_count} consecutive '{category}' experiments",
+        # STORY-663: exit-code-bearing warn (category-run length gate).
+        add("warn", "diversity", f"{category_count} consecutive '{category}' experiments",
             "Review an orthogonal research-agenda direction before another similar iteration.")
     else:
         add("ok", "diversity", "No repeated-category streak detected")
@@ -212,7 +292,8 @@ def _assess_loop(
             break
         failure_count += 1
     if failure_count >= 5:
-        add("advisory", "stuck", f"{failure_count} consecutive discarded/crashed experiments",
+        # STORY-663: exit-code-bearing warn (discard streak / stuck gate).
+        add("warn", "stuck", f"{failure_count} consecutive discarded/crashed experiments",
             "Switch category or revisit the highest-impact assumption.")
     else:
         add("ok", "stuck", "No 5-experiment failure streak detected")
@@ -223,9 +304,16 @@ def _assess_loop(
     return signals
 
 
-def _render_signals(signals: list[dict[str, str]]) -> None:
-    icons = {"ok": f"{GREEN}✓{NC}", "advisory": f"{YELLOW}⚠{NC}", "structural": f"{RED}✗{NC}"}
-    print(f"{BOLD}Deterministic accounting:{NC}")
+def _render_signals(
+    signals: list[dict[str, str]], title: str = "Deterministic accounting:"
+) -> None:
+    icons = {
+        "ok": f"{GREEN}✓{NC}",
+        "advisory": f"{YELLOW}⚠{NC}",
+        "warn": f"{YELLOW}⚠{NC}",
+        "structural": f"{RED}✗{NC}",
+    }
+    print(f"{BOLD}{title}{NC}")
     for signal in signals:
         print(f"  {icons[signal['state']]} {signal['name']}: {signal['message']}")
         if signal["pointer"]:
@@ -323,13 +411,27 @@ def _render_closure_readiness(root: Path, comp: art_lib.Artifact) -> None:
 
 
 def _run_status(root: Path, args: dict) -> int:
-    """COMP-level closure-readiness first; LOOP accounting only if a LOOP resolves."""
+    """COMP-level closure-readiness first; LOOP accounting only if a LOOP resolves.
+
+    STORY-663 exit codes: 0 clear · 3 warn · 1/2 fail (the skill rule is
+    "if status fails, stop"). Phase 0 git preconditions and the LOOP
+    readiness gates (draft LOOP, missing agenda, category-run length,
+    discard streak) are the warn/fail sources.
+    """
     comp = _resolve_comp(root, args)
     if not comp:
         return 1
 
     print(f"\n{BOLD}=== Autoresearch Status ==={NC}\n")
     _render_closure_readiness(root, comp)
+
+    # Phase 0 preconditions (STORY-663): git checks + COMP existence.
+    signals = _phase0_git_signals(root)
+    signals.append({
+        "state": "ok", "name": "comp",
+        "message": f"{comp.id} exists", "pointer": "",
+    })
+    _render_signals(signals, title="Phase 0 preconditions:")
 
     loops = _find_loops_for_comp(root, comp.id)
     explicit = args.get("loop")
@@ -339,16 +441,29 @@ def _run_status(root: Path, args: dict) -> int:
     if not has_resolvable:
         print(f"{YELLOW}⚠{NC} no active LOOP — COMP idle; create a LOOP to continue")
         print()
-        return 0
+        return _status_exit_code(signals)
 
     loop = _resolve_loop(root, comp, args)
     if not loop:
-        return 1 if explicit else 0
+        # Ambiguous (multiple drafts) or explicit-but-missing: a failure.
+        return 1
 
     print(f"LOOP:        {CYAN}{loop.id}{NC}  [{loop.status}]\n")
-    signals = _assess_loop(root, comp, loop)
-    _render_signals(signals)
-    return 2 if _has_structural(signals) else 0
+    loop_signals: list[dict[str, str]] = []
+    if loop.status == "draft":
+        loop_signals.append({
+            "state": "warn", "name": "loop-draft",
+            "message": f"{loop.id} is still draft — start it before iterating",
+            "pointer": f"specflow autoresearch run --competition {comp.id}",
+        })
+    else:
+        loop_signals.append({
+            "state": "ok", "name": "loop-draft",
+            "message": f"{loop.id} is {loop.status}", "pointer": "",
+        })
+    loop_signals.extend(_assess_loop(root, comp, loop))
+    _render_signals(loop_signals)
+    return _status_exit_code(signals + loop_signals)
 
 
 def _running_loops_for_comp(

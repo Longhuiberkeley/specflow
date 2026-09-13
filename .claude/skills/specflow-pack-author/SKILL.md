@@ -179,13 +179,13 @@ A brief description of the pack, its source, and what it covers.
 
 ### Step 5: Validate Pack
 
-Run the pack validation script to verify the generated structure is sound:
+Run the pack validation command to verify the generated structure is sound:
 
 ```
 bash .claude/skills/specflow-pack-author/scripts/validate-pack.sh .specflow/packs/{name}/
 ```
 
-The script checks that `pack.yaml` has `name`/`version`/`description`, each `standards/*.yaml` has `standard`/`title`/`clauses`, and each `schemas/*.yaml` (if any) has `type`/`prefix`/`id_format`/`required_fields`/`allowed_status`/`directory`. If any check fails, fix it before proceeding.
+The script forwards to `specflow pack-validate` (STORY-663): `pack.yaml` has `name`/`version`/`description`, every `adds_skills` entry has `skills/<name>/SKILL.md`, each `standards/*.yaml` (when shipped) has `standard`/`title`/`clauses`, each `schemas/*.yaml` (when shipped) has `type`/`prefix`/`id_format`/`required_fields`/`allowed_status`/`directory`, and no shipped skill script contains `uv run`. If any check fails, fix it before proceeding.
 
 ### Step 6: Preview and Install
 

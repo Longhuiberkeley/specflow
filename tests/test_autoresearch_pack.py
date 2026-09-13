@@ -10,6 +10,7 @@ Five test classes covering:
 
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 
 import yaml
@@ -168,6 +169,20 @@ def project_root(tmp_path: Path) -> Path:
         (root / subdir).mkdir(parents=True, exist_ok=True)
 
     art_lib._load_active_packs(root)
+
+    # STORY-663: `autoresearch status` runs Phase 0 git precondition checks
+    # and fails outside a git repo. The loop protocol commits every iteration,
+    # so a git-backed fixture project is the pack's real contract.
+    for argv in (
+        ["git", "init"],
+        ["git", "add", ".specflow"],
+        ["git", "-c", "user.email=agent@example.com", "-c", "user.name=agent",
+         "commit", "-m", "fixture init"],
+    ):
+        proc = subprocess.run(
+            argv, cwd=str(root), capture_output=True, text=True, check=False
+        )
+        assert proc.returncode == 0, f"{' '.join(argv)} failed: {proc.stderr}"
 
     yield root
 
@@ -722,7 +737,9 @@ class TestAutoresearchCLI:
             "autoresearch_subcommand": "status",
             "competition": "COMP-001",
         })
-        assert rc == 0
+        # STORY-663: missing research_agenda and the 3-run category streak are
+        # exit-code-bearing warns now — this run exits 3 (was 0 pre-663).
+        assert rc == 3
         out = capsys.readouterr().out
         assert "Closure-readiness" in out
         assert "LOOP-001" in out
@@ -999,7 +1016,9 @@ class TestStatusClosureReadiness:
             "autoresearch_subcommand": "status",
             "competition": "COMP-001",
         })
-        assert rc == 0
+        # STORY-663: budget 20 requires a 5-direction agenda; this 1-direction
+        # agenda is a warn → exit 3 (was 0 pre-663). Rendering is unchanged.
+        assert rc == 3
         out = capsys.readouterr().out
         assert "Closure-readiness" in out
         assert "beat baseline" in out

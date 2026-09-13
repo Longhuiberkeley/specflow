@@ -54,6 +54,8 @@ specflow autoresearch status --competition COMP-NNN   # explicit when multiple C
 specflow trace COMP-NNN
 ```
 
+**Status exit codes (STORY-663):** `0` clear · `3` warnings (proceed with caution) · anything else is a failure — stop, surface the failing check, and fix it. Never start or continue a LOOP after a failed `status`.
+
 From that output, read two things into context before acting:
 
 - **COMP frontmatter** — `verify_command`, `metric_name`, `metric_direction`, `objective_type`, `goals`, `constraints`, `success_criteria`, `domain`. These pin what "better" means and the rules of engagement.

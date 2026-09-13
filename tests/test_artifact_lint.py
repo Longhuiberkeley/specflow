@@ -566,6 +566,74 @@ class TestLintRunIntegration:
         assert rc == 1
 
 
+# ── STORY-663: persistent-warning escalation (lint_cmd.run) ────────────────
+
+class TestWarningEscalation:
+    """Warnings persisting across >= 3 full validation runs escalate to
+    blocking (severity-levels.md §Escalation, enforced — STORY-663).
+
+    Counts persist in CLI-managed `.specflow/lint-warning-history.yaml`;
+    a warning that disappears resets its counter; filtered `--type` runs
+    (the pre-commit hook's cadence) do not advance counts."""
+
+    def _seed_persistent_warning(self, root: Path) -> None:
+        # Draft STORY with no links → orphan warning (links check) + draft
+        # spec-linkage warning (story-linkage check). Both warning-only.
+        _write_artifact(
+            root, "STORY-001", "story", "Orphan story", status="draft",
+            body="## Acceptance Criteria\n\n1. Given X\n2. Then Y",
+        )
+
+    def _history(self, root: Path) -> dict:
+        path = root / ".specflow" / "lint-warning-history.yaml"
+        assert path.exists(), "escalation state must persist in .specflow/"
+        return yaml.safe_load(path.read_text(encoding="utf-8"))
+
+    def test_third_run_escalates_to_blocking(self, project_root: Path, capsys):
+        self._seed_persistent_warning(project_root)
+        assert lint_cmd.run(project_root, {}) == 0  # run 1
+        assert lint_cmd.run(project_root, {}) == 0  # run 2
+        capsys.readouterr()
+        rc = lint_cmd.run(project_root, {})  # run 3
+        assert rc == 1
+        out = capsys.readouterr().out
+        assert "Escalation" in out
+        assert "seen in 3 runs" in out
+        assert "STORY-001" in out
+        history = self._history(project_root)
+        assert any(counts for counts in history.values())
+
+    def test_fixed_warning_resets_counter(self, project_root: Path, capsys):
+        self._seed_persistent_warning(project_root)
+        lint_cmd.run(project_root, {})
+        lint_cmd.run(project_root, {})
+        # Fix: remove the orphaning artifact entirely.
+        (project_root / "_specflow" / "work" / "stories" / "STORY-001.md").unlink()
+        rc = lint_cmd.run(project_root, {})
+        assert rc == 0
+        history = self._history(project_root)
+        assert all(not counts for counts in history.values()), (
+            "a warning absent from the run must reset its count"
+        )
+
+    def test_filtered_runs_do_not_advance_counts(self, project_root: Path):
+        self._seed_persistent_warning(project_root)
+        assert lint_cmd.run(project_root, {}) == 0  # full run 1 → count 1
+        assert lint_cmd.run(project_root, {"type": "links"}) == 0
+        assert lint_cmd.run(project_root, {"type": "links"}) == 0
+        # Filtered runs did not advance the counter: this full run is only
+        # consecutive run 2 → still PASS.
+        assert lint_cmd.run(project_root, {}) == 0
+        # The next full run is run 3 → escalated → blocking.
+        assert lint_cmd.run(project_root, {}) == 1
+
+    def test_escalation_state_file_is_cli_managed_shape(self, project_root: Path):
+        self._seed_persistent_warning(project_root)
+        lint_cmd.run(project_root, {})
+        text = (project_root / ".specflow" / "lint-warning-history.yaml").read_text()
+        assert "do not hand-edit" in text
+
+
 # ── _check_compliance_evidence ───────────────────────────────────────────────
 
 class TestCheckComplianceEvidence:

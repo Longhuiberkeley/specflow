@@ -23,6 +23,102 @@ from specflow.lib.domain_constants import DOMAIN_RECOMMENDED
 
 CHECK_NAMES = ["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "thinking-techniques", "autoresearch-logging", "autoresearch-comp-closure", "spike-lifecycle", "source-drift", "dec-risk-profile", "ac-observable", "nfr-category", "backfilled-links", "role-target"]
 
+# ── STORY-663: persistent-warning escalation ──────────────────────
+# severity-levels.md claims "warnings persisting across 3+ validation runs
+# escalate to blocking". Before STORY-663 nothing enforced that — a prompt-only
+# promise (false security). Enforcement lives HERE (I3): a full artifact-lint
+# run (no --type filter — the CI/release-audit cadence, not the pre-commit
+# hook's filtered runs) increments a per-warning consecutive-run counter in
+# CLI-managed .specflow/ state. A warning seen in >= ESCALATION_RUNS
+# consecutive full runs is reported as blocking and fails the run (exit 1).
+# A warning that disappears resets its counter (absent keys are dropped).
+ESCALATION_RUNS = 3
+LINT_HISTORY_FILE = ".specflow/lint-warning-history.yaml"
+
+
+def _warning_detail_lines(result: dict[str, str | int]) -> list[str]:
+    """Extract stable per-warning identity lines from a check result.
+
+    A check's ``detail`` is the exact rendered findings text; each line is one
+    finding (some checks collapse counts into a line — the line is then the
+    identity, deterministic for unchanged state). Blocking lines are excluded
+    (already blocking); info lines (``ℹ``) are excluded.
+    """
+    if not result.get("warning_count"):
+        return []
+    detail = str(result.get("detail", ""))
+    lines = [ln.strip() for ln in detail.splitlines() if ln.strip()]
+    if result.get("blocking_count"):
+        return [ln for ln in lines if "⚠" in ln]
+    # Pure-warning checks may render findings without a ⚠ marker
+    # (e.g. fingerprints' "N fingerprint(s) stale: ...") — keep every
+    # non-info line so those escalate too.
+    return [ln for ln in lines if "⚠" in ln or "ℹ" not in ln]
+
+
+def _load_warning_history(root: Path) -> dict[str, dict[str, int]]:
+    path = root / LINT_HISTORY_FILE
+    if not path.exists():
+        return {}
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    history: dict[str, dict[str, int]] = {}
+    for check, counts in data.items():
+        if isinstance(check, str) and isinstance(counts, dict):
+            history[check] = {
+                k: v for k, v in counts.items()
+                if isinstance(k, str) and isinstance(v, int)
+            }
+    return history
+
+
+def _save_warning_history(root: Path, history: dict[str, dict[str, int]]) -> None:
+    path = root / LINT_HISTORY_FILE
+    path.parent.mkdir(parents=True, exist_ok=True)
+    header = (
+        "# Managed by `specflow artifact-lint` (STORY-663) — do not hand-edit.\n"
+        "# Per-warning consecutive full-run counts; >= 3 escalates to blocking.\n"
+    )
+    path.write_text(
+        header + yaml.dump(history, default_flow_style=False, sort_keys=True),
+        encoding="utf-8",
+    )
+
+
+def _record_warning_runs(
+    root: Path,
+    results: list[tuple[str, dict]],
+) -> list[tuple[str, str, int]]:
+    """Update persistent run counts and return escalated warnings.
+
+    Returns a list of (check_name, warning_line, consecutive_runs) for every
+    warning whose count reached ESCALATION_RUNS in this run.
+    """
+    history = _load_warning_history(root)
+    escalated: list[tuple[str, str, int]] = []
+    for check_name, result in results:
+        lines = _warning_detail_lines(result)
+        keys: dict[str, str] = {}
+        for line in lines:
+            digest = hashlib.sha1(
+                f"{check_name}\x00{line}".encode("utf-8")
+            ).hexdigest()[:16]
+            keys[digest] = line
+        prev = history.get(check_name, {})
+        # Absent warnings reset: replace the check's dict wholesale.
+        history[check_name] = {d: prev.get(d, 0) + 1 for d in keys}
+        for digest, line in keys.items():
+            runs = history[check_name][digest]
+            if runs >= ESCALATION_RUNS:
+                escalated.append((check_name, line, runs))
+    if history:
+        _save_warning_history(root, history)
+    return escalated
+
 
 def _run_check(
     artifacts: list[art_lib.Artifact],
@@ -2152,6 +2248,15 @@ def run(root: Path, args: dict) -> int:
         total_blocking += result["blocking_count"]
         total_warnings += result["warning_count"]
 
+    # STORY-663: escalate warnings that persisted across >= ESCALATION_RUNS
+    # full validation runs (CI/release-audit cadence — filtered --type runs,
+    # e.g. the pre-commit hook's, do not advance the counter). State persists
+    # in CLI-managed .specflow/ (I2/I3: never prompt text).
+    escalated: list[tuple[str, str, int]] = []
+    if not check_type:
+        escalated = _record_warning_runs(root, results)
+        total_blocking += len(escalated)
+
     # Display results
     label_width = 12
     for check_name, result in results:
@@ -2159,10 +2264,28 @@ def run(root: Path, args: dict) -> int:
         label_padded = label.ljust(label_width)
         print(f"  {label_padded} {result['status_icon']} {result['detail']}")
 
+    if escalated:
+        print()
+        print(
+            f"{YELLOW}Escalation — warnings persisted across ≥{ESCALATION_RUNS} "
+            f"validation runs → blocking (severity-levels.md §Escalation):{NC}"
+        )
+        for check_name, line, runs in escalated:
+            print(f"  {RED}✗{NC} [{check_name}] {line}  (seen in {runs} runs)")
+        print(
+            f"  counts persist in {LINT_HISTORY_FILE}; fixing the warning resets it"
+        )
+
     # Summary
     print(f"{CYAN}{'─' * 50}{NC}")
     if total_blocking > 0:
-        print(f"  Result: {RED}FAIL{NC} ({total_blocking} blocking, {total_warnings} warnings)")
+        if escalated:
+            print(
+                f"  Result: {RED}FAIL{NC} ({total_blocking} blocking "
+                f"[{len(escalated)} escalated], {total_warnings} warnings)"
+            )
+        else:
+            print(f"  Result: {RED}FAIL{NC} ({total_blocking} blocking, {total_warnings} warnings)")
         print()
         return 1
     elif total_warnings > 0:
