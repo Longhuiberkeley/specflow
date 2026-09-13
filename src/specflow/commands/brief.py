@@ -17,10 +17,29 @@ from specflow.lib import artifacts as art_lib
 from specflow.lib import config as config_lib
 from specflow.lib import lint as lint_lib
 from specflow.lib.waves import compute_waves, filter_executable_stories
-from specflow.lib.display import RED, GREEN, YELLOW, CYAN, BOLD, NC
+from specflow.lib.display import RED, YELLOW, CYAN, BOLD, NC
 
 # Category → the prefixes that belong to it, in lifecycle order.
 _CATEGORY_ORDER = ["spec", "work", "review", "research", "ops"]
+
+
+def _draft_consent_lines(
+    artifacts: list[art_lib.Artifact], prefix: str, from_status: str = "draft"
+) -> list[str]:
+    """Exact draft IDs + one-line impact (title) each — the I1 consent vehicle
+    behind ``specflow approve --type <PREFIX>``.
+
+    A count-only digest cannot serve as consent: the approver must see WHICH
+    artifacts would move. Every matching ID is listed (no cap — a cap would
+    recreate the count-only problem), and ``--yes`` is never suggested, so the
+    batch approval stays an interactive human act.
+    """
+    lines: list[str] = []
+    for a in artifacts:
+        if art_lib.get_prefix_from_id(a.id) == prefix and (a.status or "draft") == from_status:
+            title = (getattr(a, "title", None) or "").strip() or "(untitled)"
+            lines.append(f"{a.id} — {title[:90]}")
+    return lines
 
 
 def _adoption_summary(root: Path, artifacts: list[art_lib.Artifact]) -> dict | None:
@@ -219,14 +238,17 @@ def _is_auto_dec(a: art_lib.Artifact) -> bool:
     return bool(set(tags) & {"change-record", "auto-generated", "project-audit"})
 
 
-def _recent_decisions(artifacts: list[art_lib.Artifact], limit: int = 5) -> list[tuple[str, str, str, str]]:
-    """Most-recently-modified DEC artifacts as (id, title, rationale first line, tier marker).
+def _recent_decisions(artifacts: list[art_lib.Artifact], limit: int = 5) -> list[tuple[str, str, str, str, str]]:
+    """Most-recently-modified DEC artifacts as (id, title, review_status, constraint, tier marker).
 
     Deterministic read of the artifact graph — DEC bodies live in _specflow/work/decisions/.
     Sorted by file mtime (most recent first). This IS the durable "why"; brief only
-    surfaces it, never writes a separate log. The 4th element is a risk-tier marker
-    (e.g. "T2") when a persisted ``risk_profile`` is present, else "" — the tier is
-    recorded-only (it gates nothing); showing it makes the Risk Profile visible at recall.
+    surfaces it, never writes a separate log. The 3rd element is the persisted
+    ``review_status`` ("" when the field is absent) so review debt is visible at
+    recall; the 4th is the one-line constraint/why (rationale first line). The 5th
+    is a risk-tier marker (e.g. "T2") when a persisted ``risk_profile`` is present,
+    else "" — the tier is recorded-only (it gates nothing); showing it makes the
+    Risk Profile visible at recall.
 
     Auto-generated change records (see ``_is_auto_dec``) are filtered out so the section
     surfaces real ADRs — when fewer real ADRs than ``limit`` exist, what's there is shown
@@ -242,7 +264,7 @@ def _recent_decisions(artifacts: list[art_lib.Artifact], limit: int = 5) -> list
             return 0.0
 
     decs.sort(key=_mtime, reverse=True)
-    out: list[tuple[str, str, str, str]] = []
+    out: list[tuple[str, str, str, str, str]] = []
     for a in decs[:limit]:
         first = ""
         for ln in (a.body or "").splitlines():
@@ -253,7 +275,8 @@ def _recent_decisions(artifacts: list[art_lib.Artifact], limit: int = 5) -> list
         rp = (a.frontmatter or {}).get("risk_profile") or {}
         tier = rp.get("tier") if isinstance(rp, dict) else None
         marker = f"T{tier}" if tier in (0, 1, 2) else ""
-        out.append((a.id, a.title or "(untitled)", first[:140], marker))
+        review_status = (a.frontmatter or {}).get("review_status") or ""
+        out.append((a.id, a.title or "(untitled)", str(review_status), first[:140], marker))
     return out
 
 
@@ -406,17 +429,27 @@ def _next_skill_recommendation(
     archs = _count("ARCH")
     stories = _count("STORY")
 
+    # Consent lines: exact draft IDs + one-line impact, listed whenever the
+    # core line points at a batch approval (STORY-660). Never count-only,
+    # never `--yes`.
+    consent: list[str] = []
+
     if phase in ("idle", "discovering"):
         if reqs == 0:
             core = "No REQs yet → /specflow-discover (capture requirements)."
         elif reqs_draft:
-            core = (f"{reqs_draft} REQ(s) in draft → confirm with the user, then approve "
+            core = ("REQ(s) in draft → confirm with the user, then approve "
                     f"(`specflow approve --type REQ`), then /specflow-plan.")
+            consent.extend(_draft_consent_lines(artifacts, "REQ"))
         else:
             core = "REQs approved, no ARCH yet → /specflow-plan (decompose into architecture & stories)."
     elif phase == "specifying":
-        core = (f"{reqs_draft} REQ(s) still draft → approve before planning."
-                if reqs_draft else "REQs approved → /specflow-plan.")
+        if reqs_draft:
+            core = ("REQ(s) still draft → approve (`specflow approve --type REQ`) "
+                    "before planning.")
+            consent.extend(_draft_consent_lines(artifacts, "REQ"))
+        else:
+            core = "REQs approved → /specflow-plan."
     elif phase == "planning":
         approved_stories = _count("STORY", "approved")
         if not archs:
@@ -425,6 +458,7 @@ def _next_skill_recommendation(
             core = "ARCH + STORY approved → /specflow-execute (run the waves)."
         elif _count("STORY", "draft") or not stories:
             core = "Stories not approved yet → finish /specflow-plan and approve STORYs."
+            consent.extend(_draft_consent_lines(artifacts, "STORY"))
         elif _count("STORY", "implemented") + _count("STORY", "verified") == stories:
             core = ("No approved stories ready to execute; existing stories are complete → "
                     "/specflow-artifact-review, then /specflow-ship, or /specflow-plan "
@@ -455,6 +489,7 @@ def _next_skill_recommendation(
             else:
                 core = ("No approved stories to execute → finish /specflow-plan "
                         "and approve STORYs.")
+            consent.extend(_draft_consent_lines(artifacts, "STORY"))
         elif next_wave:
             core = f"Next wave ready ({len(next_wave)} stories) → /specflow-execute (or `specflow go`)."
         elif stories and _count("STORY", "implemented") >= stories:
@@ -467,8 +502,7 @@ def _next_skill_recommendation(
             if reviewed:
                 core = "All stories implemented & reviewed → /specflow-ship (release)."
             else:
-                core = ("All stories implemented → /specflow-artifact-review "
-                        "(review + V-model tests UT/IT/QT), then /specflow-ship.")
+                core = "All stories implemented → /specflow-artifact-review, then /specflow-ship."
         else:
             core = "Continue /specflow-execute."
     elif phase in ("verifying", "complete"):
@@ -583,7 +617,7 @@ def _next_skill_recommendation(
                 f"`specflow change-impact` to inspect."
             )
 
-    return core + "".join(f"\n{n}" for n in notes)
+    return core + "".join(f"\n{n}" for n in consent + notes)
 
 
 def _health_nags(
@@ -707,13 +741,15 @@ def run(root: Path, args: dict[str, Any]) -> int:
     recent = _recent_changes(root, since)
     adoption = _adoption_summary(root, artifacts)
 
+    active_packs = config.get("active_packs", []) or []
+    recommendation = _next_skill_recommendation(
+        phase, artifacts, suspects, next_wave, active_packs, root,
+        state.get("history", []),
+    )
+
     # --next: emit only the deterministic next-skill recommendation and stop.
     if args.get("next"):
-        active_packs = config.get("active_packs", []) or []
-        print(_next_skill_recommendation(
-            phase, artifacts, suspects, next_wave, active_packs, root,
-            state.get("history", []),
-        ))
+        print(recommendation)
         return 0
 
     docs_sum = _docs_summary(root)
@@ -723,6 +759,17 @@ def run(root: Path, args: dict[str, Any]) -> int:
     print(f"\n{CYAN}SpecFlow Brief{NC} — {BOLD}{project_name}{NC}")
     print(f"{CYAN}{'─' * 50}{NC}")
     print(f"  Phase: {BOLD}{phase}{NC}   ({len(artifacts)} artifacts)")
+
+    # Answer-first (STORY-660): the --next core line and the artifact IDs it
+    # acts on print at the TOP — above the inventory — so the actionable
+    # digest leads and the reference sections follow. The wave IDs ride along
+    # here instead of their old buried position below the inventory.
+    rec_lines = recommendation.split("\n")
+    print(f"\n  {BOLD}→ Next:{NC} {rec_lines[0]}")
+    for ln in rec_lines[1:]:
+        print(f"    {ln}")
+    if next_wave:
+        print(f"  {BOLD}In-scope (next wave){NC}: {', '.join(next_wave)}")
 
     print(f"\n  {BOLD}Inventory{NC}")
     for cat in _CATEGORY_ORDER:
@@ -786,6 +833,8 @@ def run(root: Path, args: dict[str, Any]) -> int:
                   f"({adoption['biggest_cluster_count']} files)")
         print(f"    {CYAN}specflow adopt status{NC} for the per-boundary + per-artifact view")
 
+    # Conditional chrome (STORY-660): suspects print only when non-empty —
+    # the all-clear line was always-on noise. Pointers stay ID-exact.
     if suspects:
         ids = ", ".join(a.id for a in suspects[:8])
         if len(suspects) > 8:
@@ -793,23 +842,21 @@ def run(root: Path, args: dict[str, Any]) -> int:
         print(f"\n  {YELLOW}⚠ Suspects ({len(suspects)}){NC}: {ids}")
         print(f"    Resolve: specflow change-impact --resolve <ID>  |  "
               f"specflow defect-from-suspect <ID> --req <REQ>")
-    else:
-        print(f"\n  {GREEN}✓ No unresolved suspects{NC}")
-
-    print(f"\n  {BOLD}In-scope (next wave){NC}")
-    if next_wave:
-        print(f"    {', '.join(next_wave)}")
-    else:
-        print(f"    (no approved stories ready to execute)")
 
     decs = _recent_decisions(artifacts)
     print(f"\n  {BOLD}Recent decisions{NC} (DEC — the durable 'why')")
     if decs:
-        for did, title, rationale, marker in decs:
+        for did, title, review_status, constraint, marker in decs:
             tier_tag = f" {YELLOW}[{marker}]{NC}" if marker else ""
-            print(f"    {did}{tier_tag} — {title}")
-            if rationale:
-                print(f"        {rationale}")
+            if review_status in ("unreviewed", "flagged", "stale"):
+                rs_tag = f" {YELLOW}[{review_status}]{NC}"
+            elif review_status:
+                rs_tag = f" [{review_status}]"
+            else:
+                rs_tag = ""
+            print(f"    {did}{rs_tag}{tier_tag} — {title}")
+            if constraint:
+                print(f"        {constraint}")
     else:
         print(f"    (none)")
 
@@ -822,9 +869,5 @@ def run(root: Path, args: dict[str, Any]) -> int:
     else:
         print(f"    (none)")
 
-    drill = "specflow trace <ID>  |  specflow status  |  specflow artifact-lint"
-    if adoption is not None:
-        drill += "  |  specflow adopt status"
-    print(f"\n  → Drill down: {drill}")
     print()
     return 0

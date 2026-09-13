@@ -11,7 +11,10 @@ from specflow.commands import brief as brief_cmd
 from specflow.lib import artifacts as art_lib
 
 _STD_FLOW = {"draft": [], "approved": ["draft"], "implemented": ["approved"], "verified": ["implemented"]}
-_SCHEMA_TYPES = [("requirement", "REQ"), ("architecture", "ARCH"), ("story", "STORY")]
+_SCHEMA_TYPES = [
+    ("requirement", "REQ"), ("architecture", "ARCH"), ("story", "STORY"),
+    ("decision", "DEC"),
+]
 
 
 @pytest.fixture
@@ -49,7 +52,10 @@ def test_brief_runs_and_reports_phase_and_inventory(project_root: Path, capsys):
     assert "brief-test" in out
     assert "planning" in out
     assert "Inventory" in out
-    assert "No unresolved suspects" in out
+    # STORY-660 conditional chrome: empty suspects stay silent (the old
+    # always-on "✓ No unresolved suspects" line is superseded).
+    assert "No unresolved suspects" not in out
+    assert "Suspects" not in out
 
 
 # --- Knowledge-surfaces block: makes BP/PREV dormancy visible ---
@@ -137,9 +143,17 @@ def test_brief_knowledge_bp_dormancy_hint_when_no_active_bp(tmp_path: Path):
 from types import SimpleNamespace
 
 
-def _art(artifact_id: str, status: str) -> SimpleNamespace:
-    """Minimal artifact stub for the pure recommendation function."""
-    return SimpleNamespace(id=artifact_id, status=status, suspect=False)
+def _art(artifact_id: str, status: str, title: str | None = None) -> SimpleNamespace:
+    """Minimal artifact stub for the pure recommendation function.
+
+    ``title`` is attached only when given (the consent-ID listing reads it via
+    getattr and falls back to "(untitled)" — older stubs without it must keep
+    working).
+    """
+    ns = SimpleNamespace(id=artifact_id, status=status, suspect=False)
+    if title is not None:
+        ns.title = title
+    return ns
 
 
 def test_next_skill_routes_through_artifact_review_before_ship():
@@ -167,6 +181,111 @@ def test_next_skill_still_points_at_execute_when_wave_ready():
     artifacts = [_art("STORY-001", "approved")]
     out = brief_cmd._next_skill_recommendation("executing", artifacts, [], ["STORY-001"])
     assert "/specflow-execute" in out
+
+
+# --- STORY-660: approve --type consent vehicle + conditional chrome + hoist ---
+
+def test_next_skill_lists_exact_draft_req_ids_with_impact():
+    """brief --next names WHICH draft REQs move under `specflow approve --type
+    REQ` — exact IDs + one-line impact each, never a count-only digest, and
+    never an automatic --yes flag (approval stays an interactive human act)."""
+    artifacts = [
+        _art("REQ-040", "approved", title="Done req"),
+        _art("REQ-041", "draft", title="Trim shipped context"),
+        _art("REQ-042", "draft", title="CLI output fixes"),
+    ]
+    out = brief_cmd._next_skill_recommendation("discovering", artifacts, [], [])
+    assert "REQ-041 — Trim shipped context" in out
+    assert "REQ-042 — CLI output fixes" in out
+    assert "REQ-040" not in out  # only the drafts that would move
+    assert "approve --type REQ" in out
+    assert "--yes" not in out
+
+
+def test_next_skill_specifying_lists_draft_req_ids():
+    """The specifying-phase draft branch lists the same consent IDs."""
+    artifacts = [_art("REQ-010", "draft", title="Draft thing")]
+    out = brief_cmd._next_skill_recommendation("specifying", artifacts, [], [])
+    assert "REQ-010 — Draft thing" in out
+    assert "approve --type REQ" in out
+
+
+def test_next_skill_lists_draft_story_ids_for_approve():
+    """The planning-phase 'approve STORYs' branch lists exact draft STORY IDs."""
+    artifacts = [
+        _art("REQ-001", "approved"),
+        _art("ARCH-001", "approved"),
+        _art("STORY-009", "draft", title="Fix the output"),
+    ]
+    out = brief_cmd._next_skill_recommendation("planning", artifacts, [], [])
+    assert "STORY-009 — Fix the output" in out
+
+
+def test_next_skill_draft_listing_falls_back_to_untitled():
+    """Artifacts without a title (older stubs, minimal frontmatter) still list
+    their ID — the consent line never silently drops a draft."""
+    artifacts = [_art("REQ-010", "draft")]
+    out = brief_cmd._next_skill_recommendation("specifying", artifacts, [], [])
+    assert "REQ-010 — (untitled)" in out
+
+
+def test_next_skill_all_implemented_no_vmodel_reteach():
+    """STORY-660: the artifact-review pointer no longer re-teaches the V-model
+    ('review + V-model tests UT/IT/QT' is superseded) — it just routes."""
+    artifacts = [_art("STORY-001", "implemented"), _art("STORY-002", "implemented")]
+    out = brief_cmd._next_skill_recommendation("executing", artifacts, [], [])
+    assert "/specflow-artifact-review" in out
+    assert "/specflow-ship" in out
+    assert "V-model" not in out
+
+
+def test_brief_hoists_next_and_wave_ids_above_inventory(project_root: Path, capsys):
+    """Full-brief answer-first: the --next core line and the next-wave IDs print
+    BEFORE the inventory sections (they used to be buried below them)."""
+    art_lib.create_artifact(project_root, "requirement", title="R", status="approved", body="b")
+    art_lib.create_artifact(project_root, "architecture", title="A", status="approved", body="b")
+    art_lib.create_artifact(project_root, "story", title="S", status="approved", body="b")
+    rc = brief_cmd.run(project_root, {})
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "→ Next:" in out
+    assert "Inventory" in out
+    assert out.index("→ Next:") < out.index("Inventory")
+    assert out.index("STORY-001") < out.index("Inventory")  # wave ID hoisted too
+
+
+def test_brief_no_always_on_drill_down_or_empty_inscope_chrome(project_root: Path, capsys):
+    """STORY-660 conditional chrome: the drill-down footer is gone and the
+    in-scope line stays silent when no approved wave exists."""
+    art_lib.create_artifact(project_root, "requirement", title="R", status="draft", body="b")
+    assert brief_cmd.run(project_root, {}) == 0
+    out = capsys.readouterr().out
+    assert "Drill down" not in out
+    assert "(no approved stories ready to execute)" not in out
+
+
+def test_recent_decisions_surfaces_review_status():
+    """STORY-660: DEC recall carries id/title/review_status/constraint."""
+    dec = _dec("DEC-090", review_status="flagged", body="We chose X because Y")
+    decs = brief_cmd._recent_decisions([dec])
+    assert decs[0][0] == "DEC-090"
+    assert decs[0][2] == "flagged"
+    assert "We chose X because Y" in decs[0][3]
+
+
+def test_brief_renders_dec_review_status_and_constraint(project_root: Path, capsys):
+    """The rendered DEC line shows the review_status tag and the one-line
+    constraint (rationale first line)."""
+    r = art_lib.create_artifact(
+        project_root, "decision", title="Use X", status="approved",
+        body="We shall constrain Y.",
+    )
+    art_lib.update_artifact(project_root, r["id"], review_status="unreviewed")
+    assert brief_cmd.run(project_root, {}) == 0
+    out = capsys.readouterr().out
+    assert "DEC-001" in out
+    assert "[unreviewed]" in out
+    assert "We shall constrain Y." in out
 
 
 # --- core-signal honesty: executing phase must not claim execute without

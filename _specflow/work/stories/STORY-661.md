@@ -2,13 +2,14 @@
 id: STORY-661
 title: 'handbook.py: drop generic practice bodies; index-only default stdout'
 type: story
-status: draft
+status: implemented
 suspect: false
 links:
 - target: REQ-042
   role: implements
 created: '2026-09-13'
 fingerprint: sha256:c88255a10bde
+modified: '2026-09-13'
 ---
 
 # handbook.py: drop generic practice bodies; index-only default stdout

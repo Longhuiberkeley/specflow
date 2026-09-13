@@ -618,21 +618,43 @@ def generate_handbook(root: Path) -> dict:
     }
 
 
-def format_handbook_text(handbook: dict) -> str:
-    """Format the handbook as human-readable markdown text."""
+def format_handbook_text(handbook: dict, verbose: bool = False) -> str:
+    """Format the handbook as human-readable text.
+
+    Default output is an index — domain, count, and one title+tag line per
+    practice — so stdout stays a scannable menu (STORY-661: the generic
+    practice bodies were always appended and buried the signal). Full bodies
+    (practice/rationale/verification) render only with ``verbose=True`` or on
+    the ``--create`` path, where each body becomes a BP artifact.
+    """
     domain = handbook["domain"]
     tags = handbook.get("tags", [])
     practices: list[Practice] = handbook["practices"]
 
     lines: list[str] = []
-    lines.append(f"# SpecFlow Best-Practice Handbook")
-    lines.append(f"")
+    lines.append("# SpecFlow Best-Practice Handbook")
+    lines.append("")
     lines.append(f"**Domain:** {domain}")
     if tags:
         lines.append(f"**Tags:** {', '.join(tags)}")
-    lines.append(f"**Source:** bundled (deterministic, no external LLM)")
+    lines.append("**Source:** bundled (deterministic, no external LLM)")
     lines.append(f"**Practices:** {len(practices)}")
     lines.append("")
+
+    if not verbose:
+        lines.append("## Index")
+        lines.append("")
+        for i, p in enumerate(practices, 1):
+            tag_part = f" [{', '.join(p.tags)}]" if p.tags else ""
+            lines.append(f"{i}. {p.title}{tag_part}")
+        lines.append("")
+        lines.append("---")
+        lines.append(
+            "Full bodies: `specflow handbook generate --verbose` · "
+            "BP artifacts: `specflow handbook generate --create`"
+        )
+        lines.append("")
+        return "\n".join(lines)
 
     domain_practices = [p for p in practices if p.domain != "generic"]
     generic_practices = [p for p in practices if p.domain == "generic"]

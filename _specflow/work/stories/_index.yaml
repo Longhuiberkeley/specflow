@@ -1226,21 +1226,21 @@ artifacts:
   STORY-660:
     id: STORY-660
     title: 'brief.py: hoist --next + IDs; approve lists exact draft IDs and impact'
-    status: approved
+    status: implemented
     tags: []
     fingerprint: sha256:0cc1ae3bf513
     children: []
   STORY-661:
     id: STORY-661
     title: 'handbook.py: drop generic practice bodies; index-only default stdout'
-    status: approved
+    status: implemented
     tags: []
     fingerprint: sha256:c88255a10bde
     children: []
   STORY-662:
     id: STORY-662
     title: 'hook.py: route failures to artifact-lint subcommands; fix RBAC copy'
-    status: approved
+    status: implemented
     tags: []
     fingerprint: sha256:d7ef1f9bc166
     children: []

@@ -84,8 +84,8 @@ def _pre_commit(root: Path) -> int:
         for f in failures:
             print(f"  {RED}•{NC} {f}")
         print(
-            f"\n{YELLOW}Note:{NC} the pre-commit hook is advisory. Real enforcement "
-            f"requires branch protection + required signed commits on the hosting platform."
+            f"\n{YELLOW}Note:{NC} local hook blocked this transition; durable "
+            f"enforcement is hosting-side."
         )
         return 1
 
@@ -97,7 +97,7 @@ def _pre_commit(root: Path) -> int:
     if link_result.returncode != 0:
         print(f"{RED}✗ specflow pre-commit: link integrity check failed{NC}")
         print(link_result.stdout[-2000:] if len(link_result.stdout) > 2000 else link_result.stdout)
-        print(f"\n{YELLOW}Fix broken links before committing, or use --no-verify to bypass.{NC}")
+        print(f"\n{YELLOW}Fix before committing — re-run `specflow artifact-lint --type links` for details.{NC}")
         return 1
 
     # Schema validation (blocking — schema violations produce invalid artifacts)
@@ -108,12 +108,12 @@ def _pre_commit(root: Path) -> int:
     if schema_result.returncode != 0:
         print(f"{RED}✗ specflow pre-commit: schema validation failed{NC}")
         print(schema_result.stdout[-2000:] if len(schema_result.stdout) > 2000 else schema_result.stdout)
-        print(f"\n{YELLOW}Fix schema violations before committing, or use --no-verify to bypass.{NC}")
+        print(f"\n{YELLOW}Fix before committing — re-run `specflow artifact-lint --type schema` for details.{NC}")
         return 1
 
     # Advisory lint checks (YELLOW warnings — print on failure but NEVER block).
     # CI Pass 1 (artifact-lint) remains the authoritative blocker; blocking
-    # locally on these would train --no-verify, which BP-006 forbids. These are
+    # locally on these would teach bypassing the hook, which BP-006 forbids. These are
     # status-cascade and story-linkage: real signals worth surfacing early, but
     # not worth aborting a commit over.
     for check_type in ("status-cascade", "story-linkage"):

@@ -15,13 +15,14 @@ from specflow.lib.handbook import generate_handbook, format_handbook_text
 def run(root: Path, args: dict[str, Any]) -> int:
     """Run the handbook generate command."""
     do_create = args.get("create", False)
+    verbose = args.get("verbose", False)
 
     handbook = generate_handbook(root)
 
     if do_create:
         return _create_bp_artifacts(root, handbook)
 
-    print(format_handbook_text(handbook))
+    print(format_handbook_text(handbook, verbose=verbose))
     return 0
 
 

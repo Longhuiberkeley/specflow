@@ -134,15 +134,32 @@ class TestHandbookLibrary:
         text = handbook_lib.format_handbook_text(hb)
         assert "SpecFlow Best-Practice Handbook" in text
         assert "bundled" in text.lower()
+        # STORY-660/661: default format is the index — no bodies, no sermon sections.
+        assert "## Index" in text
+        assert "Separation of Concerns" in text
+        assert "## Generic Best Practices" not in text
+
+    def test_format_handbook_text_verbose_has_bodies(self, project_root: Path):
+        """STORY-661: full practice/rationale/verification bodies render only
+        with verbose=True (default stdout is index-only)."""
+        hb = handbook_lib.generate_handbook(project_root)
+        text = handbook_lib.format_handbook_text(hb, verbose=True)
         assert "## Generic Best Practices" in text
+        assert "**Rationale:**" in text
 
     def test_format_handbook_text_domain_section(self, project_root: Path):
         from specflow.lib.config import set_domain
         set_domain(project_root, "web-app")
         hb = handbook_lib.generate_handbook(project_root)
-        text = handbook_lib.format_handbook_text(hb)
+        text = handbook_lib.format_handbook_text(hb, verbose=True)
         assert "Domain-Specific Practices" in text
         assert "web-app" in text
+
+    def test_format_handbook_text_index_carries_tags(self, project_root: Path):
+        """The index line carries title + tags so it stays a scannable menu."""
+        hb = handbook_lib.generate_handbook(project_root)
+        text = handbook_lib.format_handbook_text(hb)
+        assert "[architecture, design]" in text
 
     def test_all_known_domains_have_practices(self):
         """Every domain in the discover skill's checklist list has BPs."""
@@ -164,7 +181,30 @@ class TestHandbookCommand:
         assert rc == 0
         out = capsys.readouterr().out
         assert "Best-Practice Handbook" in out
-        assert "Generic Best Practices" in out
+        # STORY-661: default stdout is domain + count + title/tag index ONLY.
+        assert "## Index" in out
+        assert "Separation of Concerns" in out
+        assert "## Generic Best Practices" not in out
+
+    def test_generate_default_stdout_is_index_only(self, project_root: Path, capsys):
+        """STORY-661: the generic sermon bodies are gone from default stdout —
+        titles+tags index only; bodies appear via --verbose."""
+        rc = handbook_cmd.run(project_root, {"create": False, "verbose": False})
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "Practices:** 6" in out  # count
+        assert "Separation of Concerns" in out  # title in index
+        assert "[architecture, design]" in out  # tags in index
+        assert "**Practice:**" not in out  # no bodies
+        assert "**Rationale:**" not in out
+        assert "**Verification:**" not in out
+
+    def test_generate_verbose_prints_full_bodies(self, project_root: Path, capsys):
+        rc = handbook_cmd.run(project_root, {"create": False, "verbose": True})
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "**Rationale:**" in out
+        assert "## Generic Best Practices" in out
 
     def test_generate_no_domain_shows_generic(self, project_root: Path, capsys):
         rc = handbook_cmd.run(project_root, {"create": False})
@@ -249,6 +289,15 @@ class TestHandbookCLIRegistration:
         parser = build_parser()
         args = parser.parse_args(["handbook", "generate", "--create"])
         assert args.create is True
+
+    def test_handbook_generate_verbose_flag(self):
+        """STORY-661: --verbose is registered and defaults to False."""
+        from specflow.cli import build_parser
+        parser = build_parser()
+        args = parser.parse_args(["handbook", "generate"])
+        assert args.verbose is False
+        args = parser.parse_args(["handbook", "generate", "--verbose"])
+        assert args.verbose is True
 
     def test_handbook_in_dispatch_map(self):
         from specflow.cli import cmd_handbook

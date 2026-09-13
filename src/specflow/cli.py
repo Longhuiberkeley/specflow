@@ -395,7 +395,11 @@ def _add_handbook_parser(subparsers):
     gen_p = sub.add_parser("generate", help="Surface or create bundled best-practice BP artifacts")
     gen_p.add_argument(
         "--create", action="store_true",
-        help="Create BP artifacts in _specflow/specs/best-practices/ (default: print to stdout)",
+        help="Create BP artifacts in _specflow/specs/best-practices/ (default: print index to stdout)",
+    )
+    gen_p.add_argument(
+        "--verbose", action="store_true",
+        help="Print full practice bodies (default: domain, count, title+tag index only)",
     )
 
 
