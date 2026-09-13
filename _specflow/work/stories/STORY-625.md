@@ -21,14 +21,14 @@ links:
 - target: UT-036
   role: verified_by
 created: '2026-08-03'
-fingerprint: sha256:fccf88e2d5f3
+fingerprint: sha256:acb19758d051
 output_files:
 - src/specflow/packs/ops/pack.yaml
 - src/specflow/packs/ops/schemas/monitor.yaml
 - src/specflow/packs/ops/schemas/run.yaml
 - tests/test_ops_pack.py
 version: 1
-modified: '2026-08-04'
+modified: '2026-09-13'
 ---
 
 # Pre-adoption baseline traceability
@@ -69,3 +69,10 @@ are added here, not orphaned.
 The Antigravity-CLI session cache that previously lived here is now excluded
 from source scanning on principle (it is an external-tool cache dir, not code),
 so it no longer requires a baseline home.
+
+## Acceptance Criteria
+
+- Every file in `output_files` is recorded against this baseline STORY because none of the three attribution orders (wave-commit IDs, git-history → STORY, feature-area → STORY) yields a defensible owner.
+- The orphan-code meter reaches zero un-adopted files with every ownerless file named against this bucket rather than demoted.
+- Future ownerless files are added to this baseline's `output_files` instead of surfacing as orphans.
+- tests/test_ops_pack.py pins the ops-pack files rolled up here.

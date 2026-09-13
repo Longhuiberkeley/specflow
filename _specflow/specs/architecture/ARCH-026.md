@@ -17,7 +17,9 @@ links:
   role: derives_from
 created: '2026-08-03'
 fingerprint: sha256:5b95d52012fe
-modified: '2026-08-10'
+modified: '2026-09-13'
+thinking_techniques:
+- assumption-surfacing
 ---
 
 # Verification-contract recording + accounting evidence lenses

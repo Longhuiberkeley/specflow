@@ -507,6 +507,35 @@ class TestCheckStorySize:
         result = lint_cmd._check_story_size(arts)
         assert "0 acceptance criteria" not in result["detail"]
 
+    def test_verified_story_size_shape_is_not_flagged(self):
+        # Count heuristics are authoring-time guidance: an implemented/verified
+        # story's shape is historical record, and STORY-663 escalation must not
+        # turn it into a blocking defect (it would fire every 3 full runs
+        # forever — the advice cannot be acted on without rewriting history).
+        body = "## Acceptance Criteria\n" + "\n".join(
+            f"{i}. criterion {i}" for i in range(1, 11)
+        )
+        arts = [_make_art("STORY-001", "story", status="verified", body=body)]
+        result = lint_cmd._check_story_size(arts)
+        assert result["warning_count"] == 0
+
+    def test_missing_ac_section_flagged_at_any_status(self):
+        # A missing AC section is fixable at any status — keep warning for
+        # implemented/verified stories too (only the count heuristics scope).
+        arts = [_make_art("STORY-001", "story", status="verified", body="no section")]
+        result = lint_cmd._check_story_size(arts)
+        assert result["warning_count"] == 1
+        assert "no Acceptance Criteria section" in result["detail"]
+
+    def test_approved_story_over_size_limit_still_flagged(self):
+        body = "## Acceptance Criteria\n" + "\n".join(
+            f"{i}. criterion {i}" for i in range(1, 11)
+        )
+        arts = [_make_art("STORY-001", "story", status="approved", body=body)]
+        result = lint_cmd._check_story_size(arts)
+        assert result["warning_count"] == 1
+        assert "10 acceptance criteria" in result["detail"]
+
 
 # ── trace.run ───────────────────────────────────────────────────────────────
 

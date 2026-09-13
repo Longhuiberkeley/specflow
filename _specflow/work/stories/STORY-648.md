@@ -12,8 +12,13 @@ links:
 - target: REQ-038
   role: implements
 created: '2026-08-30'
-fingerprint: sha256:fd215569cc2f
-modified: '2026-08-30'
+fingerprint: sha256:992c7fb99058
+modified: '2026-09-13'
 ---
 
 # v1.14.6: quant domain checklist thin rewrite — mapping, not finance
+
+## Acceptance Criteria
+
+1. The quant domain checklist teaches concept-to-artifact mapping, not finance methodology.
+2. Template and live `.claude` mirror stay byte-identical (pinned by the mirror guard in tests/test_v1143_integration.py).

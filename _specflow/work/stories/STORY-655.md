@@ -15,8 +15,14 @@ links:
 - target: DEC-081
   role: guided_by
 created: '2026-09-11'
-fingerprint: sha256:1ab9654b45c6
-modified: '2026-09-11'
+fingerprint: sha256:386c45e8cf2f
+modified: '2026-09-13'
 ---
 
 # Ops RUN reversible pause: schema, doctrine line, tests
+
+## Acceptance Criteria
+
+1. paused → live is legal in run.yaml (`live: [deployed, paused]`); deployed stays the sole creation root; retired stays terminal.
+2. The ops skill's RUN status line documents resumability without weakening the frozen-at-deploy doctrine.
+3. tests/test_ops_pack.py pins the schema map.

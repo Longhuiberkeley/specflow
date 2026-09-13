@@ -12,8 +12,13 @@ links:
 - target: REQ-039
   role: implements
 created: '2026-09-11'
-fingerprint: sha256:b76d322edefe
-modified: '2026-09-11'
+fingerprint: sha256:b9a8cc5b419b
+modified: '2026-09-13'
 ---
 
 # Closure-readiness accounting in autoresearch status
+
+## Acceptance Criteria
+
+1. `specflow autoresearch status` reports closure-readiness signals (goals met, confirmed FINDs, open agenda directions) deterministically.
+2. A repo with no active LOOP reports closure-readiness + Phase 0 checks only, exiting 0 when clean (tests/test_autoresearch_cli.py).

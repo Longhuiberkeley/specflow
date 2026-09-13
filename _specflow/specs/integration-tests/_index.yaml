@@ -409,4 +409,35 @@ artifacts:
     tags: []
     fingerprint: sha256:989a5e419b94
     children: []
-next_id: 50
+  IT-050:
+    id: IT-050
+    title: 'Autoresearch CLI integration: status codes, closure readiness, schema
+      pins (STORY-650..655)'
+    status: draft
+    tags: []
+    fingerprint: sha256:2cde75552e9f
+    children: []
+  IT-051:
+    id: IT-051
+    title: 'Context-arc integration: live/shipped mirror byte-equality + dogfood CLI
+      (STORY-656..659)'
+    status: draft
+    tags: []
+    fingerprint: sha256:94e9d899c9b7
+    children: []
+  IT-052:
+    id: IT-052
+    title: "CLI-surface integration: argparse\u2192command wiring, autoresearch status\
+      \ codes (STORY-660..663)"
+    status: draft
+    tags: []
+    fingerprint: sha256:bd7fa50d11a0
+    children: []
+  IT-053:
+    id: IT-053
+    title: 'Invariant-sheet integration: pack contents parse and route (STORY-664)'
+    status: draft
+    tags: []
+    fingerprint: sha256:5d631002793a
+    children: []
+next_id: 54

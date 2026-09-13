@@ -913,7 +913,15 @@ def _check_story_size(
     """Warn on stories exceeding size heuristics.
 
     Flags stories with >8 acceptance criteria or >5 distinct subsystem references.
+
+    The count heuristics (too many/few ACs, too many subsystem refs) are
+    authoring-time guidance scoped to actionable statuses (draft/approved):
+    re-slicing an implemented/verified story rewrites history, and STORY-663
+    persistent-warning escalation must not turn historical shape into a
+    blocking defect. The "no Acceptance Criteria section" warning stays
+    unscoped — a missing AC section is fixable at any status.
     """
+    _ACTIONABLE = ("draft", "approved")
     blocking = 0
     warnings = 0
     details: list[str] = []
@@ -933,12 +941,13 @@ def _check_story_size(
             # bulleted / `- [x]` AC sections as "0 acceptance criteria", training
             # users to ignore this check.
             ac_count = lint_lib.count_acceptance_criteria_items(art)
-            if ac_count > 8:
-                warnings += 1
-                details.append(f"  ⚠ [{art.id}] has {ac_count} acceptance criteria (max 8 recommended)")
-            if ac_count < 2:
-                warnings += 1
-                details.append(f"  ⚠ [{art.id}] has {ac_count} acceptance criteria (minimum 2 recommended)")
+            if art.status in _ACTIONABLE:
+                if ac_count > 8:
+                    warnings += 1
+                    details.append(f"  ⚠ [{art.id}] has {ac_count} acceptance criteria (max 8 recommended)")
+                if ac_count < 2:
+                    warnings += 1
+                    details.append(f"  ⚠ [{art.id}] has {ac_count} acceptance criteria (minimum 2 recommended)")
         else:
             warnings += 1
             details.append(f"  ⚠ [{art.id}] has no Acceptance Criteria section")
@@ -948,7 +957,7 @@ def _check_story_size(
             + re.findall(r"\blib/[\w./-]+", art.body)
             + re.findall(r"commands/[\w./-]+", art.body)
         )
-        if len(subsystem_refs) > 5:
+        if art.status in _ACTIONABLE and len(subsystem_refs) > 5:
             warnings += 1
             details.append(f"  ⚠ [{art.id}] references {len(subsystem_refs)} distinct subsystems (max 5 recommended)")
 
@@ -1289,11 +1298,22 @@ def _check_wave_cycles(
     if result.get("ok") and result.get("waves"):
         waves = result["waves"]
         details.append(f"  ℹ {len(stories)} stories in {len(waves)} wave(s)")
+        # ℹ-marked so the survey lines are excluded from STORY-663
+        # persistent-warning identity (info items never escalate —
+        # severity-levels.md §Escalation); an un-markable survey line would
+        # otherwise go blocking every 3 full runs.
         for i, wave in enumerate(waves):
-            details.append(f"    wave {i + 1}: {', '.join(wave)}")
+            details.append(f"    ℹ wave {i + 1}: {', '.join(wave)}")
 
+    # Restructure advice is authoring-time guidance: it is actionable only
+    # while the story can still be re-sliced (draft/approved). For
+    # implemented/verified stories the dependency set is historical record,
+    # and STORY-663 escalation must not turn it into a blocking defect.
+    _ACTIONABLE = ("draft", "approved")
     dep_counts: dict[str, int] = {}
     for s in stories:
+        if s.status not in _ACTIONABLE:
+            continue
         count = sum(1 for link in s.links if link.role in ("derives_from", "depends_on") and art_lib.get_prefix_from_id(link.target) == "STORY")
         if count > 0:
             dep_counts[s.id] = count

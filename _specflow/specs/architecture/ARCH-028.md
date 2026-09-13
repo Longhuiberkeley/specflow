@@ -21,6 +21,9 @@ links:
 created: '2026-08-03'
 fingerprint: sha256:174bed332720
 version: 1
+thinking_techniques:
+- assumption-surfacing
+modified: '2026-09-13'
 ---
 
 # Deferred lifecycle capabilities — accounting-based command surfaces

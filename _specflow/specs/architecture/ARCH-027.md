@@ -26,6 +26,9 @@ links:
   role: derives_from
 created: '2026-08-03'
 fingerprint: sha256:a4cf4564638d
+thinking_techniques:
+- assumption-surfacing
+modified: '2026-09-13'
 ---
 
 # Autoresearch pack — schema-driven capability surface

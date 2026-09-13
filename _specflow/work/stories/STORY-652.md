@@ -16,8 +16,14 @@ links:
 - target: DEC-079
   role: guided_by
 created: '2026-09-11'
-fingerprint: sha256:044c1db2f9c5
-modified: '2026-09-11'
+fingerprint: sha256:f292d79bff01
+modified: '2026-09-13'
 ---
 
 # Reversible pause: initial_statuses schema key, paused-to-active
+
+## Acceptance Criteria
+
+1. The autoresearch competition schema accepts an `initial_statuses` key naming the creation roots.
+2. paused → active is a legal COMP transition — paused is no longer a one-way door — while completed → active stays rejected.
+3. tests/test_v1145_locks.py and tests/test_artifacts.py pin the map and both directions.

@@ -27,12 +27,12 @@ links:
 - target: UT-039
   role: verified_by
 created: '2026-08-03'
-fingerprint: sha256:0c60189f291d
+fingerprint: sha256:c7ffbb2a1ebb
 output_files:
 - src/specflow/lib/orphans.py
 - tests/test_done.py
 - tests/test_verify.py
-modified: '2026-08-04'
+modified: '2026-09-13'
 ---
 
 # Orphan-code adoption + outcome feedback loop (upcoming wave)
@@ -54,15 +54,12 @@ queueable.
    (the existing learnings surface) so a repeated failure mode informs the next
    wave — accounting, never blocking. No new artifact type (PREV already exists).
 
-## Acceptance criteria (to be met when implemented)
+## Acceptance Criteria
 
-- A one-step adopt-orphan path lands an un-adopted cluster under an ARCH with a
-  backfilled STORY, and the orphan meter coverage % rises accordingly.
-- A recorded divergent `verify_run_exit_code` can seed a PREV prevention pattern
-  via the existing learnings path; the loop is opt-in and never blocks.
+- A one-step adopt-orphan path lands an un-adopted cluster under an ARCH with a backfilled STORY, and the orphan meter coverage % rises accordingly.
+- A recorded divergent `verify_run_exit_code` can seed a PREV prevention pattern via the existing learnings path; the loop is opt-in and never blocks.
 - `specflow artifact-lint --method programmatic` adds 0 blocking issues.
-- No new artifact types, no new link roles (D-18 respected), zero external API
-  calls.
+- No new artifact types, no new link roles (D-18 respected), zero external API calls.
 
 ## Out of scope
 

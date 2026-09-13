@@ -26,11 +26,13 @@ links:
   role: verified_by
 - target: QT-028
   role: verified_by
+- target: SPIKE-CHECKLIS-1a12
+  role: derives_from
 created: '2026-08-10'
 fingerprint: sha256:7642a070b2c7
 rationale: All acceptance criteria are implemented and covered by focused/full tests,
   qualification contracts, schema/skill parity, and built-wheel smoke validation.
-modified: '2026-08-10'
+modified: '2026-09-13'
 output_files:
 - src/specflow/commands/brief.py
 - src/specflow/commands/status.py

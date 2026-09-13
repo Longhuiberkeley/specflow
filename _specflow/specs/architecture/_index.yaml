@@ -249,18 +249,7 @@ artifacts:
     title: 'Privacy gate: denylist release check + sanctioned-exception model'
     status: approved
     tags: []
-    fingerprint: sha256:52b000665f0a
-    children: []
-  ARCH-LOUDFAIL-d87a:
-    id: ARCH-LOUDFAIL-d87a
-    title: Loud-failure and advisory ergonomics command surfaces (v1.13.2)
-    status: implemented
-    tags:
-    - v1.13.2
-    - ergonomics
-    - architecture
-    - accounting-not-policing
-    fingerprint: sha256:f9a476477150
+    fingerprint: sha256:6bd010cdbfc6
     children: []
   ARCH-030:
     id: ARCH-030
@@ -271,6 +260,39 @@ artifacts:
     - skills
     - architecture
     - context-audit
-    fingerprint: sha256:41c75db94fdb
+    fingerprint: sha256:bf63e49918ec
     children: []
-next_id: 31
+  ARCH-031:
+    id: ARCH-031
+    title: 'COMP lifecycle architecture: closure gate, reversible pause, closure accounting'
+    status: approved
+    tags: []
+    fingerprint: sha256:c1710dbcd31b
+    children: []
+  ARCH-032:
+    id: ARCH-032
+    title: 'Autoresearch methodology context architecture: thin checklists, rolling
+      evaluation'
+    status: approved
+    tags: []
+    fingerprint: sha256:f74c31c49988
+    children: []
+  ARCH-033:
+    id: ARCH-033
+    title: 'Ops RUN lifecycle architecture: reversible pause'
+    status: approved
+    tags: []
+    fingerprint: sha256:cd8de45116b1
+    children: []
+  ARCH-LOUDFAIL-d87a:
+    id: ARCH-LOUDFAIL-d87a
+    title: Loud-failure and advisory ergonomics command surfaces (v1.13.2)
+    status: implemented
+    tags:
+    - v1.13.2
+    - ergonomics
+    - architecture
+    - accounting-not-policing
+    fingerprint: sha256:0c794baa1eaa
+    children: []
+next_id: 34

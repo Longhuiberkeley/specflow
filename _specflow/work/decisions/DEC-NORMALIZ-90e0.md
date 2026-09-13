@@ -14,9 +14,15 @@ suspect: false
 links: []
 created: '2026-08-09'
 fingerprint: sha256:aebb8deb1526
-modified: '2026-08-10'
+modified: '2026-09-13'
 rationale: Ratified after the list-valued frontmatter normalization shipped and was
   verified in v1.13.7.
+risk_profile:
+  tier: 1
+  reversibility: reversible
+  blast_radius_count: 0
+  confidence: ''
+  confidence_reason: ''
 ---
 
 ## Decision

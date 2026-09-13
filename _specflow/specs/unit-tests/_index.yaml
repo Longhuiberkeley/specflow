@@ -758,6 +758,44 @@ artifacts:
     tags: []
     fingerprint: sha256:a8b6ddd80b25
     children: []
+  UT-083:
+    id: UT-083
+    title: 'COMP lifecycle unit pins: closure lint, reversible pause, creation gates
+      (STORY-650..652)'
+    status: draft
+    tags: []
+    fingerprint: sha256:abd2e0e914be
+    children: []
+  UT-084:
+    id: UT-084
+    title: Rolling evaluation + thin domain checklists + ops RUN pause unit pins (STORY-653..655)
+    status: draft
+    tags: []
+    fingerprint: sha256:38124556aa6c
+    children: []
+  UT-085:
+    id: UT-085
+    title: 'Minimal-context unit pins: agent-context, pack snippets, skill surfaces
+      (STORY-656..659)'
+    status: draft
+    tags: []
+    fingerprint: sha256:3755e6aea7fe
+    children: []
+  UT-086:
+    id: UT-086
+    title: 'CLI-surface unit pins: brief consent, handbook index, hook routing, backstops
+      (STORY-660..663)'
+    status: draft
+    tags: []
+    fingerprint: sha256:7d612f03c312
+    children: []
+  UT-087:
+    id: UT-087
+    title: Autoresearch invariant-sheet unit pins (STORY-664)
+    status: draft
+    tags: []
+    fingerprint: sha256:4fc0d20e8631
+    children: []
   UT-EVIDENCE-9a3d:
     id: UT-EVIDENCE-9a3d
     title: Evidence RTM includes mixed eligible REQ statuses
@@ -765,4 +803,4 @@ artifacts:
     tags: []
     fingerprint: sha256:cd2ebadd80c8
     children: []
-next_id: 83
+next_id: 88

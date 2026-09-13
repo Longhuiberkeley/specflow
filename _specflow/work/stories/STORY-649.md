@@ -15,11 +15,17 @@ links:
 - target: REQ-038
   role: implements
 created: '2026-08-30'
-fingerprint: sha256:05b68d748f71
-modified: '2026-08-30'
+fingerprint: sha256:9cbdb0c07756
+modified: '2026-09-13'
 output_files:
 - src/specflow/lib/privacy.py
 - tests/test_privacy_redaction.py
 ---
 
 # Audit-report privacy redaction at generation time + single-source denylist pattern
+
+## Acceptance Criteria
+
+1. Every project-audit report/cache write passes through `privacy.redact_text`, so quoting REQ-038's AC cannot re-leak the denylist enumeration.
+2. src/specflow/lib/privacy.py is the single source of truth for the denylist pattern; scripts/denylist_gate.py imports it rather than embedding a copy.
+3. tests/test_privacy_redaction.py pins token classes, idempotence, and prose-safety.

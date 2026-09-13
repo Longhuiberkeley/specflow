@@ -13,8 +13,14 @@ links:
 - target: REQ-039
   role: implements
 created: '2026-09-11'
-fingerprint: sha256:d358898fe0e5
-modified: '2026-09-11'
+fingerprint: sha256:b34690da3adb
+modified: '2026-09-13'
 ---
 
 # COMP closure gate: criteria, human gate, lint warn
+
+## Acceptance Criteria
+
+1. COMP completion requires every `goals` entry satisfied-with-confirmed-FIND-evidence or explicitly abandoned-with-reason, plus direct-user confirmation (no self-approval).
+2. `artifact-lint` warns on a completed COMP with zero confirmed FINDs, resolving FIND→COMP via both frontmatter competition and belongs_to links (tests/test_artifact_lint.py).
+3. COMP creation/closure transitions serialize via the creation-status gate and locks (tests/test_v1145_locks.py).

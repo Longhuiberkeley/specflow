@@ -799,7 +799,7 @@ artifacts:
     - pack-system
     - refresh
     - v1.12.5
-    fingerprint: sha256:b6acee5be483
+    fingerprint: sha256:2f37303ac6d9
     children: []
   STORY-622:
     id: STORY-622
@@ -811,7 +811,7 @@ artifacts:
     - v1.12.6
     - accounting-not-policing
     - gate
-    fingerprint: sha256:bebfe53d9f39
+    fingerprint: sha256:ecc299e5e670
     children: []
   STORY-623:
     id: STORY-623
@@ -835,7 +835,7 @@ artifacts:
     - adoption
     - outcome-feedback
     - upcoming
-    fingerprint: sha256:0c60189f291d
+    fingerprint: sha256:c7ffbb2a1ebb
     children: []
   STORY-625:
     id: STORY-625
@@ -847,7 +847,7 @@ artifacts:
     - orphan-code
     - v1.13
     - accounting-not-policing
-    fingerprint: sha256:fccf88e2d5f3
+    fingerprint: sha256:acb19758d051
     children: []
   STORY-626:
     id: STORY-626
@@ -862,21 +862,21 @@ artifacts:
     title: Fix project-audit baseline selection to semver ordering
     status: verified
     tags: []
-    fingerprint: sha256:b76debaf06ec
+    fingerprint: sha256:1c9b122924e3
     children: []
   STORY-628:
     id: STORY-628
     title: 'De-noise brief --next: rewind-evidence gate and auto-DEC filter'
     status: verified
     tags: []
-    fingerprint: sha256:067983d6c42e
+    fingerprint: sha256:513b978adf4c
     children: []
   STORY-629:
     id: STORY-629
     title: Add dec_kind discriminator to DEC artifacts
     status: verified
     tags: []
-    fingerprint: sha256:a657f806a0a2
+    fingerprint: sha256:7fd3bcca5faa
     children: []
   STORY-630:
     id: STORY-630
@@ -986,7 +986,7 @@ artifacts:
     status: draft
     tags:
     - v1.15.0-backlog
-    fingerprint: sha256:f273b7f17a02
+    fingerprint: sha256:e229e745199b
     children: []
   STORY-643:
     id: STORY-643
@@ -994,7 +994,7 @@ artifacts:
     status: draft
     tags:
     - v1.15.0-backlog
-    fingerprint: sha256:604529e78bd2
+    fingerprint: sha256:1f7ed654008d
     children: []
   STORY-644:
     id: STORY-644
@@ -1002,7 +1002,7 @@ artifacts:
     status: draft
     tags:
     - v1.15.0-backlog
-    fingerprint: sha256:b0f640aac6ac
+    fingerprint: sha256:d473e694a46a
     children: []
   STORY-645:
     id: STORY-645
@@ -1010,7 +1010,7 @@ artifacts:
     status: draft
     tags:
     - v1.15.0-backlog
-    fingerprint: sha256:239a1f65c6cf
+    fingerprint: sha256:e01c95c05ae7
     children: []
   STORY-646:
     id: STORY-646
@@ -1026,14 +1026,14 @@ artifacts:
       \ automation (CI+pytest), brief vanished symmetry + locking tests"
     status: implemented
     tags: []
-    fingerprint: sha256:1d4bbe3ef7ea
+    fingerprint: sha256:9a9b494b0ab3
     children: []
   STORY-648:
     id: STORY-648
     title: "v1.14.6: quant domain checklist thin rewrite \u2014 mapping, not finance"
     status: implemented
     tags: []
-    fingerprint: sha256:fd215569cc2f
+    fingerprint: sha256:992c7fb99058
     children: []
   STORY-649:
     id: STORY-649
@@ -1041,7 +1041,112 @@ artifacts:
       pattern
     status: implemented
     tags: []
-    fingerprint: sha256:05b68d748f71
+    fingerprint: sha256:9cbdb0c07756
+    children: []
+  STORY-650:
+    id: STORY-650
+    title: 'COMP closure gate: criteria, human gate, lint warn'
+    status: implemented
+    tags: []
+    fingerprint: sha256:b34690da3adb
+    children: []
+  STORY-651:
+    id: STORY-651
+    title: Closure-readiness accounting in autoresearch status
+    status: implemented
+    tags: []
+    fingerprint: sha256:b9a8cc5b419b
+    children: []
+  STORY-652:
+    id: STORY-652
+    title: 'Reversible pause: initial_statuses schema key, paused-to-active'
+    status: implemented
+    tags: []
+    fingerprint: sha256:f292d79bff01
+    children: []
+  STORY-653:
+    id: STORY-653
+    title: Rolling-evaluation recipe, churn rule, window_end registration
+    status: implemented
+    tags: []
+    fingerprint: sha256:423bc885e9df
+    children: []
+  STORY-654:
+    id: STORY-654
+    title: Thin pack domain-research checklists per DEC-080
+    status: implemented
+    tags: []
+    fingerprint: sha256:f48818149cd9
+    children: []
+  STORY-655:
+    id: STORY-655
+    title: 'Ops RUN reversible pause: schema, doctrine line, tests'
+    status: implemented
+    tags: []
+    fingerprint: sha256:386c45e8cf2f
+    children: []
+  STORY-656:
+    id: STORY-656
+    title: Replace always-on context and pack snippets with audit drafts
+    status: implemented
+    tags: []
+    fingerprint: sha256:2593a48f8b3e
+    children: []
+  STORY-657:
+    id: STORY-657
+    title: Rewrite all 15 skill catalog descriptions to narrow one-liners
+    status: implemented
+    tags: []
+    fingerprint: sha256:768c9e9248ea
+    children: []
+  STORY-658:
+    id: STORY-658
+    title: Collapse lifecycle skill bodies into lean routers
+    status: implemented
+    tags: []
+    fingerprint: sha256:d41c31288e5d
+    children: []
+  STORY-659:
+    id: STORY-659
+    title: Trim on-demand reference files to consult-when pointers
+    status: implemented
+    tags: []
+    fingerprint: sha256:88597a4209ef
+    children: []
+  STORY-660:
+    id: STORY-660
+    title: 'brief.py: hoist --next + IDs; approve lists exact draft IDs and impact'
+    status: implemented
+    tags: []
+    fingerprint: sha256:ef5902486a13
+    children: []
+  STORY-661:
+    id: STORY-661
+    title: 'handbook.py: drop generic practice bodies; index-only default stdout'
+    status: implemented
+    tags: []
+    fingerprint: sha256:07d4f9866811
+    children: []
+  STORY-662:
+    id: STORY-662
+    title: 'hook.py: route failures to artifact-lint subcommands; fix RBAC copy'
+    status: implemented
+    tags: []
+    fingerprint: sha256:5c5250f342f5
+    children: []
+  STORY-663:
+    id: STORY-663
+    title: 'CLI backstops: 3-run escalation, pack-validate, autoresearch status codes'
+    status: implemented
+    tags: []
+    fingerprint: sha256:72e3360fe3ba
+    children: []
+  STORY-664:
+    id: STORY-664
+    title: Autoresearch invariant sheets; skill-standards becomes DEC/ARCH
+    status: implemented
+    tags: []
+    fingerprint: sha256:3289341fad9e
     children: []
   STORY-ADDAUXIL-c7bd:
     id: STORY-ADDAUXIL-c7bd
@@ -1152,110 +1257,5 @@ artifacts:
     status: verified
     tags: []
     fingerprint: sha256:a557ed85a54a
-    children: []
-  STORY-650:
-    id: STORY-650
-    title: 'COMP closure gate: criteria, human gate, lint warn'
-    status: implemented
-    tags: []
-    fingerprint: sha256:d358898fe0e5
-    children: []
-  STORY-651:
-    id: STORY-651
-    title: Closure-readiness accounting in autoresearch status
-    status: implemented
-    tags: []
-    fingerprint: sha256:b76d322edefe
-    children: []
-  STORY-652:
-    id: STORY-652
-    title: 'Reversible pause: initial_statuses schema key, paused-to-active'
-    status: implemented
-    tags: []
-    fingerprint: sha256:044c1db2f9c5
-    children: []
-  STORY-653:
-    id: STORY-653
-    title: Rolling-evaluation recipe, churn rule, window_end registration
-    status: implemented
-    tags: []
-    fingerprint: sha256:08c73c1f3f96
-    children: []
-  STORY-654:
-    id: STORY-654
-    title: Thin pack domain-research checklists per DEC-079
-    status: implemented
-    tags: []
-    fingerprint: sha256:bec53294fcc3
-    children: []
-  STORY-655:
-    id: STORY-655
-    title: 'Ops RUN reversible pause: schema, doctrine line, tests'
-    status: implemented
-    tags: []
-    fingerprint: sha256:1ab9654b45c6
-    children: []
-  STORY-656:
-    id: STORY-656
-    title: Replace always-on context and pack snippets with audit drafts
-    status: implemented
-    tags: []
-    fingerprint: sha256:f828969e5a0e
-    children: []
-  STORY-657:
-    id: STORY-657
-    title: Rewrite all 15 skill catalog descriptions to narrow one-liners
-    status: implemented
-    tags: []
-    fingerprint: sha256:befdf131b7ca
-    children: []
-  STORY-658:
-    id: STORY-658
-    title: Collapse lifecycle skill bodies into lean routers
-    status: implemented
-    tags: []
-    fingerprint: sha256:7fdb521628fd
-    children: []
-  STORY-659:
-    id: STORY-659
-    title: Trim on-demand reference files to consult-when pointers
-    status: implemented
-    tags: []
-    fingerprint: sha256:eca9f009f24b
-    children: []
-  STORY-660:
-    id: STORY-660
-    title: 'brief.py: hoist --next + IDs; approve lists exact draft IDs and impact'
-    status: implemented
-    tags: []
-    fingerprint: sha256:0cc1ae3bf513
-    children: []
-  STORY-661:
-    id: STORY-661
-    title: 'handbook.py: drop generic practice bodies; index-only default stdout'
-    status: implemented
-    tags: []
-    fingerprint: sha256:c88255a10bde
-    children: []
-  STORY-662:
-    id: STORY-662
-    title: 'hook.py: route failures to artifact-lint subcommands; fix RBAC copy'
-    status: implemented
-    tags: []
-    fingerprint: sha256:d7ef1f9bc166
-    children: []
-  STORY-663:
-    id: STORY-663
-    title: 'CLI backstops: 3-run escalation, pack-validate, autoresearch status codes'
-    status: implemented
-    tags: []
-    fingerprint: sha256:942484ab5004
-    children: []
-  STORY-664:
-    id: STORY-664
-    title: Autoresearch invariant sheets; skill-standards becomes DEC/ARCH
-    status: implemented
-    tags: []
-    fingerprint: sha256:7821fe316936
     children: []
 next_id: 665

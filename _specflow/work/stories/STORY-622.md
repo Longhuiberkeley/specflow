@@ -27,11 +27,11 @@ links:
 - target: UT-033
   role: verified_by
 created: '2026-08-03'
-fingerprint: sha256:bebfe53d9f39
+fingerprint: sha256:ecc299e5e670
 thinking_techniques:
 - premortem
 - assumption_surfacing
-modified: '2026-08-04'
+modified: '2026-09-13'
 ---
 
 # v1.12.6 gate patch: kill the foundational-doctrine cry-wolf + add project-audit --dry-run (retro)
@@ -53,14 +53,12 @@ v1.13 cycle has a complete REQ→ARCH→STORY chain for the false-confidence the
   cache + index mutations). Enables local pre-push exit-code checks without
   dirtying the tree.
 
-## Acceptance criteria (met)
+## Acceptance Criteria
 
 - A BP or DEC with no `links[]` is NOT flagged as orphan-provenance.
 - Genuine orphan-provenance detection for every other type stays intact.
-- `specflow project-audit --dry-run` exits with the same code as a real run and
-  writes nothing to disk.
-- The release-gate audit escalates only on real structural findings (16 warns
-  at v1.12.6, down from 17).
+- `specflow project-audit --dry-run` exits with the same code as a real run and writes nothing to disk.
+- The release-gate audit escalates only on real structural findings (16 warns at v1.12.6, down from 17).
 
 ## Verification (already on record)
 

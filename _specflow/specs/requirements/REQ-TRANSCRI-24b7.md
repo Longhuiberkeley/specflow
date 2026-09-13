@@ -15,10 +15,12 @@ links:
 - target: DEC-059
   role: derives_from
 created: '2026-08-04'
-fingerprint: sha256:7e2a7a6434b9
-modified: '2026-08-05'
+fingerprint: sha256:7aa453452d91
+modified: '2026-09-13'
 non_functional_category: functional
 version: 1
+thinking_techniques:
+- assumption-surfacing
 ---
 
 # Transcript-mined CLI authoring ergonomics — wave 2 (v1.13.2)
@@ -39,5 +41,5 @@ A corpus of ~1,558 real agent CLI invocations exposed recurring authoring fricti
 
 1. Given an agent needs to replace an artifact body or Acceptance Criteria section, when it uses the dedicated update surface, then the intended body scope changes and the fingerprint recomputes without clobbering unrelated sections.
 2. Given an agent mistypes a status, frontmatter field, confidence option, or lint-repair command, when SpecFlow responds, then the guidance is deterministic, copy-paste-correct, and never fires on correct input.
-3. Given fingerprint drift or unreviewed decisions exist, when the agent asks for status, then report-only accounting is fast, non-mutating, and counts each downstream artifact once.
+3. Given fingerprint drift or unreviewed decisions exist, when the agent asks for status, then report-only accounting is deterministic and non-mutating, and counts each downstream artifact once.
 4. Given two flags could write the same field, when both are supplied, then SpecFlow fails loudly rather than silently selecting precedence.

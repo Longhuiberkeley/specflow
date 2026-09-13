@@ -111,6 +111,22 @@ class TestWaveCycleDetection:
         assert result["warning_count"] >= 1
         assert "4 dependencies" in result["detail"]
 
+    def test_verified_story_dependency_advice_not_flagged(self, project_root: Path):
+        # Restructure advice is authoring-time guidance: a verified story's
+        # dependency set is historical record, and STORY-663 escalation must
+        # not turn it into a persistent blocking defect.
+        links = [art_lib.Link(target=f"STORY-00{i}", role="depends_on") for i in range(1, 5)]
+        stories = [
+            _make_art("STORY-001", "story", status="verified"),
+            _make_art("STORY-002", "story", status="verified"),
+            _make_art("STORY-003", "story", status="verified"),
+            _make_art("STORY-004", "story", status="verified"),
+            _make_art("STORY-005", "story", status="verified", links=links),
+        ]
+        result = lint_cmd._check_wave_cycles(stories, project_root)
+        assert result["warning_count"] == 0
+        assert "dependencies" not in result["detail"]
+
     def test_no_stories(self, project_root: Path):
         result = lint_cmd._check_wave_cycles([], project_root)
         assert result["warning_count"] == 0
@@ -127,3 +143,15 @@ class TestWaveCycleDetection:
         assert result["warning_count"] == 0
         assert "wave 1" in result["detail"]
         assert "wave 2" in result["detail"]
+
+    def test_wave_survey_lines_are_info_marked(self, project_root: Path):
+        # STORY-663 escalation identity includes every non-ℹ detail line, so
+        # the informational wave survey MUST carry the ℹ marker — otherwise the
+        # survey itself would escalate to blocking every 3 full lint runs.
+        stories = [_make_art("STORY-001", "story", status="approved")]
+        result = lint_cmd._check_wave_cycles(stories, project_root)
+        identity_lines = lint_cmd._warning_detail_lines(result)
+        assert identity_lines == [], (
+            "wave survey lines must be ℹ-marked so they never count as "
+            "persistent warnings"
+        )

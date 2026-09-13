@@ -15,8 +15,10 @@ links:
 - target: ARCH-LOUDFAIL-d87a
   role: derives_from
 created: '2026-08-04'
-fingerprint: sha256:87c9b2fa14a6
-modified: '2026-08-04'
+fingerprint: sha256:303166b07fa8
+modified: '2026-09-13'
+thinking_techniques:
+- assumption-surfacing
 ---
 
 # Loud-failure and advisory ergonomics — detailed design (v1.13.2)
@@ -29,7 +31,7 @@ modified: '2026-08-04'
 
 The mutation path uses a line-anchored h2/h3 regex, excludes fenced spans, and selects a boundary at the next same-or-higher-level heading. Detection-only lint retains broad markers. Zero headings appends; one replaces; multiple fail as ambiguous.
 
-## Repair semantics
+## Repair implementation
 
 Schema-declared dotted-map heads merge into the existing map. Existing custom frontmatter keys bypass typo matching. Unknown current statuses may transition to any legal status so the lint repair command is executable; legal current statuses retain normal transition enforcement.
 

@@ -11,8 +11,8 @@ links:
 - target: REQ-035
   role: implements
 created: '2026-08-04'
-fingerprint: sha256:a657f806a0a2
-modified: '2026-08-04'
+fingerprint: sha256:7fd3bcca5faa
+modified: '2026-09-13'
 output_files:
 - src/specflow/commands/document_changes.py
 - .specflow/schema/decision.yaml
@@ -22,3 +22,10 @@ output_files:
 # Add dec_kind discriminator to DEC artifacts
 
 49 of 62 DEC artifacts are auto-generated change records; the DEC type conflates design decisions with per-commit bookkeeping. Add a dec_kind discriminator (adr | change_record): schema optional field in .specflow/schema/decision.yaml, document_changes generator stamps change_record, and backfill-stamp all 62 existing DECs. See CHL-342.
+
+## Acceptance Criteria
+
+1. `.specflow/schema/decision.yaml` declares the optional `dec_kind` field (adr | change_record).
+2. `document-changes` stamps every generated change-record DEC with `dec_kind: change_record`.
+3. All pre-existing DECs are backfilled with a `dec_kind` value.
+4. tests/test_risk.py pins the discriminator behavior.

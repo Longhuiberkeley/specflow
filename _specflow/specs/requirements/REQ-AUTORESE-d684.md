@@ -6,10 +6,12 @@ status: verified
 suspect: false
 links: []
 created: '2026-05-16'
-modified: '2026-08-05'
-fingerprint: sha256:0fc93b56a8e8
+modified: '2026-09-13'
+fingerprint: sha256:ffcfd81a9cb4
 non_functional_category: functional
 version: 1
+thinking_techniques:
+- assumption-surfacing
 ---
 
 # Autoresearch pack v0.2.0: multi-criteria support, CLI subcommand, and harness-agnosticism
@@ -20,7 +22,7 @@ version: 1
 2. `competition-setup-protocol.md` documents multi-criteria competitions (primary metric + guards + auxiliary logging) with a worked quant example
 3. `competition-setup-protocol.md` documents leakage and gaming patterns (read-only eval, one-number verify, robustness-adjusted primaries) as recommendations, not mandates
 4. `autonomous-loop-protocol.md` includes anti-gaming pointer and auxiliary_metrics logging in Phase 7
-5. `specflow autoresearch plan|run|review|leaderboard` CLI subcommand works with multi-COMP repos (`--competition`, `--all`)
+5. `specflow autoresearch plan|run|review|leaderboard` CLI subcommands address multi-COMP repos: `--competition` selects the named COMP and `--all` iterates every COMP, printing one result set per competition
 6. SKILL.md references CLI backends for all subcommands instead of inlining full protocol
 7. Pack `context_snippet` is defined in pack.yaml and `inject_pack_context()` injects it into instruction files with idempotent sentinel markers
 8. `platforms.yaml` has `instruction_file` field for each platform

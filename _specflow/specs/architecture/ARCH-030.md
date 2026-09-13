@@ -16,13 +16,15 @@ links:
 - target: DEC-083
   role: guided_by
 created: '2026-09-13'
-fingerprint: sha256:41c75db94fdb
+fingerprint: sha256:bf63e49918ec
 modified: '2026-09-13'
+thinking_techniques:
+- assumption-surfacing
 ---
 
 # Skills subsystem: router anatomy, reference layering, and CLI invocation contract
 
-## Anatomy
+## Structure
 
 A skill directory strictly contains:
 
@@ -43,7 +45,7 @@ A skill directory strictly contains:
 
 Deterministic operations (link validation, fingerprints, ranking, wave computation, checklist assembly) run in the Python CLI. Skills call bare `specflow <cmd>` (e.g. `specflow artifact-lint`, `specflow trace`, `specflow brief`) — never `uv run specflow`, which breaks in consuming projects that install via `uv tool install git+...` (see the bootstrap bug in AGENTS.md section 6).
 
-## Layering
+## Module layering
 
 `src/specflow/templates/skills/shared/<skill>/` (shipped, byte-identical mirror of `.claude/skills/<skill>/` dogfood copy) → `specflow init`/`refresh` copies to each host platform's skill dir. Pack skills ship in `src/specflow/packs/<pack>/skills/` and install via `apply_pack`, which never overwrites user-edited files.
 

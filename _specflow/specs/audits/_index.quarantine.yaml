@@ -7,3 +7,21 @@ AUD-094:
   - project-audit
   - auto-generated
   title: Project Audit 20260805T092834Z
+AUD-127:
+  fingerprint: sha256:45a615efe35c
+  id: AUD-127
+  quarantined_at: '2026-09-13T06:09:06Z'
+  status: open
+  tags:
+  - project-audit
+  - auto-generated
+  title: Project Audit 20260913T060758Z
+AUD-128:
+  fingerprint: sha256:a31845a9be74
+  id: AUD-128
+  quarantined_at: '2026-09-13T06:09:06Z'
+  status: open
+  tags:
+  - project-audit
+  - auto-generated
+  title: Project Audit 20260913T060802Z

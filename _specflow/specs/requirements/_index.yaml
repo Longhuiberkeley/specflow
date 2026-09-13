@@ -8,7 +8,7 @@ artifacts:
     - cli
     - core
     - mvp
-    fingerprint: sha256:f900d4c4d133
+    fingerprint: sha256:e732c7d79ed4
     children: []
   REQ-002:
     id: REQ-002
@@ -367,32 +367,6 @@ artifacts:
     tags: []
     fingerprint: sha256:9f6ceeee33b6
     children: []
-  REQ-AUTORESE-d684:
-    id: REQ-AUTORESE-d684
-    title: 'Autoresearch pack v0.2.0: multi-criteria support, CLI subcommand, and
-      harness-agnosticism'
-    status: verified
-    tags: []
-    fingerprint: sha256:0fc93b56a8e8
-    children: []
-  REQ-DEFERRED-5cea:
-    id: REQ-DEFERRED-5cea
-    title: 'Deferred lifecycle capabilities: rewind accounting, RTM, RBAC check, supersession,
-      quality gates, multi-host'
-    status: implemented
-    tags: []
-    fingerprint: sha256:d512b2374ca6
-    children: []
-  REQ-TRANSCRI-24b7:
-    id: REQ-TRANSCRI-24b7
-    title: "Transcript-mined CLI authoring ergonomics \u2014 wave 2 (v1.13.2)"
-    status: implemented
-    tags:
-    - v1.13.2
-    - ergonomics
-    - accounting-not-policing
-    fingerprint: sha256:7e2a7a6434b9
-    children: []
   REQ-039:
     id: REQ-039
     title: 'COMP lifecycle: closure gate, reversible pause, closure accounting'
@@ -413,7 +387,7 @@ artifacts:
     title: 'Ops RUN lifecycle: reversible pause'
     status: approved
     tags: []
-    fingerprint: sha256:9ae17684507c
+    fingerprint: sha256:724a517d38bf
     children: []
   REQ-042:
     id: REQ-042
@@ -421,5 +395,31 @@ artifacts:
     status: approved
     tags: []
     fingerprint: sha256:6e6765cb4ad7
+    children: []
+  REQ-AUTORESE-d684:
+    id: REQ-AUTORESE-d684
+    title: 'Autoresearch pack v0.2.0: multi-criteria support, CLI subcommand, and
+      harness-agnosticism'
+    status: verified
+    tags: []
+    fingerprint: sha256:ffcfd81a9cb4
+    children: []
+  REQ-DEFERRED-5cea:
+    id: REQ-DEFERRED-5cea
+    title: 'Deferred lifecycle capabilities: rewind accounting, RTM, RBAC check, supersession,
+      quality gates, multi-host'
+    status: implemented
+    tags: []
+    fingerprint: sha256:d512b2374ca6
+    children: []
+  REQ-TRANSCRI-24b7:
+    id: REQ-TRANSCRI-24b7
+    title: "Transcript-mined CLI authoring ergonomics \u2014 wave 2 (v1.13.2)"
+    status: implemented
+    tags:
+    - v1.13.2
+    - ergonomics
+    - accounting-not-policing
+    fingerprint: sha256:7aa453452d91
     children: []
 next_id: 43

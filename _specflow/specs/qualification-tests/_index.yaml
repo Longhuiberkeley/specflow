@@ -439,4 +439,11 @@ artifacts:
     tags: []
     fingerprint: sha256:e56b6180862b
     children: []
-next_id: 52
+  QT-052:
+    id: QT-052
+    title: Upgrade-arc suite qualification (STORY-650..664, REQ-042 arc)
+    status: draft
+    tags: []
+    fingerprint: sha256:c8fc27579ef8
+    children: []
+next_id: 53

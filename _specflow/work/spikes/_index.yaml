@@ -9,6 +9,15 @@ artifacts:
     - research
     fingerprint: sha256:2f161b739cc8
     children: []
+  SPIKE-002:
+    id: SPIKE-002
+    title: "2026-09 frontier-model context audit \u2014 handoff"
+    status: draft
+    tags:
+    - context-audit
+    - handoff
+    fingerprint: sha256:0ec50ff5c587
+    children: []
   SPIKE-BPSURFAC-710b:
     id: SPIKE-BPSURFAC-710b
     title: 'BP surface gaps: inert applies_to field + no wildcard; no promote-PREV/CHL
@@ -32,14 +41,5 @@ artifacts:
     - learning
     - observability
     fingerprint: sha256:ee1fdea97a1c
-    children: []
-  SPIKE-002:
-    id: SPIKE-002
-    title: "2026-09 frontier-model context audit \u2014 handoff"
-    status: draft
-    tags:
-    - context-audit
-    - handoff
-    fingerprint: sha256:0ec50ff5c587
     children: []
 next_id: 3
