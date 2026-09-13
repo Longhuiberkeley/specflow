@@ -1254,7 +1254,7 @@ artifacts:
   STORY-664:
     id: STORY-664
     title: Autoresearch invariant sheets; skill-standards becomes DEC/ARCH
-    status: approved
+    status: implemented
     tags: []
     fingerprint: sha256:7821fe316936
     children: []

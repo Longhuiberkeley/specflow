@@ -262,4 +262,15 @@ artifacts:
     - accounting-not-policing
     fingerprint: sha256:f9a476477150
     children: []
-next_id: 30
+  ARCH-030:
+    id: ARCH-030
+    title: 'Skills subsystem: router anatomy, reference layering, and CLI invocation
+      contract'
+    status: approved
+    tags:
+    - skills
+    - architecture
+    - context-audit
+    fingerprint: sha256:41c75db94fdb
+    children: []
+next_id: 31

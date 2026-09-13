@@ -22,7 +22,7 @@ SpecFlow does not ship with proprietary "Extension Packs" or gated industry stan
 We enforce compliance through CI/CD. Traceability matrices, linkage rules, and checklist requirements are validated locally by zero-token shell/Python scripts, not just by LLM inference. Ensure any new validation rule you add operates deterministically.
 
 ### 5. Context Efficiency (Skill Standards)
-When writing AI skills for SpecFlow's internal agents (e.g., inside `.claude/skills/`), strictly adhere to the standards outlined in `docs/skill-standards.md`.
+Skill standards are artifact-native per DEC-082: see `specflow trace DEC-083` (normative decision) and `specflow trace ARCH-030` (skills subsystem anatomy). `docs/skill-standards.md` is derived rendering only.
 - Keep `SKILL.md` under 500 lines.
 - Store domain knowledge in `references/`.
 - Store deterministic operations in `scripts/`.

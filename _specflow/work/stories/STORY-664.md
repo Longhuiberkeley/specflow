@@ -2,7 +2,7 @@
 id: STORY-664
 title: Autoresearch invariant sheets; skill-standards becomes DEC/ARCH
 type: story
-status: approved
+status: implemented
 suspect: false
 links:
 - target: REQ-042

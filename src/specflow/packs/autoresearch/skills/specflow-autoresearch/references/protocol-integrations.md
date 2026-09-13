@@ -1,150 +1,44 @@
-# Protocol Integrations
+# Protocol Integrations — Invariants
 
-Maps every producer-consumer relationship across SpecFlow's autoresearch protocols and core specflow skills. When a protocol says "read X" or "feeds into Y," this file says where X comes from and where Y goes.
+Consult when a hand-off crosses protocols (FIND→REQ promotion, COMP fields
+flowing into LOOP ideation, core artifacts feeding a COMP). Who produces and
+consumes what: each protocol file owns its own rules; this map only prevents
+orphaned hand-offs. Field-level detail lives in the owning file.
+
+## Autoresearch → Core SpecFlow (promotion)
+
+Research output is not a dead end — deployable results carry traceability back
+into core artifacts:
+
+| Produces | Consumes | How |
+|----------|----------|-----|
+| `FIND` (`deployability: deployable`, `confidence` ≥ medium) | `/specflow-discover` → new **REQ** | REQ linked `derives_from` the FIND; `what_worked` + parent LOOP's `best_metric` copied into rationale/AC |
+| Winning `EXPT` (post-check pass) | ops **RUN** (if the ops pack is installed) | RUN `derives_from` the EXPT (and the generalizing FIND) |
+| Confirmed but exploratory FIND | next LOOP's `knowledge_input` | No promotion; accumulated knowledge |
+
+This promotion is the research-side mirror of the Permanence Test — see SKILL.md
+§ "Promote Research Output" for the recipe.
 
 ## Core SpecFlow → Autoresearch
 
-| Core produces | Autoresearch consumes | When | How |
-|---------------|----------------------|------|-----|
-| `specflow-discover` (REQ artifacts) | COMP setup (`competition-setup-protocol.md`) | During competition creation | User's requirements inform COMP `goals`, `success_criteria`, and `constraints` |
-| `specflow-execute` (implementation) | COMP pre-work (data prep, env setup) | Before first LOOP | Engineering prep (download data, set up verify script, configure environment) goes through core SpecFlow, NOT LOOP |
-| `specflow-plan` (ARCH/DDD artifacts) | COMP infrastructure design | During competition setup | Architecture for the verify pipeline, data storage, and experiment infrastructure |
-| `specflow-adapter` (CI, hooks) | LOOP execution environment | Before first LOOP | Pre-commit hooks, CI validation of EXPT artifacts |
+REQ content informs COMP `goals`/`success_criteria`/`constraints` (discover);
+ARCH/DDD shape the verify pipeline and experiment infrastructure (plan);
+engineering prep (data download, env setup) goes through core execute/plan, never
+inside a LOOP iteration; CI/hooks from adapter validate EXPT artifacts.
 
-## Autoresearch → Core SpecFlow
+## Internal field flow (owner in parentheses)
 
-Research outputs are **not** a dead end — the pipeline's most valuable results promote back into core spec artifacts so they carry traceability and survive the next session. This is the research-side mirror of the Permanence Test.
+- **COMP → LOOP** (autonomous-loop-protocol.md): `goals`/`theses`/`constraints` → hypothesis framing; `pre_check_command`/`post_check_command` → per-iteration guards and deploy-fit grading; `noise_characterization` → noise strategy (noise-handling-protocol.md); `domain` → EDA deltas, checklist, methodology lens; `custom_categories` → the active category set.
+- **LOOP → EXPT** (autonomous-loop-protocol.md): `active_research_questions` → hypothesis linkage; `budget` → termination + surprise allocation.
+- **EXPT → FIND** (finding-generation-protocol.md): `metric_value`/`change_category` → grouping; `hypothesis`+`hypothesis_outcome`, `failure_analysis`, `design_quality`, `auxiliary_metrics`, `crash_telemetry` → `what_worked`/`what_failed` authoring and confidence calibration.
+- **FIND → LOOP** (autonomous-loop-protocol.md): `what_worked`/`what_failed`/`next_steps` → ideation; `confidence` → synthesis triggers; `deployability` → post-check weighting.
+- **LOOP → next LOOP** (autonomous-loop-protocol.md): `lessons_learned`, `looplevel_findings`, condensation briefs, `termination_suggestions`, `best_metric` baseline, `eda_summary` skip rule, `research_agenda` inheritance + re-rank.
 
-| Autoresearch produces | Core SpecFlow consumes | When | How |
-|----------------------|------------------------|------|-----|
-| `FIND` (`deployability=deployable`, `confidence` ≥ medium) | `/specflow-discover` → new **REQ** | When the user says "ship this finding", "productionize", "promote the winning approach" | Create the REQ with `--links '[{"target":"FIND-NNN","role":"derives_from"}]'`; copy `FIND.what_worked` / `best_metric` into the REQ rationale so the evidence chain carries forward |
-| `EXPT` (winning, `post_check` pass) | ops **RUN** (if the ops pack is installed) | When a winning experiment is deployed live | Create RUN with `derives_from` the EXPT (and the FIND that generalized it); see the ops pack |
-| `FIND` (confirmed, but `deployability=exploratory`) | nothing — stays as accumulated knowledge | Default | No promotion; the FIND feeds the next LOOP's `knowledge_input` |
+## Skill-to-protocol routing
 
-The promotion is the explicit "research outgrew a one-off answer" trigger from the Permanence Test — see `SKILL.md` § "Promote Research Output" for the recipe.
-
-## Autoresearch Internal
-
-### COMP → LOOP
-
-| COMP field | LOOP consumes | Protocol |
-|------------|---------------|----------|
-| `COMP.goals` | Phase 2a (hypothesis formulation), Phase 2b (metric-goal alignment check) | `autonomous-loop-protocol.md` |
-| `COMP.theses` | Phase 2a (RQ-thesis-goal chain) | `autonomous-loop-protocol.md` |
-| `COMP.constraints` | Phase 2a (guard conditions) | `autonomous-loop-protocol.md` |
-| `COMP.pre_check_command` | Phase 0.5 (per-iteration pre-check) | `autonomous-loop-protocol.md` |
-| `COMP.post_check_command` | Phase 6.5 (post-check after verify) | `autonomous-loop-protocol.md` |
-| `COMP.noise_characterization` | Phase 5 (noise strategy selection) | `noise-handling-protocol.md` |
-| `COMP.domain` | Phase 0.6 (domain-specific EDA checks), Phase 0.7 (domain research checklist loading), Phase 2 (methodology BP selection) | `autonomous-loop-protocol.md`, `methodology-handbook.md`, `domain-research-checklists.md` |
-
-### LOOP → LOOP (cross-loop learning)
-
-| Prior LOOP produces | Next LOOP consumes | Protocol |
-|---------------------|-------------------|----------|
-| `LOOP.lessons_learned` | Step 0b (prior-LOOP review) | `autonomous-loop-protocol.md` |
-| `LOOP.looplevel_findings` | Step 0b, Phase 2c (pick next change) | `autonomous-loop-protocol.md` |
-| `LOOP.condensation_brief_10/20/...` | Step 0b (read trajectory midpoints) | `autonomous-loop-protocol.md` |
-| `LOOP.termination_suggestions` | Step 0b, Phase 2a (next LOOP's direction) | `autonomous-loop-protocol.md` |
-| `LOOP.best_metric` | New LOOP baseline | `autonomous-loop-protocol.md` |
-| `LOOP.eda_summary` | Phase 0.6 skip rule | `autonomous-loop-protocol.md` |
-| `LOOP.research_agenda` | Phase 2a (highest-impact forcing + calibration), Phase 2c (diversity gate), Phase 2d (idea diversity check), Phase 6.6 (direction status update) | `autonomous-loop-protocol.md`, `domain-research-checklists.md` |
-| `LOOP.category_coverage` | Phase 2c (diversity gate), Phase 8 (stuck detector) | `autonomous-loop-protocol.md` |
-| `LOOP.stuck_state` | Phase 8 (mandatory category switch) | `autonomous-loop-protocol.md` |
-
-### LOOP → EXPT
-
-| LOOP field | EXPT consumes | Protocol |
-|------------|---------------|----------|
-| `LOOP.active_research_questions` | Phase 2a (hypothesis-RQ linkage) | `autonomous-loop-protocol.md` |
-| `LOOP.budget` | Phase 1 Step 4 (budget check), Phase 0.7 (surprise budget allocation) | `autonomous-loop-protocol.md` |
-| `LOOP.iteration_count` | Phase 7 (update running totals) | `autonomous-loop-protocol.md` |
-
-### COMP → Category System
-
-| COMP field | Consumed by | Protocol |
-|------------|-------------|----------|
-| `COMP.custom_categories` | Phase 0.7 (override default category set), Phase 2c (diversity gate uses active set) | `autonomous-loop-protocol.md` |
-
-### EXPT → FIND
-
-| EXPT field | FIND consumes | Protocol |
-|------------|---------------|----------|
-| `EXPT.metric_value` | Aggregation (best, delta, trends) | `finding-generation-protocol.md` |
-| `EXPT.change_category` | Grouping, per-category analysis | `finding-generation-protocol.md` |
-| `EXPT.hypothesis` + `hypothesis_outcome` | `what_worked` / `what_failed` authoring | `finding-generation-protocol.md` |
-| `EXPT.failure_analysis` | `what_failed` root cause classification | `finding-generation-protocol.md` |
-| `EXPT.design_quality` | Confidence calibration, evidence weighting | `finding-generation-protocol.md`, Phase 6.6 |
-| `EXPT.lesson_extracted` | Cross-EXPT pattern detection | `finding-generation-protocol.md` |
-| `EXPT.auxiliary_metrics` | Auxiliary Metric Synthesis | `finding-generation-protocol.md` |
-| `EXPT.auxiliary_signal` | Buried signal detection | `finding-generation-protocol.md` |
-| `EXPT.crash_telemetry` | Pre-recovery knowledge extraction | `crash-recovery-protocol.md`, Phase 6.6 |
-| `EXPT.parameters` + `EXPT.sweep_results` | Reproducibility, parameter sensitivity analysis | `finding-generation-protocol.md` |
-| `EXPT.diversity_metrics` | Family grouping, leaderboard ranking | `competition-setup-protocol.md` |
-| `EXPT.surprise` | Identifies long-shot experiments from surprise budget | `autonomous-loop-protocol.md` (Phase 0.7) |
-
-### FIND → LOOP (feedback cycle)
-
-| FIND field | Next LOOP consumes | Protocol |
-|------------|-------------------|----------|
-| `FIND.what_worked` | Phase 2c (exploit successes) | `autonomous-loop-protocol.md` |
-| `FIND.what_failed` | Phase 2c (avoid repeats), Phase 2a (don't re-test falsified theses) | `autonomous-loop-protocol.md` |
-| `FIND.next_steps` | Step 0b, Phase 2c (direction guidance) | `autonomous-loop-protocol.md` |
-| `FIND.confidence` | Cross-loop synthesis triggers | `finding-generation-protocol.md` |
-| `FIND.deployability` | Phase 6.5 post-check weighting | `autonomous-loop-protocol.md` |
-| `FIND.safety_assessment` | Safety-critical domain gates | `finding-generation-protocol.md` |
-
-## Protocol-Specific Dependencies
-
-### Finding Generation Protocol
-
-| Section | Depends on | Protocol file |
-|---------|-----------|---------------|
-| Cross-EXPT Pattern Detection | Phase 6.6 (design_quality scores, lesson_extracted) | `autonomous-loop-protocol.md` |
-| Auxiliary Metric Synthesis | Phase 7 (auxiliary_metrics logging) | `autonomous-loop-protocol.md` |
-| Cross-Loop Synthesis | Prior FINDs, LOOP post-mortem data | `finding-generation-protocol.md`, `autonomous-loop-protocol.md` |
-| Mandatory Cross-Loop Triggers | LOOP count, FIND age, cumulative EXPT count | `autonomous-loop-protocol.md` |
-
-### Noise Handling Protocol
-
-| Section | Depends on | Protocol file |
-|---------|-----------|---------------|
-| EXPT Validity Gate | Phase 6.6 (design_quality scoring) | `autonomous-loop-protocol.md` |
-| Noise Strategy Selection | COMP.noise_characterization | `competition-setup-protocol.md` |
-
-### Crash Recovery Protocol
-
-| Section | Depends on | Protocol file |
-|---------|-----------|---------------|
-| Pre-Recovery Telemetry | Phase 6.6 (crash_telemetry field) | `autonomous-loop-protocol.md` |
-| Session Crash Recovery | Phase 0 precondition checks | `autonomous-loop-protocol.md` |
-
-### Methodology Handbook
-
-| BP | Enforced by | Protocol file |
-|----|------------|---------------|
-| ML-01 (EDA Before Modeling) | Phase 0.6 (mandatory) | `autonomous-loop-protocol.md` |
-| ML-02 (Strong Baseline First) | Phase 0.7 (mandatory — baseline must be in research agenda top-2) | `autonomous-loop-protocol.md` |
-| ML-02..ML-09 (advisory) | Phase 2 (consulted during ideation) | `autonomous-loop-protocol.md` |
-| ML-05 (Feature Engineering Over Architecture) | Phase 2c diversity gate (gated — `features` must be explored before heavy `model`/`params`) | `autonomous-loop-protocol.md` |
-| ML-07 (Advanced Techniques Late) | Phase 0.7 research agenda (gated — advanced techniques must not be top-3 without strong base) | `autonomous-loop-protocol.md` |
-| ML-08 (Characterize Noise) | COMP setup noise probe, Phase 5 noise strategy | `noise-handling-protocol.md`, `competition-setup-protocol.md` |
-
-## Skill-to-Protocol Mapping
-
-| Skill step | Primary protocol reference | Supporting references |
-|------------|---------------------------|----------------------|
-| `/specflow-autoresearch` Step 0 (setup) | `competition-setup-protocol.md` | `methodology-handbook.md` |
-| `/specflow-autoresearch` Step 1 (plan LOOP) | `autonomous-loop-protocol.md` (Phase 0, 0.5, 0.6, Step 0b) | `crash-recovery-protocol.md` |
-| `/specflow-autoresearch` Step 2 (run LOOP) | `autonomous-loop-protocol.md` (Phase 1-8) | `explore-exploit-protocol.md`, `noise-handling-protocol.md` |
-| `/specflow-autoresearch` Step 3 (review) | `finding-generation-protocol.md` | `autonomous-loop-protocol.md` (FIND Authoring, LOOP post-mortem) |
-| `/specflow-autoresearch:delegate-review` | `finding-generation-protocol.md` | (subagent pattern) |
-
-## Cross-Cutting Concerns
-
-| Concern | Protocol files involved | Integration point |
-|---------|------------------------|-------------------|
-| Knowledge preservation across LOOPs | `autonomous-loop-protocol.md` (Step 0b, LOOP post-mortem, Phase 8 condensation), `finding-generation-protocol.md` (cross-loop synthesis) | Step 0b reads LOOP post-mortem + condensation briefs; cross-loop synthesis reads FINDs across LOOPs |
-| Data quality assurance | `autonomous-loop-protocol.md` (Phase 0.6 EDA, Phase 0.5 pre-check, Phase 2d premise check), `noise-handling-protocol.md` (validity gate) | Phase 0.6 runs once at loop start; Phase 0.5 runs per-iteration; Phase 2d per-EXPT checks should consult Phase 0.6 results (e.g., stationarity check in 2d is answered by 0.6); noise validity gate runs per-EXPT |
-| Metric integrity | `autonomous-loop-protocol.md` (Phase 2b, Phase 5, Phase 6.5), `noise-handling-protocol.md` | Phase 2b checks metric-goal alignment; Phase 5 handles noise; Phase 6.5 grades post-check severity |
-| Failure learning | `autonomous-loop-protocol.md` (Phase 6.6, Phase 7 failure_analysis), `crash-recovery-protocol.md` (pre-recovery telemetry), `finding-generation-protocol.md` (what_failed authoring) | Phase 6.6 extracts lessons; crash telemetry captures partial results; FIND authoring synthesizes into what_failed |
-| Ideation diversity & first-principles thinking | `autonomous-loop-protocol.md` (Phase 0.7 research agenda with direction_status, Phase 2a highest-impact forcing + calibration, Phase 2c diversity gate + canonical categories, Phase 2d idea diversity check, Phase 6.6 agenda feedback, Phase 8 stuck detector), `domain-research-checklists.md` (universal research questions per domain), `explore-exploit-protocol.md` (explore mode category alternation) | Phase 0.7 builds the agenda; Phase 2c gates on category coverage; Phase 2d catches narrow-lens thinking; Phase 6.6 updates direction status; stuck detector forces category switch; domain checklists force ideation breadth (the model supplies domain methodology) |
+| Skill step | Primary reference |
+|------------|-------------------|
+| Setup (no COMP) | `competition-setup-protocol.md` |
+| Plan LOOP | `autonomous-loop-protocol.md` (+ `crash-recovery-protocol.md`) |
+| Run LOOP | `autonomous-loop-protocol.md` (+ `explore-exploit-protocol.md`, `noise-handling-protocol.md`) |
+| Review / delegate-review | `finding-generation-protocol.md` |

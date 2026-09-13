@@ -2138,3 +2138,88 @@ class TestAutoresearchCLIHardening:
         assert rc == 0
         out = capsys.readouterr().out
         assert "EXPT-501" in out
+
+
+class TestProtocolInvariantSheets:
+    """STORY-664: protocol references collapse to invariant sheets (SPIKE-002 STORY 9).
+
+    Enforcement lives in tests, not prompt text (I3): the spec-named invariants
+    must stay present after any future trim, and the sheets must stay sheets.
+    """
+
+    REFS = PACKS_DIR / "autoresearch" / "skills" / "specflow-autoresearch" / "references"
+
+    def _ref(self, name: str) -> Path:
+        path = self.REFS / name
+        assert path.exists(), f"{name} missing from references/"
+        return path
+
+    def test_loop_protocol_invariants(self):
+        content = self._ref("autonomous-loop-protocol.md").read_text()
+        # SPIKE-002 STORY 9: budget, one LOOP/COMP, one atomic EXPT,
+        # commit-before-verify, no `git add -A`, persist condensation_brief (F6),
+        # stop on goals-met/budget.
+        assert "budget" in content
+        assert "One running LOOP per COMP" in content
+        assert "One atomic EXPT per iteration" in content
+        assert "Commit before verify" in content
+        assert "git add -A" in content and "--no-verify" in content
+        assert "condensation_brief" in content
+        assert "goals-met or budget" in content
+        assert "Consult when" in content  # O4 contextual pointers
+
+    def test_competition_setup_invariants(self):
+        content = self._ref("competition-setup-protocol.md").read_text()
+        # stdout-is-one-number; dry-run-before-first-LOOP; freeze exam fields;
+        # eval-data off-limits; human gate on COMP completed (I1).
+        assert "one number" in content
+        assert "Dry-run before the first LOOP" in content
+        assert "frozen" in content.lower()
+        assert "off-limits" in content
+        assert "human gate" in content
+
+    def test_finding_generation_invariants(self):
+        content = self._ref("finding-generation-protocol.md").read_text()
+        # create-vs-update/supersede/falsify map; FIND draft->confirmed is an
+        # I1 user gate; the CLI suggest-finds exists.
+        assert "superseded" in content and "falsified" in content
+        assert "Create a new FIND" in content and "Update it" in content
+        assert "human gate" in content
+        assert "suggest-finds" in content
+
+    def test_sheets_have_consult_when_pointers(self):
+        # crash-recovery, explore-exploit, domain-research, methodology-handbook,
+        # protocol-integrations: deduped to invariants + consult-when pointers.
+        for name in (
+            "crash-recovery-protocol.md",
+            "explore-exploit-protocol.md",
+            "domain-research-checklists.md",
+            "methodology-handbook.md",
+            "protocol-integrations.md",
+        ):
+            content = self._ref(name).read_text()
+            intro = "\n".join(content.splitlines()[:15]).lower()
+            # ARCH-030: each reference states its consult-when trigger up front.
+            assert "consult" in intro, f"{name} lacks an up-front consult-when trigger"
+            assert "Consult when" in content or "references/" in content or "protocol.md" in content, (
+                f"{name} lacks pointers into sibling references"
+            )
+
+    def test_sheets_stay_sheets(self):
+        # O9 prune rot: the trimmed sheets must not regrow into the pre-STORY-664
+        # 1000+ line protocol bloat. Caps leave ample headroom over current sizes.
+        caps = {
+            "autonomous-loop-protocol.md": 120,   # was 1143 lines
+            "competition-setup-protocol.md": 90,  # was 602
+            "finding-generation-protocol.md": 90,
+            "crash-recovery-protocol.md": 80,
+            "explore-exploit-protocol.md": 80,
+            "domain-research-checklists.md": 90,
+            "methodology-handbook.md": 150,
+            "protocol-integrations.md": 90,
+        }
+        for name, cap in caps.items():
+            n_lines = len(self._ref(name).read_text().splitlines())
+            assert n_lines <= cap, (
+                f"{name} is {n_lines} lines (cap {cap}); invariant sheets must stay lean"
+            )

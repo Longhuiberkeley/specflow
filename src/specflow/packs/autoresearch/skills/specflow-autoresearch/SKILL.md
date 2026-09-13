@@ -126,7 +126,7 @@ Run the COMP's `verify_command` on the current codebase:
 - Confirm output is a parseable number
 - If fails → guide user to fix the verify command or recreate the COMP
 
-**On `:plan` (recommended for any new COMP): noise variance probe.** Run `verify_command` three times back-to-back on the unchanged baseline. Parse each metric and report min / max / mean / stdev. If stdev exceeds ~5% of mean, the metric is noisy enough that single-run iterations will produce false-positive "keeps" and false-negative "discards" — point the user at the Noise Handling section of `references/autonomous-loop-protocol.md` to pick a strategy (multi-run median, confirmation run, or environment pinning) BEFORE committing a long budget. Skip with `--no-profile` if the user has already characterized the metric. The plain `/specflow-autoresearch` (run) path uses a single dry-run for fast feedback and assumes the metric is already trusted.
+**On `:plan` (recommended for any new COMP): noise variance probe.** Run `verify_command` three times back-to-back on the unchanged baseline. Parse each metric and report min / max / mean / stdev. If stdev exceeds ~5% of mean, the metric is noisy enough that single-run iterations will produce false-positive "keeps" and false-negative "discards" — point the user at `references/noise-handling-protocol.md` to pick a strategy (multi-run median, confirmation run, or environment pinning) BEFORE committing a long budget. Skip with `--no-profile` if the user has already characterized the metric. The plain `/specflow-autoresearch` (run) path uses a single dry-run for fast feedback and assumes the metric is already trusted.
 
 ### Step 3: LOOP in Draft Status
 
@@ -228,7 +228,7 @@ A COMP reaches `completed` only when **every entry in `COMP.goals` is either sat
 specflow autoresearch run --competition COMP-NNN
 ```
 
-The CLI prints the 8-phase protocol checklist with current progress. Read `references/autonomous-loop-protocol.md` for full protocol details. Summary:
+The CLI prints the 8-phase protocol checklist with current progress. Read `references/autonomous-loop-protocol.md` for the loop invariants (budget, one LOOP/COMP, one atomic EXPT, commit-before-verify, condensation briefs, stop rules). Summary:
 
 ```
 LOOP (budget iterations):
@@ -398,13 +398,13 @@ Subagents MUST return structured output (bullet lists, JSON, or YAML). The paren
 
 ## References
 
-- `references/autonomous-loop-protocol.md` — Full 8-phase loop protocol with atomicity rules, goal-mindful ideation check, first-principles decomposition (Phase 0.7), category diversity gate, canonical change_category set, surprise budget, direction status tracking, and stuck detector — referenced from Step 2 (run LOOP)
-- `references/noise-handling-protocol.md` — Strategy menu for volatile metrics (multi-run, confirmation, env pinning, min-delta) — referenced from Phase 5
-- `references/crash-recovery-protocol.md` — Recovery rules for verify failures and session crashes — referenced from Phase 0 and Phase 5
-- `references/competition-setup-protocol.md` — Walkthrough for creating COMP artifacts with verify command, metric direction, goals/theses/constraints, dry-run validation, and COMP closure — referenced from Step 0 (setup) and Closing a COMP
+- `references/autonomous-loop-protocol.md` — Loop invariants: budget, one LOOP/COMP, one atomic EXPT, commit-before-verify (no `git add -A`), one-number verify, condensation briefs, stop on goals-met/budget; plus the 8-phase one-line table and the protocol gates (highest-impact forcing, category diversity, premise/idea-diversity checks, stuck detector) — referenced from Step 2 (run LOOP)
+- `references/noise-handling-protocol.md` — EXPT validity gate + strategy menu for volatile metrics (multi-run, confirmation, env pinning, min-delta) — referenced from Phase 5
+- `references/crash-recovery-protocol.md` — Telemetry-before-revert and the three session-crash recovery rules — referenced from Phase 0 and Phase 5
+- `references/competition-setup-protocol.md` — COMP invariants: one-number verify, dry-run-before-first-LOOP, frozen exam fields, eval data off-limits, COMP-completed human gate — referenced from Step 0 (setup) and Closing a COMP
 - `references/rolling-evaluation.md` — Fixed vs rolling split as a design choice, split-R&D (`validation` vs LOOP `validate`), COMP churn rule, `window_end` successor-COMP advance — referenced from Evolving a COMP and setup Step 1
-- `references/protocol-integrations.md` — Maps all producer-consumer relationships across protocols: COMP→LOOP, LOOP→EXPT, EXPT→FIND, cross-loop feedback, skill-to-protocol mapping, cross-cutting concerns — referenced from all steps for dependency context
-- `references/explore-exploit-protocol.md` — Mode behavior (explore/exploit/validate) and how each influences Phase 2 ideation — referenced from Phase 2c
-- `references/finding-generation-protocol.md` — Playbook for authoring and updating FIND artifacts after LOOP completion — referenced from Step 3 (review)
-- `references/methodology-handbook.md` — Domain-specific ML best practices (ML-01/02 mandatory, ML-05/07 gated, ML-03..09 advisory) — referenced from Phase 2
-- `references/domain-research-checklists.md` — Universal research questions per domain (quant, tabular_ml, vision, nlp, generic); the model supplies the domain methodology — loaded during Phase 0.7 for structured ideation breadth
+- `references/protocol-integrations.md` — Producer-consumer map: FIND→REQ promotion, COMP/LOOP/EXPT/FIND field flow, skill-to-protocol routing — referenced from all steps for dependency context
+- `references/explore-exploit-protocol.md` — Mode behavior (explore/exploit/validate), diversity thresholds per mode, `family_of_good` objective — referenced from Phase 2c
+- `references/finding-generation-protocol.md` — FIND invariants: create-vs-update/supersede/falsify map, draft→confirmed human gate, honest-outcome tags, `suggest-finds` first — referenced from Step 3 (review)
+- `references/methodology-handbook.md` — ML best practices by tier (ML-01/02 mandatory, ML-05/07 gated, rest advisory) with `applies_to` domains — referenced from Phase 2
+- `references/domain-research-checklists.md` — Core research questions + per-domain deltas (quant, tabular_ml, vision, nlp, generic) — loaded during Phase 0.7 for structured ideation breadth

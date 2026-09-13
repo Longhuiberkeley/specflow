@@ -821,4 +821,15 @@ artifacts:
     - architecture
     fingerprint: sha256:bb36c2d7cb63
     children: []
-next_id: 83
+  DEC-083:
+    id: DEC-083
+    title: 'Skill standards are artifact-native: progressive disclosure, router bodies,
+      bare specflow CLI'
+    status: approved
+    tags:
+    - context-audit
+    - skills
+    - standards
+    fingerprint: sha256:2f12950bfe06
+    children: []
+next_id: 84
