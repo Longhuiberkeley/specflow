@@ -2,13 +2,14 @@
 id: STORY-663
 title: 'CLI backstops: 3-run escalation, pack-validate, autoresearch status codes'
 type: story
-status: draft
+status: approved
 suspect: false
 links:
 - target: REQ-042
   role: implements
 created: '2026-09-13'
 fingerprint: sha256:942484ab5004
+modified: '2026-09-13'
 ---
 
 # CLI backstops: 3-run escalation, pack-validate, autoresearch status codes

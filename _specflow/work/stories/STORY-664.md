@@ -2,13 +2,14 @@
 id: STORY-664
 title: Autoresearch invariant sheets; skill-standards becomes DEC/ARCH
 type: story
-status: draft
+status: approved
 suspect: false
 links:
 - target: REQ-042
   role: implements
 created: '2026-09-13'
 fingerprint: sha256:7821fe316936
+modified: '2026-09-13'
 ---
 
 # Autoresearch invariant sheets; skill-standards becomes DEC/ARCH
