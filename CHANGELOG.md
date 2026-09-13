@@ -4,6 +4,30 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.15.0] - 2026-09-13
+
+### Highlights
+- **Frontier-model context overhaul (REQ-042, DEC-082, STORY-656–664):** the 2026-09 ultracode context audit (SPIKE-002 handoff) found the shipped model-facing context written for older models — always-on routing surface, recipe-style skills, prompt rules duplicating CLI enforcement. This release ships the audited replacement: lean skill routers, consent-grade CLI digests, deterministic CLI backstops, and autoresearch invariant sheets. Roughly 6,900 lines of skill/protocol prose deleted with the enforcement moved into the CLI, not the prompts.
+
+### Features
+- **Lean lifecycle skills (STORY-656–659).** `agent-context.md` 26 → 12 content lines with seek-and-proceed consent (I1); all four pack `context_snippet`s are routing + STORY-reservation only (always-on budget ~500 tokens, pinned by test); 15 skill catalog descriptions are one-line narrow REQUIRED-when triggers (no keyword walls, no NOT-for lists); discover/execute/plan/init/start/doc/review-triad `SKILL.md` bodies collapse to decisions + gates + pointers — the copy-pasted Freeform block is one shared line, the byte-identical `level-boundaries.md` duplicate is deleted. On-demand references trimmed to consult-when invariants (RFC 2119 + ambiguity list in normative-language; ≥3 GWT ACs + vertical slice in story-writing; hard/soft/none table in wave-computation; terminal statuses + DEF cycle + `transitions <ID>` in status-lifecycle; team-setup and severity-levels to their irreplaceable cores; checklist-assembly stops restating the algorithm `checklist-run` owns). Execute keeps the F3 posture: proceed on reversible implementation, stop only for approval-gated status, unapproved linked specs, or scope change. Template and live `.claude` mirrors stay byte-identical.
+- **`brief` becomes a consent vehicle (STORY-660).** `--next` and artifact IDs hoist to the top of the output; the approve digest lists the exact draft IDs with one-line impact before any `approve --type` (never auto `--yes`); DEC id/title/review_status/constraint surface in the digest; suspects/stale/drill-down chrome prints only when non-empty.
+- **`handbook` index-only stdout (STORY-661).** Default output is domain, count, and the title+tag index; `GENERIC_PRACTICES` sermon bodies are no longer appended to every listing (full bodies remain on `--verbose`/`--create`).
+- **CLI backstops (STORY-663, gates the HIGH-risk cuts).** `artifact-lint` warnings persisting across 3 full validation runs escalate to blocking (counts in `.specflow/lint-warning-history.yaml`; filtered `--type` runs don't advance counts; a fixed warning resets). New `specflow pack-validate <path>`; the shipped `validate-pack.sh` defers to it — no `uv run` anywhere in shipped skill scripts. `specflow autoresearch status` now fails/warns on Phase 0 git problems (rev-parse, dirty tree, `index.lock`, detached HEAD, missing COMP/LOOP draft), discard streaks, category-run length, missing `research_agenda`, and diversity/stuck signals.
+- **Autoresearch invariant sheets (STORY-664).** The nine protocol docs (−2,848 lines) collapse to invariants + consult-when pointers: autonomous-loop-protocol keeps budget, one LOOP/COMP, one atomic EXPT, commit-before-verify, no `git add -A`, persist `condensation_brief`, stop on goals-met/budget; competition-setup keeps stdout-is-one-number, dry-run-before-first-LOOP, frozen exam fields, eval-data off-limits, and the human gate on COMP completed; finding-generation keeps the create-vs-update/supersede/falsify map with FIND draft→confirmed as the user gate.
+
+### Fixes
+- **`hook.py` stops teaching `--no-verify` (STORY-662).** Link/schema failures name `specflow artifact-lint --type links|schema` and stop; RBAC failures read "local hook blocked this transition; durable enforcement is hosting-side" (no longer called advisory); suspect warnings stay conditional and ID-exact.
+- **Escalation cliff cleared before release.** Stale `lint-warning-history` entries from pre-escalation runs would block on first contact after upgrading (0fe7239) — the history is reset so only warnings persisting across three fresh full runs escalate.
+
+### Decisions / Docs
+- DEC-082 (knowledge lives in the artifact system, not docs/), DEC-083 + ARCH-030 (skill standards are artifact-native: router anatomy, reference layering, bare-`specflow` invocation contract); `docs/skill-standards.md` is derived rendering only. ARCH-031/032 record the COMP-closure and autoresearch-context anatomy from the v1.14.7 line; REQ-042 implemented; SPIKE-002 preserves the audit handoff and rubric.
+- **Upgrade note:** skill/reference changes reach existing installs via `specflow refresh --packs --force` (pack assets) and plain `specflow refresh` (shared skills/context); CLI-side changes (brief/handbook/hook/pack-validate, lint escalation, autoresearch status codes) apply on tool upgrade. The new `artifact-lint` escalation only fires on warnings persisting across three full runs.
+
+### Tests
+- +58 (1481 → 1539): context-budget + guardrail re-anchor, router/reference content pins, brief consent-vehicle (hoisted IDs, exact draft IDs + impact, DEC surfacing, conditional chrome), handbook index-only default, hook message routing, lint 3-run escalation (advance/reset/filtered-run semantics), pack-validate CLI, autoresearch status fail/warn codes, invariant-sheet pins.
+- Total: 1539 tests passing
+
 ## [1.14.7] - 2026-09-11
 
 ### Highlights

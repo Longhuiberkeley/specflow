@@ -4,6 +4,13 @@ SpecFlow ships incrementally. This document tracks what shipped in each release,
 
 For the original implementation plan (phase breakdown, dependency graph — now historical, superseded by the release history below), see [docs/.archive/plan.md](docs/.archive/plan.md).
 
+## v1.15.0
+
+- **Frontier-model context overhaul (REQ-042, DEC-082/083, STORY-656–664)** — per the 2026-09 ultracode context audit (SPIKE-002): lean lifecycle skill routers + trimmed consult-when references (~6,900 lines of skill/protocol prose deleted, template and `.claude` mirrors byte-identical); one-line narrow skill-description triggers; `agent-context.md` + pack snippets within the ~500-token always-on budget; `brief` becomes a consent vehicle (hoisted IDs, exact draft IDs + impact for `approve --type`, DEC surfacing, conditional chrome); `handbook` index-only stdout; `hook` routes failures to `artifact-lint` subcommands instead of teaching `--no-verify`.
+- **Deterministic CLI backstops (STORY-663)** — `artifact-lint` warnings escalate to blocking after persisting across 3 full runs (`.specflow/lint-warning-history.yaml`); new `specflow pack-validate` (shipped `validate-pack.sh` defers to it — no `uv run` in skill scripts); `autoresearch status` fails/warns on Phase 0 git problems, discard streaks, missing agenda, diversity/stuck.
+- **Autoresearch invariant sheets (STORY-664)** — the nine protocol docs collapse to invariants + consult-when pointers; `docs/skill-standards.md` becomes derived rendering (normative standards live in DEC-083 + ARCH-030).
+- **Skill slimming / lazy reference loading (the robustness backlog item, delivered as STORY-658/659 under REQ-042)** — discover/execute/plan bundles collapse from ~64/~40/~38 KB of recipes to lean routers; context-budget pinned by tests.
+
 ## v1.14.7
 
 - **Autoresearch lifecycle governance (REQ-039/040/041, STORY-650–655)** — reversible pause on COMP (new core `initial_statuses` schema key) and ops RUN; COMP closure becomes a user-gated protocol (`closure_disposition` field + warn-only `autoresearch-comp-closure` lint); `autoresearch status` gains a closure-readiness block with evaluation-window elapsedness; rolling-evaluation/split-R&D shipped ahead of v1.15.0 as `references/rolling-evaluation.md` + DEC-079 churn rule + `window_end` registration; pack research checklists thinned per DEC-080 (DEC-078 principle extended to the pack).
@@ -28,16 +35,15 @@ Generalized-core hardening, scoped deliberately small (harness-level work deferr
 - **Guardrail-test hardening** — anchored approval-gate assertions + mutation checks; caught that `specflow-artifact-review/SKILL.md` never actually stated the no-self-approval rule (now fixed).
 - **Dogfood closure for v1.14.2** — STORY-637 verified (contracts UT-074/IT-041/QT-047), IT-038/QT-045 stamps truthful.
 
-## v1.15.0 (operator re-scope 2026-08-30: robustness first — defer per-harness customization)
+## v1.15.x backlog (operator re-scope 2026-08-30: robustness first — defer per-harness customization)
 
-Operator directive (2026-08-30): **stop before per-harness customization; make the existing offering very nice and robust first.** Ordering below reflects it.
+Operator directive (2026-08-30): **stop before per-harness customization; make the existing offering very nice and robust first.** Ordering below reflects it. The frontier-model context overhaul and skill slimming shipped in v1.15.0 (STORY-656–664); the rest remains open.
 
 ### Robustness & polish (priority)
 - **Denylist gate scope extension** — cover `.claude/` (the live skill mirror — highest-risk reintroduction surface), `.github/`, root `AGENTS.md`; `.specflow/` stays consciously excluded (generated state, redacted at write time since STORY-649).
 - **Audit the remaining 8 domain checklists against DEC-078** (thin, mapping-not-methodology).
 - **lint schema-bypass cleanup** — move the hardcoded `condensation_brief_<N>` regex (lint.py) to schema-level pattern support, killing the last code-side special case.
 - **STORY-642** — unify `compute_chain_depth` with the typed edge matrix (v1.14.3's role-target matrix is the declared cousin).
-- **STORY-645** — skill slimming / lazy reference loading (discover ~64KB, execute ~40KB, plan ~38KB bundles) + a context-cost regression test.
 - **`trace.py` renderers** — COMP lineage + LOOP escalation-source sections (make existing edges visible where users look).
 - **LOW pack defects** — float coercion guards (:624/:728/:950), `--show-family` doc drift, ops SKILL.md:162 edge form, metric_value-when-kept refusal.
 - **Review-finding burn-down** — 113 open / 7 stale review findings; docs-staleness sweep (only 2 docs cite artifacts).
