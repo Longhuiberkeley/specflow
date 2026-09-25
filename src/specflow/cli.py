@@ -841,7 +841,7 @@ def _add_autoresearch_parser(subparsers):
     log_p.add_argument("--metric-value", type=float, dest="metric_value",
                        help="Primary metric value")
     log_p.add_argument("--change-category", required=True, dest="change_category",
-                       help="Category of change (e.g. features, model, params)")
+                        help="Category of change (e.g. features, model, params, analysis)")
     log_p.add_argument("--summary", required=True, help="One-line description of the change")
     log_p.add_argument("--title", help="EXPT title (defaults to summary)")
     log_p.add_argument("--set", dest="set_fields", action="append",

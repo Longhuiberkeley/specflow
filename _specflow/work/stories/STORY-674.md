@@ -2,7 +2,7 @@
 id: STORY-674
 title: Error-analysis protocol and analysis iterations (REQ-046)
 type: story
-status: approved
+status: implemented
 suspect: false
 links:
 - target: REQ-046

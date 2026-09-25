@@ -42,6 +42,11 @@
 # metric that is not a new best. Recorded via
 # `specflow autoresearch log --research-progress '<json>'`; absent or
 # malformed records are read conservatively as no evidence.
+#
+# `change_category` remains extensible; `analysis` is a canonical value for an
+# analysis-only no_op EXPT with anchored `research_progress` (see
+# error-analysis-protocol.md). Such records feed Phase 2 hypotheses and are
+# exempt from evidence-free streak windows.
 type: experiment
 category: research
 prefix: EXPT

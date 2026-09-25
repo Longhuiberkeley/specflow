@@ -1532,3 +1532,29 @@ class TestAutoresearchFrontier:
         assert "EDA is recorded for tabular_ml" in out
         assert "agenda-revision" in out
         assert "specflow update LOOP-001 --set research_agenda='[...]'" in out
+
+    def test_analysis_no_op_log_accepts_and_renders_anchored_progress(
+        self, project_root, monkeypatch, capsys,
+    ):
+        from specflow import cli
+
+        _make_loop(project_root, "LOOP-001", "COMP-001", status="running")
+        monkeypatch.chdir(project_root)
+        progress = {
+            "evidence_ref": "EXPT-001",
+            "finding": "OOF residuals cluster in sparse-feature rows",
+            "next_decision": "pursue",
+        }
+        rc = cli.main([
+            "autoresearch", "log", "--loop", "LOOP-001",
+            "--status", "no_op", "--change-category", "analysis",
+            "--summary", "sliced OOF residuals by feature availability",
+            "--research-progress", json.dumps(progress),
+        ])
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "Created EXPT-001" in out
+        expt = _parse(project_root, "EXPT-001")
+        assert expt.status == "no_op"
+        assert expt.frontmatter["change_category"] == "analysis"
+        assert expt.frontmatter["research_progress"] == progress

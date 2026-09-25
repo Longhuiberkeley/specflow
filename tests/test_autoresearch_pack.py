@@ -2465,3 +2465,28 @@ class TestEdaLenses:
 
         checklist = (self.REFS / "domain-research-checklists.md").read_text()
         assert "never by inspecting the isolated final eval partition" in checklist
+
+
+class TestErrorAnalysisProtocol:
+    REFS = PACKS_DIR / "autoresearch" / "skills" / "specflow-autoresearch" / "references"
+
+    def test_analysis_protocol_is_train_oof_only_and_feeds_ideation(self):
+        protocol = (self.REFS / "error-analysis-protocol.md").read_text()
+        for topic in (
+            "prediction with truth", "residuals", "worst-k", "P&L", "regime",
+            "train/OOF", "isolated final eval/test partition is NEVER read",
+            "change_category: analysis", "status: no_op", "research_progress",
+        ):
+            assert topic.lower() in protocol.lower()
+        loop_protocol = (self.REFS / "autonomous-loop-protocol.md").read_text()
+        phase2 = next(line for line in loop_protocol.splitlines() if "| 2 Ideate |" in line)
+        assert "error-analysis-protocol.md" in phase2
+        assert "feed" in phase2.lower() and "hypotheses" in phase2.lower()
+        assert "error-analysis-protocol.md" in (
+            PACKS_DIR / "autoresearch" / "skills" / "specflow-autoresearch" / "SKILL.md"
+        ).read_text()
+
+    def test_experiment_schema_registers_analysis_category(self):
+        schema = (PACKS_DIR / "autoresearch" / "schemas" / "experiment.yaml").read_text()
+        assert "`analysis` is a canonical value" in schema
+        assert "analysis-only no_op EXPT" in schema

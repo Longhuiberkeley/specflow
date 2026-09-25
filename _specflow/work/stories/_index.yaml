@@ -1327,7 +1327,7 @@ artifacts:
   STORY-674:
     id: STORY-674
     title: Error-analysis protocol and analysis iterations (REQ-046)
-    status: approved
+    status: implemented
     tags: []
     fingerprint: sha256:989b4509f92b
     children: []
