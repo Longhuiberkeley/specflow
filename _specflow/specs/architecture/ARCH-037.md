@@ -3,7 +3,7 @@ id: ARCH-037
 title: 'Autoresearch steering: frontier ledger, EDA lenses, error analysis, knowledge
   flow'
 type: architecture
-status: approved
+status: implemented
 suspect: false
 links:
 - target: REQ-046

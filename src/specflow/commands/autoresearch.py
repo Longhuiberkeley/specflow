@@ -440,14 +440,33 @@ def _has_meaningful_progress(
     return expt.status == "kept" and _keep_shows_improvement(expt, prior_expts, direction)
 
 
+def _is_anchored_analysis_no_op(expt: art_lib.Artifact, root: Path) -> bool:
+    """Analysis-only no-ops are work, not evidence-free experiment attempts."""
+    if (
+        expt.status != "no_op"
+        or str(expt.frontmatter.get("change_category", "")).casefold() != "analysis"
+    ):
+        return False
+    note = _progress_note(expt)
+    return bool(
+        note
+        and _evidence_ref_is_anchored(expt, note["evidence_ref"], root)
+    )
+
+
 def _window_has_progress(
     tail: list[art_lib.Artifact],
     ordered: list[art_lib.Artifact],
     root: Path,
     direction: str,
 ) -> bool:
-    """True when the tail's last `_RECENT_WINDOW` EXPTs show new evidence."""
-    window_ids = {expt.id for expt in tail[-_RECENT_WINDOW:]}
+    """True when the last eligible EXPTs in the tail show new evidence.
+
+    Anchored analysis no-ops are omitted before forming the recent window, so
+    they neither reset nor consume one of STORY-665's evidence-sensitive slots.
+    """
+    eligible_tail = [expt for expt in tail if not _is_anchored_analysis_no_op(expt, root)]
+    window_ids = {expt.id for expt in eligible_tail[-_RECENT_WINDOW:]}
     for index, expt in enumerate(ordered):
         if expt.id not in window_ids:
             continue
@@ -539,9 +558,12 @@ def _assess_loop(
     expts = _find_expts_for_loop(root, loop.id)
     ordered = _ordered_expts(expts)
     direction = comp.frontmatter.get("metric_direction", "higher_is_better")
-    _, category_tail = _tail_run(expts, "change_category")
+    # Remove anchored analysis-only records before deriving every streak tail;
+    # the common window helper applies the same exclusion defensively.
+    streak_expts = [expt for expt in ordered if not _is_anchored_analysis_no_op(expt, root)]
+    _, category_tail = _tail_run(streak_expts, "change_category")
     nonkept_tail: list[art_lib.Artifact] = []
-    for expt in reversed(ordered):
+    for expt in reversed(streak_expts):
         if expt.status not in ("discarded", "crashed"):
             break
         nonkept_tail.append(expt)
@@ -687,6 +709,362 @@ def _render_closure_readiness(root: Path, comp: art_lib.Artifact) -> None:
     )
     print(f"  LOOPs: {census}")
     print()
+
+
+_FRONTIER_DEPTH_THRESHOLD = 2.0
+
+
+def _resolve_frontier_comp(root: Path, args: dict) -> art_lib.Artifact | None:
+    """Resolve ``--comp`` as a COMP ID or a directory containing its artifact."""
+    selected = args.get("comp") or args.get("competition")
+    if not selected:
+        return _resolve_comp(root, args)
+
+    candidate = Path(str(selected)).expanduser()
+    if not candidate.is_absolute():
+        candidate = root / candidate
+    if candidate.exists():
+        try:
+            if candidate.is_file():
+                artifact = art_lib.parse_artifact(candidate)
+                candidates = [artifact] if art_lib.get_prefix_from_id(artifact.id) == "COMP" else []
+            elif (candidate / "_specflow").exists():
+                candidates = [
+                    artifact for artifact in art_lib.discover_artifacts(candidate)
+                    if art_lib.get_prefix_from_id(artifact.id) == "COMP"
+                ]
+            else:
+                candidates = []
+                for path in candidate.rglob("*.md"):
+                    if path.name.startswith("_"):
+                        continue
+                    artifact = art_lib.parse_artifact(path)
+                    if artifact and art_lib.get_prefix_from_id(artifact.id) == "COMP":
+                        candidates.append(artifact)
+        except (OSError, ValueError):
+            candidates = []
+        if len(candidates) == 1:
+            return candidates[0]
+        if len(candidates) > 1:
+            print(f"{YELLOW}Multiple competitions found under '{selected}'. Specify a COMP ID.{NC}")
+            return None
+        print(f"{RED}✗ No COMP artifact found at '{selected}'.{NC}")
+        return None
+
+    return _resolve_comp(root, {**args, "competition": str(selected)})
+
+
+def _frontier_noise_sigma(comp: art_lib.Artifact) -> tuple[float | None, str]:
+    """Read a stored noise sigma (or derive it from stored probe samples)."""
+    raw = comp.frontmatter.get("noise_characterization")
+    if isinstance(raw, dict):
+        for key in ("sigma", "stdev", "standard_deviation", "stddev"):
+            value = _numeric(raw.get(key))
+            if value is not None and value >= 0:
+                return value, f"noise_characterization.{key}"
+        samples = raw.get("samples")
+        if isinstance(samples, list):
+            numeric_samples = [_numeric(value) for value in samples]
+            if len(numeric_samples) >= 2 and all(value is not None for value in numeric_samples):
+                from specflow.lib.noise_probe import run_noise_probe
+
+                probe = run_noise_probe([value for value in numeric_samples if value is not None])
+                return probe.stdev, "noise_characterization.samples via noise_probe"
+    return None, "unavailable"
+
+
+def _frontier_family(expt: art_lib.Artifact) -> tuple[str, str, str]:
+    fm = expt.frontmatter
+    category = str(fm.get("change_category") or "unspecified").strip()
+    strategy = str(fm.get("strategy_family") or fm.get("strategy_used") or "unspecified").strip()
+    return category, strategy, f"{category}::{strategy}"
+
+
+def _frontier_agenda_records(
+    loops: list[art_lib.Artifact], expts: list[art_lib.Artifact]
+) -> tuple[list[dict], list[dict]]:
+    """Return deduped agenda entries and their open, uncovered neighborhoods."""
+    records: dict[str, dict] = {}
+    for loop in sorted(loops, key=lambda artifact: artifact.id):
+        agenda = loop.frontmatter.get("research_agenda") or []
+        if not isinstance(agenda, list):
+            continue
+        for entry in agenda:
+            if not isinstance(entry, dict):
+                continue
+            direction = entry.get("direction")
+            if not isinstance(direction, str) or not direction.strip():
+                continue
+            key = _normalised(direction)
+            record = records.get(key)
+            if record is None:
+                record = {
+                    "direction": direction.strip(),
+                    "status": entry.get("status", "unexplored"),
+                    "priority": entry.get("priority"),
+                    "rationale": entry.get("rationale", ""),
+                    "category": entry.get("change_category", entry.get("category", "")),
+                    "strategy_family": entry.get("strategy_family", ""),
+                    "source_loops": [loop.id],
+                    "covered": False,
+                }
+                records[key] = record
+            elif loop.id not in record["source_loops"]:
+                record["source_loops"].append(loop.id)
+            if entry.get("status") in _OPEN_AGENDA_STATUSES and entry.get("priority") not in _CLOSED_AGENDA_PRIORITIES:
+                record["status"] = entry.get("status")
+                record["priority"] = entry.get("priority")
+
+    for record in records.values():
+        direction = _normalised(record["direction"])
+        for expt in expts:
+            fm = expt.frontmatter
+            category, strategy, _family = _frontier_family(expt)
+            searchable = " ".join(
+                str(fm.get(key) or "")
+                for key in ("summary", "hypothesis", "research_question", "strategy_family", "strategy_used")
+            )
+            if (
+                direction and direction in _normalised(searchable)
+            ) or (
+                str(fm.get("agenda_direction", "")).strip()
+                and _normalised(str(fm.get("agenda_direction"))) == direction
+            ) or (
+                str(record.get("category", "")).strip()
+                and str(record.get("category")).casefold() == category.casefold()
+            ) or (
+                str(record.get("strategy_family", "")).strip()
+                and str(record.get("strategy_family")).casefold() == strategy.casefold()
+            ):
+                record["covered"] = True
+                break
+
+    all_records = list(records.values())
+    open_records = [
+        record for record in all_records
+        if record.get("status") in _OPEN_AGENDA_STATUSES
+        and record.get("priority") not in _CLOSED_AGENDA_PRIORITIES
+    ]
+    unexplored = [record for record in open_records if not record["covered"]]
+    return all_records, unexplored
+
+
+def _frontier_ledger(root: Path, comp: art_lib.Artifact) -> dict:
+    """Compute the zero-token frontier ledger from COMP/LOOP/EXPT frontmatter."""
+    loops = _find_loops_for_comp(root, comp.id)
+    expts = [expt for loop in loops for expt in _find_expts_for_loop(root, loop.id)]
+    expts.sort(key=lambda expt: (
+        str(expt.frontmatter.get("loop", "")),
+        _numeric(expt.frontmatter.get("iteration")) or 0,
+        str(expt.frontmatter.get("created", "")), expt.id,
+    ))
+
+    sigma, sigma_source = _frontier_noise_sigma(comp)
+    direction = comp.frontmatter.get("metric_direction", "higher_is_better")
+    lineages: dict[str, list[art_lib.Artifact]] = {}
+    explicit_lineages: dict[str, bool] = {}
+    for expt in expts:
+        raw_lineage = expt.frontmatter.get("lineage")
+        if isinstance(raw_lineage, str) and raw_lineage.strip():
+            lineage_id = raw_lineage.strip()
+            explicit_lineages[lineage_id] = True
+        else:
+            lineage_id = f"singleton:{expt.id}"
+            explicit_lineages[lineage_id] = False
+        lineages.setdefault(lineage_id, []).append(expt)
+
+    lineage_rows: list[dict] = []
+    for lineage_id, chain in sorted(lineages.items()):
+        measured: list[tuple[art_lib.Artifact, float]] = []
+        for expt in chain:
+            metric = _numeric(expt.frontmatter.get("metric_value"))
+            if metric is not None and expt.status != "no_op":
+                measured.append((expt, metric))
+        gains: list[dict] = []
+        for index in range(1, len(measured)):
+            previous, previous_metric = measured[index - 1]
+            current, current_metric = measured[index]
+            gain = current_metric - previous_metric
+            if direction == "lower_is_better":
+                gain = -gain
+            normalized_gain = (
+                abs(gain) / sigma if sigma is not None and sigma > 0
+                else (0.0 if sigma == 0 and gain == 0 else None)
+            ) if sigma is not None else gain
+            within_noise = abs(gain) <= sigma if sigma is not None else None
+            gains.append({
+                "from": previous.id,
+                "to": current.id,
+                "gain": gain,
+                "noise_adjusted_gain": normalized_gain,
+                "within_noise": within_noise,
+            })
+
+        within_noise_streak = 0
+        for gain_record in reversed(gains):
+            if gain_record["within_noise"] is not True:
+                break
+            within_noise_streak += 1
+        depth_exhausted = bool(gains) and within_noise_streak == len(gains)
+        families = sorted({_frontier_family(expt)[2] for expt in chain})
+        lineage_rows.append({
+            "lineage": lineage_id,
+            "explicit_lineage": explicit_lineages[lineage_id],
+            "depth": len(chain),
+            "attempts": [expt.id for expt in chain],
+            "strategy_families": families,
+            "measured_gains": gains,
+            "within_noise_streak": within_noise_streak,
+            "depth_exhausted": depth_exhausted,
+        })
+
+    family_groups: dict[str, list[art_lib.Artifact]] = {}
+    for expt in expts:
+        family_groups.setdefault(_frontier_family(expt)[2], []).append(expt)
+    agenda_records, unexplored = _frontier_agenda_records(loops, expts)
+    covered_count = sum(bool(record["covered"]) for record in agenda_records)
+    agenda_total = len(agenda_records)
+    coverage = covered_count / agenda_total if agenda_total else 0.0
+    mean_depth = (
+        sum(row["depth"] for row in lineage_rows) / len(lineage_rows)
+        if lineage_rows else 0.0
+    )
+
+    states: list[dict[str, str]] = []
+    exhausted = [row["lineage"] for row in lineage_rows if row["depth_exhausted"]]
+    if exhausted:
+        states.append({
+            "code": "depth_exhausted",
+            "message": "Within-noise gains across the observed depth of lineage(s): " + ", ".join(exhausted),
+        })
+    if len(family_groups) > 1 and mean_depth < _FRONTIER_DEPTH_THRESHOLD:
+        states.append({
+            "code": "breadth_without_depth",
+            "message": f"Breadth across {len(family_groups)} families with mean lineage depth {mean_depth:.2f}",
+        })
+    if not agenda_records:
+        states.append({
+            "code": "empty_agenda",
+            "message": "No research agenda is recorded; agenda coverage is 0%.",
+        })
+
+    move_menu = [
+        {
+            "move": "switch formulation",
+            "suggestion": (
+                f"Consider the open agenda direction: {unexplored[0]['direction']}"
+                if unexplored else "Choose a different formulation from an open agenda entry."
+            ),
+            "advisory": True,
+        },
+        {
+            "move": "restart with memory",
+            "suggestion": "Start a follow-up LOOP with the prior LOOP findings, negative results, and condensation brief loaded.",
+            "advisory": True,
+        },
+        {
+            "move": "landscape re-survey",
+            "suggestion": "Revisit adjacent-field practice before selecting another formulation (see landscape-resurvey.md).",
+            "advisory": True,
+        },
+    ]
+
+    revisit_candidates = []
+    for family, family_expts in sorted(family_groups.items()):
+        if len(family_expts) == 1 and family_expts[0].status == "discarded":
+            expt = family_expts[0]
+            revisit_candidates.append({
+                "experiment": expt.id,
+                "family": family,
+                "reason": "First-of-a-kind family was discarded after a single attempt; revisit is an option, not a quota.",
+            })
+
+    signals: list[dict[str, str]] = [
+        {"state": "advisory", "name": state["code"], "message": state["message"]}
+        for state in states
+    ]
+    if unexplored:
+        signals.append({
+            "state": "advisory", "name": "unexplored-neighborhoods",
+            "message": f"{len(unexplored)} open agenda direction(s) have no matching EXPT coverage.",
+        })
+    caveat = (
+        "Noise probe unavailable; raw gains are shown without noise adjustment and within-noise classification is unavailable."
+        if sigma is None else ""
+    )
+
+    return {
+        "schema_version": 1,
+        "competition": {"id": comp.id, "title": comp.title},
+        "noise": {"sigma": sigma, "source": sigma_source, "caveat": caveat},
+        "lineages": lineage_rows,
+        "width": {
+            "strategy_family_count": len(family_groups),
+            "strategy_families": sorted(family_groups),
+            "mean_lineage_depth": mean_depth,
+            "agenda_coverage": {
+                "covered": covered_count,
+                "total": agenda_total,
+                "ratio": coverage,
+            },
+            "open_agenda_entries": [
+                record for record in agenda_records
+                if record.get("status") in _OPEN_AGENDA_STATUSES
+                and record.get("priority") not in _CLOSED_AGENDA_PRIORITIES
+            ],
+            "unexplored_neighborhoods": unexplored,
+        },
+        "states": states,
+        "move_menu": move_menu,
+        "revisit_candidates": revisit_candidates,
+        "signals": signals,
+    }
+
+
+def _run_frontier(root: Path, args: dict) -> int:
+    comp = _resolve_frontier_comp(root, args)
+    if not comp:
+        return 1
+    ledger = _frontier_ledger(root, comp)
+    if args.get("json"):
+        print(json.dumps(ledger, indent=2, sort_keys=True))
+        return 0
+
+    print(f"\n{BOLD}=== Autoresearch Frontier: {comp.id} ==={NC}\n")
+    noise = ledger["noise"]
+    if noise["sigma"] is None:
+        print(f"Noise adjustment: unavailable — {noise['caveat']}")
+    else:
+        print(f"Noise sigma:      {noise['sigma']} ({noise['source']})")
+    print(f"Strategy families: {ledger['width']['strategy_family_count']}")
+    agenda = ledger["width"]["agenda_coverage"]
+    print(f"Agenda coverage:  {agenda['covered']}/{agenda['total']} ({agenda['ratio']:.0%})")
+    print(f"Lineages:         {len(ledger['lineages'])}  |  mean depth {ledger['width']['mean_lineage_depth']:.2f}")
+    print()
+
+    print(f"{BOLD}Top frontier signals:{NC}")
+    top_signals = ledger["signals"][:3]
+    if not top_signals:
+        print("  No stagnation or unexplored-neighborhood signals.")
+    for signal in top_signals:
+        print(f"  {YELLOW}⚠{NC} {signal['name']}: {signal['message']}")
+    omitted = len(ledger["signals"]) - len(top_signals)
+    if omitted:
+        print(f"  +{omitted} more signal(s) in the full ledger")
+
+    if ledger["states"]:
+        print(f"\n{BOLD}Stagnation states (advisory):{NC}")
+        for state in ledger["states"]:
+            print(f"  - {state['code']}: {state['message']}")
+    print(f"\n{BOLD}Advisory move menu:{NC}")
+    for item in ledger["move_menu"]:
+        print(f"  - {item['move']}: {item['suggestion']}")
+    if ledger["revisit_candidates"]:
+        print(f"\n{BOLD}Revisit candidates:{NC}")
+        for candidate in ledger["revisit_candidates"]:
+            print(f"  - {candidate['experiment']} ({candidate['family']}): {candidate['reason']}")
+    print(f"\n{DIM}Full ledger: specflow autoresearch frontier --comp {comp.id} --json{NC}\n")
+    return 0
 
 
 def _run_status(root: Path, args: dict) -> int:
@@ -1577,6 +1955,8 @@ def run(root: Path, args: dict) -> int:
         return _run_run(root, args)
     if sub == "status":
         return _run_status(root, args)
+    if sub == "frontier":
+        return _run_frontier(root, args)
     if sub == "review":
         return _run_review(root, args)
     if sub == "leaderboard":
@@ -1587,5 +1967,5 @@ def run(root: Path, args: dict) -> int:
         return _run_suggest_finds(root, args)
 
     print(f"{RED}✗ Unknown autoresearch subcommand. "
-          f"Use: plan, run, status, review, leaderboard, log, suggest-finds{NC}")
+          f"Use: plan, run, status, frontier, review, leaderboard, log, suggest-finds{NC}")
     return 1

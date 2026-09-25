@@ -320,7 +320,7 @@ artifacts:
     id: ARCH-037
     title: 'Autoresearch steering: frontier ledger, EDA lenses, error analysis, knowledge
       flow'
-    status: approved
+    status: implemented
     tags: []
     fingerprint: sha256:bbc529903821
     children: []

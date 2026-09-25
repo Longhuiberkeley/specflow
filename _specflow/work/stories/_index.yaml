@@ -1313,7 +1313,7 @@ artifacts:
   STORY-672:
     id: STORY-672
     title: Autoresearch frontier ledger and move menu (REQ-046)
-    status: approved
+    status: implemented
     tags: []
     fingerprint: sha256:35326d62fe8c
     children: []

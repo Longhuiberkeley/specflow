@@ -263,7 +263,7 @@ artifacts:
     id: DDD-031
     title: 'Frontier ledger: lineage depth, family width, stagnation states, move
       menu'
-    status: approved
+    status: implemented
     tags: []
     fingerprint: sha256:ba4a6edcb9f3
     children: []

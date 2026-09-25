@@ -1363,3 +1363,145 @@ class TestEvidenceAnchoring:
         assert normalised_ref("commit:abc123") == normalised_ref("abc123")
         assert normalised_ref("path:logs/run.json") == normalised_ref("logs/run.json")
         assert normalised_ref("ABC123") == normalised_ref("abc123")
+
+
+class TestAutoresearchFrontier:
+    def test_full_ledger_covers_lineage_noise_width_agenda_and_revisit(
+        self, project_root, capsys, monkeypatch,
+    ):
+        from specflow import cli
+
+        _make_loop(
+            project_root, "LOOP-001", "COMP-001", status="completed",
+            extra={"research_agenda": [
+                {"direction": "feature family alpha", "status": "in_progress",
+                 "category": "features", "strategy_family": "linear"},
+                {"direction": "new neighborhoods", "status": "unexplored"},
+            ]},
+        )
+        art_lib.update_artifact(
+            project_root, "COMP-001", noise_characterization={"sigma": 0.05}
+        )
+        for expt_id, metric in (("EXPT-001", 1.0), ("EXPT-002", 1.01), ("EXPT-003", 1.02)):
+            _make_expt(
+                project_root, expt_id, "LOOP-001", "kept", metric,
+                category="features",
+                extra={"lineage": "linear-feature-chain", "iteration": int(expt_id[-3:]),
+                       "strategy_family": "linear", "research_question": "feature family alpha"},
+            )
+        _make_expt(
+            project_root, "EXPT-004", "LOOP-001", "discarded", 0.8,
+            category="model", extra={"strategy_family": "tree", "iteration": 4},
+        )
+        _make_expt(
+            project_root, "EXPT-005", "LOOP-001", "discarded", 0.7,
+            category="params", extra={"strategy_family": "svm", "iteration": 5},
+        )
+
+        monkeypatch.chdir(project_root)
+        rc = cli.main([
+            "autoresearch", "frontier", "--comp", "COMP-001", "--json",
+        ])
+        assert rc == 0
+        ledger = json.loads(capsys.readouterr().out)
+        assert ledger["competition"]["id"] == "COMP-001"
+        assert ledger["noise"]["sigma"] == 0.05
+        chain = next(row for row in ledger["lineages"] if row["lineage"] == "linear-feature-chain")
+        assert chain["depth"] == 3
+        assert chain["within_noise_streak"] == 2
+        assert chain["depth_exhausted"] is True
+        assert ledger["width"]["strategy_family_count"] == 3
+        assert ledger["width"]["agenda_coverage"] == {"covered": 1, "total": 2, "ratio": 0.5}
+        assert [entry["direction"] for entry in ledger["width"]["unexplored_neighborhoods"]] == [
+            "new neighborhoods"
+        ]
+        assert {state["code"] for state in ledger["states"]} >= {
+            "depth_exhausted", "breadth_without_depth",
+        }
+        assert {item["move"] for item in ledger["move_menu"]} == {
+            "switch formulation", "restart with memory", "landscape re-survey",
+        }
+        assert {item["experiment"] for item in ledger["revisit_candidates"]} == {
+            "EXPT-004", "EXPT-005",
+        }
+        schema = yaml.safe_load(
+            (PACKS_DIR / "autoresearch" / "schemas" / "experiment.yaml").read_text()
+        )
+        assert {"lineage", "strategy_family"} <= set(schema["optional_fields"])
+
+    def test_missing_lineage_is_singleton_and_missing_noise_states_caveat(self, project_root):
+        _make_loop(project_root, "LOOP-001", "COMP-001", status="completed",
+                   extra={"research_agenda": []})
+        _make_expt(project_root, "EXPT-001", "LOOP-001", "discarded", 0.2,
+                   extra={"strategy_family": "one-off"})
+        ledger = autoresearch_cmd._frontier_ledger(
+            project_root, _parse(project_root, "COMP-001")
+        )
+        assert ledger["lineages"] == [{
+            "lineage": "singleton:EXPT-001", "explicit_lineage": False,
+            "depth": 1, "attempts": ["EXPT-001"],
+            "strategy_families": ["features::one-off"], "measured_gains": [],
+            "within_noise_streak": 0, "depth_exhausted": False,
+        }]
+        assert ledger["noise"]["sigma"] is None
+        assert "raw gains" in ledger["noise"]["caveat"]
+        assert ledger["width"]["agenda_coverage"] == {"covered": 0, "total": 0, "ratio": 0.0}
+        assert any(state["code"] == "empty_agenda" for state in ledger["states"])
+
+    def test_frontier_default_view_shows_top_signals_and_full_ledger_pointer(
+        self, project_root, capsys,
+    ):
+        _make_loop(project_root, "LOOP-001", "COMP-001", status="completed")
+        comp_dir = project_root / "_specflow" / "specs" / "competitions"
+        rc = autoresearch_cmd.run(project_root, {
+            "autoresearch_subcommand": "frontier", "comp": str(comp_dir),
+        })
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "Top frontier signals" in out
+        assert "Advisory move menu" in out
+        assert "Full ledger: specflow autoresearch frontier --comp COMP-001 --json" in out
+
+    def test_anchored_analysis_no_op_does_not_consume_evidence_window(
+        self, git_project_root, capsys,
+    ):
+        _make_healthy_loop(git_project_root)
+        for expt_id in ("EXPT-001", "EXPT-002"):
+            _make_expt(git_project_root, expt_id, "LOOP-001", "discarded", 0.1,
+                       category="features")
+        _make_expt(
+            git_project_root, "EXPT-003", "LOOP-001", "no_op", 0.1,
+            category="analysis",
+            extra={"research_progress": {
+                "evidence_ref": "EXPT-003", "finding": "OOF residual slice saved",
+                "next_decision": "pursue",
+            }},
+        )
+        _make_expt(git_project_root, "EXPT-004", "LOOP-001", "discarded", 0.1,
+                   category="features")
+        rc = autoresearch_cmd.run(git_project_root, {
+            "autoresearch_subcommand": "status", "competition": "COMP-001",
+        })
+        assert rc == 3
+        out = capsys.readouterr().out
+        assert "consecutive 'features' experiments with no new evidence" in out
+        assert "consecutive non-kept experiments with no new evidence" in out
+
+    def test_module_has_no_iteration_count_keyed_rotation_rule(self):
+        import ast
+        import re
+
+        source = Path(autoresearch_cmd.__file__).read_text(encoding="utf-8")
+        tree = ast.parse(source)
+        for node in ast.walk(tree):
+            if not isinstance(node, (ast.If, ast.While)):
+                continue
+            condition = ast.unparse(node.test)
+            if "iteration_count" not in condition:
+                continue
+            consequence = ast.unparse(node)
+            assert not re.search(
+                r"\b(?:rotate|rotation|switch_category|force_category|rotation_quota)\w*\b",
+                consequence,
+                flags=re.IGNORECASE,
+            )

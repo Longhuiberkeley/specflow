@@ -2,7 +2,7 @@
 id: STORY-672
 title: Autoresearch frontier ledger and move menu (REQ-046)
 type: story
-status: approved
+status: implemented
 suspect: false
 links:
 - target: REQ-046

@@ -813,6 +813,11 @@ def _add_autoresearch_parser(subparsers):
     status_p.add_argument("--competition", help="Competition ID (default: auto-detect)")
     status_p.add_argument("--loop", help="LOOP ID (default: running or draft LOOP for the COMP)")
 
+    frontier_p = sub.add_parser("frontier", help="Show the COMP research-frontier ledger")
+    frontier_p.add_argument("--comp", dest="comp",
+                            help="COMP ID or directory containing one (default: auto-detect)")
+    frontier_p.add_argument("--json", action="store_true", help="Emit the full frontier ledger as JSON")
+
     review_p = sub.add_parser("review", help="Review FINDs, leaderboard, and loop history")
     review_p.add_argument("--competition", help="Competition ID (default: auto-detect)")
     review_p.add_argument("--top", type=int, default=5, help="Number of top EXPTs to show (default: 5)")
