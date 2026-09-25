@@ -3,7 +3,7 @@ id: STORY-675
 title: 'Knowledge flow: plan --inherit, condensation requirement, top-3 status, adjacent-field
   lens (REQ-046)'
 type: story
-status: approved
+status: implemented
 suspect: false
 links:
 - target: REQ-046

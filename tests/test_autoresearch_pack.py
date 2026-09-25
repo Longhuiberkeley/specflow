@@ -2490,3 +2490,16 @@ class TestErrorAnalysisProtocol:
         schema = (PACKS_DIR / "autoresearch" / "schemas" / "experiment.yaml").read_text()
         assert "`analysis` is a canonical value" in schema
         assert "analysis-only no_op EXPT" in schema
+
+
+class TestLandscapeResurvey:
+    def test_adjacent_field_lens_uses_scoped_practice_catalog(self):
+        refs = PACKS_DIR / "autoresearch" / "skills" / "specflow-autoresearch" / "references"
+        content = (refs / "landscape-resurvey.md").read_text()
+        for topic in ("Kaggle", "Quantitative practice", "Experimental design", "specflow practices list --scope"):
+            assert topic.lower() in content.lower()
+        skill = (
+            PACKS_DIR / "autoresearch" / "skills" / "specflow-autoresearch" / "SKILL.md"
+        ).read_text()
+        assert "references/landscape-resurvey.md" in skill
+        assert len(skill.splitlines()) < 500

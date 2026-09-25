@@ -1335,7 +1335,7 @@ artifacts:
     id: STORY-675
     title: 'Knowledge flow: plan --inherit, condensation requirement, top-3 status,
       adjacent-field lens (REQ-046)'
-    status: approved
+    status: implemented
     tags: []
     fingerprint: sha256:22d9c0ca75fd
     children: []

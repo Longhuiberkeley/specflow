@@ -431,3 +431,4 @@ Helpers MUST return structured output. Never delegate the loop or an approval.
 - `references/domain-research-checklists.md` — Core research questions + per-domain deltas (quant, tabular_ml, vision, nlp, generic) — loaded during Phase 0.7 for decomposition width
 - `references/eda-lenses.md` — applicable EDA, leakage, distribution-shift, class-imbalance, target-noise, and quant regime lenses — referenced from Phase 0.6
 - `references/error-analysis-protocol.md` — train/OOF error slicing, residual review, worst-k review, and strategy P&L attribution — outputs feed Phase 2 hypotheses
+- `references/landscape-resurvey.md` — adjacent-field practice lens for Kaggle patterns, quant practice, and experiment design via `specflow practices list --scope`

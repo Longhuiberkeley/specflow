@@ -612,14 +612,14 @@ def _assess_loop(
     else:
         add("ok", "reassess", "No evidence-free streak detected")
 
-    if expts and iteration_count and iteration_count % 10 == 0 and not fm.get("condensation_briefs"):
-        add("advisory", "condensation", "No condensation brief recorded at this checkpoint",
-            f"specflow update {loop.id} --set condensation_briefs='[...]'")
     return signals
 
 
 def _render_signals(
-    signals: list[dict[str, str]], title: str = "Deterministic accounting:"
+    signals: list[dict[str, str]],
+    title: str = "Deterministic accounting:",
+    actionable_cap: int | None = None,
+    ledger_pointer: str = "",
 ) -> None:
     icons = {
         "ok": f"{GREEN}✓{NC}",
@@ -629,10 +629,34 @@ def _render_signals(
         "structural": f"{RED}✗{NC}",
     }
     print(f"{BOLD}{title}{NC}")
-    for signal in signals:
+    visible = list(enumerate(signals))
+    omitted = 0
+    if actionable_cap is not None:
+        ranks = {"structural": 0, "warn": 1, "advisory": 2}
+        actionable = [
+            (index, signal) for index, signal in visible
+            if signal["state"] in ranks
+        ]
+        selected = {
+            index for index, _signal in sorted(
+                actionable, key=lambda item: (ranks[item[1]["state"]], item[0])
+            )[:actionable_cap]
+        }
+        omitted = max(0, len(actionable) - len(selected))
+        visible = [
+            (index, signal) for index, signal in visible
+            if signal["state"] not in ranks or index in selected
+        ]
+        visible.sort(key=lambda item: (ranks.get(item[1]["state"], 3), item[0]))
+
+    for _index, signal in visible:
         print(f"  {icons[signal['state']]} {signal['name']}: {signal['message']}")
         if signal["pointer"]:
             print(f"      {DIM}→ {signal['pointer']}{NC}")
+    if omitted:
+        print(f"  {DIM}+{omitted} lower-ranked actionable signal(s) omitted{NC}")
+        if ledger_pointer:
+            print(f"      {DIM}Full frontier ledger: {ledger_pointer}{NC}")
     print()
 
 
@@ -1111,7 +1135,17 @@ def _run_status(root: Path, args: dict) -> int:
         "state": "ok", "name": "comp",
         "message": f"{comp.id} exists", "pointer": "",
     })
-    _render_signals(signals, title="Phase 0 preconditions:")
+    frontier_pointer = f"specflow autoresearch frontier --comp {comp.id} --json"
+    _render_signals(
+        signals,
+        title="Phase 0 preconditions:",
+        actionable_cap=3,
+        ledger_pointer=frontier_pointer,
+    )
+    phase_actionable_count = sum(
+        signal["state"] in {"structural", "warn", "advisory"}
+        for signal in signals
+    )
 
     loops = _find_loops_for_comp(root, comp.id)
     explicit = args.get("loop")
@@ -1142,7 +1176,11 @@ def _run_status(root: Path, args: dict) -> int:
             "message": f"{loop.id} is {loop.status}", "pointer": "",
         })
     loop_signals.extend(_assess_loop(root, comp, loop))
-    _render_signals(loop_signals)
+    _render_signals(
+        loop_signals,
+        actionable_cap=max(0, 3 - min(phase_actionable_count, 3)),
+        ledger_pointer=frontier_pointer,
+    )
     return _status_exit_code(signals + loop_signals)
 
 
@@ -1187,6 +1225,125 @@ def _parse_knowledge_input(raw: str | None) -> list[str] | None:
     return [item.strip() for item in raw.split(",") if item.strip()]
 
 
+def _condensation_text(value: object) -> str:
+    if isinstance(value, str):
+        return value.strip()
+    if isinstance(value, list):
+        return "\n".join(text for item in value if (text := _condensation_text(item)))
+    if isinstance(value, dict):
+        for key in ("brief", "summary", "content", "text"):
+            if value.get(key):
+                return _condensation_text(value[key])
+        return json.dumps(value, sort_keys=True, ensure_ascii=False)
+    return "" if value is None else str(value)
+
+
+def _latest_condensation_brief(loop: art_lib.Artifact) -> str | None:
+    """Return the latest stored brief across aggregate and numbered fields."""
+    fm = loop.frontmatter
+    numbered: list[tuple[int, object]] = []
+    for key, value in fm.items():
+        if not key.startswith("condensation_brief_"):
+            continue
+        suffix = key.removeprefix("condensation_brief_")
+        if suffix.isdigit():
+            numbered.append((int(suffix), value))
+    if numbered:
+        text = _condensation_text(max(numbered, key=lambda item: item[0])[1])
+        return text or None
+
+    raw = fm.get("condensation_briefs")
+    if isinstance(raw, dict):
+        numeric_items = [(int(key), value) for key, value in raw.items() if str(key).isdigit()]
+        if numeric_items:
+            text = _condensation_text(max(numeric_items, key=lambda item: item[0])[1])
+            return text or None
+    if isinstance(raw, list):
+        text = _condensation_text(raw[-1]) if raw else ""
+        return text or None
+    if raw is not None:
+        text = _condensation_text(raw)
+        return text or None
+    text = _condensation_text(fm.get("condensation_brief"))
+    return text or None
+
+
+def _seed_research_agenda(source: art_lib.Artifact) -> list[dict]:
+    """Build traceable agenda seeds from a completed LOOP's durable memory."""
+    seeds: list[dict] = []
+    positions: dict[str, int] = {}
+
+    def add(direction: object, rationale: str, **fields) -> None:
+        if not isinstance(direction, str) or not direction.strip():
+            return
+        text = direction.strip()
+        key = _normalised(text)
+        if key in positions:
+            prior = seeds[positions[key]]
+            prior_rationale = prior.get("rationale", "")
+            if rationale and rationale not in prior_rationale:
+                prior["rationale"] = f"{prior_rationale}\n{rationale}".strip()
+            return
+        seed = {
+            "direction": text,
+            "status": fields.pop("status", "unexplored"),
+            "rationale": rationale,
+            **fields,
+        }
+        positions[key] = len(seeds)
+        seeds.append(seed)
+
+    raw_unexplored = source.frontmatter.get("unexplored_directions") or []
+    if isinstance(raw_unexplored, str):
+        raw_unexplored = [raw_unexplored]
+    if isinstance(raw_unexplored, list):
+        for item in raw_unexplored:
+            if isinstance(item, dict):
+                direction = item.get("direction") or item.get("title")
+                detail = item.get("rationale") or item.get("why") or ""
+            else:
+                direction, detail = item, ""
+            add(
+                direction,
+                f"Inherited from {source.id} unexplored_directions. "
+                f"Prior rationale: {detail or 'none recorded'}",
+            )
+
+    agenda = source.frontmatter.get("research_agenda") or []
+    if isinstance(agenda, list):
+        for entry in agenda:
+            if not isinstance(entry, dict):
+                continue
+            if entry.get("status") not in _OPEN_AGENDA_STATUSES:
+                continue
+            if entry.get("priority") in _CLOSED_AGENDA_PRIORITIES:
+                continue
+            add(
+                entry.get("direction"),
+                f"Inherited open agenda entry from {source.id}. "
+                f"Prior rationale: {entry.get('rationale') or 'none recorded'}",
+                status=entry.get("status", "unexplored"),
+                **({"expected_impact": entry["expected_impact"]} if entry.get("expected_impact") else {}),
+                **({"priority": entry["priority"]} if entry.get("priority") else {}),
+            )
+
+    brief = _latest_condensation_brief(source)
+    if brief:
+        first_line = next(
+            (line.strip().lstrip("#-• ") for line in brief.splitlines() if line.strip()),
+            "",
+        )
+        direction = (
+            f"Condensation follow-up: {first_line[:120]}"
+            if first_line else f"Follow up on the condensation brief from {source.id}"
+        )
+        add(
+            direction,
+            f"Seeded from the latest condensation brief on {source.id}: {brief}",
+        )
+    return seeds
+
+
 def _render_loop_summary(root: Path, comp: art_lib.Artifact, loop_id: str) -> None:
     artifacts = art_lib.discover_artifacts(root)
     id_index = art_lib.build_id_index(artifacts)
@@ -1203,19 +1360,45 @@ def _render_loop_summary(root: Path, comp: art_lib.Artifact, loop_id: str) -> No
     ki = lf.get("knowledge_input")
     if ki:
         print(f"    knowledge_input: {ki}")
+    agenda = lf.get("research_agenda") or []
+    if isinstance(agenda, list) and agenda:
+        print(f"    research_agenda: {len(agenda)} seeded direction(s)")
     print()
 
 
 def _run_plan(root: Path, args: dict) -> int:
     """plan = create/update a LOOP (AC1) when mode/budget given, else checklist."""
+    inherit_id = args.get("inherit_loop") or args.get("inherit")
+    inherit_source = None
+    if inherit_id:
+        source = art_lib.build_id_index(art_lib.discover_artifacts(root)).get(inherit_id)
+        if not source or art_lib.get_prefix_from_id(source.id) != "LOOP":
+            print(f"{RED}✗ Inherited LOOP '{inherit_id}' not found.{NC}")
+            return 1
+        if source.status != "completed":
+            print(f"{RED}✗ --inherit requires a completed LOOP (got {source.id} [{source.status}]).{NC}")
+            return 1
+        source_comp = source.frontmatter.get("competition")
+        selected_comp = args.get("competition")
+        if selected_comp and selected_comp != source_comp:
+            print(f"{RED}✗ --inherit {source.id} belongs to {source_comp}, not {selected_comp}.{NC}")
+            return 1
+        inherit_source = source
+        args = {**args, "competition": source_comp}
+
     comp = _resolve_comp(root, args)
     if not comp:
         return 1
 
     mode = args.get("mode")
     budget = args.get("budget")
+    inherited_agenda = _seed_research_agenda(inherit_source) if inherit_source else None
+    if inherit_source:
+        mode = mode if mode is not None else inherit_source.frontmatter.get("mode")
+        budget = budget if budget is not None else inherit_source.frontmatter.get("budget")
     has_create_intent = (
-        mode is not None
+        inherit_source is not None
+        or mode is not None
         or budget is not None
         or args.get("knowledge_input") is not None
         or bool(args.get("create", False))
@@ -1268,6 +1451,8 @@ def _run_plan(root: Path, args: dict) -> int:
         fields["budget"] = int(budget)
     if knowledge_input is not None:
         fields["knowledge_input"] = knowledge_input
+    if inherited_agenda is not None:
+        fields["research_agenda"] = inherited_agenda
 
     if existing:
         updates = dict(fields)
@@ -1295,7 +1480,10 @@ def _run_plan(root: Path, args: dict) -> int:
         _render_loop_summary(root, comp, existing.id)
         return 0
 
-    title = args.get("title") or f"{mode or 'Explore'} loop on {comp.id}"
+    title = args.get("title") or (
+        f"Follow-up to {inherit_source.id}"
+        if inherit_source else f"{mode or 'Explore'} loop on {comp.id}"
+    )
     create_status = "running" if will_run else "draft"
     create_kwargs: dict = {
         "competition": comp.id,
@@ -1528,6 +1716,12 @@ def _run_review(root: Path, args: dict) -> int:
         if l.status in ("completed", "plateaued"):
             loop_expts = _find_expts_for_loop(root, l.id)
             loop_findings = [f for f in findings if f.frontmatter.get("source_loop") == l.id]
+            if not _latest_condensation_brief(l):
+                warnings.append(
+                    f"  {YELLOW}⚠{NC} {CYAN}{l.id}{NC} is {l.status} without a condensation brief; "
+                    "a brief is required at LOOP completion. Add one with "
+                    f"`specflow update {l.id} --set condensation_briefs='[...]'`."
+                )
             if not loop_findings:
                 warnings.append(f"  {YELLOW}⚠{NC} {CYAN}{l.id}{NC} is {l.status} but has zero FINDs")
             for e in loop_expts:

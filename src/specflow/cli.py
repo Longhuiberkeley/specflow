@@ -790,6 +790,8 @@ def _add_autoresearch_parser(subparsers):
     plan_p.add_argument("--budget", type=int, help="Iteration budget for the LOOP (triggers create/update)")
     plan_p.add_argument("--knowledge-input", dest="knowledge_input",
                         help="Comma-separated or JSON list of FIND IDs to seed knowledge_input")
+    plan_p.add_argument("--inherit", dest="inherit_loop",
+                        help="Seed a follow-up LOOP agenda from a completed LOOP")
     plan_p.add_argument("--title", help="LOOP title (create only; default '<mode> loop on <COMP>')")
     plan_p.add_argument("--status", choices=["draft", "running"],
                         help="LOOP status at create/update (default: draft; 'running' starts it)")

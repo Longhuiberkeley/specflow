@@ -1558,3 +1558,93 @@ class TestAutoresearchFrontier:
         assert expt.status == "no_op"
         assert expt.frontmatter["change_category"] == "analysis"
         assert expt.frontmatter["research_progress"] == progress
+
+    def test_plan_inherit_seeds_directions_open_entries_and_latest_brief(
+        self, project_root, monkeypatch, capsys,
+    ):
+        from specflow import cli
+
+        _make_loop(
+            project_root, "LOOP-001", "COMP-001", status="completed",
+            mode="exploit", budget=25,
+            extra={
+                "unexplored_directions": [
+                    "test sparse-feature interactions",
+                    {"direction": "check subgroup calibration", "rationale": "OOF gap"},
+                ],
+                "research_agenda": [
+                    {"direction": "revise thresholding", "status": "in_progress",
+                     "expected_impact": "medium", "rationale": "prior residual pattern"},
+                    {"direction": "closed direction", "status": "exhausted"},
+                ],
+                "condensation_brief_10": "Older brief: compare feature groups",
+                "condensation_brief_20": "Latest brief: inspect regime-specific errors",
+            },
+        )
+        monkeypatch.chdir(project_root)
+        rc = cli.main(["autoresearch", "plan", "--inherit", "LOOP-001"])
+        assert rc == 0
+        assert "research_agenda: 4 seeded direction(s)" in capsys.readouterr().out
+        followup = _parse(project_root, "LOOP-002")
+        assert followup.status == "draft"
+        assert followup.frontmatter["mode"] == "exploit"
+        assert followup.frontmatter["budget"] == 25
+        agenda = followup.frontmatter["research_agenda"]
+        directions = {entry["direction"] for entry in agenda}
+        assert "test sparse-feature interactions" in directions
+        assert "check subgroup calibration" in directions
+        assert "revise thresholding" in directions
+        brief_seed = next(entry for entry in agenda if "Latest brief:" in entry["direction"])
+        assert "latest condensation brief" in brief_seed["rationale"].lower()
+        assert "Latest brief: inspect regime-specific errors" in brief_seed["rationale"]
+        assert "Older brief" not in brief_seed["rationale"]
+        assert all(entry.get("rationale", "").strip() for entry in agenda)
+        assert not any(entry["direction"] == "closed direction" for entry in agenda)
+
+    def test_review_requires_condensation_brief_for_completed_loop(self, project_root, capsys):
+        _make_loop(project_root, "LOOP-001", "COMP-001", status="completed")
+        _make_loop(
+            project_root, "LOOP-002", "COMP-001", status="completed",
+            extra={"condensation_brief_20": "Keep regime-specific diagnostic"},
+        )
+        assert _parse(project_root, "LOOP-001").status == "completed"
+        assert autoresearch_cmd._latest_condensation_brief(_parse(project_root, "LOOP-001")) is None
+        assert autoresearch_cmd._latest_condensation_brief(_parse(project_root, "LOOP-002"))
+        rc = autoresearch_cmd.run(project_root, {
+            "autoresearch_subcommand": "review", "competition": "COMP-001",
+        })
+        assert rc == 0  # the requirement is advisory, not a measurement gate
+        out = capsys.readouterr().out
+        assert out.count("without a condensation brief") == 1
+        assert "required at LOOP completion" in out
+        assert "specflow update LOOP-001 --set condensation_briefs='[...]'" in out
+
+    def test_status_ranks_caps_actionable_signals_and_points_to_frontier(
+        self, git_project_root, monkeypatch, capsys,
+    ):
+        _make_healthy_loop(git_project_root)
+        signals = [
+            {"state": "advisory", "name": f"advisory-{i}", "message": f"advice {i}", "pointer": ""}
+            for i in range(5)
+        ]
+        signals.extend([
+            {"state": "warn", "name": "warning", "message": "warn", "pointer": ""},
+            {"state": "structural", "name": "critical", "message": "critical", "pointer": ""},
+        ])
+        monkeypatch.setattr(autoresearch_cmd, "_assess_loop", lambda *_args: signals)
+        rc = autoresearch_cmd.run(git_project_root, {
+            "autoresearch_subcommand": "status", "competition": "COMP-001",
+        })
+        assert rc == 2
+        out = capsys.readouterr().out
+        accounting = out.split("Deterministic accounting:", 1)[1]
+        assert accounting.index("critical:") < accounting.index("warning:") < accounting.index("advisory-0:")
+        assert "advisory-1:" not in accounting
+        assert "advisory-2:" not in accounting
+        assert "+4 lower-ranked actionable signal(s) omitted" in accounting
+        assert "Full frontier ledger: specflow autoresearch frontier --comp COMP-001 --json" in accounting
+
+    def test_status_no_longer_uses_iteration_count_checkpoint_for_condensation(self):
+        source = Path(autoresearch_cmd.__file__).read_text(encoding="utf-8")
+        assert "iteration_count % 10" not in source
+        assert "iteration_count and iteration_count %" not in source
