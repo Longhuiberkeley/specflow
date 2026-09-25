@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 from specflow.lib import artifacts as art_lib
+from specflow.lib import evaluator_fingerprint as evaluator_lib
 from specflow.lib import standards as std_lib
 from specflow.lib.dedup import find_similar_to
 from specflow.lib.display import RED, GREEN, YELLOW, YELLOW_DIM, CYAN, NC
@@ -268,6 +269,24 @@ def run(root: Path, args: dict) -> int:
                     print(f"{YELLOW_DIM}Cancelled.{NC}")
                     return 1
 
+    # STORY-676 (REQ-047 AC1): a COMP's evaluator fingerprint is recorded at
+    # setup — the verify command plus evaluation-script hashes, pure
+    # filesystem hashing (evaluator_lib). Frozen at creation: later harness
+    # drift is caught by the fingerprint-drift lint check (EXPT stamps vs
+    # this setup fingerprint), never re-stamped in place — the exam identity
+    # must not chase a mutated harness (churn rule; rolling-evaluation.md).
+    evaluator_fingerprint = None
+    if (
+        art_lib.normalize_type(artifact_type) == "competition"
+        and "evaluator_fingerprint" not in extra_fields
+    ):
+        verify_command = extra_fields.get("verify_command")
+        if isinstance(verify_command, str) and verify_command.strip():
+            evaluator_fingerprint = evaluator_lib.compute_evaluator_fingerprint(
+                root, verify_command
+            )
+            extra_fields["evaluator_fingerprint"] = evaluator_fingerprint
+
     result = art_lib.create_artifact(
         root=root,
         artifact_type=artifact_type,
@@ -285,6 +304,8 @@ def run(root: Path, args: dict) -> int:
     if result["ok"]:
         print(f"{GREEN}✓ Created {result['id']}{NC}")
         print(f"  Path: {result['path']}")
+        if evaluator_fingerprint:
+            print(f"  Evaluator fingerprint: {evaluator_fingerprint} (recorded at setup)")
         if links:
             from specflow.lib import role_targets as rt
             for hint in rt.advisory_for_entries(art_lib.normalize_type(args.get("type", "")), links):

@@ -328,7 +328,7 @@ artifacts:
     id: ARCH-038
     title: 'Research integrity guards: evaluator fingerprint, jump and guard flags,
       external scores'
-    status: approved
+    status: implemented
     tags: []
     fingerprint: sha256:47c45af0ea47
     children: []

@@ -27,6 +27,7 @@ import pytest
 
 from specflow.commands import autoresearch as autoresearch_cmd
 from specflow.lib import artifacts as art_lib
+from specflow.lib import evaluator_fingerprint as evaluator_lib
 
 PACKS_DIR = Path(__file__).parent.parent / "src" / "specflow" / "packs"
 
@@ -1648,3 +1649,268 @@ class TestAutoresearchFrontier:
         source = Path(autoresearch_cmd.__file__).read_text(encoding="utf-8")
         assert "iteration_count % 10" not in source
         assert "iteration_count and iteration_count %" not in source
+
+
+# ── STORY-676 (REQ-047): evaluator fingerprint and drift routing ────────────
+
+
+def _create_comp_cli(root: Path, title: str, verify_command: str) -> str:
+    """Create a COMP through the real CLI; return its ID."""
+    from specflow import cli
+    rc = cli.main([
+        "create", "--type", "competition", "--title", title,
+        "--status", "active", "--skip-dedup-check",
+        "--body", "Evaluator fingerprint fixture",
+        "--set", f"verify_command={verify_command}",
+        "--set", "metric_name=accuracy",
+        "--set", "metric_direction=higher_is_better",
+    ])
+    assert rc == 0
+    comps = [
+        a for a in art_lib.discover_artifacts(root)
+        if art_lib.get_prefix_from_id(a.id) == "COMP" and a.title == title
+    ]
+    assert len(comps) == 1
+    return comps[0].id
+
+
+class TestEvaluatorFingerprintSetup:
+    """AC1: COMP.evaluator_fingerprint (verify command plus evaluation-script
+    hashes) is recorded at setup and changes when an eval-script hash changes."""
+
+    def test_create_records_fingerprint_at_setup(self, project_root, monkeypatch, capsys):
+        (project_root / "scripts").mkdir()
+        (project_root / "scripts" / "eval.py").write_text("print(0.5)\n")
+        monkeypatch.chdir(project_root)
+        comp_id = _create_comp_cli(
+            project_root, "Setup fingerprint comp", "python scripts/eval.py"
+        )
+        out = capsys.readouterr().out
+        comp = _parse(project_root, comp_id)
+        fp = comp.frontmatter.get("evaluator_fingerprint")
+        expected = evaluator_lib.compute_evaluator_fingerprint(
+            project_root, "python scripts/eval.py"
+        )
+        assert fp == expected
+        assert fp.startswith("sha256:")
+        assert f"Evaluator fingerprint: {fp}" in out
+        # The setup checklist surfaces the recorded identity.
+        rc = autoresearch_cmd.run(
+            project_root, {"autoresearch_subcommand": "plan", "competition": comp_id}
+        )
+        assert rc == 0
+        assert f"Eval fp:       {fp}" in capsys.readouterr().out
+
+    def test_fingerprint_changes_when_eval_script_hash_changes(
+        self, project_root, monkeypatch,
+    ):
+        scripts = project_root / "scripts"
+        scripts.mkdir()
+        eval_py = scripts / "eval.py"
+        eval_py.write_text("print(0.5)\n")
+        fp1 = evaluator_lib.compute_evaluator_fingerprint(
+            project_root, "python scripts/eval.py"
+        )
+
+        # Pure filesystem hashing: identical content keeps the fingerprint
+        # even when rewritten.
+        eval_py.write_text("print(0.5)\n")
+        assert (
+            evaluator_lib.compute_evaluator_fingerprint(
+                project_root, "python scripts/eval.py"
+            )
+            == fp1
+        )
+
+        # A changed evaluation-script hash changes the fingerprint.
+        eval_py.write_text("print(0.9)\n")
+        fp2 = evaluator_lib.compute_evaluator_fingerprint(
+            project_root, "python scripts/eval.py"
+        )
+        assert fp2 != fp1
+
+        # Files the verify command does not run are not part of the evaluator.
+        (project_root / "unrelated.py").write_text("print('unused')\n")
+        assert (
+            evaluator_lib.compute_evaluator_fingerprint(
+                project_root, "python scripts/eval.py"
+            )
+            == fp2
+        )
+
+        # The verify command itself is covered too.
+        assert (
+            evaluator_lib.compute_evaluator_fingerprint(
+                project_root, "python scripts/eval.py --seed 1"
+            )
+            != fp2
+        )
+
+        # The recorded setup value tracks the change across setups.
+        monkeypatch.chdir(project_root)
+        comp1 = _create_comp_cli(project_root, "First exam", "python scripts/eval.py")
+        assert _parse(project_root, comp1).frontmatter["evaluator_fingerprint"] == fp2
+        eval_py.write_text("print(0.7)\n")
+        fp3 = evaluator_lib.compute_evaluator_fingerprint(
+            project_root, "python scripts/eval.py"
+        )
+        assert fp3 != fp2
+        comp2 = _create_comp_cli(project_root, "Second exam", "python scripts/eval.py")
+        assert _parse(project_root, comp2).frontmatter["evaluator_fingerprint"] == fp3
+
+    def test_log_stamps_expt_under_current_fingerprint(
+        self, project_root, monkeypatch,
+    ):
+        from specflow import cli
+        (project_root / "scripts").mkdir()
+        (project_root / "scripts" / "eval.py").write_text("print(0.5)\n")
+        monkeypatch.chdir(project_root)
+        comp_id = _create_comp_cli(project_root, "Stamp comp", "python scripts/eval.py")
+        assert cli.main([
+            "autoresearch", "plan", "--competition", comp_id,
+            "--mode", "explore", "--budget", "10",
+        ]) == 0
+        rc = cli.main([
+            "autoresearch", "log", "--loop", "LOOP-001",
+            "--status", "kept", "--metric-value", "0.6",
+            "--change-category", "features", "--summary", "unchanged harness",
+        ])
+        assert rc == 0
+        expt = _parse(project_root, "EXPT-001")
+        assert expt.frontmatter["evaluator_fingerprint"] == (
+            _parse(project_root, comp_id).frontmatter["evaluator_fingerprint"]
+        )
+        # Unchanged harness → nothing to flag.
+        from specflow.commands.artifact_lint import _run_check
+        result = _run_check(
+            art_lib.discover_artifacts(project_root), project_root, "fingerprint-drift"
+        )
+        assert result["warning_count"] == 0
+        assert result["blocking_count"] == 0
+
+    def test_log_rejects_set_evaluator_fingerprint(self, project_root, monkeypatch, capsys):
+        from specflow import cli
+        _make_loop(project_root, "LOOP-001", "COMP-001", status="running")
+        monkeypatch.chdir(project_root)
+        rc = cli.main([
+            "autoresearch", "log", "--loop", "LOOP-001",
+            "--status", "kept", "--metric-value", "0.5",
+            "--change-category", "features", "--summary", "s",
+            "--set", "evaluator_fingerprint=sha256:000000000000",
+        ])
+        assert rc == 1
+        assert "reserved" in capsys.readouterr().out
+
+
+class TestFingerprintDriftLint:
+    """AC2/AC3: fingerprint-drift lint check — once per COMP, successor-COMP
+    routing, never per-EXPT, never retroactive for pre-fingerprint EXPTs."""
+
+    def _lint(self, root: Path) -> dict:
+        from specflow.commands.artifact_lint import _run_check
+        return _run_check(art_lib.discover_artifacts(root), root, "fingerprint-drift")
+
+    def _setup_fingerprinted_comp(self, root: Path, title: str,
+                                  verify_command: str) -> str:
+        from specflow import cli
+        comp_id = _create_comp_cli(root, title, verify_command)
+        assert cli.main([
+            "autoresearch", "plan", "--competition", comp_id,
+            "--mode", "explore", "--budget", "10",
+        ]) == 0
+        return comp_id
+
+    def test_check_is_registered(self):
+        from specflow.commands import artifact_lint
+        assert "fingerprint-drift" in artifact_lint.CHECK_NAMES
+
+    def test_flags_once_per_comp_with_successor_routing(
+        self, project_root, monkeypatch,
+    ):
+        from specflow import cli
+        (project_root / "scripts").mkdir()
+        eval_py = project_root / "scripts" / "eval.py"
+        eval_py.write_text("print(0.5)\n")
+        monkeypatch.chdir(project_root)
+        comp_id = self._setup_fingerprinted_comp(
+            project_root, "Drift comp", "python scripts/eval.py"
+        )
+        # The harness drifts after setup; EXPTs are logged under it.
+        eval_py.write_text("print(0.9)\n")
+        for summary in ("first drifted run", "second drifted run"):
+            assert cli.main([
+                "autoresearch", "log", "--loop", "LOOP-001",
+                "--status", "kept", "--metric-value", "0.6",
+                "--change-category", "features", "--summary", summary,
+            ]) == 0
+
+        result = self._lint(project_root)
+        assert result["blocking_count"] == 0  # advisory only (DEC-088)
+        assert result["warning_count"] == 1  # ONCE per COMP, never per EXPT
+        detail = result["detail"]
+        assert detail.count("⚠") == 1  # exactly one finding
+        assert comp_id in detail
+        assert "successor" in detail
+        assert "derives_from" in detail
+        assert "EXPT-001" in detail and "EXPT-002" in detail
+        assert "rolling-evaluation.md" in detail
+
+    def test_flags_once_per_comp_across_multiple_comps(self, project_root, monkeypatch):
+        from specflow import cli
+        scripts = project_root / "scripts"
+        scripts.mkdir()
+        (scripts / "eval_a.py").write_text("print(0.5)\n")
+        (scripts / "eval_b.py").write_text("print(0.5)\n")
+        monkeypatch.chdir(project_root)
+        comp_a = self._setup_fingerprinted_comp(
+            project_root, "Drift comp A", "python scripts/eval_a.py"
+        )
+        comp_b = self._setup_fingerprinted_comp(
+            project_root, "Drift comp B", "python scripts/eval_b.py"
+        )
+        (scripts / "eval_a.py").write_text("print(0.9)\n")
+        (scripts / "eval_b.py").write_text("print(0.9)\n")
+        assert cli.main([
+            "autoresearch", "log", "--loop", "LOOP-001",
+            "--status", "kept", "--metric-value", "0.6",
+            "--change-category", "features", "--summary", "drifted a",
+        ]) == 0
+        assert cli.main([
+            "autoresearch", "log", "--loop", "LOOP-002",
+            "--status", "kept", "--metric-value", "0.4",
+            "--change-category", "features", "--summary", "drifted b",
+        ]) == 0
+
+        result = self._lint(project_root)
+        assert result["blocking_count"] == 0
+        assert result["warning_count"] == 2  # one finding per drifted COMP
+        detail = result["detail"]
+        assert detail.count("⚠") == 2
+        assert comp_a in detail and comp_b in detail
+
+    def test_never_retroactive_for_pre_fingerprint_expts(
+        self, project_root, monkeypatch,
+    ):
+        (project_root / "scripts").mkdir()
+        eval_py = project_root / "scripts" / "eval.py"
+        eval_py.write_text("print(0.5)\n")
+        monkeypatch.chdir(project_root)
+        self._setup_fingerprinted_comp(
+            project_root, "Historical comp", "python scripts/eval.py"
+        )
+        # Harness drifts on disk, but the historical EXPT predates fingerprint
+        # stamps — nothing may fire retroactively (AC3).
+        eval_py.write_text("print(0.9)\n")
+        _make_expt(project_root, "EXPT-009", "LOOP-001", "kept", 0.5)
+
+        # Likewise a stamped EXPT under a COMP that predates recorded setup
+        # fingerprints has no identity to drift from.
+        _make_loop(project_root, "LOOP-002", "COMP-001", status="running")
+        _make_expt(
+            project_root, "EXPT-010", "LOOP-002", "kept", 0.5,
+            extra={"evaluator_fingerprint": "sha256:deadbeef0000"},
+        )
+
+        result = self._lint(project_root)
+        assert result["warning_count"] == 0
+        assert result["blocking_count"] == 0

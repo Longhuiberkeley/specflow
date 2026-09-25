@@ -83,6 +83,7 @@ A COMP is a **frozen exam plus leaderboard**. Reopening or mutating `verify_comm
 |-------|----------------|----------------|
 | Retrain / new approach **inside** an open window | New **LOOP** on the same COMP (`knowledge_input` = confirmed FINDs) | New COMP per retrain |
 | Exam changes (metric, verify, dataset, split, or window bounds) | **Successor COMP** (`derives_from` the old COMP) | Mutate the old COMP |
+| Evaluation harness drift (eval-script content changed under an open COMP — `artifact-lint` `fingerprint-drift` flags once per COMP) | **Successor COMP** (`derives_from` the old COMP) | Re-benchmark the old EXPTs against the mutated harness |
 | Evaluation window elapsed (`window_end` passed) | Successor COMP (window advance **is** an exam change) | Edit `window_end` / `verify_command` in place |
 | Pause research | `paused` (reversible: `paused → active`) | Close or mutate |
 | Every goal satisfied or abandoned | `completed` (human gate; **stays frozen**) | `completed → active` |

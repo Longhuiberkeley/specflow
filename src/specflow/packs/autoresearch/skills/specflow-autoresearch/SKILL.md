@@ -232,7 +232,7 @@ A COMP is **durable** — it pins a dataset, metric, and verify command. When th
   ```
 - **A genuinely new thing** (different dataset, different metric, different target). Create a fresh COMP with **no link** — a clean research scope. Don't contort the old COMP to host it.
 
-Rule of thumb: if the `verify_command`, `metric_name`, dataset, or target would change, that's a **new COMP**, not a new SPIKE and not an in-place edit. (This is the research-side mirror of the Permanence Test — see the SpecFlow base context.) Window advance is a successor COMP (`derives_from`); never per-retrain COMP churn — see the churn rule in `references/rolling-evaluation.md`.
+Rule of thumb: if the `verify_command`, `metric_name`, dataset, or target would change, that's a **new COMP**, not a new SPIKE and not an in-place edit. (This is the research-side mirror of the Permanence Test — see the SpecFlow base context.) Window advance is a successor COMP (`derives_from`); never per-retrain COMP churn — see the churn rule in `references/rolling-evaluation.md`. Eval-script edits drift the frozen `evaluator_fingerprint` recorded at setup: `artifact-lint`'s `fingerprint-drift` check flags once per COMP when an EXPT was logged under a changed fingerprint and routes to the same successor-COMP path.
 
 **Nonmetric questions are SPIKE/FIND work.** If the question has no deterministic one-number verify — a design choice, a qualitative unknown, a direction still being scoped — do not fabricate a metric to host it in a COMP. Run it in the core flow: SPIKE holds the question, FIND holds the answer, and a COMP starts only when a real `verify_command` exists. (A fake score makes every downstream decision noise.)
 

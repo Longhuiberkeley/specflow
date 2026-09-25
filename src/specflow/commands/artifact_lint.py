@@ -21,7 +21,7 @@ from specflow.lib import role_normalize
 from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC
 from specflow.lib.domain_constants import DOMAIN_RECOMMENDED
 
-CHECK_NAMES = ["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "bp-application", "thinking-techniques", "autoresearch-logging", "autoresearch-comp-closure", "spike-lifecycle", "source-drift", "dec-risk-profile", "ac-observable", "nfr-category", "backfilled-links", "role-target"]
+CHECK_NAMES = ["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "fingerprint-drift", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "bp-application", "thinking-techniques", "autoresearch-logging", "autoresearch-comp-closure", "spike-lifecycle", "source-drift", "dec-risk-profile", "ac-observable", "nfr-category", "backfilled-links", "role-target"]
 
 # ── STORY-663: persistent-warning escalation ──────────────────────
 # severity-levels.md claims "warnings persisting across 3+ validation runs
@@ -145,6 +145,8 @@ def _run_check(
         return _check_ids(artifacts, schema_dir)
     elif check_name == "fingerprints":
         return _check_fingerprints(artifacts)
+    elif check_name == "fingerprint-drift":
+        return _check_fingerprint_drift(artifacts)
     elif check_name == "acceptance":
         return _check_acceptance(artifacts)
     elif check_name == "conflicts":
@@ -1957,6 +1959,88 @@ def _check_autoresearch_comp_closure(
     }
 
 
+def _check_fingerprint_drift(
+    artifacts: list[art_lib.Artifact],
+) -> dict[str, str | int]:
+    """Evaluator-fingerprint drift routing (STORY-676, REQ-047 AC2/AC3).
+
+    ``COMP.evaluator_fingerprint`` is the frozen setup identity of the exam
+    (verify command plus evaluation-script hashes). ``autoresearch log``
+    stamps each EXPT with the fingerprint it was logged under. When a stamped
+    EXPT differs from its COMP's setup fingerprint, that EXPT was scored by a
+    different evaluator than the frozen exam — its metrics are not comparable
+    to the leaderboard.
+
+    Flags ONCE per COMP (never per EXPT) and routes to the documented
+    successor-COMP path (rolling-evaluation.md § COMP churn rule). Never
+    retroactive: EXPTs predating fingerprint stamps — and COMPs predating a
+    recorded setup fingerprint — carry nothing to compare and are skipped
+    entirely. Advisory only (DEC-088): warnings, never blocking.
+    """
+    comps: dict[str, art_lib.Artifact] = {}
+    loops: dict[str, art_lib.Artifact] = {}
+    for art in artifacts:
+        prefix = art_lib.get_prefix_from_id(art.id)
+        if prefix == "COMP":
+            comps[art.id] = art
+        elif prefix == "LOOP":
+            loops[art.id] = art
+
+    drifted: dict[str, list[str]] = {}
+    for art in artifacts:
+        if art_lib.get_prefix_from_id(art.id) != "EXPT":
+            continue
+        expt_fp = art.frontmatter.get("evaluator_fingerprint")
+        if not isinstance(expt_fp, str) or not expt_fp:
+            # Pre-fingerprint EXPT — nothing was stamped at log time, so a
+            # later drift cannot be pinned on it. Never retroactive (AC3).
+            continue
+        comp_id = art.frontmatter.get("competition")
+        if not isinstance(comp_id, str) or not comp_id:
+            loop_id = art.frontmatter.get("loop")
+            loop = loops.get(loop_id) if isinstance(loop_id, str) else None
+            comp_id = loop.frontmatter.get("competition") if loop else None
+        comp = comps.get(comp_id) if isinstance(comp_id, str) else None
+        if comp is None:
+            continue
+        comp_fp = comp.frontmatter.get("evaluator_fingerprint")
+        if not isinstance(comp_fp, str) or not comp_fp:
+            # Pre-fingerprint COMP — no setup identity recorded to drift from.
+            continue
+        if expt_fp != comp_fp:
+            drifted.setdefault(comp.id, []).append(art.id)
+
+    details: list[str] = []
+    for comp_id in sorted(drifted):
+        expt_ids = sorted(drifted[comp_id])
+        shown = ", ".join(expt_ids[:5])
+        if len(expt_ids) > 5:
+            shown += f" (+{len(expt_ids) - 5} more)"
+        details.append(
+            f"  ⚠ [{comp_id}] evaluator drift: {len(expt_ids)} EXPT(s) logged "
+            f"under a changed evaluator_fingerprint ({shown}) — scored by a "
+            f"different evaluator than the frozen setup fingerprint, so their "
+            f"metrics are not comparable to the leaderboard. Route to the "
+            f"successor-COMP path: author a new COMP linked "
+            f"`derives_from` {comp_id}, carry confirmed FINDs forward, and "
+            f"leave {comp_id} frozen (COMP churn rule — rolling-evaluation.md); "
+            f"never re-benchmark the exam in place"
+        )
+
+    warnings = len(drifted)  # ONCE per COMP, never per EXPT
+    icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
+    detail_msg = (
+        "\n".join(details) if details
+        else "No evaluator-fingerprint drift under recorded setup fingerprints"
+    )
+    return {
+        "status_icon": icon,
+        "detail": detail_msg,
+        "blocking_count": 0,
+        "warning_count": warnings,
+    }
+
+
 # ── SPIKE lifecycle defaults ──────────────────────────────────────
 _DEFAULT_SPIKE_AGE_DAYS = 30
 _MIN_ZOMBIE_WORD_COUNT = 100
@@ -2482,10 +2566,13 @@ def run(root: Path, args: dict) -> int:
     if not check_type:
         # bp-application is explicitly warning-first unless its opt-in strict
         # setting is enabled; persistent-warning escalation must not override
-        # that contract.
+        # that contract. fingerprint-drift is likewise advisory-only (DEC-088,
+        # ARCH-038): its finding is permanent historical accounting — the
+        # remedy is a successor COMP, not an edit to the drifted EXPTs — so
+        # escalation would turn a never-gating advisory into a permanent block.
         escalation_results = [
             (name, result) for name, result in results
-            if name != "bp-application"
+            if name not in ("bp-application", "fingerprint-drift")
         ]
         escalated = _record_warning_runs(root, escalation_results)
         total_blocking += len(escalated)

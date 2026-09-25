@@ -16,6 +16,7 @@ from datetime import date
 from pathlib import Path
 
 from specflow.lib import artifacts as art_lib
+from specflow.lib import evaluator_fingerprint as evaluator_lib
 from specflow.lib.display import RED, GREEN, CYAN, YELLOW, NC, BOLD, DIM
 from specflow.lib.domain_constants import DOMAIN_RECOMMENDED
 
@@ -1520,6 +1521,7 @@ def _run_plan_info(root: Path, comp: art_lib.Artifact, args: dict) -> int:
     print(f"Competition:   {CYAN}{comp.id}{NC}  {comp.title}")
     print(f"Metric:        {fm.get('metric_name', '?')} ({fm.get('metric_direction', '?')})")
     print(f"Verify cmd:    {fm.get('verify_command', '(none)')}")
+    print(f"Eval fp:       {fm.get('evaluator_fingerprint', '(not recorded)')}")
     guard = fm.get("guard_command")
     if guard:
         print(f"Guard cmd:     {guard} (mode: {fm.get('guard_mode', 'pass_fail')})")
@@ -1936,10 +1938,12 @@ def _run_log(root: Path, args: dict) -> int:
     # and parent fields — STORY-636/637). A --set override could silently
     # strip the belongs_to link edge or desync frontmatter from it. REQ-043
     # adds `research_progress` to the reserved set: the dedicated
-    # --research-progress flag is the one validated producer.
+    # --research-progress flag is the one validated producer. REQ-047 adds
+    # `evaluator_fingerprint`: the command stamps it from the harness on disk
+    # right now — a hand-set value would launder evaluator drift.
     reserved = {
         "links", "loop", "competition", "status", "id", "type", "title",
-        "research_progress",
+        "research_progress", "evaluator_fingerprint",
     }
     for entry in set_fields:
         if "=" not in entry:
@@ -1962,6 +1966,22 @@ def _run_log(root: Path, args: dict) -> int:
             extra_fields[key] = raw
 
     comp_id = loop.frontmatter.get("competition")
+
+    # STORY-676 (REQ-047 AC2): stamp the evaluator fingerprint this EXPT is
+    # logged under — recomputed from the harness on disk right now (verify
+    # command plus evaluation-script hashes; pure filesystem hashing). When
+    # the harness drifted since setup, the stamp differs from
+    # COMP.evaluator_fingerprint and `artifact-lint`'s fingerprint-drift
+    # check routes once to the successor-COMP path. EXPTs without a stamp
+    # predate fingerprinting and are never flagged retroactively.
+    evaluator_fingerprint = None
+    comp = id_index.get(comp_id) if comp_id else None
+    verify_command = comp.frontmatter.get("verify_command") if comp else None
+    if isinstance(verify_command, str) and verify_command.strip():
+        evaluator_fingerprint = evaluator_lib.compute_evaluator_fingerprint(
+            root, verify_command
+        )
+
     create_kwargs = {
         "loop": loop_id,
         "metric_value": metric_value if metric_value is not None else 0.0,
@@ -1973,6 +1993,8 @@ def _run_log(root: Path, args: dict) -> int:
         "links": [{"target": loop_id, "role": "belongs_to"}],
         **extra_fields,
     }
+    if evaluator_fingerprint:
+        create_kwargs["evaluator_fingerprint"] = evaluator_fingerprint
     if research_progress is not None:
         create_kwargs["research_progress"] = research_progress
 

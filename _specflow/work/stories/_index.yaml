@@ -1342,7 +1342,7 @@ artifacts:
   STORY-676:
     id: STORY-676
     title: Evaluator fingerprint and drift routing (REQ-047)
-    status: approved
+    status: implemented
     tags: []
     fingerprint: sha256:bb9678cd9e21
     children: []

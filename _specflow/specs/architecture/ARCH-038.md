@@ -3,7 +3,7 @@ id: ARCH-038
 title: 'Research integrity guards: evaluator fingerprint, jump and guard flags, external
   scores'
 type: architecture
-status: approved
+status: implemented
 suspect: false
 links:
 - target: REQ-047

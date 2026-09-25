@@ -1,9 +1,20 @@
+# COMP (competition) schema — autoresearch pack.
+#
+# Evaluator fingerprint (REQ-047): `evaluator_fingerprint` is recorded at
+# setup — the verify command plus the content hashes of the evaluation
+# scripts it runs (pure filesystem hashing; `specflow create --type
+# competition` stamps it). It is the frozen identity of the exam. Each EXPT
+# is stamped at `autoresearch log` with the fingerprint it was logged under;
+# when an EXPT's stamp differs from this setup fingerprint, `artifact-lint`'s
+# `fingerprint-drift` check flags ONCE per COMP and routes to the
+# successor-COMP path (rolling-evaluation.md § COMP churn rule) — never
+# per-EXPT, never retroactive for pre-fingerprint EXPTs.
 type: competition
 category: research
 prefix: COMP
 id_format: "^COMP-\\d{3,5}$"
 required_fields: [id, title, type, status, created, verify_command, metric_name, metric_direction]
-optional_fields: [description, dataset, split_method, window_end, closure_disposition, assets, timeframe, guard_command, guard_mode, objective_type, success_criteria, domain, pre_check_command, post_check_command, noise_characterization, goals, constraints, theses, custom_categories, tags, suspect, fingerprint, links, modified, thinking_techniques]
+optional_fields: [description, dataset, split_method, window_end, closure_disposition, assets, timeframe, guard_command, guard_mode, objective_type, success_criteria, domain, pre_check_command, post_check_command, noise_characterization, evaluator_fingerprint, goals, constraints, theses, custom_categories, tags, suspect, fingerprint, links, modified, thinking_techniques]
 initial_statuses: [active]
 allowed_status:
   active: [paused]

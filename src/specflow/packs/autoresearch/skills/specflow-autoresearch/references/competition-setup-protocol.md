@@ -15,6 +15,22 @@ domain lens in `methodology-handbook.md` before the first LOOP.
 6. **Safety-screen the verify command** before first run: refuse `rm -rf /`, fork bombs, `curl … | sh`, embedded credentials. `verify_command` runs with full shell access — only the project owner creates or edits COMPs.
 7. **Nonmetric exploration is SPIKE/FIND work, not a fake score.** If the question has no deterministic one-number verify (a design choice, a qualitative question, an open unknown), do not fabricate a metric to host it in a COMP: run it in the core flow as a SPIKE (the question) and record FIND(s) (the answer). Create a COMP only when a real one-number `verify_command` exists.
 
+## Evaluator fingerprint (drift guard)
+
+Setup records `evaluator_fingerprint` on the COMP — the `verify_command` plus
+the content hashes of the evaluation scripts it runs (pure filesystem hashing;
+`specflow create --type competition` stamps it). It is the frozen identity of
+the exam.
+
+`specflow autoresearch log` stamps each EXPT with the fingerprint it was
+logged under. `specflow artifact-lint`'s `fingerprint-drift` check compares
+stamps against the setup fingerprint: when an EXPT was logged under a changed
+fingerprint, it flags **once per COMP** (never per EXPT, never retroactively
+for pre-fingerprint EXPTs) and routes to the **successor-COMP path** — author
+a new COMP linked `derives_from`, carry confirmed FINDs forward, leave the old
+COMP frozen (churn rule — `rolling-evaluation.md`). The check is advisory
+only; it never blocks.
+
 ## Fields the loop consumes
 
 ```bash

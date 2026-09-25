@@ -2503,3 +2503,23 @@ class TestLandscapeResurvey:
         ).read_text()
         assert "references/landscape-resurvey.md" in skill
         assert len(skill.splitlines()) < 500
+
+
+# ── STORY-676 (REQ-047): evaluator fingerprint schema fields ────────────────
+
+class TestEvaluatorFingerprintSchema:
+
+    def test_competition_schema_has_evaluator_fingerprint(self, project_root: Path):
+        comp_raw = (project_root / ".specflow" / "schema" / "competition.yaml").read_text()
+        schema = yaml.safe_load(comp_raw)
+        assert "evaluator_fingerprint" in schema.get("optional_fields", [])
+        # The schema documents the drift-routing semantics (REQ-047 AC2).
+        for token in ("evaluator_fingerprint", "fingerprint-drift", "successor-COMP"):
+            assert token in comp_raw
+
+    def test_experiment_schema_has_evaluator_fingerprint(self, project_root: Path):
+        exp_raw = (project_root / ".specflow" / "schema" / "experiment.yaml").read_text()
+        schema = yaml.safe_load(exp_raw)
+        assert "evaluator_fingerprint" in schema.get("optional_fields", [])
+        # A missing stamp is a pre-fingerprint EXPT — never flagged retroactively.
+        assert "pre-fingerprint" in exp_raw

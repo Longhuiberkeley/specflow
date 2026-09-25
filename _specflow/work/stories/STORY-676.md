@@ -2,7 +2,7 @@
 id: STORY-676
 title: Evaluator fingerprint and drift routing (REQ-047)
 type: story
-status: approved
+status: implemented
 suspect: false
 links:
 - target: REQ-047

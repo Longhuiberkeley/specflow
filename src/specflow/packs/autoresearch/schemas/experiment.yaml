@@ -47,12 +47,21 @@
 # analysis-only no_op EXPT with anchored `research_progress` (see
 # error-analysis-protocol.md). Such records feed Phase 2 hypotheses and are
 # exempt from evidence-free streak windows.
+#
+# Evaluator drift (REQ-047): `evaluator_fingerprint` is stamped by
+# `autoresearch log` with the evaluator fingerprint the EXPT was logged under
+# (recomputed from the harness on disk at log time; see the COMP schema for
+# the fingerprint's content). A missing stamp marks a pre-fingerprint EXPT —
+# logged before fingerprinting existed — and the `fingerprint-drift` lint
+# check never flags such EXPTs retroactively. A stamp differing from
+# COMP.evaluator_fingerprint is drift: flagged once per COMP, routed to the
+# successor-COMP path.
 type: experiment
 category: research
 prefix: EXPT
 id_format: "^EXPT-\\d{3,5}$"
 required_fields: [id, title, type, status, created, loop, metric_value, change_category, summary]
-optional_fields: [description, competition, commit, iteration, hypothesis, hypothesis_outcome, research_question, parameters, model_origin, sweep_results, checks, baseline_note, diversity_metrics, failure_analysis, failure_stage, design_quality, design_quality_note, lesson_extracted, lesson_source, lesson_portability, auxiliary_signal, crash_telemetry, surprise, guard_value, guard_passed, strategy_used, strategy_family, lineage, delta, duration_seconds, auxiliary_metrics, research_progress, tags, suspect, fingerprint, links, modified, thinking_techniques]
+optional_fields: [description, competition, commit, iteration, hypothesis, hypothesis_outcome, research_question, parameters, model_origin, sweep_results, checks, baseline_note, diversity_metrics, failure_analysis, failure_stage, design_quality, design_quality_note, lesson_extracted, lesson_source, lesson_portability, auxiliary_signal, crash_telemetry, surprise, guard_value, guard_passed, strategy_used, strategy_family, lineage, delta, duration_seconds, auxiliary_metrics, research_progress, evaluator_fingerprint, tags, suspect, fingerprint, links, modified, thinking_techniques]
 allowed_status:
   kept: []
   discarded: []
