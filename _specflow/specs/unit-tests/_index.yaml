@@ -810,4 +810,32 @@ artifacts:
     tags: []
     fingerprint: sha256:4f79bd037e28
     children: []
-next_id: 89
+  UT-089:
+    id: UT-089
+    title: 'Unit Test for DDD-032: Practice loader and transitional status map semantics'
+    status: draft
+    tags: []
+    fingerprint: sha256:6c829f465977
+    children: []
+  UT-090:
+    id: UT-090
+    title: Practice anatomy and status-map unit pins (STORY-666)
+    status: draft
+    tags: []
+    fingerprint: sha256:37a15ddd16a2
+    children: []
+  UT-091:
+    id: UT-091
+    title: Practices seed stability and alias delegation pins (STORY-667)
+    status: draft
+    tags: []
+    fingerprint: sha256:d80fc368e507
+    children: []
+  UT-092:
+    id: UT-092
+    title: Practices validate, migrate, and loader pins (STORY-668)
+    status: draft
+    tags: []
+    fingerprint: sha256:be0df725a71c
+    children: []
+next_id: 93

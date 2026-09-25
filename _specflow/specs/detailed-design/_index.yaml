@@ -259,4 +259,19 @@ artifacts:
     tags: []
     fingerprint: sha256:d7a18f523ae7
     children: []
-next_id: 31
+  DDD-031:
+    id: DDD-031
+    title: 'Frontier ledger: lineage depth, family width, stagnation states, move
+      menu'
+    status: approved
+    tags: []
+    fingerprint: sha256:ba4a6edcb9f3
+    children: []
+  DDD-032:
+    id: DDD-032
+    title: Practice loader and transitional status map semantics
+    status: implemented
+    tags: []
+    fingerprint: sha256:84a45cc1a1fb
+    children: []
+next_id: 33

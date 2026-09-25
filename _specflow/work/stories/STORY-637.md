@@ -27,6 +27,7 @@ output_files:
 authorization_note: Verification contracts UT-074/IT-041/QT-047 created and stamped
   green (owner-pre-authorized overnight run 2026-08-27); closes the AUD-106 verification-coverage
   gap. Listed in morning report.
+version: 1
 ---
 
 # v1.14.2 review fixes: typed refined_by direction, --set guard, IT-038 truthfulness, lint crash guard

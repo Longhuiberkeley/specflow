@@ -18,6 +18,7 @@ output_files:
 - src/specflow/commands/autoresearch.py
 - src/specflow/commands/artifact_lint.py
 - tests/test_autoresearch_cli.py
+version: 1
 ---
 
 # Autoresearch CLI writes traceable link edges (plan/log/suggest-finds)

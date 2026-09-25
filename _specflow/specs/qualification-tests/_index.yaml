@@ -509,4 +509,25 @@ artifacts:
     tags: []
     fingerprint: sha256:41aff074f802
     children: []
-next_id: 62
+  QT-062:
+    id: QT-062
+    title: Qualify BP anatomy and lifecycle (STORY-666)
+    status: draft
+    tags: []
+    fingerprint: sha256:69dbe135f518
+    children: []
+  QT-063:
+    id: QT-063
+    title: Qualify seed split (STORY-667)
+    status: draft
+    tags: []
+    fingerprint: sha256:01852af9178a
+    children: []
+  QT-064:
+    id: QT-064
+    title: Qualify practices migrate safety (STORY-668)
+    status: draft
+    tags: []
+    fingerprint: sha256:a7b1fa674354
+    children: []
+next_id: 65

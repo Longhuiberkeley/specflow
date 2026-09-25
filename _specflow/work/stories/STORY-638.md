@@ -21,7 +21,7 @@ output_files:
 - src/specflow/commands/unlock.py
 - src/specflow/lib/executor.py
 - tests/test_create_locking.py
-version: 1
+version: 2
 review_note: 'Post-implementation review (fix pass 1): stale-break now payload-reverified
   (cannot unlink a lock a concurrent acquirer just placed across the parse gap), release
   ownership-checked, PermissionError reads as live PID, docstring claims scoped honestly.

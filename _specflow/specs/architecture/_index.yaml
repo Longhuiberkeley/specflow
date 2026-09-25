@@ -302,4 +302,34 @@ artifacts:
     tags: []
     fingerprint: sha256:8c18da8a2938
     children: []
-next_id: 35
+  ARCH-035:
+    id: ARCH-035
+    title: 'Practice spine: BP anatomy, provenance, lifecycle, and deterministic validation'
+    status: implemented
+    tags: []
+    fingerprint: sha256:d9570f45e353
+    children: []
+  ARCH-036:
+    id: ARCH-036
+    title: 'Guidance application: guided_by binding, evidence-based enforcement, tailoring'
+    status: approved
+    tags: []
+    fingerprint: sha256:1b4df2c769dd
+    children: []
+  ARCH-037:
+    id: ARCH-037
+    title: 'Autoresearch steering: frontier ledger, EDA lenses, error analysis, knowledge
+      flow'
+    status: approved
+    tags: []
+    fingerprint: sha256:bbc529903821
+    children: []
+  ARCH-038:
+    id: ARCH-038
+    title: 'Research integrity guards: evaluator fingerprint, jump and guard flags,
+      external scores'
+    status: approved
+    tags: []
+    fingerprint: sha256:47c45af0ea47
+    children: []
+next_id: 39

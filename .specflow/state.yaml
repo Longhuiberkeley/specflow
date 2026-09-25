@@ -1,4 +1,4 @@
-current: specifying
+current: executing
 history:
 - phase: idle
   entered: '2026-04-10'
@@ -34,4 +34,14 @@ history:
   entered: '2026-09-25'
   reason: REQ-044..051 approved by user in chat (Sure, do those); proceeding to ship
     pending v1.15.0 then plan
+  exited: '2026-09-25'
+- phase: planning
+  entered: '2026-09-25'
+  reason: REQ-044..051 approved; decomposing the practice-spine + autoresearch program
+    into ARCH/DDD/STORY
+  exited: '2026-09-25'
+- phase: executing
+  entered: '2026-09-25'
+  reason: 'STORY-666..677 approved (user: get those done); implementing vNext increments
+    1-4'
 created: '2026-04-10'

@@ -34,6 +34,7 @@ output_files:
 - tests/test_nfr_category.py
 - tests/test_backfilled_guard.py
 modified: '2026-08-05'
+version: 1
 ---
 
 # Enforce semver baseline naming and prefer releases in drift selection

@@ -2,7 +2,7 @@
 id: STORY-644
 title: 'v1.15.0: ops pack methodology handbook'
 type: story
-status: draft
+status: approved
 tags:
 - v1.15.0-backlog
 suspect: false
@@ -11,7 +11,7 @@ links:
   role: implements
 created: '2026-08-27'
 fingerprint: sha256:d473e694a46a
-modified: '2026-09-13'
+modified: '2026-09-25'
 ---
 
 # v1.15.0: ops pack methodology handbook

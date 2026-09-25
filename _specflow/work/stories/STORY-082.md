@@ -23,7 +23,7 @@ thinking_techniques:
 - worst_case_user
 - composition
 modified: '2026-07-30'
-version: 1
+version: 2
 verification_gate:
   baseline: 'uv run pytest: 718 passed'
   final: 'uv run pytest: 723 passed'

@@ -59,6 +59,7 @@ output_files:
 - tests/test_change_impact_cli.py
 - tests/test_discovery_plan_continuity.py
 - tests/test_tags_normalization.py
+version: 1
 ---
 
 # Close v1.13.8 readiness and distribution gaps

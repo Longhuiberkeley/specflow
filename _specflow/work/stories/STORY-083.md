@@ -16,7 +16,7 @@ links:
   role: specified_by
 created: '2026-08-02'
 fingerprint: sha256:2f37303ac6d9
-version: 1
+version: 2
 thinking_techniques:
 - worst_case_user
 - composition

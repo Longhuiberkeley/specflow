@@ -23,7 +23,7 @@ output_files:
 - src/specflow/cli.py
 - tests/test_role_targets.py
 - tests/test_v1143_integration.py
-version: 1
+version: 2
 review_note: 'v1.14.4 follow-up: derives_from unjudged (generic provenance) after
   139 false alarms on the first live consumer run; provenance-zoo regression test
   added.'

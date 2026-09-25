@@ -28,7 +28,7 @@ output_files:
 - tests/test_creation_status_gate.py
 - tests/test_handbook.py
 - tests/test_v1143_integration.py
-version: 1
+version: 2
 ---
 
 # v1.14.3: creation-status entry gates (CLI-level, --sanctioned)

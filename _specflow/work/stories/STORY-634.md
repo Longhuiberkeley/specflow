@@ -18,6 +18,7 @@ modified: '2026-08-26'
 output_files:
 - src/specflow/lib/artifacts.py
 - tests/test_artifacts.py
+version: 1
 ---
 
 # Type-aware trace direction: implements/guided_by/specified_by and test verified_by as upstream

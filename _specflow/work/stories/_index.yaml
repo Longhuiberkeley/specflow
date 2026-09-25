@@ -983,7 +983,7 @@ artifacts:
   STORY-642:
     id: STORY-642
     title: 'v1.15.0: unify chain-depth with the typed edge matrix'
-    status: draft
+    status: approved
     tags:
     - v1.15.0-backlog
     fingerprint: sha256:e229e745199b
@@ -991,7 +991,7 @@ artifacts:
   STORY-643:
     id: STORY-643
     title: 'v1.15.0: OpenCode native commands (harness-level, deferred per owner 2026-08-27)'
-    status: draft
+    status: approved
     tags:
     - v1.15.0-backlog
     fingerprint: sha256:1f7ed654008d
@@ -999,7 +999,7 @@ artifacts:
   STORY-644:
     id: STORY-644
     title: 'v1.15.0: ops pack methodology handbook'
-    status: draft
+    status: approved
     tags:
     - v1.15.0-backlog
     fingerprint: sha256:d473e694a46a
@@ -1007,7 +1007,7 @@ artifacts:
   STORY-645:
     id: STORY-645
     title: 'v1.15.0: skill slimming / lazy reference loading'
-    status: draft
+    status: approved
     tags:
     - v1.15.0-backlog
     fingerprint: sha256:e01c95c05ae7
@@ -1268,4 +1268,89 @@ artifacts:
     - v1.16.0
     fingerprint: sha256:e399616ba8ef
     children: []
-next_id: 666
+  STORY-666:
+    id: STORY-666
+    title: BP anatomy, provenance fields, and transitional status map (REQ-044)
+    status: implemented
+    tags: []
+    fingerprint: sha256:5b71045d81f0
+    children: []
+  STORY-667:
+    id: STORY-667
+    title: Practices seed split and handbook deprecation (REQ-044)
+    status: implemented
+    tags: []
+    fingerprint: sha256:6a90ee08ec8c
+    children: []
+  STORY-668:
+    id: STORY-668
+    title: Practices validate, practices migrate, applicability-first loader (REQ-044)
+    status: implemented
+    tags: []
+    fingerprint: sha256:87a1e6ff20fc
+    children: []
+  STORY-669:
+    id: STORY-669
+    title: guided_by link role for REQ, ARCH, and STORY (REQ-045)
+    status: approved
+    tags: []
+    fingerprint: sha256:8a0a1603fb02
+    children: []
+  STORY-670:
+    id: STORY-670
+    title: bp-application evidence check with tailoring and migration stamp (REQ-045)
+    status: approved
+    tags: []
+    fingerprint: sha256:225cba543bec
+    children: []
+  STORY-671:
+    id: STORY-671
+    title: Brief bound/unbound practice accounting (REQ-045)
+    status: approved
+    tags: []
+    fingerprint: sha256:6546fbec875a
+    children: []
+  STORY-672:
+    id: STORY-672
+    title: Autoresearch frontier ledger and move menu (REQ-046)
+    status: approved
+    tags: []
+    fingerprint: sha256:35326d62fe8c
+    children: []
+  STORY-673:
+    id: STORY-673
+    title: EDA lenses, applicability-aware accounting, agenda re-rank (REQ-046)
+    status: approved
+    tags: []
+    fingerprint: sha256:ed7fce11f719
+    children: []
+  STORY-674:
+    id: STORY-674
+    title: Error-analysis protocol and analysis iterations (REQ-046)
+    status: approved
+    tags: []
+    fingerprint: sha256:989b4509f92b
+    children: []
+  STORY-675:
+    id: STORY-675
+    title: 'Knowledge flow: plan --inherit, condensation requirement, top-3 status,
+      adjacent-field lens (REQ-046)'
+    status: approved
+    tags: []
+    fingerprint: sha256:22d9c0ca75fd
+    children: []
+  STORY-676:
+    id: STORY-676
+    title: Evaluator fingerprint and drift routing (REQ-047)
+    status: approved
+    tags: []
+    fingerprint: sha256:bb9678cd9e21
+    children: []
+  STORY-677:
+    id: STORY-677
+    title: Jump flags, guard metrics, external scores, metric bundles (REQ-047)
+    status: approved
+    tags: []
+    fingerprint: sha256:6562421c0056
+    children: []
+next_id: 678

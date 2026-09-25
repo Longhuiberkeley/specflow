@@ -447,4 +447,33 @@ artifacts:
     tags: []
     fingerprint: sha256:0d4aef723bc6
     children: []
-next_id: 55
+  IT-055:
+    id: IT-055
+    title: 'Integration Test for ARCH-035: Practice spine: BP anatomy, provenance,
+      lifecycle, and deterministic validation'
+    status: draft
+    tags: []
+    fingerprint: sha256:0cd8796bd286
+    children: []
+  IT-056:
+    id: IT-056
+    title: BP schema integration across lint and create (STORY-666)
+    status: draft
+    tags: []
+    fingerprint: sha256:a3cf04ff5f60
+    children: []
+  IT-057:
+    id: IT-057
+    title: Handbook alias produces equivalent practices (STORY-667)
+    status: draft
+    tags: []
+    fingerprint: sha256:d0298d2a9a9e
+    children: []
+  IT-058:
+    id: IT-058
+    title: Migration fold-in across refresh, init, and pack apply (STORY-668)
+    status: draft
+    tags: []
+    fingerprint: sha256:7ed385b56032
+    children: []
+next_id: 59
