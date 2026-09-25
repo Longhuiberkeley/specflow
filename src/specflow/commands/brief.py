@@ -146,6 +146,62 @@ def _docs_summary(root: Path) -> dict | None:
     }
 
 
+def _practice_binding_summary(
+    root: Path,
+    artifacts: list[art_lib.Artifact],
+) -> dict[str, dict[str, int]] | None:
+    """Count bound/unbound artifact-to-practice pairs by lifecycle type.
+
+    Applicability is evaluated against approved BPs for each REQ, ARCH, and
+    STORY. Counts describe expected binding edges, so one artifact applicable
+    to multiple BPs contributes one pair per BP. A DEC-authorized dropped BP is
+    no longer in scope. Return None when the inventory has no applicable BP
+    pairs, keeping the brief quiet rather than printing zero rows.
+    """
+    from specflow.lib import practices as practices_lib
+
+    target_types = ("requirement", "architecture", "story")
+    counts = {art_type: {"bound": 0, "unbound": 0} for art_type in target_types}
+    approved_bps = [
+        artifact for artifact in artifacts
+        if artifact.type == "best-practice"
+        and practices_lib.status_resolves_approved(artifact.status)
+    ]
+    if not approved_bps:
+        return None
+
+    id_index = art_lib.build_id_index(artifacts)
+    applicable_pairs = 0
+    for target in artifacts:
+        if target.type not in counts:
+            continue
+        for bp in approved_bps:
+            if practices_lib.is_tailoring_dropped(bp, id_index):
+                continue
+            if "applicability" in bp.frontmatter:
+                applicable = practices_lib.applicability_matches(
+                    bp.frontmatter.get("applicability"), target, root
+                )
+            else:
+                applies_to_ids = {
+                    link.target for link in bp.links if link.role == "applies_to"
+                }
+                applicable = (
+                    target.id in applies_to_ids or bool(set(target.tags) & set(bp.tags))
+                )
+            if not applicable:
+                continue
+
+            applicable_pairs += 1
+            bound = any(
+                link.role == "guided_by" and link.target == bp.id
+                for link in target.links
+            )
+            counts[target.type]["bound" if bound else "unbound"] += 1
+
+    return counts if applicable_pairs else None
+
+
 def _knowledge_summary(root: Path, artifacts: list[art_lib.Artifact]) -> dict:
     """Knowledge-surface health: proactive BP best-practices, reactive PREV patterns,
     research FINDs, review CHLs.
@@ -177,13 +233,6 @@ def _knowledge_summary(root: Path, artifacts: list[art_lib.Artifact]) -> dict:
     chl_open = len(chls) - chl_done
 
     hints: list[str] = []
-    active_bps = bp_by_status.get("active", 0) + bp_by_status.get("approved", 0)
-    if active_bps == 0:
-        hints.append(
-            "no active/approved BPs — domain best-practices not captured; generate at "
-            "/specflow-discover, or add one (`specflow create --type best-practice`) when "
-            "you apply a reusable practice."
-        )
     if not prevs:
         hints.append(
             "0 PREV — reactive learning never fired; patterns auto-capture from review "
@@ -196,6 +245,7 @@ def _knowledge_summary(root: Path, artifacts: list[art_lib.Artifact]) -> dict:
     # surface the count of aspirational ACs — clean line at zero aspirational.
     from specflow.lib import ac_quality
     ac_agg = ac_quality.classify_reqs_observability(artifacts)
+    practice_bindings = _practice_binding_summary(root, artifacts)
 
     return {
         "bp_total": len(bps),
@@ -206,6 +256,7 @@ def _knowledge_summary(root: Path, artifacts: list[art_lib.Artifact]) -> dict:
         "chl_done": chl_done,
         "hints": hints,
         "ac_quality": ac_agg,
+        "practice_bindings": practice_bindings,
     }
 
 
@@ -801,6 +852,19 @@ def run(root: Path, args: dict[str, Any]) -> int:
           f"PREV {knowledge['prev_count']}   "
           f"FIND {knowledge['find_count']}   "
           f"CHL {knowledge['chl_open']} open / {knowledge['chl_done']} done")
+    practice_bindings = knowledge["practice_bindings"]
+    if practice_bindings is not None:
+        print(f"\n  {BOLD}Practice bindings{NC} (in-scope approved BPs)")
+        for art_type, label in (
+            ("requirement", "REQ"),
+            ("architecture", "ARCH"),
+            ("story", "STORY"),
+        ):
+            counts = practice_bindings[art_type]
+            print(
+                f"    {label}: {counts['bound']} bound / "
+                f"{counts['unbound']} unbound"
+            )
     # REQ AC-quality: one aggregate line (accounting, not policing). Clean line
     # (no ⚠) when zero aspirational; ⚠ surfaces the gap only when it exists.
     acq = knowledge["ac_quality"]

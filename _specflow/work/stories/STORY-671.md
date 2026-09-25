@@ -2,7 +2,7 @@
 id: STORY-671
 title: Brief bound/unbound practice accounting (REQ-045)
 type: story
-status: approved
+status: implemented
 suspect: false
 links:
 - target: REQ-045
@@ -14,6 +14,8 @@ fingerprint: sha256:6546fbec875a
 thinking_techniques:
 - premortem
 - dependency-shock
+- worst_case_user
+- composition
 modified: '2026-09-25'
 ---
 

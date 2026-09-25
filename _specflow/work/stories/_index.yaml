@@ -1306,7 +1306,7 @@ artifacts:
   STORY-671:
     id: STORY-671
     title: Brief bound/unbound practice accounting (REQ-045)
-    status: approved
+    status: implemented
     tags: []
     fingerprint: sha256:6546fbec875a
     children: []

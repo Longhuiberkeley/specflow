@@ -58,7 +58,7 @@ def test_brief_runs_and_reports_phase_and_inventory(project_root: Path, capsys):
     assert "Suspects" not in out
 
 
-# --- Knowledge-surfaces block: makes BP/PREV dormancy visible ---
+# --- Knowledge-surfaces block: practice bindings and reactive learning ---
 
 def _bp_art(bp_id: str, status: str = "approved") -> art_lib.Artifact:
     return art_lib.Artifact(
@@ -69,13 +69,41 @@ def _bp_art(bp_id: str, status: str = "approved") -> art_lib.Artifact:
     )
 
 
+def _write_brief_artifact(
+    root: Path,
+    artifact_id: str,
+    art_type: str,
+    *,
+    status: str = "approved",
+    links: list[dict] | None = None,
+    extra: dict | None = None,
+) -> Path:
+    path = root / "_specflow" / art_lib.TYPE_TO_DIR[art_type] / f"{artifact_id}.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    frontmatter = {
+        "id": artifact_id,
+        "title": artifact_id,
+        "type": art_type,
+        "status": status,
+        "tags": [],
+        "links": links or [],
+    }
+    frontmatter.update(extra or {})
+    path.write_text(
+        f"---\n{yaml.safe_dump(frontmatter, sort_keys=False)}---\n\nBody.\n",
+        encoding="utf-8",
+    )
+    return path
+
+
 def test_knowledge_summary_reports_all_empty_surfaces(tmp_path: Path):
     summary = brief_cmd._knowledge_summary(tmp_path, [])
     assert summary["bp_total"] == 0
     assert summary["prev_count"] == 0
     assert summary["find_count"] == 0
     assert summary["chl_open"] == 0
-    assert any("no active/approved BPs" in hint for hint in summary["hints"])
+    assert summary["practice_bindings"] is None
+    assert not any("BPs" in hint for hint in summary["hints"])
     assert any("0 PREV" in hint for hint in summary["hints"])
 
 
@@ -87,6 +115,7 @@ def test_brief_renders_empty_knowledge_surfaces(project_root: Path, capsys):
     assert "PREV 0" in out
     assert "FIND 0" in out
     assert "CHL 0 open / 0 done" in out
+    assert "Practice bindings" not in out
 
 
 def test_brief_discovers_artifacts_once(project_root: Path, monkeypatch):
@@ -107,13 +136,14 @@ def test_knowledge_summary_reports_bp_and_prev_dormancy(tmp_path: Path):
     from specflow.lib import learning as learn_lib
 
     arts = [_bp_art("BP-001")]
-    # No PREV yet -> dormancy hint for PREV fires; approved BP means no BP-dormancy hint.
+    # No PREV yet -> dormancy hint for PREV fires; an approved BP is accounted
+    # for by binding coverage only when it applies to a lifecycle artifact.
     s = brief_cmd._knowledge_summary(tmp_path, arts)
     assert s is not None
     assert s["bp_total"] == 1
     assert s["prev_count"] == 0
     assert any("PREV" in h for h in s["hints"])
-    assert not any("no active/approved BPs" in h for h in s["hints"])
+    assert s["practice_bindings"] is None
 
     # Add a PREV via the blessed path -> prev_count rises, PREV hint clears.
     story = art_lib.Artifact(
@@ -130,11 +160,61 @@ def test_knowledge_summary_reports_bp_and_prev_dormancy(tmp_path: Path):
     assert not any("PREV" in h for h in s2["hints"])
 
 
-def test_brief_knowledge_bp_dormancy_hint_when_no_active_bp(tmp_path: Path):
-    # Only a draft BP -> "no active/approved BPs" hint fires.
-    s = brief_cmd._knowledge_summary(tmp_path, [_bp_art("BP-009", status="draft")])
-    assert s is not None
-    assert any("no active/approved BPs" in h for h in s["hints"])
+def test_brief_omits_binding_section_when_no_practice_is_in_scope(
+    project_root: Path, capsys
+):
+    _write_brief_artifact(
+        project_root,
+        "BP-009",
+        "best-practice",
+        extra={
+            "provenance": "learned",
+            "applicability": {"domains": ["safety"]},
+        },
+    )
+    _write_brief_artifact(project_root, "REQ-009", "requirement")
+
+    assert brief_cmd.run(project_root, {}) == 0
+
+    out = capsys.readouterr().out
+    assert "Practice bindings" not in out
+    summary = brief_cmd._knowledge_summary(
+        project_root, art_lib.discover_artifacts(project_root)
+    )
+    assert summary["practice_bindings"] is None
+
+
+def test_brief_reports_bound_and_unbound_practice_pairs_per_type(
+    project_root: Path, capsys
+):
+    _write_brief_artifact(
+        project_root,
+        "BP-001",
+        "best-practice",
+        extra={
+            "provenance": "learned",
+            "applicability": {"always": True},
+        },
+    )
+    for prefix, art_type in (
+        ("REQ", "requirement"),
+        ("ARCH", "architecture"),
+        ("STORY", "story"),
+    ):
+        _write_brief_artifact(
+            project_root,
+            f"{prefix}-001",
+            art_type,
+            links=[{"target": "BP-001", "role": "guided_by"}],
+        )
+        _write_brief_artifact(project_root, f"{prefix}-002", art_type)
+
+    assert brief_cmd.run(project_root, {}) == 0
+    out = capsys.readouterr().out
+
+    assert "Practice bindings" in out
+    for label in ("REQ", "ARCH", "STORY"):
+        assert f"{label}: 1 bound / 1 unbound" in out
 
 
 
