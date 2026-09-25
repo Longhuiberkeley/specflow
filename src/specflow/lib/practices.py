@@ -24,6 +24,12 @@ STRENGTH_VALUES = frozenset({"mandatory", "recommended", "neutral", "informal"})
 VERIFICATION_METHODS = frozenset({"test", "inspection", "analysis", "demonstration"})
 
 _SECTION_RE = re.compile(r"^##\s+(.+?)\s*$", re.MULTILINE)
+_LEGACY_BP_STATUS_MAP = {
+    "draft": [],
+    "approved": ["draft"],
+    "active": ["approved"],
+    "superseded": ["active"],
+}
 
 
 def render_practice_body(
@@ -98,6 +104,73 @@ def _bundled_bp_schema() -> dict[str, Any]:
     )
     data = yaml.safe_load(schema_path.read_text(encoding="utf-8")) or {}
     return data if isinstance(data, dict) else {}
+
+
+def _repair_legacy_bp_status_map(
+    root: Path, *, dry_run: bool,
+) -> tuple[bool, bool, str | None]:
+    """Repair only the migration-owned legacy BP lifecycle map, if present.
+
+    Returns ``(would_repair, repaired, error)``. Other schema customizations are
+    preserved; only the exact pre-collapse status map is replaced.
+    """
+    schema_path = root / ".specflow" / "schema" / "best-practice.yaml"
+    if not schema_path.is_file():
+        return False, False, None
+    try:
+        original = schema_path.read_text(encoding="utf-8")
+        schema = yaml.safe_load(original) or {}
+    except (OSError, yaml.YAMLError) as exc:
+        return False, False, f"{schema_path.relative_to(root)}: {exc}"
+    if not isinstance(schema, dict) or schema.get("type") != "best-practice":
+        return False, False, None
+    if schema.get("allowed_status") != _LEGACY_BP_STATUS_MAP:
+        return False, False, None
+
+    target_map = _bundled_bp_schema().get("allowed_status", {})
+    if not isinstance(target_map, dict):
+        return False, False, "bundled best-practice schema has no status map"
+    try:
+        document = yaml.compose(original)
+    except yaml.YAMLError as exc:
+        return False, False, f"{schema_path.relative_to(root)}: {exc}"
+    if not isinstance(document, yaml.MappingNode):
+        return (
+            False,
+            False,
+            f"{schema_path.relative_to(root)}: schema root is not a mapping",
+        )
+
+    status_node = next(
+        (
+            (key_node, value_node)
+            for key_node, value_node in document.value
+            if isinstance(key_node, yaml.ScalarNode)
+            and key_node.value == "allowed_status"
+        ),
+        None,
+    )
+    if status_node is None:
+        return False, False, f"{schema_path.relative_to(root)}: allowed_status is missing"
+
+    rendered_map = "allowed_status:\n"
+    for status, predecessors in target_map.items():
+        values = ", ".join(str(value) for value in (predecessors or []))
+        rendered_map += (
+            f"  {status}: [{values}]\n" if values else f"  {status}: []\n"
+        )
+    key_node, value_node = status_node
+    repaired_text = (
+        original[:key_node.start_mark.index]
+        + rendered_map
+        + original[value_node.end_mark.index:]
+    )
+    if not dry_run:
+        try:
+            schema_path.write_text(repaired_text, encoding="utf-8")
+        except OSError as exc:
+            return True, False, f"{schema_path.relative_to(root)}: {exc}"
+    return True, not dry_run, None
 
 
 def status_resolves_approved(status: str) -> bool:
@@ -401,10 +474,16 @@ def _migration_fields(bp: art_lib.Artifact) -> tuple[dict[str, Any], str | None]
     ]
     if len(matching_seeds) == 1:
         seed = matching_seeds[0]
-        fields: dict[str, Any] = {"provenance": "bundled"}
-        if not bp.frontmatter.get("source"):
-            fields["source"] = seed.seed_id
-        return fields, None
+        if _normalize_body_text(bp.body) == _normalize_body_text(seed.to_body()):
+            fields: dict[str, Any] = {"provenance": "bundled"}
+            if not bp.frontmatter.get("source"):
+                fields["source"] = seed.seed_id
+            return fields, None
+        return (
+            {"provenance": "synthesized"},
+            f"title matches bundled seed '{seed.seed_id}' but body differs; "
+            "provenance stamped synthesized",
+        )
     if validate_anatomy(bp.body):
         return (
             {"provenance": "synthesized"},
@@ -413,11 +492,40 @@ def _migration_fields(bp: art_lib.Artifact) -> tuple[dict[str, Any], str | None]
     return {"provenance": "learned"}, None
 
 
+def _normalize_body_text(body: str) -> str:
+    return re.sub(r"\s+", " ", body or "").strip()
+
+
+def _restore_original_body(path: Path, original: bytes) -> None:
+    """Keep migration metadata edits from normalizing the authored BP body."""
+    opening = original.find(b"---")
+    if opening < 0:
+        return
+    original_separator = original.find(b"---", opening + 3)
+    if original_separator < 0:
+        return
+    updated = path.read_bytes()
+    updated_opening = updated.find(b"---")
+    if updated_opening < 0:
+        return
+    updated_separator = updated.find(b"---", updated_opening + 3)
+    if updated_separator < 0:
+        return
+    path.write_bytes(
+        updated[:updated_separator + 3] + original[original_separator + 3:]
+    )
+
+
 def migrate_practices(root: Path, *, dry_run: bool = False) -> dict[str, Any]:
     """Stamp provenance on unstamped BPs; dry-run builds the same plan write-free."""
     plan: list[dict[str, Any]] = []
     warnings: list[str] = []
     errors: list[str] = []
+    would_repair_status_map, status_map_repaired, map_error = (
+        _repair_legacy_bp_status_map(root, dry_run=dry_run)
+    )
+    if map_error:
+        errors.append(map_error)
     for path in _best_practice_files(root):
         bp = art_lib.parse_artifact(path)
         if bp is None:
@@ -433,15 +541,20 @@ def migrate_practices(root: Path, *, dry_run: bool = False) -> dict[str, Any]:
     stamped: list[str] = []
     if not dry_run:
         for item in plan:
+            artifact_path = root / item["path"]
+            original = artifact_path.read_bytes()
             result = art_lib.update_artifact(root, item["id"], **item["fields"])
             if result.get("ok"):
                 stamped.append(item["id"])
+                _restore_original_body(artifact_path, original)
             else:
                 errors.append(f"{item['path']}: {result.get('error', 'update failed')}")
     return {
         "dry_run": dry_run,
         "would_stamp": plan,
         "stamped": stamped,
+        "would_repair_status_map": would_repair_status_map,
+        "status_map_repaired": status_map_repaired,
         "warnings": warnings,
         "errors": errors,
     }

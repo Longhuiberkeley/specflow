@@ -333,6 +333,8 @@ def run(root: Path, args: dict) -> int:
     # during init/re-init, and is safe to repeat on every invocation.
     from specflow.lib.practices import migrate_practices
     migration = migrate_practices(root)
+    if migration.get("status_map_repaired"):
+        print("  + Repaired best-practice status map to transitional values")
     if migration.get("stamped"):
         print(
             f"  + Migrated provenance on {len(migration['stamped'])} "

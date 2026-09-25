@@ -838,4 +838,11 @@ artifacts:
     tags: []
     fingerprint: sha256:be0df725a71c
     children: []
-next_id: 93
+  UT-093:
+    id: UT-093
+    title: Frontier ledger computation pins (DDD-031)
+    status: draft
+    tags: []
+    fingerprint: sha256:b9f75f770c8e
+    children: []
+next_id: 94

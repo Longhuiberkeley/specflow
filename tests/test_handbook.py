@@ -12,6 +12,7 @@ import yaml
 import pytest
 
 from specflow.commands import handbook as handbook_cmd
+from specflow.lib import artifacts as art_lib
 from specflow.lib import handbook as handbook_lib
 from specflow.lib import practices_seed
 
@@ -63,6 +64,18 @@ def project_root(tmp_path: Path) -> Path:
         (root / subdir).mkdir(parents=True, exist_ok=True)
 
     return root
+
+
+def _body_sections(body: str) -> dict[str, str]:
+    sections: dict[str, list[str]] = {}
+    heading: str | None = None
+    for line in body.splitlines():
+        if line.startswith("## "):
+            heading = line[3:].strip()
+            sections[heading] = []
+        elif heading is not None:
+            sections[heading].append(line)
+    return {name: "\n".join(lines).strip() for name, lines in sections.items()}
 
 
 class TestHandbookLibrary:
@@ -142,6 +155,36 @@ class TestHandbookLibrary:
             assert practice.rationale in body
             assert practice.verification in body
             assert practice.applicability(None)
+
+    def test_shipped_dogfood_bp_content_matches_regenerated_output(self):
+        """The renderer retains content of the shipped dogfood practices."""
+        bp_dir = Path(__file__).parents[1] / "_specflow/specs/best-practices"
+        paths = sorted(bp_dir.glob("BP-*.md"))
+        expected_ids = {f"BP-{index:03}" for index in range(2, 8)}
+        if {path.stem for path in paths} != expected_ids:
+            pytest.skip("the shipped dogfood BP-002..BP-007 set has changed")
+
+        for path in paths:
+            artifact = art_lib.parse_artifact(path)
+            assert artifact is not None
+            original_sections = _body_sections(artifact.body)
+            seed = practices_seed.Practice(
+                title=artifact.title,
+                practice=original_sections["Practice"],
+                rationale=original_sections["Rationale"],
+                verification=original_sections["Verification"],
+                seed_id=f"SEED-DOGFOOD-{artifact.id}",
+            )
+            regenerated_sections = _body_sections(seed.to_body())
+
+            assert artifact.id in expected_ids
+            assert {
+                section: regenerated_sections[section]
+                for section in ("Practice", "Rationale", "Verification")
+            } == {
+                section: original_sections[section]
+                for section in ("Practice", "Rationale", "Verification")
+            }
 
     def test_handbook_facade_uses_the_seed_catalogue(self):
         assert handbook_lib.GENERIC_PRACTICES is practices_seed.GENERIC_PRACTICES
@@ -278,25 +321,35 @@ class TestHandbookCommand:
         # 3 domain + 6 generic = 9
         assert len(files) >= 8
 
-    def test_generate_create_artifact_has_correct_body(self, project_root: Path):
-        rc = handbook_cmd.run(project_root, {"create": True})
+    def test_generate_create_artifact_has_correct_body(
+        self, project_root: Path, monkeypatch, capsys,
+    ):
+        """The deprecated CLI alias creates seed-equivalent BP bodies."""
+        from specflow.cli import build_parser, cmd_handbook
+
+        monkeypatch.chdir(project_root)
+        args = build_parser().parse_args(["handbook", "generate", "--create"])
+        rc = cmd_handbook(args)
+        captured = capsys.readouterr()
         assert rc == 0
+        assert "Deprecated: `specflow handbook generate`" in captured.err
+        assert "use `specflow practices seed`" in captured.err
         bp_dir = project_root / "_specflow" / "specs" / "best-practices"
         files = list(bp_dir.glob("BP-*.md"))
-        content = files[0].read_text()
-        body = content.split("---", 2)[-1]
-        headings = [line for line in body.splitlines() if line.startswith("## ")]
-        assert headings == [
-            "## Practice", "## Applies when", "## Work products",
-            "## Verification", "## Rationale",
-        ]
-        assert "## Practice" in body
-        assert "## Rationale" in body
-        assert "## Verification" in body
-        frontmatter = yaml.safe_load(content.split("---", 2)[1])
-        assert frontmatter["provenance"] == "bundled"
-        assert frontmatter["source"].startswith("SEED-GENERIC-")
-        assert frontmatter["applicability"] == {"always": True}
+        generated = {
+            artifact.frontmatter["title"]: artifact
+            for artifact in (art_lib.parse_artifact(path) for path in files)
+            if artifact is not None
+        }
+        expected = practices_seed.generate_handbook(project_root)["practices"]
+        assert set(generated) == {practice.title for practice in expected}
+        for practice in expected:
+            artifact = generated[practice.title]
+            assert _body_sections(artifact.body) == _body_sections(practice.to_body())
+            assert artifact.frontmatter["provenance"] == "bundled"
+            assert artifact.frontmatter["source"] == practice.seed_id
+            assert artifact.frontmatter["applicability"] == {"always": True}
+            assert artifact.frontmatter["status"] == "draft"
 
     def test_generate_create_artifact_status_draft(self, project_root: Path):
         """STORY-640: generated BPs are born draft — approval is a human gate,

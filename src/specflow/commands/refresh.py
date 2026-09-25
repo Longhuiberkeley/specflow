@@ -266,19 +266,34 @@ def _refresh_shared(
                            "replace with shipped defaults")
             summary.append(("schemas", detail))
 
-        if not dry_run:
-            from specflow.lib.practices import migrate_practices
 
-            migration = migrate_practices(root)
-            changed = len(migration.get("stamped", []))
-            warnings = len(migration.get("warnings", []))
-            errors = len(migration.get("errors", []))
-            detail_parts = [f"{changed} BP provenance value(s) stamped"]
-            if warnings:
-                detail_parts.append(f"{warnings} warning(s)")
-            if errors:
-                detail_parts.append(f"{errors} error(s)")
-            summary.append(("practices", "; ".join(detail_parts)))
+    # Practice migration owns the legacy status-map collapse, independently of
+    # whether the caller requested general schema refresh (which preserves drift).
+    from specflow.lib.practices import migrate_practices
+
+    migration = migrate_practices(root, dry_run=dry_run)
+    if dry_run:
+        detail_parts = []
+        if migration.get("would_repair_status_map"):
+            detail_parts.append("best-practice status map would be repaired")
+        if migration.get("would_stamp"):
+            detail_parts.append(
+                f"{len(migration['would_stamp'])} BP provenance value(s) to stamp"
+            )
+    else:
+        detail_parts = []
+        if migration.get("status_map_repaired"):
+            detail_parts.append("best-practice status map repaired")
+        changed = len(migration.get("stamped", []))
+        if changed:
+            detail_parts.append(f"{changed} BP provenance value(s) stamped")
+    warnings = len(migration.get("warnings", []))
+    errors = len(migration.get("errors", []))
+    if warnings:
+        detail_parts.append(f"{warnings} warning(s)")
+    if errors:
+        detail_parts.append(f"{errors} error(s)")
+    summary.append(("practices", "; ".join(detail_parts) or "up to date"))
 
     # ── Checklists ──────────────────────────────────────────────
     if do_checklists:

@@ -49,6 +49,8 @@ def _migrate_practice_provenance(root: Path) -> dict[str, Any]:
     from specflow.lib.practices import migrate_practices
 
     result = migrate_practices(root)
+    if result.get("status_map_repaired"):
+        print("  + Repaired best-practice status map to transitional values")
     if result.get("stamped"):
         print(
             f"  + Migrated provenance on {len(result['stamped'])} "

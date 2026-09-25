@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import socket
 from pathlib import Path
 
+import pytest
 import yaml
 
 from specflow.commands.artifact_lint import _check_status
@@ -22,6 +24,7 @@ _STATUS_MAP_BYTES = (
     b"  approved: [draft, active]\n"
     b"  superseded: [approved, active]\n"
 )
+_DOGFOOD_BP_IDS = {f"BP-{index:03}" for index in range(2, 8)}
 
 
 def _write_bp(
@@ -53,6 +56,36 @@ def _write_bp(
         encoding="utf-8",
     )
     return path
+
+
+def _write_legacy_bp_schema(root: Path) -> Path:
+    schema_path = root / ".specflow/schema/best-practice.yaml"
+    schema_path.parent.mkdir(parents=True, exist_ok=True)
+    schema_path.write_text(
+        "type: best-practice\n"
+        "allowed_status:\n"
+        "  draft: []\n"
+        "  approved: [draft]\n"
+        "  active: [approved]\n"
+        "  superseded: [active]\n"
+        "custom_field: preserved\n",
+        encoding="utf-8",
+    )
+    return schema_path
+
+
+def _file_body_bytes(path: Path) -> bytes:
+    return path.read_bytes().split(b"---", 2)[2]
+
+
+def _shipped_dogfood_bps() -> list[art_lib.Artifact]:
+    bp_dir = Path(__file__).parents[1] / "_specflow/specs/best-practices"
+    paths = sorted(bp_dir.glob("BP-*.md"))
+    if {path.stem for path in paths} != _DOGFOOD_BP_IDS:
+        pytest.skip("the shipped dogfood BP-002..BP-007 set has changed")
+    practices = [art_lib.parse_artifact(path) for path in paths]
+    assert all(practice is not None for practice in practices)
+    return [practice for practice in practices if practice is not None]
 
 
 def _old_loader(root: Path, artifact: art_lib.Artifact) -> list[str]:
@@ -195,10 +228,13 @@ def test_practices_validate_accepts_resolvable_complete_artifact(tmp_path: Path,
 def test_practices_migrate_is_idempotent_and_dry_run_is_write_free(
     tmp_path: Path, capsys,
 ):
-    legacy_seed_body = (
-        "## Practice\n\nUse the practice.\n\n"
-        "## Rationale\n\nIt helps.\n\n## Verification\n\nCheck it.\n"
+    from specflow.lib.practices_seed import get_seed_practices
+
+    seed_entry = next(
+        practice for practice in get_seed_practices()
+        if practice.title == "Separation of Concerns"
     )
+    legacy_seed_body = seed_entry.to_body()
     _write_bp(
         tmp_path, "BP-001", title="Separation of Concerns", status="active",
         body=legacy_seed_body,
@@ -206,7 +242,16 @@ def test_practices_migrate_is_idempotent_and_dry_run_is_write_free(
     _write_bp(
         tmp_path, "BP-002", title="Hand-authored legacy", body="## Practice\n\nDo it.\n",
     )
+    schema_path = _write_legacy_bp_schema(tmp_path)
+    index_path = tmp_path / "_specflow/specs/best-practices/_index.yaml"
+    index_path.parent.mkdir(parents=True, exist_ok=True)
+    index_path.write_text("artifacts: {}\nnext_id: 3\n", encoding="utf-8")
+    hand_authored_path = tmp_path / "_specflow/specs/best-practices/BP-002.md"
+    hand_authored_body = _file_body_bytes(hand_authored_path)
     before = {path: path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()}
+    before_mtimes = {
+        path: path.stat().st_mtime_ns for path in tmp_path.rglob("*") if path.is_file()
+    }
 
     dry_rc = practices_cmd.run(
         tmp_path, {"practices_subcommand": "migrate", "dry_run": True},
@@ -215,19 +260,32 @@ def test_practices_migrate_is_idempotent_and_dry_run_is_write_free(
     after_dry = {path: path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()}
     assert dry_rc == 0
     assert "Would stamp provenance on 2" in dry_output
+    assert "Would repair best-practice status map" in dry_output
     assert "source=SEED-GENERIC-01" in dry_output
     assert "Dry run complete; no files written." in dry_output
     assert before == after_dry
+    assert before_mtimes == {
+        path: path.stat().st_mtime_ns for path in tmp_path.rglob("*") if path.is_file()
+    }
+    assert index_path.read_bytes() == before[index_path]
+    assert schema_path.read_bytes() == before[schema_path]
 
     first_rc = practices_cmd.run(tmp_path, {"practices_subcommand": "migrate"})
     first_output = capsys.readouterr().out
     assert first_rc == 0
     assert "legacy anatomy is incomplete; provenance stamped synthesized" in first_output
+    assert "Repaired best-practice status map" in first_output
     seed = art_lib.parse_artifact(tmp_path / "_specflow/specs/best-practices/BP-001.md")
     hand_authored = art_lib.parse_artifact(tmp_path / "_specflow/specs/best-practices/BP-002.md")
     assert seed.frontmatter["provenance"] == "bundled"
     assert seed.frontmatter["source"] == "SEED-GENERIC-01"
     assert hand_authored.frontmatter["provenance"] == "synthesized"
+    assert _file_body_bytes(hand_authored_path) == hand_authored_body
+    assert yaml.safe_load(schema_path.read_text(encoding="utf-8"))["allowed_status"] == {
+        "draft": [],
+        "approved": ["draft", "active"],
+        "superseded": ["approved", "active"],
+    }
 
     after_first = {
         path: path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()
@@ -239,7 +297,54 @@ def test_practices_migrate_is_idempotent_and_dry_run_is_write_free(
     }
     assert second_rc == 0
     assert "Stamped provenance on 0" in second_output
+    assert "Repaired best-practice status map" not in second_output
     assert after_first == after_second
+
+
+def test_migrate_does_not_call_a_seed_title_match_bundled_when_body_differs(
+    tmp_path: Path, capsys,
+):
+    _write_bp(
+        tmp_path,
+        "BP-001",
+        title="Separation of Concerns",
+        body=practices.render_practice_body(
+            "A hand-authored decomposition rule.",
+            "For components with overlapping ownership.",
+            "An ownership map.",
+            "Review component responsibilities.",
+            "Clear ownership reduces accidental coupling.",
+        ),
+    )
+
+    rc = practices_cmd.run(tmp_path, {"practices_subcommand": "migrate"})
+    output = capsys.readouterr().out
+    migrated = art_lib.parse_artifact(
+        tmp_path / "_specflow/specs/best-practices/BP-001.md"
+    )
+
+    assert rc == 0
+    assert "title matches bundled seed 'SEED-GENERIC-01' but body differs" in output
+    assert migrated.frontmatter["provenance"] == "synthesized"
+    assert "source" not in migrated.frontmatter
+
+
+def test_practices_validate_does_not_open_network_sockets(
+    tmp_path: Path, monkeypatch, capsys,
+):
+    _write_bp(tmp_path, "BP-001", provenance="learned")
+
+    def deny_network(*_args, **_kwargs):
+        raise AssertionError("practices validate attempted network access")
+
+    monkeypatch.setattr(socket, "socket", deny_network)
+    monkeypatch.setattr(socket, "create_connection", deny_network)
+    monkeypatch.setattr(socket, "getaddrinfo", deny_network)
+
+    rc = practices_cmd.run(tmp_path, {"practices_subcommand": "validate"})
+
+    assert rc == 0
+    assert "Validated 1 best-practice artifact(s): PASS" in capsys.readouterr().out
 
 
 def test_new_loader_matches_old_tag_and_link_path_for_legacy_bps(tmp_path: Path):
@@ -292,6 +397,65 @@ def test_applicability_predicate_is_authoritative_before_tag_fallback(tmp_path: 
     assert [bp.id for bp in matched] == ["BP-002", "BP-003"]
 
 
+def test_new_loader_matches_old_path_on_shipped_dogfood_bps():
+    root = Path(__file__).parents[1]
+    for bp in _shipped_dogfood_bps():
+        target = art_lib.Artifact(
+            path=root / "_specflow/specs/requirements/REQ-dogfood.md",
+            frontmatter={
+                "id": "REQ-DOGFOOD",
+                "type": "requirement",
+                "status": "approved",
+                "tags": list(bp.tags),
+            },
+            body="",
+        )
+        old_ids = _old_loader(root, target)
+        new_ids = [
+            practice.id
+            for practice in practices.load_active_best_practices(root, target)
+        ]
+        assert new_ids == old_ids
+
+
+def test_applicability_precedence_with_shipped_dogfood_bp(tmp_path: Path):
+    dogfood = _shipped_dogfood_bps()
+    source_bp = dogfood[0]
+    bp_dir = tmp_path / "_specflow/specs/best-practices"
+    bp_dir.mkdir(parents=True)
+    for bp in dogfood:
+        frontmatter = dict(bp.frontmatter)
+        if bp.id == source_bp.id:
+            frontmatter["applicability"] = {"domains": ["embedded"]}
+        target_path = bp_dir / f"{bp.id}.md"
+        target_path.write_text(
+            "---\n"
+            + yaml.safe_dump(frontmatter, sort_keys=False)
+            + "---\n\n"
+            + bp.body
+            + "\n",
+            encoding="utf-8",
+        )
+
+    target = art_lib.Artifact(
+        path=tmp_path / "STORY-001.md",
+        frontmatter={
+            "id": "STORY-001",
+            "type": "story",
+            "status": "approved",
+            "domain": "web-app",
+            "tags": list(source_bp.tags),
+        },
+        body="",
+    )
+    matched = practices.load_active_best_practices(tmp_path, target)
+    assert source_bp.id not in {bp.id for bp in matched}
+
+    target.frontmatter["domain"] = "embedded"
+    matched = practices.load_active_best_practices(tmp_path, target)
+    assert source_bp.id in {bp.id for bp in matched}
+
+
 def test_practices_cli_registers_seed_validate_and_migrate():
     from specflow.cli import build_parser
 
@@ -320,11 +484,42 @@ def test_schema_refresh_stamps_legacy_practice_provenance(tmp_path: Path):
     assert migrated.frontmatter["provenance"] == "learned"
 
 
+def test_normal_refresh_repairs_legacy_status_map_without_force(tmp_path: Path):
+    schema_path = _write_legacy_bp_schema(tmp_path)
+    _write_bp(tmp_path, "BP-001", title="Refresh migration")
+    (tmp_path / "_specflow/specs/best-practices/_index.yaml").write_text(
+        "artifacts: {}\nnext_id: 2\n", encoding="utf-8",
+    )
+
+    assert refresh_cmd.run(
+        tmp_path, {"no_skills": True, "no_context": True},
+    ) == 0
+    repaired = yaml.safe_load(schema_path.read_text(encoding="utf-8"))
+    assert repaired["allowed_status"] == {
+        "draft": [],
+        "approved": ["draft", "active"],
+        "superseded": ["approved", "active"],
+    }
+    assert repaired["custom_field"] == "preserved"
+    after_first = schema_path.read_bytes()
+
+    assert refresh_cmd.run(
+        tmp_path, {"no_skills": True, "no_context": True},
+    ) == 0
+    assert schema_path.read_bytes() == after_first
+
+
 def test_init_path_stamps_preexisting_practices(tmp_path: Path):
+    schema_path = _write_legacy_bp_schema(tmp_path)
     bp = _write_bp(tmp_path, "BP-001", title="Init migration")
     assert init_cmd.run(tmp_path, {"platform": "opencode", "no_ci": True}) == 0
     migrated = art_lib.parse_artifact(bp)
     assert migrated.frontmatter["provenance"] == "learned"
+    assert yaml.safe_load(schema_path.read_text(encoding="utf-8"))["allowed_status"] == {
+        "draft": [],
+        "approved": ["draft", "active"],
+        "superseded": ["approved", "active"],
+    }
 
 
 def test_apply_pack_and_refresh_pack_stamp_provenance(tmp_path: Path):
@@ -338,16 +533,36 @@ def test_apply_pack_and_refresh_pack_stamp_provenance(tmp_path: Path):
         "name: example\nadds_directories: []\nadds_artifact_types: []\n",
         encoding="utf-8",
     )
-    (tmp_path / ".specflow/schema").mkdir(parents=True)
+    schema_path = _write_legacy_bp_schema(tmp_path)
     first_bp = _write_bp(tmp_path, "BP-001", title="Pack apply migration")
 
     applied = scaffold_lib.apply_pack(tmp_path, "example", tmp_path / "packs")
     assert applied["ok"]
     assert art_lib.parse_artifact(first_bp).frontmatter["provenance"] == "learned"
+    assert yaml.safe_load(schema_path.read_text(encoding="utf-8"))["allowed_status"] == {
+        "draft": [],
+        "approved": ["draft", "active"],
+        "superseded": ["approved", "active"],
+    }
 
     second_bp = _write_bp(tmp_path, "BP-002", title="Pack refresh migration")
+    schema_path.write_text(
+        "type: best-practice\n"
+        "allowed_status:\n"
+        "  draft: []\n"
+        "  approved: [draft]\n"
+        "  active: [approved]\n"
+        "  superseded: [active]\n"
+        "custom_field: preserved\n",
+        encoding="utf-8",
+    )
     refreshed = scaffold_lib.refresh_pack(
         tmp_path, "example", tmp_path / "packs", [], force=True,
     )
     assert refreshed["ok"]
     assert art_lib.parse_artifact(second_bp).frontmatter["provenance"] == "learned"
+    assert yaml.safe_load(schema_path.read_text(encoding="utf-8"))["allowed_status"] == {
+        "draft": [],
+        "approved": ["draft", "active"],
+        "superseded": ["approved", "active"],
+    }

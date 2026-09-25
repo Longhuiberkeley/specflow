@@ -100,12 +100,16 @@ def _migrate(root: Path, *, dry_run: bool) -> int:
     result = practices_lib.migrate_practices(root, dry_run=dry_run)
     plan = result["would_stamp"]
     if dry_run:
+        if result.get("would_repair_status_map"):
+            print("Would repair best-practice status map to transitional values.")
         print(f"Would stamp provenance on {len(plan)} best-practice artifact(s):")
         for item in plan:
             fields = ", ".join(f"{key}={value}" for key, value in item["fields"].items())
             print(f"  {item['path']}: {fields}")
         print("Dry run complete; no files written.")
     else:
+        if result.get("status_map_repaired"):
+            print("Repaired best-practice status map to transitional values.")
         print(f"Stamped provenance on {len(result['stamped'])} best-practice artifact(s).")
     for warning in result["warnings"]:
         print(f"warning: {warning}")
