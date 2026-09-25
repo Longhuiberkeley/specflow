@@ -15,11 +15,14 @@ it takes the already-parsed metric samples and returns the verdict plus the
 underlying statistics so a caller can report ``min / max / mean / stdev`` as the
 protocol describes.
 
-The public entry point is :func:`run_noise_probe`.
+The public entry point is :func:`run_noise_probe`. The STORY-677 (REQ-047)
+loss-hacking helpers (:func:`jump_exceeds_noise`, :func:`trial_deflated_metric`)
+live here too — same zero-I/O arithmetic contract.
 """
 
 from __future__ import annotations
 
+import math
 import statistics
 from dataclasses import dataclass
 from typing import Sequence
@@ -188,3 +191,82 @@ def run_noise_probe(
             "pick a noise strategy (see noise-handling-protocol.md)"
         ),
     )
+
+
+# ── STORY-677 (REQ-047): noise-denominated loss-hacking checks ─────────────
+# Pure arithmetic on recorded numbers (no I/O, no LLM inference). Callers
+# render these as advisory flags only — measurement advises, never gates
+# (DEC-088).
+
+# A single-iteration primary-metric jump is flagged when it exceeds
+# k x noise sigma. 3 sigma is the classic "explain this" boundary: a jump
+# three probe-stdevs above the run-to-run noise floor is not noise.
+DEFAULT_JUMP_K = 3.0
+
+# A guard-metric regression is flagged when it moves adversely beyond
+# k x its noise sigma. 1 sigma is the bare "beyond noise" boundary.
+DEFAULT_GUARD_K = 1.0
+
+
+def jump_exceeds_noise(
+    jump: float, sigma: float, k: float = DEFAULT_JUMP_K
+) -> bool:
+    """True when a single-iteration jump is ABOVE ``k x noise sigma``.
+
+    The mechanism-explanation advisory fires only *above* the denominated
+    threshold — a jump at or below ``k x sigma`` is within what the noise
+    probe already characterized and must stay silent. ``sigma`` must be a
+    positive noise floor (from :func:`run_noise_probe`'s ``stdev`` or a
+    stored ``noise_characterization``); with no positive floor there is
+    nothing to denominate against and this returns ``False`` — never a flag
+    without a measured noise floor.
+
+    Deterministic: arithmetic on the inputs only.
+    """
+    try:
+        jump_value = float(jump)
+        sigma_value = float(sigma)
+        k_value = float(k)
+    except (TypeError, ValueError):
+        return False
+    if not all(
+        math.isfinite(value) for value in (jump_value, sigma_value, k_value)
+    ):
+        return False
+    if sigma_value <= 0 or k_value <= 0:
+        return False
+    # Tiny tolerance so float noise cannot flip a jump sitting exactly on the
+    # threshold: the advisory fires only strictly ABOVE k x sigma.
+    return abs(jump_value) > k_value * sigma_value + 1e-9
+
+
+def trial_deflated_metric(
+    value: float,
+    sigma: float,
+    trials: int,
+    *,
+    direction: str = "higher_is_better",
+    k: float = 1.0,
+) -> float:
+    """Deflate a metric by the expected best-of-``trials`` noise (REQ-047).
+
+    Searching ``n`` trials and keeping the best inflates the reported metric
+    by roughly the expected maximum of ``n`` noise draws,
+    ``k x sigma x sqrt(2 ln n)``. The deflated value subtracts that (for
+    ``higher_is_better``) or adds it (for ``lower_is_better``), so a claimed
+    gain is judged against what pure noise over the same trial count could
+    have produced. Fewer than two trials (or a non-positive sigma) deflates
+    nothing. Advisory rendering only — this never gates a keep/discard.
+
+    Deterministic: arithmetic on the inputs only.
+    """
+    value_f = float(value)
+    sigma_f = float(sigma)
+    k_f = float(k)
+    n = int(trials)
+    if n < 2 or sigma_f <= 0 or k_f <= 0:
+        return value_f
+    noise_max = k_f * sigma_f * math.sqrt(2.0 * math.log(n))
+    if direction == "lower_is_better":
+        return value_f + noise_max
+    return value_f - noise_max

@@ -15,6 +15,15 @@ domain lens in `methodology-handbook.md` before the first LOOP.
 6. **Safety-screen the verify command** before first run: refuse `rm -rf /`, fork bombs, `curl … | sh`, embedded credentials. `verify_command` runs with full shell access — only the project owner creates or edits COMPs.
 7. **Nonmetric exploration is SPIKE/FIND work, not a fake score.** If the question has no deterministic one-number verify (a design choice, a qualitative question, an open unknown), do not fabricate a metric to host it in a COMP: run it in the core flow as a SPIKE (the question) and record FIND(s) (the answer). Create a COMP only when a real one-number `verify_command` exists.
 
+## Quant metric bundle (fixed horizon)
+
+For `domain: quant`, setup **requires a metric bundle with a fixed horizon** —
+`metric_bundle` (2+ metric names, e.g. Sharpe + max_drawdown + total_trades) and
+`evaluation_horizon` (the fixed window every bundle metric is measured on). A
+single-metric quant COMP is **rejected at setup** (`specflow create` refuses it)
+in favor of the bundle: one gameable number is exactly the loss-hacking surface
+REQ-047 removes. The horizon is part of the frozen exam (invariant 3).
+
 ## Evaluator fingerprint (drift guard)
 
 Setup records `evaluator_fingerprint` on the COMP — the `verify_command` plus
@@ -46,7 +55,8 @@ specflow create --type competition \
 - `objective_type` — `single_best` (default) / `family_of_good` (prefer uncorrelated keeps; log `diversity_metrics`) / `pareto_front`.
 - `guard_command` + `guard_mode` (`pass_fail` / `metric_valued`) — binary regression floors; prefer primary + guards over composite scalars. If a weighted composite is genuinely needed: freeze the weights, pair with at least one guard floor, log every component as an `auxiliary_metric`.
 - `pre_check_command` / `post_check_command` — input guards and deploy-fit checks derived from the goals; prefer one runner script with `--phase` flags. Each must pass its dry-run.
-- `domain` — set when known; drives expected `auxiliary_metrics` in lint.
+- `domain` — set when known; drives expected `auxiliary_metrics` in lint. For `quant`, also the metric bundle + fixed horizon requirement above.
+- `external_leaderboard` — external leaderboard the CV metric is checked against; `autoresearch status` renders the CV-external relation and demotes (advisory) gains the external score contradicts. Without it, status falls back to `EXPT.guard_metrics` plus trial-count-deflated metrics.
 - Noise probe: `specflow autoresearch plan --profile` runs the verify 3× and records `noise_characterization`; if stdev > ~5% of mean pick a noise strategy (`noise-handling-protocol.md`) before committing a long budget.
 
 ## Consult when

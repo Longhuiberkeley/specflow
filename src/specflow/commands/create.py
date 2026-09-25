@@ -168,6 +168,28 @@ def run(root: Path, args: dict) -> int:
               f"Usage: specflow create --type <type> --title <title>{NC}")
         return 1
 
+    # STORY-677 (REQ-047 AC6): quant setups require a metric bundle with a
+    # fixed horizon. A single-metric quant COMP is rejected at setup in favor
+    # of the bundle (competition-setup-protocol.md) — one gameable number is
+    # exactly the loss-hacking surface REQ-047 removes. Deterministic setup
+    # structure, not measurement: this gates nothing about research results.
+    if art_lib.normalize_type(artifact_type) == "competition":
+        domain = str(extra_fields.get("domain") or "").strip().casefold()
+        if domain == "quant":
+            bundle = extra_fields.get("metric_bundle")
+            names = (
+                [str(name).strip() for name in bundle if str(name).strip()]
+                if isinstance(bundle, list) else []
+            )
+            horizon = extra_fields.get("evaluation_horizon")
+            if len(names) < 2 or not (isinstance(horizon, str) and horizon.strip()):
+                print(f"{RED}✗ Quant COMP setup requires a metric bundle with a fixed "
+                      f"horizon — a single-metric COMP is rejected "
+                      f"(competition-setup-protocol.md).{NC}")
+                print(f"  {YELLOW_DIM}Record --set metric_bundle='[\"<primary>\", \"<guard>\", ...]' "
+                      f"(2+ metrics) and --set evaluation_horizon='<fixed horizon>'.{NC}")
+                return 1
+
     # Resolve the per-type initial status when --status is omitted (A7).
     # entry_statuses honors schema `initial_statuses` when present, else
     # computed empty-predecessor roots. When a type has no unique entry

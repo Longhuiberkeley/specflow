@@ -1914,3 +1914,403 @@ class TestFingerprintDriftLint:
         result = self._lint(project_root)
         assert result["warning_count"] == 0
         assert result["blocking_count"] == 0
+
+
+# ── STORY-677 (REQ-047): jump flags, guard metrics, external scores ────────
+
+
+class _IntegrityStatusMixin:
+    """Shared plumbing: a healthy running LOOP on COMP-001 + status runs."""
+
+    def _status(self, root: Path) -> int:
+        return autoresearch_cmd.run(
+            root, {"autoresearch_subcommand": "status", "competition": "COMP-001"}
+        )
+
+    def _setup(self, root: Path, sigma: float = 0.01, **noise_extra) -> None:
+        _make_healthy_loop(root)
+        noise = {"sigma": sigma, **noise_extra}
+        art_lib.update_artifact(root, "COMP-001", noise_characterization=noise)
+
+
+class TestJumpAdvisory(_IntegrityStatusMixin):
+    """AC1: the mechanism-explanation advisory fires only ABOVE k x noise sigma."""
+
+    def test_jump_above_threshold_fires_mechanism_advisory(
+        self, git_project_root, capsys
+    ):
+        # Δ0.05 = 5x sigma 0.01, above the default k=3x threshold.
+        self._setup(git_project_root)
+        _make_expt(git_project_root, "EXPT-001", "LOOP-001", "kept", 0.50)
+        _make_expt(git_project_root, "EXPT-002", "LOOP-001", "kept", 0.55)
+        assert self._status(git_project_root) == 0
+        out = capsys.readouterr().out
+        assert "mechanism explanation required" in out
+        assert "jump: EXPT-002" in out
+        assert "5.0x noise sigma" in out
+
+    def test_jump_below_threshold_stays_silent(self, git_project_root, capsys):
+        # Δ0.02 = 2x sigma 0.01 — at or below k=3x: no advisory at all.
+        self._setup(git_project_root)
+        _make_expt(git_project_root, "EXPT-001", "LOOP-001", "kept", 0.50)
+        _make_expt(git_project_root, "EXPT-002", "LOOP-001", "kept", 0.52)
+        assert self._status(git_project_root) == 0
+        out = capsys.readouterr().out
+        assert "mechanism explanation required" not in out
+        assert "jump: " not in out
+
+    def test_jump_k_is_denominated_by_noise_sigma(self, git_project_root, capsys):
+        # k x noise sigma: the same Δ0.05 flags at k=1 and stays silent at k=10.
+        self._setup(git_project_root, jump_k=10.0)
+        _make_expt(git_project_root, "EXPT-001", "LOOP-001", "kept", 0.50)
+        _make_expt(git_project_root, "EXPT-002", "LOOP-001", "kept", 0.55)
+        assert self._status(git_project_root) == 0
+        assert "mechanism explanation required" not in capsys.readouterr().out
+
+        root = git_project_root
+        art_lib.update_artifact(
+            root, "COMP-001", noise_characterization={"sigma": 0.01, "jump_k": 1.0}
+        )
+        assert self._status(root) == 0
+        assert "mechanism explanation required" in capsys.readouterr().out
+
+    def test_no_noise_floor_never_flags(self, git_project_root, capsys):
+        # No probe sigma to denominate against → never a jump flag; the block
+        # says so while it renders other integrity records.
+        _make_healthy_loop(git_project_root)
+        _make_expt(
+            git_project_root, "EXPT-001", "LOOP-001", "kept", 0.50,
+            extra={"guard_metrics": {"max_drawdown": 0.10}},
+        )
+        _make_expt(
+            git_project_root, "EXPT-002", "LOOP-001", "kept", 0.90,
+            extra={"guard_metrics": {"max_drawdown": 0.11}},
+        )
+        assert self._status(git_project_root) == 0
+        out = capsys.readouterr().out
+        assert "mechanism explanation required" not in out
+        assert "guard-regression warning" not in out
+        assert "Noise sigma unavailable" in out
+
+    def test_jump_flag_is_advisory_only(self, git_project_root, capsys):
+        # DEC-088: measurement advises, never gates — a flagged jump leaves
+        # the status exit code clear.
+        self._setup(git_project_root)
+        _make_expt(git_project_root, "EXPT-001", "LOOP-001", "kept", 0.50)
+        _make_expt(git_project_root, "EXPT-002", "LOOP-001", "kept", 0.95)
+        assert self._status(git_project_root) == 0
+        out = capsys.readouterr().out
+        assert "Research integrity (advisory):" in out
+        assert "mechanism explanation required" in out
+
+
+class TestGuardRegressionWarning(_IntegrityStatusMixin):
+    """AC2: a primary gain with a beyond-noise guard regression warns."""
+
+    def test_primary_gain_with_beyond_noise_guard_regression_warns(
+        self, git_project_root, capsys
+    ):
+        self._setup(git_project_root)
+        _make_expt(
+            git_project_root, "EXPT-001", "LOOP-001", "kept", 0.50,
+            extra={"guard_metrics": {"max_drawdown": 0.10}},
+        )
+        _make_expt(
+            git_project_root, "EXPT-002", "LOOP-001", "kept", 0.51,
+            extra={"guard_metrics": {"max_drawdown": 0.15}},
+        )
+        assert self._status(git_project_root) == 0
+        out = capsys.readouterr().out
+        assert "guard-regression warning" in out
+        assert "max_drawdown" in out
+        assert "EXPT-002" in out
+
+    def test_guard_regression_within_noise_stays_silent(
+        self, git_project_root, capsys
+    ):
+        # +0.005 regression is within 1x sigma 0.01 — not "beyond noise".
+        self._setup(git_project_root)
+        _make_expt(
+            git_project_root, "EXPT-001", "LOOP-001", "kept", 0.50,
+            extra={"guard_metrics": {"max_drawdown": 0.10}},
+        )
+        _make_expt(
+            git_project_root, "EXPT-002", "LOOP-001", "kept", 0.51,
+            extra={"guard_metrics": {"max_drawdown": 0.105}},
+        )
+        assert self._status(git_project_root) == 0
+        out = capsys.readouterr().out
+        assert "guard-regression warning" not in out
+
+    def test_guard_improvement_never_warns(self, git_project_root, capsys):
+        self._setup(git_project_root)
+        _make_expt(
+            git_project_root, "EXPT-001", "LOOP-001", "kept", 0.50,
+            extra={"guard_metrics": {"max_drawdown": 0.10}},
+        )
+        _make_expt(
+            git_project_root, "EXPT-002", "LOOP-001", "kept", 0.51,
+            extra={"guard_metrics": {"max_drawdown": 0.05}},
+        )
+        assert self._status(git_project_root) == 0
+        assert "guard-regression warning" not in capsys.readouterr().out
+
+    def test_higher_is_better_guard_direction(self, git_project_root, capsys):
+        # Explicit direction flips the adverse side: win_rate dropping is the
+        # regression for a higher_is_better guard.
+        self._setup(git_project_root)
+        _make_expt(
+            git_project_root, "EXPT-001", "LOOP-001", "kept", 0.50,
+            extra={"guard_metrics": {"win_rate": {"value": 0.60,
+                                                  "direction": "higher_is_better"}}},
+        )
+        _make_expt(
+            git_project_root, "EXPT-002", "LOOP-001", "kept", 0.51,
+            extra={"guard_metrics": {"win_rate": {"value": 0.50,
+                                                  "direction": "higher_is_better"}}},
+        )
+        assert self._status(git_project_root) == 0
+        out = capsys.readouterr().out
+        assert "guard-regression warning" in out
+        assert "win_rate" in out
+
+    def test_no_warning_without_a_primary_gain(self, git_project_root, capsys):
+        # The guard warning only guards gains: a falling primary metric with a
+        # guard move is not a gain-guard coincidence.
+        self._setup(git_project_root)
+        _make_expt(
+            git_project_root, "EXPT-001", "LOOP-001", "kept", 0.50,
+            extra={"guard_metrics": {"max_drawdown": 0.10}},
+        )
+        _make_expt(
+            git_project_root, "EXPT-002", "LOOP-001", "discarded", 0.45,
+            extra={"guard_metrics": {"max_drawdown": 0.15}},
+        )
+        assert self._status(git_project_root) in (0, 3)
+        assert "guard-regression warning" not in capsys.readouterr().out
+
+    def test_guard_regression_warning_is_advisory_only(
+        self, git_project_root, capsys
+    ):
+        # DEC-088: the warning never gates — status still exits clear.
+        self._setup(git_project_root)
+        _make_expt(
+            git_project_root, "EXPT-001", "LOOP-001", "kept", 0.50,
+            extra={"guard_metrics": {"max_drawdown": 0.10}},
+        )
+        _make_expt(
+            git_project_root, "EXPT-002", "LOOP-001", "kept", 0.51,
+            extra={"guard_metrics": {"max_drawdown": 0.15}},
+        )
+        assert self._status(git_project_root) == 0
+        assert "guard-regression warning" in capsys.readouterr().out
+
+
+class TestExternalScoreRelation(_IntegrityStatusMixin):
+    """AC3: CV-external relation with demotion; offline fallback otherwise."""
+
+    def _seed_external_chain(self, root: Path) -> None:
+        _make_expt(
+            root, "EXPT-001", "LOOP-001", "kept", 0.50,
+            extra={"external_score": {"value": 0.71, "source": "holdout-2026"}},
+        )
+        # CV rises while the external score falls → inconsistent → demoted.
+        _make_expt(
+            root, "EXPT-002", "LOOP-001", "kept", 0.55,
+            extra={"external_score": {"value": 0.69, "source": "holdout-2026"}},
+        )
+        # CV and external rise together → consistent.
+        _make_expt(
+            root, "EXPT-003", "LOOP-001", "kept", 0.60,
+            extra={"external_score": {"value": 0.75, "source": "holdout-2026"}},
+        )
+
+    def test_relation_renders_and_demotes_inconsistent_gains(
+        self, git_project_root, capsys
+    ):
+        self._setup(git_project_root)
+        art_lib.update_artifact(
+            git_project_root, "COMP-001", external_leaderboard="holdout-2026"
+        )
+        self._seed_external_chain(git_project_root)
+        assert self._status(git_project_root) == 0
+        out = capsys.readouterr().out
+        assert "CV-external relation" in out
+        assert "holdout-2026" in out
+        lines = out.splitlines()
+        expt2 = next(line for line in lines if "EXPT-002" in line and "cv=" in line)
+        assert "demoted" in expt2
+        expt3 = next(line for line in lines if "EXPT-003" in line and "cv=" in line)
+        assert "demoted" not in expt3
+        assert "consistent" in expt3
+
+    def test_external_scores_without_leaderboard_fall_back_offline(
+        self, git_project_root, capsys
+    ):
+        # No COMP.external_leaderboard → offline fallback: guards plus
+        # trial-count-deflated metrics, never the CV-external relation.
+        self._setup(git_project_root)
+        _make_expt(
+            git_project_root, "EXPT-001", "LOOP-001", "kept", 0.50,
+            extra={
+                "external_score": 0.71,
+                "guard_metrics": {"max_drawdown": 0.10},
+            },
+        )
+        _make_expt(
+            git_project_root, "EXPT-002", "LOOP-001", "kept", 0.55,
+            extra={
+                "external_score": 0.69,
+                "guard_metrics": {"max_drawdown": 0.15},
+            },
+        )
+        assert self._status(git_project_root) == 0
+        out = capsys.readouterr().out
+        assert "offline fallback" in out
+        assert "trial-count-deflated metrics" in out
+        assert "guard max_drawdown" in out
+        assert "CV-external relation" not in out
+        assert "demoted" not in out
+
+    def test_bare_number_external_score_accepted(self, git_project_root, capsys):
+        self._setup(git_project_root)
+        art_lib.update_artifact(
+            git_project_root, "COMP-001", external_leaderboard="kaggle-lb"
+        )
+        _make_expt(
+            git_project_root, "EXPT-001", "LOOP-001", "kept", 0.50,
+            extra={"external_score": 0.71},
+        )
+        _make_expt(
+            git_project_root, "EXPT-002", "LOOP-001", "kept", 0.55,
+            extra={"external_score": 0.69},
+        )
+        assert self._status(git_project_root) == 0
+        out = capsys.readouterr().out
+        assert "CV-external relation" in out
+        assert "external=0.69" in out
+
+    def test_no_leaderboard_without_integrity_records_renders_nothing(
+        self, git_project_root, capsys
+    ):
+        # Default loops (no guard/external records) keep the status output
+        # free of integrity noise.
+        self._setup(git_project_root)
+        _make_expt(git_project_root, "EXPT-001", "LOOP-001", "kept", 0.50)
+        _make_expt(git_project_root, "EXPT-002", "LOOP-001", "kept", 0.51)
+        assert self._status(git_project_root) == 0
+        out = capsys.readouterr().out
+        assert "Research integrity" not in out
+        assert "offline fallback" not in out
+
+
+class TestQuantMetricBundleSetup:
+    """AC4: a single-metric quant COMP is rejected at setup in favor of the
+    metric bundle with a fixed horizon (competition-setup-protocol.md)."""
+
+    def _create_quant(self, root: Path, monkeypatch, title: str, extra: list[str]):
+        from specflow import cli
+        monkeypatch.chdir(root)
+        return cli.main([
+            "create", "--type", "competition", "--title", title,
+            "--status", "active", "--skip-dedup-check", "--body", "quant fixture",
+            "--set", "verify_command=echo 0.5",
+            "--set", "metric_name=sharpe",
+            "--set", "metric_direction=higher_is_better",
+            "--set", "domain=quant",
+            *extra,
+        ])
+
+    def test_quant_single_metric_comp_rejected(self, project_root, monkeypatch, capsys):
+        rc = self._create_quant(project_root, monkeypatch, "Single-metric quant", [])
+        assert rc == 1
+        out = capsys.readouterr().out
+        assert "metric bundle" in out
+        assert "rejected" in out
+        assert "evaluation_horizon" in out
+
+    def test_quant_bundle_with_fixed_horizon_accepted(
+        self, project_root, monkeypatch, capsys
+    ):
+        rc = self._create_quant(project_root, monkeypatch, "Bundled quant", [
+            "--set", 'metric_bundle=["sharpe", "max_drawdown", "total_trades"]',
+            "--set", "evaluation_horizon=2019-2024 walk-forward",
+        ])
+        assert rc == 0
+        comps = [
+            a for a in art_lib.discover_artifacts(project_root)
+            if art_lib.get_prefix_from_id(a.id) == "COMP" and a.title == "Bundled quant"
+        ]
+        assert len(comps) == 1
+        fm = comps[0].frontmatter
+        assert fm["metric_bundle"] == ["sharpe", "max_drawdown", "total_trades"]
+        assert fm["evaluation_horizon"] == "2019-2024 walk-forward"
+
+    def test_quant_single_name_bundle_rejected(self, project_root, monkeypatch, capsys):
+        rc = self._create_quant(project_root, monkeypatch, "One-metric bundle", [
+            "--set", 'metric_bundle=["sharpe"]',
+            "--set", "evaluation_horizon=2019-2024",
+        ])
+        assert rc == 1
+        assert "rejected" in capsys.readouterr().out
+
+    def test_quant_bundle_without_horizon_rejected(self, project_root, monkeypatch, capsys):
+        rc = self._create_quant(project_root, monkeypatch, "No-horizon bundle", [
+            "--set", 'metric_bundle=["sharpe", "max_drawdown"]',
+        ])
+        assert rc == 1
+        assert "evaluation_horizon" in capsys.readouterr().out
+
+    def test_non_quant_single_metric_comp_still_allowed(
+        self, project_root, monkeypatch
+    ):
+        monkeypatch.chdir(project_root)
+        from specflow import cli
+        rc = cli.main([
+            "create", "--type", "competition", "--title", "Tabular comp",
+            "--status", "active", "--skip-dedup-check", "--body", "b",
+            "--set", "verify_command=echo 0.5",
+            "--set", "metric_name=roc_auc",
+            "--set", "metric_direction=higher_is_better",
+            "--set", "domain=tabular_ml",
+        ])
+        assert rc == 0
+
+    def test_plan_reports_quant_bundle_requirement(
+        self, project_root, monkeypatch, capsys
+    ):
+        rc = self._create_quant(project_root, monkeypatch, "Planned quant", [
+            "--set", 'metric_bundle=["sharpe", "max_drawdown", "total_trades"]',
+            "--set", "evaluation_horizon=2019-2024 walk-forward",
+        ])
+        assert rc == 0
+        comps = [
+            a for a in art_lib.discover_artifacts(project_root)
+            if art_lib.get_prefix_from_id(a.id) == "COMP" and a.title == "Planned quant"
+        ]
+        comp_id = comps[0].id
+        assert autoresearch_cmd.run(
+            project_root, {"autoresearch_subcommand": "plan", "competition": comp_id}
+        ) == 0
+        out = capsys.readouterr().out
+        assert "Metric bundle: sharpe, max_drawdown, total_trades" in out
+        assert "2019-2024 walk-forward" in out
+
+    def test_plan_rejects_single_metric_quant_comp(self, project_root, capsys):
+        # A quant COMP that predates the setup gate still gets the rejection
+        # surfaced on the setup checklist.
+        _write_artifact(
+            project_root, "COMP-011", "competition", "Legacy quant",
+            status="active",
+            extra_fm={
+                "created": "2026-05-15", "verify_command": "echo 0.5",
+                "metric_name": "sharpe", "metric_direction": "higher_is_better",
+                "domain": "quant",
+            },
+        )
+        assert autoresearch_cmd.run(
+            project_root, {"autoresearch_subcommand": "plan", "competition": "COMP-011"}
+        ) == 0
+        out = capsys.readouterr().out
+        assert "single-metric COMP is rejected" in out
+        assert "evaluation_horizon" in out

@@ -56,12 +56,27 @@
 # check never flags such EXPTs retroactively. A stamp differing from
 # COMP.evaluator_fingerprint is drift: flagged once per COMP, routed to the
 # successor-COMP path.
+#
+# Loss-hacking guards (REQ-047 STORY-677, advisory only per DEC-088):
+#   guard_metrics — freeform mapping `name: value` (or `name: {value,
+#                   direction}`) of guard metrics recorded alongside the
+#                   primary `metric_value`. `autoresearch status` warns when
+#                   a primary gain coincides with a guard regression beyond
+#                   noise. Entries without an explicit `direction` default to
+#                   `lower_is_better` (guard metrics are regression floors).
+#   external_score — the external/holdout score for the same iteration: a
+#                   bare number, or `{value, source}`. `autoresearch status`
+#                   renders the CV-external relation against
+#                   COMP.external_leaderboard and demotes (advisory) any gain
+#                   the external score contradicts; without a leaderboard it
+#                   falls back to guard metrics plus trial-count-deflated
+#                   metrics.
 type: experiment
 category: research
 prefix: EXPT
 id_format: "^EXPT-\\d{3,5}$"
 required_fields: [id, title, type, status, created, loop, metric_value, change_category, summary]
-optional_fields: [description, competition, commit, iteration, hypothesis, hypothesis_outcome, research_question, parameters, model_origin, sweep_results, checks, baseline_note, diversity_metrics, failure_analysis, failure_stage, design_quality, design_quality_note, lesson_extracted, lesson_source, lesson_portability, auxiliary_signal, crash_telemetry, surprise, guard_value, guard_passed, strategy_used, strategy_family, lineage, delta, duration_seconds, auxiliary_metrics, research_progress, evaluator_fingerprint, tags, suspect, fingerprint, links, modified, thinking_techniques]
+optional_fields: [description, competition, commit, iteration, hypothesis, hypothesis_outcome, research_question, parameters, model_origin, sweep_results, checks, baseline_note, diversity_metrics, failure_analysis, failure_stage, design_quality, design_quality_note, lesson_extracted, lesson_source, lesson_portability, auxiliary_signal, crash_telemetry, surprise, guard_value, guard_passed, guard_metrics, external_score, strategy_used, strategy_family, lineage, delta, duration_seconds, auxiliary_metrics, research_progress, evaluator_fingerprint, tags, suspect, fingerprint, links, modified, thinking_techniques]
 allowed_status:
   kept: []
   discarded: []

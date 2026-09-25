@@ -2,7 +2,7 @@
 id: STORY-677
 title: Jump flags, guard metrics, external scores, metric bundles (REQ-047)
 type: story
-status: approved
+status: implemented
 suspect: false
 links:
 - target: REQ-047

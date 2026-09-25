@@ -162,3 +162,100 @@ class TestDeterminism:
         # Frozen dataclass should be usable as a dict key / set member.
         assert isinstance(result, NoiseProbeResult)
         assert hash(result) == hash(run_noise_probe([1.0, 1.0]))
+
+
+# ── STORY-677 (REQ-047): noise-denominated loss-hacking helpers ────────────
+
+
+class TestJumpExceedsNoise:
+    """The mechanism-explanation advisory fires only ABOVE k x noise sigma."""
+
+    def test_jump_above_threshold_fires(self) -> None:
+        from specflow.lib.noise_probe import jump_exceeds_noise
+
+        # 0.05 jump vs sigma 0.01 at k=3 → threshold 0.03: above.
+        assert jump_exceeds_noise(0.05, 0.01) is True
+
+    def test_jump_below_threshold_stays_silent(self) -> None:
+        from specflow.lib.noise_probe import jump_exceeds_noise
+
+        # 0.02 jump vs sigma 0.01 at k=3 → threshold 0.03: below.
+        assert jump_exceeds_noise(0.02, 0.01) is False
+
+    def test_jump_at_threshold_stays_silent(self) -> None:
+        from specflow.lib.noise_probe import jump_exceeds_noise
+
+        # Exactly k x sigma is not ABOVE the threshold.
+        assert jump_exceeds_noise(0.03, 0.01, 3.0) is False
+
+    def test_magnitude_only_sign_is_irrelevant(self) -> None:
+        from specflow.lib.noise_probe import jump_exceeds_noise
+
+        assert jump_exceeds_noise(-0.05, 0.01) is True
+        assert jump_exceeds_noise(-0.02, 0.01) is False
+
+    def test_k_is_configurable(self) -> None:
+        from specflow.lib.noise_probe import jump_exceeds_noise
+
+        assert jump_exceeds_noise(0.02, 0.01, 1.0) is True
+        assert jump_exceeds_noise(0.02, 0.01, 10.0) is False
+
+    def test_no_positive_noise_floor_never_flags(self) -> None:
+        from specflow.lib.noise_probe import jump_exceeds_noise
+
+        # No sigma to denominate against → never a flag.
+        assert jump_exceeds_noise(1.0, 0.0) is False
+        assert jump_exceeds_noise(1.0, -0.1) is False
+
+    def test_non_finite_inputs_never_flag(self) -> None:
+        from specflow.lib.noise_probe import jump_exceeds_noise
+
+        assert jump_exceeds_noise(float("nan"), 0.01) is False
+        assert jump_exceeds_noise(0.05, float("inf")) is False
+        assert jump_exceeds_noise("bad", 0.01) is False  # type: ignore[arg-type]
+
+    def test_default_k_is_three(self) -> None:
+        from specflow.lib.noise_probe import DEFAULT_JUMP_K
+
+        assert DEFAULT_JUMP_K == 3.0
+
+
+class TestTrialDeflatedMetric:
+    """Best-of-trials noise deflation: value −/+ k·sigma·sqrt(2 ln n)."""
+
+    def test_higher_is_better_deflates(self) -> None:
+        from specflow.lib.noise_probe import trial_deflated_metric
+
+        import math
+
+        expected = 0.55 - 1.0 * 0.01 * math.sqrt(2 * math.log(3))
+        assert trial_deflated_metric(0.55, 0.01, 3) == pytest.approx(expected)
+
+    def test_lower_is_better_inflates(self) -> None:
+        from specflow.lib.noise_probe import trial_deflated_metric
+
+        import math
+
+        expected = 0.12 + 1.0 * 0.01 * math.sqrt(2 * math.log(3))
+        assert trial_deflated_metric(
+            0.12, 0.01, 3, direction="lower_is_better"
+        ) == pytest.approx(expected)
+
+    def test_fewer_than_two_trials_deflates_nothing(self) -> None:
+        from specflow.lib.noise_probe import trial_deflated_metric
+
+        assert trial_deflated_metric(0.55, 0.01, 1) == 0.55
+        assert trial_deflated_metric(0.55, 0.01, 0) == 0.55
+
+    def test_no_noise_floor_deflates_nothing(self) -> None:
+        from specflow.lib.noise_probe import trial_deflated_metric
+
+        assert trial_deflated_metric(0.55, 0.0, 10) == 0.55
+        assert trial_deflated_metric(0.55, -0.1, 10) == 0.55
+
+    def test_more_trials_deflate_more(self) -> None:
+        from specflow.lib.noise_probe import trial_deflated_metric
+
+        shallow = trial_deflated_metric(0.55, 0.01, 2)
+        deep = trial_deflated_metric(0.55, 0.01, 50)
+        assert deep < shallow < 0.55

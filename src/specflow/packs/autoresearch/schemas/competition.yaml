@@ -9,12 +9,30 @@
 # `fingerprint-drift` check flags ONCE per COMP and routes to the
 # successor-COMP path (rolling-evaluation.md § COMP churn rule) — never
 # per-EXPT, never retroactive for pre-fingerprint EXPTs.
+#
+# Loss-hacking guards (REQ-047 STORY-677, advisory only per DEC-088):
+#   metric_bundle + evaluation_horizon — for `domain: quant`, setup REQUIRES
+#                   a metric bundle with a fixed horizon (`metric_bundle` is
+#                   a 2+ name list; `evaluation_horizon` the fixed window all
+#                   bundle metrics are measured on). A single-metric quant
+#                   COMP is rejected at setup in favor of the bundle
+#                   (competition-setup-protocol.md).
+#   external_leaderboard — name of the external leaderboard the CV metric is
+#                   checked against. `autoresearch status` renders the
+#                   CV-external relation and demotes gains the external score
+#                   contradicts; without it, status falls back to EXPT
+#                   guard_metrics plus trial-count-deflated metrics.
+#   noise_characterization.jump_k / .guard_k / .guard_sigmas — optional
+#                   denominated-threshold overrides: the jump advisory fires
+#                   above jump_k x sigma (default 3), a guard regression
+#                   beyond guard_k x its sigma (guard_sigmas.<name>, else the
+#                   primary probe sigma; default 1).
 type: competition
 category: research
 prefix: COMP
 id_format: "^COMP-\\d{3,5}$"
 required_fields: [id, title, type, status, created, verify_command, metric_name, metric_direction]
-optional_fields: [description, dataset, split_method, window_end, closure_disposition, assets, timeframe, guard_command, guard_mode, objective_type, success_criteria, domain, pre_check_command, post_check_command, noise_characterization, evaluator_fingerprint, goals, constraints, theses, custom_categories, tags, suspect, fingerprint, links, modified, thinking_techniques]
+optional_fields: [description, dataset, split_method, window_end, closure_disposition, assets, timeframe, guard_command, guard_mode, objective_type, success_criteria, domain, pre_check_command, post_check_command, noise_characterization, evaluator_fingerprint, metric_bundle, evaluation_horizon, external_leaderboard, goals, constraints, theses, custom_categories, tags, suspect, fingerprint, links, modified, thinking_techniques]
 initial_statuses: [active]
 allowed_status:
   active: [paused]

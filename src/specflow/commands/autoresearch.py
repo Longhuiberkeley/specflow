@@ -17,6 +17,7 @@ from pathlib import Path
 
 from specflow.lib import artifacts as art_lib
 from specflow.lib import evaluator_fingerprint as evaluator_lib
+from specflow.lib import noise_probe
 from specflow.lib.display import RED, GREEN, CYAN, YELLOW, NC, BOLD, DIM
 from specflow.lib.domain_constants import DOMAIN_RECOMMENDED
 
@@ -800,7 +801,7 @@ def _resolve_frontier_comp(root: Path, args: dict) -> art_lib.Artifact | None:
     return _resolve_comp(root, {**args, "competition": str(selected)})
 
 
-def _frontier_noise_sigma(comp: art_lib.Artifact) -> tuple[float | None, str]:
+def _comp_noise_sigma(comp: art_lib.Artifact) -> tuple[float | None, str]:
     """Read a stored noise sigma (or derive it from stored probe samples)."""
     raw = comp.frontmatter.get("noise_characterization")
     if isinstance(raw, dict):
@@ -812,9 +813,7 @@ def _frontier_noise_sigma(comp: art_lib.Artifact) -> tuple[float | None, str]:
         if isinstance(samples, list):
             numeric_samples = [_numeric(value) for value in samples]
             if len(numeric_samples) >= 2 and all(value is not None for value in numeric_samples):
-                from specflow.lib.noise_probe import run_noise_probe
-
-                probe = run_noise_probe([value for value in numeric_samples if value is not None])
+                probe = noise_probe.run_noise_probe([value for value in numeric_samples if value is not None])
                 return probe.stdev, "noise_characterization.samples via noise_probe"
     return None, "unavailable"
 
@@ -905,7 +904,7 @@ def _frontier_ledger(root: Path, comp: art_lib.Artifact) -> dict:
         str(expt.frontmatter.get("created", "")), expt.id,
     ))
 
-    sigma, sigma_source = _frontier_noise_sigma(comp)
+    sigma, sigma_source = _comp_noise_sigma(comp)
     direction = comp.frontmatter.get("metric_direction", "higher_is_better")
     lineages: dict[str, list[art_lib.Artifact]] = {}
     explicit_lineages: dict[str, bool] = {}
@@ -1113,6 +1112,344 @@ def _run_frontier(root: Path, args: dict) -> int:
     return 0
 
 
+# ── STORY-677 (REQ-047): loss-hacking guards (advisory only, DEC-088) ──────
+#
+# Noise-denominated jump flags, guard-metric regression warnings, and the
+# CV-external relation (with an offline fallback) render on `autoresearch
+# status` from recorded frontmatter numbers only — no metric is re-run and no
+# LLM inference is involved. Measurement advises and never gates (DEC-088):
+# these lines live in their own advisory block, contribute no accounting
+# signals, and never change an exit code or a keep/discard decision.
+
+_JUMP_K_DEFAULT = noise_probe.DEFAULT_JUMP_K
+_GUARD_K_DEFAULT = noise_probe.DEFAULT_GUARD_K
+_DEFLATE_K_DEFAULT = 1.0
+_GUARD_DIRECTION_DEFAULT = "lower_is_better"
+_DEFLATED_LINE_CAP = 5
+
+
+def _noise_multiple(comp: art_lib.Artifact, key: str, default: float) -> float:
+    """k override from COMP.noise_characterization.<key> (positive finite)."""
+    raw = comp.frontmatter.get("noise_characterization")
+    if isinstance(raw, dict):
+        value = _numeric(raw.get(key))
+        if value is not None and value > 0:
+            return value
+    return default
+
+
+def _guard_noise_sigma(
+    comp: art_lib.Artifact, name: str, primary: float | None
+) -> float | None:
+    """Guard-specific noise sigma (noise_characterization.guard_sigmas.<name>),
+    falling back to the primary probe sigma."""
+    raw = comp.frontmatter.get("noise_characterization")
+    if isinstance(raw, dict):
+        guards = raw.get("guard_sigmas")
+        if isinstance(guards, dict):
+            value = _numeric(guards.get(name))
+            if value is not None and value >= 0:
+                return value
+    return primary
+
+
+def _guard_metrics(expt: art_lib.Artifact) -> dict[str, dict]:
+    """EXPT.guard_metrics as name -> {value, direction}.
+
+    Accepts `name: value` or `name: {value, direction}`. An entry without an
+    explicit direction defaults to lower_is_better: guard metrics are
+    regression floors (drawdown, latency, error rates) — the adverse move is
+    upward unless the record says otherwise. Malformed values are ignored.
+    """
+    raw = expt.frontmatter.get("guard_metrics")
+    if not isinstance(raw, dict):
+        return {}
+    parsed: dict[str, dict] = {}
+    for name, entry in raw.items():
+        if isinstance(entry, dict):
+            value = _numeric(entry.get("value"))
+            direction = str(entry.get("direction") or "").strip()
+        else:
+            value = _numeric(entry)
+            direction = ""
+        if value is None:
+            continue
+        if direction not in ("higher_is_better", "lower_is_better"):
+            direction = _GUARD_DIRECTION_DEFAULT
+        parsed[str(name)] = {"value": value, "direction": direction}
+    return parsed
+
+
+def _external_score(expt: art_lib.Artifact) -> dict | None:
+    """EXPT.external_score as {value, source} — a bare number or a mapping
+    {value, source}."""
+    raw = expt.frontmatter.get("external_score")
+    if isinstance(raw, dict):
+        value = _numeric(raw.get("value"))
+        source = str(raw.get("source") or "").strip()
+    else:
+        value = _numeric(raw)
+        source = ""
+    if value is None:
+        return None
+    return {"value": value, "source": source}
+
+
+def _measured_expts(expts: list[art_lib.Artifact]) -> list[art_lib.Artifact]:
+    """EXPTs carrying a finite measured primary metric (no_op records excluded)."""
+    return [
+        expt for expt in expts
+        if expt.status != "no_op"
+        and _numeric(expt.frontmatter.get("metric_value")) is not None
+    ]
+
+
+def _signed_gain(value: float, previous: float, direction: str) -> float:
+    """Direction-adjusted improvement over `previous` (positive = gain)."""
+    delta = value - previous
+    return -delta if direction == "lower_is_better" else delta
+
+
+def _jump_flags(
+    expts: list[art_lib.Artifact], sigma: float | None, jump_k: float
+) -> list[dict]:
+    """Single-iteration primary-metric jumps ABOVE k x noise sigma.
+
+    Below (or at) the denominated threshold there is no flag at all: within
+    the characterized noise floor, a jump is not a loss-hacking signal.
+    """
+    flags: list[dict] = []
+    measured = _measured_expts(expts)
+    for previous, current in zip(measured, measured[1:]):
+        jump = (
+            _numeric(current.frontmatter.get("metric_value"))
+            - _numeric(previous.frontmatter.get("metric_value"))
+        )
+        if not noise_probe.jump_exceeds_noise(jump, sigma or 0.0, jump_k):
+            continue
+        flags.append({
+            "expt": current.id,
+            "from": previous.id,
+            "jump": jump,
+            "ratio": abs(jump) / sigma if sigma else 0.0,
+        })
+    return flags
+
+
+def _guard_regressions(
+    expts: list[art_lib.Artifact],
+    comp: art_lib.Artifact,
+    primary_sigma: float | None,
+    guard_k: float,
+    direction: str,
+) -> list[dict]:
+    """Primary gains whose EXPT also moved a guard adversely beyond noise.
+
+    The adverse move is compared against the latest prior EXPT recording the
+    same guard and denominated by that guard's noise sigma
+    (noise_characterization.guard_sigmas.<name>, else the primary probe
+    sigma). Without a positive noise floor "beyond noise" is undefined and no
+    warning fires.
+    """
+    records: list[dict] = []
+    measured = _measured_expts(expts)
+    measured_ids = {expt.id for expt in measured}
+    for index, expt in enumerate(expts):
+        if expt.id not in measured_ids:
+            continue
+        previous = None
+        for prior in reversed(expts[:index]):
+            if prior.id in measured_ids:
+                previous = prior
+                break
+        if previous is None:
+            continue
+        metric = _numeric(expt.frontmatter.get("metric_value"))
+        gain = _signed_gain(
+            metric, _numeric(previous.frontmatter.get("metric_value")), direction
+        )
+        if gain <= 0:
+            continue  # no primary gain to protect — nothing to warn about
+        for name, entry in _guard_metrics(expt).items():
+            prior_value = None
+            for prior in reversed(expts[:index]):
+                prior_entry = _guard_metrics(prior).get(name)
+                if prior_entry is not None:
+                    prior_value = prior_entry["value"]
+                    break
+            if prior_value is None:
+                continue
+            regression = (
+                entry["value"] - prior_value
+                if entry["direction"] == "lower_is_better"
+                else prior_value - entry["value"]
+            )
+            if regression <= 0:
+                continue  # guard held or improved
+            sigma = _guard_noise_sigma(comp, name, primary_sigma)
+            if not noise_probe.jump_exceeds_noise(regression, sigma or 0.0, guard_k):
+                continue
+            records.append({
+                "expt": expt.id,
+                "guard": name,
+                "gain": gain,
+                "regression": regression,
+                "sigma": sigma,
+            })
+    return records
+
+
+def _cv_external_rows(
+    expts: list[art_lib.Artifact], direction: str
+) -> list[dict]:
+    """CV-external pairs and their per-iteration relation (REQ-047 AC5).
+
+    A gain is *demoted* when the CV metric improved while the external score
+    moved the other way: the external relation contradicts the claimed gain,
+    so it is rendered demoted (advisory — the recorded numbers stand).
+    """
+    rows: list[dict] = []
+    prior: dict | None = None
+    for expt in _measured_expts(expts):
+        external = _external_score(expt)
+        if external is None:
+            continue
+        metric = _numeric(expt.frontmatter.get("metric_value"))
+        row = {
+            "expt": expt.id,
+            "cv": metric,
+            "external": external["value"],
+            "source": external["source"],
+            "cv_delta": None,
+            "external_delta": None,
+            "relation": "baseline",
+            "demoted": False,
+        }
+        if prior is not None:
+            cv_delta = metric - prior["cv"]
+            ext_delta = external["value"] - prior["external"]
+            row["cv_delta"] = cv_delta
+            row["external_delta"] = ext_delta
+            if cv_delta * ext_delta < 0:
+                row["relation"] = "inconsistent"
+                row["demoted"] = _signed_gain(metric, prior["cv"], direction) > 0
+            else:
+                row["relation"] = "consistent"
+        rows.append(row)
+        prior = row
+    return rows
+
+
+def _render_integrity(
+    root: Path, comp: art_lib.Artifact, loop: art_lib.Artifact
+) -> None:
+    """Render the REQ-047 loss-hacking advisories for the resolved LOOP.
+
+    Jump flags (firing only above k x noise sigma), guard-regression warnings,
+    and the CV-external relation — or, with no external leaderboard, the
+    offline fallback (guard metrics plus trial-count-deflated metrics).
+    Advisory output only (DEC-088): no exit code and no keep/discard decision
+    is affected here.
+    """
+    expts = _ordered_expts(_find_expts_for_loop(root, loop.id))
+    sigma, sigma_source = _comp_noise_sigma(comp)
+    jump_k = _noise_multiple(comp, "jump_k", _JUMP_K_DEFAULT)
+    guard_k = _noise_multiple(comp, "guard_k", _GUARD_K_DEFAULT)
+    direction = comp.frontmatter.get("metric_direction", "higher_is_better")
+
+    jumps = _jump_flags(expts, sigma, jump_k)
+    regressions = _guard_regressions(expts, comp, sigma, guard_k, direction)
+    external_rows = _cv_external_rows(expts, direction)
+    leaderboard = comp.frontmatter.get("external_leaderboard")
+    guard_names = sorted({name for expt in expts for name in _guard_metrics(expt)})
+
+    if not jumps and not regressions and not external_rows and not guard_names:
+        return
+
+    print(f"{BOLD}Research integrity (advisory):{NC}")
+    if sigma is None:
+        print(f"  {DIM}Noise sigma unavailable ({sigma_source}) — jump and "
+              f"beyond-noise checks are skipped.{NC}")
+    else:
+        print(f"  {DIM}Noise sigma {sigma:g} ({sigma_source}) — jump k={jump_k:g}, "
+              f"guard k={guard_k:g}.{NC}")
+
+    for flag in jumps:
+        print(f"  {YELLOW}⚠{NC} jump: {flag['expt']} single-iteration jump "
+              f"{flag['jump']:+g} = {flag['ratio']:.1f}x noise sigma "
+              f"(above k={jump_k:g}x) — mechanism explanation required")
+        print(f"      {DIM}→ Explain the mechanism behind this jump in "
+              f"{flag['expt']}'s record before trusting the gain.{NC}")
+
+    for record in regressions:
+        print(f"  {YELLOW}⚠{NC} guard-regression warning: {record['expt']} "
+              f"primary gain {record['gain']:+g} regresses guard "
+              f"'{record['guard']}' by {record['regression']:+g} (beyond noise "
+              f"k={guard_k:g}x sigma {record['sigma']:g}) — inspect for metric "
+              f"gaming before trusting the gain.")
+
+    if leaderboard:
+        label = str(leaderboard).strip() or "recorded"
+        print(f"  {BOLD}CV-external relation{NC} (leaderboard: {label}):")
+        if not external_rows:
+            print(f"    {DIM}no EXPT external_score records yet{NC}")
+        for row in external_rows:
+            if row["relation"] == "baseline":
+                print(f"    {CYAN}{row['expt']}{NC}  cv={row['cv']:g}  "
+                      f"external={row['external']:g}  (baseline)")
+                continue
+            verdict = (
+                f"{YELLOW}inconsistent — gain demoted{NC}"
+                if row["demoted"] else "consistent"
+            )
+            print(f"    {CYAN}{row['expt']}{NC}  cv={row['cv']:g} "
+                  f"(Δ{row['cv_delta']:+g})  external={row['external']:g} "
+                  f"(Δ{row['external_delta']:+g})  {verdict}")
+    elif external_rows or guard_names:
+        # Offline fallback (REQ-047 AC5): without an external leaderboard the
+        # CV-external relation cannot be rendered — assess gains with guard
+        # metrics plus trial-count-deflated metrics instead.
+        print(f"  {BOLD}No external leaderboard — offline fallback{NC} "
+              f"(guards + trial-count-deflated metrics):")
+        by_guard = {record["guard"]: record for record in regressions}
+        for name in guard_names:
+            latest = None
+            for expt in reversed(expts):
+                entry = _guard_metrics(expt).get(name)
+                if entry is not None:
+                    latest = (expt, entry)
+                    break
+            if latest is None:
+                continue
+            expt, entry = latest
+            note = ""
+            record = by_guard.get(name)
+            if record is not None:
+                note = (f" ({YELLOW}regression {record['regression']:+g} beyond "
+                        f"noise on {record['expt']}{NC})")
+            print(f"    guard {name}: {entry['value']:g} "
+                  f"({entry['direction']}, latest {CYAN}{expt.id}{NC}){note}")
+        measured = _measured_expts(expts)
+        if measured and sigma is not None and sigma > 0:
+            n_trials = len(measured)
+            print(f"    {BOLD}trial-count-deflated metrics{NC} "
+                  f"(n={n_trials} trials, k={_DEFLATE_K_DEFAULT:g} x sigma {sigma:g}):")
+            for expt in measured[-_DEFLATED_LINE_CAP:]:
+                value = _numeric(expt.frontmatter.get("metric_value"))
+                deflated = noise_probe.trial_deflated_metric(
+                    value, sigma, n_trials,
+                    direction=direction, k=_DEFLATE_K_DEFAULT,
+                )
+                print(f"      {CYAN}{expt.id}{NC}  {value:g} → {deflated:.4f}")
+            omitted = len(measured) - _DEFLATED_LINE_CAP
+            if omitted > 0:
+                print(f"      {DIM}+{omitted} more measured EXPT(s){NC}")
+        elif measured:
+            print(f"    {DIM}trial-count-deflated metrics need a positive noise "
+                  f"sigma — skipped.{NC}")
+    print()
+
+
 def _run_status(root: Path, args: dict) -> int:
     """COMP-level closure-readiness first; LOOP accounting only if a LOOP resolves.
 
@@ -1121,7 +1458,9 @@ def _run_status(root: Path, args: dict) -> int:
     readiness warnings (draft LOOP, missing agenda, evidence-free streak)
     are the warn sources; a prioritized direction without a progress note is
     an advisory (exit 0, never a warn). Only structural problems (no git
-    repo, multiple running LOOPs, budget exhausted) fail.
+    repo, multiple running LOOPs, budget exhausted) fail. The REQ-047
+    integrity block (jump flags, guard regressions, CV-external relation)
+    renders after the accounting signals and never feeds the exit code.
     """
     comp = _resolve_comp(root, args)
     if not comp:
@@ -1182,6 +1521,9 @@ def _run_status(root: Path, args: dict) -> int:
         actionable_cap=max(0, 3 - min(phase_actionable_count, 3)),
         ledger_pointer=frontier_pointer,
     )
+    # REQ-047 (STORY-677): loss-hacking advisories — advisory only (DEC-088),
+    # rendered after the capped signal block so they are never omitted.
+    _render_integrity(root, comp, loop)
     return _status_exit_code(signals + loop_signals)
 
 
@@ -1525,6 +1867,22 @@ def _run_plan_info(root: Path, comp: art_lib.Artifact, args: dict) -> int:
     guard = fm.get("guard_command")
     if guard:
         print(f"Guard cmd:     {guard} (mode: {fm.get('guard_mode', 'pass_fail')})")
+    # REQ-047 AC6: quant setups require a metric bundle with a fixed horizon —
+    # a single-metric COMP is rejected at setup in favor of the bundle
+    # (competition-setup-protocol.md).
+    if str(fm.get("domain") or "").strip().casefold() == "quant":
+        bundle = fm.get("metric_bundle")
+        names = (
+            [str(name).strip() for name in bundle if str(name).strip()]
+            if isinstance(bundle, list) else []
+        )
+        horizon = fm.get("evaluation_horizon")
+        if len(names) >= 2 and isinstance(horizon, str) and horizon.strip():
+            print(f"Metric bundle: {', '.join(names)} (fixed horizon: {horizon.strip()})")
+        else:
+            print(f"{RED}✗ Quant metric bundle: a single-metric COMP is rejected at "
+                  f"setup — record metric_bundle (2+ metrics) and evaluation_horizon "
+                  f"(competition-setup-protocol.md).{NC}")
     print()
 
     loops = _find_loops_for_comp(root, comp.id)

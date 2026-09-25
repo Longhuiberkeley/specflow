@@ -2523,3 +2523,42 @@ class TestEvaluatorFingerprintSchema:
         assert "evaluator_fingerprint" in schema.get("optional_fields", [])
         # A missing stamp is a pre-fingerprint EXPT — never flagged retroactively.
         assert "pre-fingerprint" in exp_raw
+
+
+# ── STORY-677 (REQ-047): guard metrics, external scores, metric bundles ────
+
+class TestResearchIntegrityGuardDocs:
+    """The STORY-677 surfaces are documented where ARCH-038 says they live:
+    the schemas (EXPT.guard_metrics / EXPT.external_score / COMP bundle +
+    horizon + external_leaderboard) and the quant setup protocol."""
+
+    def test_setup_protocol_requires_quant_metric_bundle(self):
+        proto = (
+            PACKS_DIR / "autoresearch" / "skills" / "specflow-autoresearch"
+            / "references" / "competition-setup-protocol.md"
+        ).read_text()
+        lowered = proto.lower()
+        for token in ("metric bundle", "fixed horizon", "single-metric",
+                      "rejected", "metric_bundle", "evaluation_horizon", "quant"):
+            assert token in lowered, f"setup protocol should document '{token}'"
+
+    def test_experiment_schema_has_guard_metrics_and_external_score(self):
+        exp_raw = (PACKS_DIR / "autoresearch" / "schemas" / "experiment.yaml").read_text()
+        schema = yaml.safe_load(exp_raw)
+        for field in ("guard_metrics", "external_score"):
+            assert field in schema.get("optional_fields", []), \
+                f"experiment.yaml should have optional field '{field}'"
+        for token in ("guard_metrics", "external_score", "CV-external", "demotes",
+                      "trial-count-deflated", "lower_is_better"):
+            assert token in exp_raw, f"experiment.yaml should document '{token}'"
+
+    def test_competition_schema_has_integrity_fields(self):
+        comp_raw = (PACKS_DIR / "autoresearch" / "schemas" / "competition.yaml").read_text()
+        schema = yaml.safe_load(comp_raw)
+        for field in ("metric_bundle", "evaluation_horizon", "external_leaderboard"):
+            assert field in schema.get("optional_fields", []), \
+                f"competition.yaml should have optional field '{field}'"
+        lowered = comp_raw.lower()
+        for token in ("metric bundle", "fixed horizon", "single-metric quant",
+                      "external_leaderboard", "jump_k", "guard_k"):
+            assert token in lowered, f"competition.yaml should document '{token}'"
