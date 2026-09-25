@@ -2,7 +2,7 @@
 id: STORY-643
 title: 'v1.15.0: OpenCode native commands (harness-level, deferred per owner 2026-08-27)'
 type: story
-status: approved
+status: deprecated
 tags:
 - v1.15.0-backlog
 suspect: false
@@ -11,7 +11,10 @@ links:
   role: implements
 created: '2026-08-27'
 fingerprint: sha256:1f7ed654008d
-modified: '2026-09-25'
+modified: '2026-09-26'
+deprecation_reason: 'v1.15.0-era scope parked at v1.16.0 release per owner decision
+  2026-09-26: superseded by later work or explicitly deferred (see title); re-derive
+  via a new REQ if the need returns'
 ---
 
 # v1.15.0: OpenCode native commands (harness-level, deferred per owner 2026-08-27)

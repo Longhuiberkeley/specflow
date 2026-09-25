@@ -983,7 +983,7 @@ artifacts:
   STORY-642:
     id: STORY-642
     title: 'v1.15.0: unify chain-depth with the typed edge matrix'
-    status: approved
+    status: deprecated
     tags:
     - v1.15.0-backlog
     fingerprint: sha256:e229e745199b
@@ -991,7 +991,7 @@ artifacts:
   STORY-643:
     id: STORY-643
     title: 'v1.15.0: OpenCode native commands (harness-level, deferred per owner 2026-08-27)'
-    status: approved
+    status: deprecated
     tags:
     - v1.15.0-backlog
     fingerprint: sha256:1f7ed654008d
@@ -999,7 +999,7 @@ artifacts:
   STORY-644:
     id: STORY-644
     title: 'v1.15.0: ops pack methodology handbook'
-    status: approved
+    status: deprecated
     tags:
     - v1.15.0-backlog
     fingerprint: sha256:d473e694a46a
@@ -1007,7 +1007,7 @@ artifacts:
   STORY-645:
     id: STORY-645
     title: 'v1.15.0: skill slimming / lazy reference loading'
-    status: approved
+    status: deprecated
     tags:
     - v1.15.0-backlog
     fingerprint: sha256:e01c95c05ae7
