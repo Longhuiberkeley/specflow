@@ -214,6 +214,49 @@ def test_practices_validate_reports_malformed_artifacts_deterministically(
     assert "BP-004.md: superseded best-practice has no successor lineage" in first_output
 
 
+def test_practices_validate_tolerates_synthesized_legacy_anatomy(tmp_path: Path, capsys):
+    # DEC-089 legacy allowance: `practices migrate` stamps provenance but
+    # deliberately restores the authored body (_restore_original_body), so a
+    # migrated legacy BP can never reach the five-part anatomy retroactively.
+    # Enforcement is the create/edit boundary; migrated records pass.
+    _write_bp(
+        tmp_path,
+        "BP-001",
+        provenance="synthesized",
+        body="## Practice\n\nDo it.\n\n## Rationale\n\nBecause.\n\n"
+             "## Verification\n\nCheck it.\n",
+    )
+    rc = practices_cmd.run(tmp_path, {"practices_subcommand": "validate"})
+    output = capsys.readouterr().out
+    assert rc == 0
+    assert "PASS" in output
+    assert "missing section" not in output
+
+
+def test_practices_validate_still_enforces_anatomy_on_authored_provenance(
+    tmp_path: Path, capsys,
+):
+    # The allowance is migration-only: bundled / standard / learned records
+    # (and unstamped legacy records awaiting migrate) still fail.
+    _write_bp(
+        tmp_path,
+        "BP-001",
+        provenance="learned",
+        body="## Practice\n\nDo it.\n\n## Rationale\n\nBecause.\n",
+    )
+    rc = practices_cmd.run(tmp_path, {"practices_subcommand": "validate"})
+    output = capsys.readouterr().out
+    assert rc == 1
+    assert "BP-001.md: missing section 'Work products'" in output
+
+
+def test_shipped_dogfood_bps_pass_practices_validate():
+    root = Path(__file__).parents[1]
+    shipped = _shipped_dogfood_bps()
+    assert shipped  # skip guard lives in the helper
+    assert practices.validate_practices(root) == []
+
+
 def test_practices_validate_accepts_resolvable_complete_artifact(tmp_path: Path, capsys):
     _write_bp(
         tmp_path, "BP-001", provenance="bundled", source="SEED-GENERIC-01",

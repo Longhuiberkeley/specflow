@@ -1191,6 +1191,41 @@ class TestStatusExitCodes:
         out = capsys.readouterr().out
         assert "Multiple running LOOPs" in out
 
+    def test_global_cap_keeps_loop_structural_visible_behind_phase0_warns(
+        self, git_project_root, monkeypatch, capsys
+    ):
+        # STORY-675/DEC-088: the top-3 cap ranks the whole payload, not each
+        # section. Three Phase 0 warns previously zeroed the LOOP cap and hid
+        # the higher-ranked structural signals (multiple running LOOPs,
+        # budget exhausted) behind a mislabeled "+N lower-ranked" line.
+        _make_healthy_loop(git_project_root)
+        phase_signals = [
+            {"state": "warn", "name": f"phase-{i}",
+             "message": f"phase warn {i}", "pointer": ""}
+            for i in range(3)
+        ]
+        loop_signals = [
+            {"state": "structural", "name": "concurrency",
+             "message": "Multiple running LOOPs: LOOP-001, LOOP-002",
+             "pointer": "Abort all but one running LOOP before continuing."},
+            {"state": "warn", "name": "budget",
+             "message": "Budget exhausted (5/5)", "pointer": ""},
+        ]
+        monkeypatch.setattr(
+            autoresearch_cmd, "_phase0_git_signals", lambda *_args: phase_signals
+        )
+        monkeypatch.setattr(
+            autoresearch_cmd, "_assess_loop",
+            lambda *_args: loop_signals,
+        )
+
+        assert self._status(git_project_root) == 2
+        out = capsys.readouterr().out
+        assert "Multiple running LOOPs" in out
+        # Global top-3 = the structural + the two earliest warns; the other two
+        # actionable signals are omitted once with the payload-level count.
+        assert "+2 lower-ranked actionable signal(s) omitted" in out
+
     def test_idle_comp_clean_git_exits_zero(self, git_project_root, capsys):
         # No active LOOP: closure-readiness + Phase 0 only; clean → 0.
         assert self._status(git_project_root) == 0
@@ -1602,6 +1637,69 @@ class TestAutoresearchFrontier:
         assert all(entry.get("rationale", "").strip() for entry in agenda)
         assert not any(entry["direction"] == "closed direction" for entry in agenda)
 
+    def test_plan_inherit_preserves_existing_draft_agenda_when_source_has_no_memory(
+        self, project_root, monkeypatch, capsys,
+    ):
+        # A completed source with no durable memory seeds [] — that must never
+        # wipe the auto-selected draft LOOP's authored agenda. The outcome is
+        # loud, not silent.
+        from specflow import cli
+
+        _make_loop(project_root, "LOOP-001", "COMP-001", status="completed",
+                   mode="explore", budget=25)
+        _make_loop(
+            project_root, "LOOP-002", "COMP-001", status="draft",
+            mode="explore", budget=25,
+            extra={"research_agenda": [
+                {"direction": "author's own direction", "status": "unexplored"},
+            ]},
+        )
+        monkeypatch.chdir(project_root)
+        rc = cli.main(["autoresearch", "plan", "--inherit", "LOOP-001"])
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "not clobbered" in out
+        followup = _parse(project_root, "LOOP-002")
+        agenda = followup.frontmatter["research_agenda"]
+        assert [entry["direction"] for entry in agenda] == ["author's own direction"]
+
+    def test_plan_inherit_merges_new_seeds_and_dedupes_against_existing_agenda(
+        self, project_root, monkeypatch, capsys,
+    ):
+        # Merge-never-replace applies to the agenda the way it already applies
+        # to links: new inherited directions append, duplicates are dropped,
+        # existing entries keep their own metadata.
+        from specflow import cli
+
+        _make_loop(
+            project_root, "LOOP-001", "COMP-001", status="completed",
+            mode="explore", budget=25,
+            extra={"unexplored_directions": [
+                "fresh inherited direction", "brand new direction",
+            ]},
+        )
+        _make_loop(
+            project_root, "LOOP-002", "COMP-001", status="draft",
+            mode="explore", budget=25,
+            extra={"research_agenda": [
+                {"direction": "author's own direction", "status": "unexplored"},
+                {"direction": "fresh inherited direction", "status": "unexplored"},
+            ]},
+        )
+        monkeypatch.chdir(project_root)
+        rc = cli.main(["autoresearch", "plan", "--inherit", "LOOP-001"])
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "merged 1 inherited seed(s)" in out
+        followup = _parse(project_root, "LOOP-002")
+        directions = [
+            entry["direction"] for entry in followup.frontmatter["research_agenda"]
+        ]
+        assert directions == [
+            "author's own direction", "fresh inherited direction",
+            "brand new direction",
+        ]
+
     def test_review_requires_condensation_brief_for_completed_loop(self, project_root, capsys):
         _make_loop(project_root, "LOOP-001", "COMP-001", status="completed")
         _make_loop(
@@ -1800,6 +1898,31 @@ class TestEvaluatorFingerprintSetup:
         ])
         assert rc == 1
         assert "reserved" in capsys.readouterr().out
+
+    def test_update_set_cannot_rewrite_frozen_fingerprint(
+        self, project_root, monkeypatch, capsys,
+    ):
+        # The generic frontmatter editor must not launder evaluator drift in
+        # one command: the frozen setup stamp (autoresearch.py reserves the key
+        # on `log`) is equally reserved on `update --set` — for the COMP and
+        # for the EXPT harness stamp.
+        from specflow import cli
+        (project_root / "scripts").mkdir()
+        (project_root / "scripts" / "eval.py").write_text("print(0.5)\n")
+        monkeypatch.chdir(project_root)
+        comp_id = _create_comp_cli(
+            project_root, "Frozen fingerprint comp", "python scripts/eval.py"
+        )
+        before = _parse(project_root, comp_id).frontmatter["evaluator_fingerprint"]
+        rc = cli.main([
+            "update", comp_id,
+            "--set", "evaluator_fingerprint=sha256:deadbeef0000",
+        ])
+        assert rc == 1
+        out = capsys.readouterr().out
+        assert "reserved" in out
+        assert "successor COMP" in out
+        assert _parse(project_root, comp_id).frontmatter["evaluator_fingerprint"] == before
 
 
 class TestFingerprintDriftLint:

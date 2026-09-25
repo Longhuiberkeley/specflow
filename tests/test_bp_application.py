@@ -73,6 +73,9 @@ def _bp(root: Path, bp_id: str = "BP-001", **extra) -> Path:
         "applicability": {"always": True},
         "strength": "recommended",
         "verification_method": "inspection",
+        # Backfill grace is frontmatter-date keyed: a BP last modified before
+        # the lifecycle targets (created 2026-01-01) is in scope for them.
+        "modified": "2025-12-01",
     }
     fields.update(extra)
     return _write_artifact(
@@ -233,17 +236,41 @@ def test_bp_application_skips_unstamped_legacy_practice(project_root: Path):
 
 
 def test_bp_application_backfill_grace_skips_unchanged_artifact(project_root: Path):
-    bp_path = _bp(project_root)
-    req_path = _write_artifact(project_root, "REQ-001", "requirement")
-    approval_ns = bp_path.stat().st_mtime_ns
-    grace_mtime = approval_ns - 1_000_000
-    os.utime(req_path, ns=(grace_mtime, grace_mtime))
+    _bp(project_root, modified="2026-06-01")
+    _write_artifact(
+        project_root, "REQ-001", "requirement",
+        extra={"modified": "2026-05-01"},
+    )
 
     result = _bp_application(project_root)
 
     assert result["blocking_count"] == 0
     assert result["warning_count"] == 0
     assert "REQ-001" not in result["detail"]
+
+
+def test_bp_application_grace_is_frontmatter_date_keyed_not_mtime(
+    project_root: Path,
+):
+    # Same artifact bytes, only the filesystem mtimes flip: the result must not
+    # move. Git does not preserve mtimes, so an mtime-keyed grace would make a
+    # fresh clone/CI disagree with the working tree (DEC-089 false blocking).
+    bp_path = _bp(project_root, modified="2026-06-01")
+    req_path = _write_artifact(
+        project_root, "REQ-001", "requirement",
+        extra={"modified": "2026-07-01"},
+    )
+    # REQ is newer in frontmatter but older on disk → still checked.
+    os.utime(req_path, ns=(bp_path.stat().st_mtime_ns - 1_000_000,) * 2)
+    assert _bp_application(project_root)["warning_count"] == 1
+
+    # REQ is older in frontmatter but newer on disk → still skipped.
+    req_path = _write_artifact(
+        project_root, "REQ-001", "requirement",
+        extra={"modified": "2026-05-01"},
+    )
+    os.utime(req_path, ns=(bp_path.stat().st_mtime_ns + 1_000_000,) * 2)
+    assert _bp_application(project_root)["warning_count"] == 0
 
 
 def test_bp_application_checks_test_verification_status(project_root: Path):

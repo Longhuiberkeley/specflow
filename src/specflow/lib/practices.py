@@ -384,7 +384,19 @@ def validate_practices(root: Path) -> list[dict[str, str]]:
             add(path, "could not parse artifact frontmatter")
             continue
         best_practices.append(bp)
+        provenance = bp.frontmatter.get("provenance")
+        # DEC-089 legacy allowance: `practices migrate` stamps `synthesized`
+        # provenance WITHOUT rewriting the authored body (_restore_original_body),
+        # so a migrated legacy BP can never reach the five-section anatomy
+        # retroactively. Five-part enforcement is the create/edit boundary for
+        # post-migration records; failing migrated ones forever would make the
+        # flagship repo red on its own check. Only the migration's own
+        # `synthesized` marker is tolerated — authoring provenance (bundled /
+        # standard / learned) still enforces the anatomy.
+        legacy_anatomy = provenance == "synthesized"
         for problem in validate_anatomy(bp.body):
+            if legacy_anatomy:
+                continue
             add(path, problem)
 
         method = bp.frontmatter.get("verification_method")
@@ -397,7 +409,6 @@ def validate_practices(root: Path) -> list[dict[str, str]]:
                 f"{', '.join(sorted(VERIFICATION_METHODS))}",
             )
 
-        provenance = bp.frontmatter.get("provenance")
         if provenance is not None:
             if not isinstance(provenance, str) or provenance not in PROVENANCE_VALUES:
                 add(

@@ -617,11 +617,41 @@ def _assess_loop(
     return signals
 
 
+# DEC-088: actionable-signal ranks shared by the per-call cap and the global
+# selector so the two can never disagree.
+_ACTIONABLE_RANKS = {"structural": 0, "warn": 1, "advisory": 2}
+
+
+def _select_actionable(
+    signals: list[dict[str, str]], cap: int = 3,
+) -> tuple[set[int], int]:
+    """Select the top-``cap`` actionable indices across ``signals``.
+
+    STORY-675/DEC-088: ranking is global across the whole status payload, not
+    per section — a per-section cap let three Phase 0 warns exhaust the budget
+    and hide a higher-ranked LOOP structural ("Multiple running LOOPs",
+    "Budget exhausted"), mislabeled as "lower-ranked". Ties keep payload order.
+    """
+    ranked = [
+        (index, signal) for index, signal in enumerate(signals)
+        if signal["state"] in _ACTIONABLE_RANKS
+    ]
+    selected = {
+        index for index, _signal in sorted(
+            ranked,
+            key=lambda item: (_ACTIONABLE_RANKS[item[1]["state"]], item[0]),
+        )[:cap]
+    }
+    return selected, max(0, len(ranked) - len(selected))
+
+
 def _render_signals(
     signals: list[dict[str, str]],
     title: str = "Deterministic accounting:",
     actionable_cap: int | None = None,
     ledger_pointer: str = "",
+    selected_actionable: set[int] | None = None,
+    omitted_count: int | None = None,
 ) -> None:
     icons = {
         "ok": f"{GREEN}✓{NC}",
@@ -633,23 +663,28 @@ def _render_signals(
     print(f"{BOLD}{title}{NC}")
     visible = list(enumerate(signals))
     omitted = 0
-    if actionable_cap is not None:
-        ranks = {"structural": 0, "warn": 1, "advisory": 2}
-        actionable = [
-            (index, signal) for index, signal in visible
-            if signal["state"] in ranks
-        ]
-        selected = {
-            index for index, _signal in sorted(
-                actionable, key=lambda item: (ranks[item[1]["state"]], item[0])
-            )[:actionable_cap]
-        }
-        omitted = max(0, len(actionable) - len(selected))
+    if selected_actionable is not None:
+        # Caller-selected global top-N: keep non-actionable rows plus the
+        # selected actionable ones; only the caller can report the total
+        # omitted (one payload-level count, not one per section).
+        omitted = omitted_count or 0
         visible = [
             (index, signal) for index, signal in visible
-            if signal["state"] not in ranks or index in selected
+            if signal["state"] not in _ACTIONABLE_RANKS
+            or index in selected_actionable
         ]
-        visible.sort(key=lambda item: (ranks.get(item[1]["state"], 3), item[0]))
+        visible.sort(
+            key=lambda item: (_ACTIONABLE_RANKS.get(item[1]["state"], 3), item[0])
+        )
+    elif actionable_cap is not None:
+        selected, omitted = _select_actionable(signals, cap=actionable_cap)
+        visible = [
+            (index, signal) for index, signal in visible
+            if signal["state"] not in _ACTIONABLE_RANKS or index in selected
+        ]
+        visible.sort(
+            key=lambda item: (_ACTIONABLE_RANKS.get(item[1]["state"], 3), item[0])
+        )
 
     for _index, signal in visible:
         print(f"  {icons[signal['state']]} {signal['name']}: {signal['message']}")
@@ -1476,16 +1511,6 @@ def _run_status(root: Path, args: dict) -> int:
         "message": f"{comp.id} exists", "pointer": "",
     })
     frontier_pointer = f"specflow autoresearch frontier --comp {comp.id} --json"
-    _render_signals(
-        signals,
-        title="Phase 0 preconditions:",
-        actionable_cap=3,
-        ledger_pointer=frontier_pointer,
-    )
-    phase_actionable_count = sum(
-        signal["state"] in {"structural", "warn", "advisory"}
-        for signal in signals
-    )
 
     loops = _find_loops_for_comp(root, comp.id)
     explicit = args.get("loop")
@@ -1493,6 +1518,12 @@ def _run_status(root: Path, args: dict) -> int:
         loop.status in ("running", "draft") for loop in loops
     )
     if not has_resolvable:
+        _render_signals(
+            signals,
+            title="Phase 0 preconditions:",
+            actionable_cap=3,
+            ledger_pointer=frontier_pointer,
+        )
         print(f"{YELLOW}⚠{NC} no active LOOP — COMP idle; create a LOOP to continue")
         print()
         return _status_exit_code(signals)
@@ -1500,9 +1531,14 @@ def _run_status(root: Path, args: dict) -> int:
     loop = _resolve_loop(root, comp, args)
     if not loop:
         # Ambiguous (multiple drafts) or explicit-but-missing: a failure.
+        _render_signals(
+            signals,
+            title="Phase 0 preconditions:",
+            actionable_cap=3,
+            ledger_pointer=frontier_pointer,
+        )
         return 1
 
-    print(f"LOOP:        {CYAN}{loop.id}{NC}  [{loop.status}]\n")
     loop_signals: list[dict[str, str]] = []
     if loop.status == "draft":
         loop_signals.append({
@@ -1516,15 +1552,30 @@ def _run_status(root: Path, args: dict) -> int:
             "message": f"{loop.id} is {loop.status}", "pointer": "",
         })
     loop_signals.extend(_assess_loop(root, comp, loop))
+
+    # STORY-675/DEC-088: ONE global top-3 across Phase 0 + LOOP by severity, so
+    # a LOOP structural can never be crowded out by three Phase 0 warns. The
+    # omitted count is payload-level and reported once, with the final block.
+    combined = signals + loop_signals
+    selected, omitted = _select_actionable(combined, cap=3)
+    offset = len(signals)
+    _render_signals(
+        signals,
+        title="Phase 0 preconditions:",
+        ledger_pointer=frontier_pointer,
+        selected_actionable={index for index in selected if index < offset},
+    )
+    print(f"LOOP:        {CYAN}{loop.id}{NC}  [{loop.status}]\n")
     _render_signals(
         loop_signals,
-        actionable_cap=max(0, 3 - min(phase_actionable_count, 3)),
         ledger_pointer=frontier_pointer,
+        selected_actionable={index - offset for index in selected if index >= offset},
+        omitted_count=omitted,
     )
     # REQ-047 (STORY-677): loss-hacking advisories — advisory only (DEC-088),
     # rendered after the capped signal block so they are never omitted.
     _render_integrity(root, comp, loop)
-    return _status_exit_code(signals + loop_signals)
+    return _status_exit_code(combined)
 
 
 def _running_loops_for_comp(
@@ -1709,6 +1760,57 @@ def _render_loop_summary(root: Path, comp: art_lib.Artifact, loop_id: str) -> No
     print()
 
 
+def _apply_inherited_agenda(
+    existing: art_lib.Artifact | None,
+    fields: dict,
+    inherited: list[dict],
+    source: art_lib.Artifact,
+) -> None:
+    """Attach ``--inherit`` seeds without silently clobbering an existing agenda.
+
+    The agenda is authored work, not a derived counter: ``plan --inherit`` into
+    an existing draft LOOP (auto-selected singleton) merges new directions
+    (deduped by normalized direction) after the entries already there. A source
+    with no durable memory yields no seeds and must never wipe the target's
+    agenda; every non-trivial outcome prints a warning instead of staying
+    silent.
+    """
+    if existing is None:
+        if inherited:
+            fields["research_agenda"] = inherited
+        return
+    raw = existing.frontmatter.get("research_agenda") or []
+    current = (
+        [entry for entry in raw if isinstance(entry, dict)]
+        if isinstance(raw, list) else []
+    )
+    if not current:
+        if inherited:
+            fields["research_agenda"] = inherited
+        else:
+            print(f"{YELLOW}⚠ --inherit {source.id} produced no agenda seeds; "
+                  f"{existing.id} has no existing agenda to preserve.{NC}")
+        return
+    known = {_normalised(str(entry.get("direction", ""))) for entry in current}
+    added = [
+        seed for seed in inherited
+        if _normalised(str(seed.get("direction", ""))) not in known
+    ]
+    if added:
+        fields["research_agenda"] = current + added
+        print(f"{YELLOW}⚠ {existing.id} already has {len(current)} agenda "
+              f"direction(s); merged {len(added)} inherited seed(s) after them "
+              f"instead of replacing the agenda.{NC}")
+    elif inherited:
+        print(f"{YELLOW}⚠ {existing.id} already has {len(current)} agenda "
+              f"direction(s); inherited directions are already present — "
+              f"existing agenda kept.{NC}")
+    else:
+        print(f"{YELLOW}⚠ --inherit {source.id} produced no agenda seeds; "
+              f"{existing.id}'s existing {len(current)}-direction agenda was "
+              f"kept (not clobbered).{NC}")
+
+
 def _run_plan(root: Path, args: dict) -> int:
     """plan = create/update a LOOP (AC1) when mode/budget given, else checklist."""
     inherit_id = args.get("inherit_loop") or args.get("inherit")
@@ -1794,8 +1896,10 @@ def _run_plan(root: Path, args: dict) -> int:
         fields["budget"] = int(budget)
     if knowledge_input is not None:
         fields["knowledge_input"] = knowledge_input
-    if inherited_agenda is not None:
-        fields["research_agenda"] = inherited_agenda
+    # The inherited agenda is staged after `existing` is known: links merge
+    # never-replace, and the agenda now follows the same rule.
+    if inherited_agenda is not None and inherit_source is not None:
+        _apply_inherited_agenda(existing, fields, inherited_agenda, inherit_source)
 
     if existing:
         updates = dict(fields)

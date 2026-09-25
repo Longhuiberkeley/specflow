@@ -12,6 +12,20 @@ from specflow.lib.display import RED, GREEN, YELLOW, NC
 
 _SENTINEL_NAMES = {"lean_assessment"}
 
+# Frontmatter keys owned by their producer commands, never writable through
+# the generic frontmatter editor even though the type schema declares them.
+# `evaluator_fingerprint` is the frozen setup identity of a COMP and the
+# per-EXPT harness stamp (REQ-047/STORY-676): a hand-set value would launder
+# evaluator drift (the same threat model `autoresearch log` enforces). The
+# schema lists it under optional_fields, so parse_set_fields alone accepts it.
+_RESERVED_SET_KEYS = {
+    "evaluator_fingerprint": (
+        "stamped by the harness at COMP setup and by "
+        "'specflow autoresearch log' for EXPTs — edit the evaluator or create "
+        "a successor COMP instead"
+    ),
+}
+
 # Artifact-ID-shaped tokens (e.g. ARCH-007, DEF-3). A target gets a "not
 # found" warning ONLY when it both matches this shape AND its prefix is a
 # registered artifact-type prefix — standards clauses (ISO-14971, ISO26262-CL-3)
@@ -65,6 +79,15 @@ def run(root: Path, args: dict) -> int:
         ))
     except ValueError as exc:
         print(f"{RED}✗ {exc}{NC}")
+        return 1
+
+    # Reserved-key guard: the schema declares these, but only their producer
+    # commands may write them. Reject before any transition/write work so
+    # `--set evaluator_fingerprint=...` can never launder drift in one command.
+    reserved_hits = [key for key in updates if key in _RESERVED_SET_KEYS]
+    if reserved_hits:
+        for key in reserved_hits:
+            print(f"{RED}✗ --set {key} is reserved ({_RESERVED_SET_KEYS[key]}).{NC}")
         return 1
 
     # Validate a --set links= payload the same way as an explicit --links flag,

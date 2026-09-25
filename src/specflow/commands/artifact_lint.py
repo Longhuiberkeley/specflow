@@ -7,7 +7,7 @@ import hashlib
 import re
 import subprocess
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import yaml
@@ -1536,20 +1536,39 @@ def _check_bp_application(
     advisory_practices: dict[str, art_lib.Artifact] = {}
     pair_count = 0
 
-    def _mtime_ns(artifact: art_lib.Artifact) -> int:
-        try:
-            return artifact.path.stat().st_mtime_ns
-        except OSError:
-            return 0
+    # Backfill grace is keyed on the git-tracked frontmatter date, never on
+    # filesystem mtime: git does not preserve mtimes, so a fresh clone stamps
+    # every file with checkout time in tree order — identical committed content
+    # would yield different lint results per environment (and a later edit to
+    # a BP would retroactively exempt every older-mtime artifact). DEC-089's
+    # grace must be deterministic across clones and CI.
+    def _lifecycle_date(artifact: art_lib.Artifact) -> date | None:
+        for field in ("modified", "created"):
+            raw = artifact.frontmatter.get(field)
+            if not isinstance(raw, str) or not raw.strip():
+                continue
+            try:
+                return date.fromisoformat(raw.strip()[:10])
+            except ValueError:
+                continue
+        return None
 
     for target in targets:
         in_scope = practices_lib.load_active_best_practices(root, target)
+        target_date = _lifecycle_date(target)
         for bp in in_scope:
             if not bp.frontmatter.get("provenance") or bp.id in dropped:
                 continue
             # Backfill grace: do not expose a legacy artifact to a practice
-            # approved/updated after that artifact was last written.
-            if _mtime_ns(target) <= _mtime_ns(bp):
+            # approved/updated after that artifact was last written. When
+            # either side has no parseable frontmatter date the pair is
+            # checked (conservative: structural accounting beats a silent skip).
+            bp_date = _lifecycle_date(bp)
+            if (
+                target_date is not None
+                and bp_date is not None
+                and target_date <= bp_date
+            ):
                 continue
 
             pair_count += 1
