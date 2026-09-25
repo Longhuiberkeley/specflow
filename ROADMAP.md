@@ -4,6 +4,14 @@ SpecFlow ships incrementally. This document tracks what shipped in each release,
 
 For the original implementation plan (phase breakdown, dependency graph — now historical, superseded by the release history below), see [docs/.archive/plan.md](docs/.archive/plan.md).
 
+## v1.16.0
+
+- **Practice spine (REQ-044, STORY-666–668, ARCH-035/DDD-032, DEC-085/089)** — BP anatomy + provenance/lifecycle with a transitional status map; `specflow practices seed|validate|migrate` (migrate repairs the legacy map through every fold-in path, no `--force`); bundled seeds split out with stable ids; applicability-first BP loading; `handbook generate` deprecated alias.
+- **Guidance binding (REQ-045, STORY-669–671, ARCH-036, DEC-086)** — `guided_by` on REQ/ARCH/STORY; single evidence-based warning-first `bp-application` lint check (graph facts only, migration-stamp skip, frontmatter-date backfill grace, tailoring needs an approved DEC); `brief` bound/unbound practice accounting.
+- **Autoresearch steering (REQ-046, STORY-672–675, ARCH-037/DDD-031, DEC-088)** — `autoresearch frontier` ledger (depth/width/stagnation/move menu, `--json`); EDA lenses replace dangling checks, applicability-aware; error-analysis protocol + `analysis` iterations exempt from evidence-free windows; `plan --inherit` (merge, never clobber); condensation brief required at LOOP completion; status top-3 global ranking; adjacent-field landscape lens.
+- **Research integrity guards (REQ-047, STORY-676–677, ARCH-038)** — frozen `evaluator_fingerprint` + one-shot drift routing (reserved against `update --set`); noise-denominated jump advisories; `guard_metrics` regression warnings; `external_score` relation/demotion/offline fallback; quant metric bundles with fixed horizon.
+- **Program governance** — two independent ultracode review rounds over the whole program (blocker/major findings fixed pre-tag); STORY-642–645 (v1.15.0-era scope) deprecated per owner decision; REQ-048–051 parked as **deprecated** (terminal status) pending next-cycle decomposition of increments 5–8 — circumstance profile, `/specflow-practices` skill, knowledge flywheel, standards alignment — to be re-derived as fresh draft REQs at the next planning pass, ratification preserved in DEC-085–088.
+
 ## v1.15.0
 
 - **Frontier-model context overhaul (REQ-042, DEC-082/083, STORY-656–664)** — per the 2026-09 ultracode context audit (SPIKE-002): lean lifecycle skill routers + trimmed consult-when references (~6,900 lines of skill/protocol prose deleted, template and `.claude` mirrors byte-identical); one-line narrow skill-description triggers; `agent-context.md` + pack snippets within the ~500-token always-on budget; `brief` becomes a consent vehicle (hoisted IDs, exact draft IDs + impact for `approve --type`, DEC surfacing, conditional chrome); `handbook` index-only stdout; `hook` routes failures to `artifact-lint` subcommands instead of teaching `--no-verify`.
@@ -43,7 +51,7 @@ Operator directive (2026-08-30): **stop before per-harness customization; make t
 - **Denylist gate scope extension** — cover `.claude/` (the live skill mirror — highest-risk reintroduction surface), `.github/`, root `AGENTS.md`; `.specflow/` stays consciously excluded (generated state, redacted at write time since STORY-649).
 - **Audit the remaining 8 domain checklists against DEC-078** (thin, mapping-not-methodology).
 - **lint schema-bypass cleanup** — move the hardcoded `condensation_brief_<N>` regex (lint.py) to schema-level pattern support, killing the last code-side special case.
-- **STORY-642** — unify `compute_chain_depth` with the typed edge matrix (v1.14.3's role-target matrix is the declared cousin).
+- ~~**STORY-642** — unify `compute_chain_depth` with the typed edge matrix~~ *(deprecated at v1.16.0 per owner decision 2026-09-26; the guided_by chain-depth work shipped there covers the adjacent surface — re-derive via a new REQ if the unification is still wanted)*.
 - **`trace.py` renderers** — COMP lineage + LOOP escalation-source sections (make existing edges visible where users look).
 - **LOW pack defects** — float coercion guards (:624/:728/:950), `--show-family` doc drift, ops SKILL.md:162 edge form, metric_value-when-kept refusal.
 - **Review-finding burn-down** — 113 open / 7 stale review findings; docs-staleness sweep (only 2 docs cite artifacts).
@@ -51,10 +59,10 @@ Operator directive (2026-08-30): **stop before per-harness customization; make t
 
 ### Methodology (after robustness)
 - **Rolling-evaluation / split-R&D** — *shipped ahead of schedule in v1.14.7* (`references/rolling-evaluation.md` + DEC-079 churn rule + `window_end` registration). Remaining v1.15.0 follow-ups: surface `window_end` elapsedness in more consumption paths; split-R&D adoption feedback from live competitions.
-- **STORY-644** — ops pack methodology handbook (parity with autoresearch's BP-01..ML-22 surface), documenting the two ops↔autoresearch escalation doors.
+- ~~**STORY-644** — ops pack methodology handbook~~ *(deprecated at v1.16.0 per owner decision 2026-09-26; re-derive via a new REQ when prioritized)*.
 
 ### Deferred — per-harness customization (explicitly out until the offering is robust)
-- **STORY-643** — OpenCode native commands/tools. Deferred per owner 2026-08-27, re-affirmed 2026-08-30.
+- ~~**STORY-643** — OpenCode native commands/tools~~ *(deprecated at v1.16.0 per owner decision 2026-09-26, extending the owner deferral of 2026-08-27; re-derive via a new REQ when revived)*.
 - **Orchestration pack** — conductor + host bindings. The workflows-as-data design (user-definable YAML stage contracts; the operator's plan→review→implement→review→fix flow as reference recipe) stays recorded here and in DEC-078's session notes; implementation waits until the robustness block lands. No new artifact types; link-role additions to be stated when revived.
 - **Frozen extras** — `role_targets.py` dead `competition.operates_on` row; `domain_constants.py` sync all five domains.
 

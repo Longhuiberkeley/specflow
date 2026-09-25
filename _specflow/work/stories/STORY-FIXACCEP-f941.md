@@ -28,6 +28,7 @@ output_files:
 - tests/test_v132_ergonomics.py
 - CHANGELOG.md
 modified: '2026-08-04'
+version: 2
 ---
 
 # Fix Acceptance Criteria mutation boundaries (v1.13.3)

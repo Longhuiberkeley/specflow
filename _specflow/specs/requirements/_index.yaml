@@ -463,14 +463,14 @@ artifacts:
   REQ-048:
     id: REQ-048
     title: Circumstance- and lifecycle-moment-driven guidance surfacing
-    status: approved
+    status: deprecated
     tags: []
     fingerprint: sha256:beaad285a691
     children: []
   REQ-049:
     id: REQ-049
     title: Self-generation of fit-for-circumstances practices when no standard exists
-    status: approved
+    status: deprecated
     tags: []
     fingerprint: sha256:56d5836f74e3
     children: []
@@ -478,14 +478,14 @@ artifacts:
     id: REQ-050
     title: 'Research knowledge flywheel: deterministic promotion and LOOP consumption
       records'
-    status: approved
+    status: deprecated
     tags: []
     fingerprint: sha256:9a94d3ae1315
     children: []
   REQ-051:
     id: REQ-051
     title: Load-bearing alignment to imported standards
-    status: approved
+    status: deprecated
     tags: []
     fingerprint: sha256:7b2e39178e76
     children: []

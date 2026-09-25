@@ -193,7 +193,7 @@ STORY-070:
   src/specflow/packs/autoresearch/schemas/loop.yaml: 665fc95e877500bd
 STORY-082:
   AGENTS.md: 868e26096fb9c118
-  src/specflow/__init__.py: d7e65820f6cfbfee
+  src/specflow/__init__.py: 8d43940af0e2905c
   src/specflow/commands/artifact_review.py: ad972dac86edfe8b
   src/specflow/commands/brief.py: b5372fe2a9db41e6
   src/specflow/lib/checklists.py: 2e44bdfc1c9e4cc6
@@ -347,7 +347,7 @@ STORY-ADDMULTI-0f54:
 STORY-ARTIFACT-a39a:
   tests/test_lint_quality_gates.py: e265efa68913bac8
 STORY-FIXACCEP-f941:
-  CHANGELOG.md: 9e15f6a4f09a69cf
+  CHANGELOG.md: fdef766b68bcb051
   src/specflow/lib/lint.py: 8cab715455a93ceb
   tests/test_v132_ergonomics.py: 32cc151a32036af1
 STORY-KEEPRELE-37de:
@@ -365,7 +365,7 @@ STORY-RBACCHEC-e356:
 STORY-RTMCOMMA-1d6f:
   src/specflow/commands/rtm.py: 8cf5379414d7c677
 STORY-SHIPV1-cbb2:
-  CHANGELOG.md: 9e15f6a4f09a69cf
+  CHANGELOG.md: fdef766b68bcb051
   docs/cli-reference.md: 3a2bf3fcdc7bd402
   src/specflow/cli.py: fd930f7c17671d06
   src/specflow/commands/artifact_lint.py: 2fe43cc5d0f9c613

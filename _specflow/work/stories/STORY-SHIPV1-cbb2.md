@@ -37,6 +37,7 @@ output_files:
 - docs/cli-reference.md
 - CHANGELOG.md
 modified: '2026-08-04'
+version: 1
 ---
 
 # Ship v1.13.2 transcript-mined CLI ergonomics
