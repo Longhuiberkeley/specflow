@@ -312,7 +312,7 @@ artifacts:
   ARCH-036:
     id: ARCH-036
     title: 'Guidance application: guided_by binding, evidence-based enforcement, tailoring'
-    status: approved
+    status: implemented
     tags: []
     fingerprint: sha256:1b4df2c769dd
     children: []

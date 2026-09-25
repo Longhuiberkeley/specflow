@@ -14,5 +14,5 @@ allowed_status:
   # then this artifact's status moves to superseded (not from draft; use cancelled instead).
   superseded: [approved, implemented, verified]
   cancelled: [draft, approved, implemented, verified]
-allowed_link_roles: [refined_by, verified_by, derives_from, complies_with, validated_by, supersedes]
+allowed_link_roles: [refined_by, verified_by, derives_from, complies_with, validated_by, supersedes, guided_by]
 directory: _specflow/specs/requirements/

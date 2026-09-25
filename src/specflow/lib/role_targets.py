@@ -52,6 +52,9 @@ ROLE_TARGET_MATRIX: dict[str, dict[str, frozenset[str]]] = {
         # never warned; artifact-shaped targets fall through to the row.
         "complies_with": frozenset(_SPEC_TYPES),
         "supersedes": frozenset(_SPEC_TYPES | {"best-practice", "finding"}),
+        # REQ guidance is the BP-application spine (DEC-086); decisions remain
+        # valid guidance targets for consistency with ARCH/DDD.
+        "guided_by": frozenset({"decision", "best-practice"}),
     },
     "architecture": {
         # ARCH→ARCH refinement is a real decomposition shape in dogfood
@@ -61,7 +64,7 @@ ROLE_TARGET_MATRIX: dict[str, dict[str, frozenset[str]]] = {
         "verified_by": frozenset(_TEST_TYPES),
         "complies_with": frozenset(_SPEC_TYPES),
         "supersedes": frozenset(_SPEC_TYPES | {"best-practice", "finding"}),
-        # guided_by on a spec points at a decision that shaped it.
+        # guided_by on a spec points at a decision or best-practice that shaped it.
         "guided_by": frozenset({"decision", "best-practice"}),
     },
     "detailed-design": {

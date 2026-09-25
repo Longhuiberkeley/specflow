@@ -1292,9 +1292,9 @@ artifacts:
   STORY-669:
     id: STORY-669
     title: guided_by link role for REQ, ARCH, and STORY (REQ-045)
-    status: approved
+    status: implemented
     tags: []
-    fingerprint: sha256:8a0a1603fb02
+    fingerprint: sha256:2a725a5f700b
     children: []
   STORY-670:
     id: STORY-670

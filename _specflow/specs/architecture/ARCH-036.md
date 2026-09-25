@@ -2,7 +2,7 @@
 id: ARCH-036
 title: 'Guidance application: guided_by binding, evidence-based enforcement, tailoring'
 type: architecture
-status: approved
+status: implemented
 suspect: false
 links:
 - target: REQ-045

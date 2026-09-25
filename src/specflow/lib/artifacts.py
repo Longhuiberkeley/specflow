@@ -787,7 +787,8 @@ def is_upstream_edge(
 
     - ``derives_from``/``complies_with`` are always upstream.
     - ``implements``/``guided_by``/``specified_by`` are upstream from work-ish
-      sources (story, ops run).
+      sources (story, ops run); ``guided_by → best-practice`` is upstream from
+      lifecycle specs and stories as well.
     - ``verified_by`` is upstream only from a test (test → story/spec); a
       spec/story's own ``verified_by → UT/IT/QT`` edge points at its verifier
       and reads downstream.
@@ -800,6 +801,12 @@ def is_upstream_edge(
     - Research parent roles are upstream for their source types.
     """
     if role in ("derives_from", "complies_with"):
+        return True
+    if (
+        role == "guided_by"
+        and target_type == "best-practice"
+        and source_type in {"requirement", "architecture", "story"}
+    ):
         return True
     if role == "refined_by":
         if (
@@ -939,8 +946,10 @@ def trace_chain(
 # Roles that constitute a structural trace edge for chain-depth purposes.
 # Informational/annotation roles (refers_to, exposed_by, fails_to_meet,
 # supersedes, related_to, ...) must not inflate the V-model chain depth.
+# guided_by is intentionally depth-neutral: it records contextual guidance, not
+# an implementation/verification hop, and must not inflate legacy trace depth.
 _CHAIN_DEPTH_ROLES = frozenset({
-    "derives_from", "complies_with", "refined_by", "implements", "guided_by",
+    "derives_from", "complies_with", "refined_by", "implements",
     "specified_by", "verified_by", "executes",
     "belongs_to", "operates_on", "condenses",
 })
