@@ -803,4 +803,11 @@ artifacts:
     tags: []
     fingerprint: sha256:cd2ebadd80c8
     children: []
-next_id: 88
+  UT-088:
+    id: UT-088
+    title: Autoresearch evidence-sensitive reassessment unit pins (STORY-665)
+    status: draft
+    tags: []
+    fingerprint: sha256:4f79bd037e28
+    children: []
+next_id: 89

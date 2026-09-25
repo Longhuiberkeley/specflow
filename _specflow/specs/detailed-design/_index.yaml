@@ -251,4 +251,12 @@ artifacts:
     - detailed-design
     fingerprint: sha256:303166b07fa8
     children: []
-next_id: 30
+  DDD-030:
+    id: DDD-030
+    title: 'Autoresearch reassessment signal and evidence/priority fields: detailed
+      design'
+    status: approved
+    tags: []
+    fingerprint: sha256:d7a18f523ae7
+    children: []
+next_id: 31

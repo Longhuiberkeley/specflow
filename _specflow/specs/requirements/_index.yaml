@@ -422,4 +422,71 @@ artifacts:
     - accounting-not-policing
     fingerprint: sha256:7aa453452d91
     children: []
-next_id: 43
+  REQ-043:
+    id: REQ-043
+    title: 'Autoresearch: evidence-sensitive reassessment, evidence/priority separation,
+      decomposition as hypothesis'
+    status: implemented
+    tags:
+    - autoresearch
+    - v1.16.0
+    fingerprint: sha256:45382c5d1394
+    children: []
+  REQ-044:
+    id: REQ-044
+    title: Uniform best-practice anatomy with provenance and deterministic validation
+    status: approved
+    tags: []
+    fingerprint: sha256:9cfd00ceb075
+    children: []
+  REQ-045:
+    id: REQ-045
+    title: Auditable application of practices to REQ, ARCH, and STORY artifacts
+    status: approved
+    tags: []
+    fingerprint: sha256:3b43380ca5fd
+    children: []
+  REQ-046:
+    id: REQ-046
+    title: Measured research steering and first-class analysis in autoresearch
+    status: approved
+    tags: []
+    fingerprint: sha256:5996cf0e19fb
+    children: []
+  REQ-047:
+    id: REQ-047
+    title: Deterministic research integrity guards against metric gaming
+    status: approved
+    tags: []
+    fingerprint: sha256:14cee12d7279
+    children: []
+  REQ-048:
+    id: REQ-048
+    title: Circumstance- and lifecycle-moment-driven guidance surfacing
+    status: approved
+    tags: []
+    fingerprint: sha256:beaad285a691
+    children: []
+  REQ-049:
+    id: REQ-049
+    title: Self-generation of fit-for-circumstances practices when no standard exists
+    status: approved
+    tags: []
+    fingerprint: sha256:56d5836f74e3
+    children: []
+  REQ-050:
+    id: REQ-050
+    title: 'Research knowledge flywheel: deterministic promotion and LOOP consumption
+      records'
+    status: approved
+    tags: []
+    fingerprint: sha256:9a94d3ae1315
+    children: []
+  REQ-051:
+    id: REQ-051
+    title: Load-bearing alignment to imported standards
+    status: approved
+    tags: []
+    fingerprint: sha256:7b2e39178e76
+    children: []
+next_id: 52

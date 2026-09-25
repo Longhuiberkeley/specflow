@@ -295,4 +295,11 @@ artifacts:
     - accounting-not-policing
     fingerprint: sha256:0c794baa1eaa
     children: []
-next_id: 34
+  ARCH-034:
+    id: ARCH-034
+    title: Autoresearch evidence/priority model and reassessment semantics
+    status: approved
+    tags: []
+    fingerprint: sha256:8c18da8a2938
+    children: []
+next_id: 35

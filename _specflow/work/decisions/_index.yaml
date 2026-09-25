@@ -839,4 +839,41 @@ artifacts:
     - data-integrity
     fingerprint: sha256:aebb8deb1526
     children: []
-next_id: 85
+  DEC-085:
+    id: DEC-085
+    title: 'Practice spine: one BP anatomy, provenance, and a collapsed lifecycle'
+    status: approved
+    tags: []
+    fingerprint: sha256:eddc3295e9e4
+    children: []
+  DEC-086:
+    id: DEC-086
+    title: BP guidance binds lifecycle artifacts via guided_by; enforcement is graph-facts-only
+      and warning-first
+    status: approved
+    tags: []
+    fingerprint: sha256:a779567e21a1
+    children: []
+  DEC-087:
+    id: DEC-087
+    title: Process knowledge lives in best-practice artifacts; the research flywheel
+      closes by deterministic promotion
+    status: approved
+    tags: []
+    fingerprint: sha256:2312fd89b708
+    children: []
+  DEC-088:
+    id: DEC-088
+    title: Measurement advises; deterministic gates and humans decide
+    status: approved
+    tags: []
+    fingerprint: sha256:a460de94bfee
+    children: []
+  DEC-089:
+    id: DEC-089
+    title: 'Risk: two atomicity couplings gate the practice-spine release'
+    status: draft
+    tags: []
+    fingerprint: sha256:d5f16a1e2b54
+    children: []
+next_id: 90

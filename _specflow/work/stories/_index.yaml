@@ -1258,4 +1258,14 @@ artifacts:
     tags: []
     fingerprint: sha256:a557ed85a54a
     children: []
-next_id: 665
+  STORY-665:
+    id: STORY-665
+    title: 'Autoresearch evidence-sensitive reassessment (REQ-043): CLI, schema, skill
+      references'
+    status: implemented
+    tags:
+    - autoresearch
+    - v1.16.0
+    fingerprint: sha256:e399616ba8ef
+    children: []
+next_id: 666

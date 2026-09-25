@@ -440,4 +440,11 @@ artifacts:
     tags: []
     fingerprint: sha256:5d631002793a
     children: []
-next_id: 54
+  IT-054:
+    id: IT-054
+    title: Autoresearch pack protocol and schema integration (STORY-665)
+    status: draft
+    tags: []
+    fingerprint: sha256:0d4aef723bc6
+    children: []
+next_id: 55

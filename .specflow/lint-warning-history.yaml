@@ -8,7 +8,8 @@ backfilled-links: {}
 chain-report: {}
 compliance-evidence: {}
 conflicts: {}
-coverage: {}
+coverage:
+  eb10e5b3f18a0103: 1
 dec-risk-profile: {}
 fingerprints: {}
 ids: {}
