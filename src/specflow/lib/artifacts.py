@@ -1330,7 +1330,9 @@ def update_artifact(
                 # gate can never be satisfied and the artifact would be
                 # uncorrectable via CLI. Allow correction to any legal status
                 # in that case; the gate is enforced normally otherwise.
-                if current not in allowed_from and current in allowed_status:
+                from specflow.lib.practices import status_is_valid
+
+                if current not in allowed_from and status_is_valid(schema, current):
                     return {
                         "ok": False,
                         "error": f"Cannot transition '{artifact_id}' from '{current}' to '{new_status}'. Allowed from: {', '.join(allowed_from) if allowed_from else '(none)'}"

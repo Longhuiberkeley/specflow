@@ -266,6 +266,20 @@ def _refresh_shared(
                            "replace with shipped defaults")
             summary.append(("schemas", detail))
 
+        if not dry_run:
+            from specflow.lib.practices import migrate_practices
+
+            migration = migrate_practices(root)
+            changed = len(migration.get("stamped", []))
+            warnings = len(migration.get("warnings", []))
+            errors = len(migration.get("errors", []))
+            detail_parts = [f"{changed} BP provenance value(s) stamped"]
+            if warnings:
+                detail_parts.append(f"{warnings} warning(s)")
+            if errors:
+                detail_parts.append(f"{errors} error(s)")
+            summary.append(("practices", "; ".join(detail_parts)))
+
     # ── Checklists ──────────────────────────────────────────────
     if do_checklists:
         if dry_run:

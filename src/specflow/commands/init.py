@@ -329,6 +329,20 @@ def run(root: Path, args: dict) -> int:
 
     _render_codeowners(root)
 
+    # STORY-668: provenance stamping follows the schema and pack assets landed
+    # during init/re-init, and is safe to repeat on every invocation.
+    from specflow.lib.practices import migrate_practices
+    migration = migrate_practices(root)
+    if migration.get("stamped"):
+        print(
+            f"  + Migrated provenance on {len(migration['stamped'])} "
+            "best-practice artifact(s)"
+        )
+    for warning in migration.get("warnings", []):
+        print(f"  ! Practice migration: {warning}")
+    for error in migration.get("errors", []):
+        print(f"  ! Practice migration failed: {error}")
+
     want_ci = not args.get("no_ci", False)
     if want_ci:
         _install_ci_workflow(root)

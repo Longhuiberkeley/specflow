@@ -21,21 +21,10 @@ def load_active_best_practices(
     root: Path,
     artifact: art_lib.Artifact,
 ) -> list[art_lib.Artifact]:
-    """Return active/approved BPs matching by tag or ``applies_to`` link."""
-    bp_dir = root / "_specflow" / "specs" / "best-practices"
-    if not bp_dir.exists():
-        return []
+    """Return approved BPs matched applicability-first, then by legacy tags."""
+    from specflow.lib.practices import load_active_best_practices as load
 
-    artifact_tags = set(artifact.tags)
-    relevant_bps: list[art_lib.Artifact] = []
-    for bp_file in sorted(bp_dir.glob("*.md")):
-        bp = art_lib.parse_artifact(bp_file)
-        if not bp or bp.status not in ("active", "approved"):
-            continue
-        applies_to_ids = {link.target for link in bp.links if link.role == "applies_to"}
-        if artifact.id in applies_to_ids or artifact_tags & set(bp.tags):
-            relevant_bps.append(bp)
-    return relevant_bps
+    return load(root, artifact)
 
 
 def load_active_bp_context(root: Path, artifact: art_lib.Artifact) -> str:

@@ -95,6 +95,12 @@ def cmd_handbook(args: argparse.Namespace) -> int:
     return handbook_cmd.run(root, vars(args))
 
 
+def cmd_practices(args: argparse.Namespace) -> int:
+    from specflow.commands import practices as practices_cmd
+    root = _find_project_root()
+    return practices_cmd.run(root, vars(args))
+
+
 def cmd_phase_status(args: argparse.Namespace) -> int:
     from specflow.commands import phase_status as phase_status_cmd
     root = _find_project_root()
@@ -395,10 +401,10 @@ def _add_standards_parser(subparsers):
 def _add_handbook_parser(subparsers):
     p = subparsers.add_parser(
         "handbook",
-        help="Generate bundled best-practice guidance (deterministic, no external LLM)",
+        help="Deprecated alias for `practices seed` (deterministic bundled guidance)",
     )
     sub = p.add_subparsers(dest="handbook_subcommand")
-    gen_p = sub.add_parser("generate", help="Surface or create bundled best-practice BP artifacts")
+    gen_p = sub.add_parser("generate", help="Deprecated alias for `practices seed`")
     gen_p.add_argument(
         "--create", action="store_true",
         help="Create BP artifacts in _specflow/specs/best-practices/ (default: print index to stdout)",
@@ -406,6 +412,29 @@ def _add_handbook_parser(subparsers):
     gen_p.add_argument(
         "--verbose", action="store_true",
         help="Print full practice bodies (default: domain, count, title+tag index only)",
+    )
+
+
+def _add_practices_parser(subparsers):
+    p = subparsers.add_parser(
+        "practices",
+        help="Seed, validate, or migrate best-practice artifacts",
+    )
+    sub = p.add_subparsers(dest="practices_subcommand")
+    seed_p = sub.add_parser("seed", help="List or create bundled best practices")
+    seed_p.add_argument(
+        "--create", action="store_true",
+        help="Create draft BP artifacts from the bundled seed catalogue",
+    )
+    seed_p.add_argument(
+        "--verbose", action="store_true",
+        help="Print full practice bodies instead of the title index",
+    )
+    sub.add_parser("validate", help="Validate BP anatomy, metadata, and supersession lineage")
+    migrate_p = sub.add_parser("migrate", help="Stamp provenance on legacy BP artifacts")
+    migrate_p.add_argument(
+        "--dry-run", action="store_true", dest="dry_run",
+        help="Print the provenance stamps that would be written without changing files",
     )
 
 
@@ -830,7 +859,7 @@ def _add_autoresearch_parser(subparsers):
 # so `specflow --help` actually shows the phase headers, not just the source.
 _HELP_EPILOG = """\
 commands by workflow phase:
-  Discover:   init, refresh, status, brief, domain, patterns, handbook, standards, list, schema, transitions
+  Discover:   init, refresh, status, brief, domain, patterns, practices, handbook, standards, list, schema, transitions
   Plan:       create, update, approve
   Execute:    go, done, phase-status, phase-set, cascade-status, reconcile, generate-tests, verify
   Review:     artifact-lint, checklist-run, artifact-review, project-audit, trace, rtm, risk-tier
@@ -1081,6 +1110,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_domain_parser(subparsers)
     _add_patterns_parser(subparsers)
     _add_handbook_parser(subparsers)
+    _add_practices_parser(subparsers)
 
     # ── Plan ────────────────────────────────────────────────────
     _add_create_parser(subparsers)
@@ -1163,6 +1193,7 @@ def main(argv: list[str] | None = None) -> int:
         "domain": cmd_domain,
         "patterns": cmd_patterns,
         "handbook": cmd_handbook,
+        "practices": cmd_practices,
         "artifact-lint": cmd_artifact_lint,
         "create": cmd_create,
         "update": cmd_update,

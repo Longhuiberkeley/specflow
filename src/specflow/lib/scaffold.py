@@ -44,6 +44,23 @@ INTERNAL_DIRS = [
 _INDEX_STUB = {"artifacts": {}, "next_id": 1}
 
 
+def _migrate_practice_provenance(root: Path) -> dict[str, Any]:
+    """Apply the idempotent BP provenance migration after schema/pack writes."""
+    from specflow.lib.practices import migrate_practices
+
+    result = migrate_practices(root)
+    if result.get("stamped"):
+        print(
+            f"  + Migrated provenance on {len(result['stamped'])} "
+            "best-practice artifact(s)"
+        )
+    for warning in result.get("warnings", []):
+        print(f"  ! Practice migration: {warning}")
+    for error in result.get("errors", []):
+        print(f"  ! Practice migration failed: {error}")
+    return result
+
+
 def create_spec_dirs(root: Path) -> None:
     """Create _specflow/ directory structure with _index.yaml stubs."""
     for rel in SPEC_DIRS:
@@ -176,6 +193,7 @@ def refresh_pack(
     manifest = preview["manifest"]
     for platform_code in platform_codes:
         inject_pack_context(root, pack_name, manifest.get("context_snippet", ""), platform_code)
+    _migrate_practice_provenance(root)
     return {"ok": True, "written": written, "preserved": preserved}
 
 
@@ -283,6 +301,8 @@ def apply_pack(
                 if not dst.exists():
                     shutil.copytree(str(src), str(dst))
                     skills_added.append(skill_name)
+
+    _migrate_practice_provenance(root)
 
     return {
         "ok": True,

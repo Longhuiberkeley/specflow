@@ -609,17 +609,55 @@ def _domain_predicate(domain: str) -> Callable[[Any], bool]:
     return matches
 
 
+_SEED_ID_BY_TITLE = {
+    "Separation of Concerns": "SEED-GENERIC-01",
+    "Interface Contracts First": "SEED-GENERIC-02",
+    "Testability by Design": "SEED-GENERIC-03",
+    "Error Handling at Boundaries": "SEED-GENERIC-04",
+    "Observability Built-in": "SEED-GENERIC-05",
+    "Vertical Slice Stories": "SEED-GENERIC-06",
+    "Input Validation at Every Boundary": "SEED-WEB-APP-01",
+    "CSRF Protection on State-Changing Endpoints": "SEED-WEB-APP-02",
+    "Session Expiration and Refresh": "SEED-WEB-APP-03",
+    "Consistent Exit Codes": "SEED-CLI-TOOL-01",
+    "Configuration Priority Layering": "SEED-CLI-TOOL-02",
+    "Machine-Readable Output Mode": "SEED-CLI-TOOL-03",
+    "API Versioning from Day One": "SEED-API-SERVICE-01",
+    "Rate Limiting and Quotas": "SEED-API-SERVICE-02",
+    "Structured Error Responses": "SEED-API-SERVICE-03",
+    "Idempotent Processing": "SEED-DATA-PIPELINE-01",
+    "Checkpointing and Replay": "SEED-DATA-PIPELINE-02",
+    "Schema Validation at Ingest": "SEED-DATA-PIPELINE-03",
+    "Memory Safety": "SEED-EMBEDDED-01",
+    "Watchdog Timer": "SEED-EMBEDDED-02",
+    "Deterministic Timing": "SEED-EMBEDDED-03",
+    "Data Leakage Prevention": "SEED-ML-01",
+    "Reproducible Training": "SEED-ML-02",
+    "Metric Integrity": "SEED-ML-03",
+    "No-Lookahead Guarantee": "SEED-QUANT-01",
+    "Transaction Cost Modeling": "SEED-QUANT-02",
+    "Risk Limits and Kill-Switch": "SEED-QUANT-03",
+    "Semantic Versioning": "SEED-LIBRARY-01",
+    "Public API Surface Documentation": "SEED-LIBRARY-02",
+    "Backward Compatibility Tests": "SEED-LIBRARY-03",
+}
+
+
 def _assign_seed_metadata() -> None:
-    """Assign IDs by explicit catalogue order and attach executable predicates."""
-    for index, practice in enumerate(GENERIC_PRACTICES, 1):
-        practice.seed_id = f"SEED-GENERIC-{index:02d}"
-        practice.applicability = _applies_to_all
+    """Assign fixed IDs from the catalogue map and attach predicates."""
+    entries = [*GENERIC_PRACTICES]
     for domain, practices in DOMAIN_PRACTICES.items():
-        domain_id = domain.upper()
+        entries.extend(practices)
         predicate = _domain_predicate(domain)
-        for index, practice in enumerate(practices, 1):
-            practice.seed_id = f"SEED-{domain_id}-{index:02d}"
+        for practice in practices:
             practice.applicability = predicate
+    for practice in GENERIC_PRACTICES:
+        practice.applicability = _applies_to_all
+    for practice in entries:
+        try:
+            practice.seed_id = _SEED_ID_BY_TITLE[practice.title]
+        except KeyError as exc:
+            raise ValueError(f"Bundled practice has no stable seed ID: {practice.title}") from exc
 
 
 _assign_seed_metadata()

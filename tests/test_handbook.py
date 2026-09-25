@@ -293,6 +293,10 @@ class TestHandbookCommand:
         assert "## Practice" in body
         assert "## Rationale" in body
         assert "## Verification" in body
+        frontmatter = yaml.safe_load(content.split("---", 2)[1])
+        assert frontmatter["provenance"] == "bundled"
+        assert frontmatter["source"].startswith("SEED-GENERIC-")
+        assert frontmatter["applicability"] == {"always": True}
 
     def test_generate_create_artifact_status_draft(self, project_root: Path):
         """STORY-640: generated BPs are born draft — approval is a human gate,
