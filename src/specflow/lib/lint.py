@@ -146,7 +146,7 @@ def validate_artifact_schema(
     # Status allowed values
     status = fm.get("status", "")
     allowed = schema.get("allowed_status", {})
-    if status and status not in allowed:
+    if status and not _status_is_valid(schema, status):
         issues.append({
             "severity": "blocking",
             "message": f'Invalid status "{status}" (allowed: {", ".join(allowed)})',
@@ -240,6 +240,13 @@ def validate_artifact_schema(
                 })
 
     return issues
+
+
+def _status_is_valid(schema: dict[str, Any], status: str) -> bool:
+    """Delegate status compatibility to the shared lifecycle helper."""
+    from specflow.lib.practices import status_is_valid
+
+    return status_is_valid(schema, status)
 
 
 # ---------------------------------------------------------------------------

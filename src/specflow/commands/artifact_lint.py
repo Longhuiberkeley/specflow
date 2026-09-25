@@ -327,7 +327,7 @@ def _check_status(
         schema = schemas.get(art.type)
         if schema:
             allowed = schema.get("allowed_status", {})
-            if art.status and art.status not in allowed:
+            if art.status and not lint_lib._status_is_valid(schema, art.status):
                 blocking += 1
                 msg = f"  ✗ [{art.id}] invalid status '{art.status}'"
                 # W2.2: deterministic fix only for the typo case (near-miss of a
@@ -2470,4 +2470,3 @@ def _auto_fix(root: Path) -> None:
 
     if fixed_count > 0:
         print(f"  ✓ Recomputed {fixed_count} stale fingerprint(s)")
-
