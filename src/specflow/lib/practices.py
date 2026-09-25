@@ -108,6 +108,46 @@ def status_resolves_approved(status: str) -> bool:
     return status == "active" and status in approved_predecessors
 
 
+def tailoring_drop_problem(
+    practice: art_lib.Artifact,
+    id_index: dict[str, art_lib.Artifact],
+) -> str | None:
+    """Explain why a dropped-practice tailoring record is not authorized.
+
+    A valid drop is explicit and auditable: it has a rationale and cites an
+    existing approved DEC. Other tailoring statuses are not drop exemptions.
+    """
+    record = practice.frontmatter.get("tailoring")
+    if record is None:
+        return None
+    if not isinstance(record, dict):
+        return "tailoring must be a mapping with status, rationale, and dec"
+    if record.get("status") != "dropped":
+        return None
+    if not str(record.get("rationale") or "").strip():
+        return "dropped tailoring needs a non-empty rationale"
+    dec_id = str(record.get("dec") or "").strip()
+    decision = id_index.get(dec_id)
+    if decision is None or decision.type != "decision":
+        return f"dropped tailoring cites missing DEC '{dec_id or '(missing)'}'"
+    if decision.status != "approved":
+        return f"dropped tailoring DEC '{dec_id}' is '{decision.status}', not approved"
+    return None
+
+
+def is_tailoring_dropped(
+    practice: art_lib.Artifact,
+    id_index: dict[str, art_lib.Artifact],
+) -> bool:
+    """Return whether an approved DEC authorizes this BP's dropped status."""
+    record = practice.frontmatter.get("tailoring")
+    return (
+        isinstance(record, dict)
+        and record.get("status") == "dropped"
+        and tailoring_drop_problem(practice, id_index) is None
+    )
+
+
 def applicability_matches(
     applicability: Any,
     artifact: art_lib.Artifact,

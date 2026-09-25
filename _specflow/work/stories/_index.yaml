@@ -1299,7 +1299,7 @@ artifacts:
   STORY-670:
     id: STORY-670
     title: bp-application evidence check with tailoring and migration stamp (REQ-045)
-    status: approved
+    status: implemented
     tags: []
     fingerprint: sha256:225cba543bec
     children: []

@@ -26,6 +26,7 @@ def default_config(project_name: str = "") -> dict:
         },
         "lint": {
             "compliance_evidence_strict": False,
+            "bp_evidence_strict": False,
             "autoresearch_logging_strict": False,
             "role_target_strict": False,
         },
@@ -213,5 +214,4 @@ def backup_specflow_internals(root: Path, backup_dir: Path) -> list[str]:
         backed_up.append(".specflow/schema/")
 
     return backed_up
-
 

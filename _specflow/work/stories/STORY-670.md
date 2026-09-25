@@ -2,7 +2,7 @@
 id: STORY-670
 title: bp-application evidence check with tailoring and migration stamp (REQ-045)
 type: story
-status: approved
+status: implemented
 suspect: false
 links:
 - target: REQ-045
@@ -14,6 +14,8 @@ fingerprint: sha256:225cba543bec
 thinking_techniques:
 - premortem
 - dependency-shock
+- worst_case_user
+- composition
 modified: '2026-09-25'
 ---
 

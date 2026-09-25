@@ -21,7 +21,7 @@ from specflow.lib import role_normalize
 from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC
 from specflow.lib.domain_constants import DOMAIN_RECOMMENDED
 
-CHECK_NAMES = ["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "thinking-techniques", "autoresearch-logging", "autoresearch-comp-closure", "spike-lifecycle", "source-drift", "dec-risk-profile", "ac-observable", "nfr-category", "backfilled-links", "role-target"]
+CHECK_NAMES = ["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "bp-application", "thinking-techniques", "autoresearch-logging", "autoresearch-comp-closure", "spike-lifecycle", "source-drift", "dec-risk-profile", "ac-observable", "nfr-category", "backfilled-links", "role-target"]
 
 # ── STORY-663: persistent-warning escalation ──────────────────────
 # severity-levels.md claims "warnings persisting across 3+ validation runs
@@ -167,6 +167,8 @@ def _run_check(
         return _check_wave_cycles(artifacts, root)
     elif check_name == "compliance-evidence":
         return _check_compliance_evidence(artifacts, root)
+    elif check_name == "bp-application":
+        return _check_bp_application(artifacts, root)
     elif check_name == "thinking-techniques":
         return _check_thinking_techniques(artifacts)
     elif check_name == "autoresearch-logging":
@@ -1453,6 +1455,169 @@ def _check_compliance_evidence(
     }
 
 
+def _bp_verification_advisory(bp: art_lib.Artifact) -> str:
+    """Return Verification prose for display only; never compile its contents."""
+    match = re.search(
+        r"^##\s+Verification\s*$\n(.*?)(?=^##\s+|\Z)",
+        bp.body or "",
+        re.MULTILINE | re.DOTALL,
+    )
+    text = " ".join(match.group(1).split()) if match else ""
+    if len(text) > 180:
+        text = text[:177].rstrip() + "..."
+    if not text:
+        text = "no Verification prose; inspect the practice manually"
+    return f"  ℹ [{bp.id}] advisory inspection item (not compiled): {text}"
+
+
+def _check_bp_application(
+    artifacts: list[art_lib.Artifact],
+    root: Path,
+) -> dict[str, str | int]:
+    """Account for stamped, applicable BP bindings using graph facts only.
+
+    Verification prose is emitted as advisory inspection context. The only
+    executable verification fact is whether an in-scope BP declares the
+    ``test`` method and its linked tests have reached ``verified`` status.
+    Legacy BPs without a provenance migration stamp and lifecycle artifacts
+    not modified after a BP's latest approval/update are outside this pass.
+    """
+    from specflow.lib import config as config_lib
+    from specflow.lib import practices as practices_lib
+
+    cfg = config_lib.read_config(root) or {}
+    if not isinstance(cfg, dict):
+        cfg = {}
+    lint_cfg = cfg.get("lint") or {}
+    if not isinstance(lint_cfg, dict):
+        lint_cfg = {}
+    strict = bool(lint_cfg.get("bp_evidence_strict", False))
+    id_index = art_lib.build_id_index(artifacts)
+    targets = [
+        artifact for artifact in artifacts
+        if artifact.type in {"requirement", "architecture", "story"}
+    ]
+    blocking = 0
+    warnings = 0
+    details: list[str] = []
+
+    def _bump(message: str) -> None:
+        nonlocal blocking, warnings
+        if strict:
+            blocking += 1
+            details.append(f"  ✗ {message}")
+        else:
+            warnings += 1
+            details.append(f"  ⚠ {message}")
+
+    # A migration stamp is the release boundary: unstamped legacy BPs skip the
+    # evidence and tailoring check entirely (DEC-089).
+    dropped: set[str] = set()
+    for bp in artifacts:
+        if bp.type != "best-practice" or not bp.frontmatter.get("provenance"):
+            continue
+        if not practices_lib.status_resolves_approved(bp.status):
+            continue
+        tailoring = bp.frontmatter.get("tailoring")
+        if isinstance(tailoring, dict) and tailoring.get("status") == "dropped":
+            problem = practices_lib.tailoring_drop_problem(bp, id_index)
+            if problem:
+                _bump(f"[{bp.id}] {problem}")
+            else:
+                dropped.add(bp.id)
+
+    coverage: dict[str, list[int]] = {
+        "requirement": [0, 0],
+        "architecture": [0, 0],
+        "story": [0, 0],
+    }
+    advisory_practices: dict[str, art_lib.Artifact] = {}
+    pair_count = 0
+
+    def _mtime_ns(artifact: art_lib.Artifact) -> int:
+        try:
+            return artifact.path.stat().st_mtime_ns
+        except OSError:
+            return 0
+
+    for target in targets:
+        in_scope = practices_lib.load_active_best_practices(root, target)
+        for bp in in_scope:
+            if not bp.frontmatter.get("provenance") or bp.id in dropped:
+                continue
+            # Backfill grace: do not expose a legacy artifact to a practice
+            # approved/updated after that artifact was last written.
+            if _mtime_ns(target) <= _mtime_ns(bp):
+                continue
+
+            pair_count += 1
+            coverage[target.type][1] += 1
+            advisory_practices[bp.id] = bp
+            bound = any(
+                link.role == "guided_by" and link.target == bp.id
+                for link in target.links
+            )
+            if not bound:
+                _bump(f"[{target.id}] in-scope BP {bp.id} is not linked via guided_by")
+                continue
+
+            coverage[target.type][0] += 1
+            if bp.frontmatter.get("verification_method") != "test":
+                continue
+
+            linked_tests = [
+                id_index[link.target]
+                for link in target.links
+                if link.role == "verified_by"
+                and link.target in id_index
+                and id_index[link.target].type in {
+                    "unit-test", "integration-test", "qualification-test",
+                }
+            ]
+            if not linked_tests:
+                _bump(
+                    f"[{target.id}] BP {bp.id} uses test verification but has no linked verification test"
+                )
+            else:
+                incomplete = [test.id for test in linked_tests if test.status != "verified"]
+                if incomplete:
+                    _bump(
+                        f"[{target.id}] BP {bp.id} verification test(s) not verified: "
+                        f"{', '.join(incomplete[:5])}"
+                    )
+
+    if pair_count:
+        for art_type, (bound, total) in coverage.items():
+            if total:
+                details.append(
+                    f"  ℹ {art_type}: {bound}/{total} in-scope BP binding(s) bound; "
+                    f"{total - bound} unbound"
+                )
+        details.extend(
+            _bp_verification_advisory(bp)
+            for bp in sorted(advisory_practices.values(), key=lambda item: item.id)
+        )
+
+    if blocking == 0 and warnings == 0:
+        icon = GREEN + "✓" + NC
+        detail_msg = "\n".join(details) if details else "No stamped, in-scope approved BPs to check"
+    elif blocking:
+        icon = RED + "✗" + NC
+        detail_msg = "\n".join(details)
+    else:
+        icon = YELLOW + "⚠" + NC
+        detail_msg = "\n".join(details)
+    if blocking:
+        detail_msg += "\n  → escalated by lint.bp_evidence_strict=true"
+
+    return {
+        "status_icon": icon,
+        "detail": detail_msg,
+        "blocking_count": blocking,
+        "warning_count": warnings,
+    }
+
+
 def _check_thinking_techniques(
     artifacts: list[art_lib.Artifact],
 ) -> dict[str, str | int]:
@@ -2315,7 +2480,14 @@ def run(root: Path, args: dict) -> int:
     # in CLI-managed .specflow/ (I2/I3: never prompt text).
     escalated: list[tuple[str, str, int]] = []
     if not check_type:
-        escalated = _record_warning_runs(root, results)
+        # bp-application is explicitly warning-first unless its opt-in strict
+        # setting is enabled; persistent-warning escalation must not override
+        # that contract.
+        escalation_results = [
+            (name, result) for name, result in results
+            if name != "bp-application"
+        ]
+        escalated = _record_warning_runs(root, escalation_results)
         total_blocking += len(escalated)
 
     # Display results
