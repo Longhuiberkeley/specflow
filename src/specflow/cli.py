@@ -812,6 +812,10 @@ def _add_autoresearch_parser(subparsers):
     log_p.add_argument("--title", help="EXPT title (defaults to summary)")
     log_p.add_argument("--set", dest="set_fields", action="append",
                        help="Additional KEY=VALUE frontmatter fields")
+    log_p.add_argument("--research-progress", dest="research_progress",
+                       help="JSON object {evidence_ref, finding, next_decision} documenting "
+                            "meaningful progress for this EXPT (read by `autoresearch status`; "
+                            "evidence_ref must anchor to this EXPT)")
     log_p.add_argument("--no-update-loop", action="store_true", dest="no_update_loop",
                        help="Skip auto-updating LOOP counters")
 

@@ -3,7 +3,7 @@
 Best practices for ML/experimental work, consulted live during Phase 2 ideation —
 pull the group matching the change, don't read end-to-end. Tiering: **ML-01/ML-02
 mandatory** (enforced by the loop protocol's Phase 0.6 EDA and Phase 0.7 agenda),
-**ML-05/ML-07 gated** (diversity gate / agenda ranking), the rest advisory.
+**ML-05/ML-07 gated** (evidence-sensitive reassessment / agenda ranking), the rest advisory.
 Breadth comes from the Phase 0.7 agenda in `domain-research-checklists.md` and
 mode behavior in `explore-exploit-protocol.md`; this file is the depth lens.
 
@@ -15,6 +15,10 @@ feature engineering/calibration, diverse ensembles + seed averaging; avoid
 leaderboard probing, eval-set leaks, split-tuned post-processing, ensembles too
 heavy to run live. If a tactic raises `metric_value` without raising the goal, it
 is metric-gaming (premise check), not progress.
+
+**Mission value over exhaustive falsification:** choosing a better-evidenced and
+cheaper formulation B without disproving A is legitimate research economy —
+record why (new evidence + next decision), don't burn budget on completeness.
 
 ## Domain fit gate
 
@@ -58,6 +62,11 @@ Each practice lists `applies_to` domains — only apply practices tagged for you
 - **ML-21: Seed averaging / bagging** — applies_to: all. Cheap variance reduction; don't ship a single-seed result inside its own spread.
 - **ML-22: Pseudo-labeling / semi-supervised** — applies_to: `tabular_ml`, `vision`, `nlp`. Amplifies existing bias; gate behind leak-free validation and confidence thresholds.
 
+## Research economy (ML-23–24)
+
+- **ML-23: Feasibility before expense** — applies_to: all. Check data, compute, and time feasibility before an expensive test; an infeasible test is a recorded result (`failure_analysis`, negative memory), not an experiment that burns budget.
+- **ML-24: Negative memory** — applies_to: all. Record negative, invalid, and infeasible results (`failure_analysis`, `lesson_extracted`, FIND `what_failed`) so later LOOPs don't re-run dead ends. A parked direction (`deprioritize`) keeps its evidence; a `revisit` priority states what would change the answer.
+
 ## Bias catalog
 
 | Bias | Tell | Fix |
@@ -65,5 +74,5 @@ Each practice lists `applies_to` domains — only apply practices tagged for you
 | Selection | Sample unrepresentative of serve-time population | Define the target population; sample/weight to match |
 | Survivorship | Dead/delisted/failed cases missing | Point-in-time data including entities as they were |
 | Look-ahead / data-snooping | Metric improbably high; features use future info | Strict temporal cutoffs; features from the past only |
-| Confirmation (ideation) | Only testing variants of the liked hypothesis | Explore mode tests the opposite; read `what_failed`; diversity gate + idea-diversity check |
+| Confirmation (ideation) | Only testing variants of the liked hypothesis | Explore mode tests the opposite; read `what_failed`; reassessment + idea-diversity check |
 | Label leakage | Feature proxies for or is computed from the target | Audit feature provenance; drop what wouldn't exist at prediction time |

@@ -13,6 +13,7 @@ domain lens in `methodology-handbook.md` before the first LOOP.
 4. **Eval data is off-limits to the loop.** Read-only to the agent (permissions 400, separate cwd, container isolation, or a documented convention in the COMP description); `verify_command` reads only the evaluation partition; train/test partitions disjoint (hash/`comm` intersection empty); temporal features use nothing at/after the split cutoff. Record the checks in `constraints` so later LOOPs inherit the guarantee.
 5. **COMP `active → completed` is a human gate.** Assemble the per-goal `closure_disposition` (each `goals` entry satisfied-with-FIND-citation or abandoned-with-reason; `artifact-lint` warns without it), present it with the Closure-readiness block from `specflow autoresearch status`, and only the direct user's explicit go-ahead completes the COMP. Subagents never close COMPs; metrics are evidence, not approval. `paused` is reversible (`paused → active`).
 6. **Safety-screen the verify command** before first run: refuse `rm -rf /`, fork bombs, `curl … | sh`, embedded credentials. `verify_command` runs with full shell access — only the project owner creates or edits COMPs.
+7. **Nonmetric exploration is SPIKE/FIND work, not a fake score.** If the question has no deterministic one-number verify (a design choice, a qualitative question, an open unknown), do not fabricate a metric to host it in a COMP: run it in the core flow as a SPIKE (the question) and record FIND(s) (the answer). Create a COMP only when a real one-number `verify_command` exists.
 
 ## Fields the loop consumes
 

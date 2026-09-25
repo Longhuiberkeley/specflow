@@ -1,10 +1,14 @@
 # Domain Research Checklists — Invariants
 
-Consult during Phase 0.7 (First-Principles Decomposition) to force breadth
-before narrowing. Universal research questions — the model supplies the domain
-methodology; this file only asks. Walk every section, assess relevance to the
-current COMP, record a ranked `research_agenda` on the LOOP, and check coverage
-in Phase 2c — not repetition. Do not treat the questions as a method menu.
+Consult during Phase 0.7 (decomposition) to surface the width of plausible
+formulations before narrowing. Decomposition is a hypothesis, not a quota:
+record the formulations worth testing — each one's assumptions, tradeoffs, and
+how it would be evaluated (component vs joint/tightly coupled vs end-to-end
+where relevant) — and no direction count is required. Universal research
+questions — the model supplies the domain methodology; this file only asks.
+Walk the sections that bear on the current COMP, record a ranked
+`research_agenda` on the LOOP, and check coverage in Phase 2c — not repetition.
+Do not treat the questions as a method menu.
 
 **Domain keys** (`COMP.domain`): `quant` · `tabular_ml` · `vision` · `nlp` ·
 unmatched → `generic`. The same key selects the applied-practices lens in

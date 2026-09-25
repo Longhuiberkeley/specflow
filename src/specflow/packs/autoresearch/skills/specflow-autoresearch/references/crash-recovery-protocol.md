@@ -26,10 +26,17 @@ Then apply exactly one recovery rule:
 | Last commit `experiment(…)` with no matching EXPT | Crashed after Commit, before Log | `safe_revert()` (revert, else `git reset --hard HEAD~1`); resume at Phase 1 |
 | Clean tree + last commit has its EXPT | Crashed after Log | Nothing to recover; resume normally |
 
-## Stuck (>5 consecutive discards)
+## Evidence-free streaks — reassess, don't switch by count
 
-Category switch is mandatory (see the stuck rule in `autonomous-loop-protocol.md`
-Phase 8): re-read the code, FINDs, and agenda; try the opposite or a radical
-change. At 10 discards: `specflow update LOOP-NNN --status plateaued`, author
-FINDs from what was learned, and ask the user to extend with a different mode or
-rework the COMP.
+REQ-043: there is no mandatory category switch and no count-based stop. When a
+line stops producing new evidence (its last three attempts carry no anchored,
+distinct `research_progress` and no measured improvement), reassess: re-read the
+code, FINDs, and agenda; record what the streak taught (`research_progress` /
+`failure_analysis` / `hypothesis_outcome` — negative memory the next LOOP can
+read); then choose the next formulation or set the direction's `priority`
+(`deprioritize` / `revisit`). Picking B does not require proving A impossible.
+Counts never close a direction; budget still bounds the LOOP. If the budget
+ends without progress, propose `plateaued` and let the user decide the next
+move (extend with a different mode, rework the COMP, or park the direction).
+Crashed runs may be `invalid` instruments: record the teardown as
+`failure_analysis`, not as evidence against the hypothesis.

@@ -1486,6 +1486,25 @@ def _check_thinking_techniques(
     }
 
 
+def _research_progress_issue(value: object) -> str | None:
+    """Malformed `research_progress` shape (REQ-043), or None when absent/valid.
+
+    Shape-only: the value must be a mapping with non-empty string
+    `evidence_ref`, `finding`, and `next_decision`. Anchor/novelty accounting
+    lives in `autoresearch status` (`_window_has_progress`); this lint check
+    only keeps the field readable.
+    """
+    if value is None:
+        return None
+    if not isinstance(value, dict):
+        return "must be a mapping with evidence_ref, finding, next_decision"
+    for key in ("evidence_ref", "finding", "next_decision"):
+        entry = value.get(key)
+        if not isinstance(entry, str) or not entry.strip():
+            return f"needs a non-empty '{key}' string"
+    return None
+
+
 def _check_autoresearch_logging(
     artifacts: list[art_lib.Artifact],
     root: Path,
@@ -1580,8 +1599,30 @@ def _check_autoresearch_logging(
         elif status == "kept" and not art.frontmatter.get("hypothesis_outcome"):
             _bump(
                 f"[{art.id}] (kept) has no `hypothesis_outcome` logged "
-                f"(supported/not_supported/inconclusive)"
+                f"(supported/not_supported/inconclusive/invalid)"
             )
+        # REQ-043: `invalid` means the instrument failed, not the hypothesis —
+        # the instrument failure must be recorded so the result is negative
+        # memory instead of a silent gap.
+        if (
+            status != "draft"
+            and art.frontmatter.get("hypothesis_outcome") == "invalid"
+            and not art.frontmatter.get("failure_analysis")
+        ):
+            _bump(
+                f"[{art.id}] (hypothesis_outcome=invalid) has no `failure_analysis` "
+                f"logged (record the instrument failure)"
+            )
+
+        # REQ-043: `research_progress` is optional, but when present it must
+        # have the documented shape (three non-empty strings) or the status
+        # reassessment cannot read the claim. Shape-only: anchoring and
+        # novelty accounting live in `autoresearch status`.
+        progress_issue = _research_progress_issue(
+            art.frontmatter.get("research_progress")
+        )
+        if progress_issue:
+            _bump(f"[{art.id}] `research_progress` {progress_issue}")
 
     # STORY-636/637: link-edge consistency. Frontmatter parent fields
     # (`competition`, `loop`, `source_loop`) are invisible to `specflow trace`;

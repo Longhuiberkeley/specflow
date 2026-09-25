@@ -9,6 +9,7 @@ protocol checklists that any harness can follow.
 from __future__ import annotations
 
 import json
+import math
 import subprocess
 import sys
 from datetime import date
@@ -204,22 +205,255 @@ def _resolve_loop(
     return None
 
 
-def _consecutive_tail(expts: list[art_lib.Artifact], key: str) -> tuple[object, int]:
-    """Return the final value and its consecutive run length by iteration/order."""
-    if not expts:
-        return None, 0
-    ordered = sorted(
+def _ordered_expts(expts: list[art_lib.Artifact]) -> list[art_lib.Artifact]:
+    """EXPTs in loop order: iteration, then created, then id."""
+    return sorted(
         expts,
         key=lambda e: (e.frontmatter.get("iteration", 0), e.frontmatter.get("created", ""), e.id),
     )
+
+
+def _tail_run(
+    expts: list[art_lib.Artifact], key: str
+) -> tuple[object, list[art_lib.Artifact]]:
+    """Return (final value, tail artifacts sharing it) in loop order."""
+    if not expts:
+        return None, []
+    ordered = _ordered_expts(expts)
     value = ordered[-1].frontmatter.get(key) if key != "status" else ordered[-1].status
-    count = 0
+    tail: list[art_lib.Artifact] = []
     for expt in reversed(ordered):
         current = expt.frontmatter.get(key) if key != "status" else expt.status
         if current != value:
             break
-        count += 1
-    return value, count
+        tail.append(expt)
+    tail.reverse()
+    return value, tail
+
+
+# REQ-043: reassessment is bounded to the most recent attempts. A keep from
+# earlier in the tail must never mask a line that has stopped producing
+# evidence, so only the last RECENT_WINDOW artifacts can claim progress.
+_RECENT_WINDOW = 3
+_PROGRESS_FIELDS = ("evidence_ref", "finding", "next_decision")
+
+
+def _progress_note(expt: art_lib.Artifact) -> dict[str, str] | None:
+    """The EXPT's `research_progress` when it has the documented shape.
+
+    Shape (all three non-empty strings): {evidence_ref, finding,
+    next_decision}. Anything else — absent, non-mapping, empty, partial — is
+    read conservatively as "no structured evidence claim".
+    """
+    raw = expt.frontmatter.get("research_progress")
+    if not isinstance(raw, dict):
+        return None
+    note: dict[str, str] = {}
+    for key in _PROGRESS_FIELDS:
+        value = raw.get(key)
+        if not isinstance(value, str) or not value.strip():
+            return None
+        note[key] = value.strip()
+    return note
+
+
+def _normalised(text: str) -> str:
+    """Whitespace/case-insensitive comparison key for claims and refs."""
+    return " ".join(text.split()).casefold()
+
+
+def _normalised_ref(ref: str) -> str:
+    """Comparison key for refs with the optional scheme stripped.
+
+    ``commit:abc`` and ``abc`` are the same citation, so re-spelling the same
+    ref (or flipping its scheme) can never register as new evidence.
+    """
+    body = ref.strip()
+    for scheme in ("commit:", "path:", "artifact:"):
+        if body.lower().startswith(scheme):
+            body = body[len(scheme):].strip()
+            break
+    return _normalised(body)
+
+
+_HEX_CHARS = frozenset("0123456789abcdef")
+
+
+def _evidence_ref_is_anchored(
+    expt: art_lib.Artifact, ref: str, root: Path
+) -> bool:
+    """True when `ref` points at this EXPT's own record (REQ-043).
+
+    Accepted anchors, each narrowly bounded:
+      - the EXPT's ID, exactly or with an explicit ``#fragment`` suffix
+        (``EXPT-001#verify-log``) — a longer ID like ``EXPT-0010`` is a
+        different experiment and never matches ``EXPT-001``;
+      - the `commit` recorded on this EXPT, exactly or as a plausible
+        abbreviation of at least 7 hex characters (``commit:`` scheme
+        optional); ``commit:`` alone or a 1-char prefix never matches;
+      - a repo-relative output path this EXPT logs *outside* its own
+        `research_progress` note (a field/body mention plus the file on disk);
+        the note cannot certify itself.
+
+    This checks that the citation exists and is anchored to the current
+    experiment — never that the evidence proves anything; the agent still
+    reads the cited source.
+    """
+    ref_text = ref.strip()
+    if not ref_text:
+        return False
+
+    # 1. The EXPT's own ID — exact, or an explicit `#fragment` (boundary).
+    if expt.id and (
+        ref_text == expt.id or ref_text.startswith(f"{expt.id}#")
+    ):
+        return True
+
+    # 2. The commit recorded on this EXPT — exact or a >=7-char hex prefix.
+    commit = expt.frontmatter.get("commit")
+    if isinstance(commit, str) and commit.strip():
+        commit_text = commit.strip()
+        ref_body = ref_text
+        for scheme in ("commit:", "path:", "artifact:"):
+            if ref_body.lower().startswith(scheme):
+                ref_body = ref_body[len(scheme):].strip()
+        if ref_body:
+            if ref_body == commit_text:
+                return True
+            lowered = ref_body.lower()
+            if (
+                len(ref_body) >= 7
+                and all(char in _HEX_CHARS for char in lowered)
+                and commit_text.lower().startswith(lowered)
+            ):
+                return True
+
+    # 3. A repo-relative output path this EXPT logs elsewhere in its record.
+    ref_body = ref_text
+    for scheme in ("path:", "artifact:"):
+        if ref_body.lower().startswith(scheme):
+            ref_body = ref_body[len(scheme):].strip()
+    if not ref_body or ref_body.startswith("/") or ".." in Path(ref_body).parts:
+        return False
+    record = {
+        key: value for key, value in expt.frontmatter.items()
+        if key != "research_progress"
+    }
+    record_text = json.dumps(record, sort_keys=True, default=str)
+    if ref_body not in record_text and ref_body not in (expt.body or ""):
+        return False
+    return (root / ref_body).is_file()
+
+
+def _note_repeats(note: dict[str, str], prior_expts: list[art_lib.Artifact]) -> bool:
+    """True when this finding or evidence_ref already appeared in history.
+
+    Compared against every earlier EXPT's note, including records outside the
+    recent window: re-stating an old claim under a new ref (or vice versa) is
+    not new evidence.
+    """
+    claim = _normalised(note["finding"])
+    ref = _normalised_ref(note["evidence_ref"])
+    for prior in prior_expts:
+        prior_note = _progress_note(prior)
+        if not prior_note:
+            continue
+        if claim == _normalised(prior_note["finding"]):
+            return True
+        if ref == _normalised_ref(prior_note["evidence_ref"]):
+            return True
+    return False
+
+
+def _numeric(value: object) -> float | None:
+    """Finite number or None — NaN/±Infinity are not measured numbers."""
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if math.isfinite(number) else None
+
+
+def _keep_shows_improvement(
+    expt: art_lib.Artifact, prior_expts: list[art_lib.Artifact], direction: str
+) -> bool:
+    """A keep counts only with a measured new best (delta is the fallback).
+
+    Repeat keeps of the same value are accounting, not progress. When this
+    EXPT carries a finite primary metric, the decision is the actual new-best
+    comparison against prior kept values — a positive `delta` cannot override a
+    metric that is not a new best (unchanged scores with `delta: 1` would
+    otherwise suppress reassessment forever). A finite signed `delta` is
+    accepted only as the fallback when no comparable primary metric exists on
+    this EXPT. This reads the recorded numbers; it does not re-run the metric.
+    """
+    metric = _numeric(expt.frontmatter.get("metric_value"))
+    if metric is not None:
+        best: float | None = None
+        for prior in prior_expts:
+            if prior.status != "kept":
+                continue
+            value = _numeric(prior.frontmatter.get("metric_value"))
+            if value is None:
+                continue
+            if best is None:
+                best = value
+            elif direction == "lower_is_better":
+                best = min(best, value)
+            else:
+                best = max(best, value)
+        if best is None:
+            return True
+        if direction == "lower_is_better":
+            return metric < best
+        return metric > best
+
+    delta = _numeric(expt.frontmatter.get("delta"))
+    if delta is None or delta == 0:
+        return False
+    if direction == "lower_is_better":
+        return delta < 0
+    return delta > 0
+
+
+def _has_meaningful_progress(
+    expt: art_lib.Artifact,
+    prior_expts: list[art_lib.Artifact],
+    root: Path,
+    direction: str,
+) -> bool:
+    """Existence check for one EXPT's evidence claim (REQ-043).
+
+    Meaningful progress is either an anchored, non-repeated `research_progress`
+    note, or a keep that shows a measured improvement. Outcome labels alone and
+    absent/legacy annotations do not count; no predicate here claims truth.
+    """
+    note = _progress_note(expt)
+    if (
+        note
+        and _evidence_ref_is_anchored(expt, note["evidence_ref"], root)
+        and not _note_repeats(note, prior_expts)
+    ):
+        return True
+    return expt.status == "kept" and _keep_shows_improvement(expt, prior_expts, direction)
+
+
+def _window_has_progress(
+    tail: list[art_lib.Artifact],
+    ordered: list[art_lib.Artifact],
+    root: Path,
+    direction: str,
+) -> bool:
+    """True when the tail's last `_RECENT_WINDOW` EXPTs show new evidence."""
+    window_ids = {expt.id for expt in tail[-_RECENT_WINDOW:]}
+    for index, expt in enumerate(ordered):
+        if expt.id not in window_ids:
+            continue
+        if _has_meaningful_progress(expt, ordered[:index], root, direction):
+            return True
+    return False
 
 
 def _assess_loop(
@@ -227,7 +461,15 @@ def _assess_loop(
     comp: art_lib.Artifact,
     loop: art_lib.Artifact,
 ) -> list[dict[str, str]]:
-    """Derive deterministic accounting signals without making research choices."""
+    """Derive deterministic accounting signals without making research choices.
+
+    REQ-043 semantics: warnings surface *evidence gaps* (missing agenda,
+    evidence-free streaks, decisions without a progress note), never a
+    count-based rotation or kill. A streak is examined over the recent window
+    only (`_window_has_progress`), so progress must be recent, anchored, and
+    novel; budget exhaustion stays structural because it is a hard loop bound,
+    not a judgment about the research.
+    """
     signals: list[dict[str, str]] = []
 
     def add(state: str, name: str, message: str, pointer: str = "") -> None:
@@ -251,22 +493,34 @@ def _assess_loop(
     else:
         add("ok", "budget", f"Iteration budget {iteration_count}/{budget if budget is not None else '?'}")
 
-    quick = isinstance(budget, int) and budget <= 5
     if fm.get("eda_completed"):
         add("ok", "eda", "EDA is recorded")
     else:
         add("advisory", "eda", "No completed EDA is recorded",
             f"specflow update {loop.id} --set eda_completed=true --set eda_summary=\"...\"")
 
+    # REQ-043: decomposition is a hypothesis, not a quota. The agenda just has
+    # to be recorded — its direction count is not a gate. Quick tier no longer
+    # changes the check (the tier still lightens the Phase 0.7 walk).
     agenda = fm.get("research_agenda") or []
-    agenda_min = 2 if quick else 5
-    if isinstance(agenda, list) and len(agenda) >= agenda_min:
-        add("ok", "agenda", f"Research agenda has {len(agenda)} directions")
+    agenda_entries = [entry for entry in agenda if isinstance(entry, dict)] if isinstance(agenda, list) else []
+    if agenda_entries:
+        add("ok", "agenda", f"Research agenda has {len(agenda_entries)} recorded direction(s)")
     else:
-        # STORY-663: exit-code-bearing warn — status exits 3 while the
-        # Phase 0.7 agenda is missing.
-        add("warn", "agenda", f"Research agenda has fewer than {agenda_min} directions",
+        # STORY-663/REQ-043: exit-code-bearing warn — status exits 3 while the
+        # Phase 0.7 reasoning is missing entirely.
+        add("warn", "agenda", "No research agenda recorded (Phase 0.7 decomposition missing)",
             f"specflow update {loop.id} --set research_agenda='[...]'")
+
+    missing_progress = [
+        str(entry.get("direction", "?"))
+        for entry in agenda_entries
+        if entry.get("priority") in _AGENDA_PRIORITIES and not entry.get("progress")
+    ]
+    if missing_progress:
+        add("advisory", "progress",
+            f"{len(missing_progress)} prioritized direction(s) without a progress note",
+            "Record new evidence + the next decision (`progress`) on each prioritized direction.")
 
     if fm.get("knowledge_input"):
         add("ok", "knowledge", "Prior findings are loaded")
@@ -276,27 +530,45 @@ def _assess_loop(
     else:
         add("ok", "knowledge", "No prior findings are available")
 
+    # REQ-043: reassessment is evidence-sensitive and bounded to the last few
+    # attempts. A sustained streak is only surfaced when its recent window
+    # produced no meaningful progress — never because a count hit a
+    # rotation/lock threshold (the old 2/3 category gate and 5-discard switch
+    # are gone). An older keep cannot suppress the warning. Reassessment is a
+    # warn: accounting, not a kill.
     expts = _find_expts_for_loop(root, loop.id)
-    category, category_count = _consecutive_tail(expts, "change_category")
-    threshold = 2 if fm.get("mode", "explore") == "explore" else 3
-    if category and category_count >= threshold:
-        # STORY-663: exit-code-bearing warn (category-run length gate).
-        add("warn", "diversity", f"{category_count} consecutive '{category}' experiments",
-            "Review an orthogonal research-agenda direction before another similar iteration.")
-    else:
-        add("ok", "diversity", "No repeated-category streak detected")
-
-    failure_count = 0
-    for expt in reversed(sorted(expts, key=lambda e: (e.frontmatter.get("iteration", 0), e.id))):
+    ordered = _ordered_expts(expts)
+    direction = comp.frontmatter.get("metric_direction", "higher_is_better")
+    _, category_tail = _tail_run(expts, "change_category")
+    nonkept_tail: list[art_lib.Artifact] = []
+    for expt in reversed(ordered):
         if expt.status not in ("discarded", "crashed"):
             break
-        failure_count += 1
-    if failure_count >= 5:
-        # STORY-663: exit-code-bearing warn (discard streak / stuck gate).
-        add("warn", "stuck", f"{failure_count} consecutive discarded/crashed experiments",
-            "Switch category or revisit the highest-impact assumption.")
+        nonkept_tail.append(expt)
+    nonkept_tail.reverse()
+
+    reassess_reasons: list[str] = []
+    if len(category_tail) >= 3 and not _window_has_progress(
+        category_tail, ordered, root, direction
+    ):
+        category = category_tail[-1].frontmatter.get("change_category", "unspecified")
+        reassess_reasons.append(
+            f"{len(category_tail)} consecutive '{category}' experiments with no new evidence"
+        )
+    if len(nonkept_tail) >= 3 and not _window_has_progress(
+        nonkept_tail, ordered, root, direction
+    ):
+        reassess_reasons.append(
+            f"{len(nonkept_tail)} consecutive non-kept experiments with no new evidence"
+        )
+    if reassess_reasons:
+        add("warn", "reassess", "; ".join(reassess_reasons),
+            "Reassess the formulation; record `research_progress` on the recent EXPTs "
+            "(an `evidence_ref` anchored to that EXPT, a distinct finding, the next "
+            "decision) or a measured primary-metric improvement before another "
+            "similar iteration.")
     else:
-        add("ok", "stuck", "No 5-experiment failure streak detected")
+        add("ok", "reassess", "No evidence-free streak detected")
 
     if expts and iteration_count and iteration_count % 10 == 0 and not fm.get("condensation_briefs"):
         add("advisory", "condensation", "No condensation brief recorded at this checkpoint",
@@ -325,7 +597,12 @@ def _has_structural(signals: list[dict[str, str]]) -> bool:
     return any(signal["state"] == "structural" for signal in signals)
 
 
+# REQ-043: agenda `status` is the lifecycle state; `priority` is the decision
+# and is deliberately separate from evidence. deprioritize/blocked close a
+# direction out of the open list; revisit stays open (parked with intent).
 _OPEN_AGENDA_STATUSES = frozenset({"unexplored", "in_progress", "promising"})
+_AGENDA_PRIORITIES = frozenset({"pursue", "deprioritize", "blocked", "revisit"})
+_CLOSED_AGENDA_PRIORITIES = frozenset({"deprioritize", "blocked"})
 _LOOP_CENSUS_STATUSES = ("draft", "running", "completed", "plateaued", "aborted")
 _OPEN_DIRECTION_LIST_CAP = 8
 
@@ -342,6 +619,8 @@ def _open_agenda_directions(loops: list[art_lib.Artifact]) -> list[str]:
             if not isinstance(entry, dict):
                 continue
             if entry.get("status") not in _OPEN_AGENDA_STATUSES:
+                continue
+            if entry.get("priority") in _CLOSED_AGENDA_PRIORITIES:
                 continue
             direction = entry.get("direction")
             if not isinstance(direction, str) or not direction.strip():
@@ -415,8 +694,10 @@ def _run_status(root: Path, args: dict) -> int:
 
     STORY-663 exit codes: 0 clear · 3 warn · 1/2 fail (the skill rule is
     "if status fails, stop"). Phase 0 git preconditions and the LOOP
-    readiness gates (draft LOOP, missing agenda, category-run length,
-    discard streak) are the warn/fail sources.
+    readiness warnings (draft LOOP, missing agenda, evidence-free streak)
+    are the warn sources; a prioritized direction without a progress note is
+    an advisory (exit 0, never a warn). Only structural problems (no git
+    repo, multiple running LOOPs, budget exhausted) fail.
     """
     comp = _resolve_comp(root, args)
     if not comp:
@@ -775,15 +1056,19 @@ def _run_run(root: Path, args: dict) -> int:
     print()
     print(f"{BOLD}8-Phase Protocol Checklist:{NC}")
     print("  Phase 1: Review — Read FINDs + current EXPTs + git history")
-    print("  Phase 2: Ideate — Pick next change (fix crashes → exploit → explore → combine)")
-    print("  Phase 3: Modify — ONE atomic change, one-sentence test")
+    print("  Phase 2: Ideate — Reassess the evidence; pick the next formulation by mission value")
+    print("  Phase 3: Modify — Implement ONE coherent hypothesis (coordinated changes allowed when logged)")
     print("  Phase 4: Commit — git add <files> && git commit -m 'experiment(<scope>): ...'")
     print("  Phase 5: Verify — Run COMP.verify_command, extract metric")
     print("  Phase 5.1: Noise — Multi-run median if metric is noisy")
     print("  Phase 5.5: Guard — Run guard_command if defined on COMP")
-    print("  Phase 6: Decide — kept / discarded / crashed / no_op")
-    print("  Phase 7: Log — Create EXPT artifact, update LOOP totals")
-    print("  Phase 8: Repeat or Complete — Check budget, condense every 10 iterations")
+    print("  Phase 6: Decide — kept / discarded / crashed / no_op; log hypothesis_outcome "
+          "(supported/not_supported/inconclusive/invalid) + next decision")
+    print("  Phase 7: Log — Create EXPT artifact (add --research-progress when the "
+          "iteration produced evidence), update LOOP totals")
+    print("  Phase 8: Repeat or Complete — Reassess an evidence-free line over the last 3 "
+          "attempts; budget bounds; condense every 10")
+    print(f"{DIM}No rotation quota and no failure-count kill: counts are accounting, not judgment.{NC}")
     print()
     print(f"{YELLOW}This command prints the protocol checklist. The loop is driven by the AI agent.{NC}")
     print(f"{DIM}Run /specflow-autoresearch in your AI assistant to execute the loop.{NC}")
@@ -1002,6 +1287,32 @@ def _run_leaderboard(root: Path, args: dict) -> int:
     return 0
 
 
+def _parse_research_progress(raw: str | None) -> dict[str, str] | None:
+    """Parse `autoresearch log --research-progress` JSON (REQ-043).
+
+    Returns None when the flag is absent. Raises ValueError when the payload
+    is not a JSON object with non-empty string `evidence_ref`, `finding`, and
+    `next_decision` — the producer fails fast so a malformed record never
+    reaches the status accounting (which reads malformed records as no
+    evidence).
+    """
+    if raw is None:
+        return None
+    try:
+        parsed = json.loads(raw)
+    except (json.JSONDecodeError, ValueError) as exc:
+        raise ValueError(f"not valid JSON: {exc}") from exc
+    if not isinstance(parsed, dict):
+        raise ValueError("must be a JSON object")
+    note: dict[str, str] = {}
+    for key in _PROGRESS_FIELDS:
+        value = parsed.get(key)
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"missing non-empty string field '{key}'")
+        note[key] = value.strip()
+    return note
+
+
 def _run_log(root: Path, args: dict) -> int:
     loop_id = args.get("loop")
     artifacts = art_lib.discover_artifacts(root)
@@ -1017,12 +1328,26 @@ def _run_log(root: Path, args: dict) -> int:
     summary = args.get("summary")
     title = args.get("title") or summary
 
+    try:
+        research_progress = _parse_research_progress(args.get("research_progress"))
+    except ValueError as exc:
+        print(f"{RED}✗ Invalid --research-progress: {exc}.{NC}")
+        print(f"{DIM}  Expected JSON: "
+              f'{{"evidence_ref": "EXPT-NNN | commit:<sha> | <logged path>", '
+              f'"finding": "...", "next_decision": "pursue|deprioritize|blocked|revisit"}}{NC}')
+        return 1
+
     extra_fields = {}
     set_fields = args.get("set_fields") or []
     # Reserved: these keys are owned by the command itself (traceability edges
     # and parent fields — STORY-636/637). A --set override could silently
-    # strip the belongs_to link edge or desync frontmatter from it.
-    reserved = {"links", "loop", "competition", "status", "id", "type", "title"}
+    # strip the belongs_to link edge or desync frontmatter from it. REQ-043
+    # adds `research_progress` to the reserved set: the dedicated
+    # --research-progress flag is the one validated producer.
+    reserved = {
+        "links", "loop", "competition", "status", "id", "type", "title",
+        "research_progress",
+    }
     for entry in set_fields:
         if "=" not in entry:
             print(f"{RED}✗ Invalid --set value '{entry}'. Expected KEY=VALUE.{NC}")
@@ -1055,6 +1380,8 @@ def _run_log(root: Path, args: dict) -> int:
         "links": [{"target": loop_id, "role": "belongs_to"}],
         **extra_fields,
     }
+    if research_progress is not None:
+        create_kwargs["research_progress"] = research_progress
 
     result = art_lib.create_artifact(
         root,

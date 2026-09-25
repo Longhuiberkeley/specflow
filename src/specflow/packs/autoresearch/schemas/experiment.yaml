@@ -10,12 +10,44 @@
 #                       live in DOMAIN_RECOMMENDED (lib/domain_constants) and are
 #                       surfaced as advisory warnings by `artifact-lint`
 #                       (autoresearch-logging check), never as blockers.
+#
+# Evidence vs priority (REQ-043): `hypothesis_outcome` records evidence about
+# the tested formulation — `supported` / `not_supported` (scoped falsification:
+# state the tested scope in `failure_analysis`) / `inconclusive` (inside the
+# noise floor) / `invalid` (invalid instrument: verify or premise broken; no
+# evidence either way, and `failure_analysis` records why). Priority is a
+# decision, not evidence: it lives on the parent LOOP's `research_agenda`
+# entries (`pursue` / `deprioritize` / `blocked` / `revisit`) and is never
+# derived from a failure count.
+#
+# Meaningful progress (REQ-043): `research_progress` is the optional structured
+# claim `autoresearch status` reads when it checks whether a sustained line
+# produced new evidence over its last three attempts. Shape (all three are
+# non-empty strings):
+#   research_progress:
+#     evidence_ref: <EXPT-NNN | EXPT-NNN#fragment | commit:<sha> | path this EXPT logs>
+#     finding: "<what this experiment established — distinct across history>"
+#     next_decision: pursue|deprioritize|blocked|revisit
+# `evidence_ref` must anchor to *this* EXPT, narrowly: the EXPT ID exactly or
+# with an `#fragment` suffix (`EXPT-0010` is a different experiment); the
+# recorded `commit` exactly or as a >=7-character hex abbreviation (`commit:`
+# alone or a 1-character prefix never matches); or a repo-relative output path
+# the record logs outside `research_progress` itself (the note cannot certify
+# itself) and that exists. The check validates anchoring and novelty, not truth
+# — the agent still reads the cited source. A repeated `finding` or
+# `evidence_ref` is never progress, even under a new path or a re-spelled
+# scheme (`commit:x` ≡ `x`). A kept status counts only as a new best primary
+# `metric_value`; a finite, correctly signed `delta` is the fallback when no
+# comparable metric exists — never a repeat keep, and never an override of a
+# metric that is not a new best. Recorded via
+# `specflow autoresearch log --research-progress '<json>'`; absent or
+# malformed records are read conservatively as no evidence.
 type: experiment
 category: research
 prefix: EXPT
 id_format: "^EXPT-\\d{3,5}$"
 required_fields: [id, title, type, status, created, loop, metric_value, change_category, summary]
-optional_fields: [description, competition, commit, iteration, hypothesis, hypothesis_outcome, research_question, parameters, model_origin, sweep_results, checks, baseline_note, diversity_metrics, failure_analysis, failure_stage, design_quality, design_quality_note, lesson_extracted, lesson_source, lesson_portability, auxiliary_signal, crash_telemetry, surprise, guard_value, guard_passed, strategy_used, delta, duration_seconds, auxiliary_metrics, tags, suspect, fingerprint, links, modified, thinking_techniques]
+optional_fields: [description, competition, commit, iteration, hypothesis, hypothesis_outcome, research_question, parameters, model_origin, sweep_results, checks, baseline_note, diversity_metrics, failure_analysis, failure_stage, design_quality, design_quality_note, lesson_extracted, lesson_source, lesson_portability, auxiliary_signal, crash_telemetry, surprise, guard_value, guard_passed, strategy_used, delta, duration_seconds, auxiliary_metrics, research_progress, tags, suspect, fingerprint, links, modified, thinking_techniques]
 allowed_status:
   kept: []
   discarded: []

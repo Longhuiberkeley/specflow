@@ -1,47 +1,56 @@
 # Autonomous Loop Protocol — Invariants
 
-One iteration = ideate → modify → commit → verify → decide → log. The CLI prints
-this protocol (`specflow autoresearch run`); every rule below is a hard invariant,
-not a suggestion. `specflow autoresearch status` is the deterministic preflight —
-exit 0 clear · 3 warns (proceed with caution) · anything else is a failure: stop
-and fix it before iterating. Deeper context lives in the sibling references named
-in "Consult when".
+One iteration = reassess → ideate → modify → commit → verify → decide → log.
+The CLI prints this protocol (`specflow autoresearch run`); every rule below is
+a hard invariant, not a suggestion. `specflow autoresearch status` is the
+deterministic preflight — exit 0 clear · 3 warns (proceed with caution) ·
+anything else is a failure: stop and fix it before iterating. Deeper context
+lives in the sibling references named in "Consult when".
+
+## Three things named "loop" — keep them apart
+
+The **runtime loop** is this per-iteration cycle (the 8 phases). The
+**research LOOP** is the SpecFlow artifact (`LOOP-NNN`: budget, agenda,
+totals). A **project research cycle** (e.g. a project's S1–S5 gates) is the
+consuming project's own staged process — project-specific, not defined by this
+pack. A LOOP can run inside a project cycle; the names must not be conflated.
 
 ## Hard invariants
 
 1. **Bounded budget.** A LOOP never runs without `budget`; when `iteration_count >= budget` the loop ends. No unbounded mode exists.
 2. **One running LOOP per COMP.** Two LOOPs race on Phase 4 commits and destroy reconstructable history. If a LOOP is already `running`: attach, abort-then-restart, or open a separate COMP.
-3. **One atomic EXPT per iteration.** The change must be describable in one sentence; if it needs "and", it is two EXPTs. Attribute every metric delta to exactly one change.
+3. **One coherent hypothesis per EXPT.** The experiment serves one stated hypothesis; changes that need separate narratives are separate EXPTs. Coordinated component changes (a feature plus its calibration; a joint or tightly coupled formulation) are one EXPT when logged as serving that one hypothesis — record the components and why they belong together. Attribution is to the hypothesis, not to a byte.
 4. **Commit before verify.** Stage explicit paths, commit `experiment(<scope>): <what and why>`, then run `verify_command`. Nothing is kept unless verify exits 0 with a measurable number.
 5. **Never `git add -A` (or `git add .`).** Stage explicit file paths only — `-A` stages secrets and the user's unrelated work. Never bypass a blocking hook with `--no-verify`; fix what the hook reports.
 6. **Rollback prefers `git revert`.** Revert preserves the failed experiment in history (it is the loop's memory); `git reset --hard HEAD~1` only on revert conflict. Discarded and crashed EXPTs are reverted, kept ones stay.
 7. **Verify stdout is one number.** Non-numeric output ⇒ `status: crashed` + revert; two consecutive extraction failures mean the verify command is broken — stop. Rich diagnostics go to disk for review, never stdout.
 8. **Persist condensation briefs on the LOOP** every 10 iterations (`condensation_brief_10`, `_20`, …; ~20 lines: iteration range, kept/discarded/crashed counts, best metric + EXPT, categories that drove improvement, dead ends). Working memory is volatile; the LOOP artifact is the digest the next LOOP's review reads.
-9. **A hypothesis precedes every EXPT**: one line with predicted effect and reason, tied to an `active_research_question`; log it as `hypothesis`. After verify, log `hypothesis_outcome` (`supported` / `not_supported` / `inconclusive`) regardless of keep/discard — FINDs synthesize outcomes, not metrics.
-10. **Stop on goals-met or budget — nothing else.** Goals met AND post-checks healthy (≥80% pass) ⇒ `completed` early. Budget exhausted ⇒ `completed`. Plateau with goals unmet ⇒ surface the suggestion; the user decides. Loop autonomously — no per-iteration confirmations; a one-line status every ~5 iterations and a final summary suffice.
-11. **Loop state lives on the LOOP artifact** (totals, best metric, agenda, coverage, stuck state). Never write `.specflow/` internals; `specflow autoresearch log` is the atomic EXPT + counters update.
+9. **Evidence is separate from priority.** One line with predicted effect and reason precedes every EXPT; tie it to an `active_research_question` and log it as `hypothesis`. After verify, log `hypothesis_outcome` — evidence about the *tested formulation*: `supported` / `not_supported` (scoped falsification: state the tested scope) / `inconclusive` (inside the noise floor) / `invalid` (invalid instrument — verify or premise broken, no evidence either way). When the iteration established something the next decision can use, log it as `research_progress` on the EXPT (the shape `status` reads: see invariant 10). Priority is a decision, not evidence: record `priority` (`pursue` / `deprioritize` / `blocked` / `revisit`) and `progress` (the new evidence + the next decision it feeds) on the agenda direction. Progress needs new evidence tied to a decision, not just an outcome label.
+10. **Reassess on evidence, not counts — over a bounded recent window.** A sustained same-category line or non-kept run triggers reassessment when its **last three EXPTs** produced no new evidence. New evidence is either (a) an EXPT `research_progress` note — `{evidence_ref, finding, next_decision}`, all non-empty — whose `evidence_ref` anchors narrowly to *that* EXPT (the ID exactly or with an explicit `#fragment`; the recorded `commit` exactly or as a ≥7-character hex abbreviation; or a repo-relative output path the record logs outside the progress note and that exists), whose `finding` is distinct from every earlier record, and whose ref is not a repeat; or (b) a `kept` status with a new best primary `metric_value` per `COMP.metric_direction`, falling back to a finite, correctly signed `delta` only when no comparable metric exists. Outcome labels alone, absent/malformed records, non-finite numbers, repeated claims under a new path, and keeps older than the window are not evidence; a historical keep never masks a stagnant line. The check validates existence, anchor, and novelty — never truth; the investigator still reads the cited source. Never rotate, switch, exhaust, or kill a direction because a count was reached — 2/3 same-category streaks, five discards, and three failures are accounting, not judgment. A direction may be `deprioritize`d or parked in `revisit` while another formulation is pursued: choose B without proving A impossible. Mark `status: exhausted` only when the formulations were tried and recorded; counts alone never close a direction. Check feasibility (data, compute, time) before an expensive test — infeasible is a recorded result, not an experiment.
+11. **Stop on goals-met or budget — nothing else.** Goals met AND post-checks healthy (≥80% pass) ⇒ `completed` early. Budget exhausted ⇒ `completed`. Plateau with goals unmet ⇒ surface the suggestion; the user decides. Loop autonomously — no per-iteration confirmations; a one-line status every ~5 iterations and a final summary suffice.
+12. **Loop state lives on the LOOP artifact** (totals, best metric, agenda, coverage, stuck state). Never write `.specflow/` internals; `specflow autoresearch log` is the atomic EXPT + counters update.
 
 ## The eight phases, one line each
 
 | Phase | Rule |
 |-------|------|
 | 0 Precondition | `specflow autoresearch status` green (invariant above). COMP exists, LOOP `draft`, confirmed FINDs loaded into `knowledge_input`. |
-| 0.5–0.7 Prepare | COMP `pre_check_command` guards inputs per iteration. EDA once before the first iteration (ML-01; fatal data problems stop the loop; record `eda_completed` + `eda_summary`; skip only if a prior LOOP ran it on unchanged data). Record a ranked `research_agenda` on the LOOP — ≥5 directions across ≥3 `change_category` values, param tuning never top-2, ~10% surprise budget for long shots — plus `category_coverage`. Load the matching `domain-research-checklists.md` section. Quick tier (budget ≤ 5): EDA checks #1/#4 only and a 2-direction agenda, announcing quick mode. |
+| 0.5–0.7 Prepare | COMP `pre_check_command` guards inputs per iteration. EDA once before the first iteration (ML-01; fatal data problems stop the loop; record `eda_completed` + `eda_summary`; skip only if a prior LOOP ran it on unchanged data). **Decomposition is a hypothesis:** before running the baseline, reason about the width of plausible formulations — what could move the metric; component vs joint/tightly coupled vs end-to-end where relevant; each formulation's assumptions, tradeoffs, and how it would be evaluated — then record the worth-testing ones as a ranked `research_agenda` on the LOOP plus `category_coverage`. No direction count is required. Load the matching `domain-research-checklists.md` section. Quick tier (budget ≤ 5): EDA checks #1/#4 only and a one-line width note (still recorded before the dry-run), announcing the reduced coverage. |
 | 1 Review | Read confirmed FINDs, this LOOP's EXPTs, `git log`. Not the first LOOP? Also read prior `lessons_learned`, condensation briefs, and `termination_suggestions`. |
-| 2 Ideate | Hypothesis first (invariant 9). Gates: **highest-impact forcing** ("the highest-impact thing is X, I am about to do Y" — justify any gap, note agenda disagreements), **category diversity** (3 consecutive same-category EXPTs blocked; 2 in explore mode; unexplored categories before piling onto explored ones), **premise + idea-diversity check** (data property, prior art incl. prior LOOPs, metric-gaming, same-approach repetition). No blind parameter sweeps — sweep locally, log one EXPT with `sweep_results`. Consult `methodology-handbook.md` for the lens matching the change and `explore-exploit-protocol.md` for mode behavior. Use the canonical `change_category` set (or `COMP.custom_categories`); never invent mid-loop aliases. |
-| 3 Modify | One atomic change (invariant 3); multi-file is fine when it serves one purpose. |
+| 2 Ideate | Hypothesis first (invariant 9). Gates: **highest-impact forcing** ("the highest-impact thing is X, I am about to do Y" — justify any gap, note agenda disagreements), **evidence check** (has this line produced new evidence in its last three EXPTs? if not, reassess and record `research_progress` / `progress`; there is no rotation quota), **premise + idea-diversity check** (data property, prior art incl. prior LOOPs, metric-gaming, same-approach repetition). No blind parameter sweeps — sweep locally, log one EXPT with `sweep_results`. Consult `methodology-handbook.md` for the lens matching the change and `explore-exploit-protocol.md` for mode behavior. Use the canonical `change_category` set (or `COMP.custom_categories`); never invent mid-loop aliases. |
+| 3 Modify | One coherent hypothesis (invariant 3); coordinated component changes are fine when logged as serving it. |
 | 4 Commit | Invariants 4–5. Nothing staged ⇒ log `no_op`, skip verify, next iteration. |
 | 5 Verify | Invariant 7. Pre-check failure ⇒ `discarded` + `failure_stage: pre_check` without verify. Volatile metric ⇒ pick a strategy from `noise-handling-protocol.md`. COMP `guard_command` ⇒ run after verify; on failure rework the implementation (max 2 attempts), never the tests. Timeout at 2× normal ⇒ crash. |
-| 6 Decide | `kept` / `discarded` / `crashed` / `no_op`, mechanically from metric + guard. Log `hypothesis_outcome` (invariant 9), `failure_analysis` on non-keeps, update the agenda direction's `status` (3+ failures ⇒ `exhausted`; improvements ⇒ `promising`). COMP `post_check_command` grades deploy-fit severity (minor / moderate / severe); severe ⇒ `deployability: not_deployable`. |
-| 7 Log | `specflow autoresearch log --loop LOOP-NNN …` creates the EXPT and updates LOOP counters atomically. Title by what changed; position in `iteration`. `parameters` / `model_origin` mandatory for `model`/`params` categories; auxiliary metrics for the domain. |
-| 8 Repeat / Complete | Invariants 8 and 10. Stuck (>5 consecutive discards): switch category (mandatory), re-read code, FINDs, and agenda; log `stuck_state`; at 10 recommend stopping. Then FIND authoring per `finding-generation-protocol.md` — including the LOOP post-mortem fields (`lessons_learned`, `looplevel_findings`). |
+| 6 Decide | `kept` / `discarded` / `crashed` / `no_op`, mechanically from metric + guard. Log `hypothesis_outcome` (invariant 9), `research_progress` when the iteration produced evidence the next decision can use, and `failure_analysis` on non-keeps; update the agenda direction: `promising` when it produced new positive evidence, and set `priority` + `progress` whenever the decision changes (deprioritize/revisit — never `exhausted` from a count alone). `inconclusive` inside the noise floor is not negative evidence; confirm a marginal winner on a fresh seed or held-out slice before confidence climbs (ML-13). COMP `post_check_command` grades deploy-fit severity (minor / moderate / severe); severe ⇒ `deployability: not_deployable`. |
+| 7 Log | `specflow autoresearch log --loop LOOP-NNN …` creates the EXPT and updates LOOP counters atomically (`--research-progress '<json>'` records the anchored progress note). Title by what changed; position in `iteration`. `parameters` / `model_origin` mandatory for `model`/`params` categories; auxiliary metrics for the domain. |
+| 8 Repeat / Complete | Invariants 8, 10, 11. An evidence-free streak (last three attempts) triggers reassessment — re-read code, FINDs, and agenda, record `research_progress` / `progress`, then pick another formulation or park the direction (`deprioritize` / `revisit`); no mandatory category switch and no count-based stop. Then FIND authoring per `finding-generation-protocol.md` — including the LOOP post-mortem fields (`lessons_learned`, `looplevel_findings`). |
 
 ## Consult when
 
-- Verify fails or a session died mid-iteration → `crash-recovery-protocol.md` (capture `crash_telemetry` before reverting; three recovery rules).
+- Verify fails or a session died mid-iteration → `crash-recovery-protocol.md` (capture `crash_telemetry` before reverting; recovery rules; evidence-free streak handling).
 - Choosing or suggesting a LOOP mode → `explore-exploit-protocol.md`.
-- Creating or closing a COMP → `competition-setup-protocol.md`.
-- Authoring FINDs after the loop → `finding-generation-protocol.md`.
+- Creating or closing a COMP → `competition-setup-protocol.md` (nonmetric questions are SPIKE/FIND work, not a fake COMP score).
+- Authoring FINDs after the loop → `finding-generation-protocol.md` (one investigator by default; a delegated review pass is optional at consequential boundaries).
 - Domain methodology during Phase 2 → `methodology-handbook.md`; ideation breadth at Phase 0.7 → `domain-research-checklists.md`.
 - Split design, window advance, COMP churn rule → `rolling-evaluation.md`.
 - Who produces/consumes which field → `protocol-integrations.md`.

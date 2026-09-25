@@ -17,6 +17,7 @@ ledger. They exercise the real CLI parser path (cli.main) where useful.
 
 from __future__ import annotations
 
+import json
 import re
 import subprocess
 from pathlib import Path
@@ -313,6 +314,10 @@ class TestRunProtocol:
         assert "8-Phase Protocol" in out
         assert "Phase 5: Verify" in out
         assert "Phase 7: Log" in out
+        # REQ-043: the printed protocol teaches coherent hypotheses and
+        # evidence/priority, not rotation counts.
+        assert "coherent hypothesis" in out
+        assert "no rotation quota" in out.lower()
         # Running LOOP was not re-started.
         assert "draft → running" not in out
 
@@ -796,8 +801,10 @@ def _make_healthy_loop(root: Path) -> None:
 
 
 class TestStatusExitCodes:
-    """STORY-663: 0 = clear · 3 = warn · 1/2 = fail. The skill prompt rule is
-    "if status fails, stop" — these tests pin what fails and what warns."""
+    """STORY-663 + REQ-043: 0 = clear · 3 = warn · 1/2 = fail. The skill prompt
+    rule is "if status fails, stop" — these tests pin what fails and what
+    warns. REQ-043 moved the warn sources from counts to evidence gaps:
+    reassessment fires on evidence-free streaks, never on a rotation quota."""
 
     def _status(self, root: Path, **extra) -> int:
         args = {"autoresearch_subcommand": "status", "competition": "COMP-001"}
@@ -853,7 +860,11 @@ class TestStatusExitCodes:
         out = capsys.readouterr().out
         assert "still draft" in out
 
-    def test_discard_streak_warns(self, git_project_root, capsys):
+    def test_evidence_free_discard_streak_warns(self, git_project_root, capsys):
+        # REQ-043: five legacy records with no `research_progress` and no
+        # outcome labels are an evidence-free streak — a reassessment warn
+        # (exit 3), never a structural kill. Unannotated records are read
+        # conservatively.
         _make_healthy_loop(git_project_root)
         for i in range(5):
             _make_expt(
@@ -862,25 +873,311 @@ class TestStatusExitCodes:
             )
         assert self._status(git_project_root) == 3
         out = capsys.readouterr().out
-        assert "consecutive discarded/crashed experiments" in out
+        assert "consecutive non-kept experiments with no new evidence" in out
+        assert "Reassess the formulation" in out
 
-    def test_category_run_length_warns(self, git_project_root, capsys):
+    def test_alternating_outcome_labels_still_warn(self, git_project_root, capsys):
+        # REQ-043: outcome labels alone are not evidence. Alternating
+        # invalid/inconclusive labels carry no distinct, anchored
+        # `research_progress`, so the streak still warns (the old
+        # ≥2-distinct-labels predicate is gone).
         _make_healthy_loop(git_project_root)
-        _make_expt(git_project_root, "EXPT-001", "LOOP-001", "kept", 0.7,
-                   category="features")
-        _make_expt(git_project_root, "EXPT-002", "LOOP-001", "kept", 0.8,
-                   category="features")
+        outcomes = ["invalid", "inconclusive", "invalid"]
+        for i, outcome in enumerate(outcomes):
+            _make_expt(
+                git_project_root, f"EXPT-00{i + 1}", "LOOP-001",
+                "discarded", 0.1, category="features",
+                extra={"hypothesis_outcome": outcome},
+            )
         assert self._status(git_project_root) == 3
         out = capsys.readouterr().out
-        assert "consecutive 'features' experiments" in out
+        assert "with no new evidence" in out
+        assert "No evidence-free streak detected" not in out
+
+    def test_distinct_research_progress_negative_continues(
+        self, git_project_root, capsys
+    ):
+        # REQ-043: a scientific negative with distinct, anchored evidence and
+        # a next decision is meaningful progress — the line may continue.
+        _make_healthy_loop(git_project_root)
+        decisions = ("revisit", "pursue", "deprioritize")
+        for i, decision in enumerate(decisions):
+            expt_id = f"EXPT-00{i + 1}"
+            _make_expt(
+                git_project_root, expt_id, "LOOP-001",
+                "discarded", 0.1, category="features",
+                extra={
+                    "hypothesis_outcome": "not_supported",
+                    "research_progress": {
+                        "evidence_ref": expt_id,
+                        "finding": f"negative finding {i + 1}: depth {i + 1} adds no lift",
+                        "next_decision": decision,
+                    },
+                },
+            )
+        assert self._status(git_project_root) == 0
+        out = capsys.readouterr().out
+        assert "No evidence-free streak detected" in out
+
+    def test_old_keep_does_not_suppress_stagnant_tail(
+        self, git_project_root, capsys
+    ):
+        # REQ-043: the accounting window is the last three attempts. A keep
+        # outside that window cannot mask a later evidence-free tail.
+        _make_healthy_loop(git_project_root)
+        _make_expt(git_project_root, "EXPT-001", "LOOP-001", "kept", 0.9,
+                   category="features")
+        for i in range(2, 5):
+            _make_expt(git_project_root, f"EXPT-00{i}", "LOOP-001",
+                       "discarded", 0.1, category="features")
+        assert self._status(git_project_root) == 3
+        out = capsys.readouterr().out
+        assert "consecutive 'features' experiments with no new evidence" in out
+        assert "consecutive non-kept experiments with no new evidence" in out
+
+    def test_repeated_finding_under_new_refs_does_not_count(
+        self, git_project_root, capsys
+    ):
+        # REQ-043: re-stating an old finding under fresh evidence_refs is not
+        # new evidence — novelty is checked against the whole history.
+        _make_healthy_loop(git_project_root)
+        _make_expt(
+            git_project_root, "EXPT-001", "LOOP-001", "discarded", 0.1,
+            category="features",
+            extra={"research_progress": {
+                "evidence_ref": "EXPT-001",
+                "finding": "cutoff sweep is flat",
+                "next_decision": "revisit",
+            }},
+        )
+        for i in range(2, 5):
+            _make_expt(
+                git_project_root, f"EXPT-00{i}", "LOOP-001", "discarded", 0.1,
+                category="features",
+                extra={"research_progress": {
+                    "evidence_ref": f"EXPT-00{i}",
+                    "finding": "cutoff sweep is flat",
+                    "next_decision": "pursue",
+                }},
+            )
+        assert self._status(git_project_root) == 3
+
+    def test_repeated_evidence_ref_does_not_count(self, git_project_root, capsys):
+        # REQ-043: a repeated evidence_ref is not new evidence even when the
+        # finding text differs, the ref is anchored to the current EXPT, and
+        # the scheme is re-spelled (`commit:x` ↔ `x`).
+        _make_healthy_loop(git_project_root)
+        _make_expt(
+            git_project_root, "EXPT-001", "LOOP-001", "discarded", 0.1,
+            category="features",
+            extra={
+                "commit": "beef1234deadbeef",
+                "research_progress": {
+                    "evidence_ref": "commit:beef1234deadbeef",
+                    "finding": "first look is flat",
+                    "next_decision": "revisit",
+                },
+            },
+        )
+        for i in range(2, 5):
+            ref = "beef1234deadbeef" if i % 2 == 0 else "commit:beef1234deadbeef"
+            _make_expt(
+                git_project_root, f"EXPT-00{i}", "LOOP-001", "discarded", 0.1,
+                category="features",
+                extra={
+                    "commit": "beef1234deadbeef",
+                    "research_progress": {
+                        "evidence_ref": ref,
+                        "finding": f"distinct claim {i}",
+                        "next_decision": "pursue",
+                    },
+                },
+            )
+        assert self._status(git_project_root) == 3
+
+    def test_malformed_or_untied_progress_is_conservative(
+        self, git_project_root, capsys
+    ):
+        # REQ-043: absent, malformed, partial, and untied records are read as
+        # no evidence (existence check is conservative, never optimistic).
+        _make_healthy_loop(git_project_root)
+        _make_expt(
+            git_project_root, "EXPT-001", "LOOP-001", "discarded", 0.1,
+            category="features",
+            extra={"research_progress": "EXPT-001 was great"},  # not a mapping
+        )
+        _make_expt(
+            git_project_root, "EXPT-002", "LOOP-001", "discarded", 0.1,
+            category="features",
+            extra={"research_progress": {
+                "evidence_ref": "EXPT-002", "finding": "partial record",
+            }},  # missing next_decision
+        )
+        _make_expt(
+            git_project_root, "EXPT-003", "LOOP-001", "discarded", 0.1,
+            category="features",
+            extra={"research_progress": {
+                "evidence_ref": "EXPT-001",  # anchored to another record
+                "finding": "untied reference",
+                "next_decision": "pursue",
+            }},
+        )
+        assert self._status(git_project_root) == 3
+
+    def test_repeat_keeps_without_improvement_do_not_count(
+        self, git_project_root, capsys
+    ):
+        # REQ-043: keep status alone counts only with a measured delta or a
+        # new best primary metric. Three keeps at the incumbent best are
+        # repeat keeps, not progress.
+        _make_healthy_loop(git_project_root)
+        _make_expt(git_project_root, "EXPT-001", "LOOP-001", "kept", 0.5,
+                   category="features")
+        for i in range(2, 5):
+            _make_expt(git_project_root, f"EXPT-00{i}", "LOOP-001", "kept",
+                       0.5, category="features")
+        assert self._status(git_project_root) == 3
+        out = capsys.readouterr().out
+        assert "consecutive 'features' experiments with no new evidence" in out
+
+    def test_repeat_keeps_lower_is_better_do_not_count(
+        self, git_project_root, capsys
+    ):
+        # REQ-043: the improvement sign follows COMP.metric_direction; equal
+        # values are not improvement for lower_is_better either.
+        _make_healthy_loop(git_project_root)
+        _make_comp(git_project_root, direction="lower_is_better")
+        _make_expt(git_project_root, "EXPT-001", "LOOP-001", "kept", 0.4,
+                   category="features")
+        for i in range(2, 5):
+            _make_expt(git_project_root, f"EXPT-00{i}", "LOOP-001", "kept",
+                       0.4, category="features")
+        assert self._status(git_project_root) == 3
+
+    def test_recent_improving_keep_counts(self, git_project_root, capsys):
+        # REQ-043: an improvement inside the recent window is progress, even
+        # when the tail's later keeps repeat it.
+        _make_healthy_loop(git_project_root)
+        _make_expt(git_project_root, "EXPT-001", "LOOP-001", "kept", 0.5,
+                   category="features")
+        _make_expt(git_project_root, "EXPT-002", "LOOP-001", "kept", 0.6,
+                   category="features")
+        for i in (3, 4):
+            _make_expt(git_project_root, f"EXPT-00{i}", "LOOP-001", "kept",
+                       0.6, category="features")
+        assert self._status(git_project_root) == 0
+        out = capsys.readouterr().out
+        assert "No evidence-free streak detected" in out
+
+    def test_repeated_positive_delta_does_not_override_unchanged_metric(
+        self, git_project_root, capsys
+    ):
+        # REQ-043: when a comparable primary metric exists, it decides — a
+        # repeated positive delta on unchanged keeps must not suppress
+        # reassessment indefinitely.
+        _make_healthy_loop(git_project_root)
+        _make_expt(git_project_root, "EXPT-001", "LOOP-001", "kept", 0.6,
+                   category="features")
+        for i in (2, 3, 4):
+            _make_expt(
+                git_project_root, f"EXPT-00{i}", "LOOP-001", "kept", 0.6,
+                category="features", extra={"delta": 1},
+            )
+        assert self._status(git_project_root) == 3
+        out = capsys.readouterr().out
+        assert "consecutive 'features' experiments with no new evidence" in out
+
+    def test_finite_delta_is_fallback_when_metric_absent(
+        self, git_project_root, capsys
+    ):
+        # REQ-043: a finite, correctly signed delta is accepted when no
+        # comparable primary metric exists on the EXPT (and the accepted
+        # EXPT must sit inside the recent window).
+        _make_healthy_loop(git_project_root)
+        _make_expt(git_project_root, "EXPT-001", "LOOP-001", "kept", 0.5,
+                   category="features")
+        _make_expt(git_project_root, "EXPT-002", "LOOP-001", "kept", None,
+                   category="features", extra={"delta": 0.05})
+        for i in (3, 4):
+            _make_expt(git_project_root, f"EXPT-00{i}", "LOOP-001", "kept",
+                       None, category="features")
+        assert self._status(git_project_root) == 0
+
+    def test_nonfinite_metric_or_delta_does_not_count(
+        self, git_project_root, capsys
+    ):
+        # REQ-043: NaN/Infinity are not measured numbers — as a metric they
+        # fall back to delta, and as a delta they never count (NaN also
+        # compared False for lower_is_better before this fix).
+        _make_healthy_loop(git_project_root)
+        _make_expt(
+            git_project_root, "EXPT-001", "LOOP-001", "kept", float("nan"),
+            category="features", extra={"delta": float("nan")},
+        )
+        _make_expt(
+            git_project_root, "EXPT-002", "LOOP-001", "kept", float("inf"),
+            category="features", extra={"delta": float("inf")},
+        )
+        _make_expt(
+            git_project_root, "EXPT-003", "LOOP-001", "kept", None,
+            category="features", extra={"delta": float("-inf")},
+        )
+        assert self._status(git_project_root) == 3
+
+    def test_nonfinite_delta_lower_is_better_does_not_count(
+        self, git_project_root, capsys
+    ):
+        # Regression: NaN delta previously satisfied the lower_is_better
+        # "improved" comparison and counted as progress.
+        _make_healthy_loop(git_project_root)
+        _make_comp(git_project_root, direction="lower_is_better")
+        for i in range(1, 4):
+            _make_expt(
+                git_project_root, f"EXPT-00{i}", "LOOP-001", "kept", None,
+                category="features", extra={"delta": float("nan")},
+            )
+        assert self._status(git_project_root) == 3
+
+    def test_evidence_free_category_run_warns(self, git_project_root, capsys):
+        # 3+ same-category legacy EXPTs with no annotations: evidence-free,
+        # conservative warning.
+        _make_healthy_loop(git_project_root)
+        for i in range(3):
+            _make_expt(git_project_root, f"EXPT-00{i + 1}", "LOOP-001",
+                       "discarded", 0.1, category="features")
+        assert self._status(git_project_root) == 3
+        out = capsys.readouterr().out
+        assert "consecutive 'features' experiments with no new evidence" in out
+
+    def test_two_direction_agenda_has_no_minimum_quota(
+        self, git_project_root, capsys
+    ):
+        # REQ-043: decomposition is a hypothesis, not a direction count — a
+        # 2-direction agenda passes at full budget.
+        _make_loop(
+            git_project_root, "LOOP-001", "COMP-001", status="running",
+            mode="explore", budget=50,
+            extra={
+                "research_agenda": [
+                    {"direction": "feature mix", "status": "in_progress"},
+                    {"direction": "calibration", "status": "unexplored"},
+                ],
+                "eda_completed": True,
+                "iteration_count": 0,
+            },
+        )
+        assert self._status(git_project_root) == 0
+        out = capsys.readouterr().out
+        assert "2 recorded direction(s)" in out
 
     def test_missing_research_agenda_warns(self, git_project_root, capsys):
-        # budget 50 → full Phase 0.7 rigor: 5-direction agenda required.
+        # The check is presence, not a quota — a missing Phase 0.7 record
+        # still warns at full budget.
         _make_loop(git_project_root, "LOOP-001", "COMP-001", status="running",
                    mode="explore", budget=50, extra={"iteration_count": 0})
         assert self._status(git_project_root) == 3
         out = capsys.readouterr().out
-        assert "fewer than 5 directions" in out
+        assert "No research agenda recorded" in out
 
     def test_structural_beats_warn(self, git_project_root, capsys):
         # Multiple running LOOPs (structural fail) + missing agenda (warn):
@@ -898,4 +1195,171 @@ class TestStatusExitCodes:
         assert self._status(git_project_root) == 0
         out = capsys.readouterr().out
         assert "no active LOOP" in out
+
+    def test_prioritized_direction_without_progress_is_advisory(
+        self, git_project_root, capsys
+    ):
+        # REQ-043: a priority decision should carry its progress note. Missing
+        # progress is an advisory (exit stays 0), not a warn/block.
+        _make_loop(
+            git_project_root, "LOOP-001", "COMP-001", status="running",
+            mode="explore", budget=50,
+            extra={
+                "research_agenda": [
+                    {"direction": "feature mix", "status": "in_progress",
+                     "priority": "pursue"},
+                    {"direction": "calibration", "status": "unexplored"},
+                ],
+                "eda_completed": True,
+                "iteration_count": 0,
+            },
+        )
+        assert self._status(git_project_root) == 0
+        out = capsys.readouterr().out
+        assert "prioritized direction(s) without a progress note" in out
         assert "Phase 0 preconditions" in out
+
+
+class TestLogResearchProgress:
+    """REQ-043: `autoresearch log --research-progress` is the validated producer
+    for the EXPT progress note that `autoresearch status` reads over its recent
+    window."""
+
+    def _plan(self, project_root: Path, monkeypatch) -> int:
+        from specflow import cli
+        monkeypatch.chdir(project_root)
+        return cli.main([
+            "autoresearch", "plan", "--competition", "COMP-001",
+            "--mode", "explore", "--budget", "50",
+        ])
+
+    def test_log_research_progress_round_trips(self, project_root, monkeypatch, capsys):
+        from specflow import cli
+        assert self._plan(project_root, monkeypatch) == 0
+        note = {
+            "evidence_ref": "commit:a1b2c3d",
+            "finding": "cutoff above 0.6 degrades recall",
+            "next_decision": "revisit",
+        }
+        rc = cli.main([
+            "autoresearch", "log", "--loop", "LOOP-001",
+            "--status", "discarded", "--metric-value", "0.71",
+            "--change-category", "params", "--summary", "cutoff sweep",
+            "--research-progress", json.dumps(note),
+        ])
+        assert rc == 0
+        expt = _parse(project_root, "EXPT-001")
+        assert expt.frontmatter["research_progress"] == note
+
+    def test_log_research_progress_malformed_rejected(
+        self, project_root, monkeypatch, capsys
+    ):
+        from specflow import cli
+        assert self._plan(project_root, monkeypatch) == 0
+        rc = cli.main([
+            "autoresearch", "log", "--loop", "LOOP-001",
+            "--status", "discarded", "--metric-value", "0.71",
+            "--change-category", "params", "--summary", "cutoff sweep",
+            "--research-progress", '{"evidence_ref": "EXPT-001"}',
+        ])
+        assert rc == 1
+        out = capsys.readouterr().out
+        assert "Invalid --research-progress" in out
+        assert "missing non-empty string field 'finding'" in out
+        expts = [
+            a for a in art_lib.discover_artifacts(project_root)
+            if art_lib.get_prefix_from_id(a.id) == "EXPT"
+        ]
+        assert expts == [], "malformed progress must create nothing"
+
+    def test_log_research_progress_not_json_rejected(
+        self, project_root, monkeypatch, capsys
+    ):
+        from specflow import cli
+        assert self._plan(project_root, monkeypatch) == 0
+        rc = cli.main([
+            "autoresearch", "log", "--loop", "LOOP-001",
+            "--status", "kept", "--metric-value", "0.72",
+            "--change-category", "features", "--summary", "s",
+            "--research-progress", "not-json",
+        ])
+        assert rc == 1
+        assert "Invalid --research-progress" in capsys.readouterr().out
+
+    def test_set_research_progress_is_reserved(self, project_root, monkeypatch, capsys):
+        from specflow import cli
+        assert self._plan(project_root, monkeypatch) == 0
+        rc = cli.main([
+            "autoresearch", "log", "--loop", "LOOP-001",
+            "--status", "kept", "--metric-value", "0.72",
+            "--change-category", "features", "--summary", "s",
+            "--set", 'research_progress={"evidence_ref": "EXPT-001"}',
+        ])
+        assert rc == 1
+        assert "reserved" in capsys.readouterr().out
+
+
+class TestEvidenceAnchoring:
+    """Narrow regression pins for `_evidence_ref_is_anchored` false anchors
+    (REQ-043): prefix collisions, empty/one-char commit matches, and the
+    tautological path self-mention inside `research_progress`."""
+
+    def _expt(self, art_id: str = "EXPT-001", fm_extra: dict | None = None,
+              body: str = "") -> art_lib.Artifact:
+        fm = {
+            "id": art_id, "type": "experiment", "status": "discarded",
+            "loop": "LOOP-001", "metric_value": 0.1,
+            "change_category": "features", "summary": "x",
+            "research_progress": {
+                "evidence_ref": "placeholder",
+                "finding": "f",
+                "next_decision": "pursue",
+            },
+        }
+        if fm_extra:
+            fm.update(fm_extra)
+        return art_lib.Artifact(
+            path=Path(f"{art_id}.md"), frontmatter=fm, body=body, links=[],
+        )
+
+    def test_exact_id_and_fragment_only(self, tmp_path: Path):
+        anchored = autoresearch_cmd._evidence_ref_is_anchored
+        art = self._expt("EXPT-001")
+        assert anchored(art, "EXPT-001", tmp_path) is True
+        assert anchored(art, "EXPT-001#verify-log", tmp_path) is True
+        # Prefix collision: a longer, different EXPT id is not this EXPT.
+        assert anchored(art, "EXPT-0010", tmp_path) is False
+        assert anchored(art, "see EXPT-001", tmp_path) is False
+
+    def test_commit_anchor_requires_exact_or_hex_abbreviation(self, tmp_path: Path):
+        anchored = autoresearch_cmd._evidence_ref_is_anchored
+        art = self._expt("EXPT-002", fm_extra={"commit": "abcdef1234567890"})
+        assert anchored(art, "abcdef1234567890", tmp_path) is True
+        assert anchored(art, "commit:abcdef1234567890", tmp_path) is True
+        assert anchored(art, "commit:abcdef1", tmp_path) is True  # 7-hex prefix
+        assert anchored(art, "commit:abcdef", tmp_path) is False  # 6 chars
+        assert anchored(art, "commit:a", tmp_path) is False       # 1 char
+        assert anchored(art, "commit:", tmp_path) is False        # empty body
+        assert anchored(art, "commit:zzzzzzzz", tmp_path) is False  # non-hex
+
+    def test_path_anchor_cannot_self_certify(self, tmp_path: Path):
+        anchored = autoresearch_cmd._evidence_ref_is_anchored
+        target = tmp_path / "logs" / "run.json"
+        target.parent.mkdir()
+        target.write_text("{}", encoding="utf-8")
+        # The ref lives inside `research_progress` itself; it is not logged
+        # elsewhere on the record, so the record mention is tautological.
+        art = self._expt("EXPT-003")
+        art.frontmatter["research_progress"]["evidence_ref"] = "logs/run.json"
+        assert anchored(art, "logs/run.json", tmp_path) is False
+        # Logged in a real output field and present on disk: anchored.
+        art = self._expt("EXPT-003", fm_extra={"checks": ["logs/run.json"]})
+        assert anchored(art, "logs/run.json", tmp_path) is True
+        # Logged but missing on disk: not anchored.
+        assert anchored(art, "logs/missing.json", tmp_path) is False
+
+    def test_scheme_respelling_is_the_same_ref(self):
+        normalised_ref = autoresearch_cmd._normalised_ref
+        assert normalised_ref("commit:abc123") == normalised_ref("abc123")
+        assert normalised_ref("path:logs/run.json") == normalised_ref("logs/run.json")
+        assert normalised_ref("ABC123") == normalised_ref("abc123")

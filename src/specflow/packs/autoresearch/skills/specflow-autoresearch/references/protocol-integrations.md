@@ -30,9 +30,10 @@ inside a LOOP iteration; CI/hooks from adapter validate EXPT artifacts.
 
 - **COMP → LOOP** (autonomous-loop-protocol.md): `goals`/`theses`/`constraints` → hypothesis framing; `pre_check_command`/`post_check_command` → per-iteration guards and deploy-fit grading; `noise_characterization` → noise strategy (noise-handling-protocol.md); `domain` → EDA deltas, checklist, methodology lens; `custom_categories` → the active category set.
 - **LOOP → EXPT** (autonomous-loop-protocol.md): `active_research_questions` → hypothesis linkage; `budget` → termination + surprise allocation.
-- **EXPT → FIND** (finding-generation-protocol.md): `metric_value`/`change_category` → grouping; `hypothesis`+`hypothesis_outcome`, `failure_analysis`, `design_quality`, `auxiliary_metrics`, `crash_telemetry` → `what_worked`/`what_failed` authoring and confidence calibration.
+- **EXPT → FIND** (finding-generation-protocol.md): `metric_value`/`change_category` → grouping; `hypothesis`+`hypothesis_outcome` (`supported`/`not_supported`/`inconclusive`/`invalid`), `failure_analysis`, `design_quality`, `auxiliary_metrics`, `crash_telemetry` → `what_worked`/`what_failed` authoring and confidence calibration. (`sensitive` is a FIND-side robustness tag here, not an EXPT outcome value.)
+- **EXPT → status accounting** (autonomous-loop-protocol.md): `research_progress` (`evidence_ref` anchored to the EXPT + distinct `finding` + `next_decision`) and a keep's measured `delta`/new-best `metric_value` → the recent-window reassessment signal in `autoresearch status`; `hypothesis_outcome` labels, repeated claims/refs, and older keeps do not count.
 - **FIND → LOOP** (autonomous-loop-protocol.md): `what_worked`/`what_failed`/`next_steps` → ideation; `confidence` → synthesis triggers; `deployability` → post-check weighting.
-- **LOOP → next LOOP** (autonomous-loop-protocol.md): `lessons_learned`, `looplevel_findings`, condensation briefs, `termination_suggestions`, `best_metric` baseline, `eda_summary` skip rule, `research_agenda` inheritance + re-rank.
+- **LOOP → next LOOP** (autonomous-loop-protocol.md): `lessons_learned`, `looplevel_findings`, condensation briefs, `termination_suggestions`, `best_metric` baseline, `eda_summary` skip rule, `research_agenda` inheritance + re-rank (direction `priority`/`progress` carry the decisions separately from the evidence).
 
 ## Skill-to-protocol routing
 
@@ -41,4 +42,4 @@ inside a LOOP iteration; CI/hooks from adapter validate EXPT artifacts.
 | Setup (no COMP) | `competition-setup-protocol.md` |
 | Plan LOOP | `autonomous-loop-protocol.md` (+ `crash-recovery-protocol.md`) |
 | Run LOOP | `autonomous-loop-protocol.md` (+ `explore-exploit-protocol.md`, `noise-handling-protocol.md`) |
-| Review / delegate-review | `finding-generation-protocol.md` |
+| Review (sequential by default; delegated pass optional) | `finding-generation-protocol.md` |

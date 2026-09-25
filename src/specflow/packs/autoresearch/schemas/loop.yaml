@@ -1,3 +1,18 @@
+# LOOP (research loop) schema — autoresearch pack.
+#
+# `research_agenda` entries (freeform; rendered by `autoresearch status`):
+#   {direction, status: unexplored|in_progress|promising|exhausted,
+#    expected_impact, rationale,
+#    priority: pursue|deprioritize|blocked|revisit,   # REQ-043 decision
+#    progress: "<new evidence + the next decision it feeds>"}
+# Decomposition is a hypothesis: the agenda records the width of plausible
+# formulations (assumptions, tradeoffs, evaluation) — there is no direction
+# quota. `priority` is a decision, separate from evidence
+# (`hypothesis_outcome` lives on the EXPT); deprioritize/blocked close a
+# direction out of the open list, revisit keeps it open. Evidence movement for
+# the `status` reassessment comes from each EXPT's `research_progress` note
+# over its last three attempts (see experiment.yaml); `progress` here is the
+# direction-level decision note.
 type: loop
 category: research
 prefix: LOOP

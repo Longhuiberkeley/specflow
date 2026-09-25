@@ -412,6 +412,8 @@ specflow autoresearch status [--competition COMP-001]
 specflow autoresearch review --competition COMP-001
 specflow autoresearch leaderboard [--competition COMP-001 | --all]
 specflow autoresearch log --loop LOOP-001 --status kept --metric-value 0.73 --summary "..."
+specflow autoresearch log --loop LOOP-001 --status discarded --metric-value 0.71 --summary "..." \
+  --research-progress '{"evidence_ref":"commit:a1b2c3d","finding":"cutoff above 0.6 degrades recall","next_decision":"revisit"}'
 specflow autoresearch suggest-finds --loop LOOP-001
 ```
 
@@ -419,10 +421,10 @@ specflow autoresearch suggest-finds --loop LOOP-001
 |------------|---------|
 | `plan` | Create/update a LOOP or print the setup checklist; `--profile` includes the host-run three-sample noise probe in that checklist |
 | `run` | Print the loop protocol and start a draft LOOP unless `--no-start`; refuses a second concurrent running LOOP |
-| `status` | Print COMP-level closure-readiness (goals echo, confirmed FIND count, open agenda directions, LOOP census) even when every LOOP is completed/plateaued, then LOOP readiness/budget accounting when a running or draft LOOP resolves |
+| `status` | Print COMP-level closure-readiness (goals echo, confirmed FIND count, open agenda directions, LOOP census) even when every LOOP is completed/plateaued, then LOOP readiness/budget accounting when a running or draft LOOP resolves. Exit codes: `0` clear · `3` warns (missing agenda, evidence-free streak — reassess, don't rotate) · `1`/`2` fail (no git repo, concurrent running LOOPs, budget exhausted). A prioritized direction without a `progress` note is an advisory (exit stays `0`), not a warn. |
 | `review` | Summarize all loops, experiments, and candidate findings for one competition |
 | `leaderboard` | Rank experiments for one competition or all competitions |
-| `log` | Record an experiment outcome and optional structured fields (`--set KEY=VALUE`) |
+| `log` | Record an experiment outcome and optional structured fields (`--set KEY=VALUE`, `--research-progress JSON`: `{evidence_ref, finding, next_decision}` with evidence_ref anchored to the EXPT) |
 | `suggest-finds` | Propose one condensed FIND from a LOOP's experiment history |
 
 ### `specflow document-changes`

@@ -435,6 +435,48 @@ class TestAutoresearchHypothesisLogging:
         result = lint_cmd._check_autoresearch_logging([art], project_root)
         assert "hypothesis" not in result["detail"]
 
+    def test_invalid_outcome_accepted_with_failure_analysis(self, project_root: Path):
+        # REQ-043: `invalid` is a valid evidence outcome (invalid instrument).
+        art = self._expt(
+            hypothesis="X lifts metric",
+            hypothesis_outcome="invalid",
+            failure_analysis="verify crashed on malformed input — no evidence either way",
+        )
+        result = lint_cmd._check_autoresearch_logging([art], project_root)
+        assert "hypothesis" not in result["detail"]
+
+    def test_invalid_outcome_without_failure_analysis_warns(self, project_root: Path):
+        art = self._expt(hypothesis="X lifts metric", hypothesis_outcome="invalid")
+        result = lint_cmd._check_autoresearch_logging([art], project_root)
+        assert "instrument failure" in result["detail"]
+
+    def test_valid_research_progress_is_clean(self, project_root: Path):
+        # REQ-043: the progress note is a known optional shape — a complete
+        # record produces no autoresearch-logging warning.
+        art = self._expt(
+            hypothesis="X lifts metric",
+            hypothesis_outcome="not_supported",
+            research_progress={
+                "evidence_ref": "EXPT-050",
+                "finding": "cutoff sweep is flat",
+                "next_decision": "revisit",
+            },
+        )
+        result = lint_cmd._check_autoresearch_logging([art], project_root)
+        assert "research_progress" not in result["detail"]
+
+    def test_malformed_research_progress_warns(self, project_root: Path):
+        # REQ-043: shape-only lint — a partial record is reported so it cannot
+        # silently become an unreadable status input.
+        art = self._expt(
+            hypothesis="X lifts metric",
+            hypothesis_outcome="not_supported",
+            research_progress={"evidence_ref": "EXPT-050", "finding": "x"},
+        )
+        result = lint_cmd._check_autoresearch_logging([art], project_root)
+        assert "research_progress" in result["detail"]
+        assert "next_decision" in result["detail"]
+
 
 # ── 4. End-to-end chain ─────────────────────────────────────────────────────
 
@@ -670,6 +712,8 @@ class TestAutoresearchCLI:
         assert "8-Phase Protocol" in out
         assert "Phase 5: Verify" in out
         assert "Phase 7: Log" in out
+        assert "coherent hypothesis" in out
+        assert "hypothesis_outcome" in out
 
     def test_review_shows_findings_and_leaderboard(self, project_root: Path, capsys):
         self._setup_comp_and_loop(project_root)
@@ -737,16 +781,17 @@ class TestAutoresearchCLI:
             "autoresearch_subcommand": "status",
             "competition": "COMP-001",
         })
-        # STORY-663: missing research_agenda and the 3-run category streak are
-        # exit-code-bearing warns now — this run exits 3 (was 0 pre-663).
+        # REQ-043: missing research_agenda is an exit-code-bearing warn (was
+        # one of the STORY-663 gates). The fixture's EXPTs include keeps, so
+        # evidence moved and no reassessment warn fires.
         assert rc == 3
         out = capsys.readouterr().out
         assert "Closure-readiness" in out
         assert "LOOP-001" in out
         assert "Deterministic accounting" in out
         assert "No completed EDA" in out
-        assert "Research agenda" in out
-        assert "consecutive 'features' experiments" in out
+        assert "No research agenda recorded" in out
+        assert "No evidence-free streak detected" in out
 
     def test_run_blocks_when_budget_is_exhausted(self, project_root: Path, capsys):
         self._setup_comp_and_loop(project_root)
@@ -958,6 +1003,36 @@ class TestStatusClosureReadiness:
         assert "direction-9" not in out
         assert "+2 more" in out
 
+    def test_open_directions_respect_priority(self, project_root: Path, capsys):
+        # REQ-043: priority is a decision separate from status/evidence.
+        # deprioritize/blocked close a direction out of the open list;
+        # pursue/revisit keep it open.
+        self._make_comp(project_root)
+        self._make_loop(
+            project_root, "LOOP-001", "completed",
+            agenda=[
+                {"direction": "feature mix", "status": "in_progress",
+                 "priority": "pursue"},
+                {"direction": "leakage audit", "status": "in_progress",
+                 "priority": "blocked"},
+                {"direction": "regime split", "status": "in_progress",
+                 "priority": "deprioritize"},
+                {"direction": "exit logic", "status": "in_progress",
+                 "priority": "revisit"},
+            ],
+        )
+        rc = autoresearch_cmd.run(project_root, {
+            "autoresearch_subcommand": "status",
+            "competition": "COMP-001",
+        })
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "Open directions (2):" in out
+        assert "feature mix" in out
+        assert "exit logic" in out
+        assert "leakage audit" not in out
+        assert "regime split" not in out
+
     def test_no_goals_and_no_open_directions_echo(self, project_root: Path, capsys):
         self._make_comp(project_root)
         self._make_loop(project_root, "LOOP-001", "completed")
@@ -1016,9 +1091,10 @@ class TestStatusClosureReadiness:
             "autoresearch_subcommand": "status",
             "competition": "COMP-001",
         })
-        # STORY-663: budget 20 requires a 5-direction agenda; this 1-direction
-        # agenda is a warn → exit 3 (was 0 pre-663). Rendering is unchanged.
-        assert rc == 3
+        # REQ-043: no direction-count quota — a 1-direction agenda is a
+        # recorded decomposition, not a warn; the LOOP accounting still
+        # renders (was exit 3 under the STORY-663 quota).
+        assert rc == 0
         out = capsys.readouterr().out
         assert "Closure-readiness" in out
         assert "beat baseline" in out
@@ -1283,6 +1359,24 @@ class TestNewSchemaFields:
         opts = schema.get("optional_fields", [])
         for field in ("goal", "required_findings", "termination_suggestions"):
             assert field in opts, f"loop.yaml should have optional field '{field}'"
+
+    def test_schemas_document_evidence_and_priority(self, project_root: Path):
+        # REQ-043: evidence (EXPT) and priority/progress (LOOP agenda) are
+        # documented on the schema files, not only in prose.
+        loop_raw = (project_root / ".specflow" / "schema" / "loop.yaml").read_text()
+        exp_raw = (project_root / ".specflow" / "schema" / "experiment.yaml").read_text()
+        for token in ("priority", "progress", "deprioritize", "revisit"):
+            assert token in loop_raw, f"loop.yaml should document '{token}'"
+        assert "no direction" in loop_raw.lower()
+        for token in ("invalid", "scoped falsification", "not_supported"):
+            assert token in exp_raw, f"experiment.yaml should document '{token}'"
+        # REQ-043 follow-up: `research_progress` is a schema field consumed by
+        # `autoresearch status`, not a prose orphan.
+        schema = yaml.safe_load(exp_raw)
+        assert "research_progress" in schema.get("optional_fields", [])
+        for token in ("research_progress", "evidence_ref", "finding", "next_decision"):
+            assert token in exp_raw, f"experiment.yaml should document '{token}'"
+        assert "last three" in loop_raw.lower() or "recent" in loop_raw.lower()
 
     def test_finding_schema_has_new_fields(self, project_root: Path):
         schema_path = project_root / ".specflow" / "schema" / "finding.yaml"
@@ -2156,17 +2250,133 @@ class TestProtocolInvariantSheets:
 
     def test_loop_protocol_invariants(self):
         content = self._ref("autonomous-loop-protocol.md").read_text()
-        # SPIKE-002 STORY 9: budget, one LOOP/COMP, one atomic EXPT,
-        # commit-before-verify, no `git add -A`, persist condensation_brief (F6),
-        # stop on goals-met/budget.
+        # SPIKE-002 STORY 9 + REQ-043: budget, one LOOP/COMP, one coherent
+        # hypothesis per EXPT, commit-before-verify, no `git add -A`, persist
+        # condensation_brief (F6), stop on goals-met/budget, evidence/priority
+        # separation, reassess-on-evidence.
         assert "budget" in content
         assert "One running LOOP per COMP" in content
-        assert "One atomic EXPT per iteration" in content
+        assert "One coherent hypothesis per EXPT" in content
         assert "Commit before verify" in content
         assert "git add -A" in content and "--no-verify" in content
         assert "condensation_brief" in content
         assert "goals-met or budget" in content
+        assert "not_supported" in content and "invalid" in content
+        assert "deprioritize" in content and "revisit" in content
+        assert "no rotation quota" in content.lower() or "reassess on evidence" in content.lower()
+        assert "runtime loop" in content.lower()
+        # REQ-043 follow-up: progress is a bounded-window, anchored record.
+        assert "research_progress" in content
+        assert "last three" in content.lower()
+        assert "evidence_ref" in content
         assert "Consult when" in content  # O4 contextual pointers
+
+    def test_loop_protocol_has_no_count_driven_gates(self):
+        # REQ-043: the forced rotation/switch/exhaust rules are gone.
+        content = self._ref("autonomous-loop-protocol.md").read_text()
+        assert "3 consecutive same-category EXPTs blocked" not in content
+        assert "2 in explore mode" not in content
+        assert "3+ failures ⇒ `exhausted`" not in content
+        assert "Stuck (>5 consecutive discards)" not in content
+
+    def test_finding_generation_evidence_vocabulary(self):
+        content = self._ref("finding-generation-protocol.md").read_text()
+        assert "scoped falsification" in content
+        assert "invalid" in content
+        assert "priority" in content.lower()
+        assert "sequential" in content.lower()
+
+    def test_review_is_optional_not_mandatory(self):
+        # REQ-043: one investigator + deterministic log; a delegated review
+        # pass is optional at consequential boundaries with a sequential
+        # default. The old mandatory post-LOOP delegation rule must be gone.
+        skill = (
+            PACKS_DIR / "autoresearch" / "skills" / "specflow-autoresearch"
+            / "SKILL.md"
+        ).read_text()
+        assert "delegate review to a subagent" not in skill.lower()
+        assert "One investigator" in skill
+        assert "optional" in skill.lower() and "sequential" in skill.lower()
+        # No fabricated-score path for nonmetric questions.
+        assert "Nonmetric questions are SPIKE/FIND work" in skill
+        assert "never required" in skill.lower()
+
+    def test_status_docs_keep_progress_advisory(self):
+        # REQ-043 review fix: a prioritized direction without a `progress`
+        # note is advisory (exit stays 0), never an exit-3 warn source.
+        skill = (
+            PACKS_DIR / "autoresearch" / "skills" / "specflow-autoresearch"
+            / "SKILL.md"
+        ).read_text()
+        cli_ref = (
+            Path(__file__).parent.parent / "docs" / "cli-reference.md"
+        ).read_text()
+        sentence = "prioritized direction without a `progress` note is an advisory"
+        assert sentence in skill
+        assert sentence in cli_ref
+
+    def test_sensitive_is_find_robustness_not_expt_outcome(self):
+        # REQ-043 review fix: `sensitive` is a FIND-side robustness tag; the
+        # EXPT evidence vocabulary stays the four-value outcome set.
+        skill = (
+            PACKS_DIR / "autoresearch" / "skills" / "specflow-autoresearch"
+            / "SKILL.md"
+        ).read_text()
+        find = self._ref("finding-generation-protocol.md").read_text()
+        assert "`supported` / `not_supported` / `inconclusive` / `invalid`" in skill
+        assert "FIND-side robustness tag" in skill
+        assert "`sensitive` is a FIND-side robustness tag" in find
+
+    def test_setup_formulation_width_precedes_baseline_dry_run(self):
+        # Setup order must match Phase 0.7: reason about formulation width
+        # before the baseline dry-run, not head-first.
+        skill = (
+            PACKS_DIR / "autoresearch" / "skills" / "specflow-autoresearch"
+            / "SKILL.md"
+        ).read_text()
+        width = skill.index("### Step 1.5: Formulation Width")
+        dry = skill.index("### Step 2: Verify Command Dry-Runs")
+        assert width < dry
+        section = skill[width:dry]
+        assert "first verify run" in section
+        assert "head-first default" in section
+
+    def test_quick_tier_keeps_validity_checks_without_blanket_rerun(self):
+        # Quick tier reduces coverage, not correctness: baseline validity and
+        # verify/guard/invalid-instrument rules stay; no iteration-count-based
+        # blanket "rerun before trusting" mandate.
+        skill = (
+            PACKS_DIR / "autoresearch" / "skills" / "specflow-autoresearch"
+            / "SKILL.md"
+        ).read_text()
+        quick = skill[skill.index("**Quick / smoke tier"):skill.index("### Step 1.5")]
+        assert "parseable number" in quick
+        assert "invalid" in quick and "failure_analysis" in quick
+        assert "one coherent hypothesis" in quick.lower()
+        assert "reduced coverage" in quick.lower()
+        assert "MUST announce" not in quick
+        assert "rerun without it before trusting" not in skill
+        # Confidence follows actual evaluation/coverage, never budget size:
+        # no blanket low-confidence or rerun rule for budget <= 5.
+        assert "not merely because the budget was small" in quick
+        assert "low-confidence until confirmed" not in quick
+        assert "do not present quick-tier output as validated" not in quick
+
+    def test_setup_confirmation_proceeds_under_existing_authority(self):
+        # Astra autonomy: an already-authorized scope/budget is summarized and
+        # proceeded on; only materially missing authority is asked for — and
+        # the genuine human gates stay untouched.
+        skill = (
+            PACKS_DIR / "autoresearch" / "skills" / "specflow-autoresearch"
+            / "SKILL.md"
+        ).read_text()
+        step4 = skill[skill.index("### Step 4:"):skill.index("## Autoresearch Lifecycle")]
+        assert "authorized the scope and budget" in step4
+        assert "materially missing" in step4
+        assert "FIND draft → confirmed" in step4
+        assert "COMP active → completed" in step4
+        # The FIND confirmation gate itself is unchanged.
+        assert "No self-approval on findings" in skill
 
     def test_competition_setup_invariants(self):
         content = self._ref("competition-setup-protocol.md").read_text()
