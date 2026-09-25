@@ -497,4 +497,67 @@ artifacts:
     tags: []
     fingerprint: sha256:22ba0dc20337
     children: []
-next_id: 62
+  IT-062:
+    id: IT-062
+    title: guided_by edge renders through trace (STORY-669)
+    status: draft
+    tags: []
+    fingerprint: sha256:5613479a0750
+    children: []
+  IT-063:
+    id: IT-063
+    title: bp-application coverage arithmetic end to end (STORY-670)
+    status: draft
+    tags: []
+    fingerprint: sha256:923abf277163
+    children: []
+  IT-064:
+    id: IT-064
+    title: Brief binding section omission (STORY-671)
+    status: draft
+    tags: []
+    fingerprint: sha256:4ee3bef03efd
+    children: []
+  IT-065:
+    id: IT-065
+    title: Frontier CLI rendering and json ledger (STORY-672)
+    status: draft
+    tags: []
+    fingerprint: sha256:acb6116fa20d
+    children: []
+  IT-066:
+    id: IT-066
+    title: EDA lens wiring and agenda revision advisory (STORY-673)
+    status: draft
+    tags: []
+    fingerprint: sha256:13518bfdb44b
+    children: []
+  IT-067:
+    id: IT-067
+    title: Error-analysis protocol pack integration (STORY-674)
+    status: draft
+    tags: []
+    fingerprint: sha256:742b653bc2c8
+    children: []
+  IT-068:
+    id: IT-068
+    title: Condensation gate and top-3 ranking integration (STORY-675)
+    status: draft
+    tags: []
+    fingerprint: sha256:384f11350556
+    children: []
+  IT-069:
+    id: IT-069
+    title: Fingerprint freeze and drift routing integration (STORY-676)
+    status: draft
+    tags: []
+    fingerprint: sha256:1bfe9e825e13
+    children: []
+  IT-070:
+    id: IT-070
+    title: Guard advisories and quant bundle integration (STORY-677)
+    status: draft
+    tags: []
+    fingerprint: sha256:c71c88ef596d
+    children: []
+next_id: 71

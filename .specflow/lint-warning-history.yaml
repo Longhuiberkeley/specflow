@@ -9,7 +9,7 @@ chain-report: {}
 compliance-evidence: {}
 conflicts: {}
 coverage:
-  d9109b279385415f: 7
+  38f93df7badea127: 1
 dec-risk-profile: {}
 fingerprints: {}
 ids: {}
@@ -20,29 +20,56 @@ quality: {}
 role-target: {}
 schema: {}
 source-drift:
-  016d0a6c869696de: 2
-  03c081806c009f83: 2
-  0b7e0ccbcc664f8d: 2
-  357d903e019504a9: 2
-  47689d971c905e35: 2
-  499202af25c272f7: 2
-  4f2fa973de9c9155: 2
-  5996f0c8eda12b2b: 2
-  693ab601365a8972: 2
-  6f19ae1ed2ce0cd5: 1
-  71af156bc9583400: 2
-  73ceb67d611e851f: 1
-  7c74c64cc47b384f: 1
-  8300c45d3e25ebed: 1
-  8d21c33f111e4b44: 2
-  8fb62cd0d6c5547f: 2
-  98df8453b191434e: 1
-  9bd1b24955e889e1: 2
-  9da1a84efc3b1bbc: 1
-  a29da83824d7af03: 2
-  acf1a747971a9a08: 2
-  d897bf7501614734: 2
-  da6f4dd050641008: 2
+  00639859a8a7b73d: 6
+  016d0a6c869696de: 8
+  03c081806c009f83: 8
+  091ab4e4d8531119: 1
+  0b7e0ccbcc664f8d: 8
+  0c6d22c11bec60a9: 1
+  0cfeac9cc3a440d2: 1
+  0dd4ecae7bef4b66: 3
+  187379795e3531e9: 6
+  357d903e019504a9: 8
+  35fff8a538a4730f: 6
+  388eddd6966611d3: 6
+  4068030bf9412fd2: 6
+  4f2fa973de9c9155: 8
+  5112e8fd50b3972c: 1
+  577f2b87f4aae2b8: 6
+  578a99a5f836d21b: 6
+  5996f0c8eda12b2b: 8
+  682169a54b5d7c82: 1
+  693ab601365a8972: 8
+  6948408ee716c56d: 6
+  6d9798d86f1638ef: 1
+  6f19ae1ed2ce0cd5: 7
+  71af156bc9583400: 8
+  73ceb67d611e851f: 7
+  750154544a6b71a3: 1
+  75541304872f499b: 1
+  7c721c7ce3dc139e: 3
+  7c74c64cc47b384f: 7
+  8300c45d3e25ebed: 7
+  8c31ab9e25b0f016: 6
+  8d21c33f111e4b44: 8
+  8fb62cd0d6c5547f: 8
+  94accf0e78942100: 6
+  98df8453b191434e: 7
+  9908188c030ab295: 6
+  9bd1b24955e889e1: 8
+  9da1a84efc3b1bbc: 7
+  a29da83824d7af03: 8
+  ab2b9c274172390b: 6
+  bb33da936462aee7: 3
+  c18f75d8981d982e: 6
+  d897bf7501614734: 8
+  da64b1a837b16c69: 6
+  df1361b242b7d521: 6
+  e1fea30f75c43958: 3
+  e4ad6a25e3658f88: 1
+  efbc076fcff053c0: 6
+  f42d8e4bcb980100: 6
+  ff056a13d4e86f87: 1
 spec-body: {}
 spidr-coverage: {}
 spike-lifecycle: {}

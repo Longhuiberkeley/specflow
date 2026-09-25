@@ -530,4 +530,67 @@ artifacts:
     tags: []
     fingerprint: sha256:a7b1fa674354
     children: []
-next_id: 65
+  QT-065:
+    id: QT-065
+    title: Qualify guided_by binding (STORY-669)
+    status: draft
+    tags: []
+    fingerprint: sha256:776361ee1ee8
+    children: []
+  QT-066:
+    id: QT-066
+    title: Qualify bp-application enforcement posture (STORY-670)
+    status: draft
+    tags: []
+    fingerprint: sha256:9f8138e9b7e9
+    children: []
+  QT-067:
+    id: QT-067
+    title: Qualify brief practice accounting (STORY-671)
+    status: draft
+    tags: []
+    fingerprint: sha256:e0915f29341a
+    children: []
+  QT-068:
+    id: QT-068
+    title: Qualify frontier stagnation advisories (STORY-672)
+    status: draft
+    tags: []
+    fingerprint: sha256:3c2a8f06724e
+    children: []
+  QT-069:
+    id: QT-069
+    title: Qualify EDA lens flow (STORY-673)
+    status: draft
+    tags: []
+    fingerprint: sha256:4d6ae47507be
+    children: []
+  QT-070:
+    id: QT-070
+    title: Qualify analysis-first iteration (STORY-674)
+    status: draft
+    tags: []
+    fingerprint: sha256:f083b2797f8a
+    children: []
+  QT-071:
+    id: QT-071
+    title: Qualify LOOP knowledge flow (STORY-675)
+    status: draft
+    tags: []
+    fingerprint: sha256:004c9835761b
+    children: []
+  QT-072:
+    id: QT-072
+    title: Qualify evaluator drift handling (STORY-676)
+    status: draft
+    tags: []
+    fingerprint: sha256:1bfd55f23221
+    children: []
+  QT-073:
+    id: QT-073
+    title: Qualify loss-hacking resistance (STORY-677)
+    status: draft
+    tags: []
+    fingerprint: sha256:d44ef36b494a
+    children: []
+next_id: 74

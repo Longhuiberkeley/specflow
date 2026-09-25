@@ -845,4 +845,67 @@ artifacts:
     tags: []
     fingerprint: sha256:b9f75f770c8e
     children: []
-next_id: 94
+  UT-094:
+    id: UT-094
+    title: guided_by role legality and depth pins (STORY-669)
+    status: draft
+    tags: []
+    fingerprint: sha256:1b8fc1f10774
+    children: []
+  UT-095:
+    id: UT-095
+    title: bp-application check semantics pins (STORY-670)
+    status: draft
+    tags: []
+    fingerprint: sha256:15de4d59edb4
+    children: []
+  UT-096:
+    id: UT-096
+    title: Brief bound/unbound practice accounting pins (STORY-671)
+    status: draft
+    tags: []
+    fingerprint: sha256:7cf1477c0ee4
+    children: []
+  UT-097:
+    id: UT-097
+    title: Frontier ledger computation pins (STORY-672)
+    status: draft
+    tags: []
+    fingerprint: sha256:2870adb7b68d
+    children: []
+  UT-098:
+    id: UT-098
+    title: EDA applicability accounting pin (STORY-673)
+    status: draft
+    tags: []
+    fingerprint: sha256:0c038f9db6c5
+    children: []
+  UT-099:
+    id: UT-099
+    title: Analysis iteration category pin (STORY-674)
+    status: draft
+    tags: []
+    fingerprint: sha256:42969ea83fa9
+    children: []
+  UT-100:
+    id: UT-100
+    title: plan --inherit seeding pins (STORY-675)
+    status: draft
+    tags: []
+    fingerprint: sha256:0aeb8410f340
+    children: []
+  UT-101:
+    id: UT-101
+    title: Evaluator fingerprint computation pins (STORY-676)
+    status: draft
+    tags: []
+    fingerprint: sha256:6c3777544385
+    children: []
+  UT-102:
+    id: UT-102
+    title: Jump and guard computation pins (STORY-677)
+    status: draft
+    tags: []
+    fingerprint: sha256:cea5a2b44eec
+    children: []
+next_id: 103
