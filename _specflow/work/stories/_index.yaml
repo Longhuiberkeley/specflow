@@ -1320,7 +1320,7 @@ artifacts:
   STORY-673:
     id: STORY-673
     title: EDA lenses, applicability-aware accounting, agenda re-rank (REQ-046)
-    status: approved
+    status: implemented
     tags: []
     fingerprint: sha256:ed7fce11f719
     children: []

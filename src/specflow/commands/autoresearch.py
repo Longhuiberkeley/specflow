@@ -100,6 +100,14 @@ def _domain_recommended_fields(domain: str) -> list[str]:
     return DOMAIN_RECOMMENDED.get(domain, [])
 
 
+_EDA_LENSES_BY_DOMAIN = {
+    "quant": ("leakage", "distribution shift", "volatility/regime buckets"),
+    "tabular_ml": ("leakage", "distribution shift", "class imbalance", "target noise"),
+    "vision": ("leakage", "distribution shift", "class imbalance", "target noise"),
+    "nlp": ("leakage", "distribution shift", "class imbalance", "target noise"),
+}
+
+
 def _find_competitions(root: Path) -> list[art_lib.Artifact]:
     artifacts = art_lib.discover_artifacts(root)
     return [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "COMP"]
@@ -512,10 +520,22 @@ def _assess_loop(
     else:
         add("ok", "budget", f"Iteration budget {iteration_count}/{budget if budget is not None else '?'}")
 
-    if fm.get("eda_completed"):
-        add("ok", "eda", "EDA is recorded")
+    domain = str(comp.frontmatter.get("domain") or "").strip().casefold()
+    eda_lenses = _EDA_LENSES_BY_DOMAIN.get(domain)
+    if not eda_lenses:
+        add(
+            "not-applicable", "eda",
+            f"EDA not applicable: no registered lenses for domain '{domain or 'unspecified'}'",
+        )
+    elif fm.get("eda_completed"):
+        add("ok", "eda", f"EDA is recorded for {domain} ({', '.join(eda_lenses)})")
+        add(
+            "advisory", "agenda-revision",
+            "EDA is complete; revise and re-rank the agenda to reflect the observed data properties.",
+            f"specflow update {loop.id} --set research_agenda='[...]'",
+        )
     else:
-        add("advisory", "eda", "No completed EDA is recorded",
+        add("advisory", "eda", f"No completed EDA is recorded for {domain}",
             f"specflow update {loop.id} --set eda_completed=true --set eda_summary=\"...\"")
 
     # REQ-043: decomposition is a hypothesis, not a quota. The agenda just has
@@ -603,6 +623,7 @@ def _render_signals(
 ) -> None:
     icons = {
         "ok": f"{GREEN}✓{NC}",
+        "not-applicable": f"{DIM}–{NC}",
         "advisory": f"{YELLOW}⚠{NC}",
         "warn": f"{YELLOW}⚠{NC}",
         "structural": f"{RED}✗{NC}",

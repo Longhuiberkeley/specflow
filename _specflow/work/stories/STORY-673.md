@@ -2,7 +2,7 @@
 id: STORY-673
 title: EDA lenses, applicability-aware accounting, agenda re-rank (REQ-046)
 type: story
-status: approved
+status: implemented
 suspect: false
 links:
 - target: REQ-046

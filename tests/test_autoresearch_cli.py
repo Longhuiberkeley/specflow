@@ -1505,3 +1505,30 @@ class TestAutoresearchFrontier:
                 consequence,
                 flags=re.IGNORECASE,
             )
+
+    def test_status_eda_is_not_applicable_without_domain_lenses(self, project_root):
+        _make_loop(project_root, "LOOP-001", "COMP-001", status="running")
+        signals = autoresearch_cmd._assess_loop(
+            project_root, _parse(project_root, "COMP-001"), _parse(project_root, "LOOP-001")
+        )
+        eda = next(signal for signal in signals if signal["name"] == "eda")
+        assert eda["state"] == "not-applicable"
+        assert "unspecified" in eda["message"]
+        assert not any(signal["name"] == "agenda-revision" for signal in signals)
+
+    def test_status_offers_agenda_revision_command_after_applicable_eda(
+        self, project_root, capsys,
+    ):
+        art_lib.update_artifact(project_root, "COMP-001", domain="tabular_ml")
+        _make_loop(
+            project_root, "LOOP-001", "COMP-001", status="running",
+            extra={"eda_completed": True, "eda_summary": "Fold integrity and imbalance reviewed"},
+        )
+        rc = autoresearch_cmd.run(project_root, {
+            "autoresearch_subcommand": "status", "competition": "COMP-001",
+        })
+        assert rc == 2  # project_root is intentionally not a git repository
+        out = capsys.readouterr().out
+        assert "EDA is recorded for tabular_ml" in out
+        assert "agenda-revision" in out
+        assert "specflow update LOOP-001 --set research_agenda='[...]'" in out

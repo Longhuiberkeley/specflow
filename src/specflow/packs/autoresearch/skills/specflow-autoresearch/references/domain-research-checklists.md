@@ -12,7 +12,7 @@ Do not treat the questions as a method menu.
 
 **Domain keys** (`COMP.domain`): `quant` · `tabular_ml` · `vision` · `nlp` ·
 unmatched → `generic`. The same key selects the applied-practices lens in
-`methodology-handbook.md` and the EDA deltas in `autonomous-loop-protocol.md`
+`methodology-handbook.md` and the EDA lenses in `references/eda-lenses.md`
 Phase 0.6.
 
 ## Concept → Artifact map (research)
@@ -43,6 +43,6 @@ metric. *Only exists while running?* → RUN/MONITOR (ops).
 ## Domain deltas (add to the core)
 
 - **quant** — Alignment of instruments and whether missingness is informative; walk-forward vs point-in-time data (survivorship); is the split choice itself validated; costs and constraints inside the metric; holds across regimes/windows.
-- **tabular_ml** — Proxies for the target or unavailable at prediction time; group/temporal integrity of the split; winner confirmed on a held-out slice.
+- **tabular_ml** — Proxies for the target or unavailable at prediction time; group/temporal integrity of the split; confirm winners on a fresh seed or COMP-approved development validation fold, never by inspecting the isolated final eval partition.
 - **vision** — Dimension/corrupt-file consistency, label quality spot-checks; split grouped by the right unit before any leaking transform; same near-duplicates on both sides; holds across collection sites and conditions.
 - **nlp** — Language, length, encoding, duplicates; annotation artifacts; near-duplicate texts across the split; vocabulary/prompts fit on evaluation text.

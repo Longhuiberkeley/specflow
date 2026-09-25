@@ -789,7 +789,7 @@ class TestAutoresearchCLI:
         assert "Closure-readiness" in out
         assert "LOOP-001" in out
         assert "Deterministic accounting" in out
-        assert "No completed EDA" in out
+        assert "EDA not applicable: no registered lenses" in out
         assert "No research agenda recorded" in out
         assert "No evidence-free streak detected" in out
 
@@ -2433,3 +2433,35 @@ class TestProtocolInvariantSheets:
             assert n_lines <= cap, (
                 f"{name} is {n_lines} lines (cap {cap}); invariant sheets must stay lean"
             )
+
+
+class TestEdaLenses:
+    REFS = PACKS_DIR / "autoresearch" / "skills" / "specflow-autoresearch" / "references"
+
+    def test_quick_tier_references_applicable_eda_lenses(self):
+        skill = (
+            PACKS_DIR / "autoresearch" / "skills" / "specflow-autoresearch" / "SKILL.md"
+        ).read_text()
+        protocol = (self.REFS / "autonomous-loop-protocol.md").read_text()
+        assert "EDA checks #1/#4" not in skill
+        assert "EDA checks #1/#4" not in protocol
+        assert "eda-lenses.md" in skill
+        assert "eda-lenses.md" in protocol
+
+    def test_lenses_cover_required_diagnostics_and_isolation(self):
+        lenses = (self.REFS / "eda-lenses.md").read_text().lower()
+        for topic in (
+            "leakage", "distribution shift", "class imbalance", "target noise",
+            "volatility/regime buckets", "train/oof", "isolated final eval/test partition",
+        ):
+            assert topic in lenses
+
+    def test_ml11_uses_validation_folds_and_never_reads_isolated_eval(self):
+        handbook = (self.REFS / "methodology-handbook.md").read_text()
+        ml11 = next(line for line in handbook.splitlines() if "ML-11:" in line)
+        assert "train-vs-test" not in ml11
+        assert "COMP-approved validation folds" in ml11
+        assert "Never open or read the isolated final eval partition" in ml11
+
+        checklist = (self.REFS / "domain-research-checklists.md").read_text()
+        assert "never by inspecting the isolated final eval partition" in checklist

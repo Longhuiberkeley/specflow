@@ -40,14 +40,14 @@ Each practice lists `applies_to` domains — only apply practices tagged for you
 ## Validation integrity (ML-10–12)
 
 - **ML-10: Split first, preprocess second** — applies_to: all. Every transform (scaler, imputer, encoder, SMOTE, PCA, selection) fit on the training fold only.
-- **ML-11: Adversarial validation** — applies_to: all. Train train-vs-test classifier; AUC ≈ 0.5 ⇒ CV trustworthy, AUC → 1.0 ⇒ shift/leak suspects found.
+- **ML-11: Adversarial validation** — applies_to: all. Compare training folds with COMP-approved validation folds using train/OOF data; AUC ≈ 0.5 ⇒ no obvious fold shift, AUC → 1.0 ⇒ investigate shift/leakage. Never open or read the isolated final eval partition for this diagnostic.
 - **ML-12: Out-of-fold for any meta-step** — applies_to: `tabular_ml`, `quant`. Target encoding and stacking consume OOF predictions, never in-fold.
 
 ## Statistical traps (ML-13–16)
 
 - **ML-13: Correct for multiple comparisons** — applies_to: all. Best-of-N is upward-biased; confirm a marginal winner on a fresh seed or held-out slice (LOOP-level counterpart of ML-08).
 - **ML-14: Mind dimensionality** — applies_to: `tabular_ml`, `quant`. p ≫ n and multicollinearity distort fits and importances; drive regularization/reduction choices, not just EDA.
-- **ML-15: Distribution shift & non-stationarity** — applies_to: `quant`, `tabular_ml`. Pair walk-forward (ML-04) with adversarial validation (ML-11); prefer regime-robust features.
+- **ML-15: Distribution shift & non-stationarity** — applies_to: `quant`, `tabular_ml`. Pair walk-forward (ML-04) with fold-based adversarial validation (ML-11); prefer regime-robust features without reading the isolated final eval partition.
 - **ML-16: Simpson's paradox & confounding** — applies_to: all. Check key results per segment, not just globally; a global score can move opposite to its components.
 
 ## Optimize the real objective (ML-17–19)
