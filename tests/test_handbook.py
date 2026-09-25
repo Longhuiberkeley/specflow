@@ -13,6 +13,7 @@ import pytest
 
 from specflow.commands import handbook as handbook_cmd
 from specflow.lib import handbook as handbook_lib
+from specflow.lib import practices_seed
 
 
 _SCHEMA_TYPES = [
@@ -110,9 +111,42 @@ class TestHandbookLibrary:
     def test_practice_to_body_has_sections(self):
         p = handbook_lib.GENERIC_PRACTICES[0]
         body = p.to_body()
-        assert "## Practice" in body
-        assert "## Rationale" in body
-        assert "## Verification" in body
+        headings = [line for line in body.splitlines() if line.startswith("## ")]
+        assert headings == [
+            "## Practice", "## Applies when", "## Work products",
+            "## Verification", "## Rationale",
+        ]
+        assert p.practice in body
+        assert p.rationale in body
+        assert p.verification in body
+
+    def test_seed_entries_have_stable_ids_and_applicability_predicates(self):
+        first = practices_seed.get_seed_practices()
+        second = practices_seed.get_seed_practices()
+        ids = [practice.seed_id for practice in first]
+        assert ids == [practice.seed_id for practice in second]
+        assert ids[:3] == [
+            "SEED-WEB-APP-01", "SEED-WEB-APP-02", "SEED-WEB-APP-03",
+        ]
+        assert ids[-6:] == [f"SEED-GENERIC-{index:02d}" for index in range(1, 7)]
+        assert len(ids) == len(set(ids))
+        assert all(callable(practice.applicability) for practice in first)
+
+    def test_six_generic_seed_bodies_preserve_the_handbook_content(self):
+        """The former bundled set keeps its practice, rationale, and checks."""
+        generic = practices_seed.get_practices("")
+        assert len(generic) == 6
+        for practice in generic:
+            body = practice.to_body()
+            assert practice.practice in body
+            assert practice.rationale in body
+            assert practice.verification in body
+            assert practice.applicability(None)
+
+    def test_handbook_facade_uses_the_seed_catalogue(self):
+        assert handbook_lib.GENERIC_PRACTICES is practices_seed.GENERIC_PRACTICES
+        assert handbook_lib.DOMAIN_PRACTICES is practices_seed.DOMAIN_PRACTICES
+        assert handbook_lib.generate_handbook is practices_seed.generate_handbook
 
     def test_generate_handbook_no_domain(self, project_root: Path):
         hb = handbook_lib.generate_handbook(project_root)
@@ -179,12 +213,18 @@ class TestHandbookCommand:
     def test_generate_prints_to_stdout(self, project_root: Path, capsys):
         rc = handbook_cmd.run(project_root, {"create": False})
         assert rc == 0
-        out = capsys.readouterr().out
+        captured = capsys.readouterr()
+        out = captured.out
         assert "Best-Practice Handbook" in out
         # STORY-661: default stdout is domain + count + title/tag index ONLY.
         assert "## Index" in out
         assert "Separation of Concerns" in out
         assert "## Generic Best Practices" not in out
+        assert "Deprecated" in captured.err
+        assert "specflow practices seed" in captured.err
+        assert out == practices_seed.format_handbook_text(
+            practices_seed.generate_handbook(project_root),
+        ) + "\n"
 
     def test_generate_default_stdout_is_index_only(self, project_root: Path, capsys):
         """STORY-661: the generic sermon bodies are gone from default stdout —
@@ -244,9 +284,15 @@ class TestHandbookCommand:
         bp_dir = project_root / "_specflow" / "specs" / "best-practices"
         files = list(bp_dir.glob("BP-*.md"))
         content = files[0].read_text()
-        assert "## Practice" in content
-        assert "## Rationale" in content
-        assert "## Verification" in content
+        body = content.split("---", 2)[-1]
+        headings = [line for line in body.splitlines() if line.startswith("## ")]
+        assert headings == [
+            "## Practice", "## Applies when", "## Work products",
+            "## Verification", "## Rationale",
+        ]
+        assert "## Practice" in body
+        assert "## Rationale" in body
+        assert "## Verification" in body
 
     def test_generate_create_artifact_status_draft(self, project_root: Path):
         """STORY-640: generated BPs are born draft — approval is a human gate,

@@ -9,11 +9,18 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from specflow.lib.handbook import generate_handbook, format_handbook_text
+from specflow.lib.practices_seed import generate_handbook, format_handbook_text
 
 
 def run(root: Path, args: dict[str, Any]) -> int:
-    """Run the handbook generate command."""
+    """Run the deprecated handbook alias for bundled-practice seeding."""
+    import sys
+
+    print(
+        "Deprecated: `specflow handbook generate` is retained as an alias; "
+        "use `specflow practices seed`.",
+        file=sys.stderr,
+    )
     do_create = args.get("create", False)
     verbose = args.get("verbose", False)
 
