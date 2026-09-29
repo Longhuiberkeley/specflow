@@ -241,23 +241,13 @@ artifacts:
     tags: []
     fingerprint: sha256:ff97eebd13ed
     children: []
-  DDD-LOUDFAIL-3e02:
-    id: DDD-LOUDFAIL-3e02
-    title: "Loud-failure and advisory ergonomics \u2014 detailed design (v1.13.2)"
-    status: implemented
-    tags:
-    - v1.13.2
-    - ergonomics
-    - detailed-design
-    fingerprint: sha256:303166b07fa8
-    children: []
   DDD-030:
     id: DDD-030
     title: 'Autoresearch reassessment signal and evidence/priority fields: detailed
       design'
     status: approved
     tags: []
-    fingerprint: sha256:d7a18f523ae7
+    fingerprint: sha256:03659f868d6c
     children: []
   DDD-031:
     id: DDD-031
@@ -274,4 +264,33 @@ artifacts:
     tags: []
     fingerprint: sha256:84a45cc1a1fb
     children: []
-next_id: 33
+  DDD-033:
+    id: DDD-033
+    title: ontology.yaml schema and kind/orientation resolution
+    status: draft
+    tags:
+    - ontology
+    - core
+    fingerprint: sha256:f6d41cde140e
+    children: []
+  DDD-034:
+    id: DDD-034
+    title: 'Index store: allocation, cache, crash and re-run invariants'
+    status: verified
+    tags:
+    - index
+    - concurrency
+    - invariants
+    fingerprint: sha256:df4c26cd3a64
+    children: []
+  DDD-LOUDFAIL-3e02:
+    id: DDD-LOUDFAIL-3e02
+    title: "Loud-failure and advisory ergonomics \u2014 detailed design (v1.13.2)"
+    status: implemented
+    tags:
+    - v1.13.2
+    - ergonomics
+    - detailed-design
+    fingerprint: sha256:303166b07fa8
+    children: []
+next_id: 35

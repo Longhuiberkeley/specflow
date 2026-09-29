@@ -522,8 +522,11 @@ def _restore_original_body(path: Path, original: bytes) -> None:
     updated_separator = updated.find(b"---", updated_opening + 3)
     if updated_separator < 0:
         return
-    path.write_bytes(
-        updated[:updated_separator + 3] + original[original_separator + 3:]
+    # Atomic, under the mutation lock (STORY-696): a crash leaves the whole
+    # old or the whole new file.
+    art_lib.write_artifact_text(
+        art_lib._project_root_of(path) or path.parent, path,
+        updated[:updated_separator + 3] + original[original_separator + 3:],
     )
 
 

@@ -106,6 +106,18 @@ def _run_similarity(root: Path, args: dict[str, Any]) -> int:
     return 0
 
 
+def _in_adoption_run(root: Path) -> bool:
+    """True when the adoption pack is active or any artifact is `backfilled`."""
+    try:
+        from specflow.lib import config as config_lib
+
+        if "adoption" in (config_lib.read_config(root).get("active_packs") or []):
+            return True
+        return any("backfilled" in (a.tags or []) for a in art_lib.discover_artifacts(root))
+    except Exception:
+        return False
+
+
 def _run_orphan_code(root: Path, args: dict[str, Any]) -> int:
     result = find_orphan_code(root)
     orphans = result["orphan_files"]
@@ -174,6 +186,14 @@ def _run_orphan_code(root: Path, args: dict[str, Any]) -> int:
         if linked < len(orphans):
             print(f"  {YELLOW_DIM}{len(orphans) - linked} files could not be linked (target not found or file error){NC}")
         return 0 if linked == len(orphans) else 1
+    elif _in_adoption_run(root):
+        # Adoption creates zero STORYs (DEC-057), so --adopt (which mints a
+        # backfilled STORY) is the wrong closure here. Per-boundary wiring is
+        # `update --output-files`; --retro-link is project-wide (final pass).
+        print(f"\n  {CYAN}Tip:{NC} Widen the owning ARCH's glob with "
+              f"`specflow update ARCH-NNN --output-files '<glob>,<glob>'` (replaces the list).")
+        print(f"  {YELLOW_DIM}`--retro-link ARCH-NNN` links EVERY orphan file in the project; "
+              f"use it once, in the final adoption pass, for a deliberate residual sweep.{NC}")
     else:
         print(f"\n  {CYAN}Tip:{NC} Use --adopt <ARCH-ID> for the one-step closure (link cluster + backfilled STORY),")
         print(f"  or --retro-link <ID> to retroactively link all orphan files to an existing artifact (STORY/ARCH/DDD/REQ).")

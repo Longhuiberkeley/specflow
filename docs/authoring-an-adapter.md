@@ -107,14 +107,13 @@ specflow-validate:
   image: python:3.11
   script:
     - pip install uv
-    - uv sync
-    - uv run specflow artifact-lint --method programmatic
+    - uvx --from git+https://github.com/Longhuiberkeley/specflow@v<ver> specflow artifact-lint --method programmatic
 """
 
 _GITLAB_HOOK = """\
 #!/usr/bin/env bash
 # specflow pre-commit hook (GitLab variant)
-exec uv run specflow hook pre-commit "$@"
+exec specflow hook pre-commit "$@"
 """
 
 
@@ -172,4 +171,4 @@ for path, content in files.items():
 
 ## Unified `/specflow-adapter` skill
 
-The `/specflow-adapter` slash command wraps all adapter operations behind a single interactive prompt — CI setup, exchange configuration, standards ingestion, and team RBAC management. It reads and writes `.specflow/adapters.yaml` and the `team` section of `.specflow/config.yaml` on the user's behalf.
+The `/specflow-adapter` slash command wraps all adapter operations behind a single interactive prompt — CI setup, exchange configuration, and team RBAC management. It reads and writes `.specflow/adapters.yaml` and the `team` section of `.specflow/config.yaml` on the user's behalf.

@@ -1,0 +1,17 @@
+id: PREV-010
+name: 'Prevent recurrence of: Unlocked index read-modify-write in update and rebuild-index
+  loses concurrent creates and re-allocates their ids (violated REQ-002) (caught by
+  IT-091)'
+discovered_from: DEF-008
+mode: reactive
+pattern: 'Prevent recurrence of: Unlocked index read-modify-write in update and rebuild-index
+  loses concurrent creates and re-allocates their ids (violated REQ-002) (caught by
+  IT-091)'
+applies_to:
+  tags: []
+items:
+- id: PREV-010-01
+  check: Verify that changes touching REQ-002 are exercised by IT-091 before approval.
+  severity: warning
+  automated: false
+  mode: reactive

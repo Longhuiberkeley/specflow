@@ -8,7 +8,10 @@
 #                     for OpenCode that is .claude/skills, not this path.
 #   instruction_file: Where to inject pack context (AGENTS.md, CLAUDE.md, etc.)
 #   detection:        Directory/file markers used to auto-detect this platform
-#   legacy_dirs:      (optional) Old directories to clean up on reinstall
+#   legacy_dirs:      (optional) Old directories to clean up on reinstall. Only
+#                     specflow-owned entries (names starting with "specflow")
+#                     inside them are removed, and a legacy dir that is (or
+#                     contains) the instruction_file or skills dir is refused.
 
 platforms:
 
@@ -111,8 +114,6 @@ platforms:
     instruction_file: .kiro/steering/specflow.md
     detection:
       - .kiro/
-    legacy_dirs:
-      - .kiro/steering
 
   kilocode:
     name: "KiloCoder"
@@ -141,8 +142,6 @@ platforms:
     instruction_file: .trae/rules/specflow.md
     detection:
       - .trae/
-    legacy_dirs:
-      - .trae/rules
 
   junie:
     name: "Junie"

@@ -145,7 +145,7 @@ The appended section explains:
 
 ## Acceptance Criteria
 
-- [ ] `uv run specflow init` runs without error
+- [ ] `specflow init` runs without error
 - [ ] Platform is correctly detected or user is prompted
 - [ ] `.specflow/` directory structure matches architecture.md
 - [ ] `_specflow/` directory structure matches architecture.md (6 spec dirs + 4 work dirs)
@@ -162,7 +162,7 @@ None. This is the foundation phase.
 ## Verification Gate
 
 Dogfooding Initialization:
-- We immediately run `uv run specflow init` on the SpecFlow repository itself to initialize its own `.specflow/` and `_specflow/` directories.
+- We immediately run `specflow init` on the SpecFlow repository itself to initialize its own `.specflow/` and `_specflow/` directories.
 
 ## Estimated Effort
 

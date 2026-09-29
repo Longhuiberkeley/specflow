@@ -43,7 +43,6 @@ items:
 
   - id: CKL-DOM-CLI-07
     check: "Respects NO_COLOR and pipe detection"
-    automated: true
-    script: "grep -rq 'NO_COLOR\\|isatty\\|isatty' src/ 2>/dev/null && exit 0 || echo 'No NO_COLOR or pipe-detection handling found'"
+    automated: false
     llm_prompt: "Confirm the tool disables colored output when NO_COLOR is set or when stdout is piped. Flag tools that hard-code ANSI codes."
     severity: info

@@ -69,4 +69,11 @@ artifacts:
     - review
     fingerprint: sha256:3de8fdad0f7a
     children: []
-next_id: 8
+  BP-008:
+    id: BP-008
+    title: Event-triggered model-checking spikes for stateful mechanisms
+    status: approved
+    tags: []
+    fingerprint: sha256:5a0b339b05c4
+    children: []
+next_id: 9

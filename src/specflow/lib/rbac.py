@@ -16,6 +16,7 @@ from typing import Any
 
 import yaml
 
+from specflow.lib import git_utils
 from specflow.lib.config import read_config
 
 
@@ -118,6 +119,7 @@ def check_independence(
     artifact_file: str,
     new_status: str,
     author_email: str,
+    upto: str | None = None,
 ) -> tuple[bool, str]:
     """Block verifier == implementer when transitioning to a verification status.
 
@@ -125,6 +127,16 @@ def check_independence(
     previously committed to the artifact's file. If the current author appears
     in that set AND the transition is to a status marked as a verification
     status, the commit is rejected.
+
+    STORY-698: history follows renames (``git log --follow``), so a file that
+    ``renumber-drafts`` renamed from its draft id (``REQ-FOO-ab12.md`` ->
+    ``REQ-001.md``) keeps the authorship recorded under the draft name.
+
+    ``upto`` names the commit that MAKES the transition (the CI gate's
+    per-commit walk). Only its strict ancestors count as prior implementation,
+    and ``artifact_file`` is read as the path at that commit; the transition
+    commit's own author is never counted against itself. Without ``upto``
+    (pre-commit: the transition is still staged) history is read from HEAD.
 
     Verification statuses are declared in config.team.policy.verification_statuses
     (default: ["verified"]).
@@ -140,14 +152,15 @@ def check_independence(
     if new_status not in verification_statuses:
         return (True, "")
 
-    result = _run_git(root, ["log", "--format=%ae", "--", artifact_file])
-    if result.returncode != 0:
+    upto_sha = (git_utils.resolve_ref(root, upto) or upto) if upto else ""
+    history = git_utils.file_history(root, artifact_file, upto_sha or "HEAD")
+    if history is None:
         return (True, "")
 
     prior_authors = {
-        line.strip().lower()
-        for line in result.stdout.splitlines()
-        if line.strip()
+        entry["author_email"]
+        for entry in history
+        if entry["author_email"] and entry["sha"] != upto_sha
     }
     if author_email.strip().lower() in prior_authors:
         return (

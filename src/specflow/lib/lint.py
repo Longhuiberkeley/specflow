@@ -24,8 +24,6 @@ __all__ = [
     "set_acceptance_criteria",
     "count_acceptance_criteria_headings",
     "recompute_fingerprint",
-    "discover_checklists",
-    "run_automated_checklist",
 ]
 
 
@@ -551,81 +549,3 @@ def count_acceptance_criteria_items(artifact: art_lib.Artifact) -> int:
             continue
         count += 1
     return count
-
-
-# ---------------------------------------------------------------------------
-# Checklist loading and execution
-# ---------------------------------------------------------------------------
-
-def discover_checklists(checklists_dir: Path, category: str = "") -> list[Path]:
-    """Discover checklist YAML files in a category subdirectory.
-
-    Args:
-        checklists_dir: Base checklists directory (.specflow/checklists)
-        category: Subdirectory (phase-gates, in-process, readiness, etc.)
-
-    Returns:
-        Sorted list of checklist file paths.
-    """
-    target = checklists_dir / category if category else checklists_dir
-    if not target.exists():
-        return []
-    return sorted(target.glob("*.yaml"))
-
-
-def run_automated_checklist(checklist: dict[str, Any], project_root: Path) -> list[dict[str, Any]]:
-    """Run all automated items in a checklist.
-
-    Returns a list of result dicts with keys: id, check, passed, severity, output.
-    """
-    import subprocess
-
-    results = []
-    for item in checklist.get("items", []):
-        if not item.get("automated", False):
-            continue
-
-        script = item.get("script", "")
-        if not script:
-            results.append({
-                "id": item.get("id", "unknown"),
-                "check": item.get("check", ""),
-                "passed": False,
-                "severity": item.get("severity", "blocking"),
-                "output": "No script defined",
-            })
-            continue
-
-        try:
-            result = subprocess.run(
-                ["bash", "-c", script],
-                cwd=str(project_root),
-                capture_output=True,
-                text=True,
-                timeout=60,
-            )
-            results.append({
-                "id": item.get("id", "unknown"),
-                "check": item.get("check", ""),
-                "passed": result.returncode == 0,
-                "severity": item.get("severity", "blocking"),
-                "output": result.stdout.strip() or result.stderr.strip(),
-            })
-        except subprocess.TimeoutExpired:
-            results.append({
-                "id": item.get("id", "unknown"),
-                "check": item.get("check", ""),
-                "passed": False,
-                "severity": item.get("severity", "blocking"),
-                "output": "Script timed out after 60s",
-            })
-        except Exception as e:
-            results.append({
-                "id": item.get("id", "unknown"),
-                "check": item.get("check", ""),
-                "passed": False,
-                "severity": item.get("severity", "blocking"),
-                "output": str(e),
-            })
-
-    return results

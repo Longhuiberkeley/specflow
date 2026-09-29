@@ -13,7 +13,7 @@ TLDR: I want to make a framework that can build production level codebase easier
 
 ---
 
-**Compliance-grade spec tracking, without the portal.**
+**Traceable spec tracking, without the portal.**
 Your git repo is the ALM. Your AI assistant is the UI.
 
 Traditional ALM asks you to leave your editor, log into a website, and click through forms. SpecFlow doesn't. Every requirement, architecture doc, test, and audit record lives in Markdown in your repo — diffable, reviewable, CI-validated, yours.
@@ -32,7 +32,7 @@ SpecFlow starts when you know what you want to build. `/specflow-discover` captu
 
 **Already have a codebase?** Install the optional **adoption pack** (`/specflow-init --preset adoption`) and run `/specflow-adopt` — it inventories your existing code/docs/tests, backfills artifacts describing what already exists, and cuts an as-built baseline so forward change is governed from there. Greenfield projects skip this and start at `/specflow-discover`.
 
-If you need help deciding *what* to build, use a tool that does ideation well. When you're ready to specify, track, and build it with compliance-grade rigor — that's SpecFlow.
+If you need help deciding *what* to build, use a tool that does ideation well. When you're ready to specify, track, and build it with full V-model traceability — that's SpecFlow.
 
 ## Two ways to drive, one engine
 
@@ -115,8 +115,8 @@ Full walkthrough in the [getting-started guide](docs/getting-started.md).
 | **Zero-token CI validation** | Schema, links, status, fingerprints, coverage — deterministic Python, no LLM required |
 | **V-model traceability** | REQ → ARCH → DDD → UT/IT/QT, fully linked and linted; `specflow rtm --gaps` renders the bidirectional matrix with per-row gap markers |
 | **Verification contracts** *(new)* | UT/IT/QT/STORY declare a `verify_command`; `specflow verify <ID> | --all` runs it and records `verify_run_*` evidence so `verified` is machine-checked, not asserted. A failing run is **recorded, never blocking** — accounting, not policing |
-| **Computed risk tiers** *(new)* | `specflow risk-tier <IDs>` derives a minimum approval tier (0 light / 1 normal / 2 stop) from the change set's intrinsic properties and persists it to the DEC's `risk_profile`. The tier **gates nothing** — it is a recorded floor; downgrade below it only with a recorded justification |
-| **Bring-your-own-standard** | Drop a PDF, URL, or pasted text. SpecFlow extracts clauses into compliance schemas |
+| **Computed risk tiers** *(new)* | `specflow risk-tier <IDs>` derives a minimum approval tier (0 light / 1 normal / 2 stop) from the change set's intrinsic properties (read-only); `document-changes` records it on the DEC's `risk_profile`. The tier **gates nothing** — it is a recorded floor; downgrade below it only with a recorded justification |
+| **Bring-your-own-standard** | Drop a PDF, URL, or pasted text. SpecFlow extracts clauses into schemas your artifacts can link to; coverage is tracked, compliance is not certified |
 | **Immutable baselines** | Snapshot, diff, and generate audit evidence between releases |
 | **First-class Claude Code + OpenCode** | SpecFlow skills install once, into `.claude/skills`. OpenCode2 already reads that tree — a second copy in `.opencode/skills` would silently override it. Other hosts still get their own dir. `specflow init` warns if a leftover `.opencode/skills/specflow-*` exists; `specflow refresh --all-platforms` syncs hosts that do not share the Claude tree |
 | **Autoresearch loops** | Define a competition + verify command, let your assistant iterate; every experiment becomes a tracked artifact |
@@ -139,14 +139,14 @@ You can invoke a skill by typing its `/specflow-*` slash **or** by just describi
 | `/specflow-artifact-review` | Deep review of a specific artifact |
 | `/specflow-change-impact-review` | Blast-radius review of recent changes |
 | `/specflow-audit` | Periodic full-project health check |
-| `/specflow-ship` | Release: baseline + change records + audit |
+| `/specflow-ship` | Release: verify + change records + audit, then baseline after approval |
 | `/specflow-pack-author` | Author a standards compliance pack |
-| `/specflow-adapter` | CI, exchange (ReqIF), standards, team RBAC |
+| `/specflow-adapter` | CI, exchange (ReqIF), team RBAC |
 | `/specflow-doc` | Author/cite docs (`@ID`), sync the docs index, check staleness |
 
 All core skills accept freeform context. `/specflow-audit I'm worried about REQ coverage` scopes the audit to your concern.
 
-Replies already lead with the answer (a short TLDR is in the injected `AGENTS.md`). The optional `tldr-communication` pack (`specflow init --preset tldr-communication`) is only the longer 10-line variant — you do not need to ask for a TLDR.
+Replies already lead with the answer (a short TLDR is in the injected `AGENTS.md`). The optional `tldr-communication` pack (`specflow init --preset tldr-communication`) only adds a small reply-style block to the instruction file — you do not need it, or to ask for a TLDR.
 
 ## Autoresearch — autonomous research loops (new in v1.6.0)
 
@@ -214,7 +214,7 @@ Use `/specflow-doc` to author, cite, sync the docs index, and check staleness.
 - **Bring your own standard.** We don't ship copyrighted packs. Feed SpecFlow your own ISO 26262 / ASPICE / policy PDF and it extracts clauses.
 - **Skills over clicks.** The user-facing interface is `/specflow-*` commands in your assistant. The CLI underneath is for CI, scripts, and power users.
 
-> `#vibe-compliance` — if vibe-coding lets you build by intent, vibe-compliance lets you verify by intent. SpecFlow handles the ceremony so you can focus on the decisions.
+> SpecFlow produces traceability evidence to support compliance work. It does not certify that a project complies with any standard; that judgment stays with you and your assessor.
 
 ## ALM, but make it friendly
 

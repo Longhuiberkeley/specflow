@@ -1,0 +1,16 @@
+id: PREV-020
+name: 'Prevent recurrence of: merge leaves a supersedes link on the target when the
+  source ends cancelled, deprecated or unchanged (violated REQ-002) (caught by UT-129)'
+discovered_from: DEF-019
+mode: reactive
+pattern: 'Prevent recurrence of: merge leaves a supersedes link on the target when
+  the source ends cancelled, deprecated or unchanged (violated REQ-002) (caught by
+  UT-129)'
+applies_to:
+  tags: []
+items:
+- id: PREV-020-01
+  check: Verify that changes touching REQ-002 are exercised by UT-129 before approval.
+  severity: warning
+  automated: false
+  mode: reactive

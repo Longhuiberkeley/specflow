@@ -107,11 +107,19 @@ def create_baseline(root: Path, name: str) -> dict[str, Any]:
         "artifacts": snapshot,
     }
 
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        yaml.dump(data, default_flow_style=False, sort_keys=False),
-        encoding="utf-8",
-    )
+    # Exclusive create (DEC-093): a concurrent create of the same name loses
+    # cleanly instead of overwriting an immutable baseline.
+    from specflow.lib import locks as locks_lib
+
+    text = yaml.dump(data, default_flow_style=False, sort_keys=False)
+    if not locks_lib.locked_exclusive_write(root, path, text):
+        return {
+            "ok": False,
+            "error": (
+                f"Baseline '{name}' already exists and cannot be overwritten "
+                "(baselines are immutable)."
+            ),
+        }
 
     return {
         "ok": True,
@@ -151,7 +159,27 @@ def _semver_parts(name: str) -> tuple[tuple[int, ...], str] | None:
     return tuple(int(x) for x in m.group(1).split(".")), m.group(2)
 
 
-def _semver_sort_key(name: str) -> tuple[int, tuple[int, ...], int, str]:
+def _prerelease_key(suffix: str) -> tuple[tuple[int, int, str], ...]:
+    """SemVer 2.0 section 11 key for the prerelease part of a name suffix.
+
+    Build metadata (``+...``) is dropped. A leading ``-`` is stripped; a
+    suffix without one (e.g. ``rc1``) is treated as a prerelease as well. Dot
+    separated identifiers compare numerically when all digits (and sort before
+    alphanumeric ones), else by ASCII order. A shorter identifier list sorts
+    before a longer one that shares its prefix (tuple comparison).
+    """
+    pre = suffix.split("+", 1)[0]
+    if pre.startswith("-"):
+        pre = pre[1:]
+    if not pre:
+        return ()
+    return tuple(
+        (0, int(ident), "") if ident.isdigit() else (1, 0, ident)
+        for ident in pre.split(".")
+    )
+
+
+def _semver_sort_key(name: str) -> tuple:
     """Sort key for semver-aware ascending ordering of baseline names.
 
     Baselines are typically named like the release that produced them
@@ -159,8 +187,12 @@ def _semver_sort_key(name: str) -> tuple[int, tuple[int, ...], int, str]:
     sorts after "v1.13.3" because "9" > "1" character-by-character, so the
     lexicographic last two entries are not the two newest releases.
 
-    Parseable names (see ``_semver_parts``) sort naturally by numeric
-    segments, with prereleases before the clean release of the same version.
+    Parseable names (see ``_semver_parts``) order per SemVer 2.0 section 11:
+    numeric core segments first, then a prerelease sorts before the clean
+    release of the same core (so ``-spec-sync`` post-release suffixes sort
+    below the release), prerelease identifiers compare numerically/ASCII per
+    ``_prerelease_key``, and build metadata is ignored. The name itself is the
+    final tie-break so equal-precedence names order deterministically.
     Unparseable names sort stably after every semver name. The result is
     ascending with the newest baseline last, which is what callers (e.g.
     ``baselines[-1]`` / ``baselines[-2:]``) rely on.
@@ -168,8 +200,9 @@ def _semver_sort_key(name: str) -> tuple[int, tuple[int, ...], int, str]:
     parts = _semver_parts(name)
     if parts is not None:
         nums, suffix = parts
-        return (0, nums, 1 if not suffix else 0, suffix)
-    return (1, (0,), 0, name)
+        pre = _prerelease_key(suffix)
+        return (0, nums, 0 if pre else 1, pre, name)
+    return (1, (0,), 0, (), name)
 
 
 def list_baselines(root: Path) -> list[str]:

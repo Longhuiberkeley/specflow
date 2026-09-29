@@ -20,15 +20,25 @@ def _check_artifact(
     artifact: Artifact,
     gate: str | None,
     proactive: bool,
+    parse_errors_sink: set[str] | None = None,
 ) -> int:
-    """Run check on a single artifact. Returns 0 if no blocking failures."""
+    """Run check on a single artifact. Returns 0 if no blocking failures.
+
+    Checklist files that failed to parse are reported per artifact and added
+    to ``parse_errors_sink`` so ``run`` can surface them in the summary.
+    """
     assembled = assemble_checklist(root, artifact, phase_transition=gate)
+    parse_errors = list(assembled.parse_errors)
+    if parse_errors_sink is not None:
+        parse_errors_sink.update(parse_errors)
 
     print(f"\n{BOLD}{artifact.id}{NC} — {artifact.title}")
     print(f"  Type: {artifact.type} | Tags: {artifact.tags}")
     print(f"  Sources: {', '.join(assembled.sources) if assembled.sources else '(none)'}")
     print(f"  Items: {len(assembled.items)} ({sum(1 for i in assembled.items if i.automated)} automated, "
           f"{sum(1 for i in assembled.items if not i.automated)} agent-judged)")
+    for err in parse_errors:
+        print(f"  {YELLOW}⚠ Checklist failed to parse (items not run): {err}{NC}")
 
     if not assembled.items:
         print(f"  {YELLOW}Warning: No checklists matched this artifact.{NC}")
@@ -37,20 +47,29 @@ def _check_artifact(
         from datetime import datetime, timezone
         ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         checklist_id = f"check-{artifact.id}"
-        persist_results(root, artifact.id, checklist_id, [])
+        persist_results(root, artifact.id, checklist_id, [], parse_errors=parse_errors)
         update_artifact_checklists_applied(root, artifact.id, checklist_id, ts)
         return 0
 
     # Pass 1: Automated
     auto_results = run_automated_pass(root, assembled, artifact)
-    blocking_failed = any(r.result == "failed" for r in auto_results)
+    # Severity is honoured (STORY-682): only a blocking-severity non-pass
+    # blocks; a failed warning/info item is reported as a warning.
+    blocking_failed = any(r.is_blocking for r in auto_results)
 
     if auto_results:
         print("\n  Automated checks:")
         for r in auto_results:
-            symbol = f"{GREEN}✓{NC}" if r.result == "passed" else f"{RED}✗{NC}"
+            if r.result == "passed":
+                symbol = f"{GREEN}✓{NC}"
+            elif r.is_blocking:
+                symbol = f"{RED}✗{NC}"
+            else:
+                symbol = f"{YELLOW}⚠{NC}"
+            label = f" [{r.result}]" if r.result == "error" else ""
+            sev = f" ({r.severity})" if r.result != "passed" and r.severity else ""
             detail = f" — {r.detail}" if r.detail else ""
-            print(f"    {symbol} {r.item_id}{detail}")
+            print(f"    {symbol} {r.item_id}{label}{sev}{detail}")
 
     if blocking_failed:
         print(f"\n  {RED}Blocking automated check failed — agent checks skipped.{NC}")
@@ -76,7 +95,7 @@ def _check_artifact(
     from datetime import datetime, timezone
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     checklist_id = f"check-{artifact.id}"
-    persist_results(root, artifact.id, checklist_id, auto_results)
+    persist_results(root, artifact.id, checklist_id, auto_results, parse_errors=parse_errors)
     update_artifact_checklists_applied(root, artifact.id, checklist_id, ts)
 
     return 1 if blocking_failed else 0
@@ -146,13 +165,23 @@ def run(root: Path, args: dict[str, Any]) -> int:
     print(f"{BOLD}SpecFlow Checklist Run{NC} — reviewing {len(artifacts_to_check)} artifact(s)")
 
     total_blocking = 0
+    parse_errors: set[str] = set()
     for art in artifacts_to_check:
-        result = _check_artifact(root, art, gate, proactive)
+        result = _check_artifact(root, art, gate, proactive, parse_errors)
         total_blocking += result
+
+    if parse_errors:
+        print(f"\n{YELLOW}{len(parse_errors)} checklist file(s) failed to parse — their items did not run:{NC}")
+        for err in sorted(parse_errors):
+            print(f"  • {err}")
 
     if total_blocking:
         print(f"\n{RED}{total_blocking} artifact(s) have blocking failures.{NC}")
         return 1
+
+    if parse_errors:
+        print(f"\n{YELLOW}No blocking automated failures, but the run is incomplete (unparseable checklists).{NC}")
+        return 0
 
     print(f"\n{GREEN}All automated checks passed.{NC}")
     return 0

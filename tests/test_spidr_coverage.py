@@ -122,10 +122,20 @@ class TestSpidrCoverage:
         assert result["warning_count"] == 0
         assert "covered" in result["detail"].lower()
 
-    def test_missing_dimension(self):
-        stories = [
-            _make_art("STORY-001", "story", extra_fm={"tags": ["spidr-path"]}),
+    # STORY-695 (REQ-056 AC7): missing dimensions only warn once the story
+    # set is large enough to cover all five; smaller sets use padded fixtures.
+    @staticmethod
+    def _pad(stories, n=5):
+        extra = [
+            _make_art(f"STORY-9{i:02d}", "story", extra_fm={"tags": ["feature"]})
+            for i in range(max(0, n - len(stories)))
         ]
+        return stories + extra
+
+    def test_missing_dimension(self):
+        stories = self._pad([
+            _make_art("STORY-001", "story", extra_fm={"tags": ["spidr-path"]}),
+        ])
         result = lint_cmd._check_spidr_coverage(stories)
         assert result["warning_count"] == 4
         assert "spidr-spike" in result["detail"]
@@ -134,12 +144,21 @@ class TestSpidrCoverage:
         assert "spidr-rules" in result["detail"]
 
     def test_no_spidr_tags(self):
-        stories = [
+        stories = self._pad([
             _make_art("STORY-001", "story", extra_fm={"tags": ["feature"]}),
-        ]
+        ])
         result = lint_cmd._check_spidr_coverage(stories)
         assert result["warning_count"] == 5
         assert "no SPIDR dimension tags" in result["detail"]
+
+    def test_small_story_set_is_informational(self):
+        # Fewer stories than dimensions cannot cover all five: info, not warning.
+        for tags in (["spidr-path"], ["feature"]):
+            stories = [_make_art("STORY-001", "story", extra_fm={"tags": tags})]
+            result = lint_cmd._check_spidr_coverage(stories)
+            assert result["warning_count"] == 0
+            assert "⚠" not in result["detail"]
+            assert "spidr-spike" in result["detail"]
 
     def test_no_stories(self):
         result = lint_cmd._check_spidr_coverage([])
@@ -147,9 +166,9 @@ class TestSpidrCoverage:
         assert "no stories" in result["detail"].lower() or "skipped" in result["detail"].lower()
 
     def test_only_path_covered(self):
-        stories = [
+        stories = self._pad([
             _make_art("STORY-001", "story", extra_fm={"tags": ["spidr-path"]}),
             _make_art("STORY-002", "story", extra_fm={"tags": ["spidr-path"]}),
-        ]
+        ])
         result = lint_cmd._check_spidr_coverage(stories)
         assert result["warning_count"] == 4

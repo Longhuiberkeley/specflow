@@ -284,17 +284,6 @@ artifacts:
     tags: []
     fingerprint: sha256:cd8de45116b1
     children: []
-  ARCH-LOUDFAIL-d87a:
-    id: ARCH-LOUDFAIL-d87a
-    title: Loud-failure and advisory ergonomics command surfaces (v1.13.2)
-    status: implemented
-    tags:
-    - v1.13.2
-    - ergonomics
-    - architecture
-    - accounting-not-policing
-    fingerprint: sha256:0c794baa1eaa
-    children: []
   ARCH-034:
     id: ARCH-034
     title: Autoresearch evidence/priority model and reassessment semantics
@@ -332,4 +321,34 @@ artifacts:
     tags: []
     fingerprint: sha256:47c45af0ea47
     children: []
-next_id: 39
+  ARCH-039:
+    id: ARCH-039
+    title: Core ontology, fact model and graph views
+    status: draft
+    tags:
+    - ontology
+    - core
+    fingerprint: sha256:54ef276c8143
+    children: []
+  ARCH-040:
+    id: ARCH-040
+    title: Shipped-surface guards, pack resolution and format versioning
+    status: approved
+    tags:
+    - guards
+    - packs
+    - format-version
+    fingerprint: sha256:6f851214ea4b
+    children: []
+  ARCH-LOUDFAIL-d87a:
+    id: ARCH-LOUDFAIL-d87a
+    title: Loud-failure and advisory ergonomics command surfaces (v1.13.2)
+    status: implemented
+    tags:
+    - v1.13.2
+    - ergonomics
+    - architecture
+    - accounting-not-policing
+    fingerprint: sha256:0c794baa1eaa
+    children: []
+next_id: 41

@@ -89,6 +89,11 @@ _ACCOUNTING_CONCERNS: frozenset[str] = frozenset({
     # cry-wolf at warn level. The conjunction guardrail (lib/ac_quality.py) keeps
     # domain observables ("the relay energizes") UNCLASSIFIED, never aspirational.
     "ac-observability",
+    # coverage-shape: REQs refined only via the legacy 'ARCH derives_from REQ'
+    # shape instead of the canonical 'REQ refined_by ARCH' (STORY-679).
+    # Accounting, not policing — never escalates: the lens emits INFO only;
+    # registration keeps it non-escalating even if a caller stamped a warn.
+    "coverage-shape",
 })
 
 
@@ -131,7 +136,14 @@ _AUD_OUTPUT_TYPES = frozenset({"challenge", "audit"})
 # so the cache replayed stale findings that no longer matched the artifacts.
 # Body-fingerprint semantics (compute_fingerprint) are unchanged — this is
 # project-audit-cache-only.
-_CACHE_GENERATION = 5
+# gen 6 (STORY-684): the key also folds in signatures of the NON-artifact
+# inputs the cross-cutting lenses read — docs surface (docs-staleness),
+# installed standards (standards-coverage), baselines (baseline-drift),
+# schemas (consistency), the source-file set (orphan-code) — plus the run
+# mode (--quick / --standard). Pre-gen-6 a docs edit or a new source file
+# replayed stale findings. The same bump also carries the STORY-679
+# coverage-shape bucket and the STORY-683 lens-error bucket.
+_CACHE_GENERATION = 6
 
 # Audit-relevant frontmatter fields folded into the project cache fingerprint
 # (gen 5). The body fingerprint captures content drift; these are the STABLE
@@ -178,7 +190,89 @@ def _audit_fm_signature(art: art_lib.Artifact) -> str:
     return "|".join(parts)
 
 
-def _project_fingerprint(artifacts: list[art_lib.Artifact]) -> str:
+def _content_sig(root: Path, paths: list[Path]) -> str:
+    """sha256 over sorted (relpath, content-hash) pairs — deterministic.
+
+    Content (not mtime) so a checkout/touch that leaves bytes unchanged still
+    reuses the cache. An unreadable file contributes a stable marker rather
+    than aborting the audit (the lens that reads it reports the problem).
+    """
+    h = hashlib.sha256()
+    for p in sorted(paths, key=lambda q: str(q)):
+        try:
+            rel = str(p.resolve().relative_to(root))
+        except ValueError:
+            rel = str(p)
+        try:
+            digest = hashlib.sha256(p.read_bytes()).hexdigest()
+        except OSError:
+            digest = "unreadable"
+        h.update(f"{rel}\0{digest}\n".encode("utf-8"))
+    return h.hexdigest()[:16]
+
+
+def _dir_files(d: Path) -> list[Path]:
+    if not d.is_dir():
+        return []
+    return [p for p in d.rglob("*") if p.is_file()]
+
+
+def _non_artifact_inputs_signature(root: Path) -> str:
+    """Signature of every non-artifact input a cross-cutting lens reads (gen 6).
+
+    - docs surface (docs-staleness): content of ``docs_surface_paths``
+    - standards (standards-coverage): content of ``.specflow/standards/``
+    - baselines (baseline-drift): content of ``.specflow/baselines/``
+    - schemas (consistency): content of ``.specflow/schema/``
+    - source tree (orphan-code): the sorted set of ``scan_source_files`` paths
+      — orphan-code depends on WHICH files exist, not their bytes, so the set
+      is the exact input and content edits to code do not churn the cache.
+    """
+    from specflow.lib import files as files_lib
+
+    root = Path(root).resolve()
+    sd = root / ".specflow"
+
+    def _source_sig() -> str:
+        src_rel = sorted(
+            str(p.resolve().relative_to(root)) if p.resolve().is_relative_to(root) else str(p)
+            for p in files_lib.scan_source_files(root)
+        )
+        return hashlib.sha256("\n".join(src_rel).encode("utf-8")).hexdigest()[:16]
+
+    getters = (
+        ("docs", lambda: _content_sig(root, sorted(files_lib.docs_surface_paths(root)))),
+        ("standards", lambda: _content_sig(root, _dir_files(sd / "standards"))),
+        ("baselines", lambda: _content_sig(root, _dir_files(sd / "baselines"))),
+        ("schema", lambda: _content_sig(root, _dir_files(sd / "schema"))),
+        ("source", _source_sig),
+    )
+    parts = []
+    for name, getter in getters:
+        # The key must be total: a scan that raises (bad config, unreadable
+        # file) folds a stable marker in, and the lens that reads the same
+        # input raises inside _run_lens and reports a blocking lens-error.
+        try:
+            parts.append(f"{name}=" + getter())
+        except Exception as exc:  # noqa: BLE001 — surfaced by the owning lens
+            parts.append(f"{name}=unavailable:{type(exc).__name__}")
+    return ";".join(parts)
+
+
+def _project_fingerprint(
+    artifacts: list[art_lib.Artifact],
+    root: Path | None = None,
+    mode: str = "",
+) -> str:
+    """Findings-cache key.
+
+    Artifact signatures (body fingerprint + audit-relevant frontmatter) plus,
+    when ``root`` is given, the non-artifact input signature (gen 6,
+    STORY-684) and the run ``mode`` (``--quick`` / ``--standard``), so a
+    quick run's cache (no cross-cutting findings) is never replayed by a full
+    run. The artifact-only form (``root=None``) stays a pure function for
+    unit tests.
+    """
     source_sigs = sorted(
         (art.fingerprint or art_lib.compute_fingerprint(art.body))
         + "@" + _audit_fm_signature(art)
@@ -186,6 +280,10 @@ def _project_fingerprint(artifacts: list[art_lib.Artifact]) -> str:
         if art.type not in _AUD_OUTPUT_TYPES
     )
     payload = f"gen{_CACHE_GENERATION}|" + "|".join(source_sigs)
+    if root is not None:
+        payload += "|inputs:" + _non_artifact_inputs_signature(root)
+    if mode:
+        payload += "|mode:" + mode
     return hashlib.sha256(payload.encode()).hexdigest()[:16]
 
 
@@ -217,9 +315,12 @@ def _save_cached_findings(cache_dir: Path, fingerprint: str, findings: list[dict
 
 
 def _apply_fingerprint_cache(
-    artifacts: list[art_lib.Artifact], cache_dir: Path
+    artifacts: list[art_lib.Artifact],
+    cache_dir: Path,
+    proj_fp: str | None = None,
 ) -> tuple[bool, list[dict[str, str]]]:
-    proj_fp = _project_fingerprint(artifacts)
+    if proj_fp is None:
+        proj_fp = _project_fingerprint(artifacts)
     cached = _load_cached_findings(cache_dir, proj_fp)
     if cached:
         return True, cached
@@ -379,6 +480,45 @@ def _resolve_drift_pair(
     return [anchor, newest], None
 
 
+def _lens_error_finding(lens: str, exc: BaseException) -> dict[str, str]:
+    """One BLOCKING finding for a lens that raised (STORY-683).
+
+    Severity ``error`` → project-audit exit 3. ``lens-error`` is deliberately
+    NOT an accounting concern: a lens that crashed produced no findings, so
+    the audit's silence about its concern is not evidence of health.
+    """
+    detail = str(exc).strip().splitlines()[0] if str(exc).strip() else ""
+    return {
+        "severity": "error",
+        "concern": "lens-error",
+        "message": (
+            f"lens '{lens}' raised {type(exc).__name__}"
+            + (f": {detail}" if detail else "")
+            + " — its findings are missing from this audit"
+        ),
+    }
+
+
+def _run_lens(
+    results: dict[str, list[dict[str, str]]],
+    lens: str,
+    body: Any,
+) -> None:
+    """Run one cross-cutting lens; a raise becomes a blocking lens-error.
+
+    STORY-683 (fail loud): replaces the per-lens ``try/except Exception:
+    pass`` wrappers, which turned a crashed lens into a silently clean
+    concern. The exception is converted to ONE ``lens-error`` finding naming
+    the lens, and the caller continues with the remaining lenses. Each lens
+    body computes its findings locally and writes ``results`` only on
+    success, so a mid-lens raise never leaves a partial bucket behind.
+    """
+    try:
+        body()
+    except Exception as exc:  # converted to a blocking finding, never swallowed
+        results.setdefault("lens-error", []).append(_lens_error_finding(lens, exc))
+
+
 def _cross_cutting_analysis(
     artifacts: list[art_lib.Artifact],
     root: Path,
@@ -394,27 +534,41 @@ def _cross_cutting_analysis(
     # linkage bookkeeping gap, accounting under concern="verification"). The two
     # rolled warns land in different concern buckets so the exit gate can keep
     # the structural ones blocking while the test-linkage ones never drive exit-2.
-    lint_result = artifact_lint.check_coverage(artifacts)
-    struct_n = int(lint_result.get("structural_warning_count", 0))
-    verif_n = int(lint_result.get("verification_warning_count", 0))
-    if struct_n > 0:
-        results.setdefault("completeness", []).append({
-            "severity": "warn",
-            "concern": "completeness",
-            "message": (
-                f"{struct_n} structural coverage gap(s): "
-                f"{lint_result.get('structural_detail', '')[:200]}"
-            ),
-        })
-    if verif_n > 0:
-        results.setdefault("verification", []).append({
-            "severity": "warn",
-            "concern": "verification",
-            "message": (
-                f"{verif_n} test-verification coverage gap(s): "
-                f"{lint_result.get('verification_detail', '')[:200]}"
-            ),
-        })
+    def _coverage() -> None:
+        lint_result = artifact_lint.check_coverage(artifacts)
+        struct_n = int(lint_result.get("structural_warning_count", 0))
+        verif_n = int(lint_result.get("verification_warning_count", 0))
+        shape_n = int(lint_result.get("accounting_count", 0))
+        if struct_n > 0:
+            results.setdefault("completeness", []).append({
+                "severity": "warn",
+                "concern": "completeness",
+                "message": (
+                    f"{struct_n} structural coverage gap(s): "
+                    f"{lint_result.get('structural_detail', '')[:200]}"
+                ),
+            })
+        if verif_n > 0:
+            results.setdefault("verification", []).append({
+                "severity": "warn",
+                "concern": "verification",
+                "message": (
+                    f"{verif_n} test-verification coverage gap(s): "
+                    f"{lint_result.get('verification_detail', '')[:200]}"
+                ),
+            })
+        # Coverage-shape (STORY-679): REQs refined only via the legacy
+        # 'ARCH derives_from REQ' shape. Accounting, not policing — INFO
+        # severity and registered in _ACCOUNTING_CONCERNS, so it can never
+        # drive exit 2 or mint a CHL.
+        if shape_n > 0:
+            results.setdefault("coverage-shape", []).append({
+                "severity": "info",
+                "concern": "coverage-shape",
+                "message": str(lint_result.get("accounting_detail", "")).strip().lstrip("ℹ").strip(),
+            })
+
+    _run_lens(results, "coverage", _coverage)
 
     # Backfilled-exemption bucket (CHL-344 A6): check_coverage's test-link
     # predicates are REQ-anchored, so a backfilled STORY that derives_from an
@@ -425,80 +579,96 @@ def _cross_cutting_analysis(
     # chain, printed every audit it is non-zero. Omitted when zero (the nfr
     # out-of-vocabulary precedent), so a fully REQ-anchored backfill leaves
     # the findings set byte-identical.
-    exempt_findings = _backfilled_exemption_lens(artifacts)
-    if exempt_findings:
-        results.setdefault("adoption-exemption", []).extend(exempt_findings)
+    def _adoption_exemption() -> None:
+        exempt_findings = _backfilled_exemption_lens(artifacts)
+        if exempt_findings:
+            results.setdefault("adoption-exemption", []).extend(exempt_findings)
 
-    baseline_findings: list[dict[str, str]] = []
-    if drift_pair is None:
-        drift_pair = baseline_lib.select_release_pair(
-            baseline_lib.list_baselines(root)
+    _run_lens(results, "adoption-exemption", _adoption_exemption)
+
+    def _baseline_drift() -> None:
+        pair = drift_pair
+        if pair is None:
+            pair = baseline_lib.select_release_pair(
+                baseline_lib.list_baselines(root)
+            )
+        baseline_findings: list[dict[str, str]] = []
+        if len(pair) >= 2:
+            diff = baseline_lib.diff_baselines(root, pair[0], pair[1])
+            if diff.get("ok"):
+                for sc in diff.get("status_changed", []):
+                    baseline_findings.append({
+                        "severity": "info",
+                        "message": f"{sc['id']}: status {sc['old']} → {sc['new']}",
+                    })
+                for fp in diff.get("fingerprint_changed", []):
+                    baseline_findings.append({
+                        "severity": "info",
+                        "message": f"{fp['id']}: content changed (fingerprint drift)",
+                    })
+                for rm in diff.get("removed", []):
+                    baseline_findings.append({
+                        "severity": "warn",
+                        "message": f"{rm['id']}: removed since last baseline",
+                    })
+        if baseline_findings:
+            results["baseline-drift"] = baseline_findings
+
+    _run_lens(results, "baseline-drift", _baseline_drift)
+
+    def _standards_coverage() -> None:
+        compliance_findings: list[dict[str, str]] = []
+        comp = (
+            standards_lib.check_compliance(root, standard_name)
+            if standard_name is not None
+            else standards_lib.check_compliance(root)
         )
-    if len(drift_pair) >= 2:
-        diff = baseline_lib.diff_baselines(root, drift_pair[0], drift_pair[1])
-        if diff.get("ok"):
-            for sc in diff.get("status_changed", []):
-                baseline_findings.append({
-                    "severity": "info",
-                    "message": f"{sc['id']}: status {sc['old']} → {sc['new']}",
-                })
-            for fp in diff.get("fingerprint_changed", []):
-                baseline_findings.append({
-                    "severity": "info",
-                    "message": f"{fp['id']}: content changed (fingerprint drift)",
-                })
-            for rm in diff.get("removed", []):
-                baseline_findings.append({
+        if comp.get("ok"):
+            uncovered = comp.get("uncovered", [])
+            if uncovered:
+                compliance_findings.append({
                     "severity": "warn",
-                    "message": f"{rm['id']}: removed since last baseline",
+                    "message": f"{len(uncovered)}/{comp['total_clauses']} clauses uncovered in {comp['standard']}",
                 })
-    if baseline_findings:
-        results["baseline-drift"] = baseline_findings
+            else:
+                compliance_findings.append({
+                    "severity": "info",
+                    "message": f"All {comp['total_clauses']} clauses covered ({comp['standard']})",
+                })
+        if compliance_findings:
+            results["standards-coverage"] = compliance_findings
 
-    compliance_findings: list[dict[str, str]] = []
-    comp = (
-        standards_lib.check_compliance(root, standard_name)
-        if standard_name is not None
-        else standards_lib.check_compliance(root)
-    )
-    if comp.get("ok"):
-        uncovered = comp.get("uncovered", [])
-        if uncovered:
-            compliance_findings.append({
-                "severity": "warn",
-                "message": f"{len(uncovered)}/{comp['total_clauses']} clauses uncovered in {comp['standard']}",
-            })
-        else:
-            compliance_findings.append({
-                "severity": "info",
-                "message": f"All {comp['total_clauses']} clauses covered ({comp['standard']})",
-            })
-    if compliance_findings:
-        results["standards-coverage"] = compliance_findings
+    _run_lens(results, "standards-coverage", _standards_coverage)
 
     # NFR-coverage lens (accounting, not policing — see _nfr_coverage_lens).
-    nfr_findings = _nfr_coverage_lens(artifacts)
-    if nfr_findings:
-        results["nfr-coverage"] = nfr_findings
+    def _nfr_coverage() -> None:
+        nfr_findings = _nfr_coverage_lens(artifacts)
+        if nfr_findings:
+            results["nfr-coverage"] = nfr_findings
 
-    schema_dir = root / ".specflow" / "schema"
-    schema_result = artifact_lint.check_schema(artifacts, schema_dir)
-    consistency_findings: list[dict[str, str]] = []
-    if schema_result["blocking_count"] > 0:
-        consistency_findings.append({"severity": "error", "message": f"{schema_result['blocking_count']} schema issue(s)"})
-    if schema_result["warning_count"] > 0:
-        consistency_findings.append({"severity": "warn", "message": f"{schema_result['warning_count']} schema warning(s)"})
-    if consistency_findings:
-        results["consistency"] = consistency_findings
+    _run_lens(results, "nfr-coverage", _nfr_coverage)
+
+    def _consistency() -> None:
+        schema_dir = root / ".specflow" / "schema"
+        schema_result = artifact_lint.check_schema(artifacts, schema_dir)
+        consistency_findings: list[dict[str, str]] = []
+        if schema_result["blocking_count"] > 0:
+            consistency_findings.append({"severity": "error", "message": f"{schema_result['blocking_count']} schema issue(s)"})
+        if schema_result["warning_count"] > 0:
+            consistency_findings.append({"severity": "warn", "message": f"{schema_result['warning_count']} schema warning(s)"})
+        if consistency_findings:
+            results["consistency"] = consistency_findings
+
+    _run_lens(results, "consistency", _consistency)
 
     # Orphan source-code lens: source files not traced to any STORY/REQ via
     # output_files. Surfaces the dormant `detect orphan-code` scan in the audit.
     # Distinguishes "tracking not adopted" (info) from "files slipped through
     # partial tracking" (warn) to avoid alarm fatigue.
-    orphan_findings: list[dict[str, str]] = []
-    try:
+    def _orphan_code() -> None:
         from specflow.lib.orphans import find_orphan_code
 
+        orphan_findings: list[dict[str, str]] = []
         oc = find_orphan_code(root)
         total = oc["total_count"]
         referenced = oc["referenced_count"]
@@ -525,20 +695,20 @@ def _cross_cutting_analysis(
                     "severity": "info",
                     "message": f"All {total} source files traced to a STORY/REQ.",
                 })
-    except Exception:
-        pass
-    if orphan_findings:
-        results["orphan-code"] = orphan_findings
+        if orphan_findings:
+            results["orphan-code"] = orphan_findings
+
+    _run_lens(results, "orphan-code", _orphan_code)
 
     # Docs-staleness lens: docs that cite a superseded/cancelled/deprecated
     # artifact. Accounting, not policing: findings are surfaced for review but
     # never escalate the exit code — "docs-staleness" is registered in
     # _ACCOUNTING_CONCERNS, so its warns are excluded from the exit-2 count.
     # Docs are prose; staleness is reported, never enforced (BP-005/006).
-    docs_findings: list[dict[str, str]] = []
-    try:
+    def _docs_staleness() -> None:
         from specflow.lib import docs as docs_lib
 
+        docs_findings: list[dict[str, str]] = []
         docs = docs_lib.discover_docs(root)
         stale = docs_lib.check_stale(root, docs, artifacts)
         for s in stale:
@@ -548,29 +718,38 @@ def _cross_cutting_analysis(
                 "severity": "info",
                 "message": f"{len(docs)} doc(s) scanned; all citations current.",
             })
-    except Exception:
-        pass
-    if docs_findings:
-        results["docs-staleness"] = docs_findings
+        if docs_findings:
+            results["docs-staleness"] = docs_findings
+
+    _run_lens(results, "docs-staleness", _docs_staleness)
 
     # Verification-contract lens (accounting, not policing — see
     # _verification_lens). Pure helper so the lens buckets are unit-testable
     # without running the full cross-cutting pipeline.
-    verify_findings = _verification_lens(artifacts)
-    if verify_findings:
-        results.setdefault("verification", []).extend(verify_findings)
+    def _verification() -> None:
+        verify_findings = _verification_lens(artifacts)
+        if verify_findings:
+            results.setdefault("verification", []).extend(verify_findings)
+
+    _run_lens(results, "verification", _verification)
 
     # AC-coverage lens (accounting, not policing — see _ac_coverage_lens).
-    ac_findings = _ac_coverage_lens(artifacts)
-    if ac_findings:
-        results.setdefault("ac-coverage", []).extend(ac_findings)
+    def _ac_coverage() -> None:
+        ac_findings = _ac_coverage_lens(artifacts)
+        if ac_findings:
+            results.setdefault("ac-coverage", []).extend(ac_findings)
+
+    _run_lens(results, "ac-coverage", _ac_coverage)
 
     # AC-observability lens (accounting, not policing — see
     # _ac_observability_lens). INFO-severity aggregate only — never a per-AC
     # warn, so lexicon edge cases cannot cry-wolf at warn level.
-    ac_obs_findings = _ac_observability_lens(artifacts)
-    if ac_obs_findings:
-        results.setdefault("ac-observability", []).extend(ac_obs_findings)
+    def _ac_observability() -> None:
+        ac_obs_findings = _ac_observability_lens(artifacts)
+        if ac_obs_findings:
+            results.setdefault("ac-observability", []).extend(ac_obs_findings)
+
+    _run_lens(results, "ac-observability", _ac_observability)
 
     return results
 
@@ -591,65 +770,63 @@ def _verification_lens(artifacts: list[art_lib.Artifact]) -> list[dict[str, str]
     verify_run_at, verify_run_exit_code, verify_run_command_hash) and never
     writes them.
     """
+    from specflow.lib.verification import run_matches_expected
+
     findings: list[dict[str, str]] = []
     candidate_types = {"unit-test", "integration-test", "qualification-test", "story"}
-    try:
-        any_contract = any(art.frontmatter.get("verify_command") for art in artifacts)
-        if not any_contract:
+    any_contract = any(art.frontmatter.get("verify_command") for art in artifacts)
+    if not any_contract:
+        findings.append({
+            "severity": "info",
+            "message": (
+                "Verification contracts not adopted: no artifact declares a "
+                "verify_command. Run `specflow verify` to record test-run evidence."
+            ),
+        })
+        return findings
+    declared = 0
+    clean = 0
+    for art in artifacts:
+        if (art.type not in candidate_types
+                or art.status not in ("implemented", "verified")):
+            continue
+        cmd = art.frontmatter.get("verify_command")
+        if not cmd:
+            continue
+        declared += 1
+        run_at = art.frontmatter.get("verify_run_at")
+        run_exit = art.frontmatter.get("verify_run_exit_code")
+        run_cmd_hash = art.frontmatter.get("verify_run_command_hash")
+        # compute_fingerprint-style hash of the current command so a changed
+        # verify_command is detectable against the stored run-command hash.
+        current_hash = "sha256:" + hashlib.sha256(
+            str(cmd).encode("utf-8")
+        ).hexdigest()[:12]
+        if not run_at:
             findings.append({
-                "severity": "info",
-                "message": (
-                    "Verification contracts not adopted: no artifact declares a "
-                    "verify_command. Run `specflow verify` to record test-run evidence."
-                ),
+                "severity": "warn",
+                "message": f"{art.id}: verify_command declared but never run",
             })
-            return findings
-        declared = 0
-        clean = 0
-        for art in artifacts:
-            if (art.type not in candidate_types
-                    or art.status not in ("implemented", "verified")):
-                continue
-            cmd = art.frontmatter.get("verify_command")
-            if not cmd:
-                continue
-            declared += 1
-            run_at = art.frontmatter.get("verify_run_at")
-            run_exit = art.frontmatter.get("verify_run_exit_code")
-            expected_exit = art.frontmatter.get("verify_exit_code", 0)
-            run_cmd_hash = art.frontmatter.get("verify_run_command_hash")
-            # compute_fingerprint-style hash of the current command so a changed
-            # verify_command is detectable against the stored run-command hash.
-            current_hash = "sha256:" + hashlib.sha256(
-                str(cmd).encode("utf-8")
-            ).hexdigest()[:12]
-            if not run_at:
-                findings.append({
-                    "severity": "warn",
-                    "message": f"{art.id}: verify_command declared but never run",
-                })
-            elif run_exit is not None and str(run_exit) != str(expected_exit):
-                findings.append({
-                    "severity": "warn",
-                    "message": f"{art.id}: last verify run failed (exit {run_exit})",
-                })
-            elif run_cmd_hash and run_cmd_hash != current_hash:
-                findings.append({
-                    "severity": "warn",
-                    "message": f"{art.id}: verify_command drifted since last run",
-                })
-            else:
-                clean += 1
-        if declared and clean == declared:
+        elif run_matches_expected(art.frontmatter) is False:
             findings.append({
-                "severity": "info",
-                "message": (
-                    f"{clean} artifact(s) declare verify_command; all have "
-                    f"current, green verify runs."
-                ),
+                "severity": "warn",
+                "message": f"{art.id}: last verify run failed (exit {run_exit})",
             })
-    except Exception:
-        pass
+        elif run_cmd_hash and run_cmd_hash != current_hash:
+            findings.append({
+                "severity": "warn",
+                "message": f"{art.id}: verify_command drifted since last run",
+            })
+        else:
+            clean += 1
+    if declared and clean == declared:
+        findings.append({
+            "severity": "info",
+            "message": (
+                f"{clean} artifact(s) declare verify_command; all have "
+                f"current, green verify runs."
+            ),
+        })
     # Self-describing: stamp the accounting concern so _count_warns classifies
     # the lens output correctly even before run()'s bucket-level stamping.
     for f in findings:
@@ -674,60 +851,56 @@ def _ac_coverage_lens(artifacts: list[art_lib.Artifact]) -> list[dict[str, str]]
     else clean.
     """
     findings: list[dict[str, str]] = []
-    try:
-        from specflow.commands.rtm import _children_of as _rtm_children
-        from specflow.lib import lint as _lint
+    from specflow.commands.rtm import _children_of as _rtm_children
+    from specflow.lib import lint as _lint
+    from specflow.lib.verification import run_matches_expected
 
-        decompose = {"derives_from", "refined_by"}
-        ac_reqs = [
-            a for a in artifacts
-            if art_lib.get_prefix_from_id(a.id) == "REQ"
-            and a.status in ("implemented", "verified")
-        ]
-        for req in ac_reqs:
-            ac_count = _lint.count_acceptance_criteria_items(req)
-            if ac_count == 0:
-                continue
-            # Linked-test walk: QT direct + IT via ARCH + UT via ARCH→DDD.
-            qts = _rtm_children(req.id, "qualification-test", {"verified_by"}, artifacts)
-            archs = _rtm_children(req.id, "architecture", decompose, artifacts)
-            linked: list[art_lib.Artifact] = list(qts)
-            for arch in archs:
-                linked.extend(_rtm_children(arch.id, "integration-test", {"verified_by"}, artifacts))
-                for ddd in _rtm_children(arch.id, "detailed-design", decompose, artifacts):
-                    linked.extend(_rtm_children(ddd.id, "unit-test", {"verified_by"}, artifacts))
-            # dedupe by id
-            seen_ids: set[str] = set()
-            uniq: list[art_lib.Artifact] = []
-            for t in linked:
-                if t.id not in seen_ids:
-                    seen_ids.add(t.id)
-                    uniq.append(t)
-            test_count = len(uniq)
-            green = 0
-            for t in uniq:
-                r_exit = t.frontmatter.get("verify_run_exit_code")
-                e_exit = t.frontmatter.get("verify_exit_code", 0)
-                if r_exit is not None and str(r_exit) == str(e_exit):
-                    green += 1
-            if test_count == 0:
-                findings.append({
-                    "severity": "warn",
-                    "message": (
-                        f"{req.id}: {ac_count} AC item(s) but no linked tests "
-                        f"(QT/IT/UT via verified_by)"
-                    ),
-                })
-            elif test_count < ac_count:
-                findings.append({
-                    "severity": "warn",
-                    "message": (
-                        f"{req.id}: {test_count} linked test(s) < {ac_count} AC "
-                        f"item(s) ({green} green) — review coverage"
-                    ),
-                })
-    except Exception:
-        pass
+    decompose = {"derives_from", "refined_by"}
+    ac_reqs = [
+        a for a in artifacts
+        if art_lib.get_prefix_from_id(a.id) == "REQ"
+        and a.status in ("implemented", "verified")
+    ]
+    for req in ac_reqs:
+        ac_count = _lint.count_acceptance_criteria_items(req)
+        if ac_count == 0:
+            continue
+        # Linked-test walk: QT direct + IT via ARCH + UT via ARCH→DDD.
+        qts = _rtm_children(req.id, "qualification-test", {"verified_by"}, artifacts)
+        archs = _rtm_children(req.id, "architecture", decompose, artifacts)
+        linked: list[art_lib.Artifact] = list(qts)
+        for arch in archs:
+            linked.extend(_rtm_children(arch.id, "integration-test", {"verified_by"}, artifacts))
+            for ddd in _rtm_children(arch.id, "detailed-design", decompose, artifacts):
+                linked.extend(_rtm_children(ddd.id, "unit-test", {"verified_by"}, artifacts))
+        # dedupe by id
+        seen_ids: set[str] = set()
+        uniq: list[art_lib.Artifact] = []
+        for t in linked:
+            if t.id not in seen_ids:
+                seen_ids.add(t.id)
+                uniq.append(t)
+        test_count = len(uniq)
+        green = 0
+        for t in uniq:
+            if run_matches_expected(t.frontmatter) is True:
+                green += 1
+        if test_count == 0:
+            findings.append({
+                "severity": "warn",
+                "message": (
+                    f"{req.id}: {ac_count} AC item(s) but no linked tests "
+                    f"(QT/IT/UT via verified_by)"
+                ),
+            })
+        elif test_count < ac_count:
+            findings.append({
+                "severity": "warn",
+                "message": (
+                    f"{req.id}: {test_count} linked test(s) < {ac_count} AC "
+                    f"item(s) ({green} green) — review coverage"
+                ),
+            })
     # Self-describing: stamp the accounting concern (see _verification_lens).
     for f in findings:
         f["concern"] = "ac-coverage"
@@ -754,32 +927,29 @@ def _ac_observability_lens(artifacts: list[art_lib.Artifact]) -> list[dict[str, 
     findings (silence), never a warn.
     """
     findings: list[dict[str, str]] = []
-    try:
-        from specflow.lib import ac_quality
+    from specflow.lib import ac_quality
 
-        agg = ac_quality.classify_reqs_observability(artifacts)
-        if agg["reqs_with_acs"] == 0:
-            return findings
-        for r in sorted(agg["per_req"], key=lambda r: r["id"]):
-            findings.append({
-                "severity": "info",
-                "message": (
-                    f"{r['id']}: {r['observable']}/{r['total']} observable, "
-                    f"{r['aspirational']} aspirational, {r['unclassified']} unclassified"
-                ),
-            })
-        if agg["aspirational"] > 0:
-            findings.append({
-                "severity": "info",
-                "message": (
-                    f"Project: {agg['aspirational']} aspirational AC(s) across "
-                    f"{agg['aspirational_reqs']} REQ(s); {agg['aspirational_free_reqs']}/"
-                    f"{agg['reqs_with_acs']} REQ(s) aspirational-free "
-                    f"({agg['observable']} observable, {agg['unclassified']} unclassified)"
-                ),
-            })
-    except Exception:
-        pass
+    agg = ac_quality.classify_reqs_observability(artifacts)
+    if agg["reqs_with_acs"] == 0:
+        return findings
+    for r in sorted(agg["per_req"], key=lambda r: r["id"]):
+        findings.append({
+            "severity": "info",
+            "message": (
+                f"{r['id']}: {r['observable']}/{r['total']} observable, "
+                f"{r['aspirational']} aspirational, {r['unclassified']} unclassified"
+            ),
+        })
+    if agg["aspirational"] > 0:
+        findings.append({
+            "severity": "info",
+            "message": (
+                f"Project: {agg['aspirational']} aspirational AC(s) across "
+                f"{agg['aspirational_reqs']} REQ(s); {agg['aspirational_free_reqs']}/"
+                f"{agg['reqs_with_acs']} REQ(s) aspirational-free "
+                f"({agg['observable']} observable, {agg['unclassified']} unclassified)"
+            ),
+        })
     # Self-describing: stamp the accounting concern (see _verification_lens).
     for f in findings:
         f["concern"] = "ac-observability"
@@ -1367,10 +1537,18 @@ def run(root: Path, args: dict[str, Any]) -> int:
     cache_dir = _cache_dir(root)
     if not dry_run:
         cache_dir.mkdir(parents=True, exist_ok=True)
+    # gen 6 (STORY-684): the key covers non-artifact inputs and the run mode.
+    # Computed once, before any lens runs, and reused for the save below.
+    cache_mode = (
+        "quick" if args.get("quick", False) else f"full:{args.get('standard') or ''}"
+    )
+    proj_fp = _project_fingerprint(artifacts, root, mode=cache_mode)
     if baseline_anchor:
         cache_hit, cached_findings = False, []
     else:
-        cache_hit, cached_findings = _apply_fingerprint_cache(artifacts, cache_dir)
+        cache_hit, cached_findings = _apply_fingerprint_cache(
+            artifacts, cache_dir, proj_fp
+        )
 
     if cache_hit:
         print(f"  Cache: project fingerprint unchanged, reusing previous findings")
@@ -1457,7 +1635,6 @@ def run(root: Path, args: dict[str, Any]) -> int:
                 item["axis"] = "cross-cutting"
                 item["concern"] = concern
                 all_findings_raw.append(item)
-        proj_fp = _project_fingerprint(artifacts)
         # Lossless cache (CHL-344 A0): the cache stores ALL findings, so on a
         # cache hit CHL grouping works from the full set and group counts/titles
         # match fresh runs exactly. The pre-A0 cache capped at 20 findings, so a
@@ -1467,7 +1644,12 @@ def run(root: Path, args: dict[str, Any]) -> int:
         # truncation.
         # Anchored runs never write the cache (see the anchor block above:
         # the fingerprint key cannot represent the --baseline anchor).
-        if not dry_run and not baseline_anchor:
+        # A crashed lens (STORY-683 lens-error) never writes the cache: the
+        # replay would pin the error even after the cause is fixed elsewhere.
+        lens_crashed = any(
+            f.get("concern") == "lens-error" for f in all_findings_raw
+        )
+        if not dry_run and not baseline_anchor and not lens_crashed:
             _save_cached_findings(cache_dir, proj_fp, all_findings_raw)
 
     # Chain-coverage top-line metric + prior-audit baseline for the trend line

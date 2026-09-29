@@ -15,7 +15,7 @@ A lens is a focused reasoning pass. It can run **two ways**, and both produce id
 
 **Where fan-out is worth it:**
 - **Recommended-default-on:** review of high-stakes artifacts (release baselines; safety / security / compliance-tagged) and `ship` releases (one-way doors).
-- **Optional (depth, not required):** work-phase decomposition and review — `discover` (challenge lenses), `plan` (architecture candidate seeds), `execute` (worst-case-user / composition on complex stories).
+- **Optional (depth, not required):** work-phase decomposition and review — `discover` (challenge lenses), `plan` (architecture candidate seeds), `execute` (`worst_case_user` / `composition` on complex stories).
 
 **Standard fan-out block** — every fan-out site in the skills uses this one shape:
 
@@ -70,19 +70,19 @@ Each lifecycle phase has a default set of lenses applied automatically. Users ca
 
 | Phase | Default lenses | Trigger for expansion |
 |-------|---------------|----------------------|
-| **Discover** | devil's-advocate, assumption-surfacing, five-whys, regulator | +stress-scale if performance-related; +worst-case-user for public-facing features |
-| **Plan** | premortem, dependency-shock, composition, stress-scale, worst-case-user | +cost-scaling for paid services; +regulator if compliance-sensitive |
-| **Execute** | worst-case-user, composition | +premortem for complex stories with cross-cutting risk |
-| **Review (quick)** | devil's-advocate, premortem, assumption-surfacing, red-blue-team | Any from full catalog per user request |
+| **Discover** | `devils_advocate`, `assumption_surfacing`, `five_whys`, `regulator` | +`stress_scale` if performance-related; +`worst_case_user` for public-facing features |
+| **Plan** | `premortem`, `dependency_shock`, `composition`, `stress_scale`, `worst_case_user` | +`cost_scaling` for paid services; +`regulator` if compliance-sensitive |
+| **Execute** | `worst_case_user`, `composition` | +`premortem` for complex stories with cross-cutting risk |
+| **Review (quick)** | `devils_advocate`, `premortem`, `assumption_surfacing`, `red_blue_team` | Any from full catalog per user request |
 | **Review (deep)** | All 16 available | User selects or "go deep" |
 | **Audit** | All 16 available | User selects via adversarial wings |
-| **Ship** | temporal-drift, regulator | +cost-scaling for paid services; +premortem if release has cross-cutting changes |
+| **Ship** | `temporal_drift`, `regulator` | +`cost_scaling` for paid services; +`premortem` if release has cross-cutting changes |
 
-> **Note on the Execute phase:** In addition to the two adversarial lenses listed above (`worst-case-user`, `composition`), the execute phase uses lightweight mental prompts (graceful degradation, partial-rollout safety, observability) that are not adversarial lenses. These are documented in `specflow-execute/references/thinking-techniques.md`. Only the two catalog lenses are recorded via `--thinking-techniques`.
+> **Note on the Execute phase:** In addition to the two adversarial lenses listed above (`worst_case_user`, `composition`), the execute phase uses lightweight mental prompts (graceful degradation, partial-rollout safety, observability) that are not adversarial lenses. These are documented in `specflow-execute/references/thinking-techniques.md`. Only the two catalog lenses are recorded via `--thinking-techniques`.
 
 ## Recording applied lenses
 
-After applying thinking techniques to an artifact, record which techniques were applied — even if they passed cleanly (no findings):
+After applying thinking techniques to an artifact, record which techniques were applied (use the underscore catalog keys, e.g. `devils_advocate`; hyphenated names are rejected as unknown) — even if they passed cleanly (no findings):
 
 ```
 specflow update <ARTIFACT_ID> --thinking-techniques <technique1,technique2>
@@ -97,12 +97,12 @@ This updates the artifact's `thinking_techniques` frontmatter field, enabling:
 
 For most reviews, default to these four:
 
-- devil's-advocate
-- premortem
-- assumption-surfacing
-- red/blue team
+- `devils_advocate`
+- `premortem`
+- `assumption_surfacing`
+- `red_blue_team`
 
-Expand the selection when the artifact's risk profile warrants it (security boundary → add regulator; public API → add worst-case user; scale-sensitive NFR → add stress-scale and cost-scaling).
+Expand the selection when the artifact's risk profile warrants it (security boundary → add `regulator`; public API → add `worst_case_user`; scale-sensitive NFR → add `stress_scale` and `cost_scaling`).
 
 ## Lens-selection UX
 
@@ -120,7 +120,7 @@ Apply which lenses?
   [ ] composition         [ ] inversion          [ ] competitor
   [ ] cost-scaling
 
-Estimated spend: $1.80 (3 lenses × 7 artifacts)
+Subagents: 3 (one per lens; each covers all 7 artifacts)
 Confirm?
 ```
 

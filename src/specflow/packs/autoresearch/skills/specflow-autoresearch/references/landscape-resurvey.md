@@ -5,10 +5,10 @@ the surrounding practice has changed, or a frontier signal makes a different
 research framing worth considering. This is an advisory research move, never a
 count-triggered rotation.
 
-Start with the local practice catalog and scope it to the COMP question:
+Start with the local practice catalog, then keep only the practices that bear on the COMP question:
 
 ```bash
-specflow practices list --scope "<COMP domain and research question>"
+specflow list --type best-practice
 ```
 
 Consult three adjacent-field lenses where relevant:

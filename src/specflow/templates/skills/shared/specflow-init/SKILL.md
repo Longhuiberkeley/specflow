@@ -66,11 +66,11 @@ If **Existing codebase** (brownfield): remember a `brownfield` flag and prefer t
 
 Ask the user:
 
-- "What type of project is this?" -- bounded options: Web App, CLI Tool, Library, Firmware/Embedded, Data Pipeline, Mobile, Other
-- "Do you want to apply an optional preset?" -- bounded options: `iso26262-demo`, `adoption` (existing codebase — installs `/specflow-adopt`), `autoresearch`, `ops`, or None (Recommended). Reply style is already TLDR-by-default in AGENTS.md; `tldr-communication` is only for the longer 10-line variant.
+- "What type of project is this?" -- bounded options (label = the value passed to `--domain`): `web-app`, `api-service`, `cli-tool`, `library`, `embedded`, `data-pipeline`, `mobile`, `ml`, `quant`, or Other (skip `--domain`; `specflow domain suggest` can detect one later)
+- "Do you want to apply an optional preset?" -- bounded options: `adoption` (existing codebase — installs `/specflow-adopt`), `autoresearch`, `ops`, `tldr-communication` (recap only if context may have compacted, plus a one-clause plain-language (ELI5) gloss of jargon), or None (Recommended). `iso26262-demo` is a test fixture, not a real compliance pack — never offer it.
 - "Do you want to install optional artifact types (hazard, risk, control)?" -- bounded options: Yes, No (Recommended)
-- "Which CI provider do you use?" -- bounded options: GitHub Actions (Recommended), None. (Only GitHub Actions ships a built-in adapter; GitLab/other CI is build-it-yourself via `docs/authoring-an-adapter.md` — do not offer it as a choice.)
-- "Do you have any specific compliance standard packs you want to install?" -- free text, or None (Recommended)
+- "Which CI provider do you use?" -- bounded options: GitHub Actions (Recommended), None. (Only GitHub Actions ships a built-in adapter; for GitLab/other CI, tell the user to ask `/specflow-adapter` to walk them through a custom adapter — do not offer it as a choice.)
+- "Do you need to comply with a specific standard (ISO 26262, IEC 62304, an internal policy)?" -- free text, or None (Recommended). If they name one, finish init first, then route them to `/specflow-pack-author` to turn the standard document into a compliance pack; init itself installs no standard.
 
 ### 3. Run the init command
 
@@ -84,10 +84,10 @@ Append flags as needed:
 - `--domain-tags <comma-separated>` for domain qualifiers (e.g., `--domain-tags real-time,safety-critical`)
 - `--preset <preset>` if a preset was chosen
 - `--with-types hazard,risk,control` if optional artifact types were chosen
-- `--no-ci` if no CI provider was requested
+- `--no-ci` only if the user chose None for CI (init installs the GitHub Actions workflow by default)
 - `--force` only for an intentional clean re-initialization (backs up existing config, state, and schemas first)
 
-This scaffolds `.specflow/`, `_specflow/`, config files, schemas, checklists, and installs skill directories for the target platform. Preset-declared skills install during the same init run. When `--domain` is provided, it also persists the domain classification and attempts to generate project-level best practices (the "process booklet"). The deterministic no-API fallback reads the configured project domain and can be previewed with `specflow handbook generate` or written as BP artifacts with `specflow handbook generate --create`.
+This scaffolds `.specflow/`, `_specflow/`, config files, schemas, checklists, and installs skill directories for the target platform. Preset-declared skills install during the same init run. When `--domain` is provided, it also persists the domain classification and attempts to generate project-level best practices (the "process booklet"). The deterministic fallback reads the configured project domain; preview the best practices with `specflow practices seed` or write them as draft BP artifacts with `specflow practices seed --create`, then check them with `specflow practices validate`.
 
 For an **already initialized** project, do not rerun full init just to receive schema updates. Preview with `specflow refresh --schemas --dry-run`; normal `--schemas` installs missing schemas and preserves changed local files, while explicit `--force` restores shipped defaults.
 
@@ -97,13 +97,13 @@ The `specflow init` CLI has already injected the SpecFlow instruction block into
 
 #### 4a. Check the injected block
 
-Verify that the target instruction file contains the SpecFlow sentinel marker:
+The instruction file for the chosen platform must contain the SpecFlow sentinel line `<!-- SpecFlow section (auto-generated, do not edit manually) -->` and its closing `<!-- End SpecFlow section -->`. Verify with a search of the target file for the opening marker.
 
-#### 4b. Determine the target instruction file
+#### 4b. Target instruction file
 
-The `specflow init` CLI command has already handled instruction injection automatically (via `scaffold.py`). The instruction file should already contain the SpecFlow block wrapped in `<!-- SpecFlow section ... -->` sentinels. Verify it was injected correctly by checking the target file for the sentinel marker.
+The file depends on the platform: `AGENTS.md` for Claude Code, OpenCode, Codex and Junie; `GEMINI.md` for Gemini CLI; `.github/copilot-instructions.md` for GitHub Copilot; `.cursor/rules/specflow.md` (Cursor), `.windsurf/rules/specflow.md` (Windsurf), `.clinerules/specflow.md` (Cline), `.roo/rules/specflow.md` (Roo Code), `.qwen/rules/specflow.md` (QwenCoder), `.kiro/steering/specflow.md` (Kiro), `.kilocode/rules/specflow.md` (KiloCoder), `.trae/rules/specflow.md` (Trae).
 
-If the marker is missing (unusual), the target file mapping is:
+If the marker is missing (unusual), run `specflow refresh` to re-inject the block; do not paste it by hand.
 
 ### 5. Verify git hook installation
 
@@ -148,7 +148,7 @@ Then recommend:
 
 - When offering the user choices for project type, presets, or CI, provide clear, bounded options.
 - The preset option should default to "None" unless the user indicates a regulated industry.
-- The CI option should default to "None" unless the user mentions "GitHub". (No GitLab/other adapter ships — if the user asks for non-GitHub CI, point them at `docs/authoring-an-adapter.md` instead of offering it.)
+- The CI option defaults to GitHub Actions, which is what `specflow init` installs unless `--no-ci` is passed. (No GitLab/other adapter ships — for non-GitHub CI, route to `/specflow-adapter` instead of offering it.)
 - Every choice offered to the user includes "(Recommended)" on the suggested default.
 - Platform detection should be automatic when possible. Only ask when no marker is found.
 - If the user says "skip" or "move on", accept all defaults and continue without further questions.

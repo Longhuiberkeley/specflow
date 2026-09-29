@@ -15,6 +15,8 @@ import sys
 from datetime import date
 from pathlib import Path
 
+import yaml
+
 from specflow.lib import artifacts as art_lib
 from specflow.lib import evaluator_fingerprint as evaluator_lib
 from specflow.lib import noise_probe
@@ -373,6 +375,10 @@ def _note_repeats(note: dict[str, str], prior_expts: list[art_lib.Artifact]) -> 
         if ref == _normalised_ref(prior_note["evidence_ref"]):
             return True
     return False
+
+
+# STORY-694: statuses whose `metric_value` is never a measurement.
+_UNMEASURED_STATUSES = frozenset({"no_op", "crashed"})
 
 
 def _numeric(value: object) -> float | None:
@@ -957,9 +963,8 @@ def _frontier_ledger(root: Path, comp: art_lib.Artifact) -> dict:
     for lineage_id, chain in sorted(lineages.items()):
         measured: list[tuple[art_lib.Artifact, float]] = []
         for expt in chain:
-            metric = _numeric(expt.frontmatter.get("metric_value"))
-            if metric is not None and expt.status != "no_op":
-                measured.append((expt, metric))
+            if _is_measured(expt):
+                measured.append((expt, _numeric(expt.frontmatter.get("metric_value"))))
         gains: list[dict] = []
         for index in range(1, len(measured)):
             previous, previous_metric = measured[index - 1]
@@ -1195,7 +1200,13 @@ def _guard_metrics(expt: art_lib.Artifact) -> dict[str, dict]:
     explicit direction defaults to lower_is_better: guard metrics are
     regression floors (drawdown, latency, error rates) — the adverse move is
     upward unless the record says otherwise. Malformed values are ignored.
+
+    STORY-694 AC2: a no_op or crashed EXPT's guard readings are never
+    measurements either — they can be neither a regression baseline nor the
+    latest guard value, so they parse as empty.
     """
+    if expt.status in _UNMEASURED_STATUSES:
+        return {}
     raw = expt.frontmatter.get("guard_metrics")
     if not isinstance(raw, dict):
         return {}
@@ -1230,13 +1241,39 @@ def _external_score(expt: art_lib.Artifact) -> dict | None:
     return {"value": value, "source": source}
 
 
-def _measured_expts(expts: list[art_lib.Artifact]) -> list[art_lib.Artifact]:
-    """EXPTs carrying a finite measured primary metric (no_op records excluded)."""
-    return [
-        expt for expt in expts
-        if expt.status != "no_op"
+def _is_measured(expt: art_lib.Artifact) -> bool:
+    """True when the EXPT carries a finite measured primary metric.
+
+    STORY-694: no_op and crashed records are never measurements — a crashed
+    run produced no score (new logs record `metric_value: null`; legacy logs
+    may still carry a fabricated 0.0), so neither may feed jump flags, guard
+    regressions or lineage gains.
+    """
+    return (
+        expt.status not in _UNMEASURED_STATUSES
         and _numeric(expt.frontmatter.get("metric_value")) is not None
-    ]
+    )
+
+
+def _measured_expts(expts: list[art_lib.Artifact]) -> list[art_lib.Artifact]:
+    """EXPTs carrying a finite measured primary metric (no_op/crashed excluded)."""
+    return [expt for expt in expts if _is_measured(expt)]
+
+
+def _metric_sort_key(reverse: bool):
+    """Sort key for EXPTs by primary metric with null/non-numeric values last.
+
+    STORY-694: a bare float() on `metric_value` crashed on YAML null (now the
+    recorded value for metric-less runs) and on hand-typed strings. The key
+    routes through `_numeric` and pins unmeasured EXPTs to the end whichever
+    way the list is sorted (`reverse` must match the sort's `reverse=`).
+    """
+    def key(expt: art_lib.Artifact) -> tuple[int, float]:
+        value = _numeric(expt.frontmatter.get("metric_value"))
+        if value is None:
+            return (0, 0.0) if reverse else (1, 0.0)
+        return (1, value) if reverse else (0, value)
+    return key
 
 
 def _signed_gain(value: float, previous: float, direction: str) -> float:
@@ -2171,7 +2208,7 @@ def _run_review(root: Path, args: dict) -> int:
     kept = [e for e in all_expts if e.status == "kept"]
     direction = fm.get("metric_direction", "higher_is_better")
     reverse = direction == "higher_is_better"
-    kept.sort(key=lambda e: float(e.frontmatter.get("metric_value", 0)), reverse=reverse)
+    kept.sort(key=_metric_sort_key(reverse), reverse=reverse)
 
     # Warnings section
     warnings: list[str] = []
@@ -2281,7 +2318,7 @@ def _run_leaderboard(root: Path, args: dict) -> int:
         reverse = direction == "higher_is_better"
         all_expts = _get_all_expts_for_comp(root, comp.id)
         kept = [e for e in all_expts if e.status == "kept"]
-        kept.sort(key=lambda e: float(e.frontmatter.get("metric_value", 0)), reverse=reverse)
+        kept.sort(key=_metric_sort_key(reverse), reverse=reverse)
 
         print(f"\n{BOLD}=== {comp.id} Leaderboard: {comp.title} ==={NC}")
         print(f"  Metric: {fm.get('metric_name', '?')} ({direction})")
@@ -2305,7 +2342,7 @@ def _run_leaderboard(root: Path, args: dict) -> int:
                 key = str(val) if val is not None else "unspecified"
                 groups.setdefault(key, []).append(e)
             for key, g_expts in sorted(groups.items()):
-                g_expts.sort(key=lambda e: float(e.frontmatter.get("metric_value", 0)), reverse=reverse)
+                g_expts.sort(key=_metric_sort_key(reverse), reverse=reverse)
                 print(f"  {BOLD}{key}:{NC}")
                 for i, e in enumerate(g_expts[:top_n]):
                     ef = e.frontmatter
@@ -2370,6 +2407,31 @@ def _parse_research_progress(raw: str | None) -> dict[str, str] | None:
     return note
 
 
+def _stamp_null_metric(path: Path) -> None:
+    """Record `metric_value: null` on a freshly created EXPT (STORY-694).
+
+    `metric_value` is a required EXPT key, but `create_artifact` drops None
+    kwargs. A metric-less crashed / discarded / no_op run keeps the key with
+    an explicit YAML null so the record is schema-complete without inventing
+    a score. Only frontmatter changes; the body fingerprint stays valid.
+    """
+    text = path.read_text(encoding="utf-8")
+    end = text.find("\n---", 3)
+    if not text.startswith("---") or end == -1:
+        return
+    frontmatter = yaml.safe_load(text[3:end]) or {}
+    if not isinstance(frontmatter, dict) or "metric_value" in frontmatter:
+        return
+    ordered: dict = {}
+    for key, value in frontmatter.items():
+        ordered[key] = value
+        if key == "loop":
+            ordered["metric_value"] = None
+    ordered.setdefault("metric_value", None)
+    rendered = yaml.dump(ordered, default_flow_style=False, sort_keys=False)
+    path.write_text(f"---\n{rendered}{text[end + 1:]}", encoding="utf-8")
+
+
 def _run_log(root: Path, args: dict) -> int:
     loop_id = args.get("loop")
     artifacts = art_lib.discover_artifacts(root)
@@ -2427,6 +2489,20 @@ def _run_log(root: Path, args: dict) -> int:
         except (json.JSONDecodeError, ValueError):
             extra_fields[key] = raw
 
+    # STORY-694 (REQ-047 "no score is fabricated", REQ-043 R8): the dedicated
+    # flag wins over a `--set metric_value=` override; a keep must carry a
+    # finite measured metric, and a metric-less run records null — never 0.0.
+    set_metric = extra_fields.pop("metric_value", None)
+    if metric_value is None:
+        metric_value = set_metric
+    measured_metric = _numeric(metric_value)
+    if status == "kept" and measured_metric is None:
+        print(f"{RED}✗ --status kept requires a finite --metric-value: a keep is "
+              f"a measured improvement, and no score is fabricated.{NC}")
+        print(f"{DIM}  Re-run with --metric-value <score>, or log the run as "
+              f"discarded / crashed / no_op (recorded with metric_value: null).{NC}")
+        return 1
+
     comp_id = loop.frontmatter.get("competition")
 
     # STORY-676 (REQ-047 AC2): stamp the evaluator fingerprint this EXPT is
@@ -2446,7 +2522,7 @@ def _run_log(root: Path, args: dict) -> int:
 
     create_kwargs = {
         "loop": loop_id,
-        "metric_value": metric_value if metric_value is not None else 0.0,
+        "metric_value": metric_value,
         "change_category": change_category,
         "summary": summary,
         "competition": comp_id,
@@ -2476,6 +2552,8 @@ def _run_log(root: Path, args: dict) -> int:
         return 1
 
     expt_id = result["id"]
+    if metric_value is None:
+        _stamp_null_metric(Path(result["path"]))
     print(f"{GREEN}✓ Created {expt_id}{NC}")
 
     if args.get("no_update_loop"):
@@ -2502,12 +2580,13 @@ def _run_log(root: Path, args: dict) -> int:
     }
 
     # Update best metric if applicable
-    if status == "kept" and metric_value is not None:
+    if status == "kept" and measured_metric is not None:
+        metric_value = measured_metric
         comp = id_index.get(comp_id) if comp_id else None
         direction = "higher_is_better"
         if comp:
             direction = comp.frontmatter.get("metric_direction", "higher_is_better")
-        best_metric = lf.get("best_metric")
+        best_metric = _numeric(lf.get("best_metric"))
         is_better = False
         if best_metric is None:
             is_better = True
@@ -2530,6 +2609,28 @@ def _run_log(root: Path, args: dict) -> int:
     return 0
 
 
+_OUTCOME_ORDER = ("supported", "not_supported", "inconclusive", "invalid")
+
+
+def _outcome_tally(expts: list[art_lib.Artifact]) -> str:
+    """`supported=2, invalid=1, unrecorded=1` over the EXPTs' hypothesis_outcome."""
+    counts: dict[str, int] = {}
+    for expt in expts:
+        outcome = expt.frontmatter.get("hypothesis_outcome")
+        key = str(outcome).strip() if outcome else "unrecorded"
+        counts[key] = counts.get(key, 0) + 1
+    ordered = [k for k in _OUTCOME_ORDER if k in counts]
+    ordered += sorted(k for k in counts if k not in _OUTCOME_ORDER and k != "unrecorded")
+    if "unrecorded" in counts:
+        ordered.append("unrecorded")
+    return ", ".join(f"{k}={counts[k]}" for k in ordered)
+
+
+def _clip(text: str, limit: int = 120) -> str:
+    text = " ".join(text.split())
+    return text if len(text) <= limit else text[: limit - 3] + "..."
+
+
 def _run_suggest_finds(root: Path, args: dict) -> int:
     loop_id = args.get("loop")
     artifacts = art_lib.discover_artifacts(root)
@@ -2544,59 +2645,83 @@ def _run_suggest_finds(root: Path, args: dict) -> int:
         print(f"{YELLOW}⚠ No EXPTs found for {loop_id}.{NC}")
         return 0
 
-    # Group by change_category
+    # STORY-694 (REQ-043 R3/R5): the draft is outcome ACCOUNTING — counts
+    # plus the evidence the EXPTs recorded (hypothesis_outcome,
+    # failure_analysis). Priority is a decision, not evidence: no
+    # avoid/exploit directive is ever derived from a keep or discard count,
+    # and confidence starts low until the investigator calibrates it.
     groups: dict[str, list[art_lib.Artifact]] = {}
     for e in expts:
         cat = e.frontmatter.get("change_category", "unspecified")
         groups.setdefault(cat, []).append(e)
 
     comp_id = loop.frontmatter.get("competition")
+    direction = "higher_is_better"
+    if comp_id and comp_id in id_index:
+        direction = id_index[comp_id].frontmatter.get(
+            "metric_direction", "higher_is_better"
+        )
+    reverse = direction == "higher_is_better"
     what_worked: list[str] = []
     what_failed: list[str] = []
-    next_steps: list[str] = []
+    unrecorded: list[str] = []
 
     for cat, g_expts in sorted(groups.items()):
         kept = [e for e in g_expts if e.status == "kept"]
-        discarded = [e for e in g_expts if e.status == "discarded"]
-        crashed = [e for e in g_expts if e.status == "crashed"]
-        best = None
-        if kept:
-            direction = "higher_is_better"
-            if comp_id and comp_id in id_index:
-                direction = id_index[comp_id].frontmatter.get("metric_direction", "higher_is_better")
-            reverse = direction == "higher_is_better"
-            best = max(kept, key=lambda e: float(e.frontmatter.get("metric_value", 0)))
-            if not reverse:
-                best = min(kept, key=lambda e: float(e.frontmatter.get("metric_value", 0)))
+        non_kept = [e for e in g_expts if e.status in ("discarded", "crashed")]
+        for e in kept + non_kept:
+            if not e.frontmatter.get("hypothesis_outcome"):
+                unrecorded.append(e.id)
 
         if kept:
             refs = ", ".join(e.id for e in kept[:3])
-            line = f"- {cat}: drove improvement ({refs})"
-            if best:
-                line += f" best={best.frontmatter.get('metric_value', '—')}"
+            line = (f"- {cat}: kept {len(kept)} of {len(g_expts)} ({refs}); "
+                    f"outcomes: {_outcome_tally(kept)}")
+            ranked = sorted(kept, key=_metric_sort_key(reverse), reverse=reverse)
+            best = _numeric(ranked[0].frontmatter.get("metric_value"))
+            if best is not None:
+                line += f"; best={best:g} ({ranked[0].id})"
             what_worked.append(line)
-            # Next step: exploit if multiple keeps in same category
-            if len(kept) >= 2:
-                next_steps.append(f"- Exploit: refine {cat} further ({len(kept)} keeps)")
-        elif discarded or crashed:
-            refs = ", ".join(e.id for e in (discarded + crashed)[:3])
-            what_failed.append(f"- {cat}: no successes ({refs})")
-            next_steps.append(f"- Explore: avoid {cat} or try radically different approach")
+        if non_kept:
+            discarded = sum(1 for e in non_kept if e.status == "discarded")
+            crashed = len(non_kept) - discarded
+            refs = ", ".join(e.id for e in non_kept[:3])
+            line = (f"- {cat}: discarded {discarded}, crashed {crashed} ({refs}); "
+                    f"outcomes: {_outcome_tally(non_kept)}")
+            analyses = [
+                f"{e.id}: {_clip(str(e.frontmatter['failure_analysis']))}"
+                for e in non_kept if e.frontmatter.get("failure_analysis")
+            ]
+            if analyses:
+                line += "; failure_analysis: " + "; ".join(analyses[:3])
+            what_failed.append(line)
 
     if not what_worked and not what_failed:
         print(f"{YELLOW}⚠ No actionable patterns in {loop_id} EXPTs.{NC}")
         return 0
+
+    next_steps: list[str] = []
+    if unrecorded:
+        next_steps.append(
+            f"- Record hypothesis_outcome on {', '.join(unrecorded[:6])}"
+            + (f" (+{len(unrecorded) - 6} more)" if len(unrecorded) > 6 else "")
+            + " before drawing conclusions."
+        )
+    next_steps.append(
+        "- Set agenda priority per direction from the cited evidence; the "
+        "counts above are accounting, not a verdict."
+    )
 
     draft_fm = {
         "type": "finding",
         "status": "draft",
         "competition": comp_id,
         "source_loop": loop_id,
-        "confidence": "low" if len(expts) < 5 else "medium",
-        "summary": f"Synthesized from {len(expts)} experiments in {loop_id}",
+        "confidence": "low",
+        "summary": f"Outcome accounting from {len(expts)} experiments in {loop_id}",
         "what_worked": "\n".join(what_worked) if what_worked else None,
         "what_failed": "\n".join(what_failed) if what_failed else None,
-        "next_steps": "\n".join(next_steps) if next_steps else None,
+        "next_steps": "\n".join(next_steps),
     }
 
     if args.get("write"):

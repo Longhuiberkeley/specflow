@@ -4,6 +4,14 @@ SpecFlow ships incrementally. This document tracks what shipped in each release,
 
 For the original implementation plan (phase breakdown, dependency graph — now historical, superseded by the release history below), see [docs/.archive/plan.md](docs/.archive/plan.md).
 
+## v1.17.0
+
+- **Engine direction (DEC-090, REQ-052..058, ARCH-039/040, DDD-033/034)** — Python stays; one declarative ontology + canonical graph + named views is the target (P2 registry and anti-drift guards, P3 typed findings and a committed findings-baseline ratchet, P4 one graph with `why`/`why-not`, P5 approval and link fingerprint stamps with derived suspect, P6 standards pilot against NPR 7150.2D and a private ASPICE pack with a Datalog go/no-go, P7 formal evidence for users, optional 2.0.0 derived status via `specflow migrate`). Full plan in the DEC-090 lineage.
+- **Index store (SPIKE-003, DEC-093, STORY-696, DEF-006..010/013/015)** — exclusive-create allocation, index as cache, one mutation lock, journaled renumber; `tests/formal/` harness; disposable TLA+ models in `formal/tla/`; BP-008 records the event-triggered model-checking practice (0-1 spikes a year, never calendar-driven).
+- **v1.17.0 sweep (REQ-056, STORY-685..695)** — nine broken shipped paths fixed, cry-wolf sources removed, six guard tests.
+- **Verification semantics (REQ-058, STORY-699), CI gate history (SPIKE-004, STORY-698), cascade/merge legality (STORY-697), semver ordering (STORY-700), format versioning (REQ-057, STORY-678).**
+- **Open follow-ups:** CHL-349 (cascade promotes a REQ on sibling status, not AC coverage — resolve with P5 evidence-backed status); DEF-014 wontfix (DDD-034 operating assumption); REQ-054 parked deprecated (re-derive at P5); per-skill line-budget exceptions (adapter 176, init 157, pack-author 187, autoresearch 383) to trim; `_run_gate_check` still skips script-less items; `checklist-run` exits 0 on a parse failure; `verify.py` tick still uses its own pass rule; migrate command (REQ-057 AC3) lands with 2.0.0.
+
 ## v1.16.0
 
 - **Practice spine (REQ-044, STORY-666–668, ARCH-035/DDD-032, DEC-085/089)** — BP anatomy + provenance/lifecycle with a transitional status map; `specflow practices seed|validate|migrate` (migrate repairs the legacy map through every fold-in path, no `--force`); bundled seeds split out with stable ids; applicability-first BP loading; `handbook generate` deprecated alias.
@@ -53,7 +61,7 @@ Operator directive (2026-08-30): **stop before per-harness customization; make t
 - **lint schema-bypass cleanup** — move the hardcoded `condensation_brief_<N>` regex (lint.py) to schema-level pattern support, killing the last code-side special case.
 - ~~**STORY-642** — unify `compute_chain_depth` with the typed edge matrix~~ *(deprecated at v1.16.0 per owner decision 2026-09-26; the guided_by chain-depth work shipped there covers the adjacent surface — re-derive via a new REQ if the unification is still wanted)*.
 - **`trace.py` renderers** — COMP lineage + LOOP escalation-source sections (make existing edges visible where users look).
-- **LOW pack defects** — float coercion guards (:624/:728/:950), `--show-family` doc drift, ops SKILL.md:162 edge form, metric_value-when-kept refusal.
+- **LOW pack defects** — `--show-family` doc drift, ops SKILL.md:162 edge form.
 - **Review-finding burn-down** — 113 open / 7 stale review findings; docs-staleness sweep (only 2 docs cite artifacts).
 - **brief.py derives_from credit doc** — the suppression surface (any incoming derives_from, incl. MON corrections) is broader than the CHANGELOG wording; document the semantics in the docstring/ops handbook.
 

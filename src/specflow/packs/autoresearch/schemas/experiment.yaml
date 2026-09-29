@@ -11,7 +11,7 @@
 #                       surfaced as advisory warnings by `artifact-lint`
 #                       (autoresearch-logging check), never as blockers.
 #
-# Evidence vs priority (REQ-043): `hypothesis_outcome` records evidence about
+# Evidence vs priority: `hypothesis_outcome` records evidence about
 # the tested formulation — `supported` / `not_supported` (scoped falsification:
 # state the tested scope in `failure_analysis`) / `inconclusive` (inside the
 # noise floor) / `invalid` (invalid instrument: verify or premise broken; no
@@ -20,7 +20,7 @@
 # entries (`pursue` / `deprioritize` / `blocked` / `revisit`) and is never
 # derived from a failure count.
 #
-# Meaningful progress (REQ-043): `research_progress` is the optional structured
+# Meaningful progress: `research_progress` is the optional structured
 # claim `autoresearch status` reads when it checks whether a sustained line
 # produced new evidence over its last three attempts. Shape (all three are
 # non-empty strings):
@@ -48,7 +48,7 @@
 # error-analysis-protocol.md). Such records feed Phase 2 hypotheses and are
 # exempt from evidence-free streak windows.
 #
-# Evaluator drift (REQ-047): `evaluator_fingerprint` is stamped by
+# Evaluator drift: `evaluator_fingerprint` is stamped by
 # `autoresearch log` with the evaluator fingerprint the EXPT was logged under
 # (recomputed from the harness on disk at log time; see the COMP schema for
 # the fingerprint's content). A missing stamp marks a pre-fingerprint EXPT —
@@ -57,7 +57,7 @@
 # COMP.evaluator_fingerprint is drift: flagged once per COMP, routed to the
 # successor-COMP path.
 #
-# Loss-hacking guards (REQ-047 STORY-677, advisory only per DEC-088):
+# Loss-hacking guards (advisory only, never a gate):
 #   guard_metrics — freeform mapping `name: value` (or `name: {value,
 #                   direction}`) of guard metrics recorded alongside the
 #                   primary `metric_value`. `autoresearch status` warns when

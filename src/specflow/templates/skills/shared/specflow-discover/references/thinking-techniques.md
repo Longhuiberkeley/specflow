@@ -10,7 +10,7 @@ Apply these lenses to every new REQ before it is finalized:
 | Technique | Default | Trigger for expansion |
 |-----------|---------|----------------------|
 | Devil's advocate | Always | — |
-| Assumption surfacing | When constraints are implicit | Add stress-scale if performance-related |
+| Assumption surfacing | When constraints are implicit | Add `stress_scale` if performance-related |
 | Five-whys | When rationale is thin | — |
 | Regulator | When standards are installed | — |
 

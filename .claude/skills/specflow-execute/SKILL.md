@@ -18,13 +18,14 @@ Implement approved STORYs and keep traceability green.
    Exit 1 → report the blockers and stop. Exit 0 → evaluate the `automated: false` items yourself (`.specflow/checklists/phase-gates/planning-to-executing.yaml`) against the in-scope STORY set only. The bar scales with change type (bug fix needs a REQ + acceptance criteria; refactor links the ARCH; typo/formatting/dependency bump makes the gate advisory — state the skip reason and proceed). Work that started as a SPIKE or ad-hoc experiment: apply the Permanence Test first (`references/escalation-and-promotion.md`).
 2. **Scope the wave:** `specflow go --dry-run` computes it (`references/wave-computation.md`). Resolve suspect flags on in-scope artifacts — propose the options (`specflow defect-from-suspect <ID> --req <REQ>`, `specflow change-impact --resolve <ID>`, or update the spec); the human picks, you execute.
 3. **Baseline first:** run the test suite (or `specflow artifact-lint` if there is no suite — say so) and record pass/fail counts plus the names of failing tests. This is the diff point for step 6.
-4. **Implement** per the STORY and its linked REQ/ARCH/DDD, following each acceptance criterion. Apply worst-case-user and composition lenses and record them: `specflow update <STORY-ID> --thinking-techniques worst_case_user,composition`.
+4. **Implement** per the STORY and its linked REQ/ARCH/DDD, following each acceptance criterion. Apply the `worst_case_user` and `composition` lenses and record them: `specflow update <STORY-ID> --thinking-techniques worst_case_user,composition`.
 5. **Status:** after each STORY:
    ```
    specflow update STORY-001 --status implemented
+   specflow update STORY-001 --output-files src/pkg/a.py,tests/test_a.py
    specflow cascade-status STORY-001
    ```
-   (`cascade-status` moves linked ARCH/DDD along; `--include-req` also cascades to the REQ. Locks and execution state under `.specflow/` are machine-managed — never edit them.)
+   Record every code and test file you touched as `output_files` (comma-separated, replaces the list) so change-impact and the orphan-code audit can map code back to the STORY. (`cascade-status` moves linked ARCH/DDD along; `--include-req` also cascades to the REQ. Locks and execution state under `.specflow/` are machine-managed — never edit them.)
 6. **Tests & delta:** `specflow generate-tests` for V-model pairs (`references/test-pairing.md`); run `specflow verify <ID>` before any artifact moves to `verified` (`references/verification-contracts.md`). Re-run the step-3 gate and report the baseline → final delta (caused/fixed/unchanged); record it on the STORY. Finish with `specflow artifact-lint`.
 7. **Present the implementation summary** per `../specflow-references/references/approval-presentation.md`, then offer phase closure: `specflow phase-status` (advisory), and `specflow done` only if the user accepts.
 

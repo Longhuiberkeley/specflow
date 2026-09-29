@@ -1,0 +1,18 @@
+id: PREV-011
+name: 'Prevent recurrence of: A crash mid-command does not converge on re-run: renumber-drafts
+  yields duplicate ids and blocks creates; torn artifact writes lose artifacts (violated
+  REQ-002) (caught by UT-128, IT-091)'
+discovered_from: DEF-009
+mode: reactive
+pattern: 'Prevent recurrence of: A crash mid-command does not converge on re-run:
+  renumber-drafts yields duplicate ids and blocks creates; torn artifact writes lose
+  artifacts (violated REQ-002) (caught by UT-128, IT-091)'
+applies_to:
+  tags: []
+items:
+- id: PREV-011-01
+  check: Verify that changes touching REQ-002 are exercised by UT-128, IT-091 before
+    approval.
+  severity: warning
+  automated: false
+  mode: reactive

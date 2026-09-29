@@ -59,13 +59,31 @@ class TestTldrPack:
         content = agents_md.read_text(encoding="utf-8")
         assert content.count("<!-- pack:tldr-communication context") == 1
 
-    def test_snippet_carries_action_first_levers(self, fresh_project: Path):
+    def test_snippet_carries_only_the_delta(self, fresh_project: Path):
         result = scaffold_lib.apply_pack(fresh_project, "tldr-communication", PACKS_DIR)
-        snippet = result["context_snippet"].lower()
-        # The reader-model lever + the conditional style rules (STORY-656
-        # replaced the hard anti-formatting bans with when-it-helps wording).
-        for needle in ("lead", "action or answer", "compacted", "format when it helps", "eli5"):
-            assert needle in snippet, f"snippet missing lever '{needle}'"
+        snippet = result["context_snippet"]
+        # STORY-695: the delta to the base block is the compaction recap plus a
+        # plain-language gloss rule. `eli5` must be in the BODY, not only the
+        # heading, and nothing the base block already says is restated.
+        heading, _, body = snippet.strip().partition("\n")
+        assert heading.startswith("###")
+        body_l = body.lower()
+        for needle in ("compacted", "eli5", "plain"):
+            assert needle in body_l, f"snippet body missing '{needle}'"
+        base = (PACKS_DIR.parent / "templates" / "agent-context.md").read_text(encoding="utf-8").lower()
+        assert "lead with the answer" in base  # the thing the pack must NOT restate
+        assert "lead with" not in snippet.lower()
+        assert "when they aid scan" not in body_l and "format when it helps" not in body_l
+
+    def test_description_matches_the_snippet(self):
+        import yaml
+
+        manifest = yaml.safe_load((PACKS_DIR / "tldr-communication" / "pack.yaml").read_text(encoding="utf-8"))
+        desc = manifest["description"].lower()
+        assert "10-line" not in desc and "step n of m" not in desc and "list cap" not in desc
+        assert "compacted" in desc and "eli5" in desc
+        readme = (PACKS_DIR / "tldr-communication" / "README.md").read_text(encoding="utf-8").lower()
+        assert "compacted" in readme and "eli5" in readme
 
     def test_snippet_is_concise(self, fresh_project: Path):
         """context_snippet is injected into every project's AGENTS.md — keep it tight."""
@@ -75,3 +93,27 @@ class TestTldrPack:
             f"tldr context_snippet grew to {len(non_empty)} non-empty lines; "
             f"distill, don't copy. (autoresearch was cut 30→6 for the same reason.)"
         )
+
+    def test_snippet_is_two_lines_max_bytes(self, fresh_project: Path):
+        result = scaffold_lib.apply_pack(fresh_project, "tldr-communication", PACKS_DIR)
+        assert len(result["context_snippet"].encode("utf-8")) <= 300
+
+
+class TestAggregateAlwaysOnBudget:
+    """STORY-695 AC4: the base block plus EVERY pack snippet stays inside the same
+    budget the base block alone is held to (see test_approval_guardrail)."""
+
+    _MAX_BYTES = 3072
+    _MAX_NON_EMPTY_LINES = 36
+
+    def test_base_plus_all_pack_snippets_within_budget(self):
+        import yaml
+
+        base = (PACKS_DIR.parent / "templates" / "agent-context.md").read_text(encoding="utf-8")
+        total = base
+        for manifest_path in sorted(PACKS_DIR.glob("*/pack.yaml")):
+            snippet = (yaml.safe_load(manifest_path.read_text(encoding="utf-8")) or {}).get("context_snippet") or ""
+            total += "\n" + snippet
+        assert len(total.encode("utf-8")) <= self._MAX_BYTES, len(total.encode("utf-8"))
+        non_empty = [ln for ln in total.splitlines() if ln.strip()]
+        assert len(non_empty) <= self._MAX_NON_EMPTY_LINES, len(non_empty)

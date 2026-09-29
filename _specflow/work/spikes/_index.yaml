@@ -18,6 +18,27 @@ artifacts:
     - handoff
     fingerprint: sha256:0ec50ff5c587
     children: []
+  SPIKE-003:
+    id: SPIKE-003
+    title: 'Model-check the index store: allocation under concurrency, crash and git'
+    status: completed
+    tags:
+    - formal
+    - tla
+    - concurrency
+    - index
+    fingerprint: sha256:c0024f880158
+    children: []
+  SPIKE-004:
+    id: SPIKE-004
+    title: 'Compliance-gate history properties: per-step legality and authority'
+    status: completed
+    tags:
+    - formal
+    - ci-gate
+    - rbac
+    fingerprint: sha256:3233b1bf7d76
+    children: []
   SPIKE-BPSURFAC-710b:
     id: SPIKE-BPSURFAC-710b
     title: 'BP surface gaps: inert applies_to field + no wildcard; no promote-PREV/CHL
@@ -42,4 +63,4 @@ artifacts:
     - observability
     fingerprint: sha256:ee1fdea97a1c
     children: []
-next_id: 3
+next_id: 5

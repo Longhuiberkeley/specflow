@@ -22,7 +22,7 @@ For `domain: quant`, setup **requires a metric bundle with a fixed horizon** —
 `evaluation_horizon` (the fixed window every bundle metric is measured on). A
 single-metric quant COMP is **rejected at setup** (`specflow create` refuses it)
 in favor of the bundle: one gameable number is exactly the loss-hacking surface
-REQ-047 removes. The horizon is part of the frozen exam (invariant 3).
+the bundle removes. The horizon is part of the frozen exam (invariant 3).
 
 ## Evaluator fingerprint (drift guard)
 
@@ -57,7 +57,7 @@ specflow create --type competition \
 - `pre_check_command` / `post_check_command` — input guards and deploy-fit checks derived from the goals; prefer one runner script with `--phase` flags. Each must pass its dry-run.
 - `domain` — set when known; drives expected `auxiliary_metrics` in lint. For `quant`, also the metric bundle + fixed horizon requirement above.
 - `external_leaderboard` — external leaderboard the CV metric is checked against; `autoresearch status` renders the CV-external relation and demotes (advisory) gains the external score contradicts. Without it, status falls back to `EXPT.guard_metrics` plus trial-count-deflated metrics.
-- Noise probe: `specflow autoresearch plan --profile` runs the verify 3× and records `noise_characterization`; if stdev > ~5% of mean pick a noise strategy (`noise-handling-protocol.md`) before committing a long budget.
+- `noise_characterization` — the metric's measured noise floor (shape documented in the COMP schema). Run `verify_command` three times on the unchanged baseline and record the outputs: `specflow update COMP-NNN --set 'noise_characterization={"samples":[<v1>,<v2>,<v3>]}'`; if stdev > ~5% of mean also add a `strategy` (`noise-handling-protocol.md`) before committing a long budget.
 
 ## Consult when
 

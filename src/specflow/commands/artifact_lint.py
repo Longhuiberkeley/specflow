@@ -20,8 +20,10 @@ from specflow.lib import lint as lint_lib
 from specflow.lib import role_normalize
 from specflow.lib.display import RED, GREEN, YELLOW, CYAN, NC
 from specflow.lib.domain_constants import DOMAIN_RECOMMENDED
+# One role set with `specflow cascade-status` (STORY-697 AC3).
+from specflow.commands.cascade_status import cascade_targets
 
-CHECK_NAMES = ["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "fingerprint-drift", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "bp-application", "thinking-techniques", "autoresearch-logging", "autoresearch-comp-closure", "spike-lifecycle", "source-drift", "dec-risk-profile", "ac-observable", "nfr-category", "backfilled-links", "role-target"]
+CHECK_NAMES = ["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "fingerprint-drift", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "bp-application", "thinking-techniques", "autoresearch-logging", "autoresearch-comp-closure", "spike-lifecycle", "source-drift", "dec-risk-profile", "ac-observable", "nfr-category", "backfilled-links", "role-target", "dead-oracle"]
 
 # ── STORY-663: persistent-warning escalation ──────────────────────
 # severity-levels.md claims "warnings persisting across 3+ validation runs
@@ -192,6 +194,8 @@ def _run_check(
         return _check_backfilled_links(artifacts)
     elif check_name == "role-target":
         return _check_role_targets(artifacts, root)
+    elif check_name == "dead-oracle":
+        return _check_dead_oracle(artifacts, root)
 
     return {"status_icon": "?", "detail": f"Unknown check: {check_name}",
             "blocking_count": 0, "warning_count": 0}
@@ -219,6 +223,17 @@ def check_schema(
     # ``relates_to`` used project-wide should surface as a single normalization
     # task, not 160 identical warnings that train users to ignore lint output.
     role_groups: dict[str, set[str]] = {}
+
+    # STORY-683 (fail loud): a malformed schema file used to be skipped
+    # silently by registration, so its type vanished and its artifacts read
+    # as "Unknown type" warnings. Each one is now a BLOCKING schema-error
+    # naming the file.
+    for bad_file, err in art_lib.schema_registration_errors(schema_dir):
+        blocking += 1
+        details.append(
+            f"  ✗ schema-error: malformed schema file "
+            f"{schema_dir.name}/{bad_file.name} ({err})"
+        )
 
     for art in artifacts:
         schema = schemas.get(art.type)
@@ -397,43 +412,26 @@ def _check_status_cascade(
         if story.status not in ("implemented", "verified"):
             continue
 
-        for link in story.links:
-            target = id_index.get(link.target)
-            if target is None:
+        # Nudge exactly the links cascade-status acts on (one shared
+        # decision, STORY-697 AC3): ARCH/DDD always, REQ once the STORY is
+        # verified (cascade-status --include-req).
+        include_req = story.status == "verified"
+        for target, target_prefix in cascade_targets(story, id_index, include_req):
+            if target.status != "approved":
                 continue
-
-            target_prefix = art_lib.get_prefix_from_id(target.id)
-
-            if link.role == "guided_by" and target_prefix == "ARCH":
-                if target.status == "approved":
-                    warnings += 1
-                    details.append(
-                        f"  \u26a0 [{story.id}] is '{story.status}' but linked "
-                        f"{target.id} (ARCH) is still 'approved' -- run "
-                        f"`specflow cascade-status {story.id}`"
-                    )
-
-            elif link.role == "specified_by" and target_prefix == "DDD":
-                if target.status == "approved":
-                    warnings += 1
-                    details.append(
-                        f"  \u26a0 [{story.id}] is '{story.status}' but linked "
-                        f"{target.id} (DDD) is still 'approved' -- run "
-                        f"`specflow cascade-status {story.id}`"
-                    )
-
-        if story.status == "verified":
-            for link in story.links:
-                target = id_index.get(link.target)
-                if target is None:
-                    continue
-                if link.role in ("implements", "derives_from") and art_lib.get_prefix_from_id(target.id) == "REQ":
-                    if target.status == "approved":
-                        warnings += 1
-                        details.append(
-                            f"  \u26a0 [{story.id}] is 'verified' but linked "
-                            f"{target.id} (REQ) is still 'approved' -- update REQ status"
-                        )
+            warnings += 1
+            if target_prefix == "REQ":
+                details.append(
+                    f"  \u26a0 [{story.id}] is 'verified' but linked "
+                    f"{target.id} (REQ) is still 'approved' -- update REQ status: "
+                    f"run `specflow cascade-status {story.id} --include-req`"
+                )
+            else:
+                details.append(
+                    f"  \u26a0 [{story.id}] is '{story.status}' but linked "
+                    f"{target.id} ({target_prefix}) is still 'approved' -- run "
+                    f"`specflow cascade-status {story.id}`"
+                )
 
     icon = GREEN + "\u2713" + NC if blocking == 0 and warnings == 0 else (
         RED + "\u2717" + NC if blocking > 0 else YELLOW + "\u26a0" + NC
@@ -788,10 +786,21 @@ def check_coverage(
     REQ-012 defines both; the two functions are not contradictory.
 
     For each approved REQ, verifies:
-      - At least one ARCH links to it via 'derives_from'
+      - At least one ARCH refines it: the canonical ``REQ refined_by ARCH``
+        (role_targets.py, v1.14.2) OR the legacy ``ARCH derives_from REQ``
       - At least one STORY links to it via 'implements'
     For each approved STORY, verifies:
-      - At least one test at each required V-model level links via 'verified_by'
+      - At least one test at each required V-model level is linked via
+        'verified_by' — either the test's link to the STORY or the STORY's own
+        outgoing link to the test (both shapes are legal per role_targets.py)
+
+    STORY-679: a REQ refined ONLY through the legacy derives_from shape is
+    reported as ONE collapsed accounting-class INFO line (``accounting_count``
+    / ``accounting_detail``). It is never a warning — so it can neither
+    escalate via STORY-663 persistent-warning tracking nor drive
+    project-audit's exit 2 (it routes to the accounting "coverage-shape"
+    concern at info severity). The metric delta is recorded in a DEC citing
+    REQ-012.
     """
     blocking = 0
     warnings = 0
@@ -827,11 +836,25 @@ def check_coverage(
         if a.type in tests_by_type:
             tests_by_type[a.type].append(a)
 
+    # Architectural refinement, both legal shapes (STORY-679). Canonical:
+    # the REQ holds ``refined_by → ARCH``. Legacy: the ARCH holds
+    # ``derives_from → REQ``. A REQ credited only via the legacy shape is
+    # tallied for the accounting INFO line below.
     req_to_archs: dict[str, list[art_lib.Artifact]] = {}
     for arch in archs:
         for link in arch.links:
             if link.role == "derives_from" and art_lib.get_prefix_from_id(link.target) == "REQ":
                 req_to_archs.setdefault(link.target, []).append(arch)
+    req_canonical_arch: set[str] = set()
+    for req in reqs:
+        for link in req.links:
+            if link.role != "refined_by":
+                continue
+            target = id_index.get(link.target)
+            if target is not None and target.type == "architecture":
+                req_canonical_arch.add(req.id)
+                break
+    derives_only_reqs: list[str] = []
 
     req_to_stories: dict[str, list[art_lib.Artifact]] = {}
     for story in stories:
@@ -841,7 +864,9 @@ def check_coverage(
 
     for req in reqs:
         linked_archs = req_to_archs.get(req.id, [])
-        if not linked_archs:
+        if linked_archs and req.id not in req_canonical_arch:
+            derives_only_reqs.append(req.id)
+        if not linked_archs and req.id not in req_canonical_arch:
             msg = f"  ⚠ [{req.id}] no ARCH derives_from this approved requirement"
             warnings += 1
             structural_warnings += 1
@@ -870,6 +895,13 @@ def check_coverage(
                         if t_link.target == story.id and t_link.role == "verified_by":
                             test_links_by_type[t_type].append(t_art)
                             break
+            # STORY's own outgoing verified_by → test (STORY-679).
+            for s_link in story.links:
+                if s_link.role != "verified_by":
+                    continue
+                t_art = id_index.get(s_link.target)
+                if t_art is not None and t_art.type in test_links_by_type:
+                    test_links_by_type[t_art.type].append(t_art)
 
             fully_covered = all(
                 test_links_by_type[t] for t in ("unit-test", "integration-test", "qualification-test")
@@ -888,14 +920,32 @@ def check_coverage(
                     details.append(msg)
                     verification_details.append(msg)
 
+    # Accounting-class INFO line (STORY-679): collapsed, IDs sorted so the
+    # line is deterministic. Never counted as a warning.
+    accounting_detail = ""
+    if derives_only_reqs:
+        ids = sorted(set(derives_only_reqs))
+        sample = ", ".join(ids[:5])
+        more = f" (+{len(ids) - 5} more)" if len(ids) > 5 else ""
+        accounting_detail = (
+            f"  ℹ {len(ids)} approved REQ(s) refined only via legacy "
+            f"'ARCH derives_from REQ' (canonical: REQ refined_by ARCH): "
+            f"{sample}{more}"
+        )
+
     icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
     detail_msg = "; ".join(details) if details else "All approved REQs have STORY and test coverage"
+    if accounting_detail:
+        detail_msg += "\n" + accounting_detail
 
     return {
         "status_icon": icon,
         "detail": detail_msg,
         "blocking_count": blocking,
         "warning_count": warnings,
+        # Accounting-class shape note (STORY-679): info only, never a warning.
+        "accounting_count": len(set(derives_only_reqs)),
+        "accounting_detail": accounting_detail,
         # Split buckets consumed by project_audit's _cross_cutting_analysis to
         # route structural vs test-verification gaps into separate concerns.
         "structural_warning_count": structural_warnings,
@@ -1250,17 +1300,29 @@ def _check_spidr_coverage(
         all_tags.update(t.lower() for t in s.tags)
 
     has_any_spidr = any(any(t.startswith("spidr-") for t in s.tags) for s in stories)
+    # STORY-695 (REQ-056 AC7): fewer stories than SPIDR dimensions cannot
+    # cover all five, so a lean change would always carry 4-5 cry-wolf
+    # warnings. Below that size, missing dimensions are informational only.
+    small_set = len(stories) < len(SPIDR_DIMENSIONS)
 
     for dim in sorted(SPIDR_DIMENSIONS):
         found = any(dim in t for t in all_tags)
         if not found:
-            warnings += 1
-            details.append(f"  ⚠ no stories found for SPIDR dimension '{dim}'. Stories may be incomplete.")
+            if small_set:
+                details.append(f"  ℹ no stories found for SPIDR dimension '{dim}' (only {len(stories)} stories).")
+            else:
+                warnings += 1
+                details.append(f"  ⚠ no stories found for SPIDR dimension '{dim}'. Stories may be incomplete.")
 
     if not has_any_spidr and stories:
         details.append("  ℹ no SPIDR dimension tags found on any story. Consider tagging stories during plan Step 5.")
 
-    icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
+    if warnings:
+        icon = YELLOW + "⚠" + NC
+    elif details:
+        icon = CYAN + "ℹ" + NC
+    else:
+        icon = GREEN + "✓" + NC
     detail_msg = "\n".join(details) if details else f"All {len(SPIDR_DIMENSIONS)} SPIDR dimensions covered"
 
     return {
@@ -2508,6 +2570,61 @@ def _check_role_targets(
     }
 
 
+# Statuses whose verify_command is historical, not a live oracle.
+_DEAD_ORACLE_SKIP_STATUSES = frozenset({"deprecated", "superseded", "rejected", "cancelled"})
+
+
+def _check_dead_oracle(
+    artifacts: list[art_lib.Artifact],
+    root: Path,
+) -> dict[str, str | int]:
+    """Warn when a ``verify_command`` names a repository path that does not exist.
+
+    A dead oracle cannot verify anything: the recorded run errors, or (for a
+    test runner over a surviving directory) passes over nothing — false
+    confidence either way (REQ-058 AC2, STORY-699). Token classification is
+    the deterministic heuristic in ``evaluator_fingerprint.missing_repo_paths``
+    (pytest node ids resolve to their file; flags, placeholders, quoted
+    expressions and bare words are never paths).
+
+    Accounting, not policing — WARNING only, no strict toggle: this is a
+    DEDICATED check (the role-target isolation pattern) so its warnings never
+    route through ``check_schema`` → project-audit's consistency lens → exit 2.
+    One warning per (artifact, missing path).
+    """
+    from specflow.lib.evaluator_fingerprint import missing_repo_paths
+
+    warnings: list[str] = []
+    declared = 0
+    for art in sorted(artifacts, key=lambda a: a.id):
+        cmd = (art.frontmatter or {}).get("verify_command")
+        if not cmd or not isinstance(cmd, str):
+            continue
+        if art.status in _DEAD_ORACLE_SKIP_STATUSES:
+            continue
+        declared += 1
+        for missing in missing_repo_paths(root, cmd):
+            warnings.append(
+                f"{art.id}: verify_command names {missing}, which does not "
+                f"exist (dead oracle) — repoint the command or restore the file"
+            )
+    if warnings:
+        icon = YELLOW + "⚠" + NC
+        detail = "\n".join(f"  ⚠ {w}" for w in warnings)
+    else:
+        icon = GREEN + "✓" + NC
+        detail = (
+            f"Every verify_command names paths that exist ({declared} contract(s))"
+            if declared else "No verify_command declared"
+        )
+    return {
+        "status_icon": icon,
+        "detail": detail,
+        "blocking_count": 0,
+        "warning_count": len(warnings),
+    }
+
+
 def run(root: Path, args: dict) -> int:
     """Execute specflow artifact-lint.
 
@@ -2589,9 +2706,11 @@ def run(root: Path, args: dict) -> int:
         # ARCH-038): its finding is permanent historical accounting — the
         # remedy is a successor COMP, not an edit to the drifted EXPTs — so
         # escalation would turn a never-gating advisory into a permanent block.
+        # dead-oracle is an accounting finding at REQ-058 AC2 severity; it
+        # never gates (DEF-017, tests/test_dead_oracle.py).
         escalation_results = [
             (name, result) for name, result in results
-            if name not in ("bp-application", "fingerprint-drift")
+            if name not in ("bp-application", "fingerprint-drift", "dead-oracle")
         ]
         escalated = _record_warning_runs(root, escalation_results)
         total_blocking += len(escalated)
@@ -2741,7 +2860,7 @@ def _auto_fix(root: Path) -> None:
                             fm["fingerprint"] = actual
                             body = text[end + 3:]
                             new_text = "---\n" + yaml.dump(fm, default_flow_style=False, sort_keys=False) + "---\n" + body
-                            art.path.write_text(new_text, encoding="utf-8")
+                            art_lib.write_artifact_text(root, art.path, new_text)
                             fixed_count += 1
                     except Exception:
                         pass

@@ -2,7 +2,7 @@
 
 The as-built baseline is the single new concept adoption introduces. Everything else reuses the core artifact model.
 
-## The code-linking model (D-20)
+## The code-linking model (DEC-057)
 
 Adoption links existing code to specs via **ARCH and DDD `output_files`**, not STORY. STORY is reserved for forward action (the *doing*); adoption records the *system side* (what exists), and code realizes an architecture.
 
@@ -24,7 +24,7 @@ Adoption is a **handshake into the normal lifecycle**, not a parallel track.
 
 ## Status: be honest, not ceremonial
 
-SpecFlow is accounting, not policing. When you backfill an artifact for code that already exists, set the status that **reflects reality** — `create` accepts any valid status directly (no transition prerequisite on create):
+SpecFlow is accounting, not policing. When you backfill an artifact for code that already exists, set the status that **reflects reality**. `create` reaches past `draft` only with `--sanctioned "as-built: <why>"` (the creation-status gate records it as `sanctioned_justification`); there is no transition prerequisite:
 
 | Reality | Status |
 |--------|--------|
@@ -42,7 +42,21 @@ Do not force backfilled artifacts through `draft → approved → implemented`. 
   - `"Backfilled from src/auth/ at adoption-v0"`
   - `"Backfilled from docs/adr/0003-token-format.md; README↔code conflict resolved: code authoritative (user, 2026-06-14)"`
 
-No new status, no new artifact type, no schema change. The frozen vocabulary (D-18) is respected — adoption reuses `derives_from`, `implements`, `guided_by`, `specified_by`, `verified_by`, `addresses`.
+No new status, no new artifact type, no schema change. The frozen link-role vocabulary is respected — adoption reuses `derives_from`, `implements`, `guided_by`, `specified_by`, `verified_by`, `addresses`.
+
+## Lint expectations for a skeleton
+
+`specflow artifact-lint` is forward-lifecycle aware, so an as-built record legitimately warns until deepened. All are accounting warnings, none block:
+
+| Warning | Why it fires | Clears when |
+|---------|--------------|-------------|
+| `missing verification pair` | an ARCH has no IT `verified_by` it | an existing test is mapped (Phase 3 worked example) |
+| `body has N words` / `missing structural headers` | ARCH body under ~50 words or no `## Component`-style header | the body summarizes the component under a header |
+| `never challenged` | no `thinking_techniques` on an implemented/approved spec | `/specflow-artifact-review` runs a lens and you record it via `update --thinking-techniques` |
+| `backfilled artifact has no links` | nothing links to or from it | a verifying test, parent REQ, or DEC is linked |
+| `no STORY implements this approved requirement` | a backfilled REQ has no STORY, by design | forward work touches it (adoption never creates STORYs) |
+
+Do not fake a technique or a STORY to silence these.
 
 ## When to cut a baseline
 

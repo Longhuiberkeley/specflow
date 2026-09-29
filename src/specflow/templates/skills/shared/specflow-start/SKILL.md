@@ -9,14 +9,16 @@ A thin, host-neutral router: orient on project state, then point at the right ne
 
 ## Workflow
 
+0. **No `.specflow/` directory in the project?** SpecFlow is not initialized — route to `/specflow-init` and stop (`brief` cannot run without it).
+
 1. **Recall state (deterministic, zero tokens):** run `specflow brief --next`. It reads `state.yaml` + the artifact graph and prints a deterministic next-step recommendation with any actionable advisory notes (e.g. *"REQs approved, no ARCH yet → /specflow-plan"*).
 
 2. **Honor health/setup advisories before routing:** if `brief` reports drifted schemas, preview with `specflow refresh --schemas --dry-run`; plain `--schemas` preserves local changes, while explicit `--force` restores shipped defaults. Never overwrite schema customizations silently.
 
 3. **If the recommendation is unambiguous:** tell the user exactly which slash-command to run next, and stop. Examples:
    - *"You have approved REQs but no architecture yet → run `/specflow-plan`."*
-   - *"All stories are implemented → run `/specflow-artifact-review` (review + V-model tests UT/IT/QT), then `/specflow-ship`."*
-   - *"3 suspects are open → run `specflow change-impact` (or `specflow defect-from-suspect <ID> --req <REQ>`), then continue."*
+   - *"All stories are implemented → run `/specflow-artifact-review` on what changed, then `/specflow-ship`."*
+   - *"3 suspects are open → run `/specflow-change-impact-review`, then continue."*
 
 4. **If intent is ambiguous, ask ONE disambiguating question, then route.** The common ambiguity is the three review skills:
    > "Reviewing **(a)** one specific artifact, **(b)** the impact of recent changes, or **(c)** the whole project's health?"

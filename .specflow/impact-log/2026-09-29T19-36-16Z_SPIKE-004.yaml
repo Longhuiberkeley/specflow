@@ -1,0 +1,8 @@
+changed: SPIKE-004
+change_type: content_modified
+fingerprint_old: sha256:a858d32068a7
+fingerprint_new: sha256:3233b1bf7d76
+update_type: minor
+flagged_suspects: []
+resolved: false
+timestamp: '2026-09-29T19:36:16Z'

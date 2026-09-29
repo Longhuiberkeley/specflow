@@ -340,7 +340,7 @@ def _add_refresh_parser(subparsers):
     p.add_argument("--no-skills", action="store_true", dest="no_skills", help="Skip skill update")
     p.add_argument("--no-context", action="store_true", dest="no_context", help="Skip agent-context re-injection")
     p.add_argument("--schemas", action="store_true", help="Also update base schema files (writes missing; preserves drifted unless --force)")
-    p.add_argument("--checklists", action="store_true", help="Also update base checklist templates (new only)")
+    p.add_argument("--checklists", action="store_true", help="Also update base checklist templates (writes missing, repairs unparseable; preserves changed unless --force)")
     p.add_argument("--packs", action="store_true", help="Also refresh assets for configured active packs")
     p.add_argument("--force", action="store_true", help="Replace drifted generated schemas/checklists/pack skills")
     p.add_argument("--dry-run", action="store_true", dest="dry_run", help="Show what would change without writing")
@@ -594,16 +594,15 @@ def _add_renumber_drafts_parser(subparsers):
 
 def _add_import_parser(subparsers):
     p = subparsers.add_parser("import", help="Import artifacts from an external format")
-    sub = p.add_subparsers(dest="import_subcommand")
-    # Primary: --adapter flag (handled by the parent parser, not subcommand)
+    # No subcommands (STORY-686): an empty subparsers group made argparse read
+    # the positional file as an invalid subcommand choice.
     p.add_argument("--adapter", help="Adapter name (e.g. reqif)")
     p.add_argument("file", nargs="?", help="Path to the source file")
 
 
 def _add_export_parser(subparsers):
     p = subparsers.add_parser("export", help="Export artifacts to an external format or skills to platform formats")
-    sub = p.add_subparsers(dest="export_subcommand")
-    # Primary: --adapter flag
+    # Artifact export: --adapter flag (no subcommands — see _add_import_parser)
     p.add_argument("--adapter", help="Adapter name (e.g. reqif)")
     p.add_argument("--output", help="Path to write the exported file")
     # Skill export: --format flag
@@ -707,7 +706,7 @@ def _add_split_parser(subparsers):
 
 def _add_merge_parser(subparsers):
     p = subparsers.add_parser("merge", help="Merge two artifacts (source → target)")
-    p.add_argument("source_id", help="Source artifact ID (status becomes merged_into)")
+    p.add_argument("source_id", help="Source artifact ID (becomes superseded, with a supersedes link from the target, when its schema allows)")
     p.add_argument("target_id", help="Target artifact ID (receives links)")
 
 
@@ -755,8 +754,8 @@ def _add_risk_tier_parser(subparsers):
 
 def _add_ci_gate_parser(subparsers):
     p = subparsers.add_parser("ci-gate", help="Run RBAC checks on a PR diff (server-side)")
-    p.add_argument("--base", required=True, help="Base git ref (e.g., main)")
-    p.add_argument("--head", required=True, help="Head git ref (e.g., feature-branch)")
+    p.add_argument("--base", required=True, help="Base git ref (e.g., origin/main)")
+    p.add_argument("--head", required=True, help="Head git ref or commit sha (e.g., the pull-request head sha)")
 
 
 def _add_generate_tests_parser(subparsers):
@@ -816,7 +815,7 @@ def _add_autoresearch_parser(subparsers):
     status_p.add_argument("--loop", help="LOOP ID (default: running or draft LOOP for the COMP)")
 
     frontier_p = sub.add_parser("frontier", help="Show the COMP research-frontier ledger")
-    frontier_p.add_argument("--comp", dest="comp",
+    frontier_p.add_argument("--comp", "--competition", dest="comp",
                             help="COMP ID or directory containing one (default: auto-detect)")
     frontier_p.add_argument("--json", action="store_true", help="Emit the full frontier ledger as JSON")
 
@@ -841,7 +840,7 @@ def _add_autoresearch_parser(subparsers):
                        choices=["kept", "discarded", "crashed", "no_op"],
                        help="Experiment outcome")
     log_p.add_argument("--metric-value", type=float, dest="metric_value",
-                       help="Primary metric value")
+                       help="Primary metric value (required with --status kept; omitted = null, never 0.0)")
     log_p.add_argument("--change-category", required=True, dest="change_category",
                         help="Category of change (e.g. features, model, params, analysis)")
     log_p.add_argument("--summary", required=True, help="One-line description of the change")
@@ -1248,6 +1247,14 @@ def main(argv: list[str] | None = None) -> int:
 
     handler = commands.get(args.command)
     if handler:
+        # STORY-678: warn once (stderr) when the repo's format_version is newer
+        # than this engine; `hook pre-commit` refuses on its own instead.
+        if not (args.command == "hook" and getattr(args, "hook_subcommand", None) == "pre-commit"):
+            try:
+                from specflow.lib.config import warn_format_version_once
+                warn_format_version_once(_find_project_root())
+            except Exception:
+                pass
         return handler(args)
 
     parser.print_help()

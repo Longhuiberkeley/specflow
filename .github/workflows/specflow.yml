@@ -132,7 +132,9 @@ jobs:
       - name: Install SpecFlow
         run: uv sync
       - name: RBAC gate check
-        run: uv run specflow ci-gate --base ${{ github.base_ref }} --head ${{ github.head_ref }}
+        # PR checkouts have no local branch refs: diff the fetched base branch
+        # against the PR head commit (fetch-depth: 0 makes both reachable).
+        run: uv run specflow ci-gate --base origin/${{ github.base_ref }} --head ${{ github.event.pull_request.head.sha }}
   specflow-release-gate:
     # Authoritative release gate on tag pushes. Runs project-audit WITHOUT
     # continue-on-error: safe because accounting-not-policing lenses

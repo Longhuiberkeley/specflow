@@ -1,6 +1,6 @@
 # Rolling Evaluation
 
-When to read: COMP setup Step 1 (`competition-setup-protocol.md`) when choosing a split; when the split itself is the research object; when a COMP's evaluation window elapses. Complements — does not replace — anti-leakage in `competition-setup-protocol.md` (read-only eval, one-number verify, robustness-adjusted primaries, split-integrity checks) and ML-04 / ML-10–12 in `methodology-handbook.md`. Agrees with DEC-079: frozen COMPs, successor chains, reversible pause, `completed` stays frozen.
+When to read: COMP setup (`competition-setup-protocol.md`) when choosing a split; when the split itself is the research object; when a COMP's evaluation window elapses. Complements — does not replace — anti-leakage in `competition-setup-protocol.md` (read-only eval, one-number verify, robustness-adjusted primaries, split-integrity checks) and ML-04 / ML-10–12 in `methodology-handbook.md`. Agrees with the frozen-COMP rules: successor chains, reversible pause, `completed` stays frozen.
 
 ## The split as a first-class design choice
 
@@ -35,7 +35,8 @@ The split can be an EXPT family, not just setup trivia. Use the canonical `chang
 Log split knobs on the EXPT, not in chat:
 
 ```bash
-specflow autoresearch log --loop LOOP-NNN --status kept --set change_category=validation \
+specflow autoresearch log --loop LOOP-NNN --status kept --metric-value 0.84 \
+  --change-category validation --summary "walk-forward split, 12-month train window" \
   --set parameters='{"split":"walk-forward","train_months":12,"test_months":1,"embargo_days":7}' \
   --set sweep_results='[{"train_months":6,"auc":0.81},{"train_months":12,"auc":0.84},{"train_months":24,"auc":0.83}]'
 ```

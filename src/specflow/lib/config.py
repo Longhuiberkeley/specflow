@@ -1,6 +1,8 @@
 """Configuration reading and writing for SpecFlow."""
 
 import copy
+import re
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -12,12 +14,23 @@ import specflow
 CONFIG_FILENAME = "config.yaml"
 STATE_FILENAME = "state.yaml"
 
+# STORY-678 / REQ-057: on-disk format version, independent of the release
+# ``version`` key. Bump FORMAT_VERSION only with a migration; an engine refuses
+# to trust a repository whose format_version exceeds SUPPORTED_FORMAT_VERSION.
+FORMAT_VERSION = 1
+SUPPORTED_FORMAT_VERSION = 1
+UPGRADE_INSTRUCTION = (
+    "uv tool install --force git+https://github.com/Longhuiberkeley/specflow"
+)
+_FORMAT_WARNED: set[str] = set()
+
 
 def default_config(project_name: str = "") -> dict:
     """Return a default config dict with timestamps."""
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     return {
         "version": specflow.__version__,
+        "format_version": FORMAT_VERSION,
         "project": {"name": project_name, "created": now, "domain": "", "domain_tags": []},
         "impact_analysis": {},
         "learning": {
@@ -96,8 +109,10 @@ def write_config(root: Path, config: dict) -> None:
 
 def write_state(root: Path, state: dict) -> None:
     """Write state.yaml to .specflow/."""
+    from specflow.lib import locks as locks_lib
+
     path = root / ".specflow" / STATE_FILENAME
-    path.write_text(yaml.dump(state, default_flow_style=False, sort_keys=False))
+    locks_lib.locked_write(root, path, yaml.dump(state, default_flow_style=False, sort_keys=False))
 
 
 def read_config(root: Path) -> dict:
@@ -164,7 +179,77 @@ def merge_config(existing: dict, defaults: dict) -> dict:
 
     _deep_merge(merged, existing)
     merged["version"] = specflow.__version__
+    existing_fv = existing.get("format_version")
+    if not isinstance(existing_fv, int) or isinstance(existing_fv, bool) or existing_fv < FORMAT_VERSION:
+        merged["format_version"] = FORMAT_VERSION
     return merged
+
+
+def _read_format_version(cfg: dict) -> int | None:
+    value = cfg.get("format_version")
+    if isinstance(value, bool) or not isinstance(value, int):
+        return None
+    return value
+
+
+def stamp_format_version(root: Path, *, dry_run: bool = False) -> bool:
+    """Ensure config.yaml carries ``format_version: FORMAT_VERSION``.
+
+    A minimal text edit (comments and key order survive). The legacy ``version``
+    key is never touched, and a higher format_version is never downgraded.
+    Returns True when the file was (or, with ``dry_run``, would be) changed.
+    """
+    path = root / ".specflow" / CONFIG_FILENAME
+    if not path.exists():
+        return False
+    text = path.read_text(encoding="utf-8")
+    cfg = yaml.safe_load(text) or {}
+    if not isinstance(cfg, dict):
+        return False
+    current = _read_format_version(cfg)
+    if current is not None and current >= FORMAT_VERSION:
+        return False
+    if dry_run:
+        return True
+    line = f"format_version: {FORMAT_VERSION}"
+    if re.search(r"^format_version:.*$", text, flags=re.M):
+        text = re.sub(r"^format_version:.*$", line, text, count=1, flags=re.M)
+    elif re.search(r"^version:.*$", text, flags=re.M):
+        text = re.sub(r"^(version:.*)$", lambda m: f"{m.group(1)}\n{line}", text, count=1, flags=re.M)
+    else:
+        text = f"{line}\n{text}"
+    path.write_text(text, encoding="utf-8")
+    return True
+
+
+def format_version_mismatch(root: Path) -> str | None:
+    """Return the upgrade message when the repo is newer than this engine."""
+    try:
+        cfg = read_config(root)
+    except Exception:
+        return None
+    if not isinstance(cfg, dict):
+        return None
+    repo_fv = _read_format_version(cfg)
+    if repo_fv is None or repo_fv <= SUPPORTED_FORMAT_VERSION:
+        return None
+    return (
+        f"This project's format_version is {repo_fv}, but this SpecFlow "
+        f"(v{specflow.__version__}) supports format_version "
+        f"{SUPPORTED_FORMAT_VERSION}. Upgrade SpecFlow: {UPGRADE_INSTRUCTION}"
+    )
+
+
+def warn_format_version_once(root: Path) -> None:
+    """Print the format_version mismatch to stderr at most once per process."""
+    key = str(root.resolve())
+    if key in _FORMAT_WARNED:
+        return
+    msg = format_version_mismatch(root)
+    if msg is None:
+        return
+    _FORMAT_WARNED.add(key)
+    print(f"! specflow: {msg}", file=sys.stderr)
 
 
 def detect_version_delta(root: Path) -> dict:

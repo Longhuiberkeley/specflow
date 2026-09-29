@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from specflow.lib import impact as impact_lib
-from specflow.lib.display import RED, GREEN, NC
+from specflow.lib.display import RED, GREEN, YELLOW, NC
 
 
 def run(root: Path, args: dict[str, Any]) -> int:
@@ -24,4 +24,9 @@ def run(root: Path, args: dict[str, Any]) -> int:
     rewritten = result.get("rewritten", [])
     print(f"{GREEN}✓ Merged {source_id} → {target_id}{NC}")
     print(f"  Links rewritten on {len(rewritten)} artifact(s): {', '.join(rewritten) if rewritten else '(none)'}")
+    if result.get("supersedes_link"):
+        print(f"  {target_id} supersedes {source_id}")
+    print(f"  {source_id} status: {result.get('source_status', '?')}")
+    if result.get("status_note"):
+        print(f"{YELLOW}  ! {result['status_note']}{NC}")
     return 0

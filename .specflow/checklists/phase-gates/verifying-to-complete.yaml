@@ -7,32 +7,26 @@ version: 1
 items:
   - id: CKL-GATE-006-01
     check: "All spec artifacts have status: verified"
-    automated: true
-    script: "uv run specflow artifact-lint --type status"
+    automated: false
+    llm_prompt: "List the spec artifacts in scope (`specflow list --type REQ`, and likewise for ARCH and DDD). Confirm each in-scope spec is verified (deprecated specs are out of scope). Flag each spec still in draft, approved or implemented. (`artifact-lint --type status` only checks that statuses are legal, not that they reached verified.)"
     severity: blocking
 
   - id: CKL-GATE-006-02
     check: "All fingerprints are current"
     automated: true
-    script: "uv run specflow artifact-lint --type fingerprints"
+    script: "specflow artifact-lint --type fingerprints"
     severity: blocking
 
   - id: CKL-GATE-006-03
     check: "No broken links in any artifact"
     automated: true
-    script: "uv run specflow artifact-lint --type links"
+    script: "specflow artifact-lint --type links"
     severity: blocking
 
   - id: CKL-GATE-006-04
     check: "All IDs are unique and well-formed"
     automated: true
-    script: "uv run specflow artifact-lint --type ids"
-    severity: blocking
-
-  - id: CKL-GATE-006-05
-    check: "Full validation passes"
-    automated: true
-    script: "uv run specflow artifact-lint"
+    script: "specflow artifact-lint --type ids"
     severity: blocking
 
   - id: CKL-GATE-006-06

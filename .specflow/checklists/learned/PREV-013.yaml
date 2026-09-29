@@ -1,0 +1,17 @@
+id: PREV-013
+name: 'Prevent recurrence of: cascade-status proposes illegal transitions (approved
+  to verified, self-loops), promotes a REQ past an unverified sibling STORY, and exits
+  0 on failure (violated REQ-003) (caught by UT-130)'
+discovered_from: DEF-011
+mode: reactive
+pattern: 'Prevent recurrence of: cascade-status proposes illegal transitions (approved
+  to verified, self-loops), promotes a REQ past an unverified sibling STORY, and exits
+  0 on failure (violated REQ-003) (caught by UT-130)'
+applies_to:
+  tags: []
+items:
+- id: PREV-013-01
+  check: Verify that changes touching REQ-003 are exercised by UT-130 before approval.
+  severity: warning
+  automated: false
+  mode: reactive

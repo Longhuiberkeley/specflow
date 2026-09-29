@@ -9,10 +9,12 @@ chain-report: {}
 compliance-evidence: {}
 conflicts: {}
 coverage: {}
+dead-oracle: {}
 dec-risk-profile: {}
 fingerprints: {}
 ids: {}
-links: {}
+links:
+  d88d5f318505bb4e: 2
 nfr-category: {}
 output-files: {}
 quality: {}

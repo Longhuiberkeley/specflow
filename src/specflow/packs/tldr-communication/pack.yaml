@@ -1,13 +1,14 @@
 name: tldr-communication
-version: "1.1.0"
+version: "1.2.0"
 description: >
-  Optional longer TLDR+ELI5 reply style. Baseline AGENTS.md already leads with
-  the answer; install this pack only if you want the full 10-line action-first
-  variant (restating step N of M, list cap 5, pre-send check). Adapted from
-  github.com/ayghri/i-have-adhd (behavioural shaping, no diagnosis implied).
+  Two small additions to the base reply style: recap only when context may have
+  compacted, and gloss any jargon term in one plain (ELI5) clause. The base
+  AGENTS.md block already leads with the answer or next action, so this pack
+  adds only that delta. Adapted from github.com/ayghri/i-have-adhd (behavioural
+  shaping, no diagnosis implied).
 adds_artifact_types: []
 adds_directories: []
 adds_skills: []
 context_snippet: |
   ### TLDR+ELI5
-  Lead with the action or answer. Recap only if context may have compacted; format when it helps scan.
+  Recap only if context may have compacted. Gloss any jargon term you introduce in one plain-language (ELI5) clause.

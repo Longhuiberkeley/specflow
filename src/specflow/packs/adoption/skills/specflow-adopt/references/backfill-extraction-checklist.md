@@ -10,7 +10,7 @@ Ask one at a time; let the user's answers shape the inventory:
 2. **Scope this pass** — "I see these candidate boundaries: `<list>`. Which one should we adopt this pass?" (For a small repo: "This is small enough to adopt whole — confirm?")
 3. **Key decisions** — "What are the 2-5 decisions you most want captured as DEC/ARCH? (Framework choices, data model, auth model, deployment topology…)"
 4. **Authoritative vs stale** — "Are there sources I should treat as authoritative, and any that are known-stale? (e.g. 'the README is out of date; trust the code')"
-5. **Depth** — "For this boundary, do you want full V-model (REQ→ARCH→DDD + tests) or a leaner record (ARCH only)?" Default lean (skeleton) unless the subsystem is complex or actively changing. STORY is not part of the depth choice — adoption never creates STORYs (D-20).
+5. **Depth** — "For this boundary, do you want full V-model (REQ→ARCH→DDD + tests) or a leaner record (ARCH only)?" Default lean (skeleton) unless the subsystem is complex or actively changing. STORY is not part of the depth choice — adoption never creates STORYs (DEC-057).
 
 Record the answers; they seed extraction so you're not blindly reverse-engineering.
 
@@ -22,7 +22,7 @@ Record the answers; they seed extraction so you're not blindly reverse-engineeri
 - **Status:** `approved` (matches shipped reality) or `verified` (if a QT confirms it).
 - **Provenance:** `"Backfilled from README §Features + framing interview"`.
 
-### ARCH (Architecture) — the PRIMARY code-linking home (D-20)
+### ARCH (Architecture) — the PRIMARY code-linking home (DEC-057)
 - **Read:** top-level directory layout (`git ls-files` grouped), public interfaces (API routers, exported package surfaces, schemas), deployment configs, module/workspace markers.
 - **Draft:** component structure and the interfaces between them. **One ARCH per component** — the component is the unit of adoption, not the capability and not the file.
 - **Code-link (the key field):** set `output_files` to a **package glob** covering the whole component, e.g. `src/main/java/com/acme/payments/**/*.java` or `src/auth/**/*`. One entry covers hundreds of files. This is how adopted code gets traced, coverage gets measured, and drift gets detected.
@@ -37,7 +37,7 @@ Record the answers; they seed extraction so you're not blindly reverse-engineeri
 - **Code-link:** `output_files` is the specific subset of files this DDD details (finer-grained than the parent ARCH's glob).
 - **Status:** `implemented`/`verified`.
 
-### STORY — NOT backfilled (reserved for forward action, D-20)
+### STORY — NOT backfilled (reserved for forward action, DEC-057)
 - **Do not create STORYs during adoption.** STORY records the *action side* — the doing — and in adoption the action already happened years ago. A backfilled `status: verified` STORY for shipped code is a zombie action-artifact.
 - STORY appears only when **forward work** changes adopted code: a real (non-`backfilled`) STORY, `specified_by` the existing ARCH, `output_files` = the specific files the change touched (a subset of the ARCH's glob).
 - If you catch yourself writing "STORY: implement X" for code that already exists → that's an ARCH. Re-Author it.
@@ -50,8 +50,8 @@ Record the answers; they seed extraction so you're not blindly reverse-engineeri
 
 ### UT / IT / QT (Tests) — from existing tests where they map
 - **Read:** existing test files; map each to the spec level it actually verifies (UT→DDD/unit, IT→ARCH/integration, QT→REQ/acceptance).
-- **Draft:** backfill a test artifact only where an existing test maps cleanly to a backfilled spec. Link `derives_from` the spec and set the spec `verified` if the test confirms it.
-- **Status:** `verified` (the test exists and presumably passes) — but flag in `rationale` if you couldn't run it.
+- **Draft:** backfill a test artifact only where an existing test maps cleanly to a backfilled spec. Link the test to the spec with `--links '[{"target":"<SPEC-ID>","role":"verified_by"}]'` (this is the edge lint counts as the verification pair) and set the spec `verified` if the test confirms it.
+- **Status:** `verified` (the test exists and presumably passes) with `--sanctioned "as-built: <test path> passes"` — but flag in `rationale` if you couldn't run it.
 - **Don't fabricate** test artifacts for tests that don't exist.
 
 ## General rules

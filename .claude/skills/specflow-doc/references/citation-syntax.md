@@ -2,7 +2,7 @@
 
 Docs cite spec artifacts with inline **`@ID` markers**. This is the only mechanism
 that connects prose to the spec graph — and it is intentionally lightweight: no
-frontmatter required, no link role, no schema change (respects frozen vocabulary D-18).
+frontmatter required, no link role, no schema change (respects the frozen link-role vocabulary).
 
 ## Grammar
 
@@ -36,8 +36,8 @@ Rejected: `@user`, `email@host.com`, `DEC-019` (no `@`).
 
 ```yaml
 reverse:
-  ARCH-007: [docs/architecture.md]
-  DEC-018: [docs/architecture.md, docs/decisions.md]
+  ARCH-007: [docs/design/overview.md]
+  DEC-018: [docs/design/overview.md, docs/adr/0003-token-format.md]
 ```
 
 So "which docs cite this artifact?" is a single lookup against the materialized file.

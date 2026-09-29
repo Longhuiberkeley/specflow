@@ -219,3 +219,93 @@ def test_no_bypass_flag_in_shipped_hook_text():
     comments that could be quoted back at users."""
     source = Path(hook_cmd.__file__).read_text(encoding="utf-8")
     assert "--no-verify" not in source
+
+
+# --- STORY-686 AC2: suspect warning is read in-process from staged frontmatter ---
+
+def test_pre_commit_suspect_warning_reads_staged_frontmatter(tmp_path, monkeypatch, capsys):
+    root = tmp_path / "repo"
+    (root / ".git").mkdir(parents=True)
+    changes = [
+        {
+            "path": "_specflow/work/stories/STORY-001.md",
+            "old_status": "draft", "new_status": "draft",
+            "old_fm": {}, "new_fm": {"id": "STORY-001", "suspect": True},
+        },
+        {
+            "path": "_specflow/work/stories/STORY-002.md",
+            "old_status": "draft", "new_status": "draft",
+            "old_fm": {}, "new_fm": {"id": "STORY-002", "suspect": False},
+        },
+    ]
+    monkeypatch.setattr(hook_cmd.rbac_lib, "staged_artifact_changes", lambda r: changes)
+    monkeypatch.setattr(hook_cmd.rbac_lib, "current_git_author_email", lambda r: "a@b.com")
+    calls: list[list[str]] = []
+
+    def fake_run(cmd, **kw):
+        calls.append(list(cmd))
+        return _completed(0, "(all checks clean)")
+
+    monkeypatch.setattr(hook_cmd.subprocess, "run", fake_run)
+
+    rc = hook_cmd._pre_commit(root)
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "STORY-001 is flagged suspect" in out
+    assert "STORY-002" not in out
+    assert not any("status" in c for c in calls), "no per-artifact `specflow status` subprocess"
+    assert len(calls) == 4, "only links, schema, status-cascade, story-linkage lint runs"
+
+
+# ---------------------------------------------------------------------------
+# STORY-698: per-step schema legality helper used by the CI gate walk.
+# ---------------------------------------------------------------------------
+
+
+def _req_schema_dir(tmp_path: Path) -> Path:
+    schema_dir = tmp_path / "schema"
+    schema_dir.mkdir()
+    (schema_dir / "requirement.yaml").write_text(
+        "type: requirement\n"
+        "allowed_status:\n"
+        "  draft: []\n"
+        "  approved: [draft]\n"
+        "  implemented: [approved]\n"
+        "  verified: implemented\n",  # bare-string predecessor is coerced
+        encoding="utf-8",
+    )
+    return schema_dir
+
+
+def test_illegal_step_reason_legal_and_illegal(tmp_path):
+    sd = _req_schema_dir(tmp_path)
+    assert hook_cmd._illegal_step_reason(sd, "requirement", "REQ-001", "draft", "approved") == ""
+    assert hook_cmd._illegal_step_reason(sd, "requirement", "REQ-001", "implemented", "verified") == ""
+    # One commit may record several legal steps: reachable means legal
+    # (the authority for each status passed through is checked separately).
+    assert hook_cmd._illegal_step_reason(sd, "requirement", "REQ-001", "draft", "implemented") == ""
+    reason = hook_cmd._illegal_step_reason(sd, "requirement", "REQ-001", "verified", "approved")
+    assert reason == ("REQ-001: illegal transition 'verified' -> 'approved' "
+                      "(not reachable by legal steps; allowed from: draft)")
+    unknown = hook_cmd._illegal_step_reason(sd, "requirement", "REQ-001", "draft", "done")
+    assert "'done' is not a requirement status" in unknown
+
+
+def test_illegal_step_reason_skips_creation_repair_and_unknown_type(tmp_path):
+    sd = _req_schema_dir(tmp_path)
+    # Creation (no prior status) is not a transition.
+    assert hook_cmd._illegal_step_reason(sd, "requirement", "REQ-001", "", "verified") == ""
+    # Repair path: an invalid current status may move to any legal status.
+    assert hook_cmd._illegal_step_reason(sd, "requirement", "REQ-001", "draftt", "implemented") == ""
+    # No schema for the type: artifact-lint owns that, the gate does not judge.
+    assert hook_cmd._illegal_step_reason(sd, "story", "STORY-001", "draft", "verified") == ""
+
+
+def test_legal_path_is_the_shortest_chain_and_honours_passable(tmp_path):
+    allowed = {"draft": [], "approved": ["draft"], "implemented": ["approved"],
+               "verified": ["implemented"], "cancelled": ["draft", "approved"]}
+    assert hook_cmd._legal_path(allowed, "approved", "verified") == ["implemented", "verified"]
+    assert hook_cmd._legal_path(allowed, "draft", "cancelled") == ["cancelled"]
+    assert hook_cmd._legal_path(allowed, "cancelled", "implemented") is None
+    assert hook_cmd._legal_path(allowed, "draft", "verified",
+                                passable=lambda s: s != "approved") is None

@@ -256,14 +256,12 @@ def verification_evidence(
         return "unknown (no contracts declared)"
 
     def _is_green(art: art_lib.Artifact) -> bool:
-        ran_at = art.frontmatter.get("verify_run_at")
-        if not ran_at:
+        if not art.frontmatter.get("verify_run_at"):
             return False
-        expected = art.frontmatter.get("verify_exit_code", 0)
-        recorded = art.frontmatter.get("verify_run_exit_code")
-        if recorded is None:
-            return False
-        return str(expected) == str(recorded)
+        # One expected-exit rule for every reader (STORY-699).
+        from specflow.lib.verification import run_matches_expected
+
+        return run_matches_expected(art.frontmatter) is True
 
     green = sum(1 for t in contracts if _is_green(t))
     if green > 0:

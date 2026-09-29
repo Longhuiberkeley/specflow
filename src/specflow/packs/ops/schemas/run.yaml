@@ -8,6 +8,6 @@ allowed_status:
   deployed: []
   live: [deployed, paused]
   paused: [live]
-  retired: [live, paused]
+  retired: [deployed, live, paused]
 allowed_link_roles: [derives_from, implements, complies_with]
 directory: _specflow/ops/runs/

@@ -275,13 +275,13 @@ You can link any artifact type — requirements, architecture specs, stories, te
 Once at least one artifact has a `complies_with` link, run the audit command to see your coverage gap:
 
 ```bash
-uv run specflow project-audit
+specflow project-audit
 ```
 
 If you have multiple standards installed, specify which one:
 
 ```bash
-uv run specflow project-audit --standard my-standard
+specflow project-audit --standard my-standard
 ```
 
 **Example output:**
@@ -362,7 +362,7 @@ links:
 ```
 
 ```bash
-uv run specflow project-audit
+specflow project-audit
 # Covered Clauses (1/3): ✓ POL-1  Password Policy → REQ-001
 # Compliance Gaps (2 uncovered): ✗ POL-2  Session Timeout, ✗ POL-3  Access Review
 ```

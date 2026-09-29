@@ -108,7 +108,9 @@ def _read_frontmatter(path: Path) -> dict | None:
 read_frontmatter = _read_frontmatter
 
 
-def rewrite_references(root: Path, id_map: dict[str, str]) -> int:
+def rewrite_references(
+    root: Path, id_map: dict[str, str], touched: list[Path] | None = None
+) -> int:
     """Replace every occurrence of a draft ID with its sequential replacement.
 
     Rewrites:
@@ -119,8 +121,14 @@ def rewrite_references(root: Path, id_map: dict[str, str]) -> int:
     Matches are word-boundary-guarded, so shorter IDs cannot accidentally
     collide with longer ones (e.g. REQ-AUTH-a7b would not match REQ-AUTH-a7b9).
 
+    Each file is replaced atomically through the mutation-lock primitive
+    (the caller holds the lock), so a crash never leaves a torn file and a
+    re-run finishes the job. Rewritten paths are appended to ``touched``.
+
     Returns the total number of text replacements made.
     """
+    from specflow.lib import locks as locks_lib
+
     if not id_map:
         return 0
 
@@ -135,7 +143,7 @@ def rewrite_references(root: Path, id_map: dict[str, str]) -> int:
     targets: list[Path] = []
     specflow_dir = root / "_specflow"
     if specflow_dir.exists():
-        targets.extend(specflow_dir.rglob("*.md"))
+        targets.extend(p for p in specflow_dir.rglob("*.md") if not p.name.startswith("."))
         targets.extend(specflow_dir.rglob("_index.yaml"))
     impact_dir = root / ".specflow" / "impact-log"
     if impact_dir.exists():
@@ -150,6 +158,8 @@ def rewrite_references(root: Path, id_map: dict[str, str]) -> int:
             continue
         new_text, count = regex.subn(_sub, text)
         if count:
-            path.write_text(new_text, encoding="utf-8")
+            locks_lib.atomic_write(path, new_text)
             total += count
+            if touched is not None:
+                touched.append(path)
     return total

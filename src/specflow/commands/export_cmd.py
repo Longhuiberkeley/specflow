@@ -1,10 +1,8 @@
 """specflow export — Export artifacts to external formats or skills to platform formats.
 
-Primary interface:
+Interface:
   specflow export --adapter <name> --output <file>     (artifact export)
   specflow export --skills --format <fmt> --output <dir>  (skill export)
-Legacy alias:
-  specflow export <format> --output <file>             (deprecated)
 """
 
 from __future__ import annotations
@@ -45,16 +43,10 @@ def run(root: Path, args: dict) -> int:
     adapter_name = args.get("adapter")
     output = args.get("output")
 
-    # Legacy subcommand path: export_subcommand == "reqif"
     if not adapter_name:
-        legacy_sub = args.get("export_subcommand")
-        if legacy_sub == "reqif":
-            adapter_name = "reqif"
-            output = args.get("output")
-        if not adapter_name:
-            print(f"{RED}✗ specflow export --adapter <name> --output <file> required{NC}")
-            print(f"   Or: specflow export --skills --format <fmt> --output <dir>{NC}")
-            return 1
+        print(f"{RED}✗ specflow export --adapter <name> --output <file> required{NC}")
+        print(f"   Or: specflow export --skills --format <fmt> --output <dir>{NC}")
+        return 1
 
     if not output:
         print(f"{RED}✗ --output argument required{NC}")

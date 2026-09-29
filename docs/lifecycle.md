@@ -7,7 +7,7 @@ SpecFlow is **one engine driven two ways**:
 
 Both lanes operate on the **same substrate and the same gates**, so you can mix them: an agent drafts in the AI-first lane, a reviewer approves in the ALM lane via CLI or CI. The skills never do anything you couldn't do by hand — they just compose the same `specflow …` commands.
 
-**Upgrade/knowledge maintenance uses that same engine.** `specflow brief` warns when installed base schemas drift; `specflow refresh --schemas --dry-run` previews new/changed schemas, normal refresh preserves project-owned changes, and explicit `--force` restores shipped defaults. `specflow handbook generate` provides bundled generic/domain practices with no API key, while `specflow export --skills` emits self-contained platform files with referenced guidance inlined.
+**Upgrade/knowledge maintenance uses that same engine.** `specflow brief` warns when installed base schemas drift; `specflow refresh --schemas --dry-run` previews new/changed schemas, normal refresh preserves project-owned changes, and explicit `--force` restores shipped defaults. `specflow practices seed` provides bundled generic/domain practices with no API key, while `specflow export --skills` emits self-contained platform files with referenced guidance inlined.
 
 > **Approval, in each lane.** "No self-approval" restrains the *agent*: it may never move an artifact from `draft` to `approved` on its own. In the ALM lane the human *is* the operator and approves directly by running `specflow update <ID> --status approved` (or via a reviewer / CI gate). Approval is always a human act — the lanes only differ in who surfaces the decision.
 >
@@ -54,7 +54,7 @@ flowchart TB
     ALM ==> ENG
     ENG ==> REV["/specflow-artifact-review/"]
     REV ==> NEXT["/specflow-change-impact-review/<br/>· /specflow-audit · /specflow-adapter/"]
-    NEXT ==> SHIP["/specflow-ship/<br/>baseline + DECs + quick audit"]
+    NEXT ==> SHIP["/specflow-ship/<br/>verify + DECs + audit, then baseline"]
 
     DOCS["docs knowledge surface (core) · README / docs / AGENTS<br/>@ID-cited · staleness-warned · never an artifact type"]
     ENG -. "explained / cited via @ID" .-> DOCS
@@ -126,7 +126,7 @@ flowchart TB
                                     │
                                     ▼
                             /specflow-ship
-                            (baseline + DECs + quick audit)
+                            (verify + DECs + audit, then baseline)
 
    docs (knowledge surface, core):  README / docs / AGENTS · @ID-cited · staleness-warned
        · never an artifact type · git history is the change log · /specflow-doc
@@ -184,18 +184,18 @@ These are what a user learns and uses day-to-day in the AI-first lane. Each is d
 | 6 | `/specflow-artifact-review` | Quality review of one or more specific artifacts |
 | 7 | `/specflow-change-impact-review` | Blast-radius review of recent commits/PRs |
 | 8 | `/specflow-audit` | Periodic full-project health check |
-| 9 | `/specflow-ship` | Cutting a release: baseline + change records + quick audit |
+| 9 | `/specflow-ship` | Cutting a release: verify + change records + audit, then baseline after approval |
 | 10 | `/specflow-adapter` | Configuring CI workflows, roles/RBAC, and adapters (any time) |
 | 11 | `/specflow-pack-author` | Authoring a standards compliance pack |
 | 12 | `/specflow-doc` | Authoring/citing docs (`@ID`), syncing the docs index, staleness checks |
 
 ## Tier 2 — The CLI = a standalone ALM (no agent required)
 
-Every slash command above composes underlying `uv run specflow …` commands. Those commands **are the product** for the ALM / direct lane — power users, teams, and CI pipelines invoke them directly with no API key:
+Every slash command above composes underlying `specflow …` commands. Those commands **are the product** for the ALM / direct lane — power users, teams, and CI pipelines invoke them directly with no API key:
 
 - **Recall & navigation:** `specflow brief` (one-call digest), `specflow status`, `specflow trace <ID>`, `specflow rtm [--gaps]` (project-wide REQ→ARCH→STORY→test matrix)
-- **Authoring:** `specflow create`, `specflow update --status <status>`
-- **Gates & validation:** `specflow artifact-lint [--type … | --gate <name>]`, `specflow verify <ID> | --all` (records `verify_run_*` evidence — accounting, never blocks)
+- **Authoring:** `specflow create`, `specflow update <ID> --status <status>`
+- **Gates & validation:** `specflow artifact-lint [--type <check>] [--gate <name>]`, `specflow verify <ID> | --all` (records `verify_run_*` evidence — accounting, never blocks)
 - **Defects:** `specflow defect-from-suspect <ID> --req <REQ>` (suspect → DEF with traceability); `specflow defect-from-monitor <MON> --req <REQ>` (ops MONITOR breach → DEF, freezing `observed_at`/`health`/`metrics`/`signals`/`captures` into the body; closing the DEF fires prevention-pattern capture)
 - **Release & change:** `specflow baseline`, `specflow document-changes`, `specflow project-audit`
 

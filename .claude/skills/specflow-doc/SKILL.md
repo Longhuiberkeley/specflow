@@ -1,18 +1,18 @@
 ---
 name: specflow-doc
-description: "Maintain artifact-embedded knowledge, or generate/sync a derived rendering from artifacts."
+description: "Cite specs from docs or README, find stale or out-of-date docs, or keep decision knowledge in artifacts instead of prose."
 ---
 
 Extra text narrows scope — still run the deterministic core first.
 
 # SpecFlow Doc
 
-Per DEC-082, durable knowledge lives **in artifacts** (DEC, ARCH, DDD, artifact-attached references) — never only in docs. `docs/` and root markdown (README, AGENTS, CHANGELOG, …) are a **derived rendering** of the artifact graph: indexed in `specflow brief`, citable both ways, flagged when stale — never a lifecycle artifact, never the source of truth.
+Durable knowledge lives **in artifacts** (DEC, ARCH, DDD, artifact-attached references) — never only in docs. `docs/` and root markdown (README, AGENTS, CHANGELOG, …) are a **derived rendering** of the artifact graph: indexed in `specflow brief`, citable both ways, flagged when stale — never a lifecycle artifact, never the source of truth.
 
 ## What this skill does
 
 - **Maintain artifact-embedded knowledge:** the decision/requirement content itself belongs in a DEC/REQ — create it there first; a doc may then *cite* it.
-- **Generate/sync derived docs:** render human-facing output from artifacts, keeping docs downstream of the graph so drift is detectable rather than silent.
+- **Keep docs downstream:** write or edit docs by hand, but cite the artifacts they describe so drift is detectable rather than silent. SpecFlow does not generate docs from artifacts.
 - **Cite:** where a doc references a spec, mark it inline — `@ARCH-007`, `@DEC-018.2` (sub-id); backtick'd and fenced `@ID`s don't count. See `references/citation-syntax.md`.
 
 ## Commands

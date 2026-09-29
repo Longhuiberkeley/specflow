@@ -1,0 +1,15 @@
+id: PREV-012
+name: 'Prevent recurrence of: Stale-lock break can unlink a fresh lock: two processes
+  both believe they hold the create lock (violated REQ-002) (caught by IT-091)'
+discovered_from: DEF-010
+mode: reactive
+pattern: 'Prevent recurrence of: Stale-lock break can unlink a fresh lock: two processes
+  both believe they hold the create lock (violated REQ-002) (caught by IT-091)'
+applies_to:
+  tags: []
+items:
+- id: PREV-012-01
+  check: Verify that changes touching REQ-002 are exercised by IT-091 before approval.
+  severity: warning
+  automated: false
+  mode: reactive

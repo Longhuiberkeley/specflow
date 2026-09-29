@@ -2496,7 +2496,7 @@ class TestLandscapeResurvey:
     def test_adjacent_field_lens_uses_scoped_practice_catalog(self):
         refs = PACKS_DIR / "autoresearch" / "skills" / "specflow-autoresearch" / "references"
         content = (refs / "landscape-resurvey.md").read_text()
-        for topic in ("Kaggle", "Quantitative practice", "Experimental design", "specflow practices list --scope"):
+        for topic in ("Kaggle", "Quantitative practice", "Experimental design", "specflow list --type best-practice"):  # STORY-693: `practices list --scope` never existed
             assert topic.lower() in content.lower()
         skill = (
             PACKS_DIR / "autoresearch" / "skills" / "specflow-autoresearch" / "SKILL.md"

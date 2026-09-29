@@ -1,6 +1,6 @@
 ---
 id: STORY-028
-title: Compliance rework — BYOC with /specflow-pack-author
+title: "Compliance rework \u2014 BYOC with /specflow-pack-author"
 type: story
 status: verified
 priority: medium
@@ -22,16 +22,19 @@ links:
   role: verified_by
 - target: UT-015
   role: verified_by
+- target: BP-005
+  role: guided_by
+- target: BP-006
+  role: guided_by
 created: '2026-04-14'
 checklists_applied:
 - checklist: check-STORY-028
   timestamp: '2026-04-14T17:03:23Z'
-modified: '2026-04-22'
+modified: '2026-09-30'
 fingerprint: sha256:2b3cc0030f5c
 version: 1
 output_files:
 - src/specflow/packs/iso26262-demo/pack.yaml
-- src/specflow/packs/iso26262-demo/schemas/hazard.yaml
 - src/specflow/packs/iso26262-demo/standards/iso26262-demo.yaml
 ---
 

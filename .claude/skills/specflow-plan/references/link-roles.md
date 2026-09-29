@@ -9,6 +9,7 @@
 | `verified_by` | spec → test | V-model verification pairing | REQ-001 verified_by QT-001 |
 | `implements` | story → REQ | Story implements a requirement | STORY-001 implements REQ-001 |
 | `guided_by` | story → ARCH | Story follows architecture | STORY-001 guided_by ARCH-001 |
+| `guided_by` | REQ/ARCH/STORY → BP | Artifact is shaped by an approved best practice (link on the artifact, pointing at the BP) | ARCH-001 guided_by BP-004 |
 | `specified_by` | story → DDD | Story implements a design | STORY-001 specified_by DDD-001 |
 | `validated_by` | spec → checklist | Validated by a checklist | REQ-001 validated_by CKL-GATE-002 |
 | `complies_with` | spec → standard | Satisfies a standard clause | REQ-001 complies_with ISO-26262-8.4.3 |
@@ -19,7 +20,7 @@
 | `executes` | test-run → test | Test execution record | TR-001 executes QT-001 |
 
 > **The vocabulary is frozen and behavior-paired.** A link role only exists when a query or
-> validation actually consumes it (see `docs/decisions.md`). Don't invent new roles — if the
+> validation actually consumes it (a frozen vocabulary). Don't invent new roles — if the
 > role you want isn't listed, run `specflow artifact-lint` and it will suggest the canonical
 > equivalent. The `mitigates` / `satisfies` rows are contributed by the safety/ISO-26262 pack
 > and are absent unless that pack is active.
@@ -45,13 +46,14 @@ Use `status: superseded` (plus the successor's `supersedes` link), `status: canc
 - `verified_by` — linked from QT downstream
 - `derives_from` — linked from other REQ upstream (optional)
 - `complies_with` — linked from standard clause
+- `guided_by` — links to an in-scope approved BP
 - `validated_by` — linked from checklist
 
 ### Architecture (ARCH)
 - `refined_by` — linked from DDD downstream
 - `verified_by` — linked from IT downstream
 - `derives_from` — linked from REQ upstream
-- `guided_by` — linked from STORY
+- `guided_by` — linked from STORY; also links to an in-scope BP
 - `complies_with` — linked from standard clause
 
 ### Detailed Design (DDD)
@@ -61,7 +63,7 @@ Use `status: superseded` (plus the successor's `supersedes` link), `status: canc
 
 ### Story (STORY)
 - `implements` — links to a REQ
-- `guided_by` — links to an ARCH
+- `guided_by` — links to an ARCH, or to an in-scope approved BP
 - `specified_by` — links to a DDD
 - `derives_from` — links to another STORY (optional decomposition)
 

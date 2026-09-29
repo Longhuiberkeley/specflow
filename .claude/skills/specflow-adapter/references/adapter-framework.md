@@ -2,17 +2,16 @@
 
 ## Architecture
 
-SpecFlow's adapter framework uses a registry-based plugin system. Adapters are Python classes that inherit from `specflow.lib.adapters.base.Adapter` and declare which operations they support via `supported_operations`.
+SpecFlow's adapters are configured in `.specflow/adapters.yaml`. Each names a provider and the operations it runs.
 
-## Three Axes
+## Two Axes
 
 | Axis | Methods | Purpose |
 |------|---------|---------|
 | **CI generation** | `generate_ci_workflow(ops)`, `get_hook_script()` | Generate CI workflow files and pre-commit hooks |
 | **Artifact exchange** | `import_artifacts(source)`, `export_artifacts(dest)` | Import/export from external formats |
-| **Standards ingestion** | `ingest_standard(source)` | Parse standards documents into pack format |
 
-An adapter can implement any combination of these. The built-in GitHub Actions adapter only does CI; the built-in ReqIF adapter only does exchange.
+The built-in GitHub Actions adapter only does CI; the built-in ReqIF adapter only does exchange.
 
 ## Built-in Adapters
 
@@ -21,10 +20,11 @@ An adapter can implement any combination of these. The built-in GitHub Actions a
 - **Axis:** CI generation
 - **Generates:** `.github/workflows/specflow.yml`
 - **Operations:**
-  - `artifact-lint` (always included — fully deterministic, zero external API calls)
-  - `change-impact` (blast-radius review on PRs)
-  - `project-audit` (full audit on push to main)
-  - `release-gate` (gate check on tag pushes)
+  - `artifact-lint` — blocking (always included; fully deterministic, zero external API calls)
+  - `ci-gate` — blocking (RBAC check on PRs)
+  - `release-gate` — blocking (project-audit on tag pushes)
+  - `change-impact` — advisory (blast-radius review on PRs; never fails the run)
+  - `project-audit` — advisory (full audit on push to main; never fails the run)
 - **Hook:** Generates `.git/hooks/pre-commit` that delegates to `specflow hook pre-commit`
 
 ### reqif
@@ -52,14 +52,13 @@ exchange:
     provider: reqif
     direction: bidirectional
 
-standards: []
 ```
 
 ### CI Section
 
 | Field | Description |
 |-------|-------------|
-| `provider` | Adapter name from the registry |
+| `provider` | Adapter name (`github-actions`) |
 | `operations` | List of CI operations to generate workflows for |
 
 ### Exchange Section
@@ -67,12 +66,8 @@ standards: []
 | Field | Description |
 |-------|-------------|
 | `name` | User-friendly name for this exchange configuration |
-| `provider` | Adapter name from the registry |
+| `provider` | Adapter name (`reqif`) |
 | `direction` | `import`, `export`, or `bidirectional` |
-
-### Standards Section
-
-List of standards ingestion sources. Each entry has `name`, `source` (file path), and `provider` (adapter name).
 
 ## CLI Commands
 
@@ -82,17 +77,6 @@ List of standards ingestion sources. Each entry has `name`, `source` (file path)
 | `specflow import --adapter <name> <file>` | Import via exchange adapter |
 | `specflow export --adapter <name> --output <file>` | Export via exchange adapter |
 | `specflow hook install` | Install pre-commit hook via CI adapter |
-
-## Creating Custom Adapters
-
-See `docs/authoring-an-adapter.md` for the full guide. Quick summary:
-
-1. Create a Python class inheriting from `Adapter`
-2. Set `name` and `supported_operations`
-3. Override the methods you need
-4. Decorate with `@register_adapter`
-5. Import in `lib/adapters/__init__.py` to auto-register
-6. Configure in `.specflow/adapters.yaml`
 
 ## CI Coexistence
 

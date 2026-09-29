@@ -25,8 +25,8 @@ The architecture defines two distinct command axes (`docs/architecture.md:286-31
 
 The verify skill (`specflow-verify`) is a **superset** of the validate command:
 
-1. Step 1: Calls `uv run specflow validate` (zero-token deterministic checks)
-2. Step 2: Calls `uv run specflow status` (dashboard)
+1. Step 1: Calls `specflow validate` (zero-token deterministic checks)
+2. Step 2: Calls `specflow status` (dashboard)
 3. Step 3: Assembles checklists, runs LLM-judged review
 4. Step 4: Reports findings
 
@@ -99,13 +99,13 @@ Each script becomes a one-liner delegating to the Python CLI:
 
 | Script | New content |
 |--------|-------------|
-| `scripts/validate.sh` | `uv run specflow validate "$@"` |
-| `scripts/validate-links.sh` | `uv run specflow validate --type links "$@"` |
-| `scripts/validate-status.sh` | `uv run specflow validate --type status "$@"` |
-| `scripts/validate-ids.sh` | `uv run specflow validate --type ids "$@"` |
-| `scripts/validate-fingerprints.sh` | `uv run specflow validate --type fingerprints "$@"` |
-| `scripts/validate-gate.sh` | `uv run specflow validate --type gate --gate "$@"` |
-| `scripts/check-acceptance-criteria.sh` | `uv run specflow validate --type acceptance "$@"` |
+| `scripts/validate.sh` | `specflow validate "$@"` |
+| `scripts/validate-links.sh` | `specflow validate --type links "$@"` |
+| `scripts/validate-status.sh` | `specflow validate --type status "$@"` |
+| `scripts/validate-ids.sh` | `specflow validate --type ids "$@"` |
+| `scripts/validate-fingerprints.sh` | `specflow validate --type fingerprints "$@"` |
+| `scripts/validate-gate.sh` | `specflow validate --type gate --gate "$@"` |
+| `scripts/check-acceptance-criteria.sh` | `specflow validate --type acceptance "$@"` |
 
 **Lines removed:** ~800 lines of inline Python across 7 scripts.
 **Lines added:** ~21 lines total (3 lines × 7 scripts with shebang + error check).

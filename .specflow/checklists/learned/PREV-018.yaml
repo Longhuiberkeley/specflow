@@ -1,0 +1,15 @@
+id: PREV-018
+name: 'Prevent recurrence of: dead-oracle warnings escalate to blocking after three
+  full artifact-lint runs (violated REQ-058) (caught by UT-127)'
+discovered_from: DEF-017
+mode: reactive
+pattern: 'Prevent recurrence of: dead-oracle warnings escalate to blocking after three
+  full artifact-lint runs (violated REQ-058) (caught by UT-127)'
+applies_to:
+  tags: []
+items:
+- id: PREV-018-01
+  check: Verify that changes touching REQ-058 are exercised by UT-127 before approval.
+  severity: warning
+  automated: false
+  mode: reactive

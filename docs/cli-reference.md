@@ -411,8 +411,8 @@ specflow autoresearch run --competition COMP-001 [--no-start]
 specflow autoresearch status [--competition COMP-001]
 specflow autoresearch review --competition COMP-001
 specflow autoresearch leaderboard [--competition COMP-001 | --all]
-specflow autoresearch log --loop LOOP-001 --status kept --metric-value 0.73 --summary "..."
-specflow autoresearch log --loop LOOP-001 --status discarded --metric-value 0.71 --summary "..." \
+specflow autoresearch log --loop LOOP-001 --status kept --metric-value 0.73 --change-category features --summary "..."
+specflow autoresearch log --loop LOOP-001 --status discarded --metric-value 0.71 --change-category params --summary "..." \
   --research-progress '{"evidence_ref":"commit:a1b2c3d","finding":"cutoff above 0.6 degrades recall","next_decision":"revisit"}'
 specflow autoresearch suggest-finds --loop LOOP-001
 ```
@@ -646,7 +646,7 @@ specflow split SOURCE_ID NEW_ID [--reassign LINK_OWNER_ID]
 
 ### `specflow merge`
 
-Merge two artifacts (source status becomes `merged_into`, links transfer to target).
+Merge two artifacts: links transfer to the target, the target gains a `supersedes` link to the source, and the source moves to `superseded` (or `deprecated`/`cancelled` when that is the legal terminal status from its current one).
 
 ```bash
 specflow merge SOURCE_ID TARGET_ID

@@ -21,9 +21,9 @@ Capture requirements as REQ artifacts. Two depths, decided per exchange — asse
    - `specflow create --type decision --title "Assumption: <text>" --status draft --body "<assumption, consequence if wrong, validation>"`
    - `specflow create --type decision --title "Risk: <text>" --status draft --body "<risk, likelihood, impact, mitigation>"`
 4. **Inter-REQ dependencies:** when one requirement depends on another, record it — `specflow update <dependent-REQ> --add-link <prerequisite-REQ>:derives_from` (drives story wave ordering at plan time).
-5. **Create REQs** (`specflow create --type requirement ...`, status `draft`). Write bodies per `references/normative-language.md` — RFC 2119 keywords, no ambiguity words, one obligation per REQ, Given/When/Then acceptance criteria (happy path + error/edge). Record techniques actually applied: `specflow update <REQ-ID> --thinking-techniques <...>`.
-6. **Domain (full path, only if unset):** `specflow domain suggest` → confirm with the user → `specflow domain set <type> --tag <tag>`. Question sets: `references/domain-checklists/<type>.md`; cross-cutting concerns: `references/cross-cutting.md`; best practices come deterministically from `specflow handbook generate --create`.
-7. **Validate:** `specflow artifact-lint`.
+5. **Create REQs** (`specflow create --type requirement ...`, status `draft`). Write bodies per `references/normative-language.md` — RFC 2119 keywords, no ambiguity words, one obligation per REQ, Given/When/Then acceptance criteria (happy path + error/edge). Record techniques actually applied: `specflow update <REQ-ID> --thinking-techniques <...>`. Link each in-scope approved best practice so it guides the REQ: `specflow update <REQ-ID> --add-link <BP-ID>:guided_by` (the link goes on the REQ, pointing at the BP).
+6. **Domain (full path, only if unset):** `specflow domain suggest` → confirm with the user → `specflow domain set <type> --tag <tag>`. Question sets: `references/domain-checklists/<type>.md`; cross-cutting concerns: `references/cross-cutting.md`; best practices come deterministically from `specflow practices seed` (preview) and `specflow practices seed --create` (writes draft BPs the user approves; authoring guide: `../specflow-references/references/bp-authoring.md`).
+7. **Validate:** `specflow artifact-lint` and `specflow practices validate`.
 
 ## Approval gate (I1)
 

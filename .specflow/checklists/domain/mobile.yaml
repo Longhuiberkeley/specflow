@@ -34,12 +34,16 @@ items:
     automated: false
     llm_prompt: "For features involving GPS, BLE, background processing, or continuous networking, confirm the artifact specifies when they activate/deactivate and the battery impact mitigation strategy."
     severity: warning
+    applies_to:
+      types: [requirement, architecture, story]
 
   - id: CKL-DOM-MOB-06
     check: "App store review and distribution constraints are addressed"
     automated: false
     llm_prompt: "If the artifact involves payments, user-generated content, health data, or features that may trigger app store rejection, confirm the review constraint is called out."
-    severity: info
+    severity: warning
+    applies_to:
+      types: [requirement, story]
 
   - id: CKL-DOM-MOB-07
     check: "Authentication method is platform-appropriate"

@@ -101,7 +101,6 @@ project/
 │   │   ├── phase-gates/          # Pre-task: entry criteria between phases
 │   │   ├── in-process/           # Writing constraints during artifact generation
 │   │   ├── review/               # Post-task: validation before user sees output
-│   │   ├── readiness/            # Discovery/planning readiness assessments
 │   │   ├── shared/               # Auto-matched by tags/types (user-extensible)
 │   │   └── learned/              # Prevention patterns extracted from past work
 │   ├── baselines/                # One file per baseline, immutable
@@ -145,7 +144,7 @@ The **framework** (Python package) ships scripts, templates, and checklists. Dur
 | Framework (ships with package) | Project instance (created by init) |
 |-------------------------------|-----------------------------------|
 | `src/specflow/templates/schemas/` | `.specflow/schema/` |
-| `src/specflow/templates/checklists/` | `.specflow/checklists/` (phase-gates, in-process, review, readiness) |
+| `src/specflow/templates/checklists/` | `.specflow/checklists/` (phase-gates, in-process, review) |
 | `src/specflow/templates/skills/<platform>/` | `.claude/skills/` for Claude Code **and** OpenCode (one shared tree); `.cursor/`, `.gemini/`, … for other hosts |
 | `scripts/` (thin CI/CD wrappers) | — (delegate to `specflow artifact-lint`, not copied) |
 
@@ -312,7 +311,7 @@ items:
   - id: CKL-GATE-002-01
     check: "All REQ-* artifacts have status: approved"
     automated: true
-    script: "uv run specflow artifact-lint --type status"
+    script: "specflow artifact-lint --type status"
     severity: blocking
 
   - id: CKL-GATE-002-02
@@ -357,7 +356,7 @@ These are the **primary user interface** — skill file invocations via `/specfl
 | `/specflow-audit` | `specflow-audit/` | Full-project periodic health check. Deterministic core with optional adversarial wings. |
 | `/specflow-ship` | `specflow-ship/` | Release workflow: immutable baseline, change records, quick audit. |
 | `/specflow-pack-author` | `specflow-pack-author/` | LLM-assisted authoring of standards compliance packs from PDF, URL, or pasted text. |
-| `/specflow-adapter` | `specflow-adapter/` | Manage CI workflows, import/export, standards ingestion, and team RBAC. |
+| `/specflow-adapter` | `specflow-adapter/` | Manage CI workflows, import/export, and team RBAC. |
 
 ### Programmatic commands (Python CLI, zero tokens)
 

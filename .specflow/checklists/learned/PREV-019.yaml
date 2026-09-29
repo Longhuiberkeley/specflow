@@ -1,0 +1,15 @@
+id: PREV-019
+name: 'Prevent recurrence of: reconcile ignores a refused or failed cascade and exits
+  0 (violated REQ-003) (caught by UT-130)'
+discovered_from: DEF-018
+mode: reactive
+pattern: 'Prevent recurrence of: reconcile ignores a refused or failed cascade and
+  exits 0 (violated REQ-003) (caught by UT-130)'
+applies_to:
+  tags: []
+items:
+- id: PREV-019-01
+  check: Verify that changes touching REQ-003 are exercised by UT-130 before approval.
+  severity: warning
+  automated: false
+  mode: reactive

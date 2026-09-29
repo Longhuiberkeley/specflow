@@ -14,6 +14,7 @@ from typing import Any
 from specflow.lib import artifacts as art_lib
 from specflow.lib import baselines as baseline_lib
 from specflow.lib import standards as std_lib
+from specflow.lib import verification as verification_lib
 
 
 def generate_evidence_report(root: Path, baseline_name: str) -> dict[str, Any]:
@@ -46,7 +47,9 @@ def generate_evidence_report(root: Path, baseline_name: str) -> dict[str, Any]:
 
     report_path = baseline_lib.baseline_dir(root) / f"{baseline_name}-evidence.md"
     report_path.parent.mkdir(parents=True, exist_ok=True)
-    report_path.write_text("\n".join(sections) + "\n", encoding="utf-8")
+    from specflow.lib import locks as locks_lib
+
+    locks_lib.locked_write(root, report_path, "\n".join(sections) + "\n")
 
     return {"ok": True, "path": str(report_path)}
 
@@ -116,9 +119,12 @@ def _test_results_section(artifacts: list[art_lib.Artifact]) -> list[str]:
         # verify_run_exit_code field written by `specflow verify`), annotate the
         # status cell so the compliance report never presents a bare `verified`
         # as machine-backed. No field → no annotation (status unchanged).
+        # Pass/fail is judged against the DECLARED verify_exit_code (default
+        # 0) through the shared helper — never a hard-coded "0" (STORY-699).
         run_exit = t.frontmatter.get("verify_run_exit_code")
-        if run_exit is not None:
-            suffix = "" if str(run_exit) == "0" else " — see audit"
+        matched = verification_lib.run_matches_expected(t.frontmatter)
+        if matched is not None:
+            suffix = "" if matched else " — see audit"
             status_cell = f"{t.status} (verify_run exit={run_exit}{suffix})"
         else:
             status_cell = t.status

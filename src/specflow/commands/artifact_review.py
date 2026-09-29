@@ -133,7 +133,9 @@ def _bootstrap_review_schema(root: Path) -> None:
         review_dir.mkdir(parents=True, exist_ok=True)
         index = review_dir / "_index.yaml"
         if not index.exists():
-            index.write_text("artifacts: {}\nnext_id: 1\n", encoding="utf-8")
+            from specflow.lib import locks as locks_lib
+
+            locks_lib.locked_exclusive_write(root, index, "artifacts: {}\nnext_id: 1\n")
 
 
 def emit_review_pass(

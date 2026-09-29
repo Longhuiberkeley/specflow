@@ -193,16 +193,17 @@ The deterministic core always runs first in every path; the agent layer only add
 
 ## /specflow-ship
 
-**One-line:** Release workflow — immutable baseline, change records, quick audit.
+**One-line:** Release workflow — verify, change records, lens pass, approval, then the immutable baseline.
 
-**Composes:** `specflow baseline create`, `specflow document-changes`, `specflow project-audit --quick`
+**Composes:** `specflow document-changes`, `specflow project-audit --quick`, `specflow baseline create`, `specflow phase-set`
 
 **Flow:**
-1. Ask for release tag; create baseline snapshot
-2. Ask for previous tag/commit; generate DEC trail since that anchor
-3. Run quick audit on final release state
-4. Present release summary (baseline link, DEC list, audit summary)
-5. **Advisory gate** — if audit severity ≥ error, warn and require explicit user confirmation to proceed
+1. Confirm the release tag (proposed from the last tag)
+2. Re-run the test suite and `project-audit --quick` — a red suite blocks the release
+3. Generate the DEC trail since the previous tag
+4. Adversarial lens pass, then present the release summary (DEC list, audit summary, risk profile)
+5. **Approval gate** — audit severity ≥ error warns; the release proceeds only on the user's explicit go-ahead
+6. After approval: create the baseline, record `phase-set complete`, and hand off
 
 **Writes:**
 - `.specflow/baselines/{tag}.yaml`
@@ -272,20 +273,19 @@ The deterministic core always runs first in every path; the agent layer only add
 
 ## /specflow-adapter
 
-**One-line:** Manage CI workflows, artifact exchange, standards ingestion, and team RBAC through guided configuration.
+**One-line:** Manage CI workflows, artifact exchange, and team RBAC through guided configuration.
 
 **Composes:** `specflow ci generate`, `specflow hook install`, `specflow import`, `specflow export`, config.yaml edits
 
 **Flow:**
-1. Ask what the user wants to configure: CI, exchange, standards, team roles, or status overview
+1. Ask what the user wants to configure: CI, exchange, team roles, or skill/schema upgrades
 2. **CI Setup:** Choose provider, select operations, generate workflow file and pre-commit hook
 3. **Exchange Setup:** Import from or export to external tools via exchange adapters (e.g., ReqIF)
-4. **Standards Setup:** Configure standards ingestion adapters, point to `/specflow-pack-author` for pack creation
-5. **Team Setup:** Configure RBAC roles, transition policies, independence rules, and generate CODEOWNERS
-6. **Status:** Show current adapter and team configuration
+4. **Team Setup:** Configure RBAC roles, transition policies, independence rules, and generate CODEOWNERS
+5. **Upgrades:** Refresh copied skills, schemas, and checklists after a SpecFlow upgrade
 
 **Writes:**
-- `.specflow/adapters.yaml` (CI, exchange, standards config)
+- `.specflow/adapters.yaml` (CI, exchange config)
 - `.specflow/config.yaml` (team roles and policies)
 - `.github/workflows/specflow.yml` (CI workflow)
 - `.git/hooks/pre-commit` (pre-commit hook)

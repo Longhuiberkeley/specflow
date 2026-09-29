@@ -2,7 +2,7 @@
 
 ## iso26262-demo (Bundled)
 
-Location: `src/specflow/packs/iso26262-demo/`
+Shipped with SpecFlow as a test fixture, not a real compliance pack. Shape only:
 
 ```
 iso26262-demo/

@@ -9,7 +9,7 @@ Extra text narrows scope — still run the deterministic core first.
 
 # SpecFlow Pack Author
 
-Guide the user through agent-assisted creation of a standards compliance pack. The pack can later be installed into a SpecFlow project via `specflow init --preset` or manual copy.
+Guide the user through agent-assisted creation of a standards compliance pack. The pack is written to `.specflow/packs/{name}/`, where `specflow init --preset {name}` resolves it by name.
 
 ## Workflow
 
@@ -28,52 +28,9 @@ For each source, extract:
 - **Standard title** — full title
 - **Clauses** — list of `{id, title, description}` tuples from the document
 
-### Large Document Strategy
+### Large Documents
 
-For documents over ~30 pages or multi-part standards (e.g., ISO 26262 Parts 1-12), follow this structured extraction protocol. The goal is to constrain the agent to predictable, bounded tasks rather than unbounded whole-document reasoning.
-
-#### Phase 1: Table of Contents Extraction
-
-1. **Extract the TOC first.** If reading a PDF, most standards documents have a structured table of contents. Extract only section numbers and titles — nothing else. If the platform cannot read PDFs natively, ask the user to paste the TOC or provide a URL.
-2. **Present TOC as a selection menu.** Show the user the full section list and ask: "Which sections should this pack cover?" For multi-part standards, suggest one pack per part.
-3. **One pack per standard, not per PDF.** If the source is a multi-part standard, suggest creating one pack per part or a combined pack with clauses from selected parts. Ask the user which approach they prefer.
-
-#### Phase 2: Section-by-Section Extraction
-
-For each user-selected section:
-
-1. **Chunk by section boundaries, not page ranges.** Extract one section at a time using its heading boundaries (e.g., Section 3.1 heading through Section 3.2 heading). Never chunk by page number — page breaks are arbitrary in standards documents.
-2. **Constrain output per chunk.** For each section, produce only `{id, title, description}` tuples. No analysis, no interpretation, no adding requirements that aren't explicitly stated. If a section is unclear, output the clause with a `# TODO: verify clause text` comment rather than guessing.
-3. **Preserve hierarchy.** Maintain the original clause numbering (e.g., `ISO26262-3.7`, `ISO26262-4.6.2`) so traceability maps back to the source document.
-4. **Summarize, don't copy.** Clause descriptions should be one to two sentences capturing the normative requirement, not verbatim copies of long explanatory text. The goal is traceability, not reproduction.
-
-#### Phase 3: Deduplication Pass
-
-After all sections are extracted:
-
-1. **Check for overlaps.** Adjacent sections may produce clauses that overlap (e.g., a clause referenced in both Section 3.1 and 3.2 summaries). Merge any duplicate clause IDs, keeping the more complete description.
-2. **Verify ID uniqueness.** Ensure no two clauses share the same `id` field.
-
-#### Phase 4: Verification (Spot-Check)
-
-After extraction and dedup:
-
-1. **Random spot-check.** Select 2-3 source sections at random. Re-read them and compare against the extracted clauses. Report any sections where:
-   - Clauses visible in the source were not extracted
-   - Extracted clause count doesn't match the number of visible headings
-2. **Emit verification comments.** Add a comment block at the top of the generated `standards/{name}.yaml`:
-   ```yaml
-   # VERIFY: spot-checked sections {X}, {Y}, {Z} — {N} clauses found vs {M} extracted
-   # If N != M, discrepancies are noted below.
-   ```
-3. **Report discrepancies to the user.** If any spot-check reveals missing clauses, present them and ask: "I found clauses in section X that weren't extracted. Should I add them?"
-
-#### Platform Awareness
-
-- If the AI platform has native PDF reading (Claude Code, Gemini CLI, etc.), use the `Read` tool directly on the PDF file.
-- If the platform cannot read PDFs, fall back to asking the user to paste text or provide a URL. Never fail silently — always tell the user what's needed.
-
-For small documents (under ~30 pages), skip the full protocol: extract all clauses directly, run the verification spot-check, and proceed.
+For documents over ~30 pages or multi-part standards (e.g., ISO 26262 Parts 1-12), follow the bounded extraction protocol in `references/large-documents.md`: TOC first, the user picks sections, extract one section at a time, deduplicate, spot-check. If the platform cannot read PDFs natively, ask the user to paste the text or provide a URL — never fail silently. For small documents, extract all clauses directly and run the spot-check.
 
 ### Step 2: Confirm Pack Metadata
 
@@ -96,7 +53,7 @@ Ask: "Does this look correct? Any clauses to add, remove, or merge?"
 
 ### Step 3: Schema Scaffolding (Optional)
 
-Ask: "Does this standard introduce any new artifact types beyond the built-in ones (requirement, story, test, hazard, decision, spike, defect, audit, challenge)?"
+Ask: "Does this standard introduce any new artifact types beyond the built-in ones?" (The installed types are the files in `.specflow/schema/`; `specflow schema <type>` shows one.)
 
 - **If no:** Skip to Step 4.
 - **If yes:** Ask what artifact type(s) and what fields they need. Read `references/schema-template.md` for the schema format. Generate one `.yaml` schema file per new type.
@@ -126,6 +83,7 @@ adds_artifact_types:
   - {type2}
 adds_directories:
   - specs/{dir1}  # one per new artifact type
+# Optional: adds_skills (skill directory names under skills/) and context_snippet (see references/pack-structure.md)
 ```
 
 #### `standards/{name}.yaml`
@@ -137,6 +95,7 @@ clauses:
   - id: "{clause-id}"
     title: "{clause-title}"
     description: "{clause-description}"
+    # category: safety | security | functional | process   (optional, default functional)
   # ... all clauses
 ```
 
@@ -160,10 +119,10 @@ optional_fields:
   - fingerprint
   - links
   - modified
-allowed_status:
-  draft: []
+allowed_status:          # target status: statuses it can be entered from
+  draft: []              # entry status
   approved:
-    - draft
+    - draft              # approved is reached from draft
 allowed_link_roles:
   - refined_by
   - derives_from
@@ -182,10 +141,10 @@ A brief description of the pack, its source, and what it covers.
 Run the pack validation command to verify the generated structure is sound:
 
 ```
-bash .claude/skills/specflow-pack-author/scripts/validate-pack.sh .specflow/packs/{name}/
+specflow pack-validate .specflow/packs/{name}/
 ```
 
-The script forwards to `specflow pack-validate` (STORY-663): `pack.yaml` has `name`/`version`/`description`, every `adds_skills` entry has `skills/<name>/SKILL.md`, each `standards/*.yaml` (when shipped) has `standard`/`title`/`clauses`, each `schemas/*.yaml` (when shipped) has `type`/`prefix`/`id_format`/`required_fields`/`allowed_status`/`directory`, and no shipped skill script contains `uv run`. If any check fails, fix it before proceeding.
+The command checks that `pack.yaml` has `name`/`version`/`description`, every `adds_skills` entry has `skills/<name>/SKILL.md`, each `standards/*.yaml` (when shipped) has `standard`/`title`/`clauses`, each `schemas/*.yaml` (when shipped) has `type`/`prefix`/`id_format`/`required_fields`/`allowed_status`/`directory`, and no shipped skill script contains `uv run`. If any check fails, fix it before proceeding.
 
 ### Step 6: Preview and Install
 
@@ -202,11 +161,12 @@ Present a summary to the user:
   - README.md
 
 ### To install this pack:
-- **For this project:** Copy `standards/*.yaml` → `.specflow/standards/` and `schemas/*.yaml` → `.specflow/schema/`
-- **For reuse across projects:** Copy the entire `.specflow/packs/{name}/` directory into `src/specflow/packs/` of your SpecFlow installation.
+- **New or already-initialized project:** `specflow init --preset {name}` resolves the pack from `.specflow/packs/{name}/` and installs it — standards, schemas, directories, skills, and context block — and registers it in `active_packs`. On an initialized project it runs in merge mode and keeps your config.
+- **After editing the pack:** `specflow refresh --packs --force` syncs the changes into the project.
+- **Reuse across projects:** copy the whole `.specflow/packs/{name}/` directory into each project's `.specflow/packs/`.
 ```
 
-**Exit message:** Recommend the next step to the user: "Run `/specflow-init` to install this pack into a project using `--preset {name}`."
+**Exit message:** "The pack is at `.specflow/packs/{name}/`. To install it, run `specflow init --preset {name}` (the pack is picked up from that directory), or use `/specflow-init` and name it as the preset."
 
 ## Rules
 
@@ -214,14 +174,14 @@ Present a summary to the user:
 - Preserve the original clause IDs from the source standard.
 - Keep descriptions concise but complete — one to two sentences.
 - If the user provides a multi-part standard (e.g., ISO 26262 Parts 1-12), ask which parts to include before extraction.
-- **Adapter framework (optional):** If `src/specflow/lib/adapters/base.py` is present, use `StandardsAdapter.ingest_standard(source, source_type)` for clause extraction — it returns a structured list of `{id, title, description}` dicts. Falls back to direct agent parsing if the adapter is unavailable or returns empty results.
 
 ## References
 
 - `references/schema-template.md` — YAML schema format for new artifact types
+- `references/large-documents.md` — bounded extraction protocol for long or multi-part standards
 - `references/pack-structure.md` — Detailed explanation of pack directory layout and field semantics
 - `references/example-packs.md` — Example pack structures (iso26262-demo, minimal pack)
 
 ## Scripts
 
-- `scripts/validate-pack.sh` — Deterministic validation of a pack directory structure
+- `scripts/validate-pack.sh` — Thin wrapper around `specflow pack-validate`

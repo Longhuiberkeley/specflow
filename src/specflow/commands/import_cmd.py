@@ -1,7 +1,6 @@
 """specflow import — Import artifacts from external formats.
 
-Primary interface: specflow import --adapter <name> <file>
-Legacy alias:   specflow import <format> <file>  (deprecated)
+Interface: specflow import --adapter <name> <file>
 """
 
 from __future__ import annotations
@@ -17,15 +16,9 @@ def run(root: Path, args: dict) -> int:
     adapter_name = args.get("adapter")
     file_arg = args.get("file")
 
-    # Legacy subcommand path: import_subcommand == "reqif"
     if not adapter_name:
-        legacy_sub = args.get("import_subcommand")
-        if legacy_sub == "reqif":
-            adapter_name = "reqif"
-            file_arg = args.get("file")
-        if not adapter_name:
-            print(f"{RED}✗ specflow import --adapter <name> <file> required{NC}")
-            return 1
+        print(f"{RED}✗ specflow import --adapter <name> <file> required{NC}")
+        return 1
 
     if not file_arg:
         print(f"{RED}✗ file argument required{NC}")

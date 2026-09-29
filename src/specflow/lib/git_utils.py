@@ -125,3 +125,63 @@ def artifact_id_from_path(file_path: str) -> str:
     if name.endswith(".md"):
         name = name[:-3]
     return name
+
+
+def file_history(
+    root: Path,
+    file_path: str,
+    rev: str,
+    *,
+    follow: bool = True,
+) -> list[dict[str, str]] | None:
+    """Return the commits in ``rev`` that touched ``file_path``, oldest first.
+
+    ``rev`` is anything ``git log`` accepts as a revision (``base..head``, a
+    SHA, ``HEAD``). ``file_path`` is the path as it exists at the newest end of
+    ``rev``; with ``follow`` (the default) renames are followed backwards, so a
+    file that ``renumber-drafts`` renamed from ``REQ-FOO-ab12.md`` keeps its
+    earlier commits. Each entry is
+    ``{sha, author_email, change, old_path, new_path}`` where ``change`` is the
+    git status letter (A/M/R/C/D/...) and ``old_path`` is the path in the
+    commit's parent ('' for an addition). Commits that touched the file
+    without a diff entry (e.g. merges) carry ``change`` ''.
+
+    Returns None when git fails (unknown ref, not a repository).
+    """
+    args = ["log", "--format=%x00%H%x09%ae", "--name-status"]
+    if follow:
+        args.append("--follow")
+    args += [rev, "--", file_path]
+    result = _run_git(root, args)
+    if result.returncode != 0:
+        return None
+
+    entries: list[dict[str, str]] = []
+    for chunk in result.stdout.split("\x00"):
+        chunk = chunk.strip("\n")
+        if not chunk:
+            continue
+        lines = [ln for ln in chunk.splitlines() if ln.strip()]
+        header = lines[0].split("\t", 1)
+        sha = header[0].strip()
+        email = header[1].strip().lower() if len(header) > 1 else ""
+        change, old_path, new_path = "", file_path, file_path
+        for ln in lines[1:]:
+            parts = ln.split("\t")
+            letter = parts[0][:1]
+            if letter in ("R", "C") and len(parts) >= 3:
+                change, old_path, new_path = letter, parts[1], parts[2]
+            elif len(parts) >= 2:
+                change, old_path, new_path = letter, parts[1], parts[1]
+            if letter == "A":
+                old_path = ""
+            break
+        entries.append({
+            "sha": sha,
+            "author_email": email,
+            "change": change,
+            "old_path": old_path,
+            "new_path": new_path,
+        })
+    entries.reverse()
+    return entries

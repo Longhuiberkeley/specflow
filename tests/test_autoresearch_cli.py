@@ -28,6 +28,7 @@ import pytest
 from specflow.commands import autoresearch as autoresearch_cmd
 from specflow.lib import artifacts as art_lib
 from specflow.lib import evaluator_fingerprint as evaluator_lib
+from specflow.lib import locks as locks_lib
 
 PACKS_DIR = Path(__file__).parent.parent / "src" / "specflow" / "packs"
 
@@ -79,16 +80,19 @@ def _write_artifact(
     # Keep the directory index in sync so subsequent create_artifact() calls
     # (via the CLI under test) assign the correct next ID instead of colliding
     # with scaffolding-written artifacts.
+    # The index is guarded by the repo-wide mutation lock (DEC-093): its
+    # read-modify-write must hold it, as every production writer does.
     index_path = target_dir / "_index.yaml"
-    index_data = art_lib._read_index(index_path)
-    index_data.setdefault("artifacts", {})[artifact_id] = {
-        "id": artifact_id, "title": title, "status": status,
-        "tags": [], "fingerprint": fm.get("fingerprint", ""), "children": [],
-    }
-    num = int(re.search(r"(\d+)$", artifact_id).group(1)) if re.search(r"(\d+)$", artifact_id) else 0
-    if num and num >= index_data.get("next_id", 1):
-        index_data["next_id"] = num + 1
-    art_lib._write_index(index_path, index_data)
+    with locks_lib.mutation_lock(root):
+        index_data = art_lib._read_index(index_path)
+        index_data.setdefault("artifacts", {})[artifact_id] = {
+            "id": artifact_id, "title": title, "status": status,
+            "tags": [], "fingerprint": fm.get("fingerprint", ""), "children": [],
+        }
+        num = int(re.search(r"(\d+)$", artifact_id).group(1)) if re.search(r"(\d+)$", artifact_id) else 0
+        if num and num >= index_data.get("next_id", 1):
+            index_data["next_id"] = num + 1
+        art_lib._write_index(index_path, index_data)
 
     return file_path
 
@@ -2437,3 +2441,308 @@ class TestQuantMetricBundleSetup:
         out = capsys.readouterr().out
         assert "single-metric COMP is rejected" in out
         assert "evaluation_horizon" in out
+
+
+# ── STORY-694 (REQ-043, REQ-056): no fabricated metrics, no count-based ─────
+# kill drafts, null-safe sorting; STORY-693 AC2: frontier --competition.
+
+
+def _expt_file_text(root: Path, expt_id: str) -> str:
+    return art_lib.resolve_link_target(root, expt_id).read_text(encoding="utf-8")
+
+
+class TestLogNeverFabricatesMetric:
+    """AC1: `log` refuses a metric-less keep and records null — never 0.0 —
+    for crashed, discarded and no_op runs logged without a metric."""
+
+    def _log(self, root: Path, *extra: str) -> int:
+        from specflow import cli
+        return cli.main([
+            "autoresearch", "log", "--loop", "LOOP-001",
+            "--change-category", "features", "--summary", "s", *extra,
+        ])
+
+    def test_kept_without_metric_value_is_refused(
+        self, project_root, monkeypatch, capsys
+    ):
+        _make_loop(project_root, "LOOP-001", "COMP-001", status="running",
+                   extra={"iteration_count": 0, "kept_count": 0})
+        monkeypatch.chdir(project_root)
+        assert self._log(project_root, "--status", "kept") == 1
+        out = capsys.readouterr().out
+        assert "--metric-value" in out
+        assert "kept" in out
+        expts = [a for a in art_lib.discover_artifacts(project_root)
+                 if art_lib.get_prefix_from_id(a.id) == "EXPT"]
+        assert expts == []  # nothing created
+        lf = _parse(project_root, "LOOP-001").frontmatter
+        assert lf["iteration_count"] == 0 and lf["kept_count"] == 0
+
+    def test_kept_with_non_finite_metric_is_refused(
+        self, project_root, monkeypatch, capsys
+    ):
+        _make_loop(project_root, "LOOP-001", "COMP-001", status="running")
+        monkeypatch.chdir(project_root)
+        assert self._log(project_root, "--status", "kept",
+                         "--metric-value", "nan") == 1
+        assert "--metric-value" in capsys.readouterr().out
+
+    @pytest.mark.parametrize("status", ["crashed", "discarded", "no_op"])
+    def test_metricless_non_keep_writes_yaml_null(
+        self, project_root, monkeypatch, capsys, status
+    ):
+        _make_loop(project_root, "LOOP-001", "COMP-001", status="running")
+        monkeypatch.chdir(project_root)
+        assert self._log(project_root, "--status", status) == 0
+        text = _expt_file_text(project_root, "EXPT-001")
+        assert "metric_value: null" in text
+        fm = _parse(project_root, "EXPT-001").frontmatter
+        # The required key is present (schema-valid) but carries no score.
+        assert "metric_value" in fm and fm["metric_value"] is None
+        from specflow.lib import lint as lint_lib
+        schema = yaml.safe_load(
+            (project_root / ".specflow" / "schema" / "experiment.yaml")
+            .read_text(encoding="utf-8")
+        )
+        issues = lint_lib.validate_artifact_schema(_parse(project_root, "EXPT-001"), schema)
+        assert not any("metric_value" in i["message"] for i in issues)
+
+    def test_non_keep_with_metric_keeps_the_measured_value(
+        self, project_root, monkeypatch, capsys
+    ):
+        _make_loop(project_root, "LOOP-001", "COMP-001", status="running")
+        monkeypatch.chdir(project_root)
+        assert self._log(project_root, "--status", "discarded",
+                         "--metric-value", "0.41") == 0
+        assert _parse(project_root, "EXPT-001").frontmatter["metric_value"] == 0.41
+
+
+class TestCrashedExptsExcludedFromIntegrity(_IntegrityStatusMixin):
+    """AC2: crashed EXPTs never feed jump flags or guard-regression warnings —
+    neither a new null-metric crash nor a legacy crash carrying a fabricated
+    0.0."""
+
+    @pytest.mark.parametrize("crash_metric", [None, 0.0])
+    def test_crash_between_keeps_raises_no_jump(
+        self, git_project_root, capsys, crash_metric
+    ):
+        self._setup(git_project_root)
+        _make_expt(git_project_root, "EXPT-001", "LOOP-001", "kept", 0.50)
+        _make_expt(git_project_root, "EXPT-002", "LOOP-001", "crashed",
+                   crash_metric, extra={"failure_analysis": "OOM"})
+        _make_expt(git_project_root, "EXPT-003", "LOOP-001", "kept", 0.51)
+        assert self._status(git_project_root) == 0
+        out = capsys.readouterr().out
+        assert "jump: " not in out
+        assert "mechanism explanation required" not in out
+
+    @pytest.mark.parametrize("crash_metric", [None, 0.0])
+    def test_crash_never_manufactures_a_guarded_gain(
+        self, git_project_root, capsys, crash_metric
+    ):
+        self._setup(git_project_root)
+        _make_expt(git_project_root, "EXPT-001", "LOOP-001", "kept", 0.50,
+                   extra={"guard_metrics": {"max_drawdown": 0.10}})
+        _make_expt(git_project_root, "EXPT-002", "LOOP-001", "crashed",
+                   crash_metric, extra={"failure_analysis": "OOM"})
+        # No primary gain over EXPT-001 — the guard move must not warn.
+        _make_expt(git_project_root, "EXPT-003", "LOOP-001", "kept", 0.50,
+                   extra={"guard_metrics": {"max_drawdown": 0.15}})
+        assert self._status(git_project_root) == 0
+        assert "guard-regression warning" not in capsys.readouterr().out
+
+    def test_crashed_guard_is_never_a_regression_baseline(
+        self, git_project_root, capsys
+    ):
+        # STORY-694 AC2 fix pass: the guard baseline is the latest MEASURED
+        # prior; a crashed run's guard reading must not mask the regression.
+        self._setup(git_project_root)
+        _make_expt(git_project_root, "EXPT-001", "LOOP-001", "kept", 0.50,
+                   extra={"guard_metrics": {"max_drawdown": 0.10}})
+        _make_expt(git_project_root, "EXPT-002", "LOOP-001", "crashed", None,
+                   extra={"failure_analysis": "OOM",
+                          "guard_metrics": {"max_drawdown": 0.30}})
+        _make_expt(git_project_root, "EXPT-003", "LOOP-001", "kept", 0.51,
+                   extra={"guard_metrics": {"max_drawdown": 0.30}})
+        assert self._status(git_project_root) == 0
+        out = capsys.readouterr().out
+        assert "guard-regression warning: EXPT-003" in out
+
+    def test_crashed_guard_is_never_the_latest_value(
+        self, git_project_root, capsys
+    ):
+        self._setup(git_project_root)
+        _make_expt(git_project_root, "EXPT-001", "LOOP-001", "kept", 0.50,
+                   extra={"guard_metrics": {"max_drawdown": 0.10}})
+        _make_expt(git_project_root, "EXPT-002", "LOOP-001", "crashed", None,
+                   extra={"failure_analysis": "OOM",
+                          "guard_metrics": {"max_drawdown": 0.90}})
+        assert self._status(git_project_root) == 0
+        out = capsys.readouterr().out
+        assert "latest " in out and "EXPT-001" in out
+        assert "0.9 " not in out and "EXPT-002" not in out.split("offline fallback")[-1]
+
+    def test_measured_expts_excludes_crashed_and_null(self, project_root):
+        _make_loop(project_root, "LOOP-001", "COMP-001", status="running")
+        _make_expt(project_root, "EXPT-001", "LOOP-001", "kept", 0.5)
+        _make_expt(project_root, "EXPT-002", "LOOP-001", "crashed", 0.0)
+        _make_expt(project_root, "EXPT-003", "LOOP-001", "discarded", None)
+        _make_expt(project_root, "EXPT-004", "LOOP-001", "no_op", 0.3)
+        expts = [_parse(project_root, f"EXPT-00{i}") for i in range(1, 5)]
+        measured = autoresearch_cmd._measured_expts(expts)
+        assert [e.id for e in measured] == ["EXPT-001"]
+
+
+class TestSuggestFindsNeutralAccounting:
+    """AC3 (REQ-043): suggest-finds drafts outcome accounting from
+    hypothesis_outcome and failure_analysis — confidence defaults low and no
+    avoid/exploit directive is derived from counts."""
+
+    def _seed(self, root: Path) -> None:
+        _make_loop(root, "LOOP-001", "COMP-001", status="completed")
+        _make_expt(root, "EXPT-001", "LOOP-001", "kept", 0.60,
+                   extra={"hypothesis_outcome": "supported"})
+        _make_expt(root, "EXPT-002", "LOOP-001", "kept", 0.62,
+                   extra={"hypothesis_outcome": "supported"})
+        _make_expt(root, "EXPT-003", "LOOP-001", "discarded", 0.40,
+                   category="params",
+                   extra={"hypothesis_outcome": "not_supported",
+                          "failure_analysis": "lr above 1e-2 diverges"})
+        _make_expt(root, "EXPT-004", "LOOP-001", "crashed", None,
+                   category="params",
+                   extra={"hypothesis_outcome": "invalid",
+                          "failure_analysis": "harness OOM at fold 3"})
+        _make_expt(root, "EXPT-005", "LOOP-001", "discarded", 0.41,
+                   category="params")
+        _make_expt(root, "EXPT-006", "LOOP-001", "discarded", 0.42,
+                   category="params")
+
+    def _suggest(self, root: Path, **extra) -> int:
+        args = {"autoresearch_subcommand": "suggest-finds", "loop": "LOOP-001"}
+        args.update(extra)
+        return autoresearch_cmd.run(root, args)
+
+    def test_draft_has_no_count_based_directive(self, project_root, capsys):
+        self._seed(project_root)
+        assert self._suggest(project_root) == 0
+        out = capsys.readouterr().out
+        lowered = out.lower()
+        assert "avoid" not in lowered
+        assert "exploit" not in lowered
+        assert "explore:" not in lowered
+        assert "radically different" not in lowered
+
+    def test_draft_draws_from_outcomes_and_failure_analysis(
+        self, project_root, capsys
+    ):
+        self._seed(project_root)
+        assert self._suggest(project_root) == 0
+        out = capsys.readouterr().out
+        assert "supported=2" in out
+        assert "not_supported=1" in out
+        assert "invalid=1" in out
+        assert "unrecorded=2" in out
+        assert "lr above 1e-2 diverges" in out
+        assert "harness OOM at fold 3" in out
+        # Unrecorded outcomes are named so the investigator can record them.
+        assert "EXPT-005" in out and "EXPT-006" in out
+
+    def test_confidence_defaults_low_regardless_of_count(
+        self, project_root, capsys
+    ):
+        # Six EXPTs used to bump confidence to medium by count alone.
+        self._seed(project_root)
+        assert self._suggest(project_root, write=True) == 0
+        find = _parse(project_root, "FIND-001")
+        assert find.frontmatter["confidence"] == "low"
+        for field in ("what_worked", "what_failed", "next_steps"):
+            text = str(find.frontmatter.get(field) or "").lower()
+            assert "avoid" not in text and "exploit" not in text
+
+
+class TestNullSafeMetricSorting:
+    """AC4: review, leaderboard (flat + grouped) and suggest-finds sort kept
+    EXPTs through the numeric helper — a null or non-numeric metric never
+    crashes and always sorts last, in either metric direction."""
+
+    def _seed(self, root: Path) -> None:
+        _make_loop(root, "LOOP-001", "COMP-001", status="completed")
+        _make_expt(root, "EXPT-001", "LOOP-001", "kept", None,
+                   extra={"model_origin": "gbm"})
+        _make_expt(root, "EXPT-002", "LOOP-001", "kept", 0.70,
+                   extra={"model_origin": "gbm"})
+        _make_expt(root, "EXPT-003", "LOOP-001", "kept", "n/a",
+                   extra={"model_origin": "gbm"})
+        _make_expt(root, "EXPT-004", "LOOP-001", "kept", 0.80,
+                   extra={"model_origin": "gbm"})
+
+    def _order(self, out: str) -> list[str]:
+        # Titles repeat the ID ("Experiment EXPT-002") — keep first sighting.
+        return list(dict.fromkeys(re.findall(r"EXPT-00\d", out)))
+
+    @pytest.mark.parametrize("direction", ["higher_is_better", "lower_is_better"])
+    def test_review_sorts_null_last(self, project_root, capsys, direction):
+        art_lib.update_artifact(project_root, "COMP-001", metric_direction=direction)
+        self._seed(project_root)
+        assert autoresearch_cmd.run(project_root, {
+            "autoresearch_subcommand": "review", "competition": "COMP-001",
+            "top": 5,
+        }) == 0
+        out = capsys.readouterr().out
+        top = out.split("Top 5 Kept Experiments:")[1]
+        order = self._order(top)
+        measured = ["EXPT-004", "EXPT-002"]
+        if direction == "lower_is_better":
+            measured.reverse()
+        assert order[:2] == measured
+        assert set(order[2:4]) == {"EXPT-001", "EXPT-003"}
+
+    @pytest.mark.parametrize("group_by", [None, "model_origin"])
+    @pytest.mark.parametrize("direction", ["higher_is_better", "lower_is_better"])
+    def test_leaderboard_sorts_null_last(
+        self, project_root, capsys, direction, group_by
+    ):
+        art_lib.update_artifact(project_root, "COMP-001", metric_direction=direction)
+        self._seed(project_root)
+        args = {"autoresearch_subcommand": "leaderboard",
+                "competition": "COMP-001", "top": 10}
+        if group_by:
+            args["group_by"] = group_by
+        assert autoresearch_cmd.run(project_root, args) == 0
+        order = self._order(capsys.readouterr().out)
+        measured = ["EXPT-004", "EXPT-002"]
+        if direction == "lower_is_better":
+            measured.reverse()
+        assert order[:2] == measured
+        assert set(order[2:4]) == {"EXPT-001", "EXPT-003"}
+
+    @pytest.mark.parametrize("direction", ["higher_is_better", "lower_is_better"])
+    def test_suggest_finds_best_ignores_null(self, project_root, capsys, direction):
+        art_lib.update_artifact(project_root, "COMP-001", metric_direction=direction)
+        self._seed(project_root)
+        assert autoresearch_cmd.run(project_root, {
+            "autoresearch_subcommand": "suggest-finds", "loop": "LOOP-001",
+        }) == 0
+        out = capsys.readouterr().out
+        best = "0.8" if direction == "higher_is_better" else "0.7"
+        assert f"best={best}" in out
+
+
+class TestFrontierCompetitionAlias:
+    """STORY-693 AC2: `frontier --competition` is an alias of `--comp`."""
+
+    def test_competition_alias_parses_and_resolves(
+        self, project_root, monkeypatch, capsys
+    ):
+        from specflow import cli
+        _make_loop(project_root, "LOOP-001", "COMP-001", status="running")
+        _make_expt(project_root, "EXPT-001", "LOOP-001", "kept", 0.5)
+        monkeypatch.chdir(project_root)
+        assert cli.main([
+            "autoresearch", "frontier", "--competition", "COMP-001", "--json",
+        ]) == 0
+        via_alias = json.loads(capsys.readouterr().out)
+        assert cli.main([
+            "autoresearch", "frontier", "--comp", "COMP-001", "--json",
+        ]) == 0
+        assert json.loads(capsys.readouterr().out) == via_alias

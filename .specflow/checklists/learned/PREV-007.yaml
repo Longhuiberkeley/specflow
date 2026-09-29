@@ -1,0 +1,15 @@
+id: PREV-007
+name: 'Prevent recurrence of: REQ-010 EARS verification drift: QT-011 cites an absent
+  test (planned DEF-012) (violated REQ-010) (caught by UT-127)'
+discovered_from: DEF-005
+mode: reactive
+pattern: 'Prevent recurrence of: REQ-010 EARS verification drift: QT-011 cites an
+  absent test (planned DEF-012) (violated REQ-010) (caught by UT-127)'
+applies_to:
+  tags: []
+items:
+- id: PREV-007-01
+  check: Verify that changes touching REQ-010 are exercised by UT-127 before approval.
+  severity: warning
+  automated: false
+  mode: reactive

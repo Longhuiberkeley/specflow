@@ -28,7 +28,7 @@ Bring an existing codebase into SpecFlow by **recording its current state**, the
 
 2. **Never silently resolve conflicting information (most important).** When sources disagree — README vs code, doc vs test, comment vs implementation, two docs contradicting — **pause, surface the specific conflict** (quote both sides with `file:line`), and ask the user which is authoritative or how to reconcile. Record the resolution in the artifact's `--rationale`. Adoption records reality, but *which* reality is authoritative is a human call. See `references/conflict-resolution-protocol.md`.
 
-## The code-linking model (D-20) — read this before Phase 3
+## The code-linking model (DEC-057) — read this before Phase 3
 
 - **REQ** = behavior (what the system must do). No code refs.
 - **ARCH** = component. **Owns `output_files` — typically a package glob** (e.g. `src/main/java/com/acme/payments/**/*.java`). One ARCH per component covers hundreds of files in one entry.
@@ -69,21 +69,40 @@ Bring an existing codebase into SpecFlow by **recording its current state**, the
   - **UT/IT/QT only where an existing test maps cleanly** to a backfilled spec — link `verified_by`. Don't fabricate.
   - Tag every backfilled artifact: `--tags backfilled`.
   - Record provenance in `--rationale` (e.g. `"Backfilled from src/auth/ at adoption-v0"`; or `"README vs code conflict — user confirmed code authoritative"`).
-  - **Set status honestly** — `create` accepts any valid status directly: `implemented` for code that exists, `verified` where a test confirms it, `approved` for specs that match shipped reality. This is accounting, not policing.
-  - **Do NOT create STORYs.** STORY is forward action (D-20). If you catch yourself creating a STORY for existing code, stop — that's an ARCH.
+  - **Set status honestly, and sanction it.** `implemented` for code that exists, `verified` where a test confirms it, `approved` for specs that match shipped reality. Creating past `draft` is gated: every backfill `create` carries `--sanctioned "as-built: <why this status is true>"` (kept as `sanctioned_justification`); without it `create` exits 1. Accounting, not policing.
+  - **Worked example** (an ARCH plus the existing test that verifies it): see below. The ARCH body needs ~50+ words under a `## Component`-style header, or lint warns.
 
 - **4 · As-built baseline.** `specflow baseline create adoption-v0 --evidence` (or `adoption-<boundary>-v0` for an interim checkpoint in a multi-pass adoption). State plainly: this is the handshake — from here, drift is measured against this snapshot. Record the docs surface in the baseline `--rationale` (e.g. `"...; docs surface registered: docs/ (N files), README.md"`) so the knowledge baseline is acknowledged at adoption — pre-existing docs aren't orphaned or silently stale.
 
-- **5 · Retro-link & completeness check.**
-  - `specflow detect orphan-code --retro-link ARCH-NNN` to wire any remaining unreferenced files (in this boundary) to their backfilled ARCH. (Accepts STORY/ARCH/DDD/REQ; ARCH is the usual target.)
+- **5 · Wire remaining files & completeness check.**
+  - Per boundary: widen the ARCH glob with `specflow update ARCH-NNN --output-files 'src/a/**/*.py,src/b/**/*.py'` (comma-separated; **replaces** the list, so restate existing entries).
+  - `specflow detect orphan-code --retro-link ARCH-NNN` is **project-wide**, not per-boundary: it links *every* unreferenced file in the repo to that one ARCH. Use it once, in the final pass, only to sweep a deliberate residual (frozen legacy) into a single catch-all ARCH. Never use `--adopt` in an adoption run — it mints a STORY, and adoption creates none.
   - `specflow adopt status` — the project/boundary dashboard. Confirm coverage rose this pass and note the biggest remaining cluster.
   - `specflow adopt status <REQ-NNN|ARCH-NNN>` for any artifact whose completeness is in doubt — it surfaces realization, acceptance-criteria count, linked tests, provenance, depth (skeleton/full), gaps, and post-adoption drift.
 
 - **6 · Validate & handoff.**
-  - `specflow artifact-lint` on the backfilled graph; optionally `/specflow-audit`.
+  - `specflow artifact-lint` on the backfilled graph; optionally `/specflow-audit`. Skeleton ARCHs legitimately warn (no verifying IT, never challenged, no STORY for a backfilled REQ) — see `references/as-built-baseline-protocol.md` (Lint expectations). Record `specflow update ARCH-NNN --thinking-techniques premortem` only after `/specflow-artifact-review` has actually run that lens.
   - Close resolved AUDs: after an audit, run `specflow update AUD-NNN --status closed` for any AUD whose findings are provably resolved. Don't leave resolved audits as `status: open` — they accumulate and lose signal.
   - Report from `specflow adopt status`: coverage %, what was adopted this pass, the biggest un-adopted cluster (what's left). Recommend the next boundary, or declare adoption "done enough."
   - Tell the user: forward work uses `/specflow-discover` → plan → execute; the as-built baseline is the reference for `/specflow-change-impact-review` and `/specflow-ship`. Any future change to an adopted component creates a real (non-`backfilled`) STORY `specified_by` that component's ARCH. `specflow brief` now shows a **Docs surface** block, and `specflow detect stale-docs` / `/specflow-audit` will warn if a doc cites a superseded artifact — so the adopted docs stay honest going forward.
+
+### Worked example — an ARCH and its verifying test
+
+```bash
+specflow create --type architecture --title "Payments" --status implemented \
+  --sanctioned "as-built: code already ships in src/payments/" \
+  --tags backfilled --rationale "Backfilled from src/payments/ at adoption-v0" \
+  --set 'output_files=["src/payments/**/*.py"]' \
+  --body "$(cat <<'EOF'
+## Component
+The payments component owns charge capture and refunds. It exposes a capture function used by the checkout flow, persists charge records, and de-duplicates repeated capture requests by order id. Dependencies: the shared database layer and the external card processor client. Recorded as built, not as designed.
+EOF
+)"
+specflow create --type integration-test --title "Payments capture test" --status verified \
+  --sanctioned "as-built: existing tests/test_payments.py passes" \
+  --tags backfilled --rationale "Backfilled from tests/test_payments.py" \
+  --links '[{"target":"ARCH-001","role":"verified_by"}]'
+```
 
 ## Scaling to large codebases — skeleton-first, incremental, resumable
 
@@ -103,7 +122,7 @@ Other essentials (full protocol in `references/incremental-adoption-protocol.md`
 ### Resume (mid-adoption, new session)
 
 1. `specflow brief` — the Adoption section reconstructs adoption state in one call (coverage %, backfilled counts, biggest cluster).
-2. Check for `needs-decision` tags — if any artifacts are tagged `needs-decision`, resolve their unresolved conflicts first (see `references/conflict-resolution-protocol.md`).
+2. Find open conflicts: `specflow list --tags needs-decision`. Resolve them first (see `references/conflict-resolution-protocol.md`).
 3. `specflow adopt status` — the boundary dashboard; pick the next boundary from the biggest un-adopted cluster.
 4. Read the latest `adoption-*` baseline — see what's already recorded and snapshotted.
 5. Skip anything already `tags: [backfilled]`; continue at Phase 1.
@@ -118,15 +137,17 @@ Everything this skill does is composed from CLI commands — no new Python per p
 | Coverage / progress | `specflow adopt status` |
 | Artifact completeness | `specflow adopt status <ID>` |
 | Orphan scan | `specflow detect orphan-code` |
-| Backfill ARCH (code-link) | `specflow create --type architecture --title "Payments" --status implemented --tags backfilled --rationale "…" --set 'output_files=["src/payments/**/*.py"]' --links '[{"target":"REQ-007","role":"derives_from"}]'` |
-| Backfill REQ/DDD/DEC | `specflow create --type <requirement\|detailed-design\|decision> --title "…" --status <approved\|implemented\|verified> --tags backfilled --rationale "…" --links '[…]'` |
+| Backfill ARCH (code-link) | the worked example below (`--sanctioned` is required with `--status implemented`) |
+| Backfill REQ/DDD/DEC | same shape: `--type <requirement\|detailed-design\|decision> --status <approved\|implemented\|verified> --sanctioned "as-built: …" --tags backfilled --rationale "…"` |
+| Open conflicts | `specflow list --tags needs-decision` |
 | Snapshot | `specflow baseline create adoption-v0 --evidence` |
-| Retro-link files | `specflow detect orphan-code --retro-link ARCH-NNN` |
+| Widen a glob (per boundary) | `specflow update ARCH-NNN --output-files '<glob>,<glob>'` |
+| Sweep residual (project-wide, final pass) | `specflow detect orphan-code --retro-link ARCH-NNN` |
 | Validate | `specflow artifact-lint` |
 
 ## References
 
-- `references/as-built-baseline-protocol.md` — the mental model + status/tagging conventions + the code-linking model (D-20).
+- `references/as-built-baseline-protocol.md` — the mental model + status/tagging conventions + the code-linking model (DEC-057).
 - `references/backfill-extraction-checklist.md` — per-type extraction prompts (REQ/ARCH/DDD/DEC/UT/IT/QT) **plus the framing questions**.
 - `references/conflict-resolution-protocol.md` — common conflict patterns and how to surface each to the user with `file:line` evidence.
 - `references/incremental-adoption-protocol.md` — boundary discovery, skeleton-first strategy, the resume flow, and using coverage % as the progress meter.

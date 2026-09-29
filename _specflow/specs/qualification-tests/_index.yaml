@@ -74,7 +74,7 @@ artifacts:
     title: EARS Quality in Prompts and Lint Qualification
     status: implemented
     tags: []
-    fingerprint: sha256:6ff288501672
+    fingerprint: sha256:63eb7f93230c
     children: []
   QT-012:
     id: QT-012
@@ -593,4 +593,155 @@ artifacts:
     tags: []
     fingerprint: sha256:d44ef36b494a
     children: []
-next_id: 74
+  QT-074:
+    id: QT-074
+    title: Qualify no fabricated autoresearch scores (STORY-694)
+    status: verified
+    tags: []
+    fingerprint: sha256:ae5b09d0ad8d
+    children: []
+  QT-075:
+    id: QT-075
+    title: Qualify install never deletes the always-on file (STORY-685)
+    status: verified
+    tags: []
+    fingerprint: sha256:3e1423639940
+    children: []
+  QT-076:
+    id: QT-076
+    title: Qualify format_version upgrade safety (STORY-678)
+    status: verified
+    tags: []
+    fingerprint: sha256:731ac5059066
+    children: []
+  QT-077:
+    id: QT-077
+    title: Qualify local pack install through both paths (STORY-681)
+    status: verified
+    tags: []
+    fingerprint: sha256:c3cda373ab4b
+    children: []
+  QT-078:
+    id: QT-078
+    title: Qualify import parsing and PR-safe CI gate refs (STORY-686)
+    status: verified
+    tags: []
+    fingerprint: sha256:1f76e41e1afb
+    children: []
+  QT-079:
+    id: QT-079
+    title: Qualify checklist-run honesty on shipped checklists (STORY-682, STORY-687)
+    status: verified
+    tags: []
+    fingerprint: sha256:0f72ab181992
+    children: []
+  QT-080:
+    id: QT-080
+    title: Qualify coverage crediting through artifact-lint CLI (STORY-679)
+    status: verified
+    tags: []
+    fingerprint: sha256:cfdc241141be
+    children: []
+  QT-081:
+    id: QT-081
+    title: Qualify V-pair reporting through artifact-lint CLI (STORY-680)
+    status: verified
+    tags: []
+    fingerprint: sha256:bd5e6741c1cb
+    children: []
+  QT-082:
+    id: QT-082
+    title: Qualify fail-loud exit codes through the CLI (STORY-683)
+    status: verified
+    tags: []
+    fingerprint: sha256:00c7d7590522
+    children: []
+  QT-083:
+    id: QT-083
+    title: Qualify docs-edit cache invalidation through the CLI (STORY-684)
+    status: verified
+    tags: []
+    fingerprint: sha256:fa10c21a6f8d
+    children: []
+  QT-084:
+    id: QT-084
+    title: detect orphan-code tip stays out of --adopt inside an adoption run (STORY-691)
+    status: verified
+    tags: []
+    fingerprint: sha256:4496ebc50e33
+    children: []
+  QT-085:
+    id: QT-085
+    title: Ops pack documented sequence is healthy end to end (STORY-692)
+    status: verified
+    tags: []
+    fingerprint: sha256:17a0bd5a210b
+    children: []
+  QT-086:
+    id: QT-086
+    title: Autoresearch documented setup and log sequence is healthy (STORY-693)
+    status: verified
+    tags: []
+    fingerprint: sha256:6f87ab42533d
+    children: []
+  QT-087:
+    id: QT-087
+    title: Adoption documented sequence is healthy end to end (STORY-695)
+    status: verified
+    tags: []
+    fingerprint: sha256:be9b00df7434
+    children: []
+  QT-088:
+    id: QT-088
+    title: Core lifecycle documented sequence is healthy end to end (STORY-695)
+    status: verified
+    tags: []
+    fingerprint: sha256:eef7d0acdee3
+    children: []
+  QT-089:
+    id: QT-089
+    title: Every shipped skill, pack and doc invocation parses against the CLI (STORY-688,
+      STORY-689, STORY-690)
+    status: verified
+    tags: []
+    fingerprint: sha256:a4cf06164ade
+    children: []
+  QT-090:
+    id: QT-090
+    title: specflow ci-gate CLI rejects a hidden unauthorised approval and passes
+      a clean multi-author PR (STORY-698)
+    status: verified
+    tags: []
+    fingerprint: sha256:001879d9e8d8
+    children: []
+  QT-091:
+    id: QT-091
+    title: Parallel specflow create, update and rebuild-index CLI processes keep the
+      index-store invariants I1-I4 (STORY-696)
+    status: verified
+    tags: []
+    fingerprint: sha256:e79351c46b05
+    children: []
+  QT-092:
+    id: QT-092
+    title: 'cascade-status CLI: legal one-step walk, closure hold, non-zero exit (STORY-697)'
+    status: verified
+    tags: []
+    fingerprint: sha256:7779e7e72722
+    children: []
+  QT-093:
+    id: QT-093
+    title: SemVer 2.0 section 11 ordering table (STORY-700)
+    status: verified
+    tags: []
+    fingerprint: sha256:c09060371726
+    children: []
+  QT-094:
+    id: QT-094
+    title: 'Verify-run pass rule through the CLI: declared exit code honoured by every
+      reader (STORY-699)'
+    status: verified
+    tags: []
+    fingerprint: sha256:264254e4a751
+    children: []
+next_id: 95

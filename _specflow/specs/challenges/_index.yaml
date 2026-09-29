@@ -893,4 +893,12 @@ artifacts:
     tags: []
     fingerprint: sha256:2a3d1132d093
     children: []
-next_id: 349
+  CHL-349:
+    id: CHL-349
+    title: cascade-status promotes a REQ to verified when its linked STORYs cover
+      only some acceptance criteria
+    status: open
+    tags: []
+    fingerprint: sha256:753f37ca7055
+    children: []
+next_id: 350

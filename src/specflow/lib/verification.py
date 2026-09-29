@@ -83,6 +83,41 @@ def resolve_evidence_file(root: Path, globs: Any) -> Path | None:
     return None
 
 
+# ── Expected-exit semantics (STORY-699, REQ-058 AC1) ──────────────
+
+
+def _norm_exit(value: Any) -> str:
+    """Normalise an exit code (int or str spelling) for comparison."""
+    text = str(value).strip()
+    try:
+        return str(int(text))
+    except ValueError:
+        return text
+
+
+def run_matches_expected(frontmatter: Any) -> bool | None:
+    """Does the recorded verify run satisfy the declared contract?
+
+    The ONE rule every reader (brief, evidence, risk tier, project audit)
+    uses: a run passes exactly when ``verify_run_exit_code`` equals the
+    declared ``verify_exit_code``, which defaults to ``0`` when unset or
+    blank. Int and string spellings compare equal (``2`` == ``"2"``).
+
+    Returns ``None`` when no run is recorded (no ``verify_run_exit_code``) —
+    "never run" is a different signal from "ran and failed", and callers
+    decide how to surface it. Pure: reads the mapping, never writes.
+    """
+    if not isinstance(frontmatter, dict):
+        return None
+    recorded = frontmatter.get("verify_run_exit_code")
+    if recorded is None or (isinstance(recorded, str) and not recorded.strip()):
+        return None
+    declared = frontmatter.get("verify_exit_code")
+    if declared is None or (isinstance(declared, str) and not declared.strip()):
+        declared = 0
+    return _norm_exit(recorded) == _norm_exit(declared)
+
+
 # ── Core runner ───────────────────────────────────────────────────
 
 

@@ -1,5 +1,6 @@
 """Platform detection and registry for SpecFlow."""
 
+import shutil
 from pathlib import Path
 
 import yaml
@@ -118,6 +119,60 @@ def leftover_specflow_skills(root: Path, platform_code: str) -> list[str]:
         p.name for p in own.iterdir()
         if p.is_dir() and p.name.startswith("specflow-")
     )
+
+
+def _is_ancestor_or_self(candidate: Path, target: Path) -> bool:
+    return candidate == target or candidate in target.parents
+
+
+def cleanup_legacy_dirs(root: Path, platform_code: str, *, dry_run: bool = False) -> list[str]:
+    """Remove specflow-owned entries from a platform's ``legacy_dirs``.
+
+    STORY-685: a legacy dir is never ``rmtree``'d wholesale. A legacy dir that
+    is the project root, lies outside it, or is (an ancestor of) the platform's
+    instruction file or skills dir is refused outright. Inside an accepted
+    legacy dir, only entries whose name starts with ``specflow`` are removed;
+    user files stay. A legacy dir left empty by that removal is dropped.
+
+    Returns the removed (or, with ``dry_run``, removable) paths relative to root.
+    """
+    cfg = get_platform(platform_code)
+    if not cfg:
+        return []
+    root = root.resolve()
+    protected: list[Path] = []
+    inst = cfg.get("instruction_file")
+    if inst:
+        protected.append((root / inst).resolve())
+    for code in {platform_code, get_skills_install_code(platform_code)}:
+        pcfg = get_platform(code)
+        if pcfg and pcfg.get("skills_dir"):
+            protected.append((root / pcfg["skills_dir"]).resolve())
+
+    removed: list[str] = []
+    for legacy_rel in cfg.get("legacy_dirs", []) or []:
+        legacy = (root / legacy_rel).resolve()
+        if legacy == root or root not in legacy.parents:
+            continue
+        if any(_is_ancestor_or_self(legacy, p) for p in protected):
+            continue
+        if not legacy.is_dir():
+            continue
+        owned = sorted(
+            e for e in legacy.iterdir()
+            if e.name.startswith("specflow") and not e.is_symlink()
+        )
+        for entry in owned:
+            removed.append(entry.relative_to(root).as_posix())
+            if dry_run:
+                continue
+            if entry.is_dir():
+                shutil.rmtree(str(entry), ignore_errors=True)
+            else:
+                entry.unlink(missing_ok=True)
+        if owned and not dry_run and not any(legacy.iterdir()):
+            legacy.rmdir()
+    return removed
 
 
 def get_preferred_platforms() -> list[tuple[str, dict]]:

@@ -1,0 +1,15 @@
+id: PREV-003
+name: 'Prevent recurrence of: Baseline ordering ignores SemVer 2.0 section 11 prerelease
+  and build-metadata rules (violated REQ-035) (caught by UT-124)'
+discovered_from: DEF-001
+mode: reactive
+pattern: 'Prevent recurrence of: Baseline ordering ignores SemVer 2.0 section 11 prerelease
+  and build-metadata rules (violated REQ-035) (caught by UT-124)'
+applies_to:
+  tags: []
+items:
+- id: PREV-003-01
+  check: Verify that changes touching REQ-035 are exercised by UT-124 before approval.
+  severity: warning
+  automated: false
+  mode: reactive

@@ -1,6 +1,6 @@
 ---
 id: STORY-035
-title: Project convention checklists — scaffold and enforce project structure
+title: "Project convention checklists \u2014 scaffold and enforce project structure"
 type: story
 status: verified
 priority: medium
@@ -27,15 +27,11 @@ links:
 created: '2026-04-17'
 fingerprint: sha256:5d458c39e8b8
 version: 2
-modified: '2026-04-22'
+modified: '2026-09-30'
 output_files:
 - src/specflow/templates/checklists/in-process/architecture-writing.yaml
 - src/specflow/templates/checklists/in-process/design-writing.yaml
 - src/specflow/templates/checklists/in-process/story-writing.yaml
-- src/specflow/templates/checklists/readiness/architecture-readiness.yaml
-- src/specflow/templates/checklists/readiness/discovery-readiness.yaml
-- src/specflow/templates/checklists/readiness/planning-readiness.yaml
-- src/specflow/templates/checklists/readiness/review-readiness.yaml
 ---
 
 # Project convention checklists — scaffold and enforce project structure

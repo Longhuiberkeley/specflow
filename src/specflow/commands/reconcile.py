@@ -77,6 +77,8 @@ def run(root: Path, args: dict[str, Any]) -> int:
         return 0
 
     print(f"\n{GREEN}Reconciliation found {len(promoted)} stories with evidence:{NC}")
+    failed_updates = 0
+    failed_cascades = 0
     for story, evidence in promoted:
         evidence_str = ", ".join(evidence)
         if dry_run:
@@ -87,8 +89,12 @@ def run(root: Path, args: dict[str, Any]) -> int:
                 print(f"  {GREEN}✓{NC} {story.id}: approved → implemented [{evidence_str}]")
                 if cascade:
                     from specflow.commands import cascade_status as cs
-                    cs.run(root, {"artifact_id": story.id, "include_req": False, "dry_run": dry_run})
+                    rc = cs.run(root, {"artifact_id": story.id, "include_req": False,
+                                       "dry_run": dry_run})
+                    if rc != 0:
+                        failed_cascades += 1
             else:
+                failed_updates += 1
                 print(f"  {RED}✗{NC} {story.id}: {result.get('error', 'update failed')}")
 
     if no_evidence:
@@ -96,4 +102,13 @@ def run(root: Path, args: dict[str, Any]) -> int:
         for s in no_evidence[:5]:
             print(f"    {s.id}: {s.title}")
 
+    # A refused or failed step is a failure, never a success exit (DEF-018).
+    if failed_updates or failed_cascades:
+        parts = []
+        if failed_updates:
+            parts.append(f"{failed_updates} story promotion(s) failed")
+        if failed_cascades:
+            parts.append(f"{failed_cascades} cascade(s) refused or failed")
+        print(f"\n{RED}✗ reconcile: {'; '.join(parts)}{NC}")
+        return 1
     return 0

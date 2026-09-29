@@ -1,6 +1,6 @@
 # COMP (competition) schema — autoresearch pack.
 #
-# Evaluator fingerprint (REQ-047): `evaluator_fingerprint` is recorded at
+# Evaluator fingerprint: `evaluator_fingerprint` is recorded at
 # setup — the verify command plus the content hashes of the evaluation
 # scripts it runs (pure filesystem hashing; `specflow create --type
 # competition` stamps it). It is the frozen identity of the exam. Each EXPT
@@ -10,7 +10,7 @@
 # successor-COMP path (rolling-evaluation.md § COMP churn rule) — never
 # per-EXPT, never retroactive for pre-fingerprint EXPTs.
 #
-# Loss-hacking guards (REQ-047 STORY-677, advisory only per DEC-088):
+# Loss-hacking guards (advisory only, never a gate):
 #   metric_bundle + evaluation_horizon — for `domain: quant`, setup REQUIRES
 #                   a metric bundle with a fixed horizon (`metric_bundle` is
 #                   a 2+ name list; `evaluation_horizon` the fixed window all
@@ -22,11 +22,25 @@
 #                   CV-external relation and demotes gains the external score
 #                   contradicts; without it, status falls back to EXPT
 #                   guard_metrics plus trial-count-deflated metrics.
-#   noise_characterization.jump_k / .guard_k / .guard_sigmas — optional
-#                   denominated-threshold overrides: the jump advisory fires
-#                   above jump_k x sigma (default 3), a guard regression
-#                   beyond guard_k x its sigma (guard_sigmas.<name>, else the
-#                   primary probe sigma; default 1).
+#
+# noise_characterization: ONE mapping describing the verify metric's noise
+# floor (the protocol runs verify three times on the unchanged baseline and
+# records it; noise-handling-protocol.md):
+#   samples:  [v1, v2, v3]  the raw verify outputs; `autoresearch status`
+#                           derives sigma from them (needs 2+ numbers)
+#   sigma:    <number>      alternative to samples when the run-to-run stdev
+#                           is already known (`stdev` is accepted too)
+#   strategy: "<text>"      the noise strategy chosen when stdev exceeds ~5% of
+#                           the mean (e.g. "multi-run median"); recorded for
+#                           the reader, not read by any command
+#   jump_k:   <number>      optional; the jump advisory fires above jump_k x
+#                           sigma (default 3)
+#   guard_k:  <number>      optional; a guard regression beyond guard_k x its
+#                           sigma is flagged (default 1)
+#   guard_sigmas: {<guard name>: <sigma>}  optional per-guard sigma (else the
+#                           primary sigma is used)
+# Record it with: specflow update COMP-NNN --set
+#   'noise_characterization={"samples":[0.81,0.82,0.80],"strategy":"multi-run median"}'
 type: competition
 category: research
 prefix: COMP

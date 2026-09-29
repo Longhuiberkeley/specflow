@@ -1,58 +1,58 @@
-version: 1.14.7
-rebuilt_at: '2026-09-13T06:09:06+00:00'
+version: 1.16.0
+rebuilt_at: '2026-09-29T21:34:10+00:00'
 docs:
   AGENTS.md:
     title: AGENTS.md
-    fingerprint: sha256:d2d457abd707
+    fingerprint: sha256:407c23563093
     cites: []
     last_reviewed: ''
     audience: ''
   CHANGELOG.md:
     title: Changelog
-    fingerprint: sha256:0600df60230f
+    fingerprint: sha256:dd7c5133f89c
     cites: []
     last_reviewed: ''
     audience: ''
   README.md:
     title: SpecFlow
-    fingerprint: sha256:231437fc363f
+    fingerprint: sha256:b1e80728d77d
     cites: []
     last_reviewed: ''
     audience: ''
   ROADMAP.md:
     title: SpecFlow Roadmap
-    fingerprint: sha256:c0ead6db7110
+    fingerprint: sha256:382f69786278
     cites: []
     last_reviewed: ''
     audience: ''
   docs/architecture.md:
     title: "SpecFlow \u2014 Architecture"
-    fingerprint: sha256:be343e9986ec
+    fingerprint: sha256:e450dc8d14fe
     cites: []
     last_reviewed: ''
     audience: ''
   docs/authoring-a-pack.md:
     title: Authoring a Standards Pack (Manual)
-    fingerprint: sha256:304b3ca06132
+    fingerprint: sha256:4e7d620d1a12
     cites: []
     last_reviewed: ''
     audience: ''
   docs/authoring-an-adapter.md:
     title: Authoring a SpecFlow Adapter
-    fingerprint: sha256:a4cb4b326d32
+    fingerprint: sha256:8cb4f0138be1
     cites: []
     last_reviewed: ''
     audience: ''
   docs/cli-reference.md:
     title: SpecFlow CLI Reference
-    fingerprint: sha256:9759037ecef4
+    fingerprint: sha256:f938bcf7b370
     cites:
     - CHL-NONSEMVE-c16b
     last_reviewed: ''
     audience: ''
   docs/commands.md:
     title: SpecFlow Command Reference
-    fingerprint: sha256:c4f62a178a04
+    fingerprint: sha256:7d00498ce337
     cites: []
     last_reviewed: ''
     audience: ''
@@ -71,19 +71,19 @@ docs:
     audience: ''
   docs/getting-started.md:
     title: Getting Started with SpecFlow
-    fingerprint: sha256:081a9fe4702b
+    fingerprint: sha256:541db97f0bd1
     cites: []
     last_reviewed: ''
     audience: ''
   docs/lifecycle.md:
     title: SpecFlow Lifecycle
-    fingerprint: sha256:1cbebaa0fa9b
+    fingerprint: sha256:0d805995a1b4
     cites: []
     last_reviewed: ''
     audience: ''
   docs/skill-standards.md:
     title: SpecFlow Skill Standards
-    fingerprint: sha256:6fc9ad328271
+    fingerprint: sha256:8a1607d90d4b
     cites: []
     last_reviewed: ''
     audience: ''

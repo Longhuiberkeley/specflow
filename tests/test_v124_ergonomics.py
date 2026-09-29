@@ -643,11 +643,8 @@ class TestSkillAndContextDocs:
 
     def test_agent_context_is_lean_and_tldr_default(self):
         text = (self._REPO_ROOT / "src/specflow/templates/agent-context.md").read_text(encoding="utf-8")
-        non_empty = [ln for ln in text.splitlines() if ln.strip()]
-        assert len(non_empty) <= 40, (
-            f"agent-context.md grew to {len(non_empty)} non-empty lines; "
-            f"keep the always-on block near 30 lines"
-        )
+        # STORY-688: the 40-line cap is replaced by the aggregate always-on
+        # word budget in tests/test_context_budget.py.
         lowered = text.lower()
         assert "lead with the answer" in lowered
         # STORY-656: conditional style guidance replaced the hard anti-

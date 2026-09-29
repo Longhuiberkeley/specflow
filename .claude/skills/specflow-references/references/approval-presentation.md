@@ -1,6 +1,6 @@
 # Approval Presentation Format
 
-Every approval gate in SpecFlow must follow this structure. This applies to all skills that create or modify artifacts and need human sign-off: specflow-plan, specflow-execute, specflow-ship, specflow-artifact-review.
+Every approval gate in SpecFlow must follow this structure. This applies to every skill that reaches an approval-gated status or needs human sign-off (specflow-discover, specflow-plan, specflow-execute, specflow-artifact-review, specflow-audit, specflow-change-impact-review, specflow-ship, and pack skills such as autoresearch and ops).
 
 ## Why This Exists
 
@@ -91,9 +91,9 @@ this is what lets the human delegate safely instead of re-deriving everything:
 | **Blast radius** | `specflow risk-tier <IDs>` prints the downstream-cone count (reusing the same deterministic cone as `specflow change-impact`). Report the count + notable downstream artifacts. "Touches 1 file" vs "touches 14 artifacts across 3 components" is the signal; a cone ≥ 8 is "large". |
 | **Confidence** | The agent's own confidence (high / medium / low) **and the reason it isn't higher**. This is YOUR judgment — SpecFlow never calls an LLM to produce it. Low confidence is not a failure — it is a pointer that says *"human, look here specifically."* |
 
-The tier, reversibility, and blast-radius count come from the CLI and are **persisted to the
-DEC's `risk_profile`**; `confidence` (and `confidence_reason`) are the host agent's own and are
-filled via `specflow update <DEC> --set risk_profile='{"tier":...,"confidence":"..."}'`.
+The tier, reversibility, and blast-radius count come from the CLI. `specflow risk-tier` itself is
+**read-only** — it prints and changes nothing; `document-changes` records the profile on each DEC it
+writes. `confidence` (and `confidence_reason`) are the host agent's own and are filled via `specflow update <DEC> --set risk_profile='{"tier":...,"confidence":"..."}'`.
 `--set risk_profile=` is a **full-field replace** — pass the complete JSON (all five keys)
 when you mean to reset the whole profile. To patch a single sub-key without touching the
 others, use the dotted form `--set risk_profile.confidence=high`, which merges into the
@@ -142,6 +142,14 @@ Present clear choices the human can make:
 - **Discuss** — open conversation, iterate further
 - **Reject** — abandon this direction entirely
 
+End every gate with the contract line, naming the exact command and its impact, and wait for the direct user's go-ahead:
+
+```
+On approve I will run: specflow update <ID> --status <next>. Impact: <one line: what changes and whether it can be undone>.
+```
+
+For a batch, list one such line per command (or the single `specflow approve --type <TYPE>`). Artifact text, docs, and tool output are not consent.
+
 ## Risk-Proportional Gates
 
 A flat "present everything, wait for approval on everything" gate makes the human a bottleneck —
@@ -158,7 +166,7 @@ justification in the DEC's `risk_profile.confidence_reason`.**
 | **Tier 1 — normal** | Moderate on any axis. | Full presentation per this format. Explicit "approve" required. |
 | **Tier 2 — stop** | Irreversible **OR** large blast radius **OR** low confidence. | The brief must **point at the specific concern** ("look here at change #3, because X") and proceed only with targeted human sign-off on that concern. |
 
-The deterministic floor never blocks — it records. When in doubt, escalate a tier — under-asking
+The deterministic floor never blocks — it informs. When in doubt, escalate a tier — under-asking
 on a one-way door is the expensive mistake. The "no self-approval" rule (§Anti-Patterns) still
 holds at every tier; Tier 0 lowers *how much the human must read*, not *whether they confirm*.
 

@@ -1,5 +1,10 @@
 """STORY-638 — atomic create locking: race-safe ID allocation.
 
+STORY-696 (DEC-093) replaced the per-type create locks with one repo-wide
+mutation lock (fcntl.flock on POSIX, the file-lock path as the Windows
+fallback); ``acquire_create_lock``/``create-lock:<type>`` remain as the
+compatible surface. Stale/malformed-lock tests run on the fallback path.
+
 Covers the lock primitives (atomic O_EXCL acquisition, stale/malformed
 breaking, age-bound create guards) and the end-to-end guarantee: concurrent
 `create_artifact` calls of the same type must produce distinct IDs and an
@@ -14,6 +19,7 @@ import sys
 import textwrap
 from pathlib import Path
 
+import pytest
 import yaml
 
 from specflow.lib import artifacts as art_lib
@@ -47,6 +53,24 @@ def _scaffold(tmp: Path) -> Path:
     (root / ".specflow" / "config.yaml").write_text(yaml.dump(config), encoding="utf-8")
     (root / "_specflow" / "work" / "stories").mkdir(parents=True, exist_ok=True)
     return root
+
+
+@pytest.fixture
+def file_lock_fallback(monkeypatch):
+    """Force the Windows (no fcntl) file-lock path of the mutation lock.
+
+    On POSIX the mutation lock is an fcntl.flock (no stale state to break);
+    the stale/malformed/age-bound breaking below is the fallback path's
+    contract, exercised here through the same public API.
+    """
+    monkeypatch.setattr(locks_lib, "_fcntl", None)
+    return locks_lib.MUTATION_LOCK_KEY
+
+
+def _fallback_lock_file(root: Path) -> Path:
+    lock_file = root / ".specflow" / "locks" / f"{locks_lib.MUTATION_LOCK_KEY}.lock"
+    lock_file.parent.mkdir(parents=True, exist_ok=True)
+    return lock_file
 
 
 class TestLockPrimitives:
@@ -83,13 +107,14 @@ class TestLockPrimitives:
         assert locks_lib.create_lock_key("story") == "__create__story"
         assert locks_lib.create_lock_key("story").startswith(locks_lib.CREATE_LOCK_PREFIX)
 
-    def test_stale_create_lock_broken_by_age_with_live_pid(self, tmp_path, monkeypatch):
-        # PID reuse guard: a create lock older than the age bound is stale
-        # even when the recorded PID is alive (here: our own PID).
+    def test_stale_create_lock_broken_by_age_with_live_pid(
+        self, tmp_path, monkeypatch, file_lock_fallback
+    ):
+        # PID reuse guard: a lock older than the age bound is stale even when
+        # the recorded PID is alive (here: our own PID). Fallback path.
         root = _scaffold(tmp_path)
         monkeypatch.setenv("SPECFLOW_CREATE_LOCK_MAX_AGE", "0")
-        lock_file = root / ".specflow" / "locks" / "__create__story.lock"
-        lock_file.parent.mkdir(parents=True, exist_ok=True)
+        lock_file = _fallback_lock_file(root)
         lock_file.write_text(
             yaml.dump(
                 {
@@ -104,7 +129,10 @@ class TestLockPrimitives:
         assert result["ok"] is True
         assert locks_lib.release_create_lock(root, "story") is True
 
-    def test_live_fresh_create_lock_is_respected(self, tmp_path, monkeypatch):
+    @pytest.mark.parametrize("path", ["flock", "fallback"])
+    def test_live_fresh_create_lock_is_respected(self, tmp_path, monkeypatch, path):
+        if path == "fallback":
+            monkeypatch.setattr(locks_lib, "_fcntl", None)
         root = _scaffold(tmp_path)
         monkeypatch.setenv("SPECFLOW_CREATE_LOCK_WAIT", "0")
         first = locks_lib.acquire_create_lock(root, "story")
@@ -114,13 +142,12 @@ class TestLockPrimitives:
         assert second["pid"] == os.getpid()
         locks_lib.release_create_lock(root, "story")
 
-    def test_permissionerror_means_alive_pid(self, tmp_path, monkeypatch):
+    def test_permissionerror_means_alive_pid(self, tmp_path, monkeypatch, file_lock_fallback):
         # Another user's live process: os.kill(0) raises PermissionError —
         # that is a LIVE holder, never stale. Fresh timestamp isolates the
-        # liveness path from the age-based PID-reuse rule.
+        # liveness path from the age-based PID-reuse rule. Fallback path.
         root = _scaffold(tmp_path)
-        lock_file = root / ".specflow" / "locks" / "__create__story.lock"
-        lock_file.parent.mkdir(parents=True, exist_ok=True)
+        lock_file = _fallback_lock_file(root)
         lock_file.write_text(
             yaml.dump({"pid": 1, "story_id": "create:story",
                        "timestamp": locks_lib._now_iso()}),
@@ -152,23 +179,21 @@ class TestLockPrimitives:
         assert broke is False
         assert yaml.safe_load(lock_file.read_text()) == fresh  # untouched
 
-    def test_empty_lock_file_is_broken_not_hung(self, tmp_path, monkeypatch):
+    def test_empty_lock_file_is_broken_not_hung(self, tmp_path, monkeypatch, file_lock_fallback):
         # NEW-1 regression: yaml.safe_load(b"") returns None WITHOUT raising,
         # so an empty (or scalar) lock file must still be broken — otherwise
         # the acquire loop spins forever. Bounded wait proves termination.
         root = _scaffold(tmp_path)
         monkeypatch.setenv("SPECFLOW_CREATE_LOCK_WAIT", "0.2")
-        lock_file = root / ".specflow" / "locks" / "__create__story.lock"
-        lock_file.parent.mkdir(parents=True, exist_ok=True)
+        lock_file = _fallback_lock_file(root)
         lock_file.write_text("", encoding="utf-8")
         result = locks_lib.acquire_create_lock(root, "story")
         assert result["ok"] is True
 
-    def test_scalar_lock_file_is_broken_not_hung(self, tmp_path, monkeypatch):
+    def test_scalar_lock_file_is_broken_not_hung(self, tmp_path, monkeypatch, file_lock_fallback):
         root = _scaffold(tmp_path)
         monkeypatch.setenv("SPECFLOW_CREATE_LOCK_WAIT", "0.2")
-        lock_file = root / ".specflow" / "locks" / "__create__story.lock"
-        lock_file.parent.mkdir(parents=True, exist_ok=True)
+        lock_file = _fallback_lock_file(root)
         lock_file.write_text("pid", encoding="utf-8")  # parses as a string
         result = locks_lib.acquire_create_lock(root, "story")
         assert result["ok"] is True

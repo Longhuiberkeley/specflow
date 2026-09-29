@@ -1,0 +1,17 @@
+id: PREV-015
+name: 'Prevent recurrence of: Allocators ignore a crashed renumber journal and rewritten
+  frontmatter ids: a create before the re-run takes a journalled id, duplicates it,
+  and the resume stops on a collision (violated REQ-002) (caught by UT-132)'
+discovered_from: DEF-013
+mode: reactive
+pattern: 'Prevent recurrence of: Allocators ignore a crashed renumber journal and
+  rewritten frontmatter ids: a create before the re-run takes a journalled id, duplicates
+  it, and the resume stops on a collision (violated REQ-002) (caught by UT-132)'
+applies_to:
+  tags: []
+items:
+- id: PREV-015-01
+  check: Verify that changes touching REQ-002 are exercised by UT-132 before approval.
+  severity: warning
+  automated: false
+  mode: reactive

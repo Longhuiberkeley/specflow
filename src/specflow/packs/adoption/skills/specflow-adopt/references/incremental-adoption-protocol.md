@@ -89,7 +89,7 @@ Boundaries aren't perfectly independent — cross-cutting concerns (auth, loggin
 
 ### ID collisions (parallel fan-out)
 
-If parallel agents independently create artifacts with the same ID (e.g. both create `ARCH-001` for different components), the synthesis pass must renumber one before merging. Use `specflow renumber <old-ID> <new-ID>` to update all cross-references. To prevent collisions in the first place, assign non-overlapping ID ranges to each parallel agent (e.g. agent A uses ARCH-001–ARCH-050, agent B uses ARCH-051–ARCH-100).
+If parallel agents independently create artifacts with the same ID (e.g. both create `ARCH-001` for different components), the synthesis pass must renumber one before merging. To prevent collisions in the first place, give each parallel agent its own git branch or worktree: on a feature branch `specflow create` mints collision-free draft IDs (`ARCH-PAYMENTS-a7b9`), and `specflow renumber-drafts` rewrites them to sequential IDs (updating cross-references) after the merge to main.
 
 A periodic `/specflow-audit` across the whole backfilled graph catches cross-boundary seams.
 

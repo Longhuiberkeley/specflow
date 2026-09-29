@@ -7,9 +7,12 @@ version: 1
 
 items:
   - id: CKL-IP-004-01
-    check: "Story links to at least one approved specification artifact"
+    check: "Story links to at least one specification artifact (implements, guided_by or specified_by)"
     automated: true
-    script: "python3 -c \"\nimport yaml, sys\nfrom pathlib import Path\npath = Path(sys.argv[1])\ntext = path.read_text().strip()\nend = text.find('---', 3)\nif end == -1: sys.exit(1)\nfm = yaml.safe_load(text[3:end])\nlinks = fm.get('links', []) or []\nhas_spec_link = any(l.get('role') in ('implements', 'guided_by', 'specified_by') for l in links if isinstance(l, dict))\nsys.exit(0 if has_spec_link else 1)\n\" \"\$1\""
+    # Frontmatter-only grep (no python3/PyYAML): take the frontmatter, keep the
+    # top-level `links:` block, and look for a spec-link role on the artifact ("$1").
+    script: |
+      sed -n '2,/^---/p' "$1" | sed -n '/^links:/,/^[A-Za-z_]/p' | grep -qE "role:[[:space:]]*[\"']?(implements|guided_by|specified_by)[\"']?([^A-Za-z0-9_]|$)" || { echo 'No implements/guided_by/specified_by link in the frontmatter links block'; exit 1; }
     severity: blocking
 
   - id: CKL-IP-004-02

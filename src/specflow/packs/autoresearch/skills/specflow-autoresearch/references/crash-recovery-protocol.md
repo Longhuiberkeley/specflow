@@ -28,7 +28,7 @@ Then apply exactly one recovery rule:
 
 ## Evidence-free streaks — reassess, don't switch by count
 
-REQ-043: there is no mandatory category switch and no count-based stop. When a
+There is no mandatory category switch and no count-based stop. When a
 line stops producing new evidence (its last three attempts carry no anchored,
 distinct `research_progress` and no measured improvement), reassess: re-read the
 code, FINDs, and agenda; record what the streak taught (`research_progress` /

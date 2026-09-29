@@ -7,8 +7,8 @@ version: 1
 items:
   - id: CKL-GATE-005-01
     check: "All STORY artifacts have status: implemented or verified"
-    automated: true
-    script: "uv run specflow artifact-lint --type status"
+    automated: false
+    llm_prompt: "List the STORY artifacts (`specflow list --type story`). Confirm every STORY in scope for this phase is implemented or verified (deprecated stories are out of scope). Flag each STORY still in draft or approved. (`artifact-lint --type status` only checks that statuses are legal, not that they reached implemented.)"
     severity: blocking
 
   - id: CKL-GATE-005-02
@@ -19,14 +19,14 @@ items:
 
   - id: CKL-GATE-005-03
     check: "SPEC artifacts are updated to status: implemented"
-    automated: true
-    script: "uv run specflow artifact-lint --type status"
+    automated: false
+    llm_prompt: "For the REQ, ARCH and DDD artifacts implemented by this phase's STORYs, confirm each has been moved to status implemented (`specflow list --type REQ --status approved`, and likewise for ARCH and DDD, shows the stragglers). Flag specs whose implementing STORYs are done but whose own status lags."
     severity: warning
 
   - id: CKL-GATE-005-04
     check: "No suspect flags unresolved on implemented artifacts"
     automated: true
-    script: "uv run specflow artifact-lint --type fingerprints"
+    script: "specflow artifact-lint --type fingerprints"
     severity: warning
 
   - id: CKL-GATE-005-05

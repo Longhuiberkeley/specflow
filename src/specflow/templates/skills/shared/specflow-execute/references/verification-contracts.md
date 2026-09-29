@@ -25,7 +25,7 @@ the same artifact's frontmatter:
 |-------|-------------|---------|
 | `verify_run_at` | `specflow verify` | ISO-8601 timestamp of the run. Absent ⇒ the contract was declared but never executed. |
 | `verify_run_exit_code` | `specflow verify` | The actual exit code the command returned. |
-| `verify_run_evidence` | `specflow verify` | Captured output / path to the captured output (see `--evidence-file`). |
+| `verify_run_evidence` | `specflow verify` | Captured output of the run (see `--evidence-file` for report files). |
 
 ## The keystone invariant — a failing run is RECORDED, never blocks
 
@@ -52,19 +52,12 @@ the contract adds machine-checkable evidence on top, it does not replace it.
 
 ## When to use `--evidence-file`
 
-`specflow verify <ID> [--evidence-file PATH]` captures a command's full output
-into a file and records its path in `verify_run_evidence`, instead of storing
-truncated output inline. Reach for it when:
+`specflow verify <ID> --evidence-file` is a flag (it takes no path). In addition to running the command, it hashes the first file matching the artifact's `verify_evidence` field and records that file's modification time. Reach for it when:
 
-- The command emits long or multi-line output (test runner summaries, logs) that
-  would bloat frontmatter.
-- You want the evidence to survive as a reviewable artifact (commit it, diff it
-  run-over-run).
-- You are running verification in CI and want the captured output attached to the
-  run for post-mortem.
+- The command writes a report or log file (test runner summary, coverage output) that you want tied to the run.
+- You want the evidence to survive as a reviewable artifact (commit it, diff it run-over-run).
 
-Omit `--evidence-file` for short, one-line-metric commands (the common case) —
-the inline capture is enough.
+Omit it for short, one-line-metric commands (the common case) — the inline capture is enough.
 
 ## Usage in the execute flow
 
@@ -74,9 +67,9 @@ so the `verified` status is traced, not asserted:
 ```bash
 specflow verify UT-001            # run one artifact's declared verify_command
 specflow verify --all             # run every declared contract in one pass
-specflow verify --type unit-test  # scope to one V-model level
+specflow verify --type UT         # scope to one level (UT, IT, QT, or STORY)
 specflow verify STORY-001 --dry-run   # show what would run, execute nothing
-specflow verify QT-003 --evidence-file .specflow/evidence/qt-003.log
+specflow verify QT-003 --evidence-file   # also hash the verify_evidence file
 ```
 
 `--dry-run` prints the resolved command(s) and target artifact(s) without

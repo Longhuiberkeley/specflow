@@ -1,6 +1,6 @@
 # Pack Structure Reference
 
-A standards pack is a self-contained directory under `src/specflow/packs/{name}/` (bundled) or `.specflow/packs/{name}/` (user-authored).
+A standards pack is a self-contained directory. SpecFlow ships some packs bundled; user-authored packs live at `.specflow/packs/{name}/` in the project, and `specflow init --preset {name}` resolves them by name.
 
 ## Directory Layout
 
@@ -11,6 +11,8 @@ A standards pack is a self-contained directory under `src/specflow/packs/{name}/
 │   └── {name}.yaml        # Standard clauses
 ├── schemas/               # Only if pack adds new artifact types
 │   └── {type}.yaml
+├── skills/                # Only if pack adds skills (listed in adds_skills)
+│   └── {skill}/SKILL.md
 └── README.md
 ```
 
@@ -23,6 +25,12 @@ A standards pack is a self-contained directory under `src/specflow/packs/{name}/
 | `description` | Yes | string | One-line description of what this pack provides |
 | `adds_artifact_types` | No | list | Artifact type IDs introduced by this pack |
 | `adds_directories` | No | list | `_specflow/` subdirectories to create on install |
+| `adds_skills` | No | list | Skill directory names; each needs `skills/<name>/SKILL.md` in the pack and is installed with the project's skills |
+| `context_snippet` | No | string | A short block injected into the agent instruction file on install (see below) |
+
+### `context_snippet` and its budget
+
+The snippet is always-on context: it is injected into the instruction file alongside the base SpecFlow block, so every word is read on every turn. The base block and all installed pack snippets share one budget of 375 words. Keep a snippet to a heading plus one or two lines: when the pack's skill should engage and the one command to consult. Never repeat a sentence already in the base block.
 
 ### Example
 
@@ -52,6 +60,8 @@ adds_directories:
 | `id` | Yes | string | Clause identifier from the source standard |
 | `title` | Yes | string | Clause title |
 | `description` | Yes | string | Clause description or requirement text |
+| `category` | No | string | `safety`, `security`, `functional` (default), or `process`; picks the remediation hint `specflow standards gaps` shows for an uncovered clause |
+| `severity` | No | string | `high`, `medium` (default), or `low`; high-severity gaps are prioritized |
 
 ### Example
 
@@ -84,11 +94,12 @@ A human-readable description of the pack. Should include:
 
 When a user runs `specflow init --preset {name}`:
 
-1. `apply_pack()` in `lib/scaffold.py` locates the pack under the bundled `packs/` directory
+1. SpecFlow locates the pack by name: `.specflow/packs/{name}/` in the project first, then the packs bundled with SpecFlow
 2. Copies `schemas/*.yaml` → `.specflow/schema/` (preserves existing files)
 3. Creates `_specflow/` directories declared in `adds_directories`
 4. Copies `standards/*.yaml` → `.specflow/standards/` (preserves existing files)
 5. Copies any `checklists/` subdirectory → `.specflow/checklists/`
-6. Updates `config.yaml` with new artifact types and active packs
+6. Installs each `adds_skills` skill and injects `context_snippet` into the instruction file
+7. Updates `config.yaml` with new artifact types and active packs
 
-For user-authored packs in `.specflow/packs/`, the user must manually copy standards and schemas to the appropriate `.specflow/` locations, or copy the pack to the bundled `src/specflow/packs/` directory for use with `--preset`.
+The same command works on a project that is already initialized: `init` runs in merge mode, keeps the existing config, and adds the pack. Never copy pack files into `.specflow/` by hand — the pack would not be registered in `active_packs`, so its skills, context block, and later syncs would be missing. After editing a pack that is already installed, run `specflow refresh --packs --force` to sync it.

@@ -80,4 +80,4 @@ IF metric_worse AND abs(delta) < noise_floor:
 
 ## Noise Probe at Setup Time
 
-During COMP setup (`specflow autoresearch plan --profile`), the noise variance probe runs `verify_command` three times on the unchanged baseline and reports min/max/mean/stdev. If stdev > ~5% of mean, the metric is noisy enough that you MUST pick one of the strategies above before committing a long budget. Record the chosen strategy in `COMP.noise_characterization`.
+During COMP setup, run `verify_command` three times back-to-back on the unchanged baseline (`specflow autoresearch plan --profile` adds this step to the checklist; you run it) and report min/max/mean/stdev. Record the three outputs: `specflow update COMP-NNN --set 'noise_characterization={"samples":[<v1>,<v2>,<v3>]}'`. If stdev > ~5% of mean, the metric is noisy enough that you MUST pick one of the strategies above before committing a long budget; add it as `strategy` in the same mapping (`... {"samples":[...],"strategy":"multi-run median"}'`). The full shape is documented once, in the COMP schema.

@@ -41,8 +41,8 @@ Whatever the user decides, encode it:
 If the session ends without resolution:
 
 1. **Record the unresolved conflict** in the artifact's `rationale`: `"UNRESOLVED: README claims X, code says Y — awaiting decision"`.
-2. **Tag the artifact** `needs-decision`: `specflow update <ID> --tags needs-decision`.
-3. **On resume**, before proceeding with new backfill, check for `needs-decision` tags. The `specflow adopt status` artifact view surfaces these. Resolve them first — unresolved conflicts degrade every downstream artifact that depends on the contested spec.
+2. **Tag the artifact** `needs-decision` **alongside** `backfilled` — `--tags` replaces the whole list, so restate it: `specflow update <ID> --tags backfilled,needs-decision`. (Dropping `backfilled` silently removes the artifact from adoption tracking.)
+3. **On resume**, before proceeding with new backfill, run `specflow list --tags needs-decision`. Resolve them first — unresolved conflicts degrade every downstream artifact that depends on the contested spec.
 
 ## Common conflict patterns
 

@@ -1,0 +1,15 @@
+id: PREV-005
+name: 'Prevent recurrence of: check_independence loses implementer authorship when
+  renumber-drafts renames the artifact file (violated REQ-008) (caught by IT-089)'
+discovered_from: DEF-003
+mode: reactive
+pattern: 'Prevent recurrence of: check_independence loses implementer authorship when
+  renumber-drafts renames the artifact file (violated REQ-008) (caught by IT-089)'
+applies_to:
+  tags: []
+items:
+- id: PREV-005-01
+  check: Verify that changes touching REQ-008 are exercised by IT-089 before approval.
+  severity: warning
+  automated: false
+  mode: reactive

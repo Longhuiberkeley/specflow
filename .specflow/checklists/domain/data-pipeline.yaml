@@ -40,6 +40,8 @@ items:
     automated: false
     llm_prompt: "If the pipeline processes historical data, confirm it supports parameterized date ranges for reruns. Flag pipelines that can only process 'now'."
     severity: info
+    applies_to:
+      types: [architecture, story]
 
   - id: CKL-DOM-DATA-07
     check: "Monitoring covers lag, throughput, and error rate"

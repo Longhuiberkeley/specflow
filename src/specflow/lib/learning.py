@@ -208,26 +208,30 @@ def _next_prev_number(root: Path) -> int:
 
 
 def persist_prevention_pattern(root: Path, pattern: dict[str, Any]) -> Path:
-    """Write a prevention pattern to .specflow/checklists/learned/."""
+    """Write a prevention pattern to .specflow/checklists/learned/.
+
+    The PREV number is allocated by exclusive create under the mutation lock
+    (DEC-093): a concurrent writer that took the same number makes this one
+    move on to the next, never replace the other's pattern.
+    """
+    from specflow.lib import locks as locks_lib
+
     learned_dir = root / ".specflow" / "checklists" / "learned"
     learned_dir.mkdir(parents=True, exist_ok=True)
 
-    num = _next_prev_number(root)
-    pattern_id = f"PREV-{num:03d}"
-    pattern["id"] = pattern_id
-
-    # Assign item IDs
-    for i, item in enumerate(pattern.get("items", [])):
-        item["id"] = f"{pattern_id}-{i+1:02d}"
-
-    filename = f"{pattern_id}.yaml"
-    path = learned_dir / filename
-
-    path.write_text(
-        yaml.dump(pattern, default_flow_style=False, sort_keys=False),
-        encoding="utf-8",
-    )
-    return path
+    with locks_lib.mutation_lock(root, holder="prev-pattern"):
+        num = _next_prev_number(root)
+        while True:
+            pattern_id = f"PREV-{num:03d}"
+            pattern["id"] = pattern_id
+            # Assign item IDs
+            for i, item in enumerate(pattern.get("items", [])):
+                item["id"] = f"{pattern_id}-{i+1:02d}"
+            path = learned_dir / f"{pattern_id}.yaml"
+            text = yaml.dump(pattern, default_flow_style=False, sort_keys=False)
+            if locks_lib.exclusive_write(path, text):
+                return path
+            num += 1
 
 
 def list_learned_patterns(root: Path) -> list[dict[str, Any]]:
@@ -251,8 +255,18 @@ def list_learned_patterns(root: Path) -> list[dict[str, Any]]:
 def close_phase(root: Path) -> dict[str, Any]:
     """Close the current phase: archive to history, clear execution state.
 
+    The state.yaml read-modify-write runs under the repo-wide mutation lock,
+    so a concurrent state writer's update is never lost (STORY-696 AC2).
+
     Returns summary dict.
     """
+    from specflow.lib import locks as locks_lib
+
+    with locks_lib.mutation_lock(root, holder="close-phase"):
+        return _close_phase_locked(root)
+
+
+def _close_phase_locked(root: Path) -> dict[str, Any]:
     state = read_state(root)
     if not state:
         return {"ok": False, "error": "Cannot read state.yaml"}
@@ -326,9 +340,19 @@ def set_phase(root: Path, target: str, reason: str | None = None) -> dict[str, A
     entry; when `target` is earlier than the current phase in PHASE_ORDER, the
     entry is also stamped "rewind": true.
 
+    The state.yaml read-modify-write runs under the repo-wide mutation lock
+    (STORY-696 AC2).
+
     Returns {"ok": False, "error": ...} for an unrecognized phase or unreadable
     state, else {"ok": True, "old_phase", "new_phase", "rewind"}.
     """
+    from specflow.lib import locks as locks_lib
+
+    with locks_lib.mutation_lock(root, holder="phase-set"):
+        return _set_phase_locked(root, target, reason)
+
+
+def _set_phase_locked(root: Path, target: str, reason: str | None) -> dict[str, Any]:
     if target not in PHASE_ORDER:
         return {
             "ok": False,

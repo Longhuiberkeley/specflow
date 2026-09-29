@@ -20,8 +20,8 @@ items:
 
   - id: CKL-IP-001-03
     check: "Every requirement has acceptance criteria"
-    automated: true
-    script: "specflow artifact-lint --type acceptance"
+    automated: false
+    llm_prompt: "Review this requirement. Confirm it has an Acceptance Criteria section with at least one objectively checkable criterion (Given/When/Then or a measurable statement). Flag a missing, empty, or untestable acceptance section. (Project-wide coverage is the artifact-lint acceptance check at phase gates; this item judges this artifact only.)"
     severity: blocking
 
   - id: CKL-IP-001-04

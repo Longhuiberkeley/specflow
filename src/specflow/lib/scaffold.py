@@ -34,7 +34,6 @@ INTERNAL_DIRS = [
     "standards",
     "checklists/phase-gates",
     "checklists/in-process",
-    "checklists/readiness",
     "checklists/review",
     "checklists/shared",
     "checklists/learned",
@@ -42,6 +41,27 @@ INTERNAL_DIRS = [
 ]
 
 _INDEX_STUB = {"artifacts": {}, "next_id": 1}
+
+# Project-local packs (authored by /specflow-pack-author) live here.
+LOCAL_PACKS_DIR = Path(".specflow") / "packs"
+
+
+def bundled_packs_dir() -> Path:
+    """Directory of the packs shipped inside the SpecFlow package."""
+    return Path(__file__).parent.parent / "packs"
+
+
+def resolve_packs_dir(root: Path, pack_name: str) -> Path:
+    """Return the packs directory that holds ``pack_name``.
+
+    STORY-681 / REQ-055 AC5: a project-local ``.specflow/packs/<name>/`` with a
+    ``pack.yaml`` wins over the bundled pack of the same name. Falls back to the
+    bundled directory (whose own lookup reports "not found" when absent).
+    """
+    local = root / LOCAL_PACKS_DIR
+    if (local / pack_name / "pack.yaml").is_file():
+        return local
+    return bundled_packs_dir()
 
 
 def _migrate_practice_provenance(root: Path) -> dict[str, Any]:
@@ -70,7 +90,9 @@ def create_spec_dirs(root: Path) -> None:
         d.mkdir(parents=True, exist_ok=True)
         index = d / "_index.yaml"
         if not index.exists():
-            index.write_text(yaml.dump(_INDEX_STUB, default_flow_style=False))
+            from specflow.lib import locks as locks_lib
+
+            locks_lib.locked_exclusive_write(root, index, yaml.dump(_INDEX_STUB, default_flow_style=False))
 
 
 def create_internal_dirs(root: Path, template_dir: Path, *, overwrite_schemas: bool = False) -> None:
@@ -110,29 +132,86 @@ def copy_adapters_config(root: Path, template_dir: Path) -> None:
     shutil.copy2(str(src), str(dst))
 
 
-def copy_checklists(root: Path, template_dir: Path) -> None:
-    """Copy checklist templates from package to project instance.
+_CHECKLIST_CATEGORIES = ("phase-gates", "in-process", "review", "shared", "domain")
 
-    Copies from src/specflow/templates/checklists/ to .specflow/checklists/.
-    Only copies if the destination file doesn't already exist (preserves user edits).
+
+def _checklist_parses(path: Path) -> bool:
+    """True when a checklist file loads as a YAML mapping (no warning printed)."""
+    try:
+        return isinstance(yaml.safe_load(path.read_text(encoding="utf-8")), dict)
+    except Exception:  # yaml.YAMLError, OSError, UnicodeDecodeError
+        return False
+
+
+def classify_checklists(root: Path, template_dir: Path) -> dict[str, list[str]]:
+    """Compare shipped checklist templates with the project copies.
+
+    Returns ``{"missing", "broken", "drifted"}`` lists of ``category/name``
+    paths. Only SHIPPED names are classified — user-added checklists are
+    never listed, so they are never replaced.
     """
+    out: dict[str, list[str]] = {"missing": [], "broken": [], "drifted": []}
     checklists_src = template_dir / "checklists"
     checklists_dst = root / ".specflow" / "checklists"
-
     if not checklists_src.exists():
-        return
-
-    for category in ("phase-gates", "in-process", "readiness", "review", "shared", "domain"):
+        return out
+    for category in _CHECKLIST_CATEGORIES:
         src_cat = checklists_src / category
-        dst_cat = checklists_dst / category
         if not src_cat.exists():
             continue
-
-        dst_cat.mkdir(parents=True, exist_ok=True)
-        for yaml_file in src_cat.glob("*.yaml"):
-            dst_file = dst_cat / yaml_file.name
+        for yaml_file in sorted(src_cat.glob("*.yaml")):
+            rel = f"{category}/{yaml_file.name}"
+            dst_file = checklists_dst / category / yaml_file.name
             if not dst_file.exists():
-                shutil.copy2(str(yaml_file), str(dst_file))
+                out["missing"].append(rel)
+            elif dst_file.read_bytes() == yaml_file.read_bytes():
+                continue
+            elif not _checklist_parses(dst_file):
+                out["broken"].append(rel)
+            else:
+                out["drifted"].append(rel)
+    return out
+
+
+def copy_checklists(root: Path, template_dir: Path, *, force: bool = False) -> dict[str, list[str]]:
+    """Copy checklist templates from package to project instance.
+
+    Copies from src/specflow/templates/checklists/ to .specflow/checklists/:
+
+    - missing shipped checklists are always written;
+    - a shipped-name checklist that no longer parses is replaced (its items
+      could never run, so there is no user edit worth keeping in place);
+    - a parseable but drifted shipped-name checklist is preserved unless
+      ``force`` (user edits win by default);
+    - user-added checklist names are never touched.
+
+    Every replaced file is first backed up under
+    ``.specflow/cache/backups/<timestamp>/checklists/``. Returns the
+    ``classify_checklists`` buckets plus ``replaced`` (what was overwritten).
+    """
+    from datetime import datetime, timezone
+
+    status = classify_checklists(root, template_dir)
+    checklists_src = template_dir / "checklists"
+    checklists_dst = root / ".specflow" / "checklists"
+    replace = list(status["broken"]) + (list(status["drifted"]) if force else [])
+    backup_root = (
+        root / ".specflow" / "cache" / "backups"
+        / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") / "checklists"
+    )
+    for rel in status["missing"] + replace:
+        src = checklists_src / rel
+        dst = checklists_dst / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        if dst.exists():
+            backup = backup_root / rel
+            backup.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(str(dst), str(backup))
+        shutil.copy2(str(src), str(dst))
+    for category in _CHECKLIST_CATEGORIES:
+        if (checklists_src / category).exists():
+            (checklists_dst / category).mkdir(parents=True, exist_ok=True)
+    return {**status, "replaced": replace}
 
 
 def inspect_pack_refresh(
@@ -256,7 +335,9 @@ def apply_pack(
         d.mkdir(parents=True, exist_ok=True)
         index = d / "_index.yaml"
         if not index.exists():
-            index.write_text(yaml.dump(_INDEX_STUB, default_flow_style=False))
+            from specflow.lib import locks as locks_lib
+
+            locks_lib.locked_exclusive_write(root, index, yaml.dump(_INDEX_STUB, default_flow_style=False))
 
     # 3. Copy checklists (any subdirectory structure) → .specflow/checklists/
     src_checklists = pack_root / "checklists"
@@ -500,6 +581,8 @@ def inject_base_context(root: Path, templates_dir: Path, explicit_platform: str 
     else:
         if instruction_file.endswith(".mdc"):
             block = f"---\ndescription: SpecFlow instructions\n---\n{block}"
+        # Nested instruction files (e.g. .cursor/rules/specflow.md) need their dir.
+        target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(block.lstrip(), encoding="utf-8")
         _migrate_legacy_instruction_sentinels(root, platform_code)
         return True
@@ -556,6 +639,7 @@ def inject_pack_context(root: Path, pack_name: str, context_snippet: str, explic
         _migrate_legacy_instruction_sentinels(root, platform_code)
         return True
     else:
+        target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(block, encoding="utf-8")
         _migrate_legacy_instruction_sentinels(root, platform_code)
         return True

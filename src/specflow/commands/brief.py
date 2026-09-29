@@ -331,6 +331,50 @@ def _recent_decisions(artifacts: list[art_lib.Artifact], limit: int = 5) -> list
     return out
 
 
+# A MONITOR in one of these statuses is closed out: its recorded `health`
+# (e.g. "breached" at the time of the observation) no longer means "open".
+# monitor.yaml's allowed_status is logged/flagged/resolved; "credited" is a
+# graph fact (see _mon_credited_ids), not a status.
+_MON_CLOSED_STATUSES = ("resolved",)
+
+
+def _mon_credited_ids(artifacts: list[art_lib.Artifact]) -> set[str]:
+    """MONITOR ids whose breach has a recorded follow-up (STORY-692 AC1).
+
+    The three credit wires: a DEF pointing back via `exposed_by`, the
+    MONITOR's own outgoing `informs`, or any incoming `derives_from` (a LOOP
+    escalated from the breach, a correcting MON).
+    """
+    credited: set[str] = set()
+    for a in artifacts:
+        prefix = art_lib.get_prefix_from_id(a.id)
+        for lk in a.links:
+            if lk.role == "exposed_by" and prefix == "DEF":
+                credited.add(lk.target)
+            elif lk.role == "derives_from":
+                credited.add(lk.target)
+            elif lk.role == "informs" and prefix == "MON":
+                credited.add(a.id)
+    return credited
+
+
+def _mon_is_breached(m: art_lib.Artifact, credited: set[str] | frozenset[str] = frozenset()) -> bool:
+    """Open-breach predicate shared by the pack-state note and the outcome note.
+
+    Breached while flagged (status is the authority), or while its recorded
+    health is `breached` and it is neither resolved nor credited (see
+    ``_mon_credited_ids``). A resolved MONITOR keeps its historical
+    `health: breached` forever (MONITORs are append-only) and must not nag.
+    """
+    if m.status == "flagged":
+        return True
+    return (
+        (m.frontmatter or {}).get("health") == "breached"
+        and m.status not in _MON_CLOSED_STATUSES
+        and m.id not in credited
+    )
+
+
 def _pack_state_note(artifacts: list[art_lib.Artifact], active_packs: list[str]) -> str:
     """Optional second line: an actionable state in an active subsystem (pack).
 
@@ -351,13 +395,19 @@ def _pack_state_note(artifacts: list[art_lib.Artifact], active_packs: list[str])
             if art_lib.get_prefix_from_id(a.id) == "RUN" and a.status == "live"
         )
         monitors = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "MON"]
-        breached = sum(
-            1 for a in monitors
-            if a.status == "flagged" or (a.frontmatter or {}).get("health") == "breached"
+        deployed_runs = sum(
+            1 for a in artifacts
+            if art_lib.get_prefix_from_id(a.id) == "RUN" and a.status == "deployed"
         )
+        credited = _mon_credited_ids(artifacts)
+        breached = sum(1 for a in monitors if _mon_is_breached(a, credited))
         if breached:
             return (f"{breached} breached MONITOR(s) (ops) → check drift / retrain "
                     f"(`/specflow-ops`, `specflow trace <RUN>`).")
+        if deployed_runs:
+            return (f"{deployed_runs} deployed RUN(s) awaiting live confirmation (ops) → "
+                    f"ask the user; on their go-ahead `specflow update <RUN> --status live`, "
+                    f"or `--status retired` if it never went live (`/specflow-ops`).")
         if live_runs and not monitors:
             return (f"{live_runs} live RUN(s) unobserved (ops) → record a MONITOR "
                     f"(`/specflow-ops`).")
@@ -416,12 +466,9 @@ def _outcome_feedback_note(artifacts: list[art_lib.Artifact], active_packs: list
         lk.target for a in artifacts for lk in a.links if lk.role == "derives_from"
     }
 
-    def _is_breached(m: art_lib.Artifact) -> bool:
-        return m.status == "flagged" or (m.frontmatter or {}).get("health") == "breached"
-
     unaccountable = [
         m for m in monitors
-        if _is_breached(m) and m.id not in backed_by_def
+        if _mon_is_breached(m) and m.id not in backed_by_def
         and m.id not in has_informs and m.id not in has_derives
     ]
     vanished = [
@@ -618,15 +665,13 @@ def _next_skill_recommendation(
         if not fm.get("verify_command"):
             continue
         ran_at = fm.get("verify_run_at")
-        expected = fm.get("verify_exit_code")
-        recorded = fm.get("verify_run_exit_code")
-        # Needs (re-)verification when never run, or when a recorded run diverged
-        # from the declared expected exit code (str compare tolerates 0/"0").
-        diverged = (
-            expected is not None
-            and recorded is not None
-            and str(expected) != str(recorded)
-        )
+        # Needs (re-)verification when never run, or when a recorded run failed
+        # its contract — judged by the one shared expected-exit rule (declared
+        # verify_exit_code, default 0), so a failing run with no declared code
+        # is no longer dropped (STORY-699).
+        from specflow.lib.verification import run_matches_expected
+
+        diverged = run_matches_expected(fm) is False
         if not ran_at or diverged:
             needs_verify.append(a.id)
     if needs_verify:

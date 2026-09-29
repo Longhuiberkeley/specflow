@@ -1,0 +1,17 @@
+id: PREV-017
+name: 'Prevent recurrence of: CI gate rejects a legal multi-step commit: cascade-status
+  approved to verified in one commit is flagged illegal (violated REQ-008) (caught
+  by IT-089)'
+discovered_from: DEF-016
+mode: reactive
+pattern: 'Prevent recurrence of: CI gate rejects a legal multi-step commit: cascade-status
+  approved to verified in one commit is flagged illegal (violated REQ-008) (caught
+  by IT-089)'
+applies_to:
+  tags: []
+items:
+- id: PREV-017-01
+  check: Verify that changes touching REQ-008 are exercised by IT-089 before approval.
+  severity: warning
+  automated: false
+  mode: reactive

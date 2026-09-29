@@ -159,7 +159,9 @@ _CI_GATE = """\
       - name: Install uv
         run: pip install uv
       - name: RBAC gate check
-        run: uvx --from __SPECFLOW_SOURCE__ specflow ci-gate --base ${{ github.base_ref }} --head ${{ github.head_ref }}
+        # PR checkouts have no local branch refs: diff the fetched base branch
+        # against the PR head commit. The job-level `if` limits this to PRs.
+        run: uvx --from __SPECFLOW_SOURCE__ specflow ci-gate --base origin/${{ github.base_ref }} --head ${{ github.event.pull_request.head.sha }}
 """
 
 _PYTEST = """\

@@ -798,6 +798,87 @@ artifacts:
     tags: []
     fingerprint: sha256:11e98b52f1ef
     children: []
+  DEC-085:
+    id: DEC-085
+    title: 'Practice spine: one BP anatomy, provenance, and a collapsed lifecycle'
+    status: approved
+    tags: []
+    fingerprint: sha256:eddc3295e9e4
+    children: []
+  DEC-086:
+    id: DEC-086
+    title: BP guidance binds lifecycle artifacts via guided_by; enforcement is graph-facts-only
+      and warning-first
+    status: approved
+    tags: []
+    fingerprint: sha256:a779567e21a1
+    children: []
+  DEC-087:
+    id: DEC-087
+    title: Process knowledge lives in best-practice artifacts; the research flywheel
+      closes by deterministic promotion
+    status: approved
+    tags: []
+    fingerprint: sha256:2312fd89b708
+    children: []
+  DEC-088:
+    id: DEC-088
+    title: Measurement advises; deterministic gates and humans decide
+    status: approved
+    tags: []
+    fingerprint: sha256:a460de94bfee
+    children: []
+  DEC-089:
+    id: DEC-089
+    title: 'Risk: two atomicity couplings gate the practice-spine release'
+    status: draft
+    tags: []
+    fingerprint: sha256:d5f16a1e2b54
+    children: []
+  DEC-090:
+    id: DEC-090
+    title: 'Engine direction: Python shell plus one declarative ontology and named
+      graph views; formal methods as user evidence and targeted spikes; no specflow2'
+    status: approved
+    tags:
+    - engine-direction
+    - ontology
+    - formal-methods
+    fingerprint: sha256:2ff9bffb392b
+    children: []
+  DEC-091:
+    id: DEC-091
+    title: Coverage credits canonical REQ refined_by ARCH and STORY-to-test verified_by
+      (REQ-012 metric delta)
+    status: approved
+    tags:
+    - v1.17.0
+    - coverage
+    - metric-delta
+    fingerprint: sha256:b66e58d87de9
+    children: []
+  DEC-092:
+    id: DEC-092
+    title: V-pair check requires the paired test type (REQ-013)
+    status: approved
+    tags:
+    - v1.17.0
+    - coverage
+    - metric-delta
+    fingerprint: sha256:c89667ea2131
+    children: []
+  DEC-093:
+    id: DEC-093
+    title: ID allocation linearises on exclusive file create; the index is a rebuildable
+      cache; one repo-wide mutation lock
+    status: approved
+    tags:
+    - concurrency
+    - index
+    - locking
+    - formal-methods
+    fingerprint: sha256:f82a96eacf55
+    children: []
   DEC-CHANGERE-066b:
     id: DEC-CHANGERE-066b
     title: 'Change Record: fix: normalize all list-valued frontmatter fields, not
@@ -839,41 +920,4 @@ artifacts:
     - data-integrity
     fingerprint: sha256:aebb8deb1526
     children: []
-  DEC-085:
-    id: DEC-085
-    title: 'Practice spine: one BP anatomy, provenance, and a collapsed lifecycle'
-    status: approved
-    tags: []
-    fingerprint: sha256:eddc3295e9e4
-    children: []
-  DEC-086:
-    id: DEC-086
-    title: BP guidance binds lifecycle artifacts via guided_by; enforcement is graph-facts-only
-      and warning-first
-    status: approved
-    tags: []
-    fingerprint: sha256:a779567e21a1
-    children: []
-  DEC-087:
-    id: DEC-087
-    title: Process knowledge lives in best-practice artifacts; the research flywheel
-      closes by deterministic promotion
-    status: approved
-    tags: []
-    fingerprint: sha256:2312fd89b708
-    children: []
-  DEC-088:
-    id: DEC-088
-    title: Measurement advises; deterministic gates and humans decide
-    status: approved
-    tags: []
-    fingerprint: sha256:a460de94bfee
-    children: []
-  DEC-089:
-    id: DEC-089
-    title: 'Risk: two atomicity couplings gate the practice-spine release'
-    status: draft
-    tags: []
-    fingerprint: sha256:d5f16a1e2b54
-    children: []
-next_id: 90
+next_id: 94

@@ -1,2 +1,154 @@
-artifacts: {}
-next_id: 1
+artifacts:
+  DEF-001:
+    id: DEF-001
+    title: Baseline ordering ignores SemVer 2.0 section 11 prerelease and build-metadata
+      rules
+    status: closed
+    tags: []
+    fingerprint: sha256:69e3d823e80a
+    children: []
+  DEF-002:
+    id: DEF-002
+    title: CI gate judges a PR by its net base-to-head diff and the oldest commit
+      author
+    status: closed
+    tags: []
+    fingerprint: sha256:296dc6f93f14
+    children: []
+  DEF-003:
+    id: DEF-003
+    title: check_independence loses implementer authorship when renumber-drafts renames
+      the artifact file
+    status: closed
+    tags: []
+    fingerprint: sha256:7ec79e2cf519
+    children: []
+  DEF-004:
+    id: DEF-004
+    title: Verify-run readers disagree on the expected exit code (planned DEF-010)
+    status: closed
+    tags: []
+    fingerprint: sha256:af8914e49814
+    children: []
+  DEF-005:
+    id: DEF-005
+    title: 'REQ-010 EARS verification drift: QT-011 cites an absent test (planned
+      DEF-012)'
+    status: closed
+    tags: []
+    fingerprint: sha256:5219f1632a65
+    children: []
+  DEF-006:
+    id: DEF-006
+    title: create returns REQ-001 and overwrites it when git left conflict markers
+      in _index.yaml
+    status: closed
+    tags: []
+    fingerprint: sha256:4563c3332aaa
+    children: []
+  DEF-007:
+    id: DEF-007
+    title: rebuild-index lets a deleted highest id be allocated again, silently re-binding
+      links to it
+    status: closed
+    tags: []
+    fingerprint: sha256:98f1de9bdf54
+    children: []
+  DEF-008:
+    id: DEF-008
+    title: Unlocked index read-modify-write in update and rebuild-index loses concurrent
+      creates and re-allocates their ids
+    status: closed
+    tags: []
+    fingerprint: sha256:2509444790d6
+    children: []
+  DEF-009:
+    id: DEF-009
+    title: 'A crash mid-command does not converge on re-run: renumber-drafts yields
+      duplicate ids and blocks creates; torn artifact writes lose artifacts'
+    status: closed
+    tags: []
+    fingerprint: sha256:9fd4a4c18cf8
+    children: []
+  DEF-010:
+    id: DEF-010
+    title: 'Stale-lock break can unlink a fresh lock: two processes both believe they
+      hold the create lock'
+    status: closed
+    tags: []
+    fingerprint: sha256:b216de4e154c
+    children: []
+  DEF-011:
+    id: DEF-011
+    title: cascade-status proposes illegal transitions (approved to verified, self-loops),
+      promotes a REQ past an unverified sibling STORY, and exits 0 on failure
+    status: closed
+    tags: []
+    fingerprint: sha256:a77d97a9430c
+    children: []
+  DEF-012:
+    id: DEF-012
+    title: merge wrote the non-schema status merged_into straight into the source
+      file, bypassing update_artifact
+    status: closed
+    tags: []
+    fingerprint: sha256:e4072bea9bf1
+    children: []
+  DEF-013:
+    id: DEF-013
+    title: 'Allocators ignore a crashed renumber journal and rewritten frontmatter
+      ids: a create before the re-run takes a journalled id, duplicates it, and the
+      resume stops on a collision'
+    status: closed
+    tags: []
+    fingerprint: sha256:05e96b4f8128
+    children: []
+  DEF-014:
+    id: DEF-014
+    title: 'An id erased from every working-tree record is reallocated: hand delete
+      plus a merge conflict on _index.yaml resolved with the other side re-binds existing
+      links'
+    status: wontfix
+    tags: []
+    fingerprint: sha256:5286668cd522
+    children: []
+  DEF-015:
+    id: DEF-015
+    title: 'No-flock mutation-lock fallback keeps the stale-break window: two processes
+      hold the lock'
+    status: closed
+    tags: []
+    fingerprint: sha256:2b5389d77bfb
+    children: []
+  DEF-016:
+    id: DEF-016
+    title: 'CI gate rejects a legal multi-step commit: cascade-status approved to
+      verified in one commit is flagged illegal'
+    status: closed
+    tags: []
+    fingerprint: sha256:518fae2397fe
+    children: []
+  DEF-017:
+    id: DEF-017
+    title: dead-oracle warnings escalate to blocking after three full artifact-lint
+      runs
+    status: closed
+    tags: []
+    fingerprint: sha256:be353b244fa6
+    children: []
+  DEF-018:
+    id: DEF-018
+    title: reconcile ignores a refused or failed cascade and exits 0
+    status: closed
+    tags: []
+    fingerprint: sha256:694113f82bfa
+    children: []
+  DEF-019:
+    id: DEF-019
+    title: merge leaves a supersedes link on the target when the source ends cancelled,
+      deprecated or unchanged
+    status: closed
+    tags: []
+    fingerprint: sha256:7a588f959344
+    children: []
+next_id: 20

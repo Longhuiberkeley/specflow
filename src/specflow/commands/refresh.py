@@ -59,13 +59,8 @@ def _install_skills(root: Path, platform_code: str, *, dry_run: bool = False) ->
 
     skills_dst.mkdir(parents=True, exist_ok=True)
 
-    cfg = plat_lib.get_platform(platform_code)
-    legacy = cfg.get("legacy_dirs", []) if cfg else []
-    if not dry_run:
-        for legacy_dir in legacy:
-            legacy_path = root / legacy_dir
-            if legacy_path.exists():
-                shutil.rmtree(str(legacy_path), ignore_errors=True)
+    # STORY-685: only specflow-owned entries; never the instruction file's dir.
+    plat_lib.cleanup_legacy_dirs(root, platform_code, dry_run=dry_run)
 
     count = 0
     for skill_dir in skills_src.iterdir():
@@ -246,6 +241,12 @@ def _refresh_shared(
     """Run the refresh steps that are not platform-scoped (schemas, checklists)."""
     summary: list[tuple[str, str]] = []
 
+    # ── Format version (STORY-678) ──────────────────────────────
+    stamped = config_lib.stamp_format_version(root, dry_run=dry_run)
+    if stamped:
+        verb = "would stamp" if dry_run else "stamped"
+        summary.append(("config", f"{verb} format_version: {config_lib.FORMAT_VERSION}"))
+
     # ── Schemas ─────────────────────────────────────────────────
     if do_schemas:
         new_names, _identical_names, changed_names = classify_schemas(root, template_dir)
@@ -297,13 +298,45 @@ def _refresh_shared(
 
     # ── Checklists ──────────────────────────────────────────────
     if do_checklists:
-        if dry_run:
-            summary.append(("checklists", "would copy new (idempotent)"))
-        else:
-            scaffold_lib.copy_checklists(root, template_dir)
-            summary.append(("checklists", "copied (new only)"))
+        summary.append(("checklists", _refresh_checklists(
+            root, template_dir, dry_run=dry_run, force=force_schemas,
+        )))
 
     return summary
+
+
+def _refresh_checklists(root: Path, template_dir: Path, *, dry_run: bool, force: bool) -> str:
+    """Write missing checklists, repair unparseable ones, and replace drifted
+    ones only with ``--force`` (STORY-687: fixed templates must reach
+    projects initialised before the fix)."""
+    if dry_run:
+        status = scaffold_lib.classify_checklists(root, template_dir)
+        parts = []
+        if status["missing"]:
+            parts.append(f"would write {len(status['missing'])} new")
+        if status["broken"]:
+            parts.append(f"would replace {len(status['broken'])} unparseable: {', '.join(status['broken'])}")
+        if status["drifted"]:
+            verb = "would replace" if force else "would preserve"
+            parts.append(f"{verb} {len(status['drifted'])} changed: {', '.join(status['drifted'])}")
+        return "; ".join(parts) or "up to date"
+    result = scaffold_lib.copy_checklists(root, template_dir, force=force)
+    parts = []
+    if result["missing"]:
+        parts.append(f"{len(result['missing'])} written")
+    if result["broken"]:
+        parts.append(f"{len(result['broken'])} unparseable replaced: {', '.join(result['broken'])}")
+    if result["drifted"]:
+        if force:
+            parts.append(f"{len(result['drifted'])} changed replaced: {', '.join(result['drifted'])}")
+        else:
+            parts.append(
+                f"{len(result['drifted'])} preserved (changed): {', '.join(result['drifted'])}"
+                " — run `specflow refresh --checklists --force` to take the shipped version"
+            )
+    if result["replaced"]:
+        parts.append("backups in .specflow/cache/backups/")
+    return "; ".join(parts) or "up to date"
 
 
 def _refresh_active_packs(
@@ -316,8 +349,9 @@ def _refresh_active_packs(
     """Preview or refresh assets for packs listed in project config."""
     summary: list[tuple[str, str]] = []
     active_packs = (config_lib.read_config(root) or {}).get("active_packs", []) or []
-    packs_dir = Path(__file__).parent.parent / "packs"
     for pack_name in active_packs:
+        # STORY-681: a project-local pack wins over the bundled one.
+        packs_dir = scaffold_lib.resolve_packs_dir(root, pack_name)
         preview = scaffold_lib.inspect_pack_refresh(root, pack_name, packs_dir, platform_codes)
         if not preview.get("ok"):
             summary.append((f"pack:{pack_name}", preview.get("error", "not found")))

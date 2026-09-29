@@ -9,4 +9,4 @@
 The one-line digest: SKILL.md is a lean router (<500 lines, one-line trigger
 description); domain knowledge lives in `references/` loaded on demand;
 deterministic operations are delegated to bare `specflow <cmd>` — never
-`uv run specflow`.
+through a project-runner prefix.

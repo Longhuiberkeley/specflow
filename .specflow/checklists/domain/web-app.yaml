@@ -34,15 +34,21 @@ items:
     automated: false
     llm_prompt: "Confirm the architecture identifies the state management approach (local state, context, store, cache) for server data vs. UI state. Flag architectures with no stated state strategy."
     severity: info
+    applies_to:
+      types: [architecture, detailed-design]
 
   - id: CKL-DOM-WEB-06
     check: "Responsive / mobile breakpoints are defined"
     automated: false
     llm_prompt: "If the application must work on mobile, confirm the artifact specifies which breakpoints or device classes are supported and which are out of scope."
     severity: info
+    applies_to:
+      types: [requirement, story]
 
   - id: CKL-DOM-WEB-07
     check: "SEO and meta-tag strategy for public-facing pages"
     automated: false
     llm_prompt: "For public-facing pages, confirm meta tags, Open Graph, and canonical URLs are addressed. Flag if SEO is important but no strategy is mentioned."
     severity: info
+    applies_to:
+      types: [requirement, story]

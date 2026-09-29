@@ -55,13 +55,13 @@ items:
   - id: CKL-GATE-002-01
     check: "All REQ-* artifacts have status: approved"
     automated: true
-    script: "uv run specflow validate --type status"
+    script: "specflow validate --type status"
     severity: blocking
 
   - id: CKL-GATE-002-02
     check: "Every requirement has at least one acceptance criterion"
     automated: true
-    script: "uv run specflow validate --type acceptance"
+    script: "specflow validate --type acceptance"
     severity: blocking
 
   - id: CKL-GATE-002-03

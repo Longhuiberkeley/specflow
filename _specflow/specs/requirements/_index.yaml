@@ -13,7 +13,7 @@ artifacts:
   REQ-002:
     id: REQ-002
     title: Artifact Structure
-    status: implemented
+    status: verified
     tags:
     - functional
     - core
@@ -78,7 +78,7 @@ artifacts:
   REQ-008:
     id: REQ-008
     title: Provider-Agnostic CI Gate
-    status: implemented
+    status: verified
     tags:
     - rbac
     - ci
@@ -119,7 +119,7 @@ artifacts:
   REQ-012:
     id: REQ-012
     title: Compliance Score Dashboard
-    status: implemented
+    status: verified
     tags:
     - compliance
     - reporting
@@ -129,7 +129,7 @@ artifacts:
   REQ-013:
     id: REQ-013
     title: V-Model Test Scaffolding and Execute Enhancement
-    status: implemented
+    status: verified
     tags:
     - testing
     - vmodel
@@ -396,32 +396,6 @@ artifacts:
     tags: []
     fingerprint: sha256:6e6765cb4ad7
     children: []
-  REQ-AUTORESE-d684:
-    id: REQ-AUTORESE-d684
-    title: 'Autoresearch pack v0.2.0: multi-criteria support, CLI subcommand, and
-      harness-agnosticism'
-    status: verified
-    tags: []
-    fingerprint: sha256:ffcfd81a9cb4
-    children: []
-  REQ-DEFERRED-5cea:
-    id: REQ-DEFERRED-5cea
-    title: 'Deferred lifecycle capabilities: rewind accounting, RTM, RBAC check, supersession,
-      quality gates, multi-host'
-    status: implemented
-    tags: []
-    fingerprint: sha256:d512b2374ca6
-    children: []
-  REQ-TRANSCRI-24b7:
-    id: REQ-TRANSCRI-24b7
-    title: "Transcript-mined CLI authoring ergonomics \u2014 wave 2 (v1.13.2)"
-    status: implemented
-    tags:
-    - v1.13.2
-    - ergonomics
-    - accounting-not-policing
-    fingerprint: sha256:7aa453452d91
-    children: []
   REQ-043:
     id: REQ-043
     title: 'Autoresearch: evidence-sensitive reassessment, evidence/priority separation,
@@ -430,7 +404,7 @@ artifacts:
     tags:
     - autoresearch
     - v1.16.0
-    fingerprint: sha256:45382c5d1394
+    fingerprint: sha256:5e4e1149a82b
     children: []
   REQ-044:
     id: REQ-044
@@ -489,4 +463,103 @@ artifacts:
     tags: []
     fingerprint: sha256:7b2e39178e76
     children: []
-next_id: 52
+  REQ-052:
+    id: REQ-052
+    title: 'Semantic single source of truth: one ontology declares types, kinds, lifecycles
+      and roles'
+    status: implemented
+    tags:
+    - ontology
+    - anti-drift
+    fingerprint: sha256:747c9b93f507
+    children: []
+  REQ-053:
+    id: REQ-053
+    title: 'Deterministic, typed findings: exit code is a pure function of the repository'
+    status: implemented
+    tags:
+    - findings
+    - determinism
+    fingerprint: sha256:6fcfdb7886b7
+    children: []
+  REQ-054:
+    id: REQ-054
+    title: 'Evidence-backed status: approval and link fingerprint stamps with derived
+      suspect'
+    status: deprecated
+    tags:
+    - evidence
+    - fingerprint
+    - suspect
+    fingerprint: sha256:065336566878
+    children: []
+  REQ-055:
+    id: REQ-055
+    title: Standards packs validated against a real standard with pre-registered metrics
+    status: implemented
+    tags:
+    - standards
+    - packs
+    - pilot
+    fingerprint: sha256:e3d823d9d48b
+    children: []
+  REQ-056:
+    id: REQ-056
+    title: Shipped skills, checklists, packs and always-on context are executable
+      as documented
+    status: verified
+    tags:
+    - skills
+    - packs
+    - checklists
+    - guard-tests
+    fingerprint: sha256:7c85674a836c
+    children: []
+  REQ-057:
+    id: REQ-057
+    title: 'Format versioning and upgrade safety: format_version, hook guard, migrate'
+    status: implemented
+    tags:
+    - format-version
+    - migration
+    - hook
+    fingerprint: sha256:6ab77f2c6646
+    children: []
+  REQ-058:
+    id: REQ-058
+    title: 'Verification evidence is bound to what it checked: declared-exit semantics,
+      oracle and statement pinning, formal-evidence hygiene'
+    status: implemented
+    tags:
+    - verification
+    - evidence
+    - formal-methods
+    fingerprint: sha256:d8eaefe01f6b
+    children: []
+  REQ-AUTORESE-d684:
+    id: REQ-AUTORESE-d684
+    title: 'Autoresearch pack v0.2.0: multi-criteria support, CLI subcommand, and
+      harness-agnosticism'
+    status: verified
+    tags: []
+    fingerprint: sha256:ffcfd81a9cb4
+    children: []
+  REQ-DEFERRED-5cea:
+    id: REQ-DEFERRED-5cea
+    title: 'Deferred lifecycle capabilities: rewind accounting, RTM, RBAC check, supersession,
+      quality gates, multi-host'
+    status: implemented
+    tags: []
+    fingerprint: sha256:d512b2374ca6
+    children: []
+  REQ-TRANSCRI-24b7:
+    id: REQ-TRANSCRI-24b7
+    title: "Transcript-mined CLI authoring ergonomics \u2014 wave 2 (v1.13.2)"
+    status: implemented
+    tags:
+    - v1.13.2
+    - ergonomics
+    - accounting-not-policing
+    fingerprint: sha256:7aa453452d91
+    children: []
+next_id: 59

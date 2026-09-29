@@ -146,20 +146,22 @@ def _get_touched_artifacts(story: Artifact) -> list[str]:
 
 def save_execution_state(root: Path, state: ExecutionState) -> None:
     """Save execution state to .specflow/state.yaml."""
+    from specflow.lib import locks as locks_lib
+
     state_path = root / ".specflow" / "state.yaml"
 
-    try:
-        data = yaml.safe_load(state_path.read_text(encoding="utf-8")) or {}
-    except Exception:
-        data = {}
+    with locks_lib.mutation_lock(root, holder="execution-state"):
+        try:
+            data = yaml.safe_load(state_path.read_text(encoding="utf-8")) or {}
+        except Exception:
+            data = {}
 
-    data["current"] = "executing"
-    data["execution"] = state.to_dict()
+        data["current"] = "executing"
+        data["execution"] = state.to_dict()
 
-    state_path.write_text(
-        yaml.dump(data, default_flow_style=False, sort_keys=False),
-        encoding="utf-8",
-    )
+        locks_lib.atomic_write(
+            state_path, yaml.dump(data, default_flow_style=False, sort_keys=False)
+        )
 
 
 def load_execution_state(root: Path) -> ExecutionState | None:

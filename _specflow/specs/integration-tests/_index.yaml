@@ -560,4 +560,176 @@ artifacts:
     tags: []
     fingerprint: sha256:c71c88ef596d
     children: []
-next_id: 71
+  IT-071:
+    id: IT-071
+    title: Autoresearch log metric integrity and frontier alias via CLI (STORY-694)
+    status: verified
+    tags: []
+    fingerprint: sha256:b5a4d1c881ca
+    children: []
+  IT-072:
+    id: IT-072
+    title: checklist-run on an initialised project runs the story spec-link check
+      (STORY-682, STORY-687)
+    status: verified
+    tags: []
+    fingerprint: sha256:edbbf6cad777
+    children: []
+  IT-073:
+    id: IT-073
+    title: 'Every platform: init with preset then refresh keeps both blocks and user
+      files (STORY-685)'
+    status: verified
+    tags: []
+    fingerprint: sha256:6eecf4fa6df5
+    children: []
+  IT-074:
+    id: IT-074
+    title: 'format_version via the CLI: warn once, hook refusal, init and refresh
+      (STORY-678)'
+    status: verified
+    tags: []
+    fingerprint: sha256:ce69be71066b
+    children: []
+  IT-075:
+    id: IT-075
+    title: init --preset and refresh --packs install a temporary local pack (STORY-681)
+    status: verified
+    tags: []
+    fingerprint: sha256:3af25827f801
+    children: []
+  IT-076:
+    id: IT-076
+    title: specflow import --adapter reqif reaches the adapter via cli.main (STORY-686)
+    status: verified
+    tags: []
+    fingerprint: sha256:dd070fb9cdfe
+    children: []
+  IT-077:
+    id: IT-077
+    title: Coverage-shape routes to accounting in project-audit (STORY-679)
+    status: verified
+    tags: []
+    fingerprint: sha256:ea83d7a01f18
+    children: []
+  IT-078:
+    id: IT-078
+    title: Links check renders the paired test prefix (STORY-680)
+    status: verified
+    tags: []
+    fingerprint: sha256:5968680d96ab
+    children: []
+  IT-079:
+    id: IT-079
+    title: Malformed schema surfaces through check_schema and audit (STORY-683)
+    status: verified
+    tags: []
+    fingerprint: sha256:d0af4f5e340e
+    children: []
+  IT-080:
+    id: IT-080
+    title: Findings cache reuse and invalidation end to end (STORY-684)
+    status: verified
+    tags: []
+    fingerprint: sha256:db9880eddcac
+    children: []
+  IT-081:
+    id: IT-081
+    title: Documented adoption backfill runs through the CLI with zero lint warnings
+      (STORY-691)
+    status: verified
+    tags: []
+    fingerprint: sha256:5cdd4cb50b1c
+    children: []
+  IT-082:
+    id: IT-082
+    title: Ops golden path RUN to MONITOR to breach to resolve leaves brief silent
+      (STORY-692)
+    status: verified
+    tags: []
+    fingerprint: sha256:f2346caadf57
+    children: []
+  IT-083:
+    id: IT-083
+    title: noise_characterization documented shape is what autoresearch status reads
+      (STORY-693)
+    status: verified
+    tags: []
+    fingerprint: sha256:5e3a9ba6d043
+    children: []
+  IT-084:
+    id: IT-084
+    title: Adoption, ops and autoresearch healthy-fixture sequences give zero warnings
+      (STORY-695)
+    status: verified
+    tags: []
+    fingerprint: sha256:3928c75f51e8
+    children: []
+  IT-085:
+    id: IT-085
+    title: refresh --checklists repairs broken and drifted shipped checklists (STORY-687)
+    status: verified
+    tags: []
+    fingerprint: sha256:8a876fcd452e
+    children: []
+  IT-086:
+    id: IT-086
+    title: project-audit cache key stays total when source or docs scans raise (STORY-684)
+    status: verified
+    tags: []
+    fingerprint: sha256:a1c7740e1f78
+    children: []
+  IT-087:
+    id: IT-087
+    title: 'Core lifecycle healthy fixture: documented skill sequence yields zero
+      warnings (STORY-689, STORY-688)'
+    status: verified
+    tags: []
+    fingerprint: sha256:2d70aef2d381
+    children: []
+  IT-088:
+    id: IT-088
+    title: Local pack install path documented by pack-author works end to end (STORY-690)
+    status: verified
+    tags: []
+    fingerprint: sha256:67759b87c511
+    children: []
+  IT-089:
+    id: IT-089
+    title: CI gate walks a PR's commit history in a temporary git repository (STORY-698)
+    status: verified
+    tags: []
+    fingerprint: sha256:0d0f86701f87
+    children: []
+  IT-090:
+    id: IT-090
+    title: Recorded verify run judged identically by every reader; dead-oracle stays
+      accounting at the CLI (STORY-699)
+    status: verified
+    tags: []
+    fingerprint: sha256:b3d714264561
+    children: []
+  IT-091:
+    id: IT-091
+    title: 'Index-store barriers: update, rebuild and renumber racing create, stale-break
+      unlink racing a second acquirer, and environment fixtures (STORY-696)'
+    status: verified
+    tags: []
+    fingerprint: sha256:96b506e8bd68
+    children: []
+  IT-092:
+    id: IT-092
+    title: 'cascade-status as a real process: legal walk, closure hold, draft refusal
+      and exit status (STORY-697 AC1, AC2, AC4)'
+    status: verified
+    tags: []
+    fingerprint: sha256:3a2cb691e75b
+    children: []
+  IT-093:
+    id: IT-093
+    title: Baseline ordering across create and diff selection (STORY-700)
+    status: verified
+    tags: []
+    fingerprint: sha256:879bd7e5da7c
+    children: []
+next_id: 94

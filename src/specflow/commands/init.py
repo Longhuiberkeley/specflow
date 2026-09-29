@@ -15,12 +15,9 @@ from specflow.lib.adapters import load_adapters_config, get_adapter
 from specflow.lib.adapters.github_actions import _DEFAULT_HOOK_SCRIPT
 
 
-def _get_packs_dir() -> Path:
-    return Path(__file__).parent.parent / "packs"
-
-
 def _apply_preset(root: Path, preset: str, platform_code: str | None = None) -> int:
-    packs_dir = _get_packs_dir()
+    # STORY-681: .specflow/packs/<preset>/ resolves before the bundled pack.
+    packs_dir = scaffold_lib.resolve_packs_dir(root, preset)
     result = scaffold_lib.apply_pack(root, preset, packs_dir, platform_code=platform_code)
     if not result["ok"]:
         print(f"  x Pack '{preset}' not applied: {result['error']}")
@@ -105,7 +102,11 @@ def _install_optional_types(root: Path, type_names: list[str]) -> int:
             spec_dir.mkdir(parents=True, exist_ok=True)
             index = spec_dir / "_index.yaml"
             if not index.exists():
-                index.write_text(yaml.dump({"artifacts": {}, "next_id": 1}, default_flow_style=False))
+                from specflow.lib import locks as locks_lib
+
+                locks_lib.locked_exclusive_write(
+                    root, index, yaml.dump({"artifacts": {}, "next_id": 1}, default_flow_style=False)
+                )
 
         installed.append(type_name)
         print(f"  + Optional type '{type_name}' installed (schema + directory)")
@@ -128,12 +129,8 @@ def _install_skills(root: Path, platform_code: str) -> None:
 
     skills_dst.mkdir(parents=True, exist_ok=True)
 
-    cfg = plat_lib.get_platform(platform_code)
-    legacy = cfg.get("legacy_dirs", []) if cfg else []
-    for legacy_dir in legacy:
-        legacy_path = root / legacy_dir
-        if legacy_path.exists():
-            shutil.rmtree(str(legacy_path), ignore_errors=True)
+    # STORY-685: only specflow-owned entries; never the instruction file's dir.
+    plat_lib.cleanup_legacy_dirs(root, platform_code)
 
     for skill_dir in skills_src.iterdir():
         if skill_dir.is_dir():
@@ -214,7 +211,9 @@ def run(root: Path, args: dict) -> int:
     project_name = root.name
     force = args.get("force", False)
     specflow_dir = root / ".specflow"
-    is_reinit = specflow_dir.exists()
+    # A `.specflow/` that holds only project-local packs (pack-first flow,
+    # STORY-681/690) is not an initialised project: treat it as a fresh init.
+    is_reinit = (specflow_dir / "config.yaml").exists()
 
     if is_reinit and force:
         backup_dir = specflow_dir / "cache" / "backups" / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
@@ -231,7 +230,8 @@ def run(root: Path, args: dict) -> int:
         is_reinit = False
         _force_overwrite_schemas = True
     else:
-        _force_overwrite_schemas = False
+        # --force on a `.specflow/` without config.yaml still resets schemas.
+        _force_overwrite_schemas = bool(force)
 
     if is_reinit:
         print("  Re-initializing existing SpecFlow project (merge mode)...")
@@ -254,6 +254,10 @@ def run(root: Path, args: dict) -> int:
 
         scaffold_lib.copy_checklists(root, _get_package_templates())
         scaffold_lib.copy_adapters_config(root, _get_package_templates())
+
+        if not config_lib.read_state(root):
+            config_lib.write_state(root, config_lib.default_state())
+            print("  + state.yaml written (was missing)")
     else:
         print("  Creating .specflow/ internals...")
         scaffold_lib.create_internal_dirs(root, _get_package_templates(), overwrite_schemas=_force_overwrite_schemas)
@@ -286,25 +290,8 @@ def run(root: Path, args: dict) -> int:
     scaffold_lib.copy_adapters_config(root, _get_package_templates())
     print("  + adapters.yaml copied")
 
-    if scaffold_lib.inject_base_context(root, _get_package_templates(), platform_code):
-        print("  + SpecFlow instructions injected into your instruction file.")
-
-    preset_str = args.get("preset")
-    if preset_str:
-        presets = [p.strip() for p in preset_str.split(",") if p.strip()]
-        for preset in presets:
-            print(f"  Applying preset pack '{preset}'...")
-            if _apply_preset(root, preset, platform_code) != 0:
-                return 1
-
-    with_types = args.get("with_types", "")
-    if with_types:
-        type_names = [t.strip() for t in with_types.split(",") if t.strip()]
-        if type_names:
-            print(f"  Installing optional artifact types: {', '.join(type_names)}...")
-            if _install_optional_types(root, type_names) != 0:
-                return 1
-
+    # STORY-685: skills (and legacy cleanup) land BEFORE any context injection,
+    # matching refresh, so no cleanup step can run after the blocks are written.
     install_code = plat_lib.get_skills_install_code(platform_code)
     dest = plat_lib.get_skills_install_dir(root, platform_code)
     dest_rel = dest.relative_to(root)
@@ -324,6 +311,25 @@ def run(root: Path, args: dict) -> int:
             f"  ! Leftover SpecFlow skills in {plat_lib.get_skills_dir(root, platform_code).relative_to(root)} "
             f"({', '.join(leftovers)}) would override {dest_rel} on OpenCode — remove them."
         )
+
+    if scaffold_lib.inject_base_context(root, _get_package_templates(), platform_code):
+        print("  + SpecFlow instructions injected into your instruction file.")
+
+    preset_str = args.get("preset")
+    if preset_str:
+        presets = [p.strip() for p in preset_str.split(",") if p.strip()]
+        for preset in presets:
+            print(f"  Applying preset pack '{preset}'...")
+            if _apply_preset(root, preset, platform_code) != 0:
+                return 1
+
+    with_types = args.get("with_types", "")
+    if with_types:
+        type_names = [t.strip() for t in with_types.split(",") if t.strip()]
+        if type_names:
+            print(f"  Installing optional artifact types: {', '.join(type_names)}...")
+            if _install_optional_types(root, type_names) != 0:
+                return 1
 
     _install_pre_commit_hook(root)
 

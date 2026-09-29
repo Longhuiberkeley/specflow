@@ -10,7 +10,7 @@ Apply these before finalizing each ARCH and DDD:
 | Technique | Default | Trigger for expansion |
 |-----------|---------|----------------------|
 | Premortem | Every ARCH | — |
-| Dependency shock | ARCHs with external deps | Add cost-scaling for paid services |
+| Dependency shock | ARCHs with external deps | Add `cost_scaling` for paid services |
 | Composition | When multiple ARCHs interact | — |
 | Stress-scale | When NFRs mention performance or scale | — |
 | Worst-case user | DDDs for user-facing or API features | — |

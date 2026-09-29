@@ -16,12 +16,12 @@ Decompose approved REQs into ARCH/DDD/STORY.
    specflow artifact-lint --type gate --gate specifying-to-planning
    ```
    Exit 1 → report blockers and stop.
-2. **Read context:** every approved REQ in full; `project.domain` and `project.domain_tags` from `.specflow/config.yaml`; the concept→artifact map in `../specflow-discover/references/domain-checklists/<domain>.md` when it has one (not every concept becomes a STORY — decompose into the artifact type the map names). Load the DECs the discover skill's challenge step created (`_specflow/work/decisions/`) — assumptions, risks, and drops inform the architecture. Best practices: `specflow handbook generate --create` if none exist yet; audit your draft against them before presenting.
-3. **ARCH per component** — responsibility, public interface, dependencies, data flow — discussed with the user, then `specflow create --type architecture --links '[{"target":"<REQ-ID>","role":"derives_from"}]' ...`.
+2. **Read context:** every approved REQ in full; `project.domain` and `project.domain_tags` from `.specflow/config.yaml`; the concept→artifact map in `../specflow-discover/references/domain-checklists/<domain>.md` when it has one (not every concept becomes a STORY — decompose into the artifact type the map names). Load the DECs the discover skill's challenge step created (`_specflow/work/decisions/`) — assumptions, risks, and drops inform the architecture. Best practices: `specflow practices seed --create` if none exist yet (drafts the user approves; guide: `../specflow-references/references/bp-authoring.md`); audit your draft against the approved ones before presenting.
+3. **ARCH per component** — responsibility, public interface, dependencies, data flow — discussed with the user, then `specflow create --type architecture --links '[{"target":"<REQ-ID>","role":"derives_from"}]' ...`. Add `--add-link <BP-ID>:guided_by` for each in-scope approved best practice that shapes the component.
 4. **DDD only where needed:** decide with `references/ddd-selection.md` (6-question checklist); `--type detailed-design`, linked `refined_by` its ARCH.
-5. **STORYs:** decompose per `references/spidr-decomposition.md`, write per `references/story-writing.md` (vertical slices, ≥3 Given/When/Then acceptance criteria). Link every applicable role: `implements` → REQ, `guided_by` → ARCH, `specified_by` → DDD (`references/link-roles.md`).
+5. **STORYs:** decompose per `references/spidr-decomposition.md`, write per `references/story-writing.md` (vertical slices, ≥3 Given/When/Then acceptance criteria). Link every applicable role: `implements` → REQ, `guided_by` → ARCH, `specified_by` → DDD (`references/link-roles.md`), plus `guided_by` → each in-scope approved BP.
 6. **Stress-test** the result with `references/thinking-techniques.md` (premortem, dependency shock, …) and record what you applied: `specflow update <ID> --thinking-techniques <...>`.
-7. **Validate:** `specflow artifact-lint`.
+7. **Validate:** `specflow artifact-lint` and `specflow practices validate`.
 
 ## Approval gate (I1)
 

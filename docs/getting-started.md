@@ -129,10 +129,10 @@ This finds unreviewed change records, computes their blast radius, and reviews o
 ```
 
 The release workflow:
-1. Creates an immutable baseline snapshot
+1. Re-runs your tests and a quick project audit (a red suite stops the release)
 2. Generates change records (DECs) since the last release
-3. Runs a quick project audit
-4. Presents a release summary with an advisory gate if errors were found
+3. Presents a release summary and asks for your go-ahead
+4. Only then creates the immutable baseline and records the phase as complete
 
 For periodic full-project health checks at any time:
 

@@ -28,12 +28,16 @@ items:
     automated: false
     llm_prompt: "Confirm the artifact references the versioning scheme (URL / header / content type) and the project's breaking-change policy. Flag changes that mutate an existing contract without a version bump or deprecation window."
     severity: warning
+    applies_to:
+      types: [requirement, architecture, story]
 
   - id: CKL-DOM-API-05
     check: "Observability covers entry, outcome, and latency"
     automated: false
     llm_prompt: "Confirm the artifact specifies (or relies on documented infra for) request entry log, outcome / error counter, and latency metric. Flag endpoints that ship without any of the three."
     severity: warning
+    applies_to:
+      types: [architecture, detailed-design, story]
 
   - id: CKL-DOM-API-06
     check: "Backward-compat for clients in the wild"

@@ -3,7 +3,7 @@ version: "0.2.0"
 description: >
   Bring an EXISTING codebase into SpecFlow. Inventory current code, docs, and
   tests; backfill REQ/ARCH/DDD/DEC describing what already exists; link code to
-  ARCH/DDD via `output_files` package globs (D-20); cut an as-built baseline;
+  ARCH/DDD via `output_files` package globs (DEC-057); cut an as-built baseline;
   and steer deepening with `specflow adopt status`. STORY is NOT backfilled —
   it is reserved for forward action. Install ONLY for brownfield adoption;
   greenfield projects started with /specflow-init do not need this pack.

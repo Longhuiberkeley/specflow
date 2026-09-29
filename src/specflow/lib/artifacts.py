@@ -349,6 +349,9 @@ V_MODEL_PAIRS: dict[str, str] = {
     "detailed-design": "unit-test",
 }
 
+# The test types that can pair a spec (find_missing_v_pairs, STORY-680).
+_V_PAIR_TEST_TYPES = frozenset(V_MODEL_PAIRS.values())
+
 
 @dataclass
 class Link:
@@ -490,21 +493,57 @@ def register_artifact_type(type_name: str, prefix: str, rel_dir: str) -> None:
     TYPE_TO_PREFIX[type_name] = prefix
 
 
+def _read_schema_file(schema_file: Path) -> tuple[dict[str, Any] | None, str | None]:
+    """Parse one schema file → (mapping, None) or (None, error message).
+
+    STORY-683: the single parse path for schema registration. A file that is
+    unreadable, not valid YAML, or not a top-level mapping yields an error
+    message instead of being silently skipped.
+    """
+    try:
+        data = yaml.safe_load(schema_file.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, yaml.YAMLError) as exc:
+        first = str(exc).strip().splitlines()[0] if str(exc).strip() else ""
+        return None, f"{type(exc).__name__}: {first}".rstrip(": ")
+    if not isinstance(data, dict):
+        return None, f"top level is {type(data).__name__}, expected a mapping"
+    return data, None
+
+
+def schema_registration_errors(schema_dir: Path) -> list[tuple[Path, str]]:
+    """Malformed schema files in ``schema_dir`` as sorted (path, message) pairs.
+
+    STORY-683 (fail loud): registration skips a malformed file so every other
+    type still loads, but the failure is no longer silent — ``check_schema``
+    reports each entry as a BLOCKING ``schema-error`` naming the file, which
+    makes ``artifact-lint`` (and project-audit's consistency lens) exit
+    non-zero.
+    """
+    if not schema_dir.exists():
+        return []
+    errors: list[tuple[Path, str]] = []
+    for schema_file in sorted(schema_dir.glob("*.yaml")):
+        _data, err = _read_schema_file(schema_file)
+        if err is not None:
+            errors.append((schema_file, err))
+    return errors
+
+
 def _load_active_packs(root: Path) -> None:
     """Register artifact types declared in installed pack schema files.
 
     Reads .specflow/schema/*.yaml and registers any type/prefix/directory
     combinations that are not already present. Lightweight and idempotent.
+    A malformed file is skipped here so discovery keeps working; it is
+    surfaced as a blocking schema-error by ``schema_registration_errors`` /
+    ``check_schema`` (STORY-683).
     """
     schema_dir = root / ".specflow" / "schema"
     if not schema_dir.exists():
         return
-    for schema_file in schema_dir.glob("*.yaml"):
-        try:
-            data = yaml.safe_load(schema_file.read_text(encoding="utf-8"))
-        except Exception:
-            continue
-        if not isinstance(data, dict):
+    for schema_file in sorted(schema_dir.glob("*.yaml")):
+        data, err = _read_schema_file(schema_file)
+        if err is not None or data is None:
             continue
         type_name = data.get("type", "")
         prefix = data.get("prefix", "")
@@ -718,44 +757,58 @@ def find_orphans(artifacts: list[Artifact]) -> list[Artifact]:
 def find_missing_v_pairs(artifacts: list[Artifact]) -> list[tuple[Artifact, str]]:
     """Find spec artifacts missing their verification test pair.
 
-    SPEC-anchored V-model metric (REQ-013 / ARCH-008): a test verifies its source
-    SPEC (REQ↔QT, ARCH↔IT, DDD↔UT) via 'verified_by'. This is one of REQ-012's TWO
-    distinct coverage metrics; ``check_coverage()`` implements the other
-    (STORY-anchored). They intentionally coexist — do not "merge" or "fix" the
-    apparent difference between them.
+    SPEC-anchored V-model metric (REQ-013 / ARCH-008): a spec is paired when a
+    test of its PAIRED type (``V_MODEL_PAIRS``: REQ↔QT, ARCH↔IT, DDD↔UT) is
+    linked by ``verified_by`` in either legal shape — the test's own link to
+    the spec, or the spec's own outgoing link to the test. A ``verified_by``
+    from any other artifact type (a STORY, a DEC, a wrong-level test) does NOT
+    pair the spec (STORY-680).
 
-    Returns list of (spec_artifact, missing_test_prefix) tuples.
+    This is one of REQ-012's TWO distinct coverage metrics;
+    ``check_coverage()`` implements the other (STORY-anchored). They remain
+    two metrics and are NOT merged. The pre-STORY-680 docstring said "do not
+    fix" the apparent difference; the owner approved fixing the verifier-type
+    laxness only (see the DEC citing REQ-012/REQ-013), keeping the metrics
+    distinct.
+
+    Returns list of (spec_artifact, missing_test_prefix) tuples, where
+    missing_test_prefix is the paired TEST prefix (e.g. ``QT`` for a REQ).
     """
     id_index = build_id_index(artifacts)
-    missing = []
 
+    # spec id -> set of test types that verify it (incoming test→spec edges).
+    incoming: dict[str, set[str]] = {}
+    for other in artifacts:
+        if other.type not in _V_PAIR_TEST_TYPES:
+            continue
+        for link in other.links:
+            if link.role == "verified_by":
+                incoming.setdefault(link.target, set()).add(other.type)
+
+    missing = []
     for art in artifacts:
         spec_type = art.type
         if spec_type not in V_MODEL_PAIRS:
             continue
 
         test_type = V_MODEL_PAIRS[spec_type]
-        spec_prefix = None
-        for prefix, stype in PREFIX_TO_TYPE.items():
-            if stype == spec_type:
-                spec_prefix = prefix
-                break
-
-        if not spec_prefix:
+        test_prefix = TYPE_TO_PREFIX.get(test_type)
+        if not test_prefix:
             continue
 
-        # Check if any test artifact links to this spec with verified_by role
-        has_verification = False
-        for other in artifacts:
-            for link in other.links:
-                if link.target == art.id and link.role == "verified_by":
+        has_verification = test_type in incoming.get(art.id, set())
+        if not has_verification:
+            # Spec's own outgoing verified_by → paired test type.
+            for link in art.links:
+                if link.role != "verified_by":
+                    continue
+                target = id_index.get(link.target)
+                if target is not None and target.type == test_type:
                     has_verification = True
                     break
-            if has_verification:
-                break
 
         if not has_verification:
-            missing.append((art, spec_prefix))
+            missing.append((art, test_prefix))
 
     return missing
 
@@ -989,50 +1042,159 @@ def compute_chain_depth(
     return deepest
 
 
-def _read_index(index_path: Path) -> dict[str, Any]:
+_CONFLICT_MARKERS = ("<<<<<<<", "=======", ">>>>>>>")
+
+
+def _has_conflict_markers(text: str) -> bool:
+    return any(line.startswith(_CONFLICT_MARKERS) for line in text.splitlines())
+
+
+def _conflict_sides(text: str) -> list[str]:
+    """Both sides ("ours", "theirs") of a git conflict-marked file."""
+    ours: list[str] = []
+    theirs: list[str] = []
+    side: str | None = None
+    for line in text.splitlines(keepends=True):
+        if line.startswith("<<<<<<<"):
+            side = "ours"
+        elif line.startswith("|||||||"):
+            side = "base"
+        elif line.startswith("======="):
+            side = "theirs"
+        elif line.startswith(">>>>>>>"):
+            side = None
+        elif side is None:
+            ours.append(line)
+            theirs.append(line)
+        elif side == "ours":
+            ours.append(line)
+        elif side == "theirs":
+            theirs.append(line)
+    return ["".join(ours), "".join(theirs)]
+
+
+def _read_index_raw(index_path: Path) -> tuple[dict[str, Any] | None, dict[str, Any]]:
+    """Parse an index without healing: ``(data or None, salvage)``.
+
+    ``data`` is None when the file is missing, unparsable, not a mapping, or
+    carries git conflict markers. ``salvage`` merges whatever each conflict
+    side (or the file itself) still yields — artifact entries and the
+    largest ``next_id`` — so a rebuild never forgets an id either branch
+    allocated (DDD-034 I3).
+    """
+    salvage: dict[str, Any] = {"artifacts": {}, "next_id": 1}
     if not index_path.exists():
-        return {"artifacts": {}, "next_id": 1}
+        return None, salvage
     try:
-        data = yaml.safe_load(index_path.read_text(encoding="utf-8"))
+        text = index_path.read_text(encoding="utf-8")
+    except OSError:
+        return None, salvage
+    candidates = _conflict_sides(text) if _has_conflict_markers(text) else [text]
+    parsed: list[dict[str, Any]] = []
+    for candidate in candidates:
+        try:
+            data = yaml.safe_load(candidate)
+        except yaml.YAMLError:
+            continue
         if isinstance(data, dict):
+            parsed.append(data)
+    for data in parsed:
+        arts = data.get("artifacts")
+        if isinstance(arts, dict):
+            for key, meta in arts.items():
+                salvage["artifacts"].setdefault(key, meta if isinstance(meta, dict) else {})
+        try:
+            salvage["next_id"] = max(salvage["next_id"], int(data.get("next_id", 1) or 1))
+        except (TypeError, ValueError):
+            pass
+    if len(candidates) == 1 and parsed:
+        data = parsed[0]
+        if not isinstance(data.get("artifacts", {}), dict):
+            return None, salvage
+        data.setdefault("artifacts", {})
+        data["artifacts"] = data["artifacts"] or {}
+        data.setdefault("next_id", 1)
+        return data, salvage
+    return None, salvage
+
+
+def _project_root_of(path: Path) -> Path | None:
+    for parent in path.parents:
+        if parent.name == "_specflow":
+            return parent.parent
+    return None
+
+
+def _read_index(index_path: Path) -> dict[str, Any]:
+    """Read a per-type index; the index is a rebuildable cache (DEC-093).
+
+    A missing index over existing artifact files, an unparsable one, or one
+    with git conflict markers is rebuilt from disk under the mutation lock;
+    this never returns ``{next_id: 1}`` for a directory that holds ids
+    (DEF-006, tests/formal/test_index_store_barriers.py).
+    """
+    data, _salvage = _read_index_raw(index_path)
+    if data is not None:
+        return data
+    target_dir = index_path.parent
+    has_files = target_dir.exists() and any(
+        not md.name.startswith(("_", ".")) for md in target_dir.rglob("*.md")
+    )
+    if not index_path.exists() and not has_files:
+        return {"artifacts": {}, "next_id": 1}
+    root = _project_root_of(index_path)
+    if root is None:
+        return {"artifacts": {}, "next_id": 1}
+    from specflow.lib import locks as locks_lib
+
+    with locks_lib.mutation_lock(root, holder="index-heal"):
+        data, _salvage = _read_index_raw(index_path)  # healed meanwhile?
+        if data is not None:
             return data
-    except Exception:
-        pass
-    return {"artifacts": {}, "next_id": 1}
+        logger.warning("index %s unreadable or conflicted; rebuilt from disk", index_path)
+        _rebuild_dir_index(target_dir)
+        data, _salvage = _read_index_raw(index_path)
+        return data if data is not None else {"artifacts": {}, "next_id": 1}
 
 
 def _write_index(index_path: Path, data: dict[str, Any]) -> None:
-    """Atomically replace the index file.
+    """Atomically replace the index file (requires the mutation lock).
 
-    Writes go to a unique temp file followed by ``os.replace`` (atomic on
-    POSIX): concurrent readers see either the complete old index or the
-    complete new one, never a truncate-in-progress prefix. A plain
-    ``write_text`` rewriter exposes a window where ``yaml.safe_load``
-    succeeds on a well-formed partial document — a silent lost update.
+    Goes through :func:`specflow.lib.locks.atomic_write` (temp file plus
+    ``os.replace``): readers see the whole old or the whole new index.
     """
-    import os as _os
-    import time as _time
+    from specflow.lib import locks as locks_lib
 
-    index_path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = index_path.with_name(
-        f"{index_path.name}.{_os.getpid()}.{_time.monotonic_ns()}.tmp"
+    locks_lib.atomic_write(
+        index_path, yaml.dump(data, default_flow_style=False, sort_keys=False)
     )
-    try:
-        tmp.write_text(
-            yaml.dump(data, default_flow_style=False, sort_keys=False),
-            encoding="utf-8",
-        )
-        _os.replace(tmp, index_path)
-    finally:
-        if tmp.exists():
-            try:
-                tmp.unlink()
-            except FileNotFoundError:
-                pass
 
 
 read_index = _read_index
 write_index = _write_index
+
+
+def write_artifact_text(root: Path, path: Path, text: str | bytes) -> None:
+    """Rewrite an artifact file atomically under the mutation lock.
+
+    For callers outside this module (merge, split, lint --fix, practices
+    migrate): a crash leaves the whole old or the whole new file, so the
+    re-run can still parse it (DDD-034 I5).
+    """
+    from specflow.lib import locks as locks_lib
+
+    locks_lib.locked_write(root, path, text)
+
+
+def _read_quarantine(target_dir: Path) -> dict[str, Any]:
+    quarantine_path = target_dir / "_index.quarantine.yaml"
+    if not quarantine_path.exists():
+        return {}
+    try:
+        data = yaml.safe_load(quarantine_path.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError):
+        return {}
+    return data if isinstance(data, dict) else {}
 
 
 def _quarantine_entries(
@@ -1049,21 +1211,17 @@ def _quarantine_entries(
     ``quarantined_at`` timestamp. Appending is idempotent: an ID already present
     in the quarantine file is never overwritten or duplicated, so repeated
     rebuilds are safe. Returns the number of NEWLY quarantined entries.
+    Quarantined ids are never allocated again (DDD-034 I3).
 
     The quarantine file is ``.yaml`` and ``_``-prefixed, so artifact discovery
     (which globs ``*.md`` and skips ``_``-prefixed names) never picks it up.
     """
     from datetime import datetime, timezone
 
+    from specflow.lib import locks as locks_lib
+
     quarantine_path = target_dir / "_index.quarantine.yaml"
-    existing: dict[str, Any] = {}
-    if quarantine_path.exists():
-        try:
-            data = yaml.safe_load(quarantine_path.read_text(encoding="utf-8"))
-            if isinstance(data, dict):
-                existing = data
-        except Exception:
-            existing = {}
+    existing = _read_quarantine(target_dir)
 
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     added = 0
@@ -1071,6 +1229,8 @@ def _quarantine_entries(
         if art_id in existing:
             continue
         old = old_artifacts.get(art_id, {})
+        if not isinstance(old, dict):
+            old = {}
         existing[art_id] = {
             "id": art_id,
             "title": old.get("title", ""),
@@ -1082,12 +1242,98 @@ def _quarantine_entries(
         added += 1
 
     if added:
-        target_dir.mkdir(parents=True, exist_ok=True)
-        quarantine_path.write_text(
+        locks_lib.atomic_write(
+            quarantine_path,
             yaml.dump(existing, default_flow_style=False, sort_keys=True),
-            encoding="utf-8",
         )
     return added
+
+
+def _numeric_id_pattern(prefix: str) -> re.Pattern[str]:
+    return re.compile(rf"^{re.escape(prefix)}-(\d+)(?:\.\d+)*$")
+
+
+RENUMBER_JOURNAL = Path(".specflow") / "renumber-journal.yaml"
+
+
+def renumber_journal_targets(target_dir: Path) -> set[str]:
+    """Ids a crashed ``renumber-drafts`` has reserved (DEF-013).
+
+    While ``.specflow/renumber-journal.yaml`` exists, every planned target in
+    its ``id_map`` is allocated: the resumed run will give it to a draft. An
+    unreadable journal reserves nothing here; the resumed run reports it.
+    """
+    root = _project_root_of(target_dir / "_") if target_dir.name != "_specflow" else target_dir.parent
+    if root is None:
+        return set()
+    journal = root / RENUMBER_JOURNAL
+    if not journal.exists():
+        return set()
+    try:
+        data = yaml.safe_load(journal.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        return set()
+    id_map = data.get("id_map") if isinstance(data, dict) else None
+    if not isinstance(id_map, dict):
+        return set()
+    return {str(v) for v in id_map.values() if v}
+
+
+def _highest_allocated(target_dir: Path, prefix: str, index_data: dict[str, Any]) -> int:
+    """Largest sequence number ever allocated in ``target_dir`` (DEC-093).
+
+    max(ids on disk — nested files included —, index keys, quarantined ids,
+    targets reserved by a crashed renumber's journal (DEF-013), index
+    ``next_id`` - 1). The index ``next_id`` is only a lower bound.
+    """
+    pat = _numeric_id_pattern(prefix)
+    best = 0
+    names: list[str] = [md.stem for md in target_dir.rglob("*.md")
+                        if not md.name.startswith(("_", "."))]
+    names.extend((index_data.get("artifacts") or {}).keys())
+    names.extend(_read_quarantine(target_dir).keys())
+    names.extend(renumber_journal_targets(target_dir))
+    for name in names:
+        m = pat.match(str(name))
+        if m:
+            best = max(best, int(m.group(1)))
+    try:
+        best = max(best, int(index_data.get("next_id", 1) or 1) - 1)
+    except (TypeError, ValueError):
+        pass
+    return best
+
+
+def _heal_index(target_dir: Path, index_data: dict[str, Any]) -> bool:
+    """Add artifact files the index does not know (crash debris, hand-added
+    or nested files) to ``index_data``. True when anything was added.
+
+    A file is known when its frontmatter id is an index key. The file stem is
+    a cheap stand-in for that id, except while a renumber journal exists: a
+    crashed ``renumber-drafts`` may have rewritten a draft file's frontmatter
+    id without renaming it yet, so every file is parsed then (DEF-013).
+    """
+    arts = index_data.setdefault("artifacts", {})
+    changed = False
+    parse_all = bool(renumber_journal_targets(target_dir))
+    for md in sorted(target_dir.rglob("*.md")):
+        if md.name.startswith(("_", ".")):
+            continue
+        if md.stem in arts and not parse_all:
+            continue
+        art = parse_artifact(md)
+        if art is None or not art.id or art.id in arts:
+            continue
+        arts[art.id] = {
+            "id": art.id,
+            "title": art.title,
+            "status": art.status,
+            "tags": art.tags,
+            "fingerprint": art.fingerprint,
+            "children": [],
+        }
+        changed = True
+    return changed
 
 
 def _rewrite_frontmatter(path: Path, frontmatter: dict[str, Any], body: str) -> None:
@@ -1099,8 +1345,11 @@ def _rewrite_frontmatter(path: Path, frontmatter: dict[str, Any], body: str) -> 
     — which reads the frontmatter fingerprint — see the repaired value and keeps
     the repair idempotent across repeated rebuilds.
     """
+    from specflow.lib import locks as locks_lib
+
     fm_yaml = yaml.dump(frontmatter, default_flow_style=False, sort_keys=False)
-    path.write_text(f"---\n{fm_yaml}---\n\n{body}\n", encoding="utf-8")
+    root = _project_root_of(path) or path.parent
+    locks_lib.locked_write(root, path, f"---\n{fm_yaml}---\n\n{body}\n")
 
 
 def _read_schema(schema_dir: Path, artifact_type: str) -> dict[str, Any] | None:
@@ -1228,73 +1477,111 @@ def create_artifact(
     target_dir = specflow_dir / rel_dir
     target_dir.mkdir(parents=True, exist_ok=True)
 
-    # Type-scoped create lock: the ID does not exist yet, so the guard
-    # namespaces on the artifact type. Held across ID allocation, duplicate
-    # check, file write, and index write so concurrent creates of the same
-    # type cannot collide on one ID or lose the next_id bump.
+    # One repo-wide mutation lock (DEC-093) serialises every index writer;
+    # the linearisation point of allocation is the exclusive create of the
+    # artifact file itself, so even a writer that bypassed the lock could not
+    # make two creates share an id or overwrite a file (DDD-034 I1/I2).
     from specflow.lib import locks as locks_lib
 
-    acquired = locks_lib.acquire_create_lock(root, artifact_type)
-    if not acquired.get("ok"):
+    try:
+        with locks_lib.mutation_lock(root, holder=f"create:{artifact_type}"):
+            return _create_locked(
+                root, target_dir, rel_dir, prefix, artifact_type, artifact_id,
+                title=title, status=status, priority=priority, rationale=rationale,
+                tags=tags, links=links, body=body, **kwargs,
+            )
+    except locks_lib.MutationLockTimeout as exc:
         return {
             "ok": False,
             "error": (
-                f"Another create of type '{artifact_type}' is in progress "
-                f"(PID {acquired.get('pid', '?')}, holder {acquired.get('held_by', '?')}). "
-                f"Retry shortly, or break a stale guard with "
-                f"'specflow unlock create-lock:{artifact_type}'."
+                f"Another SpecFlow write is in progress (PID {exc.pid or '?'}, "
+                f"holder {exc.holder}); create of type '{artifact_type}' timed out. "
+                f"Retry shortly; 'specflow locks' shows the holder and "
+                f"'specflow unlock create-lock:{artifact_type}' clears a stale "
+                f"legacy lock file."
             ),
         }
-    try:
-        index_path = target_dir / "_index.yaml"
-        index_data = _read_index(index_path)
 
-        if artifact_id:
-            new_id = artifact_id
-        else:
-            from specflow.lib import draft_ids as draft_lib
-            if draft_lib.is_feature_branch(root):
-                new_id = draft_lib.generate_draft_id(title, prefix)
-            else:
-                next_num = index_data.get("next_id", 1)
-                new_id = f"{prefix}-{next_num:03d}"
 
-        for existing_id in index_data.get("artifacts", {}):
-            if existing_id == new_id:
-                return {"ok": False, "error": f"Artifact ID '{new_id}' already exists in {rel_dir}"}
+def _create_locked(
+    root: Path,
+    target_dir: Path,
+    rel_dir: str,
+    prefix: str,
+    artifact_type: str,
+    artifact_id: str | None,
+    *,
+    title: str,
+    status: str,
+    priority: str | None,
+    rationale: str | None,
+    tags: list[str] | None,
+    links: list[dict[str, str]] | None,
+    body: str,
+    **kwargs: Any,
+) -> dict[str, Any]:
+    from specflow.lib import draft_ids as draft_lib
+    from specflow.lib import locks as locks_lib
 
-        content, fingerprint = _render_artifact_file(
-            artifact_id=new_id,
-            title=title,
-            artifact_type=artifact_type,
-            status=status,
-            priority=priority,
-            rationale=rationale,
-            tags=tags,
-            links=links,
-            body=body,
-            **kwargs,
+    index_path = target_dir / "_index.yaml"
+    index_data = _read_index(index_path)
+    _heal_index(target_dir, index_data)
+    arts = index_data.setdefault("artifacts", {})
+
+    def render(new_id: str) -> tuple[str, str]:
+        return _render_artifact_file(
+            artifact_id=new_id, title=title, artifact_type=artifact_type,
+            status=status, priority=priority, rationale=rationale, tags=tags,
+            links=links, body=body, **kwargs,
         )
 
+    def exists_error(new_id: str) -> dict[str, Any]:
+        return {"ok": False, "error": f"Artifact ID '{new_id}' already exists in {rel_dir}"}
+
+    if artifact_id:
+        new_id = artifact_id
+        if (new_id in arts or any(target_dir.rglob(f"{new_id}.md"))
+                or new_id in renumber_journal_targets(target_dir)):
+            return exists_error(new_id)
+        content, fingerprint = render(new_id)
         file_path = target_dir / f"{new_id}.md"
-        file_path.write_text(content, encoding="utf-8")
+        if not locks_lib.exclusive_write(file_path, content):
+            return exists_error(new_id)
+    elif draft_lib.is_feature_branch(root):
+        for _attempt in range(20):
+            new_id = draft_lib.generate_draft_id(title, prefix)
+            if new_id in arts:
+                continue
+            content, fingerprint = render(new_id)
+            file_path = target_dir / f"{new_id}.md"
+            if locks_lib.exclusive_write(file_path, content):
+                break
+        else:
+            return {"ok": False, "error": f"Could not allocate a draft id in {rel_dir}"}
+    else:
+        num = _highest_allocated(target_dir, prefix, index_data) + 1
+        while True:
+            new_id = f"{prefix}-{num:03d}"
+            content, fingerprint = render(new_id)
+            file_path = target_dir / f"{new_id}.md"
+            if new_id not in arts and locks_lib.exclusive_write(file_path, content):
+                break
+            num += 1  # taken on disk or in the index: next candidate
 
-        index_data.setdefault("artifacts", {})[new_id] = {
-            "id": new_id,
-            "title": title,
-            "status": status,
-            "tags": _normalize_str_list(tags),
-            "fingerprint": fingerprint,
-            "children": [],
-        }
-        from specflow.lib import draft_ids as _draft
-        if artifact_id is None and not _draft.is_draft_id(new_id):
-            index_data["next_id"] = next_num + 1
-        _write_index(index_path, index_data)
+    arts[new_id] = {
+        "id": new_id,
+        "title": title,
+        "status": status,
+        "tags": _normalize_str_list(tags),
+        "fingerprint": fingerprint,
+        "children": [],
+    }
+    m = _numeric_id_pattern(prefix).match(new_id)
+    if m:
+        index_data["next_id"] = max(int(index_data.get("next_id", 1) or 1), int(m.group(1)) + 1)
+    _write_index(index_path, index_data)
 
-        return {"ok": True, "id": new_id, "path": str(file_path), "fingerprint": fingerprint}
-    finally:
-        locks_lib.release_create_lock(root, artifact_type)
+    return {"ok": True, "id": new_id, "path": str(file_path), "fingerprint": fingerprint}
 
 
 def update_artifact(
@@ -1302,7 +1589,28 @@ def update_artifact(
     artifact_id: str,
     **updates: Any,
 ) -> dict[str, Any]:
+    """Update an artifact's frontmatter/body and its index entry.
+
+    The whole read-modify-write of the file and the index runs under the
+    mutation lock, so a concurrent create's index entry is never lost
+    (DEF-008, tests/formal/test_index_store_barriers.py::test_I4_*).
+    """
     _load_active_packs(root)
+    from specflow.lib import locks as locks_lib
+
+    try:
+        with locks_lib.mutation_lock(root, holder=f"update:{artifact_id}"):
+            return _update_locked(root, artifact_id, **updates)
+    except locks_lib.MutationLockTimeout as exc:
+        return {"ok": False, "error": f"Update of '{artifact_id}' timed out: {exc}. Retry shortly."}
+
+
+def _update_locked(
+    root: Path,
+    artifact_id: str,
+    **updates: Any,
+) -> dict[str, Any]:
+    from specflow.lib import locks as locks_lib
 
     file_path = resolve_link_target(root, artifact_id)
     if file_path is None:
@@ -1380,7 +1688,7 @@ def update_artifact(
     fm["fingerprint"] = fingerprint
 
     new_text = "---\n" + yaml.dump(fm, default_flow_style=False, sort_keys=False) + "---\n\n" + body + "\n"
-    file_path.write_text(new_text, encoding="utf-8")
+    locks_lib.atomic_write(file_path, new_text)
 
     prefix = get_prefix_from_id(artifact_id)
     type_name = PREFIX_TO_TYPE.get(prefix, "")
@@ -1399,112 +1707,142 @@ def update_artifact(
 
 
 def rebuild_index(root: Path, artifact_type: str | None = None) -> dict[str, Any]:
+    """Rebuild per-type indexes from the artifact files, under the mutation lock.
+
+    ``next_id`` is max(ids on disk, quarantined ids, the old index's
+    ``next_id`` - 1) + 1, so a deleted or quarantined id is never handed out
+    again (DEF-007, DDD-034 I3).
+    """
     specflow_dir = root / "_specflow"
     if not specflow_dir.exists():
         return {"rebuilt": 0, "repaired": 0, "quarantined": 0}
 
     _load_active_packs(root)
     types_to_rebuild = [artifact_type] if artifact_type else list(TYPE_TO_DIR.keys())
+    totals = {"rebuilt": 0, "repaired": 0, "quarantined": 0}
+    from specflow.lib import locks as locks_lib
+
+    with locks_lib.mutation_lock(root, holder="rebuild-index"):
+        for atype in types_to_rebuild:
+            rel_dir = TYPE_TO_DIR.get(atype)
+            if not rel_dir:
+                continue
+            target_dir = specflow_dir / rel_dir
+            if not target_dir.exists():
+                continue
+            counts = _rebuild_dir_index(target_dir, atype)
+            for key in totals:
+                totals[key] += counts[key]
+    return totals
+
+
+def _rebuild_dir_index(target_dir: Path, atype: str | None = None) -> dict[str, int]:
+    """Rebuild one directory's index from disk (caller holds the lock)."""
+    atype = atype or next(
+        (t for t, rel in TYPE_TO_DIR.items() if target_dir.as_posix().endswith(rel)),
+        target_dir.name,
+    )
     total_rebuilt = 0
     total_repaired = 0
     total_quarantined = 0
+    index_path = target_dir / "_index.yaml"
+    old_index, salvage = _read_index_raw(index_path)
+    old_artifacts = (old_index or salvage).get("artifacts", {}) or {}
+    old_next = int((old_index or salvage).get("next_id", 1) or 1)
 
-    for atype in types_to_rebuild:
-        rel_dir = TYPE_TO_DIR.get(atype)
-        if not rel_dir:
+    artifacts_data: dict[str, Any] = {}
+    max_num = 0
+
+    for md_file in sorted(target_dir.rglob("*.md")):
+        if md_file.name.startswith(("_", ".")):
             continue
-        target_dir = specflow_dir / rel_dir
-        if not target_dir.exists():
+        art = parse_artifact(md_file)
+        if not art:
             continue
 
-        index_path = target_dir / "_index.yaml"
-        old_index = _read_index(index_path)
-        old_artifacts = old_index.get("artifacts", {})
+        base_id = get_base_id(art.id)
+        # Only canonical numeric IDs advance next_id. Draft IDs end with a
+        # short hash (for example STORY-FIXACCEP-f941); even an all-digit
+        # hash is not an allocated sequence number.
+        from specflow.lib import draft_ids as draft_lib
+        last_segment = base_id.rsplit("-", 1)[-1]
+        num_match = None if draft_lib.is_draft_id(base_id) else re.fullmatch(r"\d+", last_segment)
+        if num_match:
+            num = int(num_match.group())
+            if num > max_num:
+                max_num = num
 
-        artifacts_data: dict[str, Any] = {}
-        max_num = 0
-
-        for md_file in sorted(target_dir.glob("*.md")):
-            if md_file.name.startswith("_"):
-                continue
-            art = parse_artifact(md_file)
-            if not art:
-                continue
-
-            base_id = get_base_id(art.id)
-            # Only canonical numeric IDs advance next_id. Draft IDs end with a
-            # short hash (for example STORY-FIXACCEP-f941); even an all-digit
-            # hash is not an allocated sequence number.
-            from specflow.lib import draft_ids as draft_lib
-            last_segment = base_id.rsplit("-", 1)[-1]
-            num_match = None if draft_lib.is_draft_id(base_id) else re.fullmatch(r"\d+", last_segment)
-            if num_match:
-                num = int(num_match.group())
-                if num > max_num:
-                    max_num = num
-
-            # Correct-by-definition: the fingerprint IS the body hash. When the
-            # parsed frontmatter carries an empty/missing fingerprint — or the
-            # exact empty-body hash signature (_EMPTY_BODY_FINGERPRINT, a
-            # pre-v1.13 bug's tell-tale for non-empty bodies like DEC-059) — but
-            # the body is non-empty, recompute it rather than propagating the
-            # gap. This is the root-cause repair for the auto-generated
-            # artifacts whose creation path predated the frontmatter write
-            # (AUD-022..045, DEC-043..056, and peer UT/IT/QT/STORY artifacts) and
-            # any future drift of the same shape. The value is persisted back
-            # into the .md frontmatter (not just the index) so drift/suspect
-            # detection reads the correct value and the repair is idempotent
-            # across rebuilds. Any OTHER present-but-wrong value is left in place
-            # for suspect detection — see the _EMPTY_BODY_FINGERPRINT doctrine.
-            fingerprint = art.fingerprint
-            if art.body.strip() and (not fingerprint or fingerprint == _EMPTY_BODY_FINGERPRINT):
-                fingerprint = compute_fingerprint(art.body)
-                art.frontmatter["fingerprint"] = fingerprint
-                _rewrite_frontmatter(md_file, art.frontmatter, art.body)
-                logger.warning(
-                    "rebuild_index: %s repaired empty fingerprint for %s -> %s",
-                    atype, art.id, fingerprint,
-                )
-                total_repaired += 1
-
-            artifacts_data[art.id] = {
-                "id": art.id,
-                "title": art.title,
-                "status": art.status,
-                "tags": art.tags,
-                "fingerprint": fingerprint,
-                "children": [],
-            }
-
-        # Fileless index entries (in the old index but no .md on disk) are
-        # quarantined rather than dropped into the void: their last-known entry
-        # is preserved in _index.quarantine.yaml with a timestamp. Never delete
-        # data; append idempotently.
-        fileless = set(old_artifacts.keys()) - set(artifacts_data.keys())
-        if fileless:
-            total_quarantined += _quarantine_entries(target_dir, old_artifacts, fileless)
+        # Correct-by-definition: the fingerprint IS the body hash. When the
+        # parsed frontmatter carries an empty/missing fingerprint — or the
+        # exact empty-body hash signature (_EMPTY_BODY_FINGERPRINT, a
+        # pre-v1.13 bug's tell-tale for non-empty bodies like DEC-059) — but
+        # the body is non-empty, recompute it rather than propagating the
+        # gap. This is the root-cause repair for the auto-generated
+        # artifacts whose creation path predated the frontmatter write
+        # (AUD-022..045, DEC-043..056, and peer UT/IT/QT/STORY artifacts) and
+        # any future drift of the same shape. The value is persisted back
+        # into the .md frontmatter (not just the index) so drift/suspect
+        # detection reads the correct value and the repair is idempotent
+        # across rebuilds. Any OTHER present-but-wrong value is left in place
+        # for suspect detection — see the _EMPTY_BODY_FINGERPRINT doctrine.
+        fingerprint = art.fingerprint
+        if art.body.strip() and (not fingerprint or fingerprint == _EMPTY_BODY_FINGERPRINT):
+            fingerprint = compute_fingerprint(art.body)
+            art.frontmatter["fingerprint"] = fingerprint
+            _rewrite_frontmatter(md_file, art.frontmatter, art.body)
             logger.warning(
-                "rebuild_index: %s dropped %d fileless artifact(s) from index (quarantined): %s",
-                atype, len(fileless), ", ".join(sorted(fileless)),
+                "rebuild_index: %s repaired empty fingerprint for %s -> %s",
+                atype, art.id, fingerprint,
+            )
+            total_repaired += 1
+
+        artifacts_data[art.id] = {
+            "id": art.id,
+            "title": art.title,
+            "status": art.status,
+            "tags": art.tags,
+            "fingerprint": fingerprint,
+            "children": [],
+        }
+
+    # Fileless index entries (in the old index but no .md on disk) are
+    # quarantined rather than dropped into the void: their last-known entry
+    # is preserved in _index.quarantine.yaml with a timestamp. Never delete
+    # data; append idempotently.
+    fileless = set(old_artifacts.keys()) - set(artifacts_data.keys())
+    if fileless:
+        total_quarantined += _quarantine_entries(target_dir, old_artifacts, fileless)
+        logger.warning(
+            "rebuild_index: %s dropped %d fileless artifact(s) from index (quarantined): %s",
+            atype, len(fileless), ", ".join(sorted(fileless)),
+        )
+
+    for art_id, new_entry in artifacts_data.items():
+        old_entry = old_artifacts.get(art_id, {})
+        if isinstance(old_entry, dict) and old_entry.get("fingerprint") and not new_entry.get("fingerprint"):
+            logger.warning(
+                "rebuild_index: %s fingerprint erased for %s (was %s)",
+                atype, art_id, old_entry["fingerprint"],
             )
 
-        for art_id, new_entry in artifacts_data.items():
-            old_entry = old_artifacts.get(art_id, {})
-            if old_entry.get("fingerprint") and not new_entry.get("fingerprint"):
-                logger.warning(
-                    "rebuild_index: %s fingerprint erased for %s (was %s)",
-                    atype, art_id, old_entry["fingerprint"],
-                )
+    # I3: quarantined ids and the old counter are floors, never reused.
+    pat = _numeric_id_pattern(TYPE_TO_PREFIX.get(atype, ""))
+    for q_id in _read_quarantine(target_dir):
+        m = pat.match(str(q_id))
+        if m:
+            max_num = max(max_num, int(m.group(1)))
+    max_num = max(max_num, old_next - 1)
 
-        index_data = {
-            "artifacts": artifacts_data,
-            "next_id": max_num + 1,
-        }
-        _write_index(index_path, index_data)
-        total_rebuilt += len(artifacts_data)
+    index_data = {
+        "artifacts": artifacts_data,
+        "next_id": max_num + 1,
+    }
+    _write_index(index_path, index_data)
+    total_rebuilt += len(artifacts_data)
 
     return {
         "rebuilt": total_rebuilt,
         "repaired": total_repaired,
         "quarantined": total_quarantined,
     }
+

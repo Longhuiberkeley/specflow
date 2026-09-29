@@ -58,18 +58,35 @@ class ImpactEvent:
 
 
 def create_impact_event(root: Path, event: ImpactEvent) -> Path:
-    """Write an impact event to .specflow/impact-log/ as a timestamped YAML file."""
+    """Write an impact event to .specflow/impact-log/ as a timestamped YAML file.
+
+    Names are allocated by exclusive create (DEC-093): two events for the
+    same artifact in the same second get ``..._<ID>.yaml`` and
+    ``..._<ID>-2.yaml`` instead of the second silently replacing the first.
+    """
+    from specflow.lib import locks as locks_lib
+
     log_dir = root / ".specflow" / "impact-log"
     log_dir.mkdir(parents=True, exist_ok=True)
 
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%SZ")
-    filename = f"{ts}_{event.changed}.yaml"
-    path = log_dir / filename
-    path.write_text(
-        yaml.dump(event.to_dict(), default_flow_style=False, sort_keys=False),
-        encoding="utf-8",
-    )
-    return path
+    text = yaml.dump(event.to_dict(), default_flow_style=False, sort_keys=False)
+    with locks_lib.mutation_lock(root, holder="impact-log"):
+        n = 1
+        while True:
+            suffix = "" if n == 1 else f"-{n}"
+            path = log_dir / f"{ts}_{event.changed}{suffix}.yaml"
+            if locks_lib.exclusive_write(path, text):
+                return path
+            n += 1
+
+
+def _write_artifact_file(file_path: Path, text: str) -> None:
+    """Atomic artifact rewrite under the mutation lock of its project."""
+    from specflow.lib import artifacts as art_lib
+
+    root = art_lib._project_root_of(file_path) or file_path.parent
+    art_lib.write_artifact_text(root, file_path, text)
 
 
 def load_impact_events(root: Path) -> list[ImpactEvent]:
@@ -195,7 +212,7 @@ def _update_frontmatter_field(file_path: Path, field_name: str, value: Any) -> b
     fm[field_name] = value
     body = text[end + 3:].strip()
     new_text = "---\n" + yaml.dump(fm, default_flow_style=False, sort_keys=False) + "---\n\n" + body + "\n"
-    file_path.write_text(new_text, encoding="utf-8")
+    _write_artifact_file(file_path, new_text)
     return True
 
 
@@ -224,7 +241,7 @@ def _remove_frontmatter_field(file_path: Path, field_name: str) -> bool:
     del fm[field_name]
     body = text[end + 3:].strip()
     new_text = "---\n" + yaml.dump(fm, default_flow_style=False, sort_keys=False) + "---\n\n" + body + "\n"
-    file_path.write_text(new_text, encoding="utf-8")
+    _write_artifact_file(file_path, new_text)
     return True
 
 
@@ -403,9 +420,11 @@ def resolve_suspect(
                     data["resolved"] = True
                     data["resolved_by"] = resolved_by
                     data["resolved_at"] = now
-                event_file.write_text(
+                from specflow.lib import locks as locks_lib
+
+                locks_lib.locked_write(
+                    root, event_file,
                     yaml.dump(data, default_flow_style=False, sort_keys=False),
-                    encoding="utf-8",
                 )
             except Exception:
                 continue
@@ -426,7 +445,19 @@ def split_artifact(
         source_id: The original artifact being split.
         new_id: The new artifact that receives some of the links.
         reassign_links: List of artifact IDs whose links should be rewritten.
+
+    Writes no status. Runs under the mutation lock with atomic file writes,
+    so a crash followed by a re-run converges (DDD-034 I5).
     """
+    from specflow.lib import locks as locks_lib
+
+    with locks_lib.mutation_lock(root, holder=f"split:{source_id}"):
+        return _split_locked(root, source_id, new_id, reassign_links)
+
+
+def _split_locked(
+    root: Path, source_id: str, new_id: str, reassign_links: list[str]
+) -> dict[str, Any]:
     source_path = resolve_link_target(root, source_id)
     new_path = resolve_link_target(root, new_id)
 
@@ -440,32 +471,8 @@ def split_artifact(
         art_path = resolve_link_target(root, art_id)
         if art_path is None:
             continue
-
-        art = parse_artifact(art_path)
-        if art is None:
-            continue
-
-        # Rewrite links targeting source_id to target new_id
-        try:
-            text = art_path.read_text(encoding="utf-8").strip()
-            end = text.find("---", 3)
-            fm = yaml.safe_load(text[3:end])
-            if not isinstance(fm, dict):
-                continue
-
-            changed = False
-            for link in fm.get("links", []):
-                if isinstance(link, dict) and link.get("target") == source_id:
-                    link["target"] = new_id
-                    changed = True
-
-            if changed:
-                body = text[end + 3:].strip()
-                new_text = "---\n" + yaml.dump(fm, default_flow_style=False, sort_keys=False) + "---\n\n" + body + "\n"
-                art_path.write_text(new_text, encoding="utf-8")
-                rewritten.append(art_id)
-        except Exception:
-            continue
+        if _retarget_links(art_path, source_id, new_id, drop=False):
+            rewritten.append(art_id)
 
     # Log split event
     source_art = parse_artifact(source_path)
@@ -482,12 +489,83 @@ def split_artifact(
     return {"ok": True, "rewritten": rewritten, "event_path": str(event_path)}
 
 
+def _retarget_links(art_path: Path, old: str, new: str, *, drop: bool) -> bool:
+    """Point links at ``old`` to ``new`` (or drop them); dedupe; True if changed."""
+    try:
+        text = art_path.read_text(encoding="utf-8").strip()
+    except OSError:
+        return False
+    end = text.find("---", 3)
+    if not text.startswith("---") or end == -1:
+        return False
+    try:
+        fm = yaml.safe_load(text[3:end])
+    except yaml.YAMLError:
+        return False
+    if not isinstance(fm, dict):
+        return False
+    changed = False
+    out: list[Any] = []
+    seen: set[tuple[Any, Any]] = set()
+    for link in fm.get("links") or []:
+        if isinstance(link, dict) and link.get("target") == old:
+            changed = True
+            if drop:
+                continue
+            link = {**link, "target": new}
+        if isinstance(link, dict):
+            key = (link.get("target"), link.get("role"))
+            if key in seen:
+                changed = True
+                continue
+            seen.add(key)
+        out.append(link)
+    if not changed:
+        return False
+    fm["links"] = out
+    body = text[end + 3:].strip()
+    new_text = "---\n" + yaml.dump(fm, default_flow_style=False, sort_keys=False) + "---\n\n" + body + "\n"
+    _write_artifact_file(art_path, new_text)
+    return True
+
+
+#: Terminal statuses merge may give the source, most specific first.
+#: ``superseded`` is used only with the paired ``supersedes`` link.
+_MERGE_TERMINAL = ("superseded", "deprecated", "cancelled")
+
+
+def _schema_of(root: Path, art_type: str) -> dict[str, Any]:
+    path = root / ".specflow" / "schema" / f"{art_type}.yaml"
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
 def merge_artifact(
     root: Path,
     source_id: str,
     target_id: str,
 ) -> dict[str, Any]:
-    """Merge source_id into target_id: rewrite all links referencing source to target."""
+    """Merge source_id into target_id: rewrite all links referencing source to target.
+
+    Writes only schema-legal statuses (DEC-093, STORY-697): the target gains
+    a ``supersedes`` link to the source when its schema allows that role,
+    then the source moves to ``superseded`` — or, when that pairing is not
+    available or not legal from its current status, to ``deprecated`` or
+    ``cancelled``; if none is legal the status is left unchanged and the
+    result says so. Status changes go through ``update_artifact``.
+    """
+    from specflow.lib import locks as locks_lib
+
+    with locks_lib.mutation_lock(root, holder=f"merge:{source_id}"):
+        return _merge_locked(root, source_id, target_id)
+
+
+def _merge_locked(root: Path, source_id: str, target_id: str) -> dict[str, Any]:
+    from specflow.lib import artifacts as art_lib
+
     source_path = resolve_link_target(root, source_id)
     target_path = resolve_link_target(root, target_id)
 
@@ -495,39 +573,76 @@ def merge_artifact(
         return {"ok": False, "error": f"Source artifact '{source_id}' not found"}
     if target_path is None:
         return {"ok": False, "error": f"Target artifact '{target_id}' not found"}
+    if source_id == target_id:
+        return {"ok": False, "error": "Cannot merge an artifact into itself"}
 
-    all_artifacts = discover_artifacts(root)
     rewritten = []
-
-    for art in all_artifacts:
+    for art in discover_artifacts(root):
         if art.id == source_id:
             continue
-
-        has_link = any(link.target == source_id for link in art.links)
-        if not has_link:
+        if not any(link.target == source_id for link in art.links):
             continue
-
-        try:
-            text = art.path.read_text(encoding="utf-8").strip()
-            end = text.find("---", 3)
-            fm = yaml.safe_load(text[3:end])
-            if not isinstance(fm, dict):
-                continue
-
-            for link in fm.get("links", []):
-                if isinstance(link, dict) and link.get("target") == source_id:
-                    link["target"] = target_id
-
-            body = text[end + 3:].strip()
-            new_text = "---\n" + yaml.dump(fm, default_flow_style=False, sort_keys=False) + "---\n\n" + body + "\n"
-            art.path.write_text(new_text, encoding="utf-8")
+        # The target's own links to the source would become self-links.
+        if _retarget_links(art.path, source_id, target_id, drop=art.id == target_id):
             rewritten.append(art.id)
-        except Exception:
-            continue
 
-    # Update source artifact status
-    _update_frontmatter_field(source_path, "status", "merged_into")
-    _update_frontmatter_field(source_path, "merged_target", target_id)
+    source = parse_artifact(source_path)
+    current = source.status if source else ""
+    allowed = _schema_of(root, source.type if source else "").get("allowed_status") or {}
+
+    # Supersession pairing: the target links `supersedes` -> source first,
+    # and only when the source can then legally move to superseded, so a
+    # supersedes link never outlives a cancelled/deprecated/unchanged source
+    # (DEF-019, tests/test_merge_split_status.py).
+    target = parse_artifact(target_path)
+    target_schema = _schema_of(root, target.type if target else "")
+    # A resumed merge whose source is already superseded re-pairs: the
+    # retarget pass above drops the target's own links to the source.
+    can_supersede = current == "superseded" or (
+        current not in _MERGE_TERMINAL
+        and "superseded" in allowed
+        and current in (allowed.get("superseded") or [])
+    )
+    paired = False
+    added_link: list[dict[str, str]] | None = None  # target links before our pairing
+    if target is not None and "supersedes" in (target_schema.get("allowed_link_roles") or []):
+        if any(link.target == source_id and link.role == "supersedes" for link in target.links):
+            paired = True
+        elif can_supersede:
+            before = [{"target": link.target, "role": link.role} for link in target.links]
+            links = before + [{"target": source_id, "role": "supersedes"}]
+            paired = bool(art_lib.update_artifact(root, target_id, links=links).get("ok"))
+            if paired:
+                added_link = before
+
+    # Then the source moves to a legal terminal status.
+    new_status: str | None = None
+    status_note = ""
+    if current in _MERGE_TERMINAL:
+        # Already terminal (a resumed merge): re-sync the index entry, which
+        # a crash between the file and index writes can leave behind.
+        new_status = current
+        art_lib.update_artifact(root, source_id, status=current)
+    else:
+        for candidate in _MERGE_TERMINAL:
+            if candidate == "superseded" and not paired:
+                continue
+            if candidate in allowed and current in (allowed.get(candidate) or []):
+                new_status = candidate
+                break
+        if new_status is None:
+            status_note = (
+                f"status '{current}' left unchanged: no legal terminal status "
+                f"({', '.join(_MERGE_TERMINAL)}) from it"
+            )
+        else:
+            res = art_lib.update_artifact(root, source_id, status=new_status)
+            if not res.get("ok"):
+                status_note = res.get("error", "status update failed")
+                new_status = None
+    if added_link is not None and new_status != "superseded":
+        # The pairing did not complete: take back the link we added.
+        art_lib.update_artifact(root, target_id, links=added_link)
 
     # Log merge event
     source_art = parse_artifact(source_path)
@@ -541,7 +656,16 @@ def merge_artifact(
     )
     event_path = create_impact_event(root, event)
 
-    return {"ok": True, "rewritten": rewritten, "event_path": str(event_path)}
+    result: dict[str, Any] = {
+        "ok": True,
+        "rewritten": rewritten,
+        "event_path": str(event_path),
+        "source_status": new_status or current,
+        "supersedes_link": paired,
+    }
+    if status_note:
+        result["status_note"] = status_note
+    return result
 
 
 @dataclass

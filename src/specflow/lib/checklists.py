@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import subprocess
+import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -34,9 +35,23 @@ class ChecklistResult:
     """Result of evaluating a single checklist item."""
 
     item_id: str
-    result: str  # passed | failed | skipped
+    result: str  # passed | failed | error | skipped
     detail: str | None = None
     timestamp: str = ""
+    # Severity of the originating item (blocking | warning | info). None means
+    # unknown (e.g. a hand-built result) and is treated as blocking so an
+    # unknown severity can never silently downgrade a failure.
+    severity: str | None = None
+
+    @property
+    def is_nonpass(self) -> bool:
+        """True for a failed or errored result (anything that is not a pass/skip)."""
+        return self.result in ("failed", "error")
+
+    @property
+    def is_blocking(self) -> bool:
+        """True when this non-pass result blocks (blocking or unknown severity)."""
+        return self.is_nonpass and (self.severity or "blocking") == "blocking"
 
     def __post_init__(self) -> None:
         if not self.timestamp:
@@ -50,16 +65,49 @@ class AssembledChecklist:
     artifact_id: str
     items: list[ChecklistItem] = field(default_factory=list)
     sources: list[str] = field(default_factory=list)
+    # "<path>: <reason>" for every checklist file that could not be parsed —
+    # its items did not run, so the outcome cannot be reported as passed.
+    parse_errors: list[str] = field(default_factory=list)
 
 
-def parse_checklist_file(path: Path) -> list[ChecklistItem]:
-    """Parse a YAML checklist file into ChecklistItem objects."""
+# Parse errors already written to stderr in this process — `checklist-run
+# --all` would otherwise repeat the same broken-file warning per artifact.
+_REPORTED_PARSE_ERRORS: set[str] = set()
+
+
+def _record_parse_error(path: Path, reason: str, errors: list[str] | None) -> None:
+    """Report an unparseable checklist loudly (stderr) and record it (STORY-682)."""
+    message = f"{path}: {reason}"
+    if message not in _REPORTED_PARSE_ERRORS:
+        _REPORTED_PARSE_ERRORS.add(message)
+        print(f"Warning: cannot parse checklist {message} — its items will not run "
+              "(for a shipped checklist, run `specflow refresh --checklists` to restore it)", file=sys.stderr)
+    if errors is not None and message not in errors:
+        errors.append(message)
+
+
+def _load_checklist_yaml(path: Path, errors: list[str] | None = None) -> dict | None:
+    """Load a checklist YAML mapping, or report why it cannot be used and return None."""
     try:
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    except Exception:
-        return []
-
+    except Exception as exc:  # yaml.YAMLError, OSError, UnicodeDecodeError
+        reason = " ".join(str(exc).split()) or type(exc).__name__
+        _record_parse_error(path, reason, errors)
+        return None
     if not isinstance(data, dict):
+        _record_parse_error(path, "top-level YAML is not a mapping", errors)
+        return None
+    return data
+
+
+def parse_checklist_file(path: Path, errors: list[str] | None = None) -> list[ChecklistItem]:
+    """Parse a YAML checklist file into ChecklistItem objects.
+
+    A file that fails to parse is reported on stderr (path + reason) and
+    appended to ``errors`` when given, instead of silently yielding no items.
+    """
+    data = _load_checklist_yaml(path, errors)
+    if data is None:
         return []
 
     items: list[ChecklistItem] = []
@@ -95,43 +143,61 @@ def match_tags(artifact_tags: list[str], checklist_tags: list[str]) -> bool:
     return bool(set(artifact_tags) & set(checklist_tags))
 
 
-def _load_type_checklist(root: Path, artifact_type: str) -> list[ChecklistItem]:
+# Artifact type → in-process/ checklist name.
+TYPE_CHECKLIST_TYPE_MAP: dict[str, str] = {
+    "requirement": "requirement-writing",
+    "architecture": "architecture-writing",
+    "detailed-design": "design-writing",
+    "story": "story-writing",
+}
+
+
+def _load_type_checklist(
+    root: Path, artifact_type: str, errors: list[str] | None = None
+) -> list[ChecklistItem]:
     """Load the in-process checklist for an artifact type."""
-    type_map = {
-        "requirement": "requirement-writing",
-        "architecture": "architecture-writing",
-        "detailed-design": "design-writing",
-        "story": "story-writing",
-    }
+    type_map = TYPE_CHECKLIST_TYPE_MAP
     checklist_name = type_map.get(artifact_type)
     if not checklist_name:
         return []
 
     path = root / ".specflow" / "checklists" / "in-process" / f"{checklist_name}.yaml"
     if path.exists():
-        return parse_checklist_file(path)
+        return parse_checklist_file(path, errors)
     return []
 
 
-def _load_review_checklist(root: Path, artifact_type: str) -> list[ChecklistItem]:
+# Artifact type → review/ checklist name. The three V-model test types share
+# implementation-review (STORY-687: it was shipped but unreachable before).
+REVIEW_CHECKLIST_TYPE_MAP: dict[str, str] = {
+    "requirement": "requirement-review",
+    "architecture": "architecture-review",
+    "detailed-design": "detailed-design-review",
+    "story": "story-review",
+    "unit-test": "implementation-review",
+    "integration-test": "implementation-review",
+    "qualification-test": "implementation-review",
+}
+
+
+def _load_review_checklist(
+    root: Path, artifact_type: str, errors: list[str] | None = None
+) -> list[ChecklistItem]:
     """Load the review checklist for an artifact type."""
-    type_map = {
-        "requirement": "requirement-review",
-        "architecture": "architecture-review",
-        "detailed-design": "detailed-design-review",
-        "story": "story-review",
-    }
+    type_map = REVIEW_CHECKLIST_TYPE_MAP
     checklist_name = type_map.get(artifact_type)
     if not checklist_name:
         return []
 
     path = root / ".specflow" / "checklists" / "review" / f"{checklist_name}.yaml"
     if path.exists():
-        return parse_checklist_file(path)
+        return parse_checklist_file(path, errors)
     return []
 
 
-def _load_shared_checklists(root: Path, artifact: Artifact) -> list[ChecklistItem]:
+def _load_shared_checklists(
+    root: Path, artifact: Artifact, errors: list[str] | None = None
+) -> list[ChecklistItem]:
     """Load shared checklists matching the artifact's tags and type."""
     shared_dir = root / ".specflow" / "checklists" / "shared"
     if not shared_dir.exists():
@@ -139,12 +205,8 @@ def _load_shared_checklists(root: Path, artifact: Artifact) -> list[ChecklistIte
 
     items: list[ChecklistItem] = []
     for checklist_path in sorted(shared_dir.glob("*.yaml")):
-        try:
-            data = yaml.safe_load(checklist_path.read_text(encoding="utf-8"))
-        except Exception:
-            continue
-
-        if not isinstance(data, dict):
+        data = _load_checklist_yaml(checklist_path, errors)
+        if data is None:
             continue
 
         applies_to = data.get("applies_to", {})
@@ -159,20 +221,24 @@ def _load_shared_checklists(root: Path, artifact: Artifact) -> list[ChecklistIte
         type_match = artifact.type in checklist_types if checklist_types else True
 
         if tags_match and type_match:
-            items.extend(parse_checklist_file(checklist_path))
+            items.extend(parse_checklist_file(checklist_path, errors))
 
     return items
 
 
-def _load_gate_checklist(root: Path, phase_transition: str) -> list[ChecklistItem]:
+def _load_gate_checklist(
+    root: Path, phase_transition: str, errors: list[str] | None = None
+) -> list[ChecklistItem]:
     """Load phase-gate checklist for a specific transition."""
     path = root / ".specflow" / "checklists" / "phase-gates" / f"{phase_transition}.yaml"
     if path.exists():
-        return parse_checklist_file(path)
+        return parse_checklist_file(path, errors)
     return []
 
 
-def _load_domain_checklist(root: Path, domain: str, artifact_type: str) -> list[ChecklistItem]:
+def _load_domain_checklist(
+    root: Path, domain: str, artifact_type: str, errors: list[str] | None = None
+) -> list[ChecklistItem]:
     """Load domain-specific checklist items if a domain is set in config.yaml.
 
     Looks for .specflow/checklists/domain/{domain}.yaml. Items are filtered by
@@ -187,11 +253,8 @@ def _load_domain_checklist(root: Path, domain: str, artifact_type: str) -> list[
     if not path.exists():
         return []
 
-    try:
-        data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    except Exception:
-        return []
-    if not isinstance(data, dict):
+    data = _load_checklist_yaml(path, errors)
+    if data is None:
         return []
 
     top_applies_to = data.get("applies_to") or {}
@@ -200,7 +263,7 @@ def _load_domain_checklist(root: Path, domain: str, artifact_type: str) -> list[
     if top_type_filter and artifact_type not in top_type_filter:
         return []
 
-    all_items = parse_checklist_file(path)
+    all_items = parse_checklist_file(path, errors)
     filtered: list[ChecklistItem] = []
     for item in all_items:
         # Per-item type filter overrides top-level for this item
@@ -214,7 +277,9 @@ def _load_domain_checklist(root: Path, domain: str, artifact_type: str) -> list[
     return filtered
 
 
-def _load_learned_patterns(root: Path, artifact: Artifact) -> list[ChecklistItem]:
+def _load_learned_patterns(
+    root: Path, artifact: Artifact, errors: list[str] | None = None
+) -> list[ChecklistItem]:
     """Load learned prevention patterns matching the artifact's tags."""
     learned_dir = root / ".specflow" / "checklists" / "learned"
     if not learned_dir.exists():
@@ -222,19 +287,15 @@ def _load_learned_patterns(root: Path, artifact: Artifact) -> list[ChecklistItem
 
     items: list[ChecklistItem] = []
     for pattern_path in sorted(learned_dir.glob("PREV-*.yaml")):
-        try:
-            data = yaml.safe_load(pattern_path.read_text(encoding="utf-8"))
-        except Exception:
-            continue
-
-        if not isinstance(data, dict):
+        data = _load_checklist_yaml(pattern_path, errors)
+        if data is None:
             continue
 
         applies_to = data.get("applies_to", {})
         pattern_tags = _normalize_str_list(applies_to.get("tags", [])) if isinstance(applies_to, dict) else []
 
         if match_tags(artifact.tags, pattern_tags):
-            items.extend(parse_checklist_file(pattern_path))
+            items.extend(parse_checklist_file(pattern_path, errors))
 
     return items
 
@@ -327,28 +388,29 @@ def assemble_checklist(
     """
     all_items: list[ChecklistItem] = []
     sources: list[str] = []
+    parse_errors: list[str] = []
 
     # 1. Artifact-type checklist
-    type_items = _load_type_checklist(root, artifact.type)
+    type_items = _load_type_checklist(root, artifact.type, parse_errors)
     if type_items:
         all_items.extend(type_items)
         sources.append(f"in-process/{artifact.type}")
 
     # 2. Review checklist
-    review_items = _load_review_checklist(root, artifact.type)
+    review_items = _load_review_checklist(root, artifact.type, parse_errors)
     if review_items:
         all_items.extend(review_items)
         sources.append(f"review/{artifact.type}")
 
     # 3. Shared checklists
-    shared_items = _load_shared_checklists(root, artifact)
+    shared_items = _load_shared_checklists(root, artifact, parse_errors)
     if shared_items:
         all_items.extend(shared_items)
         sources.append("shared/*")
 
     # 4. Phase-gate checklist
     if phase_transition:
-        gate_items = _load_gate_checklist(root, phase_transition)
+        gate_items = _load_gate_checklist(root, phase_transition, parse_errors)
         if gate_items:
             all_items.extend(gate_items)
             sources.append(f"phase-gates/{phase_transition}")
@@ -360,7 +422,7 @@ def assemble_checklist(
         sources.append("best-practices/BP-*")
 
     # 6. Learned patterns
-    learned_items = _load_learned_patterns(root, artifact)
+    learned_items = _load_learned_patterns(root, artifact, parse_errors)
     if learned_items:
         all_items.extend(learned_items)
         sources.append("learned/PREV-*")
@@ -368,7 +430,7 @@ def assemble_checklist(
     # 7. Domain checklist (project-level domain set via `specflow domain set`)
     from specflow.lib.config import get_domain
     domain, _ = get_domain(root)
-    domain_items = _load_domain_checklist(root, domain, artifact.type)
+    domain_items = _load_domain_checklist(root, domain, artifact.type, parse_errors)
     if domain_items:
         all_items.extend(domain_items)
         sources.append(f"domain/{domain}")
@@ -381,6 +443,7 @@ def assemble_checklist(
         artifact_id=artifact.id,
         items=all_items,
         sources=sources,
+        parse_errors=parse_errors,
     )
 
 
@@ -391,15 +454,19 @@ def run_automated_pass(
 ) -> list[ChecklistResult]:
     """Run all automated checklist items (zero-token pass).
 
-    If any blocking automated item fails, returns immediately.
-    Non-automated items are returned as 'skipped'.
+    Each result carries its item's severity. If a blocking-severity automated
+    item fails (or errors), returns immediately. An automated item with no
+    script is an ``error`` result — a definition fault, never a silent pass.
+    Non-automated items are not evaluated here.
     """
     results: list[ChecklistResult] = []
-    blocking_failed = False
 
     for item in assembled.items:
         if not item.automated:
             continue
+
+        def _result(result: str, detail: str | None = None) -> ChecklistResult:
+            return ChecklistResult(item_id=item.id, result=result, detail=detail, severity=item.severity)
 
         if item.script:
             try:
@@ -413,25 +480,20 @@ def run_automated_pass(
                     timeout=30,
                 )
                 if proc.returncode == 0:
-                    results.append(ChecklistResult(item_id=item.id, result="passed"))
+                    results.append(_result("passed"))
                 else:
                     detail = proc.stderr.strip() or proc.stdout.strip() or "Script returned non-zero"
-                    results.append(ChecklistResult(item_id=item.id, result="failed", detail=detail))
-                    if item.severity == "blocking":
-                        blocking_failed = True
+                    results.append(_result("failed", detail))
             except subprocess.TimeoutExpired:
-                results.append(ChecklistResult(item_id=item.id, result="failed", detail="Script timed out"))
-                if item.severity == "blocking":
-                    blocking_failed = True
+                results.append(_result("failed", "Script timed out"))
             except Exception as e:
-                results.append(ChecklistResult(item_id=item.id, result="failed", detail=str(e)))
-                if item.severity == "blocking":
-                    blocking_failed = True
+                results.append(_result("error", str(e)))
         else:
-            # Automated but no script — pass by default
-            results.append(ChecklistResult(item_id=item.id, result="passed"))
+            # Automated but no script: the item can never be evaluated. Report
+            # it as an error (STORY-682) rather than a vacuous pass.
+            results.append(_result("error", "Automated item has no script — fix the checklist definition"))
 
-        if blocking_failed:
+        if results[-1].is_blocking:
             break
 
     return results
@@ -442,8 +504,14 @@ def persist_results(
     artifact_id: str,
     checklist_id: str,
     results: list[ChecklistResult],
+    parse_errors: list[str] | None = None,
 ) -> Path:
-    """Write checklist results to .specflow/checklist-log/."""
+    """Write checklist results to .specflow/checklist-log/.
+
+    ``blocking_failures`` counts only non-pass results whose item severity is
+    blocking (or unknown). Unparseable checklist files (``parse_errors``) are
+    recorded and keep an otherwise-passing outcome at ``incomplete``.
+    """
     log_dir = root / ".specflow" / "checklist-log"
     log_dir.mkdir(parents=True, exist_ok=True)
 
@@ -451,24 +519,19 @@ def persist_results(
     filename = f"{ts}_{checklist_id}.yaml"
     path = log_dir / filename
 
-    blocking_failures = sum(
-        1 for r in results
-        if r.result == "failed" and any(
-            i.id == r.item_id and i.severity == "blocking"
-            for i in []  # Will be passed in real usage
-        )
-    )
+    blocking_failures = sum(1 for r in results if r.is_blocking)
 
     # Honest overall: an empty result list (no automated items ran) must NOT
     # be reported as "passed" — vacuous truth (all() over []) is dishonest
     # because nothing was actually verified. Empty → "incomplete"; non-empty
-    # all-passed → "passed"; otherwise (any failed) → "failed".
-    if not results:
-        overall = "incomplete"
-    elif all(r.result == "passed" for r in results):
-        overall = "passed"
-    else:
+    # all-passed → "passed"; otherwise (any failed) → "failed". A checklist
+    # file that failed to parse means some items never ran → not "passed".
+    if any(r.is_nonpass for r in results):
         overall = "failed"
+    elif not results or parse_errors:
+        overall = "incomplete"
+    else:
+        overall = "passed"
 
     log_data = {
         "id": f"{ts}_{checklist_id}",
@@ -477,12 +540,19 @@ def persist_results(
         "trigger": "review",
         "artifacts_checked": [artifact_id],
         "results": [
-            {"item": r.item_id, "result": r.result, **({"detail": r.detail} if r.detail else {})}
+            {
+                "item": r.item_id,
+                "result": r.result,
+                **({"severity": r.severity} if r.is_nonpass and r.severity else {}),
+                **({"detail": r.detail} if r.detail else {}),
+            }
             for r in results
         ],
         "overall": overall,
-        "blocking_failures": sum(1 for r in results if r.result == "failed"),
+        "blocking_failures": blocking_failures,
     }
+    if parse_errors:
+        log_data["parse_errors"] = list(parse_errors)
 
     path.write_text(
         yaml.dump(log_data, default_flow_style=False, sort_keys=False),

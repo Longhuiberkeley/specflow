@@ -82,8 +82,20 @@ def test_ci_gate_preserves_github_expressions():
     # str.format) and the job must still bootstrap from git.
     text = _generate(["ci-gate"])
     assert "${{ github.base_ref }}" in text
-    assert "${{ github.head_ref }}" in text
     assert "uvx --from git+" in text
+
+
+def test_ci_gate_diffs_origin_base_against_pr_head_sha():
+    # STORY-686 AC3: bare base_ref/head_ref are branch names that do not exist
+    # as local refs in a PR checkout; the gate must diff origin/<base> against
+    # the pull-request head sha (replaces the old head_ref assertion).
+    text = _generate(["ci-gate"])
+    runs = "\n".join(_job_runs(text)["specflow-ci-gate"])
+    assert "--base origin/${{ github.base_ref }}" in runs
+    assert "--head ${{ github.event.pull_request.head.sha }}" in runs
+    assert "github.head_ref" not in text
+    job = yaml.safe_load(text)["jobs"]["specflow-ci-gate"]
+    assert "pull_request" in job["if"]
 
 
 def test_default_ops_produce_expected_jobs():
@@ -155,8 +167,10 @@ def test_repo_ci_gate_pr_only_and_uses_github_refs():
     # Bootstraps from the repo itself (uv sync), not uvx.
     assert "uv sync" in flat
     assert "uv run specflow ci-gate" in flat
-    assert "${{ github.base_ref }}" in flat
-    assert "${{ github.head_ref }}" in flat
+    # STORY-686 AC3: same ref form as the generated gate (was bare head_ref).
+    assert "--base origin/${{ github.base_ref }}" in flat
+    assert "--head ${{ github.event.pull_request.head.sha }}" in flat
+    assert "github.head_ref" not in flat
 
 
 def test_repo_release_gate_no_continue_on_error():

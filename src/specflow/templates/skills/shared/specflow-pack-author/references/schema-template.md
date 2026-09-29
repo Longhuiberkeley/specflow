@@ -2,6 +2,8 @@
 
 Each schema YAML file defines a new artifact type that SpecFlow can create, validate, and track.
 
+The installed types are the files in `.specflow/schema/`; `specflow schema <type>` shows one type's fields, transitions, and link roles. Copy the shape of an existing schema rather than guessing.
+
 ## Required Fields
 
 | Field | Type | Description |
@@ -19,7 +21,9 @@ Each schema YAML file defines a new artifact type that SpecFlow can create, vali
 |-------|------|-------------|
 | `optional_fields` | list | YAML frontmatter fields that may be present |
 | `allowed_link_roles` | list | Valid link roles for `links:` frontmatter entries |
-| `initial_statuses` | list | Creation entry point(s). Overrides computed empty-predecessor roots when present; omitted → today's computed-root behavior |
+| `initial_statuses` | list | Creation entry point(s). Overrides computed empty-predecessor roots when present; omitted → computed-root behavior |
+| `category` | string | Dashboard group: `spec`, `work`, `review`, `research`, or `ops` (default `spec`) |
+| `allowed_review_status` | list | Valid values for an optional `review_status` frontmatter field (e.g., `[unreviewed, reviewed, flagged]`); lint blocks any other value. Add `review_status` to `optional_fields` too |
 
 ## Status Transitions
 
@@ -27,11 +31,11 @@ The `allowed_status` dict maps each status to the statuses it may be entered *fr
 
 ```yaml
 allowed_status:
-  draft: []              # draft can transition to nothing (terminal) or to approved
+  draft: []              # entry status: created here, no predecessor
   approved:
-    - draft              # approved can go back to draft for rework
+    - draft              # approved is reached from draft
   mitigated:
-    - approved           # mitigated can revert to approved
+    - approved           # mitigated is reached from approved
 ```
 
 An empty predecessor list marks a computed creation root (the default `--status` when exactly one such status exists).
@@ -43,9 +47,9 @@ When a status must both be a creation default *and* have a predecessor — for e
 ```yaml
 initial_statuses: [active]
 allowed_status:
-  active: [paused]       # paused → active is legal
-  paused: [active]
-  completed: [active]
+  active: [paused]       # active is reachable from paused
+  paused: [active]       # paused is reachable from active
+  completed: [active]    # completed is reachable from active
 ```
 
 Without `initial_statuses`, `active: [paused]` has no empty-predecessor root, so implicit create would require `--status`. A multi-entry list behaves like today's multi-root schemas (explicit `--status` required; each listed status is sanction-free at creation). Unknown names in the list are ignored; if none remain, SpecFlow falls back to computed roots.

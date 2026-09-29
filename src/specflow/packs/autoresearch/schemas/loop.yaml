@@ -3,7 +3,7 @@
 # `research_agenda` entries (freeform; rendered by `autoresearch status`):
 #   {direction, status: unexplored|in_progress|promising|exhausted,
 #    expected_impact, rationale,
-#    priority: pursue|deprioritize|blocked|revisit,   # REQ-043 decision
+#    priority: pursue|deprioritize|blocked|revisit,   # a decision, not evidence
 #    progress: "<new evidence + the next decision it feeds>"}
 # Decomposition is a hypothesis: the agenda records the width of plausible
 # formulations (assumptions, tradeoffs, evaluation) — there is no direction

@@ -1,0 +1,18 @@
+id: PREV-014
+name: 'Prevent recurrence of: merge wrote the non-schema status merged_into straight
+  into the source file, bypassing update_artifact (violated REQ-002) (caught by UT-129,
+  UT-131)'
+discovered_from: DEF-012
+mode: reactive
+pattern: 'Prevent recurrence of: merge wrote the non-schema status merged_into straight
+  into the source file, bypassing update_artifact (violated REQ-002) (caught by UT-129,
+  UT-131)'
+applies_to:
+  tags: []
+items:
+- id: PREV-014-01
+  check: Verify that changes touching REQ-002 are exercised by UT-129, UT-131 before
+    approval.
+  severity: warning
+  automated: false
+  mode: reactive

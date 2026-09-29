@@ -7,8 +7,8 @@ Inspired by [Karpathy's autoresearch](https://github.com/karpathy/autoresearch),
 ## Coverage
 
 - 4 new artifact types: `competition`, `loop`, `experiment`, `finding`
-- 1 skill: `specflow-autoresearch` (run, plan, review, leaderboard subcommands)
-- 4 reference protocols: autonomous loop, competition setup, explore/exploit modes, finding generation
+- 1 skill: `specflow-autoresearch`, backed by `specflow autoresearch` (plan, run, status, frontier, review, leaderboard, log, suggest-finds)
+- 13 reference sheets under `skills/specflow-autoresearch/references/`: the loop, competition setup, noise, crash recovery, explore/exploit, finding generation, rolling evaluation, EDA and error analysis, methodology, and more
 
 ## Usage
 

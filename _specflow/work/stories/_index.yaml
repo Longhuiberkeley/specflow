@@ -1148,6 +1148,369 @@ artifacts:
     tags: []
     fingerprint: sha256:3289341fad9e
     children: []
+  STORY-665:
+    id: STORY-665
+    title: 'Autoresearch evidence-sensitive reassessment (REQ-043): CLI, schema, skill
+      references'
+    status: implemented
+    tags:
+    - autoresearch
+    - v1.16.0
+    fingerprint: sha256:e399616ba8ef
+    children: []
+  STORY-666:
+    id: STORY-666
+    title: BP anatomy, provenance fields, and transitional status map (REQ-044)
+    status: implemented
+    tags: []
+    fingerprint: sha256:5b71045d81f0
+    children: []
+  STORY-667:
+    id: STORY-667
+    title: Practices seed split and handbook deprecation (REQ-044)
+    status: implemented
+    tags: []
+    fingerprint: sha256:6a90ee08ec8c
+    children: []
+  STORY-668:
+    id: STORY-668
+    title: Practices validate, practices migrate, applicability-first loader (REQ-044)
+    status: implemented
+    tags: []
+    fingerprint: sha256:87a1e6ff20fc
+    children: []
+  STORY-669:
+    id: STORY-669
+    title: guided_by link role for REQ, ARCH, and STORY (REQ-045)
+    status: implemented
+    tags: []
+    fingerprint: sha256:2a725a5f700b
+    children: []
+  STORY-670:
+    id: STORY-670
+    title: bp-application evidence check with tailoring and migration stamp (REQ-045)
+    status: implemented
+    tags: []
+    fingerprint: sha256:225cba543bec
+    children: []
+  STORY-671:
+    id: STORY-671
+    title: Brief bound/unbound practice accounting (REQ-045)
+    status: implemented
+    tags: []
+    fingerprint: sha256:6546fbec875a
+    children: []
+  STORY-672:
+    id: STORY-672
+    title: Autoresearch frontier ledger and move menu (REQ-046)
+    status: implemented
+    tags: []
+    fingerprint: sha256:35326d62fe8c
+    children: []
+  STORY-673:
+    id: STORY-673
+    title: EDA lenses, applicability-aware accounting, agenda re-rank (REQ-046)
+    status: implemented
+    tags: []
+    fingerprint: sha256:ed7fce11f719
+    children: []
+  STORY-674:
+    id: STORY-674
+    title: Error-analysis protocol and analysis iterations (REQ-046)
+    status: implemented
+    tags: []
+    fingerprint: sha256:989b4509f92b
+    children: []
+  STORY-675:
+    id: STORY-675
+    title: 'Knowledge flow: plan --inherit, condensation requirement, top-3 status,
+      adjacent-field lens (REQ-046)'
+    status: implemented
+    tags: []
+    fingerprint: sha256:22d9c0ca75fd
+    children: []
+  STORY-676:
+    id: STORY-676
+    title: Evaluator fingerprint and drift routing (REQ-047)
+    status: implemented
+    tags: []
+    fingerprint: sha256:bb9678cd9e21
+    children: []
+  STORY-677:
+    id: STORY-677
+    title: Jump flags, guard metrics, external scores, metric bundles (REQ-047)
+    status: implemented
+    tags: []
+    fingerprint: sha256:6562421c0056
+    children: []
+  STORY-678:
+    id: STORY-678
+    title: format_version stamped on init and refresh, read-side warning, hook format
+      guard
+    status: verified
+    tags:
+    - v1.17.0
+    - engine
+    - p1
+    fingerprint: sha256:1404a6a1036e
+    children: []
+  STORY-679:
+    id: STORY-679
+    title: check_coverage credits canonical REQ refined_by ARCH and STORY-to-test
+      verified_by
+    status: verified
+    tags:
+    - v1.17.0
+    - engine
+    - p1
+    - coverage
+    fingerprint: sha256:5dfece6babb5
+    children: []
+  STORY-680:
+    id: STORY-680
+    title: find_missing_v_pairs requires the paired test type and returns the test
+      prefix
+    status: verified
+    tags:
+    - v1.17.0
+    - engine
+    - p1
+    - coverage
+    fingerprint: sha256:a13aad4d1b06
+    children: []
+  STORY-681:
+    id: STORY-681
+    title: init and refresh resolve project-local packs before bundled packs
+    status: verified
+    tags:
+    - v1.17.0
+    - engine
+    - p1
+    - packs
+    fingerprint: sha256:d3de08686577
+    children: []
+  STORY-682:
+    id: STORY-682
+    title: 'Checklist runner: script-less automated items error, severity honoured,
+      parse failures warn'
+    status: verified
+    tags:
+    - v1.17.0
+    - engine
+    - p1
+    - checklists
+    fingerprint: sha256:ccc1bb2647c5
+    children: []
+  STORY-683:
+    id: STORY-683
+    title: 'Fail loud: schema registration and audit lenses emit findings instead
+      of swallowing errors'
+    status: verified
+    tags:
+    - v1.17.0
+    - engine
+    - p1
+    - determinism
+    fingerprint: sha256:4d73cc41863f
+    children: []
+  STORY-684:
+    id: STORY-684
+    title: Audit findings cache key covers non-artifact inputs
+    status: verified
+    tags:
+    - v1.17.0
+    - engine
+    - p1
+    - determinism
+    fingerprint: sha256:b1cc3def8264
+    children: []
+  STORY-685:
+    id: STORY-685
+    title: Platform install never deletes the instruction file or pack blocks
+    status: verified
+    tags:
+    - v1.17.0
+    - sweep
+    - p1b
+    - install
+    fingerprint: sha256:6af69f20c44a
+    children: []
+  STORY-686:
+    id: STORY-686
+    title: 'CLI defects: import parsing, dead hook suspect check, CI gate refs on
+      pull requests'
+    status: verified
+    tags:
+    - v1.17.0
+    - sweep
+    - p1b
+    - cli
+    fingerprint: sha256:185210cc7318
+    children: []
+  STORY-687:
+    id: STORY-687
+    title: 'Shipped checklists: story-writing rewrite, per-artifact scope, dead surfaces,
+      corpus test'
+    status: verified
+    tags:
+    - v1.17.0
+    - sweep
+    - p1b
+    - checklists
+    fingerprint: sha256:7b64ff801e55
+    children: []
+  STORY-688:
+    id: STORY-688
+    title: 'Guard tests: prose-to-CLI surface, reference lint, aggregate always-on
+      budget'
+    status: verified
+    tags:
+    - v1.17.0
+    - sweep
+    - p1b
+    - guards
+    fingerprint: sha256:d118b999d3cc
+    children: []
+  STORY-689:
+    id: STORY-689
+    title: 'Core lifecycle skills: ship reorder, execute output_files, review scope,
+      lens keys, BP path, context rule'
+    status: verified
+    tags:
+    - v1.17.0
+    - sweep
+    - p1b
+    - skills
+    fingerprint: sha256:a7c27e413cf0
+    children: []
+  STORY-690:
+    id: STORY-690
+    title: 'Setup skills and docs: pack-author install message and schema docs, adapter
+      cleanup, no uv run in docs'
+    status: verified
+    tags:
+    - v1.17.0
+    - sweep
+    - p1b
+    - skills
+    fingerprint: sha256:a443102a0573
+    children: []
+  STORY-691:
+    id: STORY-691
+    title: 'Adoption pack: backfill commands run as documented'
+    status: verified
+    tags:
+    - v1.17.0
+    - sweep
+    - p1b
+    - adoption
+    fingerprint: sha256:9c678011c2b7
+    children: []
+  STORY-692:
+    id: STORY-692
+    title: 'Ops pack: breached nag clears, MONITOR template lints clean, pause and
+      retire guidance'
+    status: verified
+    tags:
+    - v1.17.0
+    - sweep
+    - p1b
+    - ops
+    fingerprint: sha256:0a41e40bcc30
+    children: []
+  STORY-693:
+    id: STORY-693
+    title: 'Autoresearch pack text matches the CLI: commands, flags, noise shape,
+      plan and frontier'
+    status: verified
+    tags:
+    - v1.17.0
+    - sweep
+    - p1b
+    - autoresearch
+    fingerprint: sha256:efaa3993b44e
+    children: []
+  STORY-694:
+    id: STORY-694
+    title: 'Autoresearch CLI: no fabricated metrics, no count-based kill drafts, null-safe
+      sorting'
+    status: verified
+    tags:
+    - v1.17.0
+    - sweep
+    - p1b
+    - autoresearch
+    fingerprint: sha256:6a4416958b2a
+    children: []
+  STORY-695:
+    id: STORY-695
+    title: TLDR pack rewrite, iso26262-demo relabel, per-pack healthy-fixture tests
+    status: verified
+    tags:
+    - v1.17.0
+    - sweep
+    - p1b
+    - packs
+    fingerprint: sha256:9dcc3833db5f
+    children: []
+  STORY-696:
+    id: STORY-696
+    title: 'Index store: exclusive-create allocation, index as cache, one mutation
+      lock, crash-safe renumber'
+    status: verified
+    tags:
+    - v1.17.0
+    - engine
+    - p1c
+    - index
+    fingerprint: sha256:d5cd75b097f6
+    children: []
+  STORY-697:
+    id: STORY-697
+    title: cascade-status and merge write only legal statuses and fail loudly
+    status: verified
+    tags:
+    - v1.17.0
+    - engine
+    - p1c
+    - cascade
+    fingerprint: sha256:43102866b8a5
+    children: []
+  STORY-698:
+    id: STORY-698
+    title: 'CI gate walks every commit: per-step legality, per-commit authority, rename-proof
+      independence'
+    status: verified
+    tags:
+    - v1.17.0
+    - engine
+    - p1c
+    - ci-gate
+    fingerprint: sha256:0588b0bca32d
+    children: []
+  STORY-699:
+    id: STORY-699
+    title: 'Verification evidence semantics: one expected-exit helper, dead-oracle
+      finding, QT-011 repointed'
+    status: verified
+    tags:
+    - v1.17.0
+    - engine
+    - p1c
+    - verification
+    fingerprint: sha256:8b73ef40eb48
+    children: []
+  STORY-700:
+    id: STORY-700
+    title: Baseline ordering follows SemVer 2.0 section 11
+    status: verified
+    tags:
+    - v1.17.0
+    - engine
+    - p1c
+    - semver
+    fingerprint: sha256:cacb862383e2
+    children: []
   STORY-ADDAUXIL-c7bd:
     id: STORY-ADDAUXIL-c7bd
     title: Add auxiliary_metrics field to EXPT schema and update test coverage
@@ -1258,99 +1621,4 @@ artifacts:
     tags: []
     fingerprint: sha256:a557ed85a54a
     children: []
-  STORY-665:
-    id: STORY-665
-    title: 'Autoresearch evidence-sensitive reassessment (REQ-043): CLI, schema, skill
-      references'
-    status: implemented
-    tags:
-    - autoresearch
-    - v1.16.0
-    fingerprint: sha256:e399616ba8ef
-    children: []
-  STORY-666:
-    id: STORY-666
-    title: BP anatomy, provenance fields, and transitional status map (REQ-044)
-    status: implemented
-    tags: []
-    fingerprint: sha256:5b71045d81f0
-    children: []
-  STORY-667:
-    id: STORY-667
-    title: Practices seed split and handbook deprecation (REQ-044)
-    status: implemented
-    tags: []
-    fingerprint: sha256:6a90ee08ec8c
-    children: []
-  STORY-668:
-    id: STORY-668
-    title: Practices validate, practices migrate, applicability-first loader (REQ-044)
-    status: implemented
-    tags: []
-    fingerprint: sha256:87a1e6ff20fc
-    children: []
-  STORY-669:
-    id: STORY-669
-    title: guided_by link role for REQ, ARCH, and STORY (REQ-045)
-    status: implemented
-    tags: []
-    fingerprint: sha256:2a725a5f700b
-    children: []
-  STORY-670:
-    id: STORY-670
-    title: bp-application evidence check with tailoring and migration stamp (REQ-045)
-    status: implemented
-    tags: []
-    fingerprint: sha256:225cba543bec
-    children: []
-  STORY-671:
-    id: STORY-671
-    title: Brief bound/unbound practice accounting (REQ-045)
-    status: implemented
-    tags: []
-    fingerprint: sha256:6546fbec875a
-    children: []
-  STORY-672:
-    id: STORY-672
-    title: Autoresearch frontier ledger and move menu (REQ-046)
-    status: implemented
-    tags: []
-    fingerprint: sha256:35326d62fe8c
-    children: []
-  STORY-673:
-    id: STORY-673
-    title: EDA lenses, applicability-aware accounting, agenda re-rank (REQ-046)
-    status: implemented
-    tags: []
-    fingerprint: sha256:ed7fce11f719
-    children: []
-  STORY-674:
-    id: STORY-674
-    title: Error-analysis protocol and analysis iterations (REQ-046)
-    status: implemented
-    tags: []
-    fingerprint: sha256:989b4509f92b
-    children: []
-  STORY-675:
-    id: STORY-675
-    title: 'Knowledge flow: plan --inherit, condensation requirement, top-3 status,
-      adjacent-field lens (REQ-046)'
-    status: implemented
-    tags: []
-    fingerprint: sha256:22d9c0ca75fd
-    children: []
-  STORY-676:
-    id: STORY-676
-    title: Evaluator fingerprint and drift routing (REQ-047)
-    status: implemented
-    tags: []
-    fingerprint: sha256:bb9678cd9e21
-    children: []
-  STORY-677:
-    id: STORY-677
-    title: Jump flags, guard metrics, external scores, metric bundles (REQ-047)
-    status: implemented
-    tags: []
-    fingerprint: sha256:6562421c0056
-    children: []
-next_id: 678
+next_id: 701

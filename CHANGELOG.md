@@ -4,6 +4,42 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.17.0] - 2026-09-30
+
+### Highlights
+- **Engine direction settled (DEC-090):** SpecFlow stays Python. Semantics will move to one declarative ontology with a canonical graph and named views (REQ-052..054, ARCH-039, DDD-033; P2-P5 on the roadmap). A Lean engine and a specflow2 rewrite were rejected after two adversarial ultracode studies; formal methods are adopted as event-triggered model-checking spikes on SpecFlow's stateful code and as user-recorded evidence (REQ-058, BP-008).
+- **Index store hardened after a fidelity-first model check (SPIKE-003, DEC-093, DDD-034, STORY-696):** six reproduced data-loss defects (conflicted index overwriting REQ-001, deleted ids reused with links re-binding, concurrent update losing creates, crashed renumber yielding duplicate ids, two lock holders, illegal merge status). ID allocation now linearises on exclusive file creation, `_index.yaml` is a rebuildable cache, one repo-wide mutation lock (`fcntl.flock` on POSIX, kernel byte-range lock on Windows) covers every index, state, PREV, baseline and impact-log writer, and renumber-drafts journals and resumes. A crash-at-k and subprocess barrier harness in `tests/formal/` pins invariants I1-I6; the disposable TLA+ models in `formal/tla/` reproduced the defects on the current protocol (TLC exit 12) and check the fixed protocol clean (286,958 distinct states).
+- **Shipped skills, checklists and packs made executable as documented (REQ-056, STORY-685..695):** nine broken paths fixed (kiro/trae install deleting the always-on file, adoption backfill commands failing the creation gate, unparseable `import`, dead hook suspect check, STORY in-process checklist that never parsed, ship snapshotting before its gate, autoresearch text naming nonexistent flags, fabricated 0.0 metrics, CI gate failing on pull requests) plus a dozen cry-wolf sources, guarded by six new corpus tests so prose can no longer drift from the CLI.
+
+### Features
+- `format_version: 1` stamped by init and refresh; commands warn once on a newer repository format and `hook pre-commit` refuses with the upgrade instruction (REQ-057, STORY-678).
+- Project-local packs resolve from `.specflow/packs/<name>/` before bundled packs for `init --preset` and `refresh --packs`; pack-first `init --preset` fully initialises a project (STORY-681).
+- `refresh --checklists` repairs shipped checklists that fail to parse and, with `--force`, drifted ones; user-added checklists are never touched (STORY-687).
+- New accounting lint checks: `dead-oracle` (a verify_command naming a nonexistent path; QT-011 was the live instance) and a coverage-shape line for REQs refined only through legacy `derives_from` (STORY-679, STORY-699).
+- One `run_matches_expected` helper decides whether a recorded verify run passed from the declared `verify_exit_code` (default 0); brief, evidence, risk tier and project-audit all use it (STORY-699).
+- `ci-gate` walks every commit of a pull request: per-step schema legality (team mode), per-commit authority, rename-proof independence (SPIKE-004, STORY-698).
+- `cascade-status` proposes only legal one-step transitions, holds a REQ while a sibling STORY is unverified, exits non-zero on refusal; `reconcile` propagates that exit; `merge` writes `superseded` plus a `supersedes` link instead of the illegal `merged_into` (STORY-697).
+- Baseline ordering follows SemVer 2.0 section 11; post-release suffixes sort as prereleases (STORY-700).
+- Guard tests (STORY-688): prose-to-CLI surface over templates, packs, README and docs; checklist corpus; parametrized platform install safety; aggregate always-on budget (375 words); reference lint; per-pack and core-lifecycle healthy fixtures.
+- Autoresearch: `frontier --competition` alias; `log` refuses `kept` without a metric and writes null for crashed runs; crashed experiments never feed jump or guard advisories; `suggest-finds` emits neutral outcome accounting (STORY-693, STORY-694).
+
+### Fixes
+- Coverage credits the canonical `REQ refined_by ARCH` shape and a STORY's own outgoing `verified_by` (DEC-091); the V-pair check requires the paired test type and returns the test prefix (DEC-092).
+- Schema registration and project-audit lenses fail loud with `schema-error` / `lens-error` findings instead of swallowing exceptions; the findings-cache key covers standards, baselines, docs, source tree, schema and run mode (STORY-683, STORY-684).
+- Checklist runner: script-less automated items error, warning severity is honoured, parse failures warn with the repair command (STORY-682).
+- Ops: a breached MONITOR stops nagging once resolved or credited; the documented MONITOR create lints clean (STORY-692). Adoption: backfill commands carry `--sanctioned`, tags are preserved, retro-link is final-pass only (STORY-691).
+- spidr-coverage is informational when there are fewer stories than SPIDR dimensions; lean changes lint with zero warnings.
+- Core skills: ship reorders verify → document-changes → lens → gate → baseline → close-out; execute records output_files; artifact-review stops only on blockers naming the artifact; lens keys match the catalog; `practices seed` replaces the deprecated handbook alias; bp-authoring matches the five-section body; the always-on hand-edit rule names config.yaml and adapters.yaml as user-editable.
+- Packs: tldr-communication rewritten to carry only its delta (compaction recap plus one ELI5 gloss clause); iso26262-demo relabelled as a fixture and removed from the init menu; ops and tldr gain READMEs.
+
+### Decisions / Docs
+- DEC-090 (engine direction), DEC-091/092 (coverage metric deltas), DEC-093 (index allocation). REQ-052..058, ARCH-039/040, DDD-033/034 recorded; REQ-052/053/055/057/058 are implemented for their shipped increments (remaining ACs are P2-P8) and REQ-054 is parked deprecated per the v1.16.0 precedent for future-increment REQs (re-derived at the P5 planning pass). SPIKE-003/004 completed; BP-008 (event-triggered model-checking practice, provenance learned) approved. CHL-349: cascade-status promotes a REQ on sibling status, not AC coverage. DEF-001..019 filed from failing tests; DEF-014 wontfix as a DDD-034 operating assumption.
+- **Upgrade note:** run `specflow refresh` (stamps `format_version`, heals schema drift) and `specflow refresh --checklists --force` (picks up the story-writing rewrite and per-artifact item changes). Hooks run whatever `specflow` is on PATH: reinstall with `uv tool install --force git+https://github.com/Longhuiberkeley/specflow`. `cascade-status` and `reconcile` now exit 1 on a refused cascade.
+
+### Tests
+- +753 (1690 → 2443): formal crash/barrier/allocator/CLI-parallel harnesses, writer ban, safety-claim citations, cascade legality table, CI-gate history, run_matches_expected, dead-oracle, baseline ordering, format version, platform install safety, local packs, checklist corpus and runner, prose-CLI surface, reference lint, context budget, healthy fixtures, coverage semantics, fail-loud lenses, cache key, ops/adoption/tldr/autoresearch pack behaviour.
+- Total: 2443 tests passing (23 skipped, 1 strict xfail for DEF-014)
+
 ## [1.16.0] - 2026-09-26
 
 ### Highlights

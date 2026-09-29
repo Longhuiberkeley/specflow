@@ -15,9 +15,11 @@ suspect: false
 links:
 - target: REQ-037
   role: derives_from
+- target: REQ-058
+  role: derives_from
 created: '2026-08-03'
 fingerprint: sha256:5b95d52012fe
-modified: '2026-09-13'
+modified: '2026-09-30'
 thinking_techniques:
 - assumption-surfacing
 ---

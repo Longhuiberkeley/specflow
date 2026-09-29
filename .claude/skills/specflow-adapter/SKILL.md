@@ -1,6 +1,6 @@
 ---
 name: specflow-adapter
-description: "Configure CI spec validation, import/export artifacts, standards ingestion, or team RBAC."
+description: "Configure CI spec validation, import/export artifacts, or team RBAC."
 ---
 
 Extra text narrows scope — still run the deterministic core first.
@@ -9,21 +9,20 @@ Extra text narrows scope — still run the deterministic core first.
 
 # SpecFlow Adapter
 
-Manage SpecFlow's adapter framework — CI pipelines, artifact exchange, standards ingestion, and team RBAC — through a single guided interface.
+Manage SpecFlow's adapter framework — CI pipelines, artifact exchange, and team RBAC — through a single guided interface.
 
 ## Adapter Framework Overview
 
-SpecFlow's adapter framework has three axes. Any adapter can implement any combination:
+SpecFlow's adapter framework has two axes:
 
 | Axis | What | Built-in adapters |
 |------|------|-------------------|
 | **CI generation** | Generate workflow files for your CI provider | `github-actions` |
 | **Artifact exchange** | Import/export from external tools (DOORS, Polarion) | `reqif` |
-| **Standards ingestion** | Parse documents into pack format | (extensible) |
 
 Team RBAC is managed alongside CI because enforcement relies on hooks and CODEOWNERS.
 
-Configuration lives in `.specflow/adapters.yaml` (CI, exchange, standards) and `.specflow/config.yaml` (team roles and policies).
+Configuration lives in `.specflow/adapters.yaml` (CI, exchange) and `.specflow/config.yaml` (team roles and policies). This skill is the sanctioned place to edit both files. To turn a standards document into a compliance pack, use `/specflow-pack-author` instead.
 
 ---
 
@@ -37,9 +36,7 @@ Ask: "What would you like to configure?"
 |--------|------|
 | **CI Setup** | Set up or change CI pipeline, generate workflow files, install hooks |
 | **Exchange Setup** | Import or export artifacts with external tools |
-| **Standards Setup** | Configure how standards documents are ingested |
 | **Team Setup** | Configure roles, RBAC policies, CODEOWNERS |
-| **Status** | Show current adapter configuration |
 
 Route to the appropriate section below based on the user's choice.
 
@@ -48,16 +45,13 @@ Route to the appropriate section below based on the user's choice.
 ### 2A. CI Setup
 
 1. Read current config: `.specflow/adapters.yaml` → `ci` section
-2. Ask which CI provider:
-   - `github-actions` (default, built-in)
-   - Other registered adapters (check `ADAPTER_REGISTRY` in `src/specflow/lib/adapters/`)
-   - Custom adapter (point to `docs/authoring-an-adapter.md`)
-3. Ask which operations to include:
-   - `artifact-lint` (always recommended — zero-token validation)
-   - `change-impact` (blast-radius review on PRs)
-   - `project-audit` (full audit on push to main)
-   - `release-gate` (gate check on tag pushes)
-   - `ci-gate` (server-side RBAC enforcement on PRs — recommended when team roles are configured)
+2. CI provider: `github-actions` is the only built-in provider. For any other CI, say so plainly: no generator ships for it.
+3. Ask which operations to include, and tell the user which jobs are blocking and which are advisory:
+   - `artifact-lint` — **blocking** (always recommended — zero-token validation)
+   - `ci-gate` — **blocking** (server-side RBAC enforcement on PRs — recommended when team roles are configured)
+   - `release-gate` — **blocking** (project-audit check on tag pushes)
+   - `change-impact` — **advisory** (blast-radius review on PRs; the job never fails the run)
+   - `project-audit` — **advisory** (full audit on push to main; uploads the report, never fails the run)
 4. Write config to `.specflow/adapters.yaml`
 5. Generate workflow: `specflow ci generate`
 6. Install pre-commit hook: `specflow hook install`
@@ -80,26 +74,14 @@ Route to the appropriate section below based on the user's choice.
    - **Import** from external tool → `specflow import --adapter <name> <file>`
    - **Export** to external tool → `specflow export --adapter <name> --output <file>`
 3. Built-in `reqif` adapter handles ReqIF XML import/export for DOORS/Polarion interchange
-4. For other formats, point to `docs/authoring-an-adapter.md` for creating custom exchange adapters
+4. For other formats, say plainly that only ReqIF ships built-in
 5. Run the import/export command and report results
 
 **Composes:** `specflow import`, `specflow export`
 
 ---
 
-### 2C. Standards Setup
-
-1. Read current config: `.specflow/adapters.yaml` → `standards` section
-2. Show configured standards sources (if any)
-3. To author a new standards pack from a document, recommend `/specflow-pack-author`
-4. To ingest a standards document programmatically, configure a standards ingestion adapter
-5. Show available packs: `specflow init --preset <name>`
-
-**Composes:** references to `/specflow-pack-author`, `specflow init --preset`
-
----
-
-### 2D. Team Setup (RBAC)
+### 2C. Team Setup (RBAC)
 
 Team RBAC controls who can transition artifacts between statuses. It lives in `.specflow/config.yaml` under the `team` section.
 
@@ -139,7 +121,7 @@ With this policy, only `approver` role members can set `status: approved`, and o
 
 #### Independence rule
 
-Explain the built-in independence check: if someone committed changes to an artifact file (they implemented it), they cannot transition it to `verified`. This prevents self-verification — required by ASPICE, ISO 26262, and similar standards.
+Explain the built-in independence check: if someone committed changes to an artifact file (they implemented it), they cannot transition it to `verified`. This prevents self-verification — the independence principle that ASPICE, ISO 26262, and similar standards call for (a control that supports, not proves, compliance).
 
 This rule is automatic when roles are configured. No additional setup needed.
 
@@ -157,19 +139,7 @@ Update `.specflow/config.yaml` with the team section. Do not overwrite other con
 
 ---
 
-### 2E. Status
-
-Show current adapter configuration:
-
-```bash
-specflow status
-```
-
-Read and display `.specflow/adapters.yaml` and the `team` section from `.specflow/config.yaml`.
-
----
-
-### 2F. Skill and Schema Upgrades
+### 2D. Skill and Schema Upgrades
 
 After upgrading SpecFlow, refresh copied assets through the universal CLI:
 
@@ -194,12 +164,11 @@ Each exported skill inlines its skill-local `references/**/*.md`, producing self
 - Never overwrite existing CI workflow files without confirmation. The `specflow ci generate` command replaces files; always warn the user first.
 - When switching CI providers, mention that the old provider's workflow file should be manually deleted if it's at a different path.
 - RBAC is only enforced when role lists are non-empty. Always explain the solo-dev default.
-- For custom adapter authoring, always point to `docs/authoring-an-adapter.md` rather than trying to guide through Python code.
 - The pre-commit hook is advisory. Always explain that real enforcement requires platform-level branch protection.
 
 ## References
 
-- `references/adapter-framework.md` — adapter framework architecture and configuration reference
+- `references/adapter-framework.md` — adapter configuration reference
 - `references/team-setup.md` — RBAC configuration walkthrough with examples
 
 ## Scripts

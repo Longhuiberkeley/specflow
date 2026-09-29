@@ -1,0 +1,15 @@
+id: PREV-009
+name: 'Prevent recurrence of: rebuild-index lets a deleted highest id be allocated
+  again, silently re-binding links to it (violated REQ-002) (caught by IT-091)'
+discovered_from: DEF-007
+mode: reactive
+pattern: 'Prevent recurrence of: rebuild-index lets a deleted highest id be allocated
+  again, silently re-binding links to it (violated REQ-002) (caught by IT-091)'
+applies_to:
+  tags: []
+items:
+- id: PREV-009-01
+  check: Verify that changes touching REQ-002 are exercised by IT-091 before approval.
+  severity: warning
+  automated: false
+  mode: reactive

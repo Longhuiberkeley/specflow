@@ -796,13 +796,6 @@ artifacts:
     tags: []
     fingerprint: sha256:4fc0d20e8631
     children: []
-  UT-EVIDENCE-9a3d:
-    id: UT-EVIDENCE-9a3d
-    title: Evidence RTM includes mixed eligible REQ statuses
-    status: implemented
-    tags: []
-    fingerprint: sha256:cd2ebadd80c8
-    children: []
   UT-088:
     id: UT-088
     title: Autoresearch evidence-sensitive reassessment unit pins (STORY-665)
@@ -908,4 +901,232 @@ artifacts:
     tags: []
     fingerprint: sha256:cea5a2b44eec
     children: []
-next_id: 103
+  UT-103:
+    id: UT-103
+    title: Null-safe metric sort and neutral suggest-finds pins (STORY-694)
+    status: verified
+    tags: []
+    fingerprint: sha256:51bf501135a3
+    children: []
+  UT-104:
+    id: UT-104
+    title: Legacy cleanup guard and platform registry shape (STORY-685)
+    status: verified
+    tags: []
+    fingerprint: sha256:0d27a2f65d72
+    children: []
+  UT-105:
+    id: UT-105
+    title: Checklist runner error, severity and parse-failure semantics (STORY-682)
+    status: verified
+    tags: []
+    fingerprint: sha256:c6a7fbfbf76b
+    children: []
+  UT-106:
+    id: UT-106
+    title: Shipped checklist corpus and content fixes (STORY-687)
+    status: verified
+    tags: []
+    fingerprint: sha256:3876d3711ed4
+    children: []
+  UT-107:
+    id: UT-107
+    title: Import/export parse and CI gate PR refs (STORY-686)
+    status: verified
+    tags: []
+    fingerprint: sha256:28284abca569
+    children: []
+  UT-108:
+    id: UT-108
+    title: format_version stamp, mismatch message and hook refusal (STORY-678)
+    status: verified
+    tags: []
+    fingerprint: sha256:632a1319ea02
+    children: []
+  UT-109:
+    id: UT-109
+    title: Local pack directory resolves before bundled (STORY-681)
+    status: verified
+    tags: []
+    fingerprint: sha256:fd8eed100960
+    children: []
+  UT-110:
+    id: UT-110
+    title: Pre-commit suspect warning reads staged frontmatter in-process (STORY-686)
+    status: verified
+    tags: []
+    fingerprint: sha256:6b2ae73328cf
+    children: []
+  UT-111:
+    id: UT-111
+    title: readiness checklists removed from templates and scaffold (STORY-687)
+    status: verified
+    tags: []
+    fingerprint: sha256:ec858ad24b88
+    children: []
+  UT-112:
+    id: UT-112
+    title: Core skill text, always-on context, and mirror match the CLI (STORY-689)
+    status: verified
+    tags: []
+    fingerprint: sha256:77649770bc96
+    children: []
+  UT-113:
+    id: UT-113
+    title: Setup skills, pack docs, adapter, and docs teach no uv run (STORY-690)
+    status: verified
+    tags: []
+    fingerprint: sha256:762a36bc7ef1
+    children: []
+  UT-114:
+    id: UT-114
+    title: Coverage canonical-shape and STORY-held verified_by unit pins (STORY-679)
+    status: verified
+    tags: []
+    fingerprint: sha256:4eb1686940be
+    children: []
+  UT-115:
+    id: UT-115
+    title: V-pair paired-test-type unit pins (STORY-680)
+    status: verified
+    tags: []
+    fingerprint: sha256:f9d184ebb4dc
+    children: []
+  UT-116:
+    id: UT-116
+    title: Schema-registration errors and lens-error unit pins (STORY-683)
+    status: verified
+    tags: []
+    fingerprint: sha256:e96841702fea
+    children: []
+  UT-117:
+    id: UT-117
+    title: Findings cache key input-signature unit pins (STORY-684)
+    status: verified
+    tags: []
+    fingerprint: sha256:2d6aab6854cd
+    children: []
+  UT-118:
+    id: UT-118
+    title: 'Adoption pack text: sanctioned backfills, retro-link scope, DEC-057 (STORY-691)'
+    status: verified
+    tags: []
+    fingerprint: sha256:bfd9137f5356
+    children: []
+  UT-119:
+    id: UT-119
+    title: Ops breached nag clears; deployed awaits live; skill text matches CLI (STORY-692)
+    status: verified
+    tags: []
+    fingerprint: sha256:76c798606e07
+    children: []
+  UT-120:
+    id: UT-120
+    title: Autoresearch pack text names only real commands and flags; noise shape
+      documented once (STORY-693)
+    status: verified
+    tags: []
+    fingerprint: sha256:3c99fe8a6028
+    children: []
+  UT-121:
+    id: UT-121
+    title: TLDR pack delta-only snippet, iso26262-demo relabel, aggregate always-on
+      budget (STORY-695)
+    status: verified
+    tags: []
+    fingerprint: sha256:43bb0c97bc3c
+    children: []
+  UT-122:
+    id: UT-122
+    title: 'Guard tests: prose-to-CLI surface, reference lint, aggregate always-on
+      budget (STORY-688)'
+    status: verified
+    tags: []
+    fingerprint: sha256:78e5d7cdb081
+    children: []
+  UT-123:
+    id: UT-123
+    title: spidr-coverage is informational below five stories (STORY-695)
+    status: verified
+    tags: []
+    fingerprint: sha256:e8d302107141
+    children: []
+  UT-124:
+    id: UT-124
+    title: Baseline ordering follows SemVer 2.0 section 11 (STORY-700)
+    status: verified
+    tags: []
+    fingerprint: sha256:7ffef347ab5c
+    children: []
+  UT-125:
+    id: UT-125
+    title: 'Unit tests: rename-following file history, upto-scoped independence, per-step
+      legality (STORY-698)'
+    status: verified
+    tags: []
+    fingerprint: sha256:f76f4c63b1ba
+    children: []
+  UT-126:
+    id: UT-126
+    title: 'Expected-exit helper: run_matches_expected and four readers agree (STORY-699)'
+    status: verified
+    tags: []
+    fingerprint: sha256:9d0f8993c03b
+    children: []
+  UT-127:
+    id: UT-127
+    title: Dead-oracle accounting check, pytest node-id resolution, QT-011 repoint
+      (STORY-699)
+    status: verified
+    tags: []
+    fingerprint: sha256:43f737b61517
+    children: []
+  UT-128:
+    id: UT-128
+    title: 'Index-store crash-at-k harness: every write of create, update, rebuild-index,
+      renumber-drafts, lint --fix, merge, split and practices migrate re-runs to the
+      clean state (STORY-696)'
+    status: verified
+    tags: []
+    fingerprint: sha256:5f6a5b324328
+    children: []
+  UT-129:
+    id: UT-129
+    title: 'merge and split write only schema-legal statuses: superseded with a supersedes
+      link, cancelled from draft, no status on split (STORY-697 AC5)'
+    status: verified
+    tags: []
+    fingerprint: sha256:a29d207591d4
+    children: []
+  UT-130:
+    id: UT-130
+    title: cascade-status walks only legal transitions, holds REQ verification for
+      unverified siblings, and exits non-zero on any failure (STORY-697 AC1-AC4)
+    status: verified
+    tags: []
+    fingerprint: sha256:df1c9d8b76c0
+    children: []
+  UT-131:
+    id: UT-131
+    title: 'Grep ban: artifact status is written only through artifacts.update_artifact,
+      no merged_into anywhere in src (STORY-697 AC5)'
+    status: verified
+    tags: []
+    fingerprint: sha256:7550438f102e
+    children: []
+  UT-132:
+    id: UT-132
+    title: 'Model-trace replays on the fixed index store: create after a crashed renumber
+      (M1), theirs-resolved index after a delete (M2) (SPIKE-003)'
+    status: verified
+    tags: []
+    fingerprint: sha256:da42135f76d2
+    children: []
+  UT-EVIDENCE-9a3d:
+    id: UT-EVIDENCE-9a3d
+    title: Evidence RTM includes mixed eligible REQ statuses
+    status: implemented
+    tags: []
+    fingerprint: sha256:cd2ebadd80c8
+    children: []
+next_id: 133

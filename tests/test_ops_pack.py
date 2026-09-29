@@ -103,7 +103,8 @@ class TestSchemaLifecycle:
         assert "live" in allowed["paused"], "live→paused allowed"
         assert "paused" in allowed["retired"], "paused→retired allowed"
         assert "live" in allowed["retired"], "live→retired allowed"
-        assert "deployed" not in allowed["retired"], "deployed→retired NOT allowed"
+        # STORY-692: a RUN that never went live can be retired directly.
+        assert "deployed" in allowed["retired"], "deployed→retired allowed (never went live)"
         assert "paused" not in allowed["deployed"], "paused cannot go back to deployed"
 
     def test_run_paused_to_live_succeeds(self, ops_project: Path):
@@ -359,3 +360,199 @@ class TestPackStateRouting:
             "executing", arts, [], [], active_packs=["autoresearch"]
         )
         assert "LOOP(s) running" in line
+
+
+# ── 5. STORY-692: breached nag clears; deployed awaits live; golden path ─────
+
+class TestBreachedNagClears:
+    """A resolved MONITOR must stop nagging even if its health stays `breached`."""
+
+    def _arts(self, mon_status: str, health: str, extra: list | None = None):
+        return [
+            _make_art("RUN-001", "run", status="live"),
+            _make_art("MON-001", "monitor", status=mon_status,
+                      fm_extra={"run": "RUN-001", "health": health}),
+            *(extra or []),
+        ]
+
+    def test_resolved_breached_health_not_counted_in_pack_note(self):
+        note = brief_cmd._pack_state_note(self._arts("resolved", "breached"), ["ops"])
+        assert "breached" not in note
+
+    def test_flagged_counts_even_when_health_ok(self):
+        note = brief_cmd._pack_state_note(self._arts("flagged", "ok"), ["ops"])
+        assert "1 breached MONITOR(s)" in note
+
+    def test_logged_breached_health_still_counts(self):
+        note = brief_cmd._pack_state_note(self._arts("logged", "breached"), ["ops"])
+        assert "1 breached MONITOR(s)" in note
+
+    def test_logged_breached_but_credited_not_counted(self):
+        # STORY-692 AC1 "or credited": a DEF pointing back via exposed_by, an
+        # outgoing informs, or an incoming derives_from credits the breach.
+        credits = {
+            "def": _make_art("DEF-001", "defect", status="open"),
+            "corr": _make_art("MON-002", "monitor", status="logged",
+                              fm_extra={"run": "RUN-001", "health": "ok"}),
+        }
+        credits["def"].links = [art_lib.Link(target="MON-001", role="exposed_by")]
+        credits["corr"].links = [art_lib.Link(target="MON-001", role="derives_from")]
+        for extra in credits.values():
+            note = brief_cmd._pack_state_note(self._arts("logged", "breached", [extra]), ["ops"])
+            assert "breached MONITOR" not in note
+            out = brief_cmd._outcome_feedback_note(self._arts("logged", "breached", [extra]), ["ops"])
+            assert "unaccountable" not in out
+        informs = self._arts("logged", "breached")
+        informs[1].links = [art_lib.Link(target="LOOP-001", role="informs")]
+        assert "breached MONITOR" not in brief_cmd._pack_state_note(informs, ["ops"])
+
+    def test_no_phantom_credited_status(self):
+        # 'credited' is not a MONITOR status (monitor.yaml); it is a graph fact.
+        assert "credited" not in getattr(brief_cmd, "_MON_CLOSED_STATUSES", ())
+
+    def test_outcome_note_uses_same_rule(self):
+        # Resolved + health breached + no credit: NOT "breach unaccountable"
+        # (that is for live breaches); the only remaining note is "vanished".
+        out = brief_cmd._outcome_feedback_note(self._arts("resolved", "breached"), ["ops"])
+        assert "unaccountable" not in out
+        assert "vanished" in out
+
+    def test_outcome_note_silent_when_resolved_and_credited(self):
+        corr = _make_art("MON-002", "monitor", status="logged",
+                         fm_extra={"run": "RUN-001", "health": "ok"})
+        corr.links = [art_lib.Link(target="MON-001", role="derives_from")]
+        out = brief_cmd._outcome_feedback_note(self._arts("resolved", "breached", [corr]), ["ops"])
+        assert out == ""
+
+    def test_outcome_note_flagged_still_unaccountable(self):
+        out = brief_cmd._outcome_feedback_note(self._arts("flagged", "ok"), ["ops"])
+        assert "unaccountable" in out
+
+
+class TestDeployedAwaitsLive:
+    def test_deployed_run_prompts_for_live_confirmation(self):
+        arts = [_make_art("RUN-001", "run", status="deployed")]
+        line = brief_cmd._next_skill_recommendation("executing", arts, [], [], active_packs=["ops"])
+        assert "deployed RUN(s) awaiting live confirmation" in line
+        assert "--status live" in line
+
+    def test_deployed_note_silent_without_ops(self):
+        arts = [_make_art("RUN-001", "run", status="deployed")]
+        line = brief_cmd._next_skill_recommendation("executing", arts, [], [], active_packs=[])
+        assert "awaiting live" not in line
+
+    def test_breach_outranks_deployed(self):
+        arts = [
+            _make_art("RUN-001", "run", status="deployed"),
+            _make_art("MON-001", "monitor", status="flagged", fm_extra={"run": "RUN-001"}),
+        ]
+        line = brief_cmd._next_skill_recommendation("executing", arts, [], [], active_packs=["ops"])
+        assert "breached MONITOR" in line
+
+    def test_retired_run_is_silent(self):
+        arts = [_make_art("RUN-001", "run", status="retired")]
+        line = brief_cmd._next_skill_recommendation("executing", arts, [], [], active_packs=["ops"])
+        assert "RUN(s)" not in line
+
+
+class TestSkillTextMatchesCli:
+    SKILL = (PACKS_DIR / "ops" / "skills" / "specflow-ops" / "SKILL.md").read_text(encoding="utf-8")
+
+    def test_flow_b_sets_required_summary(self):
+        mon_schema = yaml.safe_load((PACKS_DIR / "ops" / "schemas" / "monitor.yaml").read_text())
+        assert "summary" in mon_schema["required_fields"]
+        assert "--set summary=" in self.SKILL or "--set 'summary=" in self.SKILL
+
+    def test_documents_pause_retire_deployed(self):
+        assert "--status paused" in self.SKILL
+        assert "retired_at" in self.SKILL
+        assert "awaiting live" in self.SKILL
+
+    def test_no_phantom_recent_monitor_claim(self):
+        assert "no recent MONITOR" not in self.SKILL
+
+    def test_pack_has_readme(self):
+        readme = PACKS_DIR / "ops" / "README.md"
+        assert readme.exists()
+        assert "/specflow-ops" in readme.read_text(encoding="utf-8")
+
+
+# The golden path drives the real CLI in a temp project (STORY-692 AC4).
+
+_ANSI = __import__("re").compile(r"\x1b\[[0-9;]*m")
+
+
+def _sf(root: Path, *args: str):
+    import subprocess
+    import sys
+
+    proc = subprocess.run(
+        [sys.executable, "-m", "specflow", *args], cwd=str(root),
+        capture_output=True, text=True, stdin=subprocess.DEVNULL, check=False,
+    )
+    proc.stdout = _ANSI.sub("", proc.stdout)
+    return proc
+
+
+@pytest.fixture
+def cli_ops_project(tmp_path: Path) -> Path:
+    import subprocess
+
+    root = tmp_path / "ops-cli"
+    root.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+    proc = _sf(root, "init", "--preset", "ops", "--platform", "claude-code", "--no-ci")
+    assert proc.returncode == 0, proc.stdout
+    return root
+
+
+def _ops_lines(brief_out: str) -> list[str]:
+    return [ln for ln in brief_out.splitlines()
+            if any(w in ln for w in ("MONITOR", "RUN(s)", "(ops)", "breach"))]
+
+
+class TestGoldenPath:
+    def test_run_monitor_breach_resolve_leaves_brief_next_silent(self, cli_ops_project: Path):
+        root = cli_ops_project
+        # Flow A: deploy, then the user's go-ahead moves it live.
+        p = _sf(root, "create", "--type", "run", "--title", "svc - prod", "--status", "deployed",
+                "--set", "environment=prod", "--set", "deployed_ref=v1.0.0",
+                "--set", "deployed_at=2026-09-01", "--skip-dedup-check")
+        assert p.returncode == 0, p.stdout
+        assert "awaiting live confirmation" in _sf(root, "brief", "--next").stdout
+        assert _sf(root, "update", "RUN-001", "--status", "live").returncode == 0
+        assert "unobserved" in _sf(root, "brief", "--next").stdout
+
+        # Flow B: a breached observation, exactly as the skill documents it.
+        p = _sf(root, "create", "--type", "monitor", "--title", "RUN-001 obs 2026-09-02",
+                "--status", "logged", "--set", "run=RUN-001", "--set", "observed_at=2026-09-02",
+                "--set", "summary=p99 latency over threshold",
+                "--set", 'metrics={"p99_ms": 900}', "--set", "health=breached",
+                "--links", "RUN-001:belongs_to", "--skip-dedup-check")
+        assert p.returncode == 0, p.stdout
+        assert _sf(root, "update", "MON-001", "--status", "flagged").returncode == 0
+        assert "breached MONITOR(s)" in _sf(root, "brief", "--next").stdout
+
+        # Recovery: a correcting observation derives_from the breach; then resolve.
+        p = _sf(root, "create", "--type", "monitor", "--title", "RUN-001 obs 2026-09-03",
+                "--status", "logged", "--set", "run=RUN-001", "--set", "observed_at=2026-09-03",
+                "--set", "summary=p99 back under threshold after rollback",
+                "--set", "health=ok",
+                "--links", "RUN-001:belongs_to,MON-001:derives_from", "--skip-dedup-check")
+        assert p.returncode == 0, p.stdout
+        assert _sf(root, "update", "MON-001", "--status", "resolved").returncode == 0
+
+        out = _sf(root, "brief", "--next").stdout
+        assert _ops_lines(out) == [], out
+        lint = _sf(root, "artifact-lint")
+        assert lint.returncode == 0, lint.stdout
+        assert not [ln for ln in lint.stdout.splitlines() if "MON-" in ln and "⚠" in ln], lint.stdout
+
+    def test_never_live_run_retires_directly(self, cli_ops_project: Path):
+        root = cli_ops_project
+        assert _sf(root, "create", "--type", "run", "--title", "svc - canary", "--status", "deployed",
+                   "--set", "environment=canary", "--set", "deployed_ref=v0.9",
+                   "--skip-dedup-check").returncode == 0
+        p = _sf(root, "update", "RUN-001", "--status", "retired", "--set", "retired_at=2026-09-05")
+        assert p.returncode == 0, p.stdout
+        assert _ops_lines(_sf(root, "brief", "--next").stdout) == []

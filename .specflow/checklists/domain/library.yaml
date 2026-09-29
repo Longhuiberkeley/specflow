@@ -40,9 +40,13 @@ items:
     automated: false
     llm_prompt: "Confirm the artifact addresses startup cost (synchronous init, async init, lazy). Flag libraries with expensive constructors and no documented initialization strategy."
     severity: info
+    applies_to:
+      types: [detailed-design, story]
 
   - id: CKL-DOM-LIB-07
     check: "Consumer type (internal / open-source / enterprise) is named"
     automated: false
     llm_prompt: "Confirm the artifact identifies the target consumer. Internal teams accept more churn; open-source needs stable APIs and migration guides; enterprise needs long-term support commitments. Flag if consumer type is unclear."
     severity: info
+    applies_to:
+      types: [requirement]
