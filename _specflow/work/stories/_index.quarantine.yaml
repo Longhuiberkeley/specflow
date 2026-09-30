@@ -1,0 +1,8 @@
+STORY-706:
+  fingerprint: sha256:ba6b3aca3cf1
+  id: STORY-706
+  quarantined_at: '2026-09-30T03:24:03Z'
+  status: draft
+  tags:
+  - x
+  title: probe typed findings

@@ -2,7 +2,7 @@
 
 Covers:
 1. Every ``references/**/*.md`` is inlined deterministically into every
-   single-file format (cursor-rules, gemini-toml, codex-agents, markdown).
+   single-file format (cursor-rules, codex-agents, markdown).
 2. Nested reference files (``references/domain-checklists/...``) are inlined too.
 3. Skills with no references export without an ``Inlined references`` section.
 4. Exports are byte-identical across runs (deterministic output).
@@ -30,7 +30,6 @@ SHIPPED_SKILLS = REPO_ROOT / "src" / "specflow" / "templates" / "skills" / "shar
 # Format -> (output subdir, filename suffix) for locating a single exported skill file.
 _FORMAT_LAYOUT = {
     "cursor-rules": (".cursor", "rules", ".mdc"),
-    "gemini-toml": (".gemini", "commands", ".toml"),
     "codex-agents": (".codex", "agents", ".toml"),
     "markdown": (".rules", "rules", ".md"),
 }
@@ -121,16 +120,18 @@ class TestDeterministicExport:
             assert result["count"] == expected
 
     def test_toml_exports_parse_as_valid_toml(self, tmp_path: Path):
-        """gemini-toml and codex-agents must emit parseable TOML even when
+        """codex-agents must emit parseable TOML even when
         inlined reference content carries backslashes (regex) or triple-quotes."""
         import tomllib
 
-        for fmt in ("gemini-toml", "codex-agents"):
-            out = tmp_path / fmt.replace("-", "_")
-            assert export_skills(out, fmt)["ok"]
-            sub = "commands" if fmt == "gemini-toml" else "agents"
-            for f in sorted((out / ("." + fmt.split("-")[0]) / sub).glob("*.toml")):
-                tomllib.loads(f.read_text(encoding="utf-8"))  # raises if invalid
+        out = tmp_path / "codex_agents"
+        assert export_skills(out, "codex-agents")["ok"]
+        for f in sorted((out / ".codex" / "agents").glob("*.toml")):
+            tomllib.loads(f.read_text(encoding="utf-8"))  # raises if invalid
+
+    def test_gemini_toml_format_retired(self, tmp_path: Path):
+        """DEC-094: the gemini-toml export format is gone."""
+        assert not export_skills(tmp_path / "g", "gemini-toml")["ok"]
 
 
 # ── 3. byte-equality guard ───────────────────────────────────────────────────

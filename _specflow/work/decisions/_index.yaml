@@ -879,6 +879,15 @@ artifacts:
     - formal-methods
     fingerprint: sha256:f82a96eacf55
     children: []
+  DEC-094:
+    id: DEC-094
+    title: Retire the Gemini CLI host
+    status: approved
+    tags:
+    - v1.17.1
+    - platforms
+    fingerprint: sha256:0f3b3e093a7e
+    children: []
   DEC-CHANGERE-066b:
     id: DEC-CHANGERE-066b
     title: 'Change Record: fix: normalize all list-valued frontmatter fields, not
@@ -907,6 +916,19 @@ artifacts:
     - auto-generated
     fingerprint: sha256:2dd9aae04035
     children: []
+  DEC-FINDINGS-79d8:
+    id: DEC-FINDINGS-79d8
+    title: Findings-baseline ratchet replaces run-count escalation; escalating vs
+      accounting classes
+    status: approved
+    tags:
+    - v1.17.1
+    - engine
+    - p3
+    - lint
+    - findings
+    fingerprint: sha256:4f4e8390c770
+    children: []
   DEC-NORMALIZ-90e0:
     id: DEC-NORMALIZ-90e0
     title: Normalize list-valued frontmatter fields to prevent scalar-string corruption
@@ -920,4 +942,4 @@ artifacts:
     - data-integrity
     fingerprint: sha256:aebb8deb1526
     children: []
-next_id: 94
+next_id: 95

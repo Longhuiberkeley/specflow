@@ -381,6 +381,13 @@ def lint_ac_observability(artifacts: list[art_lib.Artifact]) -> dict[str, str | 
         )
     warnings = len(flagged)
     blocking = 0
+    from specflow.core.findings import make
+
+    findings = [
+        make("ac-observable/aspirational", (r["id"],), "warning",
+             aspirational=r["aspirational"], total=r["total"])
+        for r in sorted(flagged, key=lambda r: r["id"])
+    ]
     if warnings > 0:
         icon = YELLOW + "⚠" + NC
         detail = "; ".join(details)
@@ -399,4 +406,5 @@ def lint_ac_observability(artifacts: list[art_lib.Artifact]) -> dict[str, str | 
         "detail": detail,
         "blocking_count": blocking,
         "warning_count": warnings,
+        "findings": findings,
     }

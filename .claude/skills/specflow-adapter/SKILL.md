@@ -152,7 +152,7 @@ After upgrading SpecFlow, refresh copied assets through the universal CLI:
 For single-file platform exports, run:
 
 ```bash
-specflow export --skills --format <cursor-rules|gemini-toml|codex-agents|markdown> --output <dir>
+specflow export --skills --format <cursor-rules|codex-agents|markdown> --output <dir>
 ```
 
 Each exported skill inlines its skill-local `references/**/*.md`, producing self-contained guidance.

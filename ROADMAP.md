@@ -4,6 +4,12 @@ SpecFlow ships incrementally. This document tracks what shipped in each release,
 
 For the original implementation plan (phase breakdown, dependency graph — now historical, superseded by the release history below), see [docs/.archive/plan.md](docs/.archive/plan.md).
 
+## v1.17.1
+
+- **P3 typed findings + findings-baseline ratchet (REQ-053 AC1-4/7-9, DEC-FINDINGS-79d8, STORY-703..705)**: the run-count escalation is replaced by a committed baseline, lint is read-only with explicit inputs, and one classification table covers lint and audit. **Sunset (v1.18.0):** an absent baseline reads as empty.
+- **Retired Gemini CLI (DEC-094, STORY-701)**; the config `version:` key is dropped and refresh bumps CI pins (STORY-702).
+- **Open follow-ups:** REQ-053 could not move back from `implemented` to record the new increment (no legal backward transition), so this is noted here; the audit exit gate is still count-based (typed records exist; wiring the audit to the baseline is P4 scope); pre-existing unused locals flagged by ruff (artifact_lint `non_spike_ids`/`method`/`gate_id`, refresh `platform_name`).
+
 ## v1.17.0
 
 - **Engine direction (DEC-090, REQ-052..058, ARCH-039/040, DDD-033/034)** — Python stays; one declarative ontology + canonical graph + named views is the target (P2 registry and anti-drift guards, P3 typed findings and a committed findings-baseline ratchet, P4 one graph with `why`/`why-not`, P5 approval and link fingerprint stamps with derived suspect, P6 standards pilot against NPR 7150.2D and a private ASPICE pack with a Datalog go/no-go, P7 formal evidence for users, optional 2.0.0 derived status via `specflow migrate`). Full plan in the DEC-090 lineage.
@@ -98,7 +104,7 @@ Operator directive (2026-08-30): **stop before per-harness customization; make t
 **Core Framework**
 - Zero-token validation engine: schema, links, status, IDs, fingerprints, acceptance, conflicts, coverage, chain depth, quality
 - Requirements quality scoring with INCOSE/EARS-based checks for ambiguity, passive voice, missing measurability, and compound requirements
-- 14 AI coding platform support (Claude Code, Cursor, Windsurf, Cline, Gemini CLI, OpenCode, GitHub Copilot, Roo Code, QwenCoder, Kiro, KiloCoder, Codex, Trae, Junie)
+- 13 AI coding platform support (Claude Code, Cursor, Windsurf, Cline, OpenCode, GitHub Copilot, Roo Code, QwenCoder, Kiro, KiloCoder, Codex, Trae, Junie)
 
 **Traceability & Compliance**
 - V-model traceability: REQ → ARCH → DDD → UT/IT/QT

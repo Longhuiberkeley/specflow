@@ -744,4 +744,43 @@ artifacts:
     tags: []
     fingerprint: sha256:264254e4a751
     children: []
-next_id: 95
+  QT-095:
+    id: QT-095
+    title: The CLI renders unchanged check text and reports new findings per kind
+      and subject (STORY-704)
+    status: verified
+    tags: []
+    fingerprint: sha256:be189b32126d
+    children: []
+  QT-096:
+    id: QT-096
+    title: New warning debt fails artifact-lint until fixed or accepted through the
+      CLI (STORY-705)
+    status: verified
+    tags: []
+    fingerprint: sha256:89b8f7d832e7
+    children: []
+  QT-097:
+    id: QT-097
+    title: Lint through the CLI writes nothing, records its inputs, and detects drift
+      after an explicit seed (STORY-703)
+    status: verified
+    tags: []
+    fingerprint: sha256:a1e04bd3a3f9
+    children: []
+  QT-098:
+    id: QT-098
+    title: init and refresh with --platform gemini fail cleanly through the CLI (STORY-701)
+    status: verified
+    tags: []
+    fingerprint: sha256:52ec9def49f5
+    children: []
+  QT-099:
+    id: QT-099
+    title: specflow refresh strips the stale version key and bumps the CI pin end
+      to end (STORY-702)
+    status: verified
+    tags: []
+    fingerprint: sha256:100b00728d4e
+    children: []
+next_id: 100

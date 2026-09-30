@@ -34,6 +34,8 @@ GUARDED = re.compile(
     r"_index\.yaml|_index\.quarantine|state\.yaml|STATE_FILENAME|PREV-|['\"]learned['\"]"
     r"|baselines['\"]|baseline_dir|_baseline_path|impact-log|impact_log"
     r"|renumber-journal|JOURNAL|index_path|quarantine_path|state_path|event_file"
+    # REQ-053 AC8 / STORY-703: the findings baseline and the source-drift store.
+    r"|findings-baseline|BASELINE_FILE|baseline_path|source-fingerprints|SOURCE_FP_FILE|store_path"
 )
 _WRITE_ATTRS = {"write_text", "write_bytes", "rename", "replace"}
 _OS_FUNCS = {("os", "replace"), ("os", "rename"), ("os", "link"), ("shutil", "move"),

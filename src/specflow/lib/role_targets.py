@@ -198,6 +198,7 @@ def check_role_targets(
                     ),
                     "code": "role_target",
                     "role": role,
+                    "artifact": art.id,
                 }
             )
     return issues

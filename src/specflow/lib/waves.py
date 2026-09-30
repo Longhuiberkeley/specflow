@@ -60,7 +60,9 @@ def build_dependency_graph(
 def detect_cycles(depends_on: dict[str, set[str]]) -> list[str] | None:
     """Detect cycles in the dependency graph using DFS with coloring.
 
-    Returns the cycle path if found, None otherwise.
+    Returns the cycle path if found, None otherwise. Nodes and edges are
+    visited in sorted order so the reported cycle is independent of set
+    iteration order (PYTHONHASHSEED) — REQ-053 AC1.
     """
     WHITE, GRAY, BLACK = 0, 1, 2
     color: dict[str, int] = {node: WHITE for node in depends_on}
@@ -68,7 +70,7 @@ def detect_cycles(depends_on: dict[str, set[str]]) -> list[str] | None:
 
     def dfs(node: str) -> list[str] | None:
         color[node] = GRAY
-        for dep in depends_on.get(node, set()):
+        for dep in sorted(depends_on.get(node, set())):
             if dep not in color:
                 continue
             if color[dep] == GRAY:
@@ -88,7 +90,7 @@ def detect_cycles(depends_on: dict[str, set[str]]) -> list[str] | None:
         color[node] = BLACK
         return None
 
-    for node in depends_on:
+    for node in sorted(depends_on):
         if color[node] == WHITE:
             result = dfs(node)
             if result:

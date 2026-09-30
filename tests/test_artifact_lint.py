@@ -595,71 +595,60 @@ class TestLintRunIntegration:
         assert rc == 1
 
 
-# ── STORY-663: persistent-warning escalation (lint_cmd.run) ────────────────
+# ── Findings-baseline ratchet (REQ-053 AC7, STORY-705) ────────────────────
 
-class TestWarningEscalation:
-    """Warnings persisting across >= 3 full validation runs escalate to
-    blocking (severity-levels.md §Escalation, enforced — STORY-663).
-
-    Counts persist in CLI-managed `.specflow/lint-warning-history.yaml`;
-    a warning that disappears resets its counter; filtered `--type` runs
-    (the pre-commit hook's cadence) do not advance counts."""
+class TestFindingsBaselineRatchet:
+    """Escalation is decided against the committed findings baseline, never by
+    run counters (DEC-FINDINGS-79d8). Replaces the STORY-663 3-run counter."""
 
     def _seed_persistent_warning(self, root: Path) -> None:
         # Draft STORY with no links → orphan warning (links check) + draft
-        # spec-linkage warning (story-linkage check). Both warning-only.
+        # spec-linkage warning (story-linkage check). Both escalating warnings.
         _write_artifact(
             root, "STORY-001", "story", "Orphan story", status="draft",
             body="## Acceptance Criteria\n\n1. Given X\n2. Then Y",
         )
 
-    def _history(self, root: Path) -> dict:
-        path = root / ".specflow" / "lint-warning-history.yaml"
-        assert path.exists(), "escalation state must persist in .specflow/"
-        return yaml.safe_load(path.read_text(encoding="utf-8"))
+    def _update(self, root: Path, **args) -> int:
+        from specflow.commands import findings_baseline
+        return findings_baseline.run(root, {"findings_baseline_subcommand": "update", **args})
 
-    def test_third_run_escalates_to_blocking(self, project_root: Path, capsys):
+    def test_no_baseline_never_escalates_and_hints(self, project_root: Path, capsys):
         self._seed_persistent_warning(project_root)
-        assert lint_cmd.run(project_root, {}) == 0  # run 1
-        assert lint_cmd.run(project_root, {}) == 0  # run 2
-        capsys.readouterr()
-        rc = lint_cmd.run(project_root, {})  # run 3
-        assert rc == 1
+        for _ in range(4):
+            assert lint_cmd.run(project_root, {}) == 0, "run counts no longer escalate"
         out = capsys.readouterr().out
-        assert "Escalation" in out
-        assert "seen in 3 runs" in out
-        assert "STORY-001" in out
-        history = self._history(project_root)
-        assert any(counts for counts in history.values())
+        assert "No findings baseline" in out
+        assert not (project_root / ".specflow" / "lint-warning-history.yaml").exists()
 
-    def test_fixed_warning_resets_counter(self, project_root: Path, capsys):
+    def test_new_escalating_warning_fails_known_passes(self, project_root: Path, capsys):
+        assert self._update(project_root) == 0  # empty baseline, ratchet on
         self._seed_persistent_warning(project_root)
-        lint_cmd.run(project_root, {})
-        lint_cmd.run(project_root, {})
-        # Fix: remove the orphaning artifact entirely.
-        (project_root / "_specflow" / "work" / "stories" / "STORY-001.md").unlink()
-        rc = lint_cmd.run(project_root, {})
-        assert rc == 0
-        history = self._history(project_root)
-        assert all(not counts for counts in history.values()), (
-            "a warning absent from the run must reset its count"
-        )
+        capsys.readouterr()
+        assert lint_cmd.run(project_root, {}) == 1
+        out = capsys.readouterr().out
+        assert "[links/orphan] STORY-001" in out
+        assert "new vs findings baseline" in out
+        assert self._update(project_root) == 1, "new keys need --accept-new"
+        assert self._update(project_root, accept_new=True) == 0
+        assert lint_cmd.run(project_root, {}) == 0, "known debt does not gate"
 
-    def test_filtered_runs_do_not_advance_counts(self, project_root: Path):
+    def test_filtered_runs_never_escalate(self, project_root: Path):
+        assert self._update(project_root) == 0
         self._seed_persistent_warning(project_root)
-        assert lint_cmd.run(project_root, {}) == 0  # full run 1 → count 1
         assert lint_cmd.run(project_root, {"type": "links"}) == 0
-        assert lint_cmd.run(project_root, {"type": "links"}) == 0
-        # Filtered runs did not advance the counter: this full run is only
-        # consecutive run 2 → still PASS.
-        assert lint_cmd.run(project_root, {}) == 0
-        # The next full run is run 3 → escalated → blocking.
         assert lint_cmd.run(project_root, {}) == 1
 
-    def test_escalation_state_file_is_cli_managed_shape(self, project_root: Path):
+    def test_resolved_entries_reported_and_ratchet_down(self, project_root: Path, capsys):
         self._seed_persistent_warning(project_root)
-        lint_cmd.run(project_root, {})
-        text = (project_root / ".specflow" / "lint-warning-history.yaml").read_text()
+        assert self._update(project_root) == 0  # seeds STORY-001 keys
+        (project_root / "_specflow" / "work" / "stories" / "STORY-001.md").unlink()
+        capsys.readouterr()
+        assert lint_cmd.run(project_root, {}) == 0
+        assert "no longer produced" in capsys.readouterr().out
+        assert self._update(project_root) == 0
+        text = (project_root / ".specflow" / "findings-baseline.yaml").read_text()
+        assert "STORY-001" not in text
         assert "do not hand-edit" in text
 
 

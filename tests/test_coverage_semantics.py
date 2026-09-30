@@ -81,7 +81,7 @@ class TestCoverageCanonicalArchShape:
         assert "⚠" not in result["accounting_detail"]
         # Rendered in the check detail as an info line (escalation-proof).
         assert result["accounting_detail"] in result["detail"]
-        assert lint_cmd._warning_detail_lines(result) == []
+        assert result["findings"] == [], "accounting info yields no typed warning"
 
     def test_both_shapes_emit_no_accounting_line(self):
         arts = [

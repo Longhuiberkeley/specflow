@@ -246,6 +246,52 @@ def _refresh_shared(
     if stamped:
         verb = "would stamp" if dry_run else "stamped"
         summary.append(("config", f"{verb} format_version: {config_lib.FORMAT_VERSION}"))
+    legacy_version = config_lib.strip_legacy_version(root, dry_run=dry_run)
+    if legacy_version is not None:
+        verb = "would remove" if dry_run else "removed"
+        summary.append(("config", f"{verb} stale version: {legacy_version} (format_version is the stamp)"))
+
+    # ── Findings ratchet migration (DEC-FINDINGS-79d8) ──────────
+    from specflow.commands.artifact_lint import LEGACY_HISTORY_FILE
+    from specflow.core.findings_baseline import BASELINE_FILE
+
+    legacy_history = root / LEGACY_HISTORY_FILE
+    if legacy_history.exists():
+        if dry_run:
+            summary.append(("lint-history", f"would remove {LEGACY_HISTORY_FILE} (run counters retired)"))
+        else:
+            from specflow.lib import locks
+
+            with locks.mutation_lock(root):
+                legacy_history.unlink()
+            summary.append(("lint-history", f"removed {LEGACY_HISTORY_FILE} (run counters retired)"))
+        if not (root / BASELINE_FILE).exists():
+            summary.append((
+                "findings",
+                "no findings baseline — run `specflow findings-baseline update` once and commit "
+                f"{BASELINE_FILE} to turn the ratchet on",
+            ))
+
+    # ── Source-drift store (REQ-053 AC2: lint no longer seeds it) ─
+    from specflow.lib import source_drift
+
+    if not source_drift.store_path(root).exists() and (root / "_specflow").is_dir():
+        if dry_run:
+            summary.append(("source-drift", "would seed source fingerprints (store absent)"))
+        else:
+            seeded = source_drift.seed(root)
+            if seeded:
+                summary.append(("source-drift", f"seeded source fingerprints for {len(seeded)} artifact(s)"))
+
+    # ── CI workflow pin (STORY-705) ─────────────────────────────
+    from specflow.lib.adapters.github_actions import WORKFLOW_PATH, bump_workflow_pin
+
+    pin = bump_workflow_pin(root, dry_run=dry_run)
+    if pin["count"]:
+        verb = "would bump" if dry_run else "bumped"
+        summary.append(("ci", f"{verb} {WORKFLOW_PATH} pin {', '.join(pin['old'])} → {pin['new']} ({pin['count']})"))
+    if pin["skipped"]:
+        summary.append(("ci", f"left non-release pin(s) as-is: {', '.join(pin['skipped'])}"))
 
     # ── Schemas ─────────────────────────────────────────────────
     if do_schemas:

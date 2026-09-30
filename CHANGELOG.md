@@ -4,6 +4,37 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.17.1] - 2026-09-30
+
+### Highlights
+- **Lint no longer cries wolf (P3 of DEC-090, REQ-053, DEC-FINDINGS-79d8, STORY-703..705).** The STORY-663 run counter is gone. It turned any warning seen in three full lint runs into a blocker and kept counts in a tracked file every run wrote to; one consumer repo showed 700 "blocking" findings with no change in the findings. Escalation is now decided against a committed `.specflow/findings-baseline.yaml`: on a full run, an escalating warning not recorded there fails the run, recorded ones are known debt, and resolved ones ratchet down. artifact-lint writes nothing under `.specflow/`, and its exit code depends only on the repository, the `--as-of` date and the baseline.
+- **Gemini CLI support retired (DEC-094, STORY-701).** 13 hosts remain.
+
+### Features
+- Typed findings: every lint check emits `Finding(rule_id, subjects, severity, class, args)` beside its unchanged rendered text (byte-identical on six real corpora, except that source-drift and wave-cycle lines now have a stable order). Keys are `(rule_id, subjects)`, with one key per finding kind and a discriminator such as the target id or path; counts, ages and hashes live in `args`. project-audit findings map to the same records, and one policy table classifies both.
+- `specflow findings-baseline update [--accept-new] [--as-of]` and `findings-baseline diff`, the only writer of the baseline (under the mutation lock). `update` seeds when the baseline is absent and always drops resolved keys; new keys need `--accept-new` (approval-gated, and each added key is printed). Without the flag, `update` writes nothing when there are new keys and exits 1. `init` writes an empty baseline, so new projects start with the ratchet on.
+- Accounting rules never escalate: the former exemptions (fingerprint-drift, bp-application, dead-oracle) plus the heuristics: conflicts, quality, ac-observable, dec-risk-profile and spike staleness.
+- `artifact-lint --as-of YYYY-MM-DD` drives spike staleness, and full runs print an `Inputs:` line (the as-of date and the source-drift store state).
+- `specflow fingerprint-refresh --source [IDs | --all]` seeds missing source-drift hashes or re-accepts reviewed drift; `init` and `refresh` seed the store when absent. Lint reports artifacts that have never been seeded (previously invisible, because seeding only ran on the very first lint).
+- `refresh` moves the CI workflow's `git+…/specflow@vX.Y.Z` pin forward to the running release. It never downgrades, and it leaves branch and SHA pins alone and reports them.
+
+### Fixes
+- Source-drift and wave-cycle output depended on `PYTHONHASHSEED` (set iteration order); both are now deterministic.
+- The stale `version:` key in `.specflow/config.yaml` is no longer written; merge drops it and refresh strips it (`format_version` is the only stamp). The dead version-delta path in `init` is removed.
+- `fingerprint-refresh --source` names IDs that match no artifact with output_files.
+
+### Decisions / Docs
+- DEC-FINDINGS-79d8 (findings-baseline ratchet semantics; sunset: from v1.18.0 an absent baseline reads as empty), DEC-094 (retire Gemini CLI; supersedes the Gemini parts of REQ-001/REQ-005/ARCH-003). severity-levels.md now states the baseline semantics.
+- **Upgrade note:**
+  1. Install v1.17.1, then run `specflow refresh`. It removes `.specflow/lint-warning-history.yaml`, strips `version:`, seeds the source-drift store if it is absent, and bumps the CI pin.
+  2. Run `specflow findings-baseline update` once and commit `.specflow/findings-baseline.yaml`. Until then the ratchet is off, and lint prints a hint on every full run.
+  3. After `renumber-drafts`, run `findings-baseline update --accept-new` in the same change.
+  4. Delete any `GEMINI.md` and `.gemini/` SpecFlow wrote. A symlinked `.gemini/skills` must be removed as a link.
+
+### Tests
+- +37: typed-findings model and parity (including the dogfood corpus), policy truth table, the baseline command and migration, read-only and hash-seed-deterministic lint, `--as-of`, CI pin refresh, and a CLI qualification suite per story. The STORY-663 escalation tests were rewritten for the ratchet.
+- Total: 2482 tests passing (23 skipped, 1 strict xfail for DEF-014)
+
 ## [1.17.0] - 2026-09-30
 
 ### Highlights

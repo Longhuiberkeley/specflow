@@ -1266,12 +1266,16 @@ def _count_warns(findings: list[dict[str, str]]) -> tuple[int, int]:
     structural and escalates. Pure function so the escalation gate is unit-
     testable without running the full audit pipeline.
     """
+    from specflow.core.findings import from_audit_dict
+
     accounting = 0
     escalating = 0
     for f in findings:
         if f.get("severity") != "warn":
             continue
-        if f.get("concern") in _ACCOUNTING_CONCERNS:
+        # One classification table (specflow.core.policy.klass_for), which
+        # defers audit concerns to _ACCOUNTING_CONCERNS (REQ-053 AC3).
+        if from_audit_dict(f).klass == "accounting":
             accounting += 1
         else:
             escalating += 1

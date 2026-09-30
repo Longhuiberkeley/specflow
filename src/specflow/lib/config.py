@@ -14,8 +14,8 @@ import specflow
 CONFIG_FILENAME = "config.yaml"
 STATE_FILENAME = "state.yaml"
 
-# STORY-678 / REQ-057: on-disk format version, independent of the release
-# ``version`` key. Bump FORMAT_VERSION only with a migration; an engine refuses
+# STORY-678 / REQ-057: on-disk format version — the only version stamp in
+# config.yaml (the release ``version`` key was dropped in v1.17.1). Bump FORMAT_VERSION only with a migration; an engine refuses
 # to trust a repository whose format_version exceeds SUPPORTED_FORMAT_VERSION.
 FORMAT_VERSION = 1
 SUPPORTED_FORMAT_VERSION = 1
@@ -29,7 +29,6 @@ def default_config(project_name: str = "") -> dict:
     """Return a default config dict with timestamps."""
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     return {
-        "version": specflow.__version__,
         "format_version": FORMAT_VERSION,
         "project": {"name": project_name, "created": now, "domain": "", "domain_tags": []},
         "impact_analysis": {},
@@ -178,7 +177,9 @@ def merge_config(existing: dict, defaults: dict) -> dict:
         return base
 
     _deep_merge(merged, existing)
-    merged["version"] = specflow.__version__
+    # The legacy release ``version`` key had no reader and went stale on every
+    # upgrade; format_version is the compatibility signal (REQ-057).
+    merged.pop("version", None)
     existing_fv = existing.get("format_version")
     if not isinstance(existing_fv, int) or isinstance(existing_fv, bool) or existing_fv < FORMAT_VERSION:
         merged["format_version"] = FORMAT_VERSION
@@ -195,8 +196,8 @@ def _read_format_version(cfg: dict) -> int | None:
 def stamp_format_version(root: Path, *, dry_run: bool = False) -> bool:
     """Ensure config.yaml carries ``format_version: FORMAT_VERSION``.
 
-    A minimal text edit (comments and key order survive). The legacy ``version``
-    key is never touched, and a higher format_version is never downgraded.
+    A minimal text edit (comments and key order survive). A higher
+    format_version is never downgraded.
     Returns True when the file was (or, with ``dry_run``, would be) changed.
     """
     path = root / ".specflow" / CONFIG_FILENAME
@@ -220,6 +221,30 @@ def stamp_format_version(root: Path, *, dry_run: bool = False) -> bool:
         text = f"{line}\n{text}"
     path.write_text(text, encoding="utf-8")
     return True
+
+
+_LEGACY_VERSION_LINE = re.compile(r"^version:.*\n?", flags=re.M)
+
+
+def strip_legacy_version(root: Path, *, dry_run: bool = False) -> str | None:
+    """Remove the stale top-level ``version:`` key from config.yaml.
+
+    Returns the removed value (or, with ``dry_run``, the value that would be
+    removed); None when there is nothing to strip. Only a top-level line
+    matches, so nested ``version`` keys are never touched.
+    """
+    path = root / ".specflow" / CONFIG_FILENAME
+    if not path.exists():
+        return None
+    text = path.read_text(encoding="utf-8")
+    cfg = yaml.safe_load(text) or {}
+    if not isinstance(cfg, dict) or "version" not in cfg:
+        return None
+    if not _LEGACY_VERSION_LINE.search(text):
+        return None
+    if not dry_run:
+        path.write_text(_LEGACY_VERSION_LINE.sub("", text, count=1), encoding="utf-8")
+    return str(cfg["version"])
 
 
 def format_version_mismatch(root: Path) -> str | None:
@@ -250,28 +275,6 @@ def warn_format_version_once(root: Path) -> None:
         return
     _FORMAT_WARNED.add(key)
     print(f"! specflow: {msg}", file=sys.stderr)
-
-
-def detect_version_delta(root: Path) -> dict:
-    """Detect config version and compare against framework version.
-
-    Returns dict with: current_version, framework_version, is_upgrade, new_fields.
-    """
-    cfg = read_config(root)
-    current_version = cfg.get("version")
-    framework_version = specflow.__version__
-
-    defaults = default_config()
-    default_keys = set(defaults.keys())
-    existing_keys = set(cfg.keys())
-    new_fields = sorted(default_keys - existing_keys - {"version"})
-
-    return {
-        "current_version": current_version,
-        "framework_version": framework_version,
-        "is_upgrade": current_version is not None and current_version != framework_version,
-        "new_fields": new_fields,
-    }
 
 
 def backup_specflow_internals(root: Path, backup_dir: Path) -> list[str]:

@@ -7,6 +7,7 @@ from pathlib import Path
 
 import yaml
 
+import specflow
 from specflow.lib import platform as plat_lib
 from specflow.lib import rbac as rbac_lib
 from specflow.lib import scaffold as scaffold_lib
@@ -242,15 +243,13 @@ def run(root: Path, args: dict) -> int:
         scaffold_lib.create_spec_dirs(root)
 
         defaults = config_lib.default_config(project_name)
+        new_fields = sorted(set(defaults) - set(existing_config or {}))
         merged = config_lib.merge_config(existing_config, defaults)
         config_lib.write_config(root, merged)
 
-        delta = config_lib.detect_version_delta(root)
-        if delta["current_version"] and delta["current_version"] != delta["framework_version"]:
-            print(f"  + Version updated: {delta['current_version']} → {delta['framework_version']}")
-        if delta["new_fields"]:
-            print(f"  + New config fields added: {', '.join(delta['new_fields'])}")
-        print(f"  + config.yaml merged (version {delta['framework_version']})")
+        if new_fields:
+            print(f"  + New config fields added: {', '.join(new_fields)}")
+        print(f"  + config.yaml merged (SpecFlow v{specflow.__version__})")
 
         scaffold_lib.copy_checklists(root, _get_package_templates())
         scaffold_lib.copy_adapters_config(root, _get_package_templates())
@@ -267,11 +266,19 @@ def run(root: Path, args: dict) -> int:
 
         config = config_lib.default_config(project_name)
         config_lib.write_config(root, config)
-        print(f"  + config.yaml written (project: {project_name}, version: {config['version']})")
+        print(f"  + config.yaml written (project: {project_name})")
 
         state = config_lib.default_state()
         config_lib.write_state(root, state)
         print("  + state.yaml written")
+
+        # DEC-FINDINGS-79d8: new projects start with the findings ratchet on
+        # (an empty baseline, written by the baseline command's routine).
+        from specflow.commands.findings_baseline import write_baseline
+        from specflow.core.findings_baseline import BASELINE_FILE
+
+        write_baseline(root, set())
+        print(f"  + {BASELINE_FILE} written (empty — findings ratchet on)")
 
     domain = args.get("domain")
     domain_tags_str = args.get("domain_tags", "")

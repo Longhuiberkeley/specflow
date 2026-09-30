@@ -23,6 +23,6 @@ Observations that may improve quality with no compliance impact — "should" whe
 ## Escalation & Override
 
 1. Warnings from phase-gate checklists escalate to **blocking** during phase transitions.
-2. Warnings persisting across 3+ validation runs escalate to **blocking**.
+2. On a full `specflow artifact-lint` run, an escalating warning not recorded in the committed `.specflow/findings-baseline.yaml` is **blocking**; recorded ones are known debt. Accounting warnings (heuristics such as quality, conflicts, AC observability, SPIKE staleness) never escalate. Only `specflow findings-baseline update` writes the baseline; recording new debt needs `--accept-new` and the user's approval.
 3. Info items never escalate automatically.
 4. **User override:** the user can manually escalate or de-escalate any finding.

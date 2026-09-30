@@ -319,8 +319,9 @@ class TestSpikeLifecycle:
 
 class TestSourceDrift:
 
-    def test_first_run_seeds_and_reports_clean(self, project_root: Path):
-        """No fingerprint file + output_files present → silently seed, 0 warnings."""
+    def test_lint_never_seeds_explicit_seed_does(self, project_root: Path):
+        """REQ-053 AC2: lint reports unseeded artifacts and writes nothing;
+        the explicit seed command (fingerprint-refresh --source) writes."""
         target = project_root / "src" / "module.py"
         target.parent.mkdir(parents=True)
         target.write_text("# initial\n")
@@ -333,9 +334,12 @@ class TestSourceDrift:
         result = lint_cmd._check_source_drift(arts, project_root)
 
         assert result["warning_count"] == 0
-        assert "Seeded" in result["detail"]
+        assert "1 artifact(s) with output_files have no accepted source fingerprint" in result["detail"]
         fp_path = project_root / ".specflow" / "source-fingerprints.yaml"
-        assert fp_path.exists(), "first run must write the fingerprint file"
+        assert not fp_path.exists(), "lint must not write the fingerprint store"
+
+        from specflow.commands import fingerprint_refresh
+        assert fingerprint_refresh.run(project_root, {"source": True}) == 0
         fp_data = yaml.safe_load(fp_path.read_text())
         assert "REQ-500" in fp_data
         assert "src/module.py" in fp_data["REQ-500"]
@@ -352,7 +356,8 @@ class TestSourceDrift:
         )
         arts = art_lib.discover_artifacts(project_root)
 
-        lint_cmd._check_source_drift(arts, project_root)  # seed
+        from specflow.lib import source_drift
+        source_drift.seed(project_root, arts)  # seed
 
         target.write_text("# changed content\n")  # drift
 
@@ -373,7 +378,8 @@ class TestSourceDrift:
             extra_fm={"output_files": ["src/module.py"]},
         )
         arts = art_lib.discover_artifacts(project_root)
-        lint_cmd._check_source_drift(arts, project_root)  # seed
+        from specflow.lib import source_drift
+        source_drift.seed(project_root, arts)  # seed
 
         target.write_text("# changed content\n")
         # Edit the artifact to mark it suspect (post-impact-review)

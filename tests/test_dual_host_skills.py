@@ -195,18 +195,18 @@ class TestLegacySentinelMigration:
         assert PACK_START in agents
         assert "More user prose." in legacy
 
-    def test_gemini_platform_never_touches_claude_md(self, tmp_path: Path):
+    def test_gemini_platform_retired(self, tmp_path: Path):
+        """DEC-094: gemini is no longer a registered host — no GEMINI.md is
+        ever written and a .gemini/-only project detects no platform."""
+        from specflow.lib import platform as platform_lib
+
         root = tmp_path / "proj"
         root.mkdir()
         (root / ".gemini").mkdir()
-        _legacy_claude_md(root)
-
-        assert scaffold_lib.inject_base_context(root, TEMPLATES_DIR, "gemini")
-        # Gemini's instruction_file is GEMINI.md — CLAUDE.md is untouched
-        # (no strip, and no @AGENTS.md bridge: not an AGENTS.md platform here).
-        legacy = (root / "CLAUDE.md").read_text(encoding="utf-8")
-        assert BASE_START in legacy
-        assert not any(line.strip() == "@AGENTS.md" for line in legacy.splitlines())
+        assert platform_lib.get_platform("gemini") is None
+        assert platform_lib.detect_platforms(root) == []
+        assert not scaffold_lib.inject_base_context(root, TEMPLATES_DIR, "gemini")
+        assert not (root / "GEMINI.md").exists()
 
 
 def _make_specflow_project(root: Path) -> None:

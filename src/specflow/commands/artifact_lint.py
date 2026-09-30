@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import difflib
-import hashlib
 import re
 import subprocess
 from collections import Counter
@@ -12,6 +11,7 @@ from pathlib import Path
 
 import yaml
 
+from specflow.core import findings as fnd
 from specflow.lib import artifacts as art_lib
 from specflow.lib import draft_ids as draft_lib
 from specflow.lib import files as files_lib
@@ -25,107 +25,53 @@ from specflow.commands.cascade_status import cascade_targets
 
 CHECK_NAMES = ["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "fingerprint-drift", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "bp-application", "thinking-techniques", "autoresearch-logging", "autoresearch-comp-closure", "spike-lifecycle", "source-drift", "dec-risk-profile", "ac-observable", "nfr-category", "backfilled-links", "role-target", "dead-oracle"]
 
-# ── STORY-663: persistent-warning escalation ──────────────────────
-# severity-levels.md claims "warnings persisting across 3+ validation runs
-# escalate to blocking". Before STORY-663 nothing enforced that — a prompt-only
-# promise (false security). Enforcement lives HERE (I3): a full artifact-lint
-# run (no --type filter — the CI/release-audit cadence, not the pre-commit
-# hook's filtered runs) increments a per-warning consecutive-run counter in
-# CLI-managed .specflow/ state. A warning seen in >= ESCALATION_RUNS
-# consecutive full runs is reported as blocking and fails the run (exit 1).
-# A warning that disappears resets its counter (absent keys are dropped).
-ESCALATION_RUNS = 3
-LINT_HISTORY_FILE = ".specflow/lint-warning-history.yaml"
+def _emit(bucket: list, rule_id: str, subjects, severity: str, **args) -> None:
+    """Record one typed finding (REQ-053 AC3) beside a check's counter."""
+    bucket.append(fnd.make(rule_id, subjects, severity, **args))
 
 
-def _warning_detail_lines(result: dict[str, str | int]) -> list[str]:
-    """Extract stable per-warning identity lines from a check result.
-
-    A check's ``detail`` is the exact rendered findings text; each line is one
-    finding (some checks collapse counts into a line — the line is then the
-    identity, deterministic for unchanged state). Blocking lines are excluded
-    (already blocking); info lines (``ℹ``) are excluded.
-    """
-    if not result.get("warning_count"):
-        return []
-    detail = str(result.get("detail", ""))
-    lines = [ln.strip() for ln in detail.splitlines() if ln.strip()]
-    if result.get("blocking_count"):
-        return [ln for ln in lines if "⚠" in ln]
-    # Pure-warning checks may render findings without a ⚠ marker
-    # (e.g. fingerprints' "N fingerprint(s) stale: ...") — keep every
-    # non-info line so those escalate too.
-    return [ln for ln in lines if "⚠" in ln or "ℹ" not in ln]
+def _norm(text: str) -> str:
+    """Count-free discriminator: digit runs collapse so counts never churn keys."""
+    return re.sub(r"\d+", "#", text.strip())
 
 
-def _load_warning_history(root: Path) -> dict[str, dict[str, int]]:
-    path = root / LINT_HISTORY_FILE
-    if not path.exists():
-        return {}
-    try:
-        data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    except Exception:
-        return {}
-    if not isinstance(data, dict):
-        return {}
-    history: dict[str, dict[str, int]] = {}
-    for check, counts in data.items():
-        if isinstance(check, str) and isinstance(counts, dict):
-            history[check] = {
-                k: v for k, v in counts.items()
-                if isinstance(k, str) and isinstance(v, int)
-            }
-    return history
+# ── Findings-baseline ratchet (REQ-053 AC7, DEC-FINDINGS-79d8) ────
+# Escalation is decided against the committed .specflow/findings-baseline.yaml
+# (keys = (rule_id, subjects)), never by run counters: on a full run an
+# escalating warning absent from the baseline fails the run; known keys are
+# debt; accounting findings never escalate (specflow.core.policy). Lint reads
+# the baseline and writes nothing under .specflow/ (AC2); the only writer is
+# `specflow findings-baseline update` (AC8). Refresh removes the obsolete
+# STORY-663 run-count file.
+LEGACY_HISTORY_FILE = ".specflow/lint-warning-history.yaml"
 
 
-def _save_warning_history(root: Path, history: dict[str, dict[str, int]]) -> None:
-    path = root / LINT_HISTORY_FILE
-    path.parent.mkdir(parents=True, exist_ok=True)
-    header = (
-        "# Managed by `specflow artifact-lint` (STORY-663) — do not hand-edit.\n"
-        "# Per-warning consecutive full-run counts; >= 3 escalates to blocking.\n"
-    )
-    path.write_text(
-        header + yaml.dump(history, default_flow_style=False, sort_keys=True),
-        encoding="utf-8",
-    )
-
-
-def _record_warning_runs(
+def collect(
     root: Path,
-    results: list[tuple[str, dict]],
-) -> list[tuple[str, str, int]]:
-    """Update persistent run counts and return escalated warnings.
+    checks: list[str],
+    *,
+    as_of: date | None = None,
+) -> tuple[list[tuple[str, dict]], list]:
+    """Run ``checks`` and return ``(results, findings)`` — pure (no writes).
 
-    Returns a list of (check_name, warning_line, consecutive_runs) for every
-    warning whose count reached ESCALATION_RUNS in this run.
+    ``specflow findings-baseline update`` uses this exact path so the baseline
+    it writes is what a full lint run sees.
     """
-    history = _load_warning_history(root)
-    escalated: list[tuple[str, str, int]] = []
-    for check_name, result in results:
-        lines = _warning_detail_lines(result)
-        keys: dict[str, str] = {}
-        for line in lines:
-            digest = hashlib.sha1(
-                f"{check_name}\x00{line}".encode("utf-8")
-            ).hexdigest()[:16]
-            keys[digest] = line
-        prev = history.get(check_name, {})
-        # Absent warnings reset: replace the check's dict wholesale.
-        history[check_name] = {d: prev.get(d, 0) + 1 for d in keys}
-        for digest, line in keys.items():
-            runs = history[check_name][digest]
-            if runs >= ESCALATION_RUNS:
-                escalated.append((check_name, line, runs))
-    if history:
-        _save_warning_history(root, history)
-    return escalated
+    artifacts = art_lib.discover_artifacts(root)
+    results: list[tuple[str, dict]] = []
+    findings: list = []
+    for check_name in checks:
+        result = _run_check(artifacts, root, check_name, as_of)
+        results.append((check_name, result))
+        findings.extend(result.get("findings", []))
+    return results, findings
 
 
 def _run_check(
     artifacts: list[art_lib.Artifact],
     root: Path,
     check_name: str,
+    as_of: date | None = None,
 ) -> dict[str, str | int]:
     """Run a validation check using Python logic and return summary.
 
@@ -180,7 +126,7 @@ def _run_check(
     elif check_name == "autoresearch-comp-closure":
         return _check_autoresearch_comp_closure(artifacts)
     elif check_name == "spike-lifecycle":
-        return _check_spike_lifecycle(artifacts, root)
+        return _check_spike_lifecycle(artifacts, root, as_of)
     elif check_name == "source-drift":
         return _check_source_drift(artifacts, root)
     elif check_name == "dec-risk-profile":
@@ -223,6 +169,7 @@ def check_schema(
     # ``relates_to`` used project-wide should surface as a single normalization
     # task, not 160 identical warnings that train users to ignore lint output.
     role_groups: dict[str, set[str]] = {}
+    findings: list = []
 
     # STORY-683 (fail loud): a malformed schema file used to be skipped
     # silently by registration, so its type vanished and its artifacts read
@@ -230,6 +177,7 @@ def check_schema(
     # naming the file.
     for bad_file, err in art_lib.schema_registration_errors(schema_dir):
         blocking += 1
+        _emit(findings, "schema/schema-error", (f"{schema_dir.name}/{bad_file.name}",), "blocking")
         details.append(
             f"  ✗ schema-error: malformed schema file "
             f"{schema_dir.name}/{bad_file.name} ({err})"
@@ -239,6 +187,7 @@ def check_schema(
         schema = schemas.get(art.type)
         if not schema:
             warnings += 1
+            _emit(findings, "schema/unknown-type", (art.id,), "warning", type=art.type)
             details.append(f"  ⚠ Unknown type '{art.type}': {art.id}")
             continue
 
@@ -249,13 +198,16 @@ def check_schema(
                 continue
             if issue["severity"] == "blocking":
                 blocking += 1
+                _emit(findings, "schema/field", (art.id, _norm(issue["message"])), "blocking")
                 details.append(f"  ✗ [{art.id}] {issue['message']}")
             elif issue["severity"] == "warning":
                 warnings += 1
+                _emit(findings, "schema/field", (art.id, _norm(issue["message"])), "warning")
                 details.append(f"  ⚠ [{art.id}] {issue['message']}")
 
     for role, art_ids in sorted(role_groups.items()):
         warnings += 1
+        _emit(findings, "schema/link-role", (f"role:{role}",), "warning", artifacts=sorted(art_ids))
         suggestion = role_normalize.suggest_canonical(role)
         label = "Non-canonical" if suggestion else "Unknown"
         hint = f" — {suggestion.hint}" if suggestion else ""
@@ -272,6 +224,7 @@ def check_schema(
         "detail": "; ".join(details) if details else f"All {len(artifacts)} artifacts pass schema validation",
         "blocking_count": blocking,
         "warning_count": warnings,
+        "findings": findings,
     }
 
 
@@ -284,6 +237,7 @@ def _check_links(
     blocking = 0
     warnings = 0
     details: list[str] = []
+    findings: list = []
 
     # Clause IDs from installed standards are valid targets for `complies_with` links.
     standard_clause_ids: set[str] = set()
@@ -299,6 +253,7 @@ def _check_links(
             if link.role == "complies_with" and link.target in standard_clause_ids:
                 continue
             blocking += 1
+            _emit(findings, "links/broken", (art.id, link.target), "blocking")
             details.append(f"  ✗ [{art.id}] broken link: {link.target} (not found)")
 
     # Orphans (SPIKEs exempt — they're expected to be standalone research)
@@ -307,6 +262,8 @@ def _check_links(
     non_spike_orphans = [a for a in orphans if art_lib.get_prefix_from_id(a.id) != "SPIKE"]
     if non_spike_orphans:
         warnings += len(non_spike_orphans)
+        for a in non_spike_orphans:
+            _emit(findings, "links/orphan", (a.id,), "warning")
         orphan_ids = ", ".join(a.id for a in non_spike_orphans[:5])
         if len(non_spike_orphans) > 5:
             orphan_ids += f" (+{len(non_spike_orphans) - 5} more)"
@@ -318,6 +275,8 @@ def _check_links(
     missing_pairs = art_lib.find_missing_v_pairs(artifacts)
     if missing_pairs:
         warnings += len(missing_pairs)
+        for a, p in missing_pairs:
+            _emit(findings, "links/missing-v-pair", (a.id, p), "warning")
         pair_details = ", ".join(f"{a.id} (no {p} verification)" for a, p in missing_pairs[:3])
         details.append(f"  ⚠ {len(missing_pairs)} missing verification pair(s): {pair_details}")
 
@@ -329,6 +288,7 @@ def _check_links(
         "detail": detail_msg,
         "blocking_count": blocking,
         "warning_count": warnings,
+        "findings": findings,
     }
 
 
@@ -341,6 +301,7 @@ def _check_status(
     blocking = 0
     warnings = 0
     details: list[str] = []
+    findings: list = []
 
     for art in artifacts:
         schema = schemas.get(art.type)
@@ -348,6 +309,7 @@ def _check_status(
             allowed = schema.get("allowed_status", {})
             if art.status and not lint_lib._status_is_valid(schema, art.status):
                 blocking += 1
+                _emit(findings, "status/invalid", (art.id,), "blocking", status=art.status)
                 msg = f"  ✗ [{art.id}] invalid status '{art.status}'"
                 # W2.2: deterministic fix only for the typo case (near-miss of a
                 # valid status). A genuinely-invalid value has no single correct
@@ -364,6 +326,7 @@ def _check_status(
     for issue in hierarchy_issues:
         if issue["severity"] == "blocking":
             blocking += 1
+            _emit(findings, "status/hierarchy", (_norm(issue["message"]),), "blocking")
             details.append(f"  ✗ {issue['message']}")
 
     icon = GREEN + "✓" + NC if blocking == 0 else RED + "✗" + NC
@@ -374,6 +337,7 @@ def _check_status(
         "detail": detail_msg,
         "blocking_count": blocking,
         "warning_count": warnings,
+        "findings": findings,
     }
 
 
@@ -392,6 +356,7 @@ def _check_status_cascade(
     details: list[str] = []
 
     stories = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "STORY"]
+    findings: list = []
 
     for story in stories:
         # Check: STORY beyond draft with linked specs still in draft
@@ -403,6 +368,7 @@ def _check_status_cascade(
                 target_prefix = art_lib.get_prefix_from_id(target.id)
                 if target_prefix in _SPEC_PREFIXES and target.status == "draft":
                     blocking += 1
+                    _emit(findings, "status-cascade/draft-spec", (story.id, target.id), "blocking")
                     details.append(
                         f"  \u2717 [{story.id}] is '{story.status}' but linked "
                         f"{target.id} ({target_prefix}) is still 'draft' -- "
@@ -420,6 +386,7 @@ def _check_status_cascade(
             if target.status != "approved":
                 continue
             warnings += 1
+            _emit(findings, "status-cascade/lagging", (story.id, target.id), "warning")
             if target_prefix == "REQ":
                 details.append(
                     f"  \u26a0 [{story.id}] is 'verified' but linked "
@@ -443,6 +410,7 @@ def _check_status_cascade(
         "detail": detail_msg,
         "blocking_count": blocking,
         "warning_count": warnings,
+        "findings": findings,
     }
 
 
@@ -462,6 +430,7 @@ def _check_story_linkage(
     blocking = 0
     warnings = 0
     details: list[str] = []
+    findings: list = []
 
     stories = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "STORY"]
 
@@ -476,12 +445,14 @@ def _check_story_linkage(
         if not has_spec_link:
             if story.status == "draft":
                 warnings += 1
+                _emit(findings, "story-linkage/draft", (story.id,), "warning")
                 details.append(
                     f"  \u26a0 [{story.id}] has no spec linkage (link to a "
                     f"REQ/ARCH/DDD, or convert to SPIKE if this is research)"
                 )
             else:
                 blocking += 1
+                _emit(findings, "story-linkage/beyond-draft", (story.id,), "blocking")
                 details.append(
                     f"  \u2717 [{story.id}] '{story.status}' with no spec linkage \u2014 "
                     f"link to a REQ/ARCH/DDD or convert to SPIKE"
@@ -497,6 +468,7 @@ def _check_story_linkage(
         "detail": detail_msg,
         "blocking_count": blocking,
         "warning_count": warnings,
+        "findings": findings,
     }
 
 
@@ -510,11 +482,13 @@ def _check_ids(
     warnings = 0
     details: list[str] = []
 
+    findings: list = []
     # Uniqueness
     seen: dict[str, str] = {}
     for art in artifacts:
         if art.id in seen:
             blocking += 1
+            _emit(findings, "ids/duplicate", (art.id, art.path.name), "blocking")
             details.append(f"  ✗ Duplicate ID: {art.id} ({art.path.name} and {seen[art.id]})")
         else:
             seen[art.id] = art.path.name
@@ -528,12 +502,14 @@ def _check_ids(
                 if draft_lib.is_draft_id(art.id):
                     continue
                 blocking += 1
+                _emit(findings, "ids/format", (art.id,), "blocking")
                 details.append(f"  ✗ [{art.id}] invalid format (expected: {id_fmt})")
 
         # Dot-notation depth
         depth = art_lib.check_dot_notation_depth(art.id)
         if depth > 3:
             warnings += 1
+            _emit(findings, "ids/depth", (art.id,), "warning", depth=depth)
             details.append(f"  ⚠ [{art.id}] dot-notation depth {depth} exceeds maximum of 3")
 
     icon = GREEN + "✓" + NC if blocking == 0 else RED + "✗" + NC
@@ -544,6 +520,7 @@ def _check_ids(
         "detail": detail_msg,
         "blocking_count": blocking,
         "warning_count": warnings,
+        "findings": findings,
     }
 
 
@@ -554,6 +531,7 @@ def _check_fingerprints(
     blocking = 0
     warnings = 0
     stale: list[str] = []
+    findings: list = []
 
     for art in artifacts:
         if not art.fingerprint:
@@ -564,6 +542,7 @@ def _check_fingerprints(
         if not result["match"]:
             warnings += 1
             stale.append(art.id)
+            _emit(findings, "fingerprints/stale", (art.id,), "warning")
 
     if stale:
         stale_str = ", ".join(stale[:5])
@@ -582,6 +561,7 @@ def _check_fingerprints(
         "detail": detail,
         "blocking_count": blocking,
         "warning_count": warnings,
+        "findings": findings,
     }
 
 
@@ -605,12 +585,14 @@ def _check_acceptance(
     blocking = 0
     warnings = 0
     details: list[str] = []
+    findings: list = []
 
     # Find REQ artifacts by ID prefix (more reliable than type field)
     reqs = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "REQ"]
     for art in reqs:
         if not lint_lib.has_acceptance_criteria(art):
             blocking += 1
+            _emit(findings, "acceptance/missing", (art.id,), "blocking")
             details.append(f"  ✗ [{art.id}] no acceptance criteria found"
                            f" → fix: specflow update {art.id} --ac '<criteria>'")
             continue
@@ -618,6 +600,7 @@ def _check_acceptance(
         item_count = lint_lib.count_acceptance_criteria_items(art)
         if item_count == 0:
             blocking += 1
+            _emit(findings, "acceptance/empty", (art.id,), "blocking")
             details.append(f"  ✗ [{art.id}] empty Acceptance Criteria section (header only)"
                            f" → fix: specflow update {art.id} --ac '<criteria>'")
             continue
@@ -632,6 +615,7 @@ def _check_acceptance(
             ac_text_stripped = _AC_LIST_MARKER_RE.sub("", ac_text)
             if not re.search(r"\d", ac_text_stripped):
                 warnings += 1
+                _emit(findings, "acceptance/nfr-threshold", (art.id,), "warning", category=str(category))
                 details.append(
                     f"  ⚠ [{art.id}] NFR ({category}) has no measurable threshold "
                     f"(no numeric value in AC) — deterministic check only; semantic "
@@ -651,6 +635,7 @@ def _check_acceptance(
         "detail": detail_msg,
         "blocking_count": blocking,
         "warning_count": warnings,
+        "findings": findings,
     }
 
 
@@ -668,6 +653,7 @@ def _check_conflicts(
     details: list[str] = []
 
     reqs = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "REQ"]
+    findings: list = []
 
     _NUM_PATTERN = re.compile(
         r"(?P<metric>[\w\s]{3,40}?)"
@@ -744,6 +730,7 @@ def _check_conflicts(
                         if upper < lower:
                             seen_pairs.add(pair_key)
                             warnings += 1
+                            _emit(findings, "conflicts/numeric", tuple(sorted((req_id_a, req_id_b))), "warning", metric=c_a["metric"])
                             details.append(
                                 f"  ⚠ [{req_id_a}] vs [{req_id_b}] conflicting: "
                                 f"'{c_a['metric']} {c_a['op']} {c_a['value']}{c_a['unit']}' "
@@ -755,6 +742,7 @@ def _check_conflicts(
                         if upper < lower:
                             seen_pairs.add(pair_key)
                             warnings += 1
+                            _emit(findings, "conflicts/numeric", tuple(sorted((req_id_a, req_id_b))), "warning", metric=c_a["metric"])
                             details.append(
                                 f"  ⚠ [{req_id_a}] vs [{req_id_b}] conflicting: "
                                 f"'{c_a['metric']} {c_a['op']} {c_a['value']}{c_a['unit']}' "
@@ -772,6 +760,7 @@ def _check_conflicts(
         "detail": detail_msg,
         "blocking_count": blocking,
         "warning_count": warnings,
+        "findings": findings,
     }
 
 
@@ -823,6 +812,7 @@ def check_coverage(
     # REQs counts once. Same predicate and link scan as the warn loop below —
     # the metric and the warnings can never disagree.
     story_chain_coverage: dict[str, bool] = {}
+    findings: list = []
 
     id_index = art_lib.build_id_index(artifacts)
 
@@ -869,6 +859,7 @@ def check_coverage(
         if not linked_archs and req.id not in req_canonical_arch:
             msg = f"  ⚠ [{req.id}] no ARCH derives_from this approved requirement"
             warnings += 1
+            _emit(findings, "coverage/no-arch", (req.id,), "warning")
             structural_warnings += 1
             details.append(msg)
             structural_details.append(msg)
@@ -877,6 +868,7 @@ def check_coverage(
         if not linked_stories:
             msg = f"  ⚠ [{req.id}] no STORY implements/derives_from this approved requirement"
             warnings += 1
+            _emit(findings, "coverage/no-story", (req.id,), "warning")
             structural_warnings += 1
             details.append(msg)
             structural_details.append(msg)
@@ -917,6 +909,7 @@ def check_coverage(
                     )
                     warnings += 1
                     verification_warnings += 1
+                    _emit(findings, "coverage/no-test", (story.id, prefix, req.id), "warning")
                     details.append(msg)
                     verification_details.append(msg)
 
@@ -943,6 +936,7 @@ def check_coverage(
         "detail": detail_msg,
         "blocking_count": blocking,
         "warning_count": warnings,
+        "findings": findings,
         # Accounting-class shape note (STORY-679): info only, never a warning.
         "accounting_count": len(set(derives_only_reqs)),
         "accounting_detail": accounting_detail,
@@ -979,6 +973,7 @@ def _check_story_size(
     blocking = 0
     warnings = 0
     details: list[str] = []
+    findings: list = []
 
     stories = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "STORY"]
 
@@ -998,12 +993,15 @@ def _check_story_size(
             if art.status in _ACTIONABLE:
                 if ac_count > 8:
                     warnings += 1
+                    _emit(findings, "story-size/ac-max", (art.id,), "warning", ac_count=ac_count)
                     details.append(f"  ⚠ [{art.id}] has {ac_count} acceptance criteria (max 8 recommended)")
                 if ac_count < 2:
                     warnings += 1
+                    _emit(findings, "story-size/ac-min", (art.id,), "warning", ac_count=ac_count)
                     details.append(f"  ⚠ [{art.id}] has {ac_count} acceptance criteria (minimum 2 recommended)")
         else:
             warnings += 1
+            _emit(findings, "story-size/no-ac", (art.id,), "warning")
             details.append(f"  ⚠ [{art.id}] has no Acceptance Criteria section")
 
         subsystem_refs = set(
@@ -1013,6 +1011,7 @@ def _check_story_size(
         )
         if art.status in _ACTIONABLE and len(subsystem_refs) > 5:
             warnings += 1
+            _emit(findings, "story-size/subsystems", (art.id,), "warning", subsystems=len(subsystem_refs))
             details.append(f"  ⚠ [{art.id}] references {len(subsystem_refs)} distinct subsystems (max 5 recommended)")
 
     icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
@@ -1023,6 +1022,7 @@ def _check_story_size(
         "detail": detail_msg,
         "blocking_count": blocking,
         "warning_count": warnings,
+        "findings": findings,
     }
 
 
@@ -1131,35 +1131,38 @@ def _check_quality(
     """
     warnings = 0
     details: list[str] = []
+    findings: list = []
 
     reqs = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "REQ"]
 
     _STRIP_CODE = re.compile(r"`[^`]+`")
 
     for art in reqs:
-        findings: list[str] = []
+        hits: list[str] = []
         body = _STRIP_CODE.sub("", art.body)
 
         for m in _AMBIGUITY_WORDS.finditer(body):
             word = m.group(1)
-            findings.append(f"ambiguity word '{word}'")
+            hits.append(f"ambiguity word '{word}'")
 
         for m in _PASSIVE_VOICE.finditer(body):
             phrase = m.group(0)
-            findings.append(f"passive voice '{phrase}'")
+            hits.append(f"passive voice '{phrase}'")
 
         for m in _COMPOUND_SHALL.finditer(body):
             snippet = m.group(0).strip()[:60]
-            findings.append(f"compound shall in '{snippet}...'")
+            hits.append(f"compound shall in '{snippet}...'")
 
         for m in _MISSING_THRESHOLD.finditer(body):
             phrase = m.group(0)
-            findings.append(f"missing threshold in '{phrase}'")
+            hits.append(f"missing threshold in '{phrase}'")
 
-        if findings:
-            warnings += len(findings)
-            sample = findings[:3]
-            suffix = f" (+{len(findings) - 3} more)" if len(findings) > 3 else ""
+        if hits:
+            warnings += len(hits)
+            for hit in hits:
+                _emit(findings, "quality/text", (art.id, _norm(hit)), "warning")
+            sample = hits[:3]
+            suffix = f" (+{len(hits) - 3} more)" if len(hits) > 3 else ""
             details.append(
                 f"  \u26a0 [{art.id}] {'; '.join(sample)}{suffix}"
             )
@@ -1172,6 +1175,7 @@ def _check_quality(
         "detail": detail_msg,
         "blocking_count": 0,
         "warning_count": warnings,
+        "findings": findings,
     }
 
 
@@ -1202,6 +1206,7 @@ def _check_spec_body(
     """
     warnings = 0
     details: list[str] = []
+    findings: list = []
 
     for art in artifacts:
         prefix = art_lib.get_prefix_from_id(art.id)
@@ -1211,17 +1216,21 @@ def _check_spec_body(
         if prefix == "ARCH":
             if word_count < _ARCH_MIN_WORDS:
                 warnings += 1
+                _emit(findings, "spec-body/word-count", (art.id,), "warning", words=word_count)
                 details.append(f"  ⚠ [{art.id}] body has {word_count} words (minimum {_ARCH_MIN_WORDS} for architecture)")
             if not _ARCH_SECTIONS.search(body):
                 warnings += 1
+                _emit(findings, "spec-body/headers", (art.id,), "warning")
                 details.append(f"  ⚠ [{art.id}] missing structural headers (expected: Interface, Component, Responsibility, Data Flow, Structure, Package, Module, or Dependencies)")
 
         elif prefix == "DDD":
             if word_count < _DDD_MIN_WORDS:
                 warnings += 1
+                _emit(findings, "spec-body/word-count", (art.id,), "warning", words=word_count)
                 details.append(f"  ⚠ [{art.id}] body has {word_count} words (minimum {_DDD_MIN_WORDS} for detailed design)")
             if not _DDD_SECTIONS.search(body):
                 warnings += 1
+                _emit(findings, "spec-body/headers", (art.id,), "warning")
                 details.append(f"  ⚠ [{art.id}] missing design headers (expected: Function, Data Structure, Algorithm, Error Handling, Invariant, Precondition, Signature, or Implementation)")
 
     icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
@@ -1232,6 +1241,7 @@ def _check_spec_body(
         "detail": detail_msg,
         "blocking_count": 0,
         "warning_count": warnings,
+        "findings": findings,
     }
 
 
@@ -1247,6 +1257,7 @@ def _check_output_files(
     """
     warnings = 0
     details: list[str] = []
+    findings: list = []
 
     for art in artifacts:
         output_files = art.frontmatter.get("output_files")
@@ -1256,12 +1267,14 @@ def _check_output_files(
         # Literal misses: declared file is gone.
         for missing in files_lib.literal_missing(root, output_files):
             warnings += 1
+            _emit(findings, "output-files/missing", (art.id, str(missing)), "warning")
             details.append(f"  ⚠ [{art.id}] output file not found: {missing}")
 
         # Glob misses: pattern matched nothing (ambiguous; worth surfacing).
         for glob_entry in files_lib.glob_entries(output_files):
             if not files_lib.expand_output_files(root, [glob_entry]):
                 warnings += 1
+                _emit(findings, "output-files/glob-empty", (art.id, str(glob_entry)), "warning")
                 details.append(f"  ⚠ [{art.id}] output_files glob matched nothing: {glob_entry}")
 
     icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
@@ -1272,6 +1285,7 @@ def _check_output_files(
         "detail": detail_msg,
         "blocking_count": 0,
         "warning_count": warnings,
+        "findings": findings,
     }
 
 
@@ -1300,6 +1314,7 @@ def _check_spidr_coverage(
         all_tags.update(t.lower() for t in s.tags)
 
     has_any_spidr = any(any(t.startswith("spidr-") for t in s.tags) for s in stories)
+    findings: list = []
     # STORY-695 (REQ-056 AC7): fewer stories than SPIDR dimensions cannot
     # cover all five, so a lean change would always carry 4-5 cry-wolf
     # warnings. Below that size, missing dimensions are informational only.
@@ -1312,6 +1327,7 @@ def _check_spidr_coverage(
                 details.append(f"  ℹ no stories found for SPIDR dimension '{dim}' (only {len(stories)} stories).")
             else:
                 warnings += 1
+                _emit(findings, "spidr-coverage/dimension", (f"dim:{dim}",), "warning")
                 details.append(f"  ⚠ no stories found for SPIDR dimension '{dim}'. Stories may be incomplete.")
 
     if not has_any_spidr and stories:
@@ -1330,6 +1346,7 @@ def _check_spidr_coverage(
         "detail": detail_msg,
         "blocking_count": 0,
         "warning_count": warnings,
+        "findings": findings,
     }
 
 
@@ -1354,11 +1371,13 @@ def _check_wave_cycles(
         }
 
     result = compute_waves(stories)
+    findings: list = []
 
     if not result.get("ok"):
         cycle = result.get("cycle", [])
         cycle_str = " -> ".join(cycle) if cycle else "unknown"
         warnings += 1
+        _emit(findings, "wave-cycles/cycle", tuple(sorted(set(cycle))) or ("unknown",), "warning")
         details.append(f"  ⚠ circular dependency detected: {cycle_str}")
 
     if result.get("ok") and result.get("waves"):
@@ -1387,6 +1406,7 @@ def _check_wave_cycles(
     for sid, count in sorted(dep_counts.items(), key=lambda x: -x[1]):
         if count >= 4:
             warnings += 1
+            _emit(findings, "wave-cycles/fan-in", (sid,), "warning", dependencies=count)
             details.append(f"  ⚠ {sid} has {count} dependencies, consider restructuring")
 
     icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
@@ -1397,6 +1417,7 @@ def _check_wave_cycles(
         "detail": detail_msg,
         "blocking_count": 0,
         "warning_count": warnings,
+        "findings": findings,
     }
 
 
@@ -1460,14 +1481,17 @@ def _check_compliance_evidence(
     details: list[str] = []
 
     clause_cache: dict[str, dict | None] = {}
+    findings: list = []
 
-    def _bump(msg: str) -> None:
+    def _bump(msg: str, rule_id: str, subjects: tuple) -> None:
         nonlocal blocking, warnings
         if strict:
             blocking += 1
+            _emit(findings, rule_id, subjects, "blocking")
             details.append(f"  ✗ {msg}")
         else:
             warnings += 1
+            _emit(findings, rule_id, subjects, "warning")
             details.append(f"  ⚠ {msg}")
 
     for art in artifacts:
@@ -1482,7 +1506,8 @@ def _check_compliance_evidence(
         if word_count < _COMPLIANCE_MIN_WORDS:
             _bump(
                 f"[{art.id}] complies_with present but body has only {word_count} "
-                f"words (≥{_COMPLIANCE_MIN_WORDS} recommended for substantive evidence)"
+                f"words (≥{_COMPLIANCE_MIN_WORDS} recommended for substantive evidence)",
+                "compliance-evidence/word-count", (art.id,),
             )
 
         for link in complies_links:
@@ -1498,7 +1523,8 @@ def _check_compliance_evidence(
                 kw_sample = ", ".join(sorted(keywords)[:5])
                 _bump(
                     f"[{art.id}] body does not reference any keyword from "
-                    f"clause '{link.target}' (expected one of: {kw_sample})"
+                    f"clause '{link.target}' (expected one of: {kw_sample})",
+                    "compliance-evidence/keyword", (art.id, link.target),
                 )
 
     if blocking == 0 and warnings == 0:
@@ -1516,6 +1542,7 @@ def _check_compliance_evidence(
         "detail": detail_msg,
         "blocking_count": blocking,
         "warning_count": warnings,
+        "findings": findings,
     }
 
 
@@ -1564,14 +1591,17 @@ def _check_bp_application(
     blocking = 0
     warnings = 0
     details: list[str] = []
+    findings: list = []
 
-    def _bump(message: str) -> None:
+    def _bump(message: str, rule_id: str, subjects: tuple) -> None:
         nonlocal blocking, warnings
         if strict:
             blocking += 1
+            _emit(findings, rule_id, subjects, "blocking")
             details.append(f"  ✗ {message}")
         else:
             warnings += 1
+            _emit(findings, rule_id, subjects, "warning")
             details.append(f"  ⚠ {message}")
 
     # A migration stamp is the release boundary: unstamped legacy BPs skip the
@@ -1586,7 +1616,7 @@ def _check_bp_application(
         if isinstance(tailoring, dict) and tailoring.get("status") == "dropped":
             problem = practices_lib.tailoring_drop_problem(bp, id_index)
             if problem:
-                _bump(f"[{bp.id}] {problem}")
+                _bump(f"[{bp.id}] {problem}", "bp-application/tailoring", (bp.id,))
             else:
                 dropped.add(bp.id)
 
@@ -1641,7 +1671,8 @@ def _check_bp_application(
                 for link in target.links
             )
             if not bound:
-                _bump(f"[{target.id}] in-scope BP {bp.id} is not linked via guided_by")
+                _bump(f"[{target.id}] in-scope BP {bp.id} is not linked via guided_by",
+                      "bp-application/unbound", (target.id, bp.id))
                 continue
 
             coverage[target.type][0] += 1
@@ -1659,14 +1690,16 @@ def _check_bp_application(
             ]
             if not linked_tests:
                 _bump(
-                    f"[{target.id}] BP {bp.id} uses test verification but has no linked verification test"
+                    f"[{target.id}] BP {bp.id} uses test verification but has no linked verification test",
+                    "bp-application/no-test", (target.id, bp.id),
                 )
             else:
                 incomplete = [test.id for test in linked_tests if test.status != "verified"]
                 if incomplete:
                     _bump(
                         f"[{target.id}] BP {bp.id} verification test(s) not verified: "
-                        f"{', '.join(incomplete[:5])}"
+                        f"{', '.join(incomplete[:5])}",
+                        "bp-application/test-not-verified", (target.id, bp.id),
                     )
 
     if pair_count:
@@ -1698,6 +1731,7 @@ def _check_bp_application(
         "detail": detail_msg,
         "blocking_count": blocking,
         "warning_count": warnings,
+        "findings": findings,
     }
 
 
@@ -1709,6 +1743,7 @@ def _check_thinking_techniques(
     CHALLENGED_STATUSES = {"approved", "implemented", "verified"}
     warnings = 0
     details: list[str] = []
+    findings: list = []
 
     for art in artifacts:
         if art.type not in SPEC_TYPES:
@@ -1718,6 +1753,7 @@ def _check_thinking_techniques(
         techniques = art.thinking_techniques
         if not techniques:
             warnings += 1
+            _emit(findings, "thinking-techniques/unchallenged", (art.id,), "warning")
             details.append(
                 f"  ⚠ {art.id} [{art.status}] has no thinking_techniques recorded "
                 f"(never challenged)"
@@ -1731,6 +1767,7 @@ def _check_thinking_techniques(
         "detail": detail_msg,
         "blocking_count": 0,
         "warning_count": warnings,
+        "findings": findings,
     }
 
 
@@ -1777,9 +1814,12 @@ def _check_autoresearch_logging(
     blocking = 0
     warnings = 0
     details: list[str] = []
+    findings: list = []
 
-    def _bump(msg: str) -> None:
+    def _bump(msg: str, kind: str, *subjects: str) -> None:
         nonlocal blocking, warnings
+        severity = "blocking" if strict else "warning"
+        _emit(findings, f"autoresearch-logging/{kind}", subjects, severity)
         if strict:
             blocking += 1
             details.append(f"  ✗ {msg}")
@@ -1819,17 +1859,20 @@ def _check_autoresearch_logging(
             missing = [f for f in recs if f not in aux]
             if missing:
                 _bump(
-                    f"[{art.id}] missing recommended aux metrics for domain '{domain}': {', '.join(missing[:3])}"
+                    f"[{art.id}] missing recommended aux metrics for domain '{domain}': {', '.join(missing[:3])}",
+                    "aux-metrics", art.id,
                 )
 
         if status == "kept" and cat in ("model", "params") and not art.frontmatter.get("parameters"):
             _bump(
-                f"[{art.id}] (kept, change_category={cat}) has no `parameters` logged"
+                f"[{art.id}] (kept, change_category={cat}) has no `parameters` logged",
+                "parameters", art.id,
             )
 
         if status in ("discarded", "crashed") and not art.frontmatter.get("failure_analysis"):
             _bump(
-                f"[{art.id}] ({status}) has no `failure_analysis` logged"
+                f"[{art.id}] ({status}) has no `failure_analysis` logged",
+                "failure-analysis", art.id,
             )
 
         # Structured reasoning fields: the protocol mandates a falsifiable
@@ -1842,12 +1885,14 @@ def _check_autoresearch_logging(
         # heavy autoresearch project).
         if status != "draft" and not art.frontmatter.get("hypothesis"):
             _bump(
-                f"[{art.id}] has no `hypothesis` logged (state the falsifiable hypothesis)"
+                f"[{art.id}] has no `hypothesis` logged (state the falsifiable hypothesis)",
+                "hypothesis", art.id,
             )
         elif status == "kept" and not art.frontmatter.get("hypothesis_outcome"):
             _bump(
                 f"[{art.id}] (kept) has no `hypothesis_outcome` logged "
-                f"(supported/not_supported/inconclusive/invalid)"
+                f"(supported/not_supported/inconclusive/invalid)",
+                "hypothesis-outcome", art.id,
             )
         # REQ-043: `invalid` means the instrument failed, not the hypothesis —
         # the instrument failure must be recorded so the result is negative
@@ -1859,7 +1904,8 @@ def _check_autoresearch_logging(
         ):
             _bump(
                 f"[{art.id}] (hypothesis_outcome=invalid) has no `failure_analysis` "
-                f"logged (record the instrument failure)"
+                f"logged (record the instrument failure)",
+                "invalid-failure-analysis", art.id,
             )
 
         # REQ-043: `research_progress` is optional, but when present it must
@@ -1870,7 +1916,7 @@ def _check_autoresearch_logging(
             art.frontmatter.get("research_progress")
         )
         if progress_issue:
-            _bump(f"[{art.id}] `research_progress` {progress_issue}")
+            _bump(f"[{art.id}] `research_progress` {progress_issue}", "research-progress", art.id)
 
     # STORY-636/637: link-edge consistency. Frontmatter parent fields
     # (`competition`, `loop`, `source_loop`) are invisible to `specflow trace`;
@@ -1890,7 +1936,8 @@ def _check_autoresearch_logging(
         if value is None:
             return None
         if not isinstance(value, str):
-            _bump(f"[{art.id}] has malformed `{key}` (expected an ID string, got {type(value).__name__})")
+            _bump(f"[{art.id}] has malformed `{key}` (expected an ID string, got {type(value).__name__})",
+                  "malformed-parent", art.id, key)
             return None
         return value
 
@@ -1908,7 +1955,8 @@ def _check_autoresearch_logging(
                     f"[{art.id}] has `competition: {comp}` but no "
                     f"`operates_on → {comp}` link edge — `specflow trace` "
                     f"cannot see it. Repair: `specflow update {art.id} "
-                    f"--add-link {comp}:operates_on`"
+                    f"--add-link {comp}:operates_on`",
+                    "missing-edge", art.id, comp,
                 )
         elif prefix == "EXPT":
             loop = _parent(art, "loop")
@@ -1921,7 +1969,8 @@ def _check_autoresearch_logging(
                     f"[{art.id}] has `loop: {loop}` but no "
                     f"`belongs_to → {loop}` link edge — `specflow trace` "
                     f"cannot see it. Repair: `specflow update {art.id} "
-                    f"--add-link {loop}:belongs_to`"
+                    f"--add-link {loop}:belongs_to`",
+                    "missing-edge", art.id, loop,
                 )
         elif prefix == "FIND":
             comp = _parent(art, "competition")
@@ -1934,7 +1983,8 @@ def _check_autoresearch_logging(
                 _bump(
                     f"[{art.id}] has `competition: {comp}` but no "
                     f"`belongs_to → {comp}` link edge. Repair: `specflow update "
-                    f"{art.id} --add-link {comp}:belongs_to`"
+                    f"{art.id} --add-link {comp}:belongs_to`",
+                    "missing-edge", art.id, comp,
                 )
             if (
                 loop
@@ -1944,7 +1994,8 @@ def _check_autoresearch_logging(
                 _bump(
                     f"[{art.id}] has `source_loop: {loop}` but no "
                     f"`condenses → {loop}` link edge. Repair: `specflow update "
-                    f"{art.id} --add-link {loop}:condenses`"
+                    f"{art.id} --add-link {loop}:condenses`",
+                    "missing-edge", art.id, loop,
                 )
 
     if blocking == 0 and warnings == 0:
@@ -1962,6 +2013,7 @@ def _check_autoresearch_logging(
         "detail": detail_msg,
         "blocking_count": blocking,
         "warning_count": warnings,
+        "findings": findings,
     }
 
 
@@ -2007,6 +2059,7 @@ def _check_autoresearch_comp_closure(
             "warning_count": 0,
         }
 
+    findings: list = []
     for comp in comps:
         if comp.status != "completed":
             continue
@@ -2015,12 +2068,14 @@ def _check_autoresearch_comp_closure(
         ]
         if not confirmed:
             warnings += 1
+            _emit(findings, "autoresearch-comp-closure/no-confirmed-find", (comp.id,), "warning")
             details.append(
                 f"  ⚠ {comp.id} completed competition has no confirmed findings "
                 f"— premature closure?"
             )
         if not comp.frontmatter.get("closure_disposition"):
             warnings += 1
+            _emit(findings, "autoresearch-comp-closure/no-disposition", (comp.id,), "warning")
             details.append(
                 f"  ⚠ {comp.id} completed competition has no closure_disposition "
                 f"recorded — per-goal disposition missing"
@@ -2037,6 +2092,7 @@ def _check_autoresearch_comp_closure(
         "detail": detail_msg,
         "blocking_count": 0,
         "warning_count": warnings,
+        "findings": findings,
     }
 
 
@@ -2109,6 +2165,9 @@ def _check_fingerprint_drift(
         )
 
     warnings = len(drifted)  # ONCE per COMP, never per EXPT
+    findings: list = []
+    for comp_id in sorted(drifted):
+        _emit(findings, "fingerprint-drift/evaluator", (comp_id,), "warning", expts=sorted(drifted[comp_id]))
     icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
     detail_msg = (
         "\n".join(details) if details
@@ -2119,6 +2178,7 @@ def _check_fingerprint_drift(
         "detail": detail_msg,
         "blocking_count": 0,
         "warning_count": warnings,
+        "findings": findings,
     }
 
 
@@ -2131,6 +2191,7 @@ _REPEATED_TAG_THRESHOLD = 3
 def _check_spike_lifecycle(
     artifacts: list[art_lib.Artifact],
     root: Path,
+    as_of: date | None = None,
 ) -> dict[str, str | int]:
     """Detect SPIKE lifecycle issues: stale, zombie, and repeated-topic patterns.
 
@@ -2143,7 +2204,12 @@ def _check_spike_lifecycle(
     """
     warnings = 0
     details: list[str] = []
-    now = datetime.now(timezone.utc)
+    findings: list = []
+    # REQ-053 AC9: the clock is an explicit input. Ages are measured from
+    # 00:00 UTC of the as-of date (default: today), so a given date always
+    # yields the same staleness verdict.
+    as_of = as_of or datetime.now(timezone.utc).date()
+    now = datetime(as_of.year, as_of.month, as_of.day, tzinfo=timezone.utc)
 
     spikes = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "SPIKE"]
 
@@ -2193,6 +2259,8 @@ def _check_spike_lifecycle(
 
         if age_days > timebox_days:
             warnings += 1
+            _emit(findings, "spike-lifecycle/stale", (sp.id,), "warning",
+                  age_days=age_days, timebox_days=timebox_days, as_of=as_of.isoformat())
             details.append(
                 f"  ⚠ [{sp.id}] stale: {sp.status} for {age_days} days "
                 f"(timebox: {timebox_days}d)"
@@ -2222,6 +2290,7 @@ def _check_spike_lifecycle(
 
         if not has_downstream:
             warnings += 1
+            _emit(findings, "spike-lifecycle/zombie", (sp.id,), "warning")
             details.append(
                 f"  ⚠ [{sp.id}] zombie: completed with {word_count} words of findings "
                 f"but nothing links to it via derives_from"
@@ -2252,34 +2321,11 @@ def _check_spike_lifecycle(
         "detail": detail_msg,
         "blocking_count": 0,
         "warning_count": warnings,
+        "findings": findings,
     }
 
 
 # ── Source-file drift detection ────────────────────────────────────
-
-
-def _hash_file_content(path: Path) -> str:
-    """Compute SHA256 hex digest of a file's contents."""
-    return hashlib.sha256(path.read_bytes()).hexdigest()[:16]
-
-
-def _load_source_fingerprints(root: Path) -> dict[str, dict[str, str]]:
-    """Load stored source fingerprints from .specflow/source-fingerprints.yaml."""
-    fp_path = root / files_lib.SOURCE_FP_FILE
-    if not fp_path.exists():
-        return {}
-    try:
-        data = yaml.safe_load(fp_path.read_text(encoding="utf-8"))
-        return data if isinstance(data, dict) else {}
-    except Exception:
-        return {}
-
-
-def _save_source_fingerprints(root: Path, data: dict[str, dict[str, str]]) -> None:
-    """Save source fingerprints to .specflow/source-fingerprints.yaml."""
-    fp_path = root / files_lib.SOURCE_FP_FILE
-    fp_path.parent.mkdir(parents=True, exist_ok=True)
-    fp_path.write_text(yaml.dump(data, default_flow_style=False, sort_keys=True), encoding="utf-8")
 
 
 def _check_source_drift(
@@ -2288,65 +2334,52 @@ def _check_source_drift(
 ) -> dict[str, str | int]:
     """Detect when output_files have changed but the artifact is not suspect-flagged.
 
-    Compares current file hashes against stored source fingerprints in
-    .specflow/source-fingerprints.yaml. Warns if a file hash has changed
-    and the governing artifact is not already suspect.
+    Compares current file hashes against the accepted hashes in
+    .specflow/source-fingerprints.yaml and warns when a file changed while its
+    governing artifact is not already suspect. Glob ``output_files`` entries
+    expand via ``files.expand_output_files``; files are visited in sorted
+    order so output never depends on set iteration (REQ-053 AC1).
 
-    Glob patterns in `output_files` are expanded via `files.expand_output_files`
-    so an ARCH/STORY covering a package glob is drift-checked for every file
-    the glob matches. The stored fingerprint key is the glob string itself;
-    all files under a glob are hashed together (any change triggers drift).
-
-    First run: if no fingerprint file exists but at least one artifact declares
-    output_files, the check silently seeds the file with current hashes and
-    returns 0 warnings. Re-run on the next commit to detect drift.
-
-    To re-seed fingerprints after reviewing changes, delete
-    ``.specflow/source-fingerprints.yaml`` and re-run.
+    Read-only (REQ-053 AC2): lint never writes the store. ``init``/``refresh``
+    seed it when absent; ``specflow fingerprint-refresh --source [IDs|--all]``
+    seeds missing entries or re-accepts reviewed drift. Artifacts with
+    output_files but no stored entry are reported as unseeded (info).
     """
-    stored = _load_source_fingerprints(root)
-    current: dict[str, dict[str, str]] = {}
+    from specflow.lib import source_drift
+
+    stored = source_drift.load_store(root)
     warnings = 0
     details: list[str] = []
-    seeded = False
+    findings: list = []
+    unseeded: list[str] = []
 
     for art in artifacts:
-        output_files = art.frontmatter.get("output_files")
-        if not output_files or not isinstance(output_files, list):
+        hashes = source_drift.current_hashes(root, art)
+        if not hashes:
             continue
-
-        art_hashes: dict[str, str] = {}
-        # Expand globs + literals into concrete files via the shared helper.
-        for resolved in files_lib.expand_output_files(root, output_files):
-            try:
-                rel = str(resolved.relative_to(root.resolve()))
-            except ValueError:
-                rel = str(resolved)
-            current_hash = _hash_file_content(resolved)
-            art_hashes[rel] = current_hash
-
-            stored_hash = (stored.get(art.id) or {}).get(rel)
+        accepted = stored.get(art.id)
+        if accepted is None:
+            unseeded.append(art.id)
+            continue
+        for rel, current_hash in hashes.items():
+            stored_hash = accepted.get(rel)
             if stored_hash and stored_hash != current_hash and not art.suspect:
                 warnings += 1
+                _emit(findings, "source-drift/changed", (art.id, rel), "warning",
+                      stored=stored_hash, now=current_hash)
                 details.append(
                     f"  ⚠ [{art.id}] source file changed: {rel} "
                     f"(stored: {stored_hash}, now: {current_hash}) — "
                     f"artifact is not suspect-flagged"
                 )
 
-        if art_hashes:
-            current[art.id] = art_hashes
-
-    fp_path = root / files_lib.SOURCE_FP_FILE
-    if not stored and current:
-        _save_source_fingerprints(root, current)
-        seeded = True
+    if unseeded:
         details.append(
-            f"  ℹ Seeded source fingerprints for {len(current)} artifact(s) "
-            f"→ {fp_path.relative_to(root)}. Re-run to detect drift."
+            f"  ℹ {len(unseeded)} artifact(s) with output_files have no accepted "
+            f"source fingerprint → specflow fingerprint-refresh --source"
         )
 
-    icon = GREEN + "✓" + NC if warnings == 0 and not seeded else (
+    icon = GREEN + "✓" + NC if warnings == 0 and not unseeded else (
         YELLOW + "⚠" + NC if warnings > 0 else CYAN + "ℹ" + NC
     )
     detail_msg = "\n".join(details) if details else "No source-file drift detected"
@@ -2356,6 +2389,8 @@ def _check_source_drift(
         "detail": detail_msg,
         "blocking_count": 0,
         "warning_count": warnings,
+        "findings": findings,
+        "unseeded_count": len(unseeded),
     }
 
 
@@ -2375,6 +2410,7 @@ def _check_dec_risk_profile(
     """
     warnings = 0
     details: list[str] = []
+    findings: list = []
 
     for art in artifacts:
         if art_lib.get_prefix_from_id(art.id) != "DEC":
@@ -2383,6 +2419,7 @@ def _check_dec_risk_profile(
             continue
         if not art.frontmatter.get("risk_profile"):
             warnings += 1
+            _emit(findings, "dec-risk-profile/missing", (art.id,), "warning")
             details.append(
                 f"  ⚠ [{art.id}] approved DEC has no risk_profile — run "
                 f"`specflow risk-tier <IDs>` and record the tier "
@@ -2400,6 +2437,7 @@ def _check_dec_risk_profile(
         "detail": detail_msg,
         "blocking_count": 0,
         "warning_count": warnings,
+        "findings": findings,
     }
 
 
@@ -2421,6 +2459,7 @@ def _check_nfr_category(
     """
     warnings = 0
     details: list[str] = []
+    findings: list = []
 
     reqs = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "REQ"]
     for art in reqs:
@@ -2430,6 +2469,7 @@ def _check_nfr_category(
         err = lint_lib.validate_nfr_category(str(category))
         if err:
             warnings += 1
+            _emit(findings, "nfr-category/vocabulary", (art.id,), "warning", category=str(category))
             details.append(f"  ⚠ [{art.id}] {err}")
 
     icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
@@ -2443,6 +2483,7 @@ def _check_nfr_category(
         "detail": detail_msg,
         "blocking_count": 0,
         "warning_count": warnings,
+        "findings": findings,
     }
 
 
@@ -2486,9 +2527,11 @@ def _check_backfilled_links(
         (a for a in artifacts if "backfilled" in (a.tags or [])),
         key=lambda a: a.id,
     )
+    findings: list = []
     for art in backfilled:
         if not art.links and art.id not in inbound_targets:
             warnings += 1
+            _emit(findings, "backfilled-links/unlinked", (art.id,), "warning")
             details.append(
                 f"  ⚠ [{art.id}] backfilled artifact has no links in either "
                 "direction — a backfilled record describing nothing asserts "
@@ -2506,6 +2549,7 @@ def _check_backfilled_links(
         "detail": detail_msg,
         "blocking_count": 0,
         "warning_count": warnings,
+        "findings": findings,
     }
 
 
@@ -2540,6 +2584,9 @@ def _check_role_targets(
     strict = bool(cfg.get("lint", {}).get("role_target_strict", False))
 
     issues = role_targets.check_role_targets(artifacts, strict=strict)
+    findings: list = []
+    for i in issues:
+        _emit(findings, "role-target/type", (i["artifact"], f"role:{i['role']}"), i["severity"])
     blocking = sum(1 for i in issues if i["severity"] == "blocking")
     warnings = sum(1 for i in issues if i["severity"] == "warning")
     details = [
@@ -2567,6 +2614,7 @@ def _check_role_targets(
         "detail": detail_msg,
         "blocking_count": blocking,
         "warning_count": warnings,
+        "findings": findings,
     }
 
 
@@ -2595,6 +2643,7 @@ def _check_dead_oracle(
     from specflow.lib.evaluator_fingerprint import missing_repo_paths
 
     warnings: list[str] = []
+    findings: list = []
     declared = 0
     for art in sorted(artifacts, key=lambda a: a.id):
         cmd = (art.frontmatter or {}).get("verify_command")
@@ -2604,6 +2653,7 @@ def _check_dead_oracle(
             continue
         declared += 1
         for missing in missing_repo_paths(root, cmd):
+            _emit(findings, "dead-oracle/missing-path", (art.id, str(missing)), "warning")
             warnings.append(
                 f"{art.id}: verify_command names {missing}, which does not "
                 f"exist (dead oracle) — repoint the command or restore the file"
@@ -2622,6 +2672,7 @@ def _check_dead_oracle(
         "detail": detail,
         "blocking_count": 0,
         "warning_count": len(warnings),
+        "findings": findings,
     }
 
 
@@ -2677,70 +2728,51 @@ def run(root: Path, args: dict) -> int:
         print(f"{CYAN}Running in fix mode — rebuilding indexes and recomputing fingerprints{NC}\n")
         _auto_fix(root)
 
-    # Discover artifacts
-    artifacts = art_lib.discover_artifacts(root)
+    as_of = args.get("as_of")
+    if isinstance(as_of, str):
+        try:
+            as_of = date.fromisoformat(as_of)
+        except ValueError:
+            print(f"{RED}✗ --as-of must be YYYY-MM-DD, got {as_of!r}{NC}")
+            return 1
+    as_of = as_of or datetime.now(timezone.utc).date()
+    full_run = not check_type
 
-    # Run checks
-    print(f"\n{CYAN}SpecFlow Artifact Lint{NC}")
-    print(f"{CYAN}{'─' * 50}{NC}")
+    results, findings = collect(root, checks_to_run, as_of=as_of)
 
-    total_blocking = 0
-    total_warnings = 0
-    results: list[tuple[str, dict]] = []
+    from specflow.core import findings_baseline, policy
 
-    for check_name in checks_to_run:
-        result = _run_check(artifacts, root, check_name)
-        results.append((check_name, result))
-        total_blocking += result["blocking_count"]
-        total_warnings += result["warning_count"]
+    baseline, baseline_error = (None, None)
+    if full_run:
+        baseline, baseline_error = findings_baseline.load(root)
+    if baseline_error is not None:
+        findings.append(baseline_error)
+    verdict = policy.decide(findings, baseline, full_run=full_run)
 
-    # STORY-663: escalate warnings that persisted across >= ESCALATION_RUNS
-    # full validation runs (CI/release-audit cadence — filtered --type runs,
-    # e.g. the pre-commit hook's, do not advance the counter). State persists
-    # in CLI-managed .specflow/ (I2/I3: never prompt text).
-    escalated: list[tuple[str, str, int]] = []
-    if not check_type:
-        # bp-application is explicitly warning-first unless its opt-in strict
-        # setting is enabled; persistent-warning escalation must not override
-        # that contract. fingerprint-drift is likewise advisory-only (DEC-088,
-        # ARCH-038): its finding is permanent historical accounting — the
-        # remedy is a successor COMP, not an edit to the drifted EXPTs — so
-        # escalation would turn a never-gating advisory into a permanent block.
-        # dead-oracle is an accounting finding at REQ-058 AC2 severity; it
-        # never gates (DEF-017, tests/test_dead_oracle.py).
-        escalation_results = [
-            (name, result) for name, result in results
-            if name not in ("bp-application", "fingerprint-drift", "dead-oracle")
-        ]
-        escalated = _record_warning_runs(root, escalation_results)
-        total_blocking += len(escalated)
+    total_blocking = sum(r["blocking_count"] for _, r in results)
+    total_warnings = sum(r["warning_count"] for _, r in results)
 
     # Display results
+    print(f"\n{CYAN}SpecFlow Artifact Lint{NC}")
+    print(f"{CYAN}{'─' * 50}{NC}")
     label_width = 12
     for check_name, result in results:
         label = check_name.capitalize() + ":"
         label_padded = label.ljust(label_width)
         print(f"  {label_padded} {result['status_icon']} {result['detail']}")
 
-    if escalated:
-        print()
-        print(
-            f"{YELLOW}Escalation — warnings persisted across ≥{ESCALATION_RUNS} "
-            f"validation runs → blocking (severity-levels.md §Escalation):{NC}"
-        )
-        for check_name, line, runs in escalated:
-            print(f"  {RED}✗{NC} [{check_name}] {line}  (seen in {runs} runs)")
-        print(
-            f"  counts persist in {LINT_HISTORY_FILE}; fixing the warning resets it"
-        )
+    if full_run:
+        _render_ratchet(verdict, baseline_error)
+        _render_inputs(root, as_of, results)
+        total_blocking += len(verdict.new) + (1 if baseline_error else 0)
 
     # Summary
     print(f"{CYAN}{'─' * 50}{NC}")
-    if total_blocking > 0:
-        if escalated:
+    if verdict.exit_code:
+        if verdict.new:
             print(
                 f"  Result: {RED}FAIL{NC} ({total_blocking} blocking "
-                f"[{len(escalated)} escalated], {total_warnings} warnings)"
+                f"[{len(verdict.new)} new vs findings baseline], {total_warnings} warnings)"
             )
         else:
             print(f"  Result: {RED}FAIL{NC} ({total_blocking} blocking, {total_warnings} warnings)")
@@ -2754,6 +2786,51 @@ def run(root: Path, args: dict) -> int:
         print(f"  Result: {GREEN}PASS{NC} (all checks clean)")
         print()
         return 0
+
+
+def _render_ratchet(verdict, baseline_error) -> None:
+    """Findings-baseline section of a full run (replaces STORY-663 escalation)."""
+    from specflow.core.findings_baseline import BASELINE_FILE
+
+    print()
+    if baseline_error is not None:
+        print(f"  {RED}✗{NC} {baseline_error.text.strip()}")
+        return
+    if not verdict.ratchet_on:
+        print(
+            f"  {CYAN}ℹ{NC} No findings baseline — persistent-warning ratchet off "
+            f"→ specflow findings-baseline update (then commit {BASELINE_FILE})"
+        )
+        return
+    print(
+        f"{YELLOW if verdict.new else CYAN}Findings baseline ({BASELINE_FILE}): "
+        f"{len(verdict.known)} known, {len(verdict.new)} new, "
+        f"{len(verdict.resolved)} resolved{NC}"
+    )
+    for f in verdict.new:
+        print(f"  {RED}✗{NC} [{f.rule_id}] {' '.join(f.subjects)} — escalating warning not in baseline")
+    if verdict.new:
+        print(
+            "  → fix them, or accept as known debt with "
+            "`specflow findings-baseline update --accept-new` (approval-gated)"
+        )
+    if verdict.resolved:
+        print(
+            f"  {CYAN}ℹ{NC} {len(verdict.resolved)} baseline entr(ies) no longer produced "
+            f"→ specflow findings-baseline update to ratchet down"
+        )
+
+
+def _render_inputs(root: Path, as_of: date, results: list[tuple[str, dict]]) -> None:
+    """Record the environment inputs of a full run (REQ-053 AC9)."""
+    from specflow.lib import source_drift
+
+    seeded = len(source_drift.load_store(root))
+    unseeded = next((r.get("unseeded_count", 0) for n, r in results if n == "source-drift"), 0)
+    print(
+        f"  {CYAN}ℹ{NC} Inputs: as-of {as_of.isoformat()}; source-drift store: "
+        f"{seeded} artifact(s) seeded, {unseeded} unseeded"
+    )
 
 
 def _run_gate_check(root: Path, gate_name: str) -> int:

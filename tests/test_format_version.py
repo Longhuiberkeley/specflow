@@ -41,13 +41,13 @@ def test_supported_format_version_is_integer_one():
 
 # ── AC1: init + refresh stamp ────────────────────────────────────────────────
 
-def test_init_stamps_format_version_and_keeps_version(tmp_path: Path):
+def test_init_stamps_format_version_without_release_version(tmp_path: Path):
     root = tmp_path / "p"
     root.mkdir()
     assert init_cmd.run(root, {"platform": "claude-code", "no_ci": True}) == 0
     cfg = _cfg(root)
     assert cfg["format_version"] == 1
-    assert cfg["version"] == specflow.__version__
+    assert "version" not in cfg, "STORY-705: the stale release version key is gone"
 
 
 def test_reinit_stamps_format_version_on_legacy_config(tmp_path: Path):
@@ -58,7 +58,7 @@ def test_reinit_stamps_format_version_on_legacy_config(tmp_path: Path):
     assert _cfg(root)["format_version"] == 1
 
 
-def test_refresh_stamps_format_version_without_touching_version(tmp_path: Path):
+def test_refresh_stamps_format_version_and_strips_legacy_version(tmp_path: Path):
     root = tmp_path / "p"
     (root / ".claude").mkdir(parents=True)
     body = "# user comment kept\nversion: 1.2.3\nproject:\n  name: p\nactive_packs: []\n"
@@ -70,8 +70,9 @@ def test_refresh_stamps_format_version_without_touching_version(tmp_path: Path):
     text = (root / ".specflow" / "config.yaml").read_text()
     cfg = yaml.safe_load(text)
     assert cfg["format_version"] == 1
-    assert cfg["version"] == "1.2.3", "refresh must not restamp the legacy version key"
+    assert "version" not in cfg, "refresh strips the stale legacy version key (STORY-705)"
     assert "# user comment kept" in text, "stamp is a minimal text edit"
+    assert "name: p" in text
 
 
 def test_refresh_dry_run_reports_but_does_not_stamp(tmp_path: Path, capsys):
@@ -82,7 +83,10 @@ def test_refresh_dry_run_reports_but_does_not_stamp(tmp_path: Path, capsys):
     assert refresh_cmd.run(root, {"dry_run": True, "no_skills": True, "no_context": True}) == 0
 
     assert "format_version" not in _cfg(root)
-    assert "format_version" in capsys.readouterr().out
+    assert _cfg(root)["version"] == "1.2.3", "dry-run writes nothing"
+    out = capsys.readouterr().out
+    assert "format_version" in out
+    assert "would remove stale version: 1.2.3" in out
 
 
 def test_stamp_never_downgrades(tmp_path: Path):

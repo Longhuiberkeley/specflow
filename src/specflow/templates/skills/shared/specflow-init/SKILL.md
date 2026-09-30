@@ -23,7 +23,6 @@ Check the project root for platform detection markers (from `platforms.yaml`):
 | `.cursor/` | `cursor` | Cursor |
 | `.windsurf/` | `windsurf` | Windsurf |
 | `.cline/` | `cline` | Cline |
-| `.gemini/` | `gemini` | Gemini CLI |
 | `.opencode/` | `opencode` | OpenCode |
 | `.github/copilot-instructions.md` | `github-copilot` | GitHub Copilot |
 | `.roo/` | `roo` | Roo Code |
@@ -34,7 +33,7 @@ Check the project root for platform detection markers (from `platforms.yaml`):
 | `.trae/` | `trae` | Trae |
 | `.junie/` | `junie` | Junie |
 
-Scan markers in order. If a marker exists, use that platform code. If multiple markers are found, prefer the first match (table order). `specflow init` also warns when multiple AI-host platform dirs are detected, since skills are only installed to the one you targeted. Claude Code and OpenCode share the `.claude/skills` tree, so only genuinely different hosts (Cursor, Gemini, …) need `specflow refresh --all-platforms` to get their own copy.
+Scan markers in order. If a marker exists, use that platform code. If multiple markers are found, prefer the first match (table order). `specflow init` also warns when multiple AI-host platform dirs are detected, since skills are only installed to the one you targeted. Claude Code and OpenCode share the `.claude/skills` tree, so only genuinely different hosts (Cursor, Windsurf, …) need `specflow refresh --all-platforms` to get their own copy.
 
 If **no** marker is found, ask:
 
@@ -43,7 +42,6 @@ If **no** marker is found, ask:
 > - Cursor
 > - Windsurf
 > - Cline
-> - Gemini CLI
 > - GitHub Copilot
 > - OpenCode
 > - Roo Code
@@ -101,7 +99,7 @@ The instruction file for the chosen platform must contain the SpecFlow sentinel 
 
 #### 4b. Target instruction file
 
-The file depends on the platform: `AGENTS.md` for Claude Code, OpenCode, Codex and Junie; `GEMINI.md` for Gemini CLI; `.github/copilot-instructions.md` for GitHub Copilot; `.cursor/rules/specflow.md` (Cursor), `.windsurf/rules/specflow.md` (Windsurf), `.clinerules/specflow.md` (Cline), `.roo/rules/specflow.md` (Roo Code), `.qwen/rules/specflow.md` (QwenCoder), `.kiro/steering/specflow.md` (Kiro), `.kilocode/rules/specflow.md` (KiloCoder), `.trae/rules/specflow.md` (Trae).
+The file depends on the platform: `AGENTS.md` for Claude Code, OpenCode, Codex and Junie; `.github/copilot-instructions.md` for GitHub Copilot; `.cursor/rules/specflow.md` (Cursor), `.windsurf/rules/specflow.md` (Windsurf), `.clinerules/specflow.md` (Cline), `.roo/rules/specflow.md` (Roo Code), `.qwen/rules/specflow.md` (QwenCoder), `.kiro/steering/specflow.md` (Kiro), `.kilocode/rules/specflow.md` (KiloCoder), `.trae/rules/specflow.md` (Trae).
 
 If the marker is missing (unusual), run `specflow refresh` to re-inject the block; do not paste it by hand.
 

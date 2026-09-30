@@ -542,8 +542,7 @@ specflow export --skills --format <fmt> [--output DIR]     # skill export
 ```
 
 Skill export (`--skills`) converts every shared SpecFlow skill into a
-platform-specific single-file format: `cursor-rules` (.mdc), `gemini-toml`
-(TOML commands), `codex-agents` (TOML agents), or `markdown` (plain rules).
+platform-specific single-file format: `cursor-rules` (.mdc), `codex-agents` (TOML agents), or `markdown` (plain rules).
 Each skill's `references/**/*.md` files are inlined deterministically (sorted
 by relative path) under an `## Inlined references` section, so the exported
 file is self-contained and byte-stable across runs.

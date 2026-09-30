@@ -145,13 +145,9 @@ class TestWaveCycleDetection:
         assert "wave 2" in result["detail"]
 
     def test_wave_survey_lines_are_info_marked(self, project_root: Path):
-        # STORY-663 escalation identity includes every non-ℹ detail line, so
-        # the informational wave survey MUST carry the ℹ marker — otherwise the
-        # survey itself would escalate to blocking every 3 full lint runs.
+        # The informational wave survey carries the ℹ marker and yields no
+        # typed findings, so it can never count toward the findings baseline.
         stories = [_make_art("STORY-001", "story", status="approved")]
         result = lint_cmd._check_wave_cycles(stories, project_root)
-        identity_lines = lint_cmd._warning_detail_lines(result)
-        assert identity_lines == [], (
-            "wave survey lines must be ℹ-marked so they never count as "
-            "persistent warnings"
-        )
+        assert result["findings"] == []
+        assert all("ℹ" in line for line in result["detail"].splitlines() if line.strip())

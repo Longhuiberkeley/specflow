@@ -732,4 +732,43 @@ artifacts:
     tags: []
     fingerprint: sha256:879bd7e5da7c
     children: []
-next_id: 94
+  IT-094:
+    id: IT-094
+    title: Lint findings and rendering stay consistent across the check suite and
+      the audit adapter (STORY-704)
+    status: verified
+    tags: []
+    fingerprint: sha256:7dd387c881e1
+    children: []
+  IT-095:
+    id: IT-095
+    title: findings-baseline update/diff, init empty baseline and refresh migration
+      (STORY-705)
+    status: verified
+    tags: []
+    fingerprint: sha256:e91f8a2e4207
+    children: []
+  IT-096:
+    id: IT-096
+    title: artifact-lint leaves .specflow byte-identical and prints identical output
+      across runs and hash seeds (STORY-703)
+    status: verified
+    tags: []
+    fingerprint: sha256:47be7f484403
+    children: []
+  IT-097:
+    id: IT-097
+    title: Platform detection and shipped skill text without Gemini (STORY-701)
+    status: verified
+    tags: []
+    fingerprint: sha256:d8ee8f833b08
+    children: []
+  IT-098:
+    id: IT-098
+    title: refresh moves the CI workflow pin forward without downgrading or touching
+      branch pins (STORY-702)
+    status: verified
+    tags: []
+    fingerprint: sha256:8e06eee9c2d5
+    children: []
+next_id: 99

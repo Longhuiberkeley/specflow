@@ -1129,4 +1129,41 @@ artifacts:
     tags: []
     fingerprint: sha256:cd2ebadd80c8
     children: []
-next_id: 133
+  UT-133:
+    id: UT-133
+    title: 'Finding records: key excludes args, class from the policy table, two problems
+      on one artifact are two keys, count parity (STORY-704)'
+    status: verified
+    tags: []
+    fingerprint: sha256:95a82e1eaf96
+    children: []
+  UT-134:
+    id: UT-134
+    title: Exit-code policy truth table and baseline format (STORY-705)
+    status: verified
+    tags: []
+    fingerprint: sha256:29e2fa598154
+    children: []
+  UT-135:
+    id: UT-135
+    title: Spike staleness follows the explicit as-of date and is accounting (STORY-703)
+    status: verified
+    tags: []
+    fingerprint: sha256:e5e381740d34
+    children: []
+  UT-136:
+    id: UT-136
+    title: Gemini is unregistered and gemini-toml export is gone (STORY-701)
+    status: verified
+    tags: []
+    fingerprint: sha256:f97fe70eed33
+    children: []
+  UT-137:
+    id: UT-137
+    title: Config carries format_version only; legacy version key dropped on merge
+      and stripped on refresh (STORY-702)
+    status: verified
+    tags: []
+    fingerprint: sha256:83742fd1ba88
+    children: []
+next_id: 138

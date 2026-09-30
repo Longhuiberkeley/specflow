@@ -19,6 +19,7 @@ Also provides the default Bash hook script via ``get_hook_script()``.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from specflow.lib.adapters.base import Adapter, register_adapter
@@ -45,6 +46,57 @@ def _specflow_source() -> str:
     except Exception:
         pass
     return f"git+{_SPECFLOW_REPO}"
+
+
+WORKFLOW_PATH = ".github/workflows/specflow.yml"
+_PIN_RE = re.compile(r"git\+" + re.escape(_SPECFLOW_REPO) + r"@([^\s'\"]+)")
+_RELEASE_TAG_RE = re.compile(r"^v(\d+)\.(\d+)\.(\d+)$")
+
+
+def _release_tuple(ref: str) -> tuple[int, int, int] | None:
+    m = _RELEASE_TAG_RE.match(ref)
+    return tuple(int(g) for g in m.groups()) if m else None  # type: ignore[return-value]
+
+
+def bump_workflow_pin(root: Path, *, dry_run: bool = False) -> dict:
+    """Move release pins of the SpecFlow source in the generated workflow forward.
+
+    Rewrites every ``git+<repo>@vX.Y.Z`` older than the running version to the
+    running version (STORY-705). Never downgrades; branch and SHA refs are left
+    untouched and reported. Returns ``{"old": [...], "new": ref|None,
+    "count": n, "skipped": [...]}``; ``count`` is 0 when nothing changed.
+    """
+    from specflow import __version__ as ver
+
+    result: dict = {"old": [], "new": None, "count": 0, "skipped": []}
+    path = root / WORKFLOW_PATH
+    target = _release_tuple(f"v{ver}")
+    if not path.exists() or target is None:
+        return result
+    text = path.read_text(encoding="utf-8")
+    old_refs: set[str] = set()
+    skipped: set[str] = set()
+
+    def _swap(m: re.Match) -> str:
+        ref = m.group(1)
+        current = _release_tuple(ref)
+        if current is None:
+            skipped.add(ref)
+            return m.group(0)
+        if current >= target:
+            return m.group(0)
+        old_refs.add(ref)
+        result["count"] += 1
+        return f"git+{_SPECFLOW_REPO}@v{ver}"
+
+    new_text = _PIN_RE.sub(_swap, text)
+    result["old"] = sorted(old_refs)
+    result["skipped"] = sorted(skipped)
+    if result["count"]:
+        result["new"] = f"v{ver}"
+        if not dry_run:
+            path.write_text(new_text, encoding="utf-8")
+    return result
 
 
 # Canonical default hook script — Bash wrapper to the CLI. THIS IS THE SINGLE

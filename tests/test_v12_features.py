@@ -393,7 +393,7 @@ class TestConfigMerge:
         merged = config_lib.merge_config(existing, defaults)
         assert merged["project"]["domain"] == "embedded"
         assert merged["impact_analysis"]["auto_flag"] is False
-        assert merged["version"] is not None
+        assert "version" not in merged
 
     def test_merge_adds_new_default_keys(self):
         defaults = {"a": 1, "b": 2, "new_key": "new_value"}
@@ -401,33 +401,12 @@ class TestConfigMerge:
         merged = config_lib.merge_config(existing, defaults)
         assert merged["new_key"] == "new_value"
 
-    def test_version_always_stamped(self):
-        import specflow
+    def test_legacy_version_dropped(self):
+        """STORY-705: a legacy release version key does not survive a merge."""
         defaults = config_lib.default_config("test")
-        existing = {"version": "0.1.0"}
-        merged = config_lib.merge_config(existing, defaults)
-        assert merged["version"] == specflow.__version__
-
-
-class TestDetectVersionDelta:
-    def test_detects_upgrade(self, project_root: Path):
-        config = config_lib.read_config(project_root)
-        config["version"] = "0.1.0"
-        config_lib.write_config(project_root, config)
-
-        delta = config_lib.detect_version_delta(project_root)
-        assert delta["is_upgrade"] is True
-        assert delta["current_version"] == "0.1.0"
-        assert delta["framework_version"] is not None
-
-    def test_no_version_not_upgrade(self, project_root: Path):
-        config = config_lib.read_config(project_root)
-        config.pop("version", None)
-        config_lib.write_config(project_root, config)
-
-        delta = config_lib.detect_version_delta(project_root)
-        assert delta["is_upgrade"] is False
-        assert delta["current_version"] is None
+        merged = config_lib.merge_config({"version": "0.1.0"}, defaults)
+        assert "version" not in merged
+        assert merged["format_version"] == config_lib.FORMAT_VERSION
 
 
 class TestInitUpgrade:
@@ -457,30 +436,22 @@ class TestInitUpgrade:
         assert updated_state["current"] == "executing"
         assert len(updated_state["history"]) == 1
 
-    def test_reinit_adds_version(self, project_root: Path):
+    def test_reinit_drops_legacy_version(self, project_root: Path):
         config = config_lib.read_config(project_root)
-        config.pop("version", None)
+        config["version"] = "0.1.0"
         config_lib.write_config(project_root, config)
 
         rc = init_cmd.run(project_root, {"platform": "claude-code", "no_ci": True})
         assert rc == 0
 
         updated_config = config_lib.read_config(project_root)
-        assert "version" in updated_config
-        assert updated_config["version"] is not None
+        assert "version" not in updated_config
+        assert updated_config["format_version"] == config_lib.FORMAT_VERSION
 
-    def test_fresh_init_has_version(self, tmp_path: Path):
-        root = tmp_path / "fresh_project"
-        root.mkdir()
-        template_dir = Path(__file__).parent.parent / "src" / "specflow" / "templates"
-        scaffold_lib.create_internal_dirs(root, template_dir)
-        scaffold_lib.create_spec_dirs(root)
+    def test_fresh_config_has_format_version_only(self, tmp_path: Path):
         config = config_lib.default_config("fresh")
-        config_lib.write_config(root, config)
-        state = config_lib.default_state()
-        config_lib.write_state(root, state)
-
-        assert config_lib.read_config(root).get("version") is not None
+        assert "version" not in config
+        assert config["format_version"] == config_lib.FORMAT_VERSION
 
 
 class TestInitForce:

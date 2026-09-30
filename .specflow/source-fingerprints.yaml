@@ -5,15 +5,15 @@ IT-072:
 IT-073:
   tests/test_platform_install_safety.py: a8c55ead2a330985
 IT-074:
-  tests/test_format_version.py: 504f893eac245d97
+  tests/test_format_version.py: 29af7c485c434c53
 IT-075:
   tests/test_init_local_packs.py: 0782575d0ae94651
 IT-076:
   tests/test_cli_import_export_parse.py: a32b03fcdf0e660c
 IT-077:
-  tests/test_coverage_semantics.py: 3d704c1c999b9476
+  tests/test_coverage_semantics.py: 68b5961340842ee4
 IT-078:
-  tests/test_coverage_semantics.py: 3d704c1c999b9476
+  tests/test_coverage_semantics.py: 68b5961340842ee4
 IT-079:
   tests/test_artifact_lint_schema_errors.py: ccd1c0e6c00b3953
   tests/test_project_audit_fail_loud.py: ff3089d9848f13ad
@@ -49,12 +49,22 @@ IT-092:
   tests/test_cascade_support.py: fa60dc760392fc95
 IT-093:
   tests/test_baseline_ordering.py: b35a424962295757
+IT-094:
+  tests/test_findings_model.py: 7127507ef2da6743
+IT-095:
+  tests/test_findings_baseline_cmd.py: c7212392dfc05a36
+IT-096:
+  tests/test_lint_readonly.py: a1f0ae9a25514fa6
+IT-097:
+  tests/test_dual_host_skills.py: ae747fa9cb99ed2e
+IT-098:
+  tests/test_ci_pin_refresh.py: 7d049d926bc499c1
 QT-074:
   tests/test_autoresearch_cli.py: 758f80a5af71d0bb
 QT-075:
   tests/test_platform_install_safety.py: a8c55ead2a330985
 QT-076:
-  tests/test_format_version.py: 504f893eac245d97
+  tests/test_format_version.py: 29af7c485c434c53
 QT-077:
   tests/test_init_local_packs.py: 0782575d0ae94651
 QT-078:
@@ -65,9 +75,9 @@ QT-079:
   tests/test_checklist_run_integration.py: fd4b1de30da8efc9
   tests/test_checklists.py: 7cc97ca2b4e1c8fe
 QT-080:
-  tests/test_coverage_semantics.py: 3d704c1c999b9476
+  tests/test_coverage_semantics.py: 68b5961340842ee4
 QT-081:
-  tests/test_coverage_semantics.py: 3d704c1c999b9476
+  tests/test_coverage_semantics.py: 68b5961340842ee4
 QT-082:
   tests/test_artifact_lint_schema_errors.py: ccd1c0e6c00b3953
   tests/test_project_audit_fail_loud.py: ff3089d9848f13ad
@@ -85,7 +95,7 @@ QT-087:
 QT-088:
   tests/test_pack_healthy_fixtures.py: 5e4f22e3e953bf4e
 QT-089:
-  tests/test_prose_cli_surface.py: 173b2c6d80414392
+  tests/test_prose_cli_surface.py: 256298695570b613
   tests/test_reference_lint.py: 9db30e2afdf7e004
 QT-090:
   tests/test_ci_gate_history.py: 373e4fa764fc3885
@@ -100,6 +110,16 @@ QT-093:
 QT-094:
   tests/test_dead_oracle.py: 014b447b33400bdd
   tests/test_verify_expected_exit_cli.py: 8de114e02a54b709
+QT-095:
+  tests/test_v1171_cli_qualification.py: 1e680d7012660fb8
+QT-096:
+  tests/test_v1171_cli_qualification.py: 1e680d7012660fb8
+QT-097:
+  tests/test_v1171_cli_qualification.py: 1e680d7012660fb8
+QT-098:
+  tests/test_v1171_cli_qualification.py: 1e680d7012660fb8
+QT-099:
+  tests/test_v1171_cli_qualification.py: 1e680d7012660fb8
 STORY-001:
   tests/test_rebuild_index.py: 18724d224a454506
 STORY-002:
@@ -135,20 +155,20 @@ STORY-021:
   scripts/artifact-lint-schema.sh: 2457aac7517d8bc4
   scripts/artifact-lint-status.sh: 1820a2696b30d81b
   scripts/checklist-run-acceptance.sh: 21f3515c7550b89a
-  src/specflow/commands/fingerprint_refresh.py: 07e897d63c5e289c
+  src/specflow/commands/fingerprint_refresh.py: b65e8771142f12f4
   src/specflow/commands/renumber_drafts.py: 7b507a0f7ad80108
   src/specflow/lib/draft_ids.py: cd770453ced3a30a
   src/specflow/templates/checklists/in-process/requirement-writing.yaml: ec5803faae42266f
   src/specflow/templates/checklists/phase-gates/discovering-to-specifying.yaml: 41e060519012e144
   src/specflow/templates/checklists/phase-gates/specifying-to-planning.yaml: 71da83750c30fb9d
 STORY-022:
-  src/specflow/lib/skill_export.py: b7fe24b51b03d600
+  src/specflow/lib/skill_export.py: feadf1de45286e2d
 STORY-024:
   src/specflow/commands/ci.py: f64b832813126ff1
   src/specflow/commands/export_cmd.py: 96010f664a06be28
   src/specflow/commands/import_cmd.py: 556dde5299d08859
   src/specflow/lib/adapters/base.py: 401adb50df53b9db
-  src/specflow/lib/adapters/github_actions.py: 8a372c98d7c9d792
+  src/specflow/lib/adapters/github_actions.py: db7fcbead76ce566
   src/specflow/lib/adapters/reqif.py: 821ed1f9050093be
   src/specflow/lib/techniques/__init__.py: a86ed74b2d3624a0
   src/specflow/lib/techniques/assumption_surfacing.py: 4f8ddc6e7d5a449f
@@ -175,7 +195,7 @@ STORY-027:
   src/specflow/lib/dedup.py: b751a96d185237eb
   src/specflow/lib/rbac.py: 8071477840448de2
   src/specflow/packs/adoption/pack.yaml: c0cc8aa040d5f8ee
-  tests/test_adoption_mechanics.py: c2b3a19ea1c3de90
+  tests/test_adoption_mechanics.py: b21eedf6a0c3ff2d
   tests/test_adoption_pack.py: 816a70b6725e8b19
 STORY-028:
   src/specflow/packs/iso26262-demo/pack.yaml: 75f163c508a020d6
@@ -191,7 +211,7 @@ STORY-033:
   src/specflow/commands/create.py: 566ddcfdc6d58ccc
   src/specflow/commands/standards_gaps.py: 9b004b2b93e8e9a3
   src/specflow/packs/tldr-communication/pack.yaml: ba1581f142be22fa
-  src/specflow/templates/platforms.yaml: 3fda0e28272665eb
+  src/specflow/templates/platforms.yaml: ffec04dcfea6aa32
   src/specflow/templates/skills/shared/specflow-pack-author/scripts/validate-pack.sh: 9d71b709256eb45b
   tests/test_tldr_pack.py: a9a6e1837bd7221b
 STORY-034:
@@ -227,7 +247,7 @@ STORY-040:
   src/specflow/templates/schemas/requirement.yaml: 39793f1fb1b7a9d2
   tests/test_cli_commands.py: c02f8cb9690de2c2
   tests/test_v124_ergonomics.py: a46848a712f643c9
-  tests/test_v12_features.py: 6033c3f946206f7e
+  tests/test_v12_features.py: 35f338d0f72d6644
 STORY-042:
   tests/test_quality_lint.py: d4ed590c5f3b54a1
 STORY-043:
@@ -256,7 +276,7 @@ STORY-048:
   src/specflow/templates/schemas/unit-test.yaml: d322be4c740e27a0
   tests/test_optional_types.py: c0e68f267623bd78
 STORY-049:
-  tests/test_artifact_lint.py: 5fc6999a9de9de89
+  tests/test_artifact_lint.py: 34afd45c80f68d85
 STORY-050:
   src/specflow/commands/cascade_status.py: 8395404b2abe7268
 STORY-051:
@@ -270,7 +290,7 @@ STORY-055:
 STORY-056:
   tests/test_spidr_coverage.py: 332a7b87e2391bf4
 STORY-057:
-  tests/test_wave_cycle_detection.py: 3dd2f59ebb478b5c
+  tests/test_wave_cycle_detection.py: f1f518a95f567555
 STORY-058:
   tests/test_ddd_selection_doc.py: d0ac473f310d87dd
 STORY-062:
@@ -290,17 +310,17 @@ STORY-070:
   src/specflow/packs/autoresearch/schemas/loop.yaml: adcdd7378d013575
 STORY-082:
   AGENTS.md: 1031a875f092b478
-  src/specflow/__init__.py: 9e73ae0ed1dee95f
+  src/specflow/__init__.py: caf5d1465d5a6845
   src/specflow/commands/artifact_review.py: 3b8e5bcb5e968090
-  src/specflow/commands/brief.py: 5226de499a7449f2
+  src/specflow/commands/brief.py: 221812ec7daf7699
   src/specflow/lib/checklists.py: a98c0bc4ec1e9394
   src/specflow/lib/ci.py: 39035b2aa4ff79d0
   src/specflow/templates/agent-context.md: 9f683f2acaf94a42
   tests/test_brief.py: 67421b2ea17b7fbd
   tests/test_knowledge_lifecycle.py: 76ad27caedf815a9
 STORY-083:
-  src/specflow/commands/refresh.py: 09dfe21741f020f5
-  tests/test_refresh_lints.py: bf587e3ce96d029b
+  src/specflow/commands/refresh.py: bd132b9768e22a2e
+  tests/test_refresh_lints.py: 54415119610d5744
 STORY-623:
   src/specflow/commands/verify.py: 5b03a0155a5cb167
   src/specflow/lib/verification.py: 69cbdda97af2c084
@@ -316,7 +336,7 @@ STORY-625:
   tests/test_ops_pack.py: 455bbf092c4c6048
 STORY-626:
   src/specflow/commands/risk_tier.py: 9bc596da89167dd8
-  src/specflow/lib/ac_quality.py: 08714003d4f974a4
+  src/specflow/lib/ac_quality.py: 655b882124da0ea0
   src/specflow/lib/risk.py: 2c44e9c88ee10207
   tests/test_ac_quality.py: cd4e72a589ff58b3
   tests/test_risk.py: 33de2e98e2e68a92
@@ -324,16 +344,16 @@ STORY-627:
   src/specflow/lib/baselines.py: eb0dda245a5068b5
   tests/test_baselines.py: d5708a27888193eb
 STORY-628:
-  src/specflow/commands/brief.py: 5226de499a7449f2
+  src/specflow/commands/brief.py: 221812ec7daf7699
   tests/test_brief.py: 67421b2ea17b7fbd
 STORY-629:
   .specflow/schema/decision.yaml: cfd2e1d619a169a8
   src/specflow/commands/document_changes.py: c022ea70fc090933
   tests/test_risk.py: 33de2e98e2e68a92
 STORY-630:
-  docs/cli-reference.md: 4cd9c38b4e8935d5
-  src/specflow/cli.py: 5c4107740a14c22e
-  src/specflow/commands/project_audit.py: 00d377dc5793d757
+  docs/cli-reference.md: 7e3eef0184a46c9f
+  src/specflow/cli.py: 21db8c7a00375626
+  src/specflow/commands/project_audit.py: e222d93e6403bf76
   src/specflow/lib/baselines.py: eb0dda245a5068b5
   src/specflow/lib/evidence.py: 013a09755556468e
   tests/test_backfilled_guard.py: fef7099a2ad37d4c
@@ -344,17 +364,17 @@ STORY-630:
 STORY-631:
   scripts/wheel-smoke.sh: 3b1490d547f033cf
   scripts/wheel_smoke.py: 33b794d509f6dac7
-  src/specflow/commands/brief.py: 5226de499a7449f2
+  src/specflow/commands/brief.py: 221812ec7daf7699
   src/specflow/commands/change_impact.py: fec833d3b0032052
   src/specflow/commands/handbook.py: 3d8ab65cbcc5dbb9
-  src/specflow/commands/init.py: 7dffba872d2387f8
-  src/specflow/commands/project_audit.py: 00d377dc5793d757
-  src/specflow/commands/refresh.py: 09dfe21741f020f5
+  src/specflow/commands/init.py: 7ffbd579878759c7
+  src/specflow/commands/project_audit.py: e222d93e6403bf76
+  src/specflow/commands/refresh.py: bd132b9768e22a2e
   src/specflow/commands/status.py: 64b3b4d2aae7240e
   src/specflow/lib/checklists.py: a98c0bc4ec1e9394
   src/specflow/lib/handbook.py: 76603b60fa7b5f57
-  src/specflow/lib/scaffold.py: 96c328a0121f7665
-  src/specflow/lib/skill_export.py: b7fe24b51b03d600
+  src/specflow/lib/scaffold.py: 4ef07f5577890f51
+  src/specflow/lib/skill_export.py: feadf1de45286e2d
   tests/test_brief.py: 67421b2ea17b7fbd
   tests/test_change_impact_cli.py: 162039e2420e46b7
   tests/test_checklists.py: 7cc97ca2b4e1c8fe
@@ -363,12 +383,12 @@ STORY-631:
   tests/test_ops_pack.py: 455bbf092c4c6048
   tests/test_project_audit.py: e83ca55c0abe0111
   tests/test_schema_drift.py: 5888e6fd6288c0f1
-  tests/test_skill_export.py: dc29b40d64aa057c
+  tests/test_skill_export.py: 990ec2e272bbb463
   tests/test_status_coverage.py: 5944f0a261eb1343
   tests/test_tags_normalization.py: c50b04156137eac4
   tests/test_wheel_smoke.py: 7ab1bb16364331bd
 STORY-632:
-  tests/test_dual_host_skills.py: b5f22cc8d8a6596a
+  tests/test_dual_host_skills.py: ae747fa9cb99ed2e
 STORY-634:
   src/specflow/lib/artifacts.py: 33ecf29d2d477897
   tests/test_artifacts.py: 581579c16a7b0f0e
@@ -384,11 +404,11 @@ STORY-635:
   src/specflow/templates/skills/shared/specflow-references/references/bp-authoring.md: 30ad4daeaf6f1310
   tests/test_approval_guardrail.py: 9e736610581e1f2f
 STORY-636:
-  src/specflow/commands/artifact_lint.py: 0abba729845c2a48
+  src/specflow/commands/artifact_lint.py: 3d7b66e1d66020e0
   src/specflow/commands/autoresearch.py: 4a5e68fca1ffea5a
   tests/test_autoresearch_cli.py: 758f80a5af71d0bb
 STORY-637:
-  src/specflow/commands/artifact_lint.py: 0abba729845c2a48
+  src/specflow/commands/artifact_lint.py: 3d7b66e1d66020e0
   src/specflow/commands/autoresearch.py: 4a5e68fca1ffea5a
   src/specflow/lib/artifacts.py: 33ecf29d2d477897
   tests/test_artifacts.py: 581579c16a7b0f0e
@@ -401,16 +421,16 @@ STORY-638:
   src/specflow/lib/locks.py: 6f24f20d837f1a7b
   tests/test_create_locking.py: 31fb0f6881e552a4
 STORY-639:
-  src/specflow/cli.py: 5c4107740a14c22e
-  src/specflow/commands/artifact_lint.py: 0abba729845c2a48
+  src/specflow/cli.py: 21db8c7a00375626
+  src/specflow/commands/artifact_lint.py: 3d7b66e1d66020e0
   src/specflow/commands/create.py: 566ddcfdc6d58ccc
   src/specflow/commands/update.py: b668d544e19ec05a
-  src/specflow/lib/role_targets.py: 01f969874b87526f
+  src/specflow/lib/role_targets.py: 1a6a1fc76f330685
   tests/test_role_targets.py: c5229f8d325601ec
   tests/test_v1143_integration.py: 2429e9725d6d9925
 STORY-640:
-  docs/cli-reference.md: 4cd9c38b4e8935d5
-  src/specflow/cli.py: 5c4107740a14c22e
+  docs/cli-reference.md: 7e3eef0184a46c9f
+  src/specflow/cli.py: 21db8c7a00375626
   src/specflow/commands/create.py: 566ddcfdc6d58ccc
   src/specflow/commands/handbook.py: 3d8ab65cbcc5dbb9
   src/specflow/lib/lint.py: 0d9ac44f398e1058
@@ -433,24 +453,24 @@ STORY-649:
   src/specflow/lib/privacy.py: 03c58d45ac1cd11a
   tests/test_privacy_redaction.py: eb5ff1364422c08e
 STORY-678:
-  src/specflow/cli.py: 5c4107740a14c22e
+  src/specflow/cli.py: 21db8c7a00375626
   src/specflow/commands/hook.py: 957efbaee261b4ee
-  src/specflow/commands/refresh.py: 09dfe21741f020f5
-  src/specflow/lib/config.py: f3877f70f27a56b0
-  tests/test_format_version.py: 504f893eac245d97
+  src/specflow/commands/refresh.py: bd132b9768e22a2e
+  src/specflow/lib/config.py: 262a2b59cef9fa6e
+  tests/test_format_version.py: 29af7c485c434c53
 STORY-679:
-  CHANGELOG.md: 76ee979eaa4a0e7a
-  src/specflow/commands/artifact_lint.py: 0abba729845c2a48
-  src/specflow/commands/project_audit.py: 00d377dc5793d757
-  tests/test_coverage_semantics.py: 3d704c1c999b9476
+  CHANGELOG.md: ab4033ac0b84dbc7
+  src/specflow/commands/artifact_lint.py: 3d7b66e1d66020e0
+  src/specflow/commands/project_audit.py: e222d93e6403bf76
+  tests/test_coverage_semantics.py: 68b5961340842ee4
 STORY-680:
-  src/specflow/commands/artifact_lint.py: 0abba729845c2a48
+  src/specflow/commands/artifact_lint.py: 3d7b66e1d66020e0
   src/specflow/lib/artifacts.py: 33ecf29d2d477897
-  tests/test_coverage_semantics.py: 3d704c1c999b9476
+  tests/test_coverage_semantics.py: 68b5961340842ee4
 STORY-681:
-  src/specflow/commands/init.py: 7dffba872d2387f8
-  src/specflow/commands/refresh.py: 09dfe21741f020f5
-  src/specflow/lib/scaffold.py: 96c328a0121f7665
+  src/specflow/commands/init.py: 7ffbd579878759c7
+  src/specflow/commands/refresh.py: bd132b9768e22a2e
+  src/specflow/lib/scaffold.py: 4ef07f5577890f51
   src/specflow/templates/skills/shared/specflow-pack-author/SKILL.md: 6fa240f20c044d5b
   tests/test_init_local_packs.py: 0782575d0ae94651
 STORY-682:
@@ -459,38 +479,38 @@ STORY-682:
   tests/test_checklist_run_integration.py: fd4b1de30da8efc9
   tests/test_checklists.py: 7cc97ca2b4e1c8fe
 STORY-683:
-  src/specflow/commands/artifact_lint.py: 0abba729845c2a48
-  src/specflow/commands/project_audit.py: 00d377dc5793d757
+  src/specflow/commands/artifact_lint.py: 3d7b66e1d66020e0
+  src/specflow/commands/project_audit.py: e222d93e6403bf76
   src/specflow/lib/artifacts.py: 33ecf29d2d477897
   tests/test_artifact_lint_schema_errors.py: ccd1c0e6c00b3953
   tests/test_project_audit_fail_loud.py: ff3089d9848f13ad
 STORY-684:
-  src/specflow/commands/project_audit.py: 00d377dc5793d757
+  src/specflow/commands/project_audit.py: e222d93e6403bf76
   tests/test_project_audit_cache_key.py: 8d3e1b555fc9348a
   tests/test_project_audit_fail_loud.py: ff3089d9848f13ad
 STORY-685:
-  src/specflow/commands/init.py: 7dffba872d2387f8
-  src/specflow/commands/refresh.py: 09dfe21741f020f5
+  src/specflow/commands/init.py: 7ffbd579878759c7
+  src/specflow/commands/refresh.py: bd132b9768e22a2e
   src/specflow/lib/platform.py: b9986feca24eb8d1
-  src/specflow/lib/scaffold.py: 96c328a0121f7665
-  src/specflow/templates/platforms.yaml: 3fda0e28272665eb
+  src/specflow/lib/scaffold.py: 4ef07f5577890f51
+  src/specflow/templates/platforms.yaml: ffec04dcfea6aa32
   tests/test_platform_install_safety.py: a8c55ead2a330985
 STORY-686:
   .github/workflows/specflow.yml: 5cb88df55ddde657
-  src/specflow/cli.py: 5c4107740a14c22e
+  src/specflow/cli.py: 21db8c7a00375626
   src/specflow/commands/export_cmd.py: 96010f664a06be28
   src/specflow/commands/hook.py: 957efbaee261b4ee
   src/specflow/commands/import_cmd.py: 556dde5299d08859
-  src/specflow/lib/adapters/github_actions.py: 8a372c98d7c9d792
+  src/specflow/lib/adapters/github_actions.py: db7fcbead76ce566
   tests/test_ci_generation.py: 6b9c1518d6e1053c
   tests/test_cli_import_export_parse.py: a32b03fcdf0e660c
   tests/test_hook.py: b855183c207dfde0
 STORY-687:
-  src/specflow/cli.py: 5c4107740a14c22e
-  src/specflow/commands/refresh.py: 09dfe21741f020f5
+  src/specflow/cli.py: 21db8c7a00375626
+  src/specflow/commands/refresh.py: bd132b9768e22a2e
   src/specflow/lib/checklists.py: a98c0bc4ec1e9394
   src/specflow/lib/lint.py: 0d9ac44f398e1058
-  src/specflow/lib/scaffold.py: 96c328a0121f7665
+  src/specflow/lib/scaffold.py: 4ef07f5577890f51
   src/specflow/templates/checklists/domain/cli-tool.yaml: 76ea215afcf2743f
   src/specflow/templates/checklists/domain/embedded.yaml: c8e0b406ceafdd38
   src/specflow/templates/checklists/in-process/requirement-writing.yaml: ec5803faae42266f
@@ -501,12 +521,12 @@ STORY-687:
   tests/test_checklist_run_integration.py: fd4b1de30da8efc9
   tests/test_refresh_checklists.py: 2af2393f45d9d580
 STORY-688:
-  docs/cli-reference.md: 4cd9c38b4e8935d5
+  docs/cli-reference.md: 7e3eef0184a46c9f
   docs/lifecycle.md: 6a5ecda28dcd2e50
   src/specflow/templates/skills/shared/specflow-change-impact-review/SKILL.md: b7b5f7c293cb068c
   src/specflow/templates/skills/shared/specflow-doc/references/citation-syntax.md: bb96381c3a794991
   tests/test_context_budget.py: 05054398927a21f5
-  tests/test_prose_cli_surface.py: 173b2c6d80414392
+  tests/test_prose_cli_surface.py: 256298695570b613
   tests/test_reference_lint.py: 9db30e2afdf7e004
   tests/test_v124_ergonomics.py: a46848a712f643c9
 STORY-689:
@@ -520,7 +540,7 @@ STORY-689:
   src/specflow/templates/skills/shared/specflow-doc/references/citation-syntax.md: bb96381c3a794991
   src/specflow/templates/skills/shared/specflow-execute/SKILL.md: bdb65e71aa5bb209
   src/specflow/templates/skills/shared/specflow-execute/references/verification-contracts.md: d3c3b8172fae1540
-  src/specflow/templates/skills/shared/specflow-init/SKILL.md: 87fd8cbd0e967ccc
+  src/specflow/templates/skills/shared/specflow-init/SKILL.md: 80266de2c39bbd64
   src/specflow/templates/skills/shared/specflow-plan/SKILL.md: 697348148c4e563e
   src/specflow/templates/skills/shared/specflow-plan/references/link-roles.md: 00a44703e236425f
   src/specflow/templates/skills/shared/specflow-plan/references/thinking-techniques.md: 706176b98098375a
@@ -529,27 +549,27 @@ STORY-689:
   src/specflow/templates/skills/shared/specflow-references/references/bp-authoring.md: 30ad4daeaf6f1310
   src/specflow/templates/skills/shared/specflow-ship/SKILL.md: 33904a265a40639f
   src/specflow/templates/skills/shared/specflow-start/SKILL.md: 1f63c8a62cee1814
-  tests/test_core_skill_text.py: 6d5044a62a236cab
+  tests/test_core_skill_text.py: 67c609096eea5c4d
 STORY-690:
   README.md: b901d791db8d7c80
-  docs/architecture.md: 8d5cbca440ed65e9
+  docs/architecture.md: 40314995c5772640
   docs/authoring-a-pack.md: 71d71b51157e2d99
   docs/authoring-an-adapter.md: 08d612cdfc9c501d
-  docs/commands.md: 52abb946d7c93049
+  docs/commands.md: 4dcbcfd2098c070d
   docs/getting-started.md: 70355099882c2952
   docs/lifecycle.md: 6a5ecda28dcd2e50
   docs/skill-standards.md: 84077846da8766cd
   src/specflow/templates/adapters.yaml: fb7b0e5622a3247b
-  src/specflow/templates/skills/shared/specflow-adapter/SKILL.md: 5b164f6eb069347c
+  src/specflow/templates/skills/shared/specflow-adapter/SKILL.md: 9de2caad60d9f6a4
   src/specflow/templates/skills/shared/specflow-adapter/references/adapter-framework.md: 844271ff960247f8
   src/specflow/templates/skills/shared/specflow-pack-author/SKILL.md: 6fa240f20c044d5b
   src/specflow/templates/skills/shared/specflow-pack-author/references/example-packs.md: 770ea4381b2b0bc7
-  src/specflow/templates/skills/shared/specflow-pack-author/references/large-documents.md: 2b7d24799e9936de
+  src/specflow/templates/skills/shared/specflow-pack-author/references/large-documents.md: 4c87589f8e131f99
   src/specflow/templates/skills/shared/specflow-pack-author/references/pack-structure.md: 8708f42c95d9e85a
   src/specflow/templates/skills/shared/specflow-pack-author/references/schema-template.md: a41064d4865563e3
   src/specflow/templates/skills/shared/specflow-pack-author/scripts/validate-pack.sh: 9d71b709256eb45b
-  tests/test_core_skill_text.py: 6d5044a62a236cab
-  tests/test_prose_cli_surface.py: 173b2c6d80414392
+  tests/test_core_skill_text.py: 67c609096eea5c4d
+  tests/test_prose_cli_surface.py: 256298695570b613
 STORY-691:
   src/specflow/commands/detect.py: c13cd3f2872292e3
   src/specflow/packs/adoption/README.md: 177bafcf29bf16c2
@@ -561,7 +581,7 @@ STORY-691:
   src/specflow/packs/adoption/skills/specflow-adopt/references/incremental-adoption-protocol.md: d021e57d393aeb1a
   tests/test_adopt_backfill_smoke.py: a1fb21a51e096929
 STORY-692:
-  src/specflow/commands/brief.py: 5226de499a7449f2
+  src/specflow/commands/brief.py: 221812ec7daf7699
   src/specflow/packs/ops/README.md: 594e04a15b05e529
   src/specflow/packs/ops/schemas/run.yaml: 13284099b3beaf42
   src/specflow/packs/ops/skills/specflow-ops/SKILL.md: 921b9c8696426ead
@@ -575,19 +595,19 @@ STORY-693:
   tests/test_autoresearch_pack.py: c603ed82c6ee43f3
   tests/test_autoresearch_skill_text.py: 51e19d34bc8a7960
 STORY-694:
-  ROADMAP.md: 42c4aeab3d6e5eca
-  src/specflow/cli.py: 5c4107740a14c22e
+  ROADMAP.md: a725e96b48a1079e
+  src/specflow/cli.py: 21db8c7a00375626
   src/specflow/commands/autoresearch.py: 4a5e68fca1ffea5a
   tests/test_autoresearch_cli.py: 758f80a5af71d0bb
 STORY-695:
-  src/specflow/commands/artifact_lint.py: 0abba729845c2a48
+  src/specflow/commands/artifact_lint.py: 3d7b66e1d66020e0
   src/specflow/packs/iso26262-demo/README.md: b3bd0a400cd41c90
   src/specflow/packs/iso26262-demo/pack.yaml: 75f163c508a020d6
   src/specflow/packs/iso26262-demo/standards/iso26262-demo.yaml: 09b77593628767e7
   src/specflow/packs/tldr-communication/README.md: cdb3bda2bbd535be
   src/specflow/packs/tldr-communication/pack.yaml: ba1581f142be22fa
-  src/specflow/templates/skills/shared/specflow-init/SKILL.md: 87fd8cbd0e967ccc
-  tests/test_core_skill_text.py: 6d5044a62a236cab
+  src/specflow/templates/skills/shared/specflow-init/SKILL.md: 80266de2c39bbd64
+  tests/test_core_skill_text.py: 67c609096eea5c4d
   tests/test_iso26262_demo_pack.py: 1828792a846c6fe2
   tests/test_pack_healthy_fixtures.py: 5e4f22e3e953bf4e
   tests/test_spidr_coverage.py: 332a7b87e2391bf4
@@ -608,9 +628,9 @@ STORY-696:
   tests/formal/test_index_store_crash.py: 3ede9fa73f9b1630
   tests/formal/test_index_store_model_traces.py: 782175d4f410feaa
   tests/test_safety_claims_cite_tests.py: 0d7da7655bdc04e4
-  tests/test_single_index_writer.py: 5bfd84dded8c30fe
+  tests/test_single_index_writer.py: b7e82ee60546d830
 STORY-697:
-  src/specflow/commands/artifact_lint.py: 0abba729845c2a48
+  src/specflow/commands/artifact_lint.py: 3d7b66e1d66020e0
   src/specflow/commands/cascade_status.py: 8395404b2abe7268
   src/specflow/commands/reconcile.py: 1bbf52596fb7d5fd
   src/specflow/lib/impact.py: c5107267642a97de
@@ -629,9 +649,9 @@ STORY-698:
   tests/test_hook.py: b855183c207dfde0
   tests/test_rbac.py: 988af649b451d3be
 STORY-699:
-  src/specflow/commands/artifact_lint.py: 0abba729845c2a48
-  src/specflow/commands/brief.py: 5226de499a7449f2
-  src/specflow/commands/project_audit.py: 00d377dc5793d757
+  src/specflow/commands/artifact_lint.py: 3d7b66e1d66020e0
+  src/specflow/commands/brief.py: 221812ec7daf7699
+  src/specflow/commands/project_audit.py: e222d93e6403bf76
   src/specflow/lib/evaluator_fingerprint.py: a62ac13e30c347e4
   src/specflow/lib/evidence.py: 013a09755556468e
   src/specflow/lib/risk.py: 2c44e9c88ee10207
@@ -644,6 +664,40 @@ STORY-700:
   src/specflow/templates/skills/shared/specflow-ship/SKILL.md: 33904a265a40639f
   src/specflow/templates/skills/shared/specflow-ship/references/baseline-naming.md: 918693f33cd2cd52
   tests/test_baseline_ordering.py: b35a424962295757
+STORY-701:
+  src/specflow/cli.py: 21db8c7a00375626
+  src/specflow/lib/skill_export.py: feadf1de45286e2d
+  src/specflow/templates/platforms.yaml: ffec04dcfea6aa32
+  src/specflow/templates/skills/shared/specflow-init/SKILL.md: 80266de2c39bbd64
+  tests/test_dual_host_skills.py: ae747fa9cb99ed2e
+  tests/test_skill_export.py: 990ec2e272bbb463
+STORY-702:
+  src/specflow/commands/init.py: 7ffbd579878759c7
+  src/specflow/commands/refresh.py: bd132b9768e22a2e
+  src/specflow/lib/adapters/github_actions.py: db7fcbead76ce566
+  src/specflow/lib/config.py: 262a2b59cef9fa6e
+  tests/test_ci_pin_refresh.py: 7d049d926bc499c1
+  tests/test_format_version.py: 29af7c485c434c53
+STORY-703:
+  src/specflow/commands/artifact_lint.py: 3d7b66e1d66020e0
+  src/specflow/commands/fingerprint_refresh.py: b65e8771142f12f4
+  src/specflow/lib/source_drift.py: 9d46121e0d9bbc7b
+  tests/test_lint_readonly.py: a1f0ae9a25514fa6
+STORY-704:
+  src/specflow/core/findings.py: 280d847ff6bfb34f
+  src/specflow/core/policy.py: 35cff4f58f4fe6e6
+  src/specflow/lib/ac_quality.py: 655b882124da0ea0
+  src/specflow/lib/role_targets.py: 1a6a1fc76f330685
+  src/specflow/lib/waves.py: 32843d8e45472127
+  tests/test_findings_model.py: 7127507ef2da6743
+STORY-705:
+  src/specflow/commands/brief.py: 221812ec7daf7699
+  src/specflow/commands/findings_baseline.py: bc97cfc6a9d57a42
+  src/specflow/core/findings_baseline.py: 5e3ba09ee0ec0b09
+  src/specflow/templates/skills/shared/specflow-artifact-review/references/severity-levels.md: 159cbc9c36468144
+  tests/test_findings_baseline_cmd.py: c7212392dfc05a36
+  tests/test_findings_policy.py: f02c997e24acbb74
+  tests/test_single_index_writer.py: b7e82ee60546d830
 STORY-ADDAUXIL-c7bd:
   src/specflow/packs/autoresearch/schemas/experiment.yaml: b12574f02134e229
   tests/test_autoresearch_schema.py: daa5627bc652bfde
@@ -656,7 +710,7 @@ STORY-ADDMULTI-0f54:
 STORY-ARTIFACT-a39a:
   tests/test_lint_quality_gates.py: e265efa68913bac8
 STORY-FIXACCEP-f941:
-  CHANGELOG.md: 76ee979eaa4a0e7a
+  CHANGELOG.md: ab4033ac0b84dbc7
   src/specflow/lib/lint.py: 0d9ac44f398e1058
   tests/test_v132_ergonomics.py: 32cc151a32036af1
 STORY-KEEPRELE-37de:
@@ -674,13 +728,13 @@ STORY-RBACCHEC-e356:
 STORY-RTMCOMMA-1d6f:
   src/specflow/commands/rtm.py: 8cf5379414d7c677
 STORY-SHIPV1-cbb2:
-  CHANGELOG.md: 76ee979eaa4a0e7a
-  docs/cli-reference.md: 4cd9c38b4e8935d5
-  src/specflow/cli.py: 5c4107740a14c22e
-  src/specflow/commands/artifact_lint.py: 0abba729845c2a48
-  src/specflow/commands/brief.py: 5226de499a7449f2
+  CHANGELOG.md: ab4033ac0b84dbc7
+  docs/cli-reference.md: 7e3eef0184a46c9f
+  src/specflow/cli.py: 21db8c7a00375626
+  src/specflow/commands/artifact_lint.py: 3d7b66e1d66020e0
+  src/specflow/commands/brief.py: 221812ec7daf7699
   src/specflow/commands/create.py: 566ddcfdc6d58ccc
-  src/specflow/commands/fingerprint_refresh.py: 07e897d63c5e289c
+  src/specflow/commands/fingerprint_refresh.py: b65e8771142f12f4
   src/specflow/commands/update.py: b668d544e19ec05a
   src/specflow/lib/artifacts.py: 33ecf29d2d477897
   src/specflow/lib/impact.py: c5107267642a97de
@@ -712,7 +766,7 @@ UT-107:
   tests/test_ci_generation.py: 6b9c1518d6e1053c
   tests/test_cli_import_export_parse.py: a32b03fcdf0e660c
 UT-108:
-  tests/test_format_version.py: 504f893eac245d97
+  tests/test_format_version.py: 29af7c485c434c53
 UT-109:
   tests/test_init_local_packs.py: 0782575d0ae94651
 UT-110:
@@ -720,13 +774,13 @@ UT-110:
 UT-111:
   tests/test_init_checklist_categories.py: cb3246978fd2ac2d
 UT-112:
-  tests/test_core_skill_text.py: 6d5044a62a236cab
+  tests/test_core_skill_text.py: 67c609096eea5c4d
 UT-113:
-  tests/test_core_skill_text.py: 6d5044a62a236cab
+  tests/test_core_skill_text.py: 67c609096eea5c4d
 UT-114:
-  tests/test_coverage_semantics.py: 3d704c1c999b9476
+  tests/test_coverage_semantics.py: 68b5961340842ee4
 UT-115:
-  tests/test_coverage_semantics.py: 3d704c1c999b9476
+  tests/test_coverage_semantics.py: 68b5961340842ee4
 UT-116:
   tests/test_artifact_lint_schema_errors.py: ccd1c0e6c00b3953
   tests/test_project_audit_fail_loud.py: ff3089d9848f13ad
@@ -735,7 +789,7 @@ UT-117:
 UT-118:
   tests/test_adopt_backfill_smoke.py: a1fb21a51e096929
 UT-119:
-  src/specflow/commands/brief.py: 5226de499a7449f2
+  src/specflow/commands/brief.py: 221812ec7daf7699
   src/specflow/packs/ops/schemas/run.yaml: 13284099b3beaf42
   tests/test_ops_pack.py: 455bbf092c4c6048
 UT-120:
@@ -745,7 +799,7 @@ UT-121:
   tests/test_tldr_pack.py: a9a6e1837bd7221b
 UT-122:
   tests/test_context_budget.py: 05054398927a21f5
-  tests/test_prose_cli_surface.py: 173b2c6d80414392
+  tests/test_prose_cli_surface.py: 256298695570b613
   tests/test_reference_lint.py: 9db30e2afdf7e004
   tests/test_v124_ergonomics.py: a46848a712f643c9
 UT-123:
@@ -766,7 +820,7 @@ UT-128:
   tests/formal/test_index_store_allocators.py: 1d705ff7281bd754
   tests/formal/test_index_store_crash.py: 3ede9fa73f9b1630
   tests/test_safety_claims_cite_tests.py: 0d7da7655bdc04e4
-  tests/test_single_index_writer.py: 5bfd84dded8c30fe
+  tests/test_single_index_writer.py: b7e82ee60546d830
 UT-129:
   tests/test_merge_split_status.py: beaf7f6fbe656135
 UT-130:
@@ -778,3 +832,13 @@ UT-131:
   tests/test_status_write_ban.py: e9b93a5573204c86
 UT-132:
   tests/formal/test_index_store_model_traces.py: 782175d4f410feaa
+UT-133:
+  tests/test_findings_model.py: 7127507ef2da6743
+UT-134:
+  tests/test_findings_policy.py: f02c997e24acbb74
+UT-135:
+  tests/test_lint_readonly.py: a1f0ae9a25514fa6
+UT-136:
+  tests/test_skill_export.py: 990ec2e272bbb463
+UT-137:
+  tests/test_format_version.py: 29af7c485c434c53

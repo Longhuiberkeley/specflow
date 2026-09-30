@@ -55,16 +55,6 @@ platforms:
     legacy_dirs:
       - .clinerules/workflows
 
-  gemini:
-    name: "Gemini CLI"
-    preferred: false
-    skills_dir: .gemini/skills
-    instruction_file: GEMINI.md
-    detection:
-      - .gemini/
-    legacy_dirs:
-      - .gemini/commands
-
   opencode:
     name: "OpenCode"
     preferred: true

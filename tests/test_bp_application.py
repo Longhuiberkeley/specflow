@@ -194,34 +194,24 @@ def test_bp_application_blocks_only_with_strict_opt_in(project_root: Path):
     assert result["warning_count"] == 0
 
 
-def test_bp_application_warning_is_not_persistently_escalated(
-    project_root: Path, monkeypatch, capsys
-):
+def test_bp_application_warning_is_accounting_never_escalates(project_root: Path, capsys):
+    """bp-application is accounting (DEC-FINDINGS-79d8): its warnings never
+    fail a full run, even with a baseline that does not record them."""
+    from specflow.commands import findings_baseline
+    from specflow.core.policy import klass_for
+
+    assert klass_for("bp-application/unbound") == "accounting"
+    assert findings_baseline.run(project_root, {"findings_baseline_subcommand": "update"}) == 0
     _bp(project_root)
     _write_artifact(project_root, "REQ-001", "requirement")
-    original_check = lint_cmd._run_check
-    escalated_checks: list[str] = []
-
-    def check(artifacts, root, name):
-        if name == "bp-application":
-            return original_check(artifacts, root, name)
-        return {
-            "status_icon": "✓",
-            "detail": "fixture check",
-            "blocking_count": 0,
-            "warning_count": 0,
-        }
-
-    def record(_root, results):
-        escalated_checks.extend(name for name, _result in results)
-        return []
-
-    monkeypatch.setattr(lint_cmd, "_run_check", check)
-    monkeypatch.setattr(lint_cmd, "_record_warning_runs", record)
-
-    assert lint_cmd.run(project_root, {}) == 0
-    assert "bp-application" not in escalated_checks
-    assert "Result:" in capsys.readouterr().out
+    result = lint_cmd._run_check(
+        lint_cmd.art_lib.discover_artifacts(project_root), project_root, "bp-application"
+    )
+    assert result["warning_count"] >= 1
+    assert all(f.klass == "accounting" for f in result["findings"])
+    lint_cmd.run(project_root, {})
+    out = capsys.readouterr().out
+    assert "[bp-application/" not in out, "accounting findings never appear as new"
 
 
 def test_bp_application_skips_unstamped_legacy_practice(project_root: Path):

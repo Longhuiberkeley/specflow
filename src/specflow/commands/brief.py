@@ -762,6 +762,17 @@ def _health_nags(
                 "`specflow baseline create` / `specflow adopt status`"
             )
 
+    # Findings ratchet off: no committed baseline, so lint cannot tell new
+    # warning debt from known debt (DEC-FINDINGS-79d8; absent reads as empty
+    # from v1.18.0).
+    from specflow.core.findings_baseline import BASELINE_FILE
+
+    if artifacts and not (root / BASELINE_FILE).exists():
+        nags.append(
+            "no findings baseline — lint's warning ratchet is off "
+            f"→ `specflow findings-baseline update`, then commit {BASELINE_FILE}"
+        )
+
     # Schema drift: installed base schemas diverged from shipped defaults.
     # Reuses refresh.py's classifier (new / identical / changed) so brief and
     # `specflow refresh --schemas` agree. Only *changed* schemas nag — new

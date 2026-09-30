@@ -123,7 +123,7 @@ project/
 │       └── decisions/            # DEC-*
 ├── src/                          # Project source code
 ├── AGENTS.md                     # Universal instructions (appended by init)
-└── .claude/                      # Platform adapter (or .opencode/, .gemini/)
+└── .claude/                      # Platform adapter (or .opencode/, .cursor/)
     └── skills/
         ├── specflow-init/
         ├── specflow-discover/
@@ -145,7 +145,7 @@ The **framework** (Python package) ships scripts, templates, and checklists. Dur
 |-------------------------------|-----------------------------------|
 | `src/specflow/templates/schemas/` | `.specflow/schema/` |
 | `src/specflow/templates/checklists/` | `.specflow/checklists/` (phase-gates, in-process, review) |
-| `src/specflow/templates/skills/<platform>/` | `.claude/skills/` for Claude Code **and** OpenCode (one shared tree); `.cursor/`, `.gemini/`, … for other hosts |
+| `src/specflow/templates/skills/<platform>/` | `.claude/skills/` for Claude Code **and** OpenCode (one shared tree); `.cursor/`, `.windsurf/`, … for other hosts |
 | `scripts/` (thin CI/CD wrappers) | — (delegate to `specflow artifact-lint`, not copied) |
 
 After init, per-project checklists grow:

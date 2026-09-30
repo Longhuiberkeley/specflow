@@ -361,7 +361,9 @@ class TestSourceDriftGlobs:
         arts = [art_lib.parse_artifact(
             _write_artifact(project_root, "ARCH-001", "architecture",
                             output_files=["src/svc/**/*.py"]))]
-        # First run seeds.
+        # The explicit seed command writes the store (lint is read-only, REQ-053 AC2).
+        from specflow.lib import source_drift
+        assert source_drift.seed(project_root, arts) == ["ARCH-001"]
         result0 = lint_cmd._check_source_drift(arts, project_root)
         assert result0["warning_count"] == 0
         # The seed file should contain per-file hashes for both a.py and b.py
@@ -380,7 +382,8 @@ class TestSourceDriftGlobs:
         arts = [art_lib.parse_artifact(
             _write_artifact(project_root, "ARCH-001", "architecture",
                             output_files=["src/svc/**/*.py"]))]
-        lint_cmd._check_source_drift(arts, project_root)  # seed
+        from specflow.lib import source_drift
+        source_drift.seed(project_root, arts)  # seed
         f.write_text("v2 CHANGED", encoding="utf-8")  # drift
         result = lint_cmd._check_source_drift(arts, project_root)
         assert result["warning_count"] >= 1

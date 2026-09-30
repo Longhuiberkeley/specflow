@@ -406,8 +406,7 @@ _BASE_SENTINEL_END = "<!-- End SpecFlow section -->"
 # Old Claude-Code fallback. We never write here anymore; leftover sentinels
 # are stripped so they do not rot beside AGENTS.md. Any platform whose
 # instruction_file is AGENTS.md (claude-code, opencode, codex, junie, ...) can
-# carry one from the old fallback path. Gemini already uses GEMINI.md as its
-# instruction_file — not a fallback, never touched.
+# carry one from the old fallback path.
 _LEGACY_INSTRUCTION_FILE = "CLAUDE.md"
 
 

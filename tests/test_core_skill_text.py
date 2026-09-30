@@ -168,7 +168,7 @@ class TestInit:
             assert not line.rstrip().endswith("marker:"), line
         section = text[text.index("#### 4a."):text.index("### 5.")]
         assert "<!-- SpecFlow section" in section
-        assert "AGENTS.md" in section and "GEMINI.md" in section
+        assert "AGENTS.md" in section and "GEMINI.md" not in section
 
     def test_domain_labels_match_loader_stems(self):
         text = _read("specflow-init/SKILL.md")

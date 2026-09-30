@@ -34,6 +34,27 @@ def _report_stale(root: Path) -> int:
     return 0
 
 
+def _refresh_source(root: Path, ids: list[str], all_: bool) -> int:
+    """``--source``: the explicit source-drift seed command (REQ-053 AC9).
+
+    No IDs: seed hashes for artifacts missing from the store (never
+    overwrites an accepted hash). IDs: re-accept the current hashes for
+    those artifacts after reviewing their drift. ``--all``: re-seed all.
+    """
+    from specflow.lib import source_drift
+
+    written = source_drift.seed(root, ids=ids or None, all_=all_)
+    skipped = sorted(set(ids) - set(written))
+    if skipped:
+        print(f"{YELLOW}⚠ No artifact with output_files matches: {', '.join(skipped)}{NC}")
+    if not written:
+        print(f"{GREEN}✓ Source-drift store up to date.{NC}")
+        return 0
+    verb = "Re-accepted" if (ids or all_) else "Seeded"
+    print(f"{GREEN}✓ {verb} source fingerprints for {len(written)} artifact(s){NC}")
+    return 0
+
+
 def run(root: Path, args: dict[str, Any]) -> int:
     """Run the tweak command — recompute fingerprint as minor, skip suspect cascade.
 
@@ -46,6 +67,8 @@ def run(root: Path, args: dict[str, Any]) -> int:
     With NO targets, lists stale fingerprints without modifying anything (W3.1).
     """
     targets = args.get("targets") or []
+    if args.get("source"):
+        return _refresh_source(root, targets, bool(args.get("all_")))
     if not targets:
         return _report_stale(root)
 

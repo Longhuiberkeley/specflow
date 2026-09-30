@@ -40,7 +40,7 @@ After extraction and dedup:
 
 ## Platform Awareness
 
-- If the AI platform has native PDF reading (Claude Code, Gemini CLI, etc.), use the `Read` tool directly on the PDF file.
+- If the AI platform has native PDF reading (Claude Code, etc.), use the `Read` tool directly on the PDF file.
 - If the platform cannot read PDFs, fall back to asking the user to paste text or provide a URL. Never fail silently — always tell the user what's needed.
 
 For small documents (under ~30 pages), skip the full protocol: extract all clauses directly, run the verification spot-check, and proceed.

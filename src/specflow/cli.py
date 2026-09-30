@@ -161,6 +161,12 @@ def cmd_project_audit(args: argparse.Namespace) -> int:
     return cmd.run(root, vars(args))
 
 
+def cmd_findings_baseline(args: argparse.Namespace) -> int:
+    from specflow.commands import findings_baseline as cmd
+    root = _find_project_root()
+    return cmd.run(root, vars(args))
+
+
 def cmd_baseline(args: argparse.Namespace) -> int:
     from specflow.commands import baseline as baseline_cmd
     root = _find_project_root()
@@ -535,6 +541,27 @@ def _add_artifact_lint_parser(subparsers):
     p.add_argument("--fix", action="store_true", help="Auto-fix (rebuild indexes, recompute fingerprints)")
     p.add_argument("--gate", help="Phase-gate checklist name")
     p.add_argument("--method", choices=["programmatic", "llm"], default="programmatic", help="Validation method")
+    p.add_argument("--as-of", dest="as_of", metavar="YYYY-MM-DD",
+                   help="Date that time-dependent checks (SPIKE staleness) measure against (default: today, UTC)")
+
+
+def _add_findings_baseline_parser(subparsers):
+    p = subparsers.add_parser(
+        "findings-baseline",
+        help="Record or compare the committed findings baseline (known lint debt; the escalation ratchet)",
+    )
+    sub = p.add_subparsers(dest="findings_baseline_subcommand")
+    up = sub.add_parser(
+        "update",
+        help="Seed the baseline, drop resolved entries; new entries only with --accept-new",
+    )
+    up.add_argument("--accept-new", dest="accept_new", action="store_true",
+                    help="Also record escalating warnings not yet in the baseline (approval-gated)")
+    up.add_argument("--as-of", dest="as_of", metavar="YYYY-MM-DD",
+                    help="Date for time-dependent checks (default: today, UTC)")
+    diff = sub.add_parser("diff", help="Show new, known and resolved entries (read-only)")
+    diff.add_argument("--as-of", dest="as_of", metavar="YYYY-MM-DD",
+                      help="Date for time-dependent checks (default: today, UTC)")
 
 
 def _add_pack_validate_parser(subparsers):
@@ -606,7 +633,7 @@ def _add_export_parser(subparsers):
     p.add_argument("--adapter", help="Adapter name (e.g. reqif)")
     p.add_argument("--output", help="Path to write the exported file")
     # Skill export: --format flag
-    p.add_argument("--format", dest="export_format", choices=["cursor-rules", "gemini-toml", "codex-agents", "markdown"],
+    p.add_argument("--format", dest="export_format", choices=["cursor-rules", "codex-agents", "markdown"],
                    help="Export SPECFLOW skills to a platform-specific format (references/**/*.md inlined; use --output to set target dir)")
     p.add_argument("--skills", action="store_true", dest="export_skills", help="Export SpecFlow skills (use with --format)")
 
@@ -670,6 +697,10 @@ def _add_defect_from_monitor_parser(subparsers):
 def _add_fingerprint_refresh_parser(subparsers):
     p = subparsers.add_parser("fingerprint-refresh", help="Update fingerprint without suspect cascade")
     p.add_argument("targets", nargs="*", help="Artifact IDs (preferred) or file paths. With none given, lists stale fingerprints without modifying anything.")
+    p.add_argument("--source", action="store_true",
+                   help="Source-drift store instead: seed missing output_files hashes, or re-accept current hashes for the given IDs")
+    p.add_argument("--all", dest="all_", action="store_true",
+                   help="With --source: re-accept current hashes for every artifact")
 
 
 def _add_artifact_review_parser(subparsers):
@@ -868,7 +899,7 @@ commands by workflow phase:
   Discover:   init, refresh, status, brief, domain, patterns, practices, handbook, standards, list, schema, transitions
   Plan:       create, update, approve
   Execute:    go, done, phase-status, phase-set, cascade-status, reconcile, generate-tests, verify
-  Review:     artifact-lint, checklist-run, artifact-review, project-audit, trace, rtm, risk-tier
+  Review:     artifact-lint, findings-baseline, checklist-run, artifact-review, project-audit, trace, rtm, risk-tier
   Release:    baseline, document-changes
   CI:         hook, rbac, renumber-drafts, import, export, detect, change-impact,
               defect-from-suspect, defect-from-monitor, fingerprint-refresh, ci, ci-gate
@@ -1146,6 +1177,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     # ── Release ─────────────────────────────────────────────────
     _add_baseline_parser(subparsers)
+    _add_findings_baseline_parser(subparsers)
     _add_document_changes_parser(subparsers)
 
     # ── CI ──────────────────────────────────────────────────────
@@ -1222,6 +1254,7 @@ def main(argv: list[str] | None = None) -> int:
         "defect-from-monitor": cmd_defect_from_monitor,
         "fingerprint-refresh": cmd_fingerprint_refresh,
         "baseline": cmd_baseline,
+        "findings-baseline": cmd_findings_baseline,
         "document-changes": cmd_document_changes,
         "hook": cmd_hook,
         "renumber-drafts": cmd_renumber_drafts,

@@ -488,7 +488,7 @@ specflow create --type story --title "x" --status approved
 specflow create --type run --title "svc" --set environment=prod
 specflow create --type requirement \\
   --title "ok" --status approved --sanctioned "imported baseline"
-uvx --from git+https://github.com/Longhuiberkeley/specflow@v1.17.0 specflow artifact-lint
+uvx --from git+https://github.com/Longhuiberkeley/specflow@v1.17.1 specflow artifact-lint
 ```
 """
 

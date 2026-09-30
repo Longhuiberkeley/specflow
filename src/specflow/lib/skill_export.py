@@ -2,7 +2,6 @@
 
 Formats:
   cursor-rules  — .mdc files with YAML frontmatter for Cursor
-  gemini-toml   — TOML command definitions for Gemini CLI
   codex-agents  — TOML agent files for Codex
   markdown      — plain Markdown rules files (Windsurf, Cline, etc.)
 """
@@ -188,31 +187,6 @@ def _toml_escape(value: str) -> str:
     return value
 
 
-def _export_gemini_toml(skills: list[dict], output_dir: Path) -> int:
-    """Export skills as Gemini CLI TOML command files."""
-    commands_dir = output_dir / "commands"
-    commands_dir.mkdir(parents=True, exist_ok=True)
-    count = 0
-
-    for skill in skills:
-        safe_body = _toml_escape(skill["body"])
-        safe_desc = _toml_escape(skill["description"])
-
-        content = f'''# {skill['name']}
-# {skill['description']}
-
-[[commands]]
-name = "{skill['name']}"
-description = "{safe_desc}"
-prompt = """{safe_body}"""
-'''
-        out_path = commands_dir / f"{skill['name']}.toml"
-        out_path.write_text(content, encoding="utf-8")
-        count += 1
-
-    return count
-
-
 def _export_codex_agents(skills: list[dict], output_dir: Path) -> int:
     """Export skills as Codex agent TOML files."""
     agents_dir = output_dir / "agents"
@@ -254,7 +228,6 @@ def _export_markdown(skills: list[dict], output_dir: Path) -> int:
 
 FORMAT_HANDLERS = {
     "cursor-rules": (_export_cursor_rules, ".cursor"),
-    "gemini-toml": (_export_gemini_toml, ".gemini"),
     "codex-agents": (_export_codex_agents, ".codex"),
     "markdown": (_export_markdown, ".rules"),
 }
@@ -265,7 +238,7 @@ def export_skills(output_dir: Path, format: str) -> dict:
 
     Args:
         output_dir: Where to write the exported files
-        format: One of cursor-rules, gemini-toml, codex-agents, markdown
+        format: One of cursor-rules, codex-agents, markdown
 
     Returns:
         dict with keys: ok (bool), count (int), format (str), output_dir (str)
