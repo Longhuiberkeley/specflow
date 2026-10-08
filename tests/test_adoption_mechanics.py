@@ -696,3 +696,73 @@ class TestAcceptanceCriteriaCount:
         # Documents current behavior: counts even in code blocks.
         assert adopt_cmd._acceptance_criteria_count(art) == 1
 
+
+
+class TestAdoptStatusFileCountFlags:
+    """F-022: 'empty glob' only when a glob entry exists and expands to
+    nothing. An ARCH without output_files counts the files its downstream
+    cone declares (dim 'via linked artifacts'), or reads dim 'no output_files'
+    — never a red flag for a boundary whose files attach to STORY/UT below."""
+
+    def _project(self, root: Path) -> None:
+        pkg = root / "src" / "main" / "auth"
+        pkg.mkdir(parents=True, exist_ok=True)
+        (pkg / "a.py").write_text("pass", encoding="utf-8")
+        (pkg / "b.py").write_text("pass", encoding="utf-8")
+        _write_artifact(root, "REQ-001", "requirement", title="Auth", status="approved",
+                        tags=["backfilled"])
+        # ARCH-001: no output_files; a STORY below it declares the files.
+        _write_artifact(root, "ARCH-001", "architecture", title="Auth component",
+                        status="implemented", tags=["backfilled"],
+                        extra_fm={"links": [{"target": "REQ-001", "role": "derives_from"}]})
+        _write_artifact(root, "STORY-001", "story", title="Login", status="implemented",
+                        output_files=["src/main/auth/a.py", "src/main/auth/b.py"],
+                        extra_fm={"links": [{"target": "ARCH-001", "role": "derives_from"}]})
+        # ARCH-002: a glob that matches nothing → the real "empty glob".
+        _write_artifact(root, "ARCH-002", "architecture", title="Ghost", status="implemented",
+                        tags=["backfilled"], output_files=["src/main/ghost/**/*.py"])
+        # ARCH-003: no output_files and nothing below it.
+        _write_artifact(root, "ARCH-003", "architecture", title="Bare", status="implemented",
+                        tags=["backfilled"])
+
+    def test_boundary_rows_distinguish_the_three_cases(self, project_root: Path, capsys):
+        self._project(project_root)
+        adopt_cmd.run(project_root, {})
+        out = capsys.readouterr().out
+        rows = {ln.split()[0]: ln for ln in out.splitlines() if ln.strip().startswith("ARCH-")}
+        assert "empty glob" not in rows["ARCH-001"]
+        assert "2 files" in rows["ARCH-001"] and "via linked artifacts" in rows["ARCH-001"]
+        assert "empty glob" in rows["ARCH-002"]
+        assert "empty glob" not in rows["ARCH-003"]
+        assert "no output_files" in rows["ARCH-003"]
+
+    def test_effective_file_count_sources(self, project_root: Path):
+        self._project(project_root)
+        artifacts = art_lib.discover_artifacts(project_root)
+        by_id = {a.id: a for a in artifacts}
+        assert adopt_cmd._effective_file_count(project_root, artifacts, by_id["ARCH-001"]) == (2, "cone")
+        assert adopt_cmd._effective_file_count(project_root, artifacts, by_id["ARCH-002"]) == (0, "direct")
+        assert adopt_cmd._effective_file_count(project_root, artifacts, by_id["ARCH-003"]) == (0, "none")
+        assert adopt_cmd._effective_file_count(project_root, artifacts, by_id["STORY-001"]) == (2, "direct")
+
+    def test_literal_only_list_that_is_missing_is_not_an_empty_glob(self, project_root: Path):
+        _write_artifact(project_root, "DDD-001", "detailed-design", title="Gone",
+                        output_files=["src/main/auth/zzz.py"])
+        artifacts = art_lib.discover_artifacts(project_root)
+        ddd = next(a for a in artifacts if a.id == "DDD-001")
+        fc, src = adopt_cmd._effective_file_count(project_root, artifacts, ddd)
+        flag = adopt_cmd._file_flag(ddd, fc, src)
+        assert "empty glob" not in flag and "declared file(s) missing" in flag
+
+    def test_artifact_view_ddd_rows_use_cone_count(self, project_root: Path, capsys):
+        self._project(project_root)
+        _write_artifact(project_root, "DDD-001", "detailed-design", title="Internals",
+                        status="implemented",
+                        extra_fm={"links": [{"target": "ARCH-001", "role": "derives_from"}]})
+        _write_artifact(project_root, "UT-001", "unit-test", title="Unit", status="implemented",
+                        output_files=["src/main/auth/a.py"],
+                        extra_fm={"links": [{"target": "DDD-001", "role": "verified_by"}]})
+        adopt_cmd.run(project_root, {"target": "ARCH-001"})
+        out = capsys.readouterr().out
+        assert "DDD-001" in out and "(1 files via links)" in out
+        assert "via linked artifacts" in out

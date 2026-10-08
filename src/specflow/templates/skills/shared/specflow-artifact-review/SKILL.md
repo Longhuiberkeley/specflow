@@ -15,12 +15,12 @@ One question, if scope could match a sibling skill: **one specific artifact** �
 
 ## Workflow
 
-1. **Composite pass (zero tokens):** `specflow artifact-review <ARTIFACT_ID>` composes lint, assembled checklists, and lens prompts in one call (`--depth quick|normal|deep`, `--proactive` for challenge items, `--all` for a whole-project sweep). Stop only on `blocking` findings that name the artifact under review — blockers on other artifacts are reported as context, not a stop; agent findings on top of structural problems in the target itself are noise.
+1. **Composite pass (zero tokens):** `specflow artifact-review <ARTIFACT_ID>` composes lint, assembled checklists, and lens prompts in one call (`--depth quick|normal|deep`, `--proactive` for challenge items — each prints with its `Hint:` line to evaluate, `--all` for a whole-project sweep). With neither an ID nor `--all` it runs lint only. Stop only on `blocking` findings that name the artifact under review — blockers on other artifacts are reported as context, not a stop; agent findings on top of structural problems in the target itself are noise.
 2. **Trace:** `specflow trace <ARTIFACT_ID>` for the upstream/downstream chain.
 3. **Checklists:** assembly — type, shared/tag, phase-gate, learned-pattern, and matching BP sources — is owned by the command (`specflow checklist-run <ARTIFACT_ID>` runs it alone; `--dedup` adds duplicate detection). `overall: incomplete` means no automated checks ran: treat as missing evidence, never a pass. Read the full output before judging.
 4. **Agent-judged items:** evaluate each non-automated item's `llm_prompt`, classify findings `blocking`/`warning`/`info` (`references/severity-levels.md`).
-5. **Lenses (optional, scoped):** pick from `../specflow-references/references/adversarial-lenses.md` only where they probe beyond the checklist; skip any lens that would re-ask a checklist item.
-6. **Report** findings grouped by severity, each tagged with its layer (`lint`/`checklist`/`agent`/`lens:<name>`), in the Approval Presentation Format (`../specflow-references/references/approval-presentation.md`). Offer remediation commands (`specflow update <ID> --status <s>`, `specflow fingerprint-refresh <ID>`, `specflow renumber-drafts`, `specflow checklist-run --proactive <ID>`) — **"Improve now, or defer?"** Blocking/warning findings auto-create up to 3 learned prevention patterns per session (`specflow patterns` lists them) — edit or remove ones that are too narrow.
+5. **Lenses (optional, scoped):** pick from `../specflow-references/references/adversarial-lenses.md` only where they probe beyond the checklist; skip any lens that would re-ask a checklist item. After applying each lens, run the `specflow update <ID> --thinking-techniques <a,b>` line the command prints — the CLI never records lenses itself.
+6. **Report** findings grouped by severity, each tagged with its layer (`lint`/`checklist`/`agent`/`lens:<name>`), in the Approval Presentation Format (`../specflow-references/references/approval-presentation.md`). Offer remediation commands (`specflow update <ID> --status <s>`, `specflow fingerprint-refresh <ID>`, `specflow renumber-drafts`, `specflow checklist-run --proactive <ID>`) — **"Improve now, or defer?"** Review findings are reported, never written back: the review pass creates no PREV; learned prevention patterns come from `specflow done` and `specflow verify --seed-prev` (`specflow patterns list` lists them); review→PREV capture is deferred (ROADMAP).
 
 ## Rules
 
@@ -32,4 +32,4 @@ One question, if scope could match a sibling skill: **one specific artifact** �
 
 - `references/severity-levels.md` — severity definitions, escalation, user override.
 - `references/challenge-engine.md` — proactive/reactive challenge modes.
-- `../specflow-references/references/adversarial-lenses.md` — full 16-lens catalog and lens-selection UX.
+- `../specflow-references/references/adversarial-lenses.md` — full 23-lens catalog and lens-selection UX.

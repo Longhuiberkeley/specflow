@@ -32,7 +32,7 @@ import yaml
 from specflow.lib import artifacts as art_lib
 from specflow.lib import files as files_lib
 from specflow.lib import orphans as orphans_lib
-from specflow.lib.display import RED, GREEN, YELLOW, CYAN, BOLD, NC
+from specflow.lib.display import RED, GREEN, YELLOW, CYAN, BOLD, DIM, NC
 
 
 # Roles that carry realization lineage (spec → spec down the V, or spec ← spec
@@ -125,6 +125,57 @@ def _verifiers(artifacts: list[art_lib.Artifact], spec_id: str) -> list[art_lib.
 
 def _file_count(root: Path, art: art_lib.Artifact) -> int:
     return len(files_lib.expand_output_files(root, art.frontmatter.get("output_files")))
+
+
+# How an artifact's file count was obtained (F-022). "direct" = its own
+# output_files; "cone" = no output_files, so the files of every artifact in
+# its transitive downstream cone (DDD/STORY/UT/IT/QT linking back to it) are
+# counted instead — the same evidence `adopt status` coverage credits; "none"
+# = no output_files and nothing in the cone declares files either.
+_FC_DIRECT = "direct"
+_FC_CONE = "cone"
+_FC_NONE = "none"
+
+
+def _effective_file_count(
+    root: Path, artifacts: list[art_lib.Artifact], art: art_lib.Artifact,
+) -> tuple[int, str]:
+    """(file count, source) for a boundary artifact.
+
+    A boundary ARCH/DDD without ``output_files`` is not "empty" — on most
+    adopted trees the files attach to STORY/UT/IT/QT below it — so the count
+    falls through to its downstream cone rather than reading 0.
+    """
+    entries = art.frontmatter.get("output_files")
+    if entries:
+        return _file_count(root, art), _FC_DIRECT
+    from specflow.lib import impact as impact_lib
+
+    cone = impact_lib.find_downstream_union(root, [art.id], artifacts=artifacts)
+    files: set[Path] = set()
+    for member in cone:
+        files |= files_lib.expand_output_files(root, member.frontmatter.get("output_files"))
+    return (len(files), _FC_CONE) if files else (0, _FC_NONE)
+
+
+def _file_flag(art: art_lib.Artifact, fc: int, source: str) -> str:
+    """The one flag a file count earns, or '' (F-022).
+
+    ``empty glob`` (red) only when a glob entry exists and expands to nothing;
+    a literal-only list that resolves to nothing is "declared file(s)
+    missing"; a cone count is labelled as such; no output_files and an empty
+    cone is a dim fact, not an error.
+    """
+    if source == _FC_DIRECT:
+        if fc:
+            return ""
+        globs = files_lib.glob_entries(art.frontmatter.get("output_files"))
+        if globs:
+            return f"{RED}empty glob{NC}"
+        return f"{YELLOW}declared file(s) missing{NC}"
+    if source == _FC_CONE:
+        return f"{DIM}via linked artifacts{NC}"
+    return f"{DIM}no output_files{NC}"
 
 
 def _acceptance_criteria_count(art: art_lib.Artifact) -> int:
@@ -268,7 +319,7 @@ def _render_project_view(root: Path, artifacts: list[art_lib.Artifact]) -> int:
     if archs:
         print(f"\n  {BOLD}Boundaries (by ARCH){NC}")
         for arch in archs:
-            fc = _file_count(root, arch)
+            fc, fc_source = _effective_file_count(root, artifacts, arch)
             has_parent = bool(_parents(artifacts, arch.id, {"REQ"}))
             ddds = _children(artifacts, arch.id, {"DDD"})
             depth = _depth_label(has_parent, bool(ddds))
@@ -284,8 +335,9 @@ def _render_project_view(root: Path, artifacts: list[art_lib.Artifact]) -> int:
                 flags.append(f"{YELLOW}{depth}{NC}")
             if drift:
                 flags.append(f"{YELLOW}{len(drift)} drift{NC}")
-            if fc == 0:
-                flags.append(f"{RED}empty glob{NC}")
+            file_flag = _file_flag(arch, fc, fc_source)
+            if file_flag:
+                flags.append(file_flag)
             flag_str = "  ".join(flags) if flags else GREEN + "✓" + NC
             print(f"    {arch.id:<10} {fc:>4} files  [{flag_str}]{parent_str}  "
                   f"{CYAN}{_truncate(arch.title, 40)}{NC}")
@@ -351,8 +403,9 @@ def _render_artifact_view(root: Path, artifacts: list[art_lib.Artifact],
         if realizers:
             print(f"\n  {BOLD}Realized by:{NC}")
             for arch in realizers:
-                fc = _file_count(root, arch)
-                print(f"    {arch.id}  {_truncate(arch.title, 40)}  ({fc} files)")
+                fc, fc_source = _effective_file_count(root, artifacts, arch)
+                via = " via links" if fc_source == _FC_CONE else ""
+                print(f"    {arch.id}  {_truncate(arch.title, 40)}  ({fc} files{via})")
         else:
             print(f"\n  {YELLOW}⚠ Not realized by any ARCH{NC}")
     elif prefix == "ARCH":
@@ -360,8 +413,9 @@ def _render_artifact_view(root: Path, artifacts: list[art_lib.Artifact],
         if ddds:
             print(f"\n  {BOLD}Detailed by:{NC}")
             for ddd in ddds:
-                fc = _file_count(root, ddd)
-                print(f"    {ddd.id}  {_truncate(ddd.title, 40)}  ({fc} files)")
+                fc, fc_source = _effective_file_count(root, artifacts, ddd)
+                via = " via links" if fc_source == _FC_CONE else ""
+                print(f"    {ddd.id}  {_truncate(ddd.title, 40)}  ({fc} files{via})")
     elif prefix == "DDD":
         archs = _parents(artifacts, target.id, {"ARCH"})
         if archs:
@@ -370,14 +424,17 @@ def _render_artifact_view(root: Path, artifacts: list[art_lib.Artifact],
                 print(f"    {arch.id}  {_truncate(arch.title, 40)}")
 
     # File coverage of this artifact itself.
-    fc = _file_count(root, target)
-    if fc or target.frontmatter.get("output_files"):
+    fc, fc_source = _effective_file_count(root, artifacts, target)
+    if fc_source == _FC_DIRECT:
         globs = files_lib.glob_entries(target.frontmatter.get("output_files"))
         glob_hint = f"  (glob: {globs[0]})" if globs else ""
         print(f"\n  {BOLD}Files:{NC}      {fc} covered{glob_hint}")
         missing = files_lib.literal_missing(root, target.frontmatter.get("output_files"))
         if missing:
             print(f"  {YELLOW}⚠ {len(missing)} declared file(s) missing on disk{NC}")
+    elif fc_source == _FC_CONE and prefix in {"ARCH", "DDD"}:
+        print(f"\n  {BOLD}Files:{NC}      {fc} via linked artifacts  "
+              f"{DIM}(no output_files on {target.id}){NC}")
 
     # Behavior (REQ) — acceptance criteria count.
     if prefix == "REQ":

@@ -42,7 +42,7 @@ artifacts:
     - skills
     - token-optimization
     - core
-    fingerprint: sha256:61ffca42745d
+    fingerprint: sha256:6b471eff035a
     children: []
   REQ-005:
     id: REQ-005
@@ -202,7 +202,7 @@ artifacts:
   REQ-021:
     id: REQ-021
     title: Convention Enforcement & Docs Architecture
-    status: implemented
+    status: verified
     tags: []
     fingerprint: sha256:2842da43fa7e
     children: []
@@ -416,16 +416,16 @@ artifacts:
   REQ-045:
     id: REQ-045
     title: Auditable application of practices to REQ, ARCH, and STORY artifacts
-    status: approved
+    status: implemented
     tags: []
     fingerprint: sha256:3b43380ca5fd
     children: []
   REQ-046:
     id: REQ-046
     title: Measured research steering and first-class analysis in autoresearch
-    status: approved
+    status: implemented
     tags: []
-    fingerprint: sha256:5996cf0e19fb
+    fingerprint: sha256:569b5ff41939
     children: []
   REQ-047:
     id: REQ-047
@@ -536,24 +536,55 @@ artifacts:
     - formal-methods
     fingerprint: sha256:d8eaefe01f6b
     children: []
-  REQ-AUTORESE-d684:
-    id: REQ-AUTORESE-d684
+  REQ-059:
+    id: REQ-059
+    title: "Transcript-mined agent ergonomics \u2014 wave 3"
+    status: implemented
+    tags:
+    - v1.17.2
+    - ergonomics
+    - accounting-not-policing
+    fingerprint: sha256:3f99eb6acca7
+    children: []
+  REQ-060:
+    id: REQ-060
+    title: Deterministic next-step and digest honesty
+    status: verified
+    tags:
+    - v1.17.2
+    - brief
+    - cry-wolf
+    - accounting-not-policing
+    fingerprint: sha256:eb7b05dc0d12
+    children: []
+  REQ-061:
+    id: REQ-061
+    title: "Shipped prose matches the engine contract \u2014 wave 2"
+    status: implemented
+    tags:
+    - v1.17.2
+    - skills
+    - prose-cli-parity
+    fingerprint: sha256:41487244bcc8
+    children: []
+  REQ-062:
+    id: REQ-062
     title: 'Autoresearch pack v0.2.0: multi-criteria support, CLI subcommand, and
       harness-agnosticism'
     status: verified
     tags: []
     fingerprint: sha256:ffcfd81a9cb4
     children: []
-  REQ-DEFERRED-5cea:
-    id: REQ-DEFERRED-5cea
+  REQ-063:
+    id: REQ-063
     title: 'Deferred lifecycle capabilities: rewind accounting, RTM, RBAC check, supersession,
       quality gates, multi-host'
     status: implemented
     tags: []
     fingerprint: sha256:d512b2374ca6
     children: []
-  REQ-TRANSCRI-24b7:
-    id: REQ-TRANSCRI-24b7
+  REQ-064:
+    id: REQ-064
     title: "Transcript-mined CLI authoring ergonomics \u2014 wave 2 (v1.13.2)"
     status: implemented
     tags:
@@ -562,4 +593,4 @@ artifacts:
     - accounting-not-policing
     fingerprint: sha256:7aa453452d91
     children: []
-next_id: 59
+next_id: 65

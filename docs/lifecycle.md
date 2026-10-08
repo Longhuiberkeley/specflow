@@ -25,7 +25,8 @@ flowchart TB
 
     subgraph AI["AI-first lane — default driver (conversational · agent-driven · zero external API calls)"]
         direction TB
-        BR["specflow brief<br/>recall / orient (resume any session)"] --> AID["/specflow-discover/"]
+        ENTRY["/specflow-init/ (first time) · /specflow-start/ (route when intent is vague)"] --> BR["specflow brief<br/>recall / orient (resume any session)"]
+        BR --> AID["/specflow-discover/"]
         AID --> AG1{{"human approval gate<br/>agent presents · no self-approval · risk tiers via specflow risk-tier"}}
         AG1 --> AIP["/specflow-plan/"]
         AIP --> AG2{{"human approval gate"}}
@@ -53,10 +54,10 @@ flowchart TB
     AI ==> ENG
     ALM ==> ENG
     ENG ==> REV["/specflow-artifact-review/"]
-    REV ==> NEXT["/specflow-change-impact-review/<br/>· /specflow-audit · /specflow-adapter/"]
+    REV ==> NEXT["/specflow-change-impact-review/<br/>· /specflow-audit · /specflow-adapter/ · /specflow-pack-author/"]
     NEXT ==> SHIP["/specflow-ship/<br/>verify + DECs + audit, then baseline"]
 
-    DOCS["docs knowledge surface (core) · README / docs / AGENTS<br/>@ID-cited · staleness-warned · never an artifact type"]
+    DOCS["docs knowledge surface (core) · README / docs / AGENTS<br/>@ID-cited · staleness-warned · never an artifact type · /specflow-doc/"]
     ENG -. "explained / cited via @ID" .-> DOCS
 
     %% Optional pack-activated extensions — not mandatory lanes; the engine works without them.
@@ -93,7 +94,8 @@ flowchart TB
    conversational·agent-led │      same commands,        │ CLI · CI · no agent
    ─────────────────────────│      same gates            │ ────────────────────────
    specflow brief  (recall) ─┘                           └─ specflow status / trace
-            │                                                       │  (read state)
+   (entry: /specflow-init first time · /specflow-start router)      │  (read state)
+            │                                                       │
             ▼                                                       ▼
    /specflow-discover                                       specflow create / update
             │                                                       │
@@ -101,7 +103,7 @@ flowchart TB
    ║ APPROVAL GATE   ║  (agent presents,                   human runs update
    ║ REQ → approved  ║   no self-approval,                --status approved
    ║                 ║   tiers via specflow risk-tier)     (reviewer / CI / operator)
-   ╚════════┬════════╝                                     (reviewer / CI / operator)
+   ╚════════┬════════╝
             ▼                                                       │
    /specflow-plan                                                   ▼
             │                                              specflow artifact-lint --gate
@@ -117,19 +119,21 @@ flowchart TB
                                     ▼
                          /specflow-artifact-review
                                     │
-            ┌───────────────────────┼───────────────────────┐
-            ▼                       ▼                       ▼
-   /specflow-change-        /specflow-audit         /specflow-adapter
-    impact-review            (periodic full-          (configure CI, roles,
-    (per-commit/PR;           project health;          adapters at any time)
-     blast radius)            AUD + CHL)
-                                    │
+            ┌───────────────────────┼─────────────────────────────┐
+            ▼                       ▼                             ▼
+   /specflow-change-impact-review   /specflow-audit         /specflow-adapter
+    (per-commit/PR;                 (periodic full-          (configure CI, roles,
+     blast radius)                   project health;          adapters at any time)
+                                     AUD + CHL)             /specflow-pack-author
+                                    │                        (author a standards pack)
                                     ▼
                             /specflow-ship
                             (verify + DECs + audit, then baseline)
 
    docs (knowledge surface, core):  README / docs / AGENTS · @ID-cited · staleness-warned
        · never an artifact type · git history is the change log · /specflow-doc
+
+   adoption (optional pack):  /specflow-adopt · existing codebase → backfill → as-built baseline → engine
 
    ── Optional pack-activated extensions (the engine runs without them) ──────────
    autoresearch (offline):  COMP → LOOP → EXPT → FIND       (frozen, reproducible)

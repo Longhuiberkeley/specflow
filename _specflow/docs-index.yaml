@@ -1,33 +1,33 @@
-version: 1.17.0
-rebuilt_at: '2026-09-30T03:24:04+00:00'
+version: 1.17.2
+rebuilt_at: '2026-10-08T03:23:27+00:00'
 docs:
   AGENTS.md:
     title: AGENTS.md
-    fingerprint: sha256:407c23563093
+    fingerprint: sha256:59f5278e4888
     cites: []
     last_reviewed: ''
     audience: ''
   CHANGELOG.md:
     title: Changelog
-    fingerprint: sha256:df93de544978
+    fingerprint: sha256:cf76318a5a08
     cites: []
     last_reviewed: ''
     audience: ''
   README.md:
     title: SpecFlow
-    fingerprint: sha256:b1e80728d77d
+    fingerprint: sha256:37ed63417da4
     cites: []
     last_reviewed: ''
     audience: ''
   ROADMAP.md:
     title: SpecFlow Roadmap
-    fingerprint: sha256:aeea7a082a94
+    fingerprint: sha256:e597c60da1fa
     cites: []
     last_reviewed: ''
     audience: ''
   docs/architecture.md:
     title: "SpecFlow \u2014 Architecture"
-    fingerprint: sha256:e0763a76d880
+    fingerprint: sha256:a4caaf37c382
     cites: []
     last_reviewed: ''
     audience: ''
@@ -45,14 +45,15 @@ docs:
     audience: ''
   docs/cli-reference.md:
     title: SpecFlow CLI Reference
-    fingerprint: sha256:f938bcf7b370
+    fingerprint: sha256:f4bb4c8d1355
     cites:
-    - CHL-NONSEMVE-c16b
+    - CHL-351
+    - DEC-099
     last_reviewed: ''
     audience: ''
   docs/commands.md:
     title: SpecFlow Command Reference
-    fingerprint: sha256:7d00498ce337
+    fingerprint: sha256:d58daacb7a7c
     cites: []
     last_reviewed: ''
     audience: ''
@@ -64,9 +65,11 @@ docs:
     audience: ''
   docs/decisions.md:
     title: "SpecFlow \u2014 Design Decisions"
-    fingerprint: sha256:4e791ed7e466
+    fingerprint: sha256:3e00d2e4eb14
     cites:
+    - ARCH-030
     - DEC-018
+    - DEC-083
     last_reviewed: ''
     audience: ''
   docs/getting-started.md:
@@ -77,24 +80,30 @@ docs:
     audience: ''
   docs/lifecycle.md:
     title: SpecFlow Lifecycle
-    fingerprint: sha256:0d805995a1b4
+    fingerprint: sha256:c9ed3c554d9e
     cites: []
     last_reviewed: ''
     audience: ''
   docs/skill-standards.md:
     title: SpecFlow Skill Standards
-    fingerprint: sha256:8a1607d90d4b
+    fingerprint: sha256:dfead9ef40d7
     cites: []
     last_reviewed: ''
     audience: ''
   docs/team-setup.md:
     title: Team Setup Guide (RBAC)
-    fingerprint: sha256:cfab7c0fa2e1
+    fingerprint: sha256:8efef6a5e01d
     cites: []
     last_reviewed: ''
     audience: ''
 reverse:
-  CHL-NONSEMVE-c16b:
+  CHL-351:
   - docs/cli-reference.md
+  DEC-099:
+  - docs/cli-reference.md
+  ARCH-030:
+  - docs/decisions.md
   DEC-018:
+  - docs/decisions.md
+  DEC-083:
   - docs/decisions.md

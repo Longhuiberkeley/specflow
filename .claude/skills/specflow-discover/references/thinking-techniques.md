@@ -1,6 +1,6 @@
 # Thinking Techniques for Discovery
 
-For the full 16-lens catalog and per-phase defaults, see
+For the full 23-lens catalog and per-phase defaults, see
 `../specflow-references/references/adversarial-lenses.md`.
 
 ## Phase defaults for Discovery
@@ -22,4 +22,4 @@ For each REQ, briefly challenge it: "Before I write this — is this actually ne
 
 Present concerns as a quick summary. Let the user confirm, revise, or drop requirements before proceeding.
 
-**Persist significant challenge results** as decision artifacts (DEC) so they survive across sessions. See the discover SKILL.md Step 5 for the DEC creation patterns.
+**Persist significant challenge results** as decision artifacts (DEC) so they survive across sessions. See the discover SKILL.md Step 3 (**Challenge before writing**) for the DEC creation patterns.

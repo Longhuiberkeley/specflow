@@ -1,7 +1,7 @@
-"""STORY-ADDCLI-0e15: specflow autoresearch plan/run/review/leaderboard CLI.
+"""STORY-722: specflow autoresearch plan/run/review/leaderboard CLI.
 
 Per-AC evidence for the four verbs, plus the concurrent-LOOP gate moved here
-from STORY-SMALLFIX-621b AC1 (the gate belongs where the LOOP lifecycle is
+from STORY-732 AC1 (the gate belongs where the LOOP lifecycle is
 created/started).
 
 AC mapping:
@@ -28,7 +28,8 @@ import pytest
 from specflow.commands import autoresearch as autoresearch_cmd
 from specflow.lib import artifacts as art_lib
 from specflow.lib import evaluator_fingerprint as evaluator_lib
-from specflow.lib import locks as locks_lib
+
+from conftest import write_artifact
 
 PACKS_DIR = Path(__file__).parent.parent / "src" / "specflow" / "packs"
 
@@ -44,57 +45,10 @@ _BASE_STATUS_FLOW = {
 _RESEARCH_SCHEMAS = ("competition", "loop", "experiment", "finding")
 
 
-def _write_artifact(
-    root: Path,
-    artifact_id: str,
-    art_type: str,
-    title: str,
-    status: str = "draft",
-    body: str = "",
-    links: list[dict] | None = None,
-    extra_fm: dict | None = None,
-) -> Path:
-    rel_dir = art_lib.TYPE_TO_DIR.get(art_type, "")
-    if not rel_dir:
-        raise ValueError(f"Unknown type: {art_type}")
-    target_dir = root / "_specflow" / rel_dir
-    target_dir.mkdir(parents=True, exist_ok=True)
-
-    fm: dict = {
-        "id": artifact_id,
-        "title": title,
-        "type": art_type,
-        "status": status,
-        "tags": [],
-        "suspect": False,
-        "links": links or [],
-    }
-    if extra_fm:
-        fm.update(extra_fm)
-
-    fm_yaml = yaml.dump(fm, default_flow_style=False, sort_keys=False)
-    content = f"---\n{fm_yaml}---\n\n# {title}\n\n{body}\n"
-    file_path = target_dir / f"{artifact_id}.md"
-    file_path.write_text(content, encoding="utf-8")
-
-    # Keep the directory index in sync so subsequent create_artifact() calls
-    # (via the CLI under test) assign the correct next ID instead of colliding
-    # with scaffolding-written artifacts.
-    # The index is guarded by the repo-wide mutation lock (DEC-093): its
-    # read-modify-write must hold it, as every production writer does.
-    index_path = target_dir / "_index.yaml"
-    with locks_lib.mutation_lock(root):
-        index_data = art_lib._read_index(index_path)
-        index_data.setdefault("artifacts", {})[artifact_id] = {
-            "id": artifact_id, "title": title, "status": status,
-            "tags": [], "fingerprint": fm.get("fingerprint", ""), "children": [],
-        }
-        num = int(re.search(r"(\d+)$", artifact_id).group(1)) if re.search(r"(\d+)$", artifact_id) else 0
-        if num and num >= index_data.get("next_id", 1):
-            index_data["next_id"] = num + 1
-        art_lib._write_index(index_path, index_data)
-
-    return file_path
+# Fixture artifacts go through the production writer (tests/conftest.py), so
+# the directory index, fingerprint and frontmatter shape match what the CLI
+# under test produces; the pre-DEC-093 hand index-sync block is gone.
+_write_artifact = write_artifact
 
 
 def _make_comp(root: Path, comp_id: str = "COMP-001", title: str = "Test Comp",
@@ -440,7 +394,7 @@ class TestLeaderboard:
         assert "params:" in out
 
 
-# ── STORY-SMALLFIX-621b AC1: concurrent-LOOP gate ──────────────────────────
+# ── STORY-732 AC1: concurrent-LOOP gate ──────────────────────────
 
 
 class TestConcurrentLoopGate:
@@ -714,6 +668,36 @@ class TestLogSetReservedKeys:
                 "--set", f"{reserved_key}=X",
             ])
             assert rc == 1, f"--set {reserved_key} should be rejected"
+
+    def test_reserved_set_rejection_names_the_real_flag(self, project_root, monkeypatch, capsys):
+        # F-028: `--set competition=` was refused with a hint to a flag that
+        # does not exist on `log`. Each reserved key names its own remedy.
+        from specflow import cli
+        monkeypatch.chdir(project_root)
+        cli.main([
+            "autoresearch", "plan",
+            "--competition", "COMP-001", "--mode", "explore", "--budget", "50",
+        ])
+        expected = {
+            "competition": ("--loop", "drop --set competition"),
+            "loop": ("--loop LOOP-NNN",),
+            "status": ("--status kept|discarded|crashed|no_op",),
+            "links": ("--add-link",),
+            "research_progress": ("--research-progress",),
+        }
+        for key, fragments in expected.items():
+            rc = cli.main([
+                "autoresearch", "log", "--loop", "LOOP-001",
+                "--status", "kept", "--metric-value", "0.5",
+                "--change-category", "features", "--summary", "s",
+                "--set", f"{key}=X",
+            ])
+            out = capsys.readouterr().out
+            assert rc == 1
+            assert f"--set {key} is reserved" in out
+            for fragment in fragments:
+                assert fragment in out, f"{key}: expected {fragment!r} in {out!r}"
+            assert "dedicated flags" not in out
 
     def test_log_after_rejected_set_still_writes_edge(self, project_root, monkeypatch, capsys):
         # The guard must not corrupt state: a rejected --set leaves no partial
@@ -1469,6 +1453,31 @@ class TestAutoresearchFrontier:
         )
         assert {"lineage", "strategy_family"} <= set(schema["optional_fields"])
 
+    def test_frontier_ignores_undeclared_agenda_direction_field(
+        self, project_root, capsys, monkeypatch,
+    ):
+        # F-111: `agenda_direction` is not in the EXPT schema; coverage comes
+        # only from declared fields (searchable text, category, strategy_family).
+        from specflow import cli
+
+        _make_loop(
+            project_root, "LOOP-001", "COMP-001", status="completed",
+            extra={"research_agenda": [
+                {"direction": "subgroup calibration", "status": "unexplored"},
+            ]},
+        )
+        _make_expt(
+            project_root, "EXPT-001", "LOOP-001", "kept", 1.0,
+            category="model",
+            extra={"strategy_family": "tree", "iteration": 1,
+                   "agenda_direction": "subgroup calibration"},
+        )
+        monkeypatch.chdir(project_root)
+        rc = cli.main(["autoresearch", "frontier", "--comp", "COMP-001", "--json"])
+        assert rc == 0
+        ledger = json.loads(capsys.readouterr().out)
+        assert ledger["width"]["agenda_coverage"] == {"covered": 0, "total": 1, "ratio": 0.0}
+
     def test_missing_lineage_is_singleton_and_missing_noise_states_caveat(self, project_root):
         _make_loop(project_root, "LOOP-001", "COMP-001", status="completed",
                    extra={"research_agenda": []})
@@ -1703,6 +1712,42 @@ class TestAutoresearchFrontier:
             "author's own direction", "fresh inherited direction",
             "brand new direction",
         ]
+
+    def test_plan_inherit_accepts_plateaued_loop_with_brief(
+        self, project_root, monkeypatch, capsys,
+    ):
+        # STORY-712 AC5 / F-107: plateaued is terminal and carries a brief, so
+        # "restart with memory" after stagnation must be able to inherit it.
+        from specflow import cli
+
+        _make_loop(
+            project_root, "LOOP-001", "COMP-001", status="plateaued",
+            mode="explore", budget=30,
+            extra={
+                "unexplored_directions": ["try a different formulation"],
+                "condensation_brief_10": "Plateau brief: depth exhausted on linear chain",
+            },
+        )
+        monkeypatch.chdir(project_root)
+        rc = cli.main(["autoresearch", "plan", "--inherit", "LOOP-001"])
+        out = capsys.readouterr().out
+        assert rc == 0, out
+        followup = _parse(project_root, "LOOP-002")
+        assert followup.status == "draft"
+        directions = {entry["direction"] for entry in followup.frontmatter["research_agenda"]}
+        assert "try a different formulation" in directions
+        assert any("Plateau brief" in d for d in directions)
+
+    def test_plan_inherit_refuses_aborted_loop(self, project_root, monkeypatch, capsys):
+        from specflow import cli
+
+        _make_loop(project_root, "LOOP-001", "COMP-001", status="aborted")
+        monkeypatch.chdir(project_root)
+        rc = cli.main(["autoresearch", "plan", "--inherit", "LOOP-001"])
+        out = capsys.readouterr().out
+        assert rc == 1
+        assert "completed or plateaued" in out
+        assert "aborted" in out
 
     def test_review_requires_condensation_brief_for_completed_loop(self, project_root, capsys):
         _make_loop(project_root, "LOOP-001", "COMP-001", status="completed")
@@ -2517,6 +2562,7 @@ class TestLogNeverFabricatesMetric:
         assert _parse(project_root, "EXPT-001").frontmatter["metric_value"] == 0.41
 
 
+@pytest.mark.slow
 class TestCrashedExptsExcludedFromIntegrity(_IntegrityStatusMixin):
     """AC2: crashed EXPTs never feed jump flags or guard-regression warnings —
     neither a new null-metric crash nor a legacy crash carrying a fabricated

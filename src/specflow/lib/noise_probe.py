@@ -1,4 +1,4 @@
-"""Noise variance probe for the autoresearch pack (AC2 of STORY-SMALLFIX-621b).
+"""Noise variance probe for the autoresearch pack (AC2 of STORY-732).
 
 Before trusting EXPT ``metric_value`` results, the autoresearch loop runs the
 competition's ``verify_command`` several times on the unchanged baseline and

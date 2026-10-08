@@ -1,6 +1,6 @@
 [project]
 name = "specflow"
-version = "1.17.1"
+version = "1.17.2"
 description = "Spec-driven development for AI-speed teams — compliance-grade traceability in your git repo"
 readme = "README.md"
 license = "MIT"
@@ -41,4 +41,11 @@ build-backend = "hatchling.build"
 [dependency-groups]
 dev = [
     "pytest>=9.0.3",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-markers"
+markers = [
+    "slow: multi-second end-to-end runs (full-corpus lint, pack lifecycle sequences, archived-release fixtures); deselect locally with `-m 'not slow'`, CI runs everything",
 ]

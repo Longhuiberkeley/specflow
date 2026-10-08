@@ -134,3 +134,19 @@ def test_thinking_techniques_not_in_args_is_noop(project_root: Path):
 
     art = art_lib.parse_artifact(project_root / "_specflow" / "specs" / "requirements" / "REQ-001.md")
     assert "thinking_techniques" not in art.frontmatter
+
+
+def test_thinking_techniques_bracketed_value_is_unwrapped(project_root: Path):
+    """F-135 step 3: a value quoted as a whole ("[premortem, dependency_shock]")
+    must not write the bracketed tokens "[premortem" / "dependency_shock]"."""
+    _create_artifact(project_root)
+    rc = update_cmd.run(project_root, {
+        "artifact_id": "REQ-001",
+        "thinking_techniques": "[premortem, dependency_shock]",
+    })
+    assert rc == 0
+    art = art_lib.parse_artifact(project_root / "_specflow" / "specs" / "requirements" / "REQ-001.md")
+    assert art is not None
+    techniques = art.frontmatter.get("thinking_techniques", [])
+    assert techniques == ["premortem", "dependency_shock"]
+    assert not any(t.startswith("[") or t.endswith("]") for t in techniques)

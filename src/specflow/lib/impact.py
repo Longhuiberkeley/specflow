@@ -293,15 +293,21 @@ def propagate_suspects(
     new_fingerprint = compute_fingerprint(artifact.body)
     old_fingerprint = artifact.fingerprint
 
-    if new_fingerprint == old_fingerprint and not force_minor:
+    # An unchanged fingerprint is a no-op regardless of force_minor: a
+    # fingerprint-refresh is a repair, not a version bump, so an up-to-date
+    # artifact must not gain a version increment or an impact-log event.
+    if new_fingerprint == old_fingerprint:
         return {"ok": True, "changed": False, "message": "No fingerprint change detected"}
 
     # Update fingerprint in the artifact
     _update_frontmatter_field(file_path, "fingerprint", new_fingerprint)
 
-    # Bump version
+    # Bump version (tolerate a hand-written non-integer such as '1.0').
     fm = _read_frontmatter(file_path)
-    current_version = fm.get("version", 0) if fm else 0
+    try:
+        current_version = int(fm.get("version", 0) or 0) if fm else 0
+    except (TypeError, ValueError):
+        current_version = 0
     _update_frontmatter_field(file_path, "version", current_version + 1)
 
     # Determine update type via 3-tier defense
@@ -335,7 +341,9 @@ def propagate_suspects(
                     break
             flagged.append({"artifact": ds_art.id, "link_role": link_role})
 
-    # Create impact-log event
+    # Create impact-log event. An event that flagged nothing has nothing to
+    # resolve, so it is born resolved (by the system) instead of lingering as
+    # an "unresolved" entry forever.
     event = ImpactEvent(
         changed=changed_artifact_id,
         change_type="content_modified",
@@ -344,6 +352,10 @@ def propagate_suspects(
         update_type=update_type,
         flagged_suspects=flagged,
     )
+    if not flagged:
+        event.resolved = True
+        event.resolved_by = "system"
+        event.resolved_at = event.timestamp
     event_path = create_impact_event(root, event)
 
     return {
@@ -390,46 +402,65 @@ def resolve_suspect(
     if artifact is None:
         return {"ok": False, "error": f"Cannot parse artifact at {file_path}"}
 
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
     if not artifact.suspect:
-        return {"ok": True, "message": f"{artifact_id} is not suspect"}
+        # Nothing to clear on the artifact — but an open impact-log event may
+        # still name it (a flag cleared outside this command, e.g. a hand
+        # edit). Close those too, so the report cannot keep an "unresolved"
+        # entry that no CLI path can ever retire.
+        closed = _close_events_naming(root, artifact_id, resolved_by, now)
+        return {"ok": True, "message": f"{artifact_id} is not suspect",
+                "events_closed": closed}
 
     # Clear suspect flag
     _update_frontmatter_field(file_path, "suspect", False)
 
     # Update impact-log events that flagged this artifact
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    log_dir = root / ".specflow" / "impact-log"
-    if log_dir.exists():
-        for event_file in log_dir.glob("*.yaml"):
-            try:
-                data = yaml.safe_load(event_file.read_text(encoding="utf-8"))
-                if not isinstance(data, dict) or data.get("resolved", False):
-                    continue
-                suspects = data.get("flagged_suspects", [])
-                if not any(s.get("artifact") == artifact_id for s in suspects):
-                    continue
-                resolved_suspects = data.get("resolved_suspects", [])
-                if artifact_id not in resolved_suspects:
-                    resolved_suspects.append(artifact_id)
-                data["resolved_suspects"] = resolved_suspects
-                all_resolved = all(
-                    s.get("artifact") in resolved_suspects
-                    for s in suspects
-                )
-                if all_resolved:
-                    data["resolved"] = True
-                    data["resolved_by"] = resolved_by
-                    data["resolved_at"] = now
-                from specflow.lib import locks as locks_lib
-
-                locks_lib.locked_write(
-                    root, event_file,
-                    yaml.dump(data, default_flow_style=False, sort_keys=False),
-                )
-            except Exception:
-                continue
+    _close_events_naming(root, artifact_id, resolved_by, now)
 
     return {"ok": True, "resolved": artifact_id, "resolved_by": resolved_by, "resolved_at": now}
+
+
+def _close_events_naming(root: Path, artifact_id: str, resolved_by: str, now: str) -> int:
+    """Mark ``artifact_id`` resolved in every open impact-log event that flagged it.
+
+    Returns the number of events that became fully resolved.
+    """
+    from specflow.lib import locks as locks_lib
+
+    closed = 0
+    log_dir = root / ".specflow" / "impact-log"
+    if not log_dir.exists():
+        return 0
+    for event_file in log_dir.glob("*.yaml"):
+        try:
+            data = yaml.safe_load(event_file.read_text(encoding="utf-8"))
+            if not isinstance(data, dict) or data.get("resolved", False):
+                continue
+            suspects = data.get("flagged_suspects", [])
+            if not any(s.get("artifact") == artifact_id for s in suspects):
+                continue
+            resolved_suspects = data.get("resolved_suspects", [])
+            if artifact_id not in resolved_suspects:
+                resolved_suspects.append(artifact_id)
+            data["resolved_suspects"] = resolved_suspects
+            all_resolved = all(
+                s.get("artifact") in resolved_suspects
+                for s in suspects
+            )
+            if all_resolved:
+                data["resolved"] = True
+                data["resolved_by"] = resolved_by
+                data["resolved_at"] = now
+                closed += 1
+            locks_lib.locked_write(
+                root, event_file,
+                yaml.dump(data, default_flow_style=False, sort_keys=False),
+            )
+        except Exception:
+            continue
+    return closed
 
 
 def split_artifact(
@@ -483,7 +514,10 @@ def _split_locked(
         fingerprint_new=source_art.fingerprint if source_art else "",
         update_type="semantic",
         flagged_suspects=[],
+        resolved=True,
+        resolved_by="system",
     )
+    event.resolved_at = event.timestamp
     event_path = create_impact_event(root, event)
 
     return {"ok": True, "rewritten": rewritten, "event_path": str(event_path)}
@@ -653,7 +687,10 @@ def _merge_locked(root: Path, source_id: str, target_id: str) -> dict[str, Any]:
         fingerprint_new="",
         update_type="semantic",
         flagged_suspects=[],
+        resolved=True,
+        resolved_by="system",
     )
+    event.resolved_at = event.timestamp
     event_path = create_impact_event(root, event)
 
     result: dict[str, Any] = {

@@ -12,8 +12,8 @@ links:
 created: '2026-09-13'
 fingerprint: sha256:c1710dbcd31b
 thinking_techniques:
-- assumption-surfacing
-modified: '2026-09-13'
+- assumption_surfacing
+modified: '2026-10-08'
 ---
 
 # COMP lifecycle architecture: closure gate, reversible pause, closure accounting

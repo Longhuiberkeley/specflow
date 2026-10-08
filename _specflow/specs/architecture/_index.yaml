@@ -28,7 +28,7 @@ artifacts:
     - platform
     - ai
     - progressive-disclosure
-    fingerprint: sha256:cbf9400d206a
+    fingerprint: sha256:4da90df7ea7d
     children: []
   ARCH-004:
     id: ARCH-004
@@ -231,7 +231,7 @@ artifacts:
     - pack
     - multi-criteria
     - domain-aware
-    fingerprint: sha256:a4cf4564638d
+    fingerprint: sha256:8daf7ce33155
     children: []
   ARCH-028:
     id: ARCH-028
@@ -340,8 +340,8 @@ artifacts:
     - format-version
     fingerprint: sha256:6f851214ea4b
     children: []
-  ARCH-LOUDFAIL-d87a:
-    id: ARCH-LOUDFAIL-d87a
+  ARCH-041:
+    id: ARCH-041
     title: Loud-failure and advisory ergonomics command surfaces (v1.13.2)
     status: implemented
     tags:
@@ -351,4 +351,4 @@ artifacts:
     - accounting-not-policing
     fingerprint: sha256:0c794baa1eaa
     children: []
-next_id: 41
+next_id: 42

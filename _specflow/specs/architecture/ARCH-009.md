@@ -18,8 +18,12 @@ links:
   role: derives_from
 created: '2026-04-22'
 fingerprint: sha256:76c8786760f1
-thinking_techniques: [assumption-surfacing, devil's-advocate, red-team]
+thinking_techniques:
+- assumption_surfacing
+- devils_advocate
+- red_blue_team
 version: 2
+modified: '2026-10-08'
 ---
 
 # Provider-Agnostic CI Gate

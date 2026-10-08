@@ -13,6 +13,8 @@ A standards pack is a self-contained directory. SpecFlow ships some packs bundle
 │   └── {type}.yaml
 ├── skills/                # Only if pack adds skills (listed in adds_skills)
 │   └── {skill}/SKILL.md
+├── checklists/            # Optional; copied to .specflow/checklists/ on install
+│   └── {category}/{name}.yaml
 └── README.md
 ```
 
@@ -37,11 +39,9 @@ The snippet is always-on context: it is injected into the instruction file along
 ```yaml
 name: iso26262-demo
 version: "0.1-demo"
-description: "ISO 26262 demo pack — minimal stubs to prove pack architecture. NOT a real compliance pack."
-adds_artifact_types:
-  - hazard
-adds_directories:
-  - specs/hazards
+description: "Test fixture: five placeholder clauses (DEMO-1..DEMO-5) that exercise the standards-pack machinery. NOT a compliance pack; the ids are not ISO 26262 numbering."
+adds_artifact_types: []    # the optional `hazard` type is a core schema (`specflow init --with-types hazard`)
+adds_directories: []
 ```
 
 ## standards/{name}.yaml — Standard Clauses
@@ -67,16 +67,18 @@ adds_directories:
 
 ```yaml
 standard: iso26262-demo
-title: "Road vehicles — Functional safety (demo stub)"
+title: "Demo standard (ISO 26262-shaped test fixture, placeholder clauses)"
 version: "0.1-demo"
 clauses:
-  - id: "ISO26262-3.7"
+  - id: "DEMO-1"
     title: "Hazard analysis and risk assessment"
-    description: "Identify and classify hazards that could be caused by malfunctioning system behaviour."
-  - id: "ISO26262-4.6"
+    description: "Placeholder clause — identify and classify hazards that could be caused by malfunctioning system behaviour."
+  - id: "DEMO-2"
     title: "Safety goals"
-    description: "Derive top-level safety requirements from identified hazards."
+    description: "Placeholder clause — derive top-level safety requirements from identified hazards."
 ```
+
+(The bundled fixture uses placeholder `DEMO-n` ids. A real pack keeps the source standard's own clause ids.)
 
 ## schemas/{type}.yaml — Artifact Schema
 
@@ -102,4 +104,4 @@ When a user runs `specflow init --preset {name}`:
 6. Installs each `adds_skills` skill and injects `context_snippet` into the instruction file
 7. Updates `config.yaml` with new artifact types and active packs
 
-The same command works on a project that is already initialized: `init` runs in merge mode, keeps the existing config, and adds the pack. Never copy pack files into `.specflow/` by hand — the pack would not be registered in `active_packs`, so its skills, context block, and later syncs would be missing. After editing a pack that is already installed, run `specflow refresh --packs --force` to sync it.
+The same command works on a project that is already initialized: `init` runs in merge mode, keeps the existing config, and adds the pack. Never copy pack files into `.specflow/` by hand — the pack would not be registered in `active_packs`, so its skills, context block, and later syncs would be missing. After editing a pack that is already installed, run `specflow refresh --packs --force` to sync it. `refresh --packs` syncs schemas, checklists, standards and skills; a project file you edited is preserved and listed unless `--force`, which overwrites it after backing it up under `.specflow/cache/backups/<timestamp>/packs/<name>/`. A pack may reuse an optional core type name (hazard, risk, control): while the pack is active, `refresh --schemas` leaves that schema to the pack.

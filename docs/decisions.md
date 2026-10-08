@@ -2,7 +2,7 @@
 
 Each decision documents the context, options considered, the resolution, and rationale. New contributors should read this before proposing changes to avoid re-litigating settled decisions.
 
-This is the human design log. Structured change records (the auto-generated "Change Record" form of a decision) also live as DEC artifacts under `_specflow/work/decisions/` — e.g. @DEC-018 — and are what `/specflow-ship` and `/specflow-change-impact-review` reason over. The two parallel each other; this file is prose, the DEC artifacts are the machine-readable graph.
+> **Historical prose log — not the normative record.** The normative decisions are the `DEC-*` artifacts under `_specflow/work/decisions/` (architecture decisions and auto-generated change records alike — e.g. @DEC-018, @DEC-083); they carry status, links, and review state, and are what `/specflow-ship`, `/specflow-change-impact-review`, and `specflow trace` reason over. New decisions are recorded with `specflow create --type decision …`, not by adding a `D-NN` section here. The `D-NN` entries below are the early design log kept for context; where a `DEC-*` exists, it wins.
 
 ---
 
@@ -187,6 +187,8 @@ This is the human design log. Structured change records (the auto-generated "Cha
 
 ### D-15: Ephemeral Installation Model
 
+> **Superseded** (shipped in v1.12.2; restated in @DEC-083 / @ARCH-030 and AGENTS.md §6). The current model is a one-time `uv tool install git+https://github.com/Longhuiberkeley/specflow` (or ephemeral `uvx --from git+…`) that puts bare `specflow` on PATH; shipped skills, hooks, and scripts invoke bare `specflow`, never `uv run specflow`, because `uv run` only resolves where SpecFlow is a declared project dependency (true in this repository alone). The text below is kept as the original rationale.
+
 **Context:** Installing frameworks globally pollutes system environments and breaks the principle of "Compliance as Code" (where compliance engines must be version-locked to the repository to guarantee reproducible results across machines).
 
 **Decision:** SpecFlow is not installed globally. Users will initialize it in their project directory using `uv run specflow init`, acting exactly like `npx`. This fetches the tool ephemerally, locks it to the local `.venv` or `pyproject.toml`, and scaffolds `.specflow/` and `.claude/skills/` locally.
@@ -204,7 +206,7 @@ This is the human design log. Structured change records (the auto-generated "Cha
 - Python-primary, no shell scripts — delete scripts entirely
 - Python-primary, shell scripts as thin wrappers — keep scripts as 3-line delegators for CI/CD
 
-**Decision:** Python-primary with optional thin shell wrappers. All deterministic logic lives in Python `lib/` modules, exposed via `specflow <subcommand>` CLI commands. Shell scripts in `scripts/` are 3-line wrappers (`exec uv run specflow artifact-lint --type <check> "$@"`) that exist solely for CI/CD pipeline compatibility. Future phases (P3 CRUD, P4 impact, P6 compliance) must implement new logic as Python lib functions + CLI subcommands, not as standalone shell scripts.
+**Decision:** Python-primary with optional thin shell wrappers. All deterministic logic lives in Python `lib/` modules, exposed via `specflow <subcommand>` CLI commands. Shell scripts in `scripts/` are 3-line wrappers (`exec uv run specflow artifact-lint --type <check> "$@"`) that exist solely for CI/CD pipeline compatibility. (That `uv run` prefix is correct only for this repository's own `scripts/`, where SpecFlow is the project; anything shipped to consumers — skill scripts, hooks, pack scripts — invokes bare `specflow`, and `pack-validate` rejects `uv run` there.) Future phases (P3 CRUD, P4 impact, P6 compliance) must implement new logic as Python lib functions + CLI subcommands, not as standalone shell scripts.
 
 **Rationale:** Python modules are testable, importable, type-checkable, and have a single maintenance point. Shell wrappers preserve backward compatibility at zero maintenance cost. The P2 duplication incident proved that non-trivial logic in shell scripts is unmaintainable when the same logic must exist in Python for the CLI.
 

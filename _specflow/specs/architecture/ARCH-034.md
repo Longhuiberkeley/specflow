@@ -10,9 +10,9 @@ links:
   role: derives_from
 created: '2026-09-21'
 fingerprint: sha256:8c18da8a2938
-modified: '2026-09-21'
+modified: '2026-10-08'
 thinking_techniques:
-- assumption-surfacing
+- assumption_surfacing
 ---
 
 ## Rationale

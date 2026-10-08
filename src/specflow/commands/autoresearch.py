@@ -913,9 +913,6 @@ def _frontier_agenda_records(
             if (
                 direction and direction in _normalised(searchable)
             ) or (
-                str(fm.get("agenda_direction", "")).strip()
-                and _normalised(str(fm.get("agenda_direction"))) == direction
-            ) or (
                 str(record.get("category", "")).strip()
                 and str(record.get("category")).casefold() == category.casefold()
             ) or (
@@ -1534,6 +1531,12 @@ def _run_status(root: Path, args: dict) -> int:
     integrity block (jump flags, guard regressions, CV-external relation)
     renders after the accounting signals and never feeds the exit code.
     """
+    if not args.get("competition") and not _find_competitions(root):
+        # F-078: a project without a COMP is idle, not broken. An explicit
+        # --competition that does not resolve still fails below.
+        print(f"{DIM}No competitions; autoresearch is idle. Start one with "
+              f"`specflow create --type competition --title <title> ...`.{NC}")
+        return 0
     comp = _resolve_comp(root, args)
     if not comp:
         return 1
@@ -1621,7 +1624,7 @@ def _running_loops_for_comp(
     """Return LOOPs in `running` status for a COMP (optionally excluding one ID).
 
     Accounting helper: it only reports state, never mutates. The concurrent-LOOP
-    gate (STORY-SMALLFIX-621b AC1) consults this to refuse starting a second
+    gate (STORY-732 AC1) consults this to refuse starting a second
     active LOOP on the same COMP.
     """
     loops = _find_loops_for_comp(root, comp_id)
@@ -1848,6 +1851,11 @@ def _apply_inherited_agenda(
               f"kept (not clobbered).{NC}")
 
 
+# LOOP statuses `plan --inherit` can seed from: both terminal states that carry
+# a condensation brief. `aborted` has no required brief and partial state.
+INHERITABLE_LOOP_STATUSES = ("completed", "plateaued")
+
+
 def _run_plan(root: Path, args: dict) -> int:
     """plan = create/update a LOOP (AC1) when mode/budget given, else checklist."""
     inherit_id = args.get("inherit_loop") or args.get("inherit")
@@ -1857,8 +1865,9 @@ def _run_plan(root: Path, args: dict) -> int:
         if not source or art_lib.get_prefix_from_id(source.id) != "LOOP":
             print(f"{RED}✗ Inherited LOOP '{inherit_id}' not found.{NC}")
             return 1
-        if source.status != "completed":
-            print(f"{RED}✗ --inherit requires a completed LOOP (got {source.id} [{source.status}]).{NC}")
+        if source.status not in INHERITABLE_LOOP_STATUSES:
+            print(f"{RED}✗ --inherit requires a completed or plateaued LOOP "
+                  f"(got {source.id} [{source.status}]).{NC}")
             return 1
         source_comp = source.frontmatter.get("competition")
         selected_comp = args.get("competition")
@@ -1889,7 +1898,7 @@ def _run_plan(root: Path, args: dict) -> int:
     if not has_create_intent:
         return _run_plan_info(root, comp, args)
 
-    # ── Create / update path (STORY-ADDCLI-0e15 AC1) ──
+    # ── Create / update path (STORY-722 AC1) ──
     target_status = args.get("status") or "draft"
     if target_status not in ("draft", "running"):
         print(f"{RED}✗ --status must be 'draft' or 'running' (got '{target_status}').{NC}")
@@ -1908,7 +1917,7 @@ def _run_plan(root: Path, args: dict) -> int:
         if len(draft_loops) == 1:
             existing = draft_loops[0]
 
-    # Concurrent-LOOP gate (STORY-SMALLFIX-621b AC1): refuse to bring up a
+    # Concurrent-LOOP gate (STORY-732 AC1): refuse to bring up a
     # second running LOOP on the same COMP. Accounting-friendly: reports state,
     # never corrupts. Drafting a LOOP while another runs is allowed (planning
     # the next loop); only *starting* a second active loop is blocked.
@@ -2092,7 +2101,7 @@ def _run_run(root: Path, args: dict) -> int:
 
     allow_start = not bool(args.get("no_start", False))
 
-    # Concurrent-LOOP gate (STORY-SMALLFIX-621b AC1): refuse to start a second
+    # Concurrent-LOOP gate (STORY-732 AC1): refuse to start a second
     # LOOP on the same COMP while one is active. `run` starts a draft LOOP
     # (draft→running) unless --no-start is passed; if another LOOP is already
     # running, that start is blocked here. Accounting-friendly: reports state,
@@ -2432,6 +2441,23 @@ def _stamp_null_metric(path: Path) -> None:
     path.write_text(f"---\n{rendered}{text[end + 1:]}", encoding="utf-8")
 
 
+# `log --set KEY=` keys the command owns, with the key-specific way to supply
+# the value instead (F-028: the generic hint pointed at flags that do not exist).
+_RESERVED_SET_HINTS: dict[str, str] = {
+    # Identity keys (id/type/created) from the one shared set; the EXPT-specific
+    # wording below overrides id/type.
+    **art_lib.IDENTITY_SET_KEYS,
+    "competition": "it is taken from the LOOP named by --loop; drop --set competition",
+    "loop": "name the LOOP with --loop LOOP-NNN; drop --set loop",
+    "status": "use --status kept|discarded|crashed|no_op",
+    "title": "use --title (defaults to --summary)",
+    "links": "the belongs_to edge is written for you; add others with 'specflow update <ID> --add-link'",
+    "id": "ids are allocated by the command; drop --set id",
+    "type": "the type is always experiment; drop --set type",
+    "research_progress": "use --research-progress '<json>'",
+    "evaluator_fingerprint": "it is stamped from the harness on disk; drop --set evaluator_fingerprint",
+}
+
 def _run_log(root: Path, args: dict) -> int:
     loop_id = args.get("loop")
     artifacts = art_lib.discover_artifacts(root)
@@ -2465,10 +2491,7 @@ def _run_log(root: Path, args: dict) -> int:
     # --research-progress flag is the one validated producer. REQ-047 adds
     # `evaluator_fingerprint`: the command stamps it from the harness on disk
     # right now — a hand-set value would launder evaluator drift.
-    reserved = {
-        "links", "loop", "competition", "status", "id", "type", "title",
-        "research_progress", "evaluator_fingerprint",
-    }
+    reserved = set(_RESERVED_SET_HINTS)
     for entry in set_fields:
         if "=" not in entry:
             print(f"{RED}✗ Invalid --set value '{entry}'. Expected KEY=VALUE.{NC}")
@@ -2479,10 +2502,8 @@ def _run_log(root: Path, args: dict) -> int:
             print(f"{RED}✗ Invalid --set value '{entry}'. Empty key.{NC}")
             return 1
         if key in reserved:
-            print(
-                f"{RED}✗ --set {key} is reserved (owned by 'autoresearch log'; "
-                f"use the dedicated flags or 'specflow update <ID> --add-link').{NC}"
-            )
+            print(f"{RED}✗ --set {key} is reserved (owned by 'autoresearch log'): "
+                  f"{_RESERVED_SET_HINTS.get(key, 'drop it')}.{NC}")
             return 1
         try:
             extra_fields[key] = json.loads(raw)

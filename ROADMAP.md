@@ -4,9 +4,14 @@ SpecFlow ships incrementally. This document tracks what shipped in each release,
 
 For the original implementation plan (phase breakdown, dependency graph — now historical, superseded by the release history below), see [docs/.archive/plan.md](docs/.archive/plan.md).
 
+## v1.17.2
+
+- **Audit-driven patch (SPIKE-005, REQ-059..061, DEC-095, STORY-707..719)** — 141 verified findings from a two-batch ultracode audit of the engine, skills, docs, ledger and ~1,785 consumer/dogfood chat transcripts; 13 waves: staged findings classes and lean-path/pre-planning accounting (no day-0 FAIL), stdin EOF and `NO_COLOR` fixes, root walk-up, CLI hints and read-only markers, `brief --next` routing and notes, lint known/new rendering, locked record-only writers, ReqIF escaping, hook/CI safety, refresh/init hygiene, skill-text parity with guard tests, docs/README/AGENTS consistency, executor/brownfield/release-consistency tests.
+- **Open follow-ups (v1.18.0):** M-1 upgrade path (`refresh` installs missing schemas by default, engine-vs-pin warning); M-2 pack prefix collision + pack-validate tiers; M-3 ReqIF import round-trip; M-4 unknown-lens lint rule, worktree-divergence nag, stale-vs-customized schema split, structural-only blast radius, decision-schema `supersedes`, link-role synonyms, scoped lint; M-6 authoring surface (`--append-body/--body-file/--ac-file`, `specflow show`, multi-ID `update`, `update --status <earlier> --reason`, export inlining cross-skill references); M-7 code hygiene (one frontmatter splitter, cli dispatch table, lint CHECKS registry, dead symbols, duplicated helpers, `lib/ci.py` and unreferenced `scripts/*.sh`). DEC-084 remains draft (deferral record).
+
 ## v1.17.1
 
-- **P3 typed findings + findings-baseline ratchet (REQ-053 AC1-4/7-9, DEC-FINDINGS-79d8, STORY-703..705)**: the run-count escalation is replaced by a committed baseline, lint is read-only with explicit inputs, and one classification table covers lint and audit. **Sunset (v1.18.0):** an absent baseline reads as empty.
+- **P3 typed findings + findings-baseline ratchet (REQ-053 AC1-4/7-9, DEC-099, STORY-703..705)**: the run-count escalation is replaced by a committed baseline, lint is read-only with explicit inputs, and one classification table covers lint and audit. **Sunset (v1.18.0):** an absent baseline reads as empty.
 - **Retired Gemini CLI (DEC-094, STORY-701)**; the config `version:` key is dropped and refresh bumps CI pins (STORY-702).
 - **Open follow-ups:** REQ-053 could not move back from `implemented` to record the new increment (no legal backward transition), so this is noted here; the audit exit gate is still count-based (typed records exist; wiring the audit to the baseline is P4 scope); pre-existing unused locals flagged by ruff (artifact_lint `non_spike_ids`/`method`/`gate_id`, refresh `platform_name`).
 
@@ -16,7 +21,7 @@ For the original implementation plan (phase breakdown, dependency graph — now 
 - **Index store (SPIKE-003, DEC-093, STORY-696, DEF-006..010/013/015)** — exclusive-create allocation, index as cache, one mutation lock, journaled renumber; `tests/formal/` harness; disposable TLA+ models in `formal/tla/`; BP-008 records the event-triggered model-checking practice (0-1 spikes a year, never calendar-driven).
 - **v1.17.0 sweep (REQ-056, STORY-685..695)** — nine broken shipped paths fixed, cry-wolf sources removed, six guard tests.
 - **Verification semantics (REQ-058, STORY-699), CI gate history (SPIKE-004, STORY-698), cascade/merge legality (STORY-697), semver ordering (STORY-700), format versioning (REQ-057, STORY-678).**
-- **Open follow-ups:** CHL-349 (cascade promotes a REQ on sibling status, not AC coverage — resolve with P5 evidence-backed status); DEF-014 wontfix (DDD-034 operating assumption); REQ-054 parked deprecated (re-derive at P5); per-skill line-budget exceptions (adapter 176, init 157, pack-author 187, autoresearch 383) to trim; `_run_gate_check` still skips script-less items; `checklist-run` exits 0 on a parse failure; `verify.py` tick still uses its own pass rule; migrate command (REQ-057 AC3) lands with 2.0.0.
+- **Open follow-ups:** CHL-349 (cascade promotes a REQ on sibling status, not AC coverage — linked `challenges` STORY-697, the cascade-status closure rule it disputes; its only REQ, REQ-054, is deprecated, so the fix is minted as a new REQ when P5 evidence-backed status is scheduled); DEF-014 wontfix (DDD-034 operating assumption); REQ-054 parked deprecated (re-derive at P5); per-skill line-budget exceptions (adapter 176, init 157, pack-author 187, autoresearch 383) to trim; `_run_gate_check` still skips script-less items; `checklist-run` exits 0 on a parse failure; `verify.py` tick still uses its own pass rule; migrate command (REQ-057 AC3) lands with 2.0.0.
 
 ## v1.16.0
 
@@ -29,7 +34,7 @@ For the original implementation plan (phase breakdown, dependency graph — now 
 ## v1.15.0
 
 - **Frontier-model context overhaul (REQ-042, DEC-082/083, STORY-656–664)** — per the 2026-09 ultracode context audit (SPIKE-002): lean lifecycle skill routers + trimmed consult-when references (~6,900 lines of skill/protocol prose deleted, template and `.claude` mirrors byte-identical); one-line narrow skill-description triggers; `agent-context.md` + pack snippets within the ~500-token always-on budget; `brief` becomes a consent vehicle (hoisted IDs, exact draft IDs + impact for `approve --type`, DEC surfacing, conditional chrome); `handbook` index-only stdout; `hook` routes failures to `artifact-lint` subcommands instead of teaching `--no-verify`.
-- **Deterministic CLI backstops (STORY-663)** — `artifact-lint` warnings escalate to blocking after persisting across 3 full runs (`.specflow/lint-warning-history.yaml`); new `specflow pack-validate` (shipped `validate-pack.sh` defers to it — no `uv run` in skill scripts); `autoresearch status` fails/warns on Phase 0 git problems, discard streaks, missing agenda, diversity/stuck.
+- **Deterministic CLI backstops (STORY-663)** — `artifact-lint` warnings escalate to blocking after persisting across 3 full runs (`.specflow/lint-warning-history.yaml`; replaced by the committed findings-baseline ratchet in v1.17.1); new `specflow pack-validate` (shipped `validate-pack.sh` defers to it — no `uv run` in skill scripts); `autoresearch status` fails/warns on Phase 0 git problems, discard streaks, missing agenda, diversity/stuck.
 - **Autoresearch invariant sheets (STORY-664)** — the nine protocol docs collapse to invariants + consult-when pointers; `docs/skill-standards.md` becomes derived rendering (normative standards live in DEC-083 + ARCH-030).
 - **Skill slimming / lazy reference loading (the robustness backlog item, delivered as STORY-658/659 under REQ-042)** — discover/execute/plan bundles collapse from ~64/~40/~38 KB of recipes to lean routers; context-budget pinned by tests.
 
@@ -57,9 +62,9 @@ Generalized-core hardening, scoped deliberately small (harness-level work deferr
 - **Guardrail-test hardening** — anchored approval-gate assertions + mutation checks; caught that `specflow-artifact-review/SKILL.md` never actually stated the no-self-approval rule (now fixed).
 - **Dogfood closure for v1.14.2** — STORY-637 verified (contracts UT-074/IT-041/QT-047), IT-038/QT-045 stamps truthful.
 
-## v1.15.x backlog (operator re-scope 2026-08-30: robustness first — defer per-harness customization)
+## Open backlog (operator re-scope 2026-08-30: robustness first — defer per-harness customization)
 
-Operator directive (2026-08-30): **stop before per-harness customization; make the existing offering very nice and robust first.** Ordering below reflects it. The frontier-model context overhaul and skill slimming shipped in v1.15.0 (STORY-656–664); the rest remains open.
+Operator directive (2026-08-30): **stop before per-harness customization; make the existing offering very nice and robust first.** Ordering below reflects it. The frontier-model context overhaul and skill slimming shipped in v1.15.0 (STORY-656–664); the rest remains open. Items here are prose-only by design — this list is the holding area, and a STORY or REQ is minted when an item is scheduled (the "every code change traces to a STORY or REQ" rule applies to code changes, not to this list).
 
 ### Robustness & polish (priority)
 - **Denylist gate scope extension** — cover `.claude/` (the live skill mirror — highest-risk reintroduction surface), `.github/`, root `AGENTS.md`; `.specflow/` stays consciously excluded (generated state, redacted at write time since STORY-649).
@@ -68,7 +73,7 @@ Operator directive (2026-08-30): **stop before per-harness customization; make t
 - ~~**STORY-642** — unify `compute_chain_depth` with the typed edge matrix~~ *(deprecated at v1.16.0 per owner decision 2026-09-26; the guided_by chain-depth work shipped there covers the adjacent surface — re-derive via a new REQ if the unification is still wanted)*.
 - **`trace.py` renderers** — COMP lineage + LOOP escalation-source sections (make existing edges visible where users look).
 - **LOW pack defects** — `--show-family` doc drift, ops SKILL.md:162 edge form.
-- **Review-finding burn-down** — 113 open / 7 stale review findings; docs-staleness sweep (only 2 docs cite artifacts).
+- **Review-finding burn-down** — open / stale review-finding counts: see the `review` line of `specflow brief`; docs-staleness sweep (only 2 docs cite artifacts).
 - **brief.py derives_from credit doc** — the suppression surface (any incoming derives_from, incl. MON corrections) is broader than the CHANGELOG wording; document the semantics in the docstring/ops handbook.
 
 ### Methodology (after robustness)
@@ -171,35 +176,6 @@ Focus: **domain intelligence and learning feedback.**
 
 Focus: **init upgrade safety, spec body quality enforcement, and output file traceability.**
 
-## v1.4.1
-
-Focus: **quality fixes from v1.3.0/v1.4.0 review — read-only impact reporting, recursive propagation, glob correctness, and code convergence.**
-
-- **Read-only `change-impact`** — source-file impact section no longer silently flags artifacts; new `--flag` opt-in
-- **Recursive downstream propagation** — suspect flags propagate transitively (ARCH → DDD → UT), not just one level
-- **`**` recursive glob support** — `output_files` with `src/**/*.py` now correctly matches nested files
-- **Converged CHL creation** — shared `specflow/lib/challenges.py` replaces duplicated logic in audit and review
-- **Per-suspect resolution** — resolving one artifact no longer resolves the entire impact-log event
-- **Spec and ROADMAP cleanup** — DDD-005, DDD-019 updated; shipped items removed from Future section
-
-## v1.4.0
-
-Focus: **compliance evidence quality and structured review artifacts.**
-
-- **Compliance evidence quality lint** — new `compliance-evidence` check in `artifact-lint`; warns when an artifact's `complies_with` link is not backed by a substantive body (≥50 words) or fails to reference any keyword from the clause. Strict mode escalates to blocking errors via `lint.compliance_evidence_strict` config.
-- **REVIEW artifact type** — new `REVIEW-NNN` schema with `reviewers`, `findings`, `consensus`, `depth`, `artifact_ref` fields; emitted by `/specflow-artifact-review` to summarize each review pass. Spawned CHLs link back via `refers_to`.
-- **Status now shows reviews** — `specflow status` adds a `Reviews:` line counting REVIEW + AUD + CHL artifacts.
-- **Auto-bootstrap on existing repos** — `artifact-review` copies `review.yaml` and creates `_specflow/specs/reviews/` on first invocation in repos that pre-date v1.4.0.
-
-## v1.3.1
-
-Focus: **verification gap closure and decision housekeeping.**
-
-- **STORY-049..063 verified** — generated 17 UT/IT/QT artifacts (QT-023..028, IT-018..023, UT-023..027) closing the missing test pairs flagged by project-audit
-- **REQ/ARCH/DDD chain coverage at 100%** — chain coverage rose from 75% to 100% (69/69); STORY test coverage rose from 76% to 100% (63/63)
-- **All 42 DECs promoted** — long-tail draft decisions (DEC-001..042) advanced to `approved`
-- **REQ-022..027 promoted** from `approved` to `implemented` to enable test stub generation
-
 ## v1.3.0
 
 Focus: **reverse impact analysis, decomposition completeness guidance, and discovery-to-plan skill continuity.**
@@ -213,6 +189,35 @@ Focus: **reverse impact analysis, decomposition completeness guidance, and disco
 - **Inter-REQ dependency prompting** — discover skill captures requirement dependencies as `derives_from` links
 - **Domain context pass-through** — plan skill reads domain classification from config and decisions from discovery
 - **Improved discover-to-plan handoff** — explicit approval instructions and next-step commands in exit message
+
+## v1.3.1
+
+Focus: **verification gap closure and decision housekeeping.**
+
+- **STORY-049..063 verified** — generated 17 UT/IT/QT artifacts (QT-023..028, IT-018..023, UT-023..027) closing the missing test pairs flagged by project-audit
+- **REQ/ARCH/DDD chain coverage at 100%** — chain coverage rose from 75% to 100% (69/69); STORY test coverage rose from 76% to 100% (63/63)
+- **All 42 DECs promoted** — long-tail draft decisions (DEC-001..042) advanced to `approved`
+- **REQ-022..027 promoted** from `approved` to `implemented` to enable test stub generation
+
+## v1.4.0
+
+Focus: **compliance evidence quality and structured review artifacts.**
+
+- **Compliance evidence quality lint** — new `compliance-evidence` check in `artifact-lint`; warns when an artifact's `complies_with` link is not backed by a substantive body (≥50 words) or fails to reference any keyword from the clause. Strict mode escalates to blocking errors via `lint.compliance_evidence_strict` config.
+- **REVIEW artifact type** — new `REVIEW-NNN` schema with `reviewers`, `findings`, `consensus`, `depth`, `artifact_ref` fields; emitted by `/specflow-artifact-review` to summarize each review pass. Spawned CHLs link back via `refers_to`.
+- **Status now shows reviews** — `specflow status` adds a `Reviews:` line counting REVIEW + AUD + CHL artifacts.
+- **Auto-bootstrap on existing repos** — `artifact-review` copies `review.yaml` and creates `_specflow/specs/reviews/` on first invocation in repos that pre-date v1.4.0.
+
+## v1.4.1
+
+Focus: **quality fixes from v1.3.0/v1.4.0 review — read-only impact reporting, recursive propagation, glob correctness, and code convergence.**
+
+- **Read-only `change-impact`** — source-file impact section no longer silently flags artifacts; new `--flag` opt-in
+- **Recursive downstream propagation** — suspect flags propagate transitively (ARCH → DDD → UT), not just one level
+- **`**` recursive glob support** — `output_files` with `src/**/*.py` now correctly matches nested files
+- **Converged CHL creation** — shared `specflow/lib/challenges.py` replaces duplicated logic in audit and review
+- **Per-suspect resolution** — resolving one artifact no longer resolves the entire impact-log event
+- **Spec and ROADMAP cleanup** — DDD-005, DDD-019 updated; shipped items removed from Future section
 
 ## v1.6.0
 
@@ -316,7 +321,9 @@ Focus: **completing the list-valued frontmatter normalization bug class.** v1.13
 - **Killed the `thinking_techniques` `str + list` `TypeError`** that aborted `artifact-review --depth deep`; fixed `output_files` silent zero-credit in `expand_output_files`.
 - **Helper correctness + dedupe** — `None` list element dropped (was a phantom `"None"` tag); unexpected types log a warning; `artifact_lint`'s divergent hand-rolled splitter deduped to `.tags`. 26 mutation-checked regression tests (+12).
 
-> Deferred to SPIKE-BPSURFAC-710b / SPIKE-CHECKLIS-1a12: BP `applies_to: all` wildcard, promote-PREV/CHL→BP, review→PREV capture, empty-checklist-results-read-as-passed.
+> Deferred to SPIKE-006 / SPIKE-007: BP `applies_to: all` wildcard, promote-PREV/CHL→BP, review→PREV capture, empty-checklist-results-read-as-passed.
+> 
+> **Review→PREV capture, spelled out.** `artifact-review` carries a REVIEW/CHL emission path (`emit_review_pass` → one REVIEW per target, CHLs linked back via `refers_to` → `_create_learned_patterns`), but it only runs on findings the CLI itself collected — and agent-judged items and lens prompts are evaluated by the host agent (zero external calls), so that list is always empty and the review pass creates no REVIEW, CHL or PREV (the skill says so; PREVs come from `specflow done` / `specflow verify --seed-prev`). The candidate closure is a `specflow artifact-review --findings <json>` ingest option: the agent hands its classified findings back and the existing emission path runs on them. Not scheduled — mint a STORY under SPIKE-007 when it is. Related: `.specflow/checklist-log/` (what `checklist-run` persists per pass) is local scratch, not evidence — it is machine-local (gitignored in this repo; consumer scaffolds do not ignore it yet — follow-up), nothing reads it, and no brief or audit signal is derived from it.
 
 ## v1.13.6
 
@@ -328,13 +335,13 @@ Focus: **the CHL-344 audit-signal-design workstream, complete.** Signals honest,
 - **NFR surface exercised (A4+A5)** — vocabulary frozen in code with create-boundary validation and an artifact-lint typo net; nfr-coverage de-escalated to accounting; dogfood sweep backfilled all 18 category-less REQs as `functional` (zero genuine NFRs recorded).
 - **Workflow tags assert (A6)** — backfilled artifacts must carry links (artifact-lint warn); audits count the backfilled exemption bucket; `deferred` closed by documentation (verified nonexistent).
 
-> Two adjacent-machinery follow-ups stay on the Future list: status-blind CHL dedup; findings cache lacks a frontmatter component.
+> One adjacent-machinery follow-up stays on the Future list: status-blind CHL dedup. (The second, a frontmatter component for the findings cache, shipped in v1.13.8.)
 
 ## v1.13.5
 
 Focus: **baseline naming policy — releases can no longer be displaced by freeform baselines.** No new blocking gates.
 
-- **Semver-prefer selection (CHL-NONSEMVE-c16b)** — audit drift and evidence-predecessor callers compare the two newest semver-parseable releases; pure-semver/pure-freeform histories unchanged. Freeform names rejected at `baseline create` (grandfathered on disk); the documented `--baseline` audit anchor wired with warn+auto-fallback.
+- **Semver-prefer selection (CHL-351)** — audit drift and evidence-predecessor callers compare the two newest semver-parseable releases; pure-semver/pure-freeform histories unchanged. Freeform names rejected at `baseline create` (grandfathered on disk); the documented `--baseline` audit anchor wired with warn+auto-fallback.
 - **Audit trend + chain coverage header** (post-v1.13.4 work, lands here) — signed deltas vs the prior stamped AUD and approved-STORY UT+IT+QT coverage in every report header; machine-readable summary stamps (CHL-341, CHL-344#2).
 
 > Delivered via STORY-630 (REQ-035) with UT-067/IT-036/QT-043. The CHL-344 umbrella (remaining audit-signal sub-findings: severity unification, per-AC rows, NFR exercising, workflow-tag rules) continues under the Future "Audit signal design" workstream.
@@ -541,6 +548,12 @@ Focus: **data safety and CI hardening.**
 - **Verification-gate step ordering** — the execute skill's verification-gate delta now runs *inside* Step 6 (Validation) before the exit/handoff message, instead of as an orphan "Step 6.5" placed after it; the exit message now reports the delta. The `AGENTS.md` / `agent-context.md` Evidence bullet was tightened to match sibling altitude.
 - **`thinking_techniques` recorded at discovery** — the discover skill now records the lenses actually applied to each REQ via `update --thinking-techniques` (the plan skill already did this for ARCH/DDD). Closes the disconnect where the challenge step ran but left the field empty, inviting cosmetic backfill to satisfy lint.
 
+## v1.9.3
+
+Focus: **mid-project adoption.**
+
+- **Adoption pack (`/specflow-adopt`) — SHIPPED v1.9.3** — bring an existing codebase into SpecFlow: inventory → backfill ARCH/DDD/REQ/DEC (tagged `backfilled`) → cut an as-built baseline → retro-link existing code → hand off to the normal lifecycle. ARCH-per-component code-linking via `output_files` globs, zero backfilled STORYs (STORY reserved for forward action), skeleton-first strategy, `specflow adopt status` completeness view (coverage %, per-ARCH boundary dashboard, per-artifact depth/gaps/drift). Incremental/resumable, conflict-surfacing, zero new Python. Opt-in pack (`/specflow-init --preset adoption`); greenfield projects don't need it. Design record: decisions.md D-19 and D-20.
+
 ## v1.9.1
 
 Focus: **disciplined relationships — vocabulary stays frozen, drift gets named.**
@@ -650,7 +663,6 @@ These may ship someday, but are not committed:
 - **REST API** — programmatic access for custom toolchain integration
 - **Static HTML export** — `specflow export --html` for zero-dependency dashboard generation
 - **Multi-pack aggregated compliance** — unified compliance view across all installed standards
-- **Adoption pack (`/specflow-adopt`)** — bring an existing codebase into SpecFlow: inventory → backfill ARCH/DDD/REQ/DEC (tagged `backfilled`) → cut an as-built baseline → retro-link existing code → hand off to the normal lifecycle. ARCH-per-component code-linking via `output_files` globs, zero backfilled STORYs (STORY reserved for forward action), skeleton-first strategy, `specflow adopt status` completeness view (coverage %, per-ARCH boundary dashboard, per-artifact depth/gaps/drift). Incremental/resumable, conflict-surfacing, zero new Python. Opt-in pack (`/specflow-init --preset adoption`); greenfield projects don't need it. Implemented; see D-19 and D-20.
 
 ## Out of Scope
 

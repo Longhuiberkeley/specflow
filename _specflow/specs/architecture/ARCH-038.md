@@ -12,10 +12,10 @@ links:
   role: guided_by
 created: '2026-09-25'
 fingerprint: sha256:47c45af0ea47
-modified: '2026-09-25'
+modified: '2026-10-08'
 thinking_techniques:
-- '[premortem'
-- dependency-shock]
+- premortem
+- dependency_shock
 ---
 
 # Research integrity guards: evaluator fingerprint, jump and guard flags, external scores

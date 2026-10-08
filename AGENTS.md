@@ -23,7 +23,7 @@ We enforce compliance through CI/CD. Traceability matrices, linkage rules, and c
 
 ### 5. Context Efficiency (Skill Standards)
 Skill standards are artifact-native per DEC-082: see `specflow trace DEC-083` (normative decision) and `specflow trace ARCH-030` (skills subsystem anatomy). `docs/skill-standards.md` is derived rendering only.
-- Keep `SKILL.md` under 500 lines.
+- `SKILL.md` is a lean router: DEC-083 sets the outer cap at 500 lines, and `tests/test_reference_lint.py` enforces the real budgets — 120 lines for core skills, 300 for pack skills, with named per-file ceilings for the current offenders that may only shrink.
 - Store domain knowledge in `references/`.
 - Store deterministic operations in `scripts/`.
 
@@ -43,7 +43,7 @@ The install mechanism (`uv tool install`, `uvx`, `python -m specflow`) is our co
 
 Describe what you want in plain language — the matching `/specflow-*` skill engages (slash optional). The `specflow` CLI is for CI and power users.
 
-Never hand-edit `.specflow/` state, schemas, or indexes (`config.yaml` and `adapters.yaml` only when an adapter, doc, or pack-author skill directs it). `_specflow/` artifact YAML is CLI-managed: `specflow update` for status, links, and frontmatter; `specflow artifact-lint` after a true hand-edit.
+Never hand-edit `.specflow/` state, schemas, or indexes (`config.yaml` and `adapters.yaml` only when an adapter, doc, or pack-author skill directs it). `_specflow/` artifact YAML is CLI-managed: `specflow update` for status, links, and frontmatter; `specflow artifact-lint` (repo-wide, read-only) after a true hand-edit.
 
 Lead with the answer or next action. On long autonomous runs, a short progress update helps; lists and bullets when they aid scan.
 
@@ -56,6 +56,8 @@ When work hits an approval-gated status, present it, suggest the exact `specflow
 If the next step is unclear, run `specflow brief --next`. If the user says skip or proceed anyway, do it and name the risk.
 
 Memory: `specflow brief` is the digest; follow artifact IDs with `specflow trace`.
+
+CLI calls: each flag and value is its own shell word (`--add-link REQ-002:implements`, never one quoted string); `specflow <cmd> --help` lists the flags, `specflow schema <type>` the fields. `specflow` resolves the project from any directory under it.
 <!-- End SpecFlow section -->
 
 ## Release Process
@@ -64,19 +66,22 @@ Follow these steps when releasing a new version:
 
 1. **Update `CHANGELOG.md`** — add a version entry with date and highlights (grouped by category: features, fixes, docs)
 2. **Bump the version in both sources of truth** — `pyproject.toml` (`version`) and `src/specflow/__init__.py` (`__version__`). `config.py` reads `specflow.__version__`, so both must match.
-3. **Update `ROADMAP.md`** — move shipped items from "Planned" to the released section
-4. **Run the test suite:** `pytest tests/`
-5. **Run self-audit:** `specflow artifact-lint` and `specflow project-audit`
-6. **Commit:** `git commit -m "chore: release v1.x.x"`
-7. **Tag:** `git tag -a v1.x.x -m "v1.x.x"`
-8. **Push:** `git push --follow-tags`
-9. **Create a GitHub Release** from the tag with the CHANGELOG excerpt as the body
-10. **Publish to PyPI** (if applicable): `uv build && uv publish`
+3. **Sync the README pin:** `grep -n '@v1\.' README.md` — the `uv tool install …@v<ver>` example must name the version being released (`tests/test_readme_pin.py` asserts pin == `__version__`, so do this before running the suite)
+4. **Update `ROADMAP.md`** — move shipped items from "Planned" to the released section
+5. **Run the test suite:** `uv run pytest tests/` — this includes `tests/test_readme_pin.py` (README pin == `__version__`) and `tests/test_cli_reference_coverage.py` (every subparser has a heading in `docs/cli-reference.md`)
+6. **Run self-audit:** `specflow artifact-lint` and `specflow project-audit`
+7. **Check the skill mirror:** `diff -rq .claude/skills src/specflow/templates/skills/shared` — the live and shipped skill trees must be byte-identical (new files included)
+8. **Wheel smoke:** `./scripts/wheel-smoke.sh` — eight stages: (1) build the wheel, (2) compare its contents against the source tree (schemas, skills + references, checklists, packs, agent-context), (3) create an isolated venv, (4) install the wheel into it, (5) `specflow init` a throwaway project with the *installed* entry point, (6) run `--version`/`status`/`brief` from it, (7) verify pack assets from the wheel (`--preset ops`), and (8) put the venv's `bin` first on PATH and run the installed pre-commit hook on a staged artifact plus a shipped skill script, both of which call bare `specflow` (CI runs the same job on tag push)
+9. **Commit:** `git commit -m "chore: release v1.x.x"`
+10. **Tag:** `git tag -a v1.x.x -m "v1.x.x"`
+11. **Push:** `git push --follow-tags`
+12. **Create a GitHub Release** from the tag with the CHANGELOG excerpt as the body
+13. **Do NOT publish to PyPI.** SpecFlow is distributed from Git only (see §6: the PyPI `specflow` name is an unrelated package). Consumers install with `uv tool install git+…@v1.x.x`.
 
 ### CHANGELOG Format
 
 The CHANGELOG follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — a bracketed
-version and ISO date heading, and a `Total: N tests passing` line closing the entry:
+version and ISO date heading, and a `Total: N tests passing` line closing the entry. `### Highlights` should be the first subsection (older entries sometimes carry a short preamble paragraph), and in `+N (A → B)` the `A` must equal the previous entry's `Total`:
 
 ```markdown
 ## [1.x.x] - YYYY-MM-DD
@@ -91,7 +96,7 @@ version and ISO date heading, and a `Total: N tests passing` line closing the en
 - Description of bug fix
 
 ### Decisions / Docs
-- D-NN (decision summary) / doc update
+- DEC-NNN (decision summary) / doc update
 
 ### Tests
 - What was added; Total: N tests passing

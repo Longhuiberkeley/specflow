@@ -16,6 +16,10 @@ and drive a fresh project:
   5. Confirm the initialized project actually received schemas, skills (with
      references), checklists, agent-context, and — via a pack preset — pack
      assets from the wheel.
+  6. Put the venv's ``bin`` first on PATH and exercise the bare-``specflow``
+     invocation contract (AGENTS.md §6): install the pre-commit hook, run it
+     against a staged artifact, and run a shipped skill script that calls
+     bare ``specflow``.
 
 Requires ``uv`` on PATH. Dependencies (pyyaml) are resolved by uv the normal
 way; the specflow package itself is always installed from the built wheel.
@@ -43,7 +47,7 @@ SRC_DIR = REPO_ROOT / "src" / "specflow"
 PACK_PRESET = "ops"
 PACK_SKILL = "specflow-ops"
 PACK_SCHEMAS = ("run.yaml", "monitor.yaml")
-PACK_CONTEXT_MARK = "Ops Pack"
+PACK_CONTEXT_MARK = "<!-- pack:ops context"  # the injected snippet sentinel, not its prose heading
 AGENT_CONTEXT_SENTINEL = "<!-- SpecFlow section (auto-generated, do not edit manually) -->"
 
 _BIN = "Scripts" if os.name == "nt" else "bin"
@@ -55,6 +59,7 @@ def _run(
     *,
     cwd: Path,
     check: bool = True,
+    env: dict[str, str] | None = None,
 ) -> subprocess.CompletedProcess[str]:
     """Run ``cmd`` in ``cwd``, print it, and return the CompletedProcess."""
     print(f"  $ {subprocess.list2cmdline(cmd)}")
@@ -64,6 +69,8 @@ def _run(
         capture_output=True,
         text=True,
         timeout=600,
+        env=env,
+        check=False,
     )
     if result.stdout:
         sys.stdout.write(result.stdout)
@@ -235,6 +242,99 @@ def verify_pack_assets(proj_dir: Path, *, require_skill: bool) -> list[str]:
     return problems
 
 
+# ── Bare `specflow` on PATH: hook + skill script ───────────────────
+
+def _path_env(venv_python: Path) -> dict[str, str]:
+    """Environment with the venv's bin directory FIRST on PATH.
+
+    This is what a user who ran ``uv tool install`` has: ``specflow`` resolves
+    by name. Nothing below may call the entry point by absolute path.
+    """
+    env = dict(os.environ)
+    env["PATH"] = str(venv_python.parent) + os.pathsep + env.get("PATH", "")
+    env.setdefault("GIT_AUTHOR_EMAIL", "wheel-smoke@example.com")
+    env.setdefault("GIT_AUTHOR_NAME", "wheel-smoke")
+    env.setdefault("GIT_COMMITTER_EMAIL", "wheel-smoke@example.com")
+    env.setdefault("GIT_COMMITTER_NAME", "wheel-smoke")
+    return env
+
+
+def _git(proj_dir: Path, env: dict[str, str], *args: str) -> subprocess.CompletedProcess[str]:
+    return _run(["git", *args], cwd=proj_dir, check=False, env=env)
+
+
+def verify_bare_specflow_on_path(venv_python: Path, proj_dir: Path) -> list[str]:
+    """Exercise the bare-``specflow`` invocation contract on an initialized project.
+
+    1. ``specflow`` resolves from PATH to the venv entry point.
+    2. ``specflow hook install`` writes (or confirms) the pre-commit hook.
+    3. The hook, run by git on a staged artifact, delegates to bare
+       ``specflow hook pre-commit`` → ``specflow artifact-lint`` and exits 0.
+    4. A shipped skill script (``validate-pack.sh``) that ``exec``s bare
+       ``specflow`` runs against a pack shipped in the wheel and exits 0.
+    """
+    problems: list[str] = []
+    env = _path_env(venv_python)
+
+    resolved = shutil.which("specflow", path=env["PATH"])
+    expected = _specflow_bin(venv_python)
+    if resolved is None or Path(resolved).resolve() != expected.resolve():
+        problems.append(f"`specflow` on PATH resolves to {resolved!r}, expected {expected}")
+        return problems
+
+    if not (proj_dir / ".git").exists():
+        problems.append("project is not a git repository; cannot exercise the hook")
+        return problems
+    if _git(proj_dir, env, "add", "-A").returncode != 0 or \
+            _git(proj_dir, env, "commit", "-q", "-m", "init").returncode != 0:
+        problems.append("could not commit the initialized project")
+        return problems
+
+    result = _run(["specflow", "hook", "install"], cwd=proj_dir, check=False, env=env)
+    if result.returncode != 0:
+        problems.append(f"`specflow hook install` failed (rc={result.returncode})")
+        return problems
+    hooks_dir = _git(proj_dir, env, "rev-parse", "--git-path", "hooks").stdout.strip()
+    hook = (proj_dir / hooks_dir / "pre-commit").resolve()
+    if not hook.exists() or "specflow hook pre-commit" not in hook.read_text(encoding="utf-8", errors="ignore"):
+        problems.append(f"pre-commit hook not installed or not specflow's: {hook}")
+        return problems
+
+    result = _run(
+        ["specflow", "create", "--type", "requirement", "--title", "Wheel smoke requirement",
+         "--body", "## Acceptance Criteria\n1. The installed hook runs bare specflow.\n"],
+        cwd=proj_dir, check=False, env=env,
+    )
+    if result.returncode != 0:
+        problems.append(f"`specflow create` failed (rc={result.returncode})")
+        return problems
+    _git(proj_dir, env, "add", "-A")
+    result = _run([str(hook)], cwd=proj_dir, check=False, env=env)
+    if result.returncode != 0 or "not on PATH" in (result.stdout + result.stderr):
+        problems.append(f"installed pre-commit hook failed on a staged artifact (rc={result.returncode})")
+    else:
+        print("       pre-commit hook on a staged artifact: rc=0 (ok)")
+
+    script = proj_dir / ".claude" / "skills" / "specflow-pack-author" / "scripts" / "validate-pack.sh"
+    if not script.exists():
+        problems.append(f"skill script not installed: {script}")
+        return problems
+    packs_dir = _run(
+        [str(venv_python), "-c", "import pathlib, specflow; print(pathlib.Path(specflow.__file__).parent / 'packs')"],
+        cwd=proj_dir, check=False, env=env,
+    ).stdout.strip()
+    pack_dir = Path(packs_dir) / PACK_PRESET
+    if not (pack_dir / "pack.yaml").exists():
+        problems.append(f"installed wheel has no pack manifest at {pack_dir}")
+        return problems
+    result = _run(["bash", str(script), str(pack_dir)], cwd=proj_dir, check=False, env=env)
+    if result.returncode != 0:
+        problems.append(f"skill script validate-pack.sh (bare `specflow pack-validate`) failed (rc={result.returncode})")
+    else:
+        print(f"       validate-pack.sh via bare specflow on {PACK_PRESET} pack: rc=0 (ok)")
+    return problems
+
+
 # ── Entry point ───────────────────────────────────────────────────
 
 def main(argv: list[str] | None = None) -> int:
@@ -265,13 +365,13 @@ def main(argv: list[str] | None = None) -> int:
             if not wheel.exists():
                 print(f"error: wheel not found: {wheel}", file=sys.stderr)
                 return 1
-            print(f"[1/7] Using existing wheel: {wheel}")
+            print(f"[1/8] Using existing wheel: {wheel}")
         else:
-            print("[1/7] Building wheel (uv build --wheel)...")
+            print("[1/8] Building wheel (uv build --wheel)...")
             wheel = build_wheel(tmp_path / "dist")
             print(f"       -> {wheel.name}")
 
-        print("[2/7] Verifying wheel contents...")
+        print("[2/8] Verifying wheel contents...")
         missing = verify_wheel_contents(wheel, SRC_DIR)
         signals = verify_asset_signals(wheel)
         failures.extend(f"wheel missing packaged asset: {m}" for m in missing)
@@ -280,18 +380,18 @@ def main(argv: list[str] | None = None) -> int:
             print("       -> packaged assets complete: schemas, skills + references, "
                   "checklists, packs, agent-context, adapters, platforms")
 
-        print("[3/7] Creating isolated venv...")
+        print("[3/8] Creating isolated venv...")
         venv_python = create_venv(tmp_path / "venv", args.python)
 
-        print("[4/7] Installing wheel into isolated venv...")
+        print("[4/8] Installing wheel into isolated venv...")
         install_wheel(venv_python, wheel)
 
-        print("[5/7] Initializing a throwaway project...")
+        print("[5/8] Initializing a throwaway project...")
         proj = tmp_path / "proj"
         init_project(venv_python, proj)
         failures.extend(verify_initialized_assets(proj))
 
-        print("[6/7] Running installed entry points (--version / status / brief)...")
+        print("[6/8] Running installed entry points (--version / status / brief)...")
         result = run_cli(venv_python, proj, "--version", check=False)
         if result.returncode != 0 or not result.stdout.strip():
             failures.append(f"`specflow --version` failed (rc={result.returncode})")
@@ -310,12 +410,15 @@ def main(argv: list[str] | None = None) -> int:
                 if result.stdout:
                     sys.stdout.write(result.stdout)
 
-        print("[7/7] Verifying pack assets from the wheel (--preset ops)...")
+        print("[7/8] Verifying pack assets from the wheel (--preset ops)...")
         proj_ops = tmp_path / "proj-ops"
         init_project(venv_python, proj_ops, "--preset", PACK_PRESET)
         # With an explicit --platform, pack skills must install during init —
         # no follow-up `refresh --packs` required.
         failures.extend(verify_pack_assets(proj_ops, require_skill=True))
+
+        print("[8/8] Running the pre-commit hook and a skill script via bare `specflow` on PATH...")
+        failures.extend(verify_bare_specflow_on_path(venv_python, proj))
 
         if failures:
             print("\nWHEEL SMOKE FAILED:")

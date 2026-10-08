@@ -427,3 +427,49 @@ class TestSeedPrevFeedback:
         prevs = sorted(learned_dir.glob("PREV-*.yaml"))
         assert len(prevs) == 2
         assert "PREV cap" in out
+
+
+# ── discovery mode skips contract-less artifacts silently (F-073) ──
+
+
+class TestDiscoverySkips:
+    def _seed(self, tmp_path):
+        root = _scaffold(tmp_path)
+        _write_artifact(
+            root, "_specflow/specs/unit-tests/UT-020.md",
+            {"id": "UT-020", "title": "T", "type": "unit-test", "status": "verified",
+             "created": "2026-08-02"},
+        )
+        _write_artifact(
+            root, "_specflow/specs/unit-tests/UT-021.md",
+            {"id": "UT-021", "title": "T", "type": "unit-test", "status": "verified",
+             "created": "2026-08-02"},
+        )
+        _write_artifact(
+            root, "_specflow/work/stories/STORY-020.md",
+            {"id": "STORY-020", "title": "T", "type": "story", "status": "verified",
+             "created": "2026-08-02", "verify_command": "echo b"},
+        )
+        return root
+
+    def test_all_dry_run_prints_one_summary_line(self, tmp_path):
+        root = self._seed(tmp_path)
+        code, out = _run(root, all=True, dry_run=True)
+        assert code == 0
+        assert "STORY-020: echo b" in out, "the field, not the type, selects"
+        assert "UT-020" not in out and "UT-021" not in out
+        assert "2 artifact(s) with no verify_command skipped; 1 with a contract" in out
+
+    def test_type_filter_also_silent(self, tmp_path):
+        root = self._seed(tmp_path)
+        code, out = _run(root, type="unit-test", dry_run=True)
+        assert code == 0
+        assert "no verification contract declared" not in out
+        assert "2 artifact(s) with no verify_command skipped; 0 with a contract" in out
+
+    def test_explicit_id_keeps_per_id_line(self, tmp_path):
+        root = self._seed(tmp_path)
+        code, out = _run(root, ids=["UT-020"], dry_run=True)
+        assert code == 0
+        assert "UT-020: no verification contract declared" in out
+        assert "with no verify_command skipped" not in out

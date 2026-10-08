@@ -14,8 +14,8 @@ created: '2026-09-25'
 fingerprint: sha256:22d9c0ca75fd
 thinking_techniques:
 - premortem
-- dependency-shock
-modified: '2026-09-25'
+- dependency_shock
+modified: '2026-10-08'
 ---
 
 # Knowledge flow: plan --inherit, condensation requirement, top-3 status, adjacent-field lens (REQ-046)

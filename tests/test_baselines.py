@@ -28,7 +28,7 @@ class TestCreateBaseline:
         assert "Invalid" in result["error"]
 
     def test_freeform_names_rejected_at_create_time(self, tmp_path: Path):
-        # CHL-NONSEMVE-c16b enforcement: new baselines must be semver-shaped
+        # CHL-351 enforcement: new baselines must be semver-shaped
         # so drift selection always has releases to prefer. The error must be
         # loud and name the policy (automation breaking on this needs to know
         # WHY and what shape to use instead).
@@ -185,7 +185,7 @@ class TestListBaselines:
         assert baseline_lib.list_baselines(tmp_path) == []
 
     def test_grandfathered_freeform_baselines_still_listed(self, tmp_path: Path):
-        # Create-time enforcement (CHL-NONSEMVE-c16b) does NOT migrate: a
+        # Create-time enforcement (CHL-351) does NOT migrate: a
         # freeform baseline written directly to disk (pre-enforcement, or by an
         # external tool) is still globbed by list_baselines and sorts after
         # every semver name. Write the fixture file directly — create_baseline
@@ -197,7 +197,7 @@ class TestListBaselines:
 
 
 class TestSelectReleasePair:
-    """CHL-NONSEMVE-c16b selection policy: drift callers prefer
+    """CHL-351 selection policy: drift callers prefer
     semver-parseable releases and only fall back to the raw tail when fewer
     than two names parse. Byte-identical to baselines[-2:] for pure-semver
     and pure-freeform lists; only mixed lists change."""

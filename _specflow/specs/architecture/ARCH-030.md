@@ -17,9 +17,9 @@ links:
   role: guided_by
 created: '2026-09-13'
 fingerprint: sha256:bf63e49918ec
-modified: '2026-09-13'
+modified: '2026-10-08'
 thinking_techniques:
-- assumption-surfacing
+- assumption_surfacing
 ---
 
 # Skills subsystem: router anatomy, reference layering, and CLI invocation contract

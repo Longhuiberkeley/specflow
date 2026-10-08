@@ -15,10 +15,10 @@ created: '2026-09-25'
 fingerprint: sha256:5b71045d81f0
 thinking_techniques:
 - premortem
-- dependency-shock
+- dependency_shock
 - worst_case_user
 - composition
-modified: '2026-09-25'
+modified: '2026-10-08'
 ---
 
 # BP anatomy, provenance fields, and transitional status map (REQ-044)

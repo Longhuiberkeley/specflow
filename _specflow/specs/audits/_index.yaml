@@ -2,7 +2,7 @@ artifacts:
   AUD-001:
     id: AUD-001
     title: Project Audit 20260415T174143Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -11,7 +11,7 @@ artifacts:
   AUD-002:
     id: AUD-002
     title: Project Audit 20260415T174156Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -20,7 +20,7 @@ artifacts:
   AUD-003:
     id: AUD-003
     title: Project Audit 20260415T174306Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -29,7 +29,7 @@ artifacts:
   AUD-004:
     id: AUD-004
     title: Project Audit 20260416T034444Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -38,7 +38,7 @@ artifacts:
   AUD-005:
     id: AUD-005
     title: Project Audit 20260416T034453Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -47,7 +47,7 @@ artifacts:
   AUD-006:
     id: AUD-006
     title: Project Audit 20260416T034528Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -56,7 +56,7 @@ artifacts:
   AUD-007:
     id: AUD-007
     title: Project Audit 20260416T034551Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -65,7 +65,7 @@ artifacts:
   AUD-008:
     id: AUD-008
     title: Project Audit 20260416T034604Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -74,7 +74,7 @@ artifacts:
   AUD-009:
     id: AUD-009
     title: Project Audit 20260416T091959Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -83,7 +83,7 @@ artifacts:
   AUD-010:
     id: AUD-010
     title: Project Audit 20260421T105914Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -92,7 +92,7 @@ artifacts:
   AUD-011:
     id: AUD-011
     title: Project Audit 20260421T144754Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -101,7 +101,7 @@ artifacts:
   AUD-012:
     id: AUD-012
     title: Project Audit 20260421T144813Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -110,7 +110,7 @@ artifacts:
   AUD-013:
     id: AUD-013
     title: Project Audit 20260421T144827Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -119,7 +119,7 @@ artifacts:
   AUD-014:
     id: AUD-014
     title: Project Audit 20260421T144838Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -128,7 +128,7 @@ artifacts:
   AUD-015:
     id: AUD-015
     title: Project Audit 20260421T145022Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -137,7 +137,7 @@ artifacts:
   AUD-016:
     id: AUD-016
     title: Project Audit 20260421T145051Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -146,7 +146,7 @@ artifacts:
   AUD-017:
     id: AUD-017
     title: Project Audit 20260421T145109Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -155,7 +155,7 @@ artifacts:
   AUD-018:
     id: AUD-018
     title: Project Audit 20260421T145217Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -164,7 +164,7 @@ artifacts:
   AUD-019:
     id: AUD-019
     title: Project Audit 20260421T150042Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -173,7 +173,7 @@ artifacts:
   AUD-020:
     id: AUD-020
     title: Project Audit 20260421T162012Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -182,7 +182,7 @@ artifacts:
   AUD-021:
     id: AUD-021
     title: Project Audit 20260421T162033Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -191,7 +191,7 @@ artifacts:
   AUD-022:
     id: AUD-022
     title: Project Audit 20260422T074402Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -200,7 +200,7 @@ artifacts:
   AUD-023:
     id: AUD-023
     title: Project Audit 20260422T084813Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -209,7 +209,7 @@ artifacts:
   AUD-024:
     id: AUD-024
     title: Project Audit 20260422T085143Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -218,7 +218,7 @@ artifacts:
   AUD-025:
     id: AUD-025
     title: Project Audit 20260422T085234Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -227,7 +227,7 @@ artifacts:
   AUD-026:
     id: AUD-026
     title: Project Audit 20260422T085715Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -236,7 +236,7 @@ artifacts:
   AUD-027:
     id: AUD-027
     title: Project Audit 20260503T095751Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -245,7 +245,7 @@ artifacts:
   AUD-028:
     id: AUD-028
     title: Project Audit 20260505T084027Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -254,7 +254,7 @@ artifacts:
   AUD-029:
     id: AUD-029
     title: Project Audit 20260505T104313Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -263,7 +263,7 @@ artifacts:
   AUD-030:
     id: AUD-030
     title: Project Audit 20260505T104412Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -272,7 +272,7 @@ artifacts:
   AUD-031:
     id: AUD-031
     title: Project Audit 20260505T104421Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -281,7 +281,7 @@ artifacts:
   AUD-032:
     id: AUD-032
     title: Project Audit 20260505T104651Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -290,7 +290,7 @@ artifacts:
   AUD-033:
     id: AUD-033
     title: Project Audit 20260505T104916Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -299,7 +299,7 @@ artifacts:
   AUD-034:
     id: AUD-034
     title: Project Audit 20260505T125601Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -308,7 +308,7 @@ artifacts:
   AUD-035:
     id: AUD-035
     title: Project Audit 20260505T125643Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -317,7 +317,7 @@ artifacts:
   AUD-036:
     id: AUD-036
     title: Project Audit 20260522T160842Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -326,7 +326,7 @@ artifacts:
   AUD-037:
     id: AUD-037
     title: Project Audit 20260525T070329Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -335,7 +335,7 @@ artifacts:
   AUD-038:
     id: AUD-038
     title: Project Audit 20260530T140007Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -344,7 +344,7 @@ artifacts:
   AUD-039:
     id: AUD-039
     title: Project Audit 20260531T102444Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -353,7 +353,7 @@ artifacts:
   AUD-040:
     id: AUD-040
     title: Project Audit 20260531T102450Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -362,7 +362,7 @@ artifacts:
   AUD-041:
     id: AUD-041
     title: Project Audit 20260531T103150Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -371,7 +371,7 @@ artifacts:
   AUD-042:
     id: AUD-042
     title: Project Audit 20260531T104102Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -380,7 +380,7 @@ artifacts:
   AUD-043:
     id: AUD-043
     title: Project Audit 20260607T050002Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -389,7 +389,7 @@ artifacts:
   AUD-044:
     id: AUD-044
     title: Project Audit 20260607T064555Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -398,7 +398,7 @@ artifacts:
   AUD-045:
     id: AUD-045
     title: Project Audit 20260607T064730Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -407,7 +407,7 @@ artifacts:
   AUD-046:
     id: AUD-046
     title: Project Audit 20260607T064750Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -416,7 +416,7 @@ artifacts:
   AUD-047:
     id: AUD-047
     title: Project Audit 20260607T064807Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -425,7 +425,7 @@ artifacts:
   AUD-048:
     id: AUD-048
     title: Project Audit 20260607T064840Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -434,7 +434,7 @@ artifacts:
   AUD-049:
     id: AUD-049
     title: Project Audit 20260607T143426Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -443,7 +443,7 @@ artifacts:
   AUD-050:
     id: AUD-050
     title: Project Audit 20260608T165808Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -452,7 +452,7 @@ artifacts:
   AUD-051:
     id: AUD-051
     title: Project Audit 20260609T102732Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -461,7 +461,7 @@ artifacts:
   AUD-052:
     id: AUD-052
     title: Project Audit 20260614T083915Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -470,7 +470,7 @@ artifacts:
   AUD-053:
     id: AUD-053
     title: Project Audit 20260614T090231Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -479,7 +479,7 @@ artifacts:
   AUD-054:
     id: AUD-054
     title: Project Audit 20260614T100735Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -488,7 +488,7 @@ artifacts:
   AUD-055:
     id: AUD-055
     title: Project Audit 20260615T091316Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -497,52 +497,52 @@ artifacts:
   AUD-056:
     id: AUD-056
     title: Project Audit 20260721T134510Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:51c26b07b94b
+    fingerprint: sha256:ee65db0ca11c
     children: []
   AUD-057:
     id: AUD-057
     title: Project Audit 20260729T172458Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:e3f96e29d454
+    fingerprint: sha256:d98f4c77f2ea
     children: []
   AUD-058:
     id: AUD-058
     title: Project Audit 20260804T100552Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:78d77e198128
+    fingerprint: sha256:e7bb71910317
     children: []
   AUD-059:
     id: AUD-059
     title: Project Audit 20260804T112641Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:e3f1c2a2c1a3
+    fingerprint: sha256:3a4028ff9146
     children: []
   AUD-060:
     id: AUD-060
     title: Project Audit 20260804T113027Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:8a1242026d03
+    fingerprint: sha256:a750df406ff6
     children: []
   AUD-061:
     id: AUD-061
     title: Project Audit 20260804T113047Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -551,16 +551,16 @@ artifacts:
   AUD-062:
     id: AUD-062
     title: Project Audit 20260804T115503Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:9e0b3334c9eb
+    fingerprint: sha256:aeaa0dd2d5ca
     children: []
   AUD-063:
     id: AUD-063
     title: Project Audit 20260804T115641Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -569,7 +569,7 @@ artifacts:
   AUD-064:
     id: AUD-064
     title: Project Audit 20260804T161739Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -578,7 +578,7 @@ artifacts:
   AUD-065:
     id: AUD-065
     title: Project Audit 20260804T164428Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -587,7 +587,7 @@ artifacts:
   AUD-066:
     id: AUD-066
     title: Project Audit 20260804T165640Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -596,7 +596,7 @@ artifacts:
   AUD-067:
     id: AUD-067
     title: Project Audit 20260804T165710Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -605,7 +605,7 @@ artifacts:
   AUD-068:
     id: AUD-068
     title: Project Audit 20260804T165717Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -614,7 +614,7 @@ artifacts:
   AUD-069:
     id: AUD-069
     title: Project Audit 20260804T170310Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -623,16 +623,16 @@ artifacts:
   AUD-070:
     id: AUD-070
     title: Project Audit 20260804T170527Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:b076aad9422e
+    fingerprint: sha256:c01b09973d17
     children: []
   AUD-071:
     id: AUD-071
     title: Project Audit 20260804T170541Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -641,7 +641,7 @@ artifacts:
   AUD-072:
     id: AUD-072
     title: Project Audit 20260804T170912Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -650,43 +650,43 @@ artifacts:
   AUD-073:
     id: AUD-073
     title: Project Audit 20260804T205902Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:b7557450faa2
+    fingerprint: sha256:38f3bfaa539e
     children: []
   AUD-075:
     id: AUD-075
     title: Project Audit 20260804T210459Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:8ed3b0e9ceb0
+    fingerprint: sha256:72a567c05acd
     children: []
   AUD-076:
     id: AUD-076
     title: Project Audit 20260805T051513Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:7352b7d1a11f
+    fingerprint: sha256:5bfb86ca1c83
     children: []
   AUD-077:
     id: AUD-077
     title: Project Audit 20260805T052050Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:9a9e53723bce
+    fingerprint: sha256:1df96e8bbb6e
     children: []
   AUD-078:
     id: AUD-078
     title: Project Audit 20260805T052800Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -695,142 +695,142 @@ artifacts:
   AUD-079:
     id: AUD-079
     title: Project Audit 20260805T055714Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:38f8b4211a93
+    fingerprint: sha256:b05bba12ecea
     children: []
   AUD-080:
     id: AUD-080
     title: Project Audit 20260805T055952Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:d27e7903fa34
+    fingerprint: sha256:af6e59fa3d44
     children: []
   AUD-081:
     id: AUD-081
     title: Project Audit 20260805T063106Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:38d656785e43
+    fingerprint: sha256:cd442b4d9e9a
     children: []
   AUD-082:
     id: AUD-082
     title: Project Audit 20260805T064817Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:8a985d186084
+    fingerprint: sha256:89d2d7dea0a8
     children: []
   AUD-083:
     id: AUD-083
     title: Project Audit 20260805T065337Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:475774bb6aa5
+    fingerprint: sha256:baba8b0d65f3
     children: []
   AUD-084:
     id: AUD-084
     title: Project Audit 20260805T072222Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:ea0e0cd48e67
+    fingerprint: sha256:0079dc9fafe3
     children: []
   AUD-085:
     id: AUD-085
     title: Project Audit 20260805T072422Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:5b6ce7610993
+    fingerprint: sha256:c7b219dfb342
     children: []
   AUD-086:
     id: AUD-086
     title: Project Audit 20260805T081604Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:55d5a8846253
+    fingerprint: sha256:09d794de2bc4
     children: []
   AUD-087:
     id: AUD-087
     title: Project Audit 20260805T081842Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:cd818b9bc6dd
+    fingerprint: sha256:c7e04e52681d
     children: []
   AUD-088:
     id: AUD-088
     title: Project Audit 20260805T083443Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:60176a01f043
+    fingerprint: sha256:edba8fafc339
     children: []
   AUD-089:
     id: AUD-089
     title: Project Audit 20260805T084032Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:c1730035011a
+    fingerprint: sha256:5d34e0442ad9
     children: []
   AUD-090:
     id: AUD-090
     title: Project Audit 20260805T084228Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:bcc698523424
+    fingerprint: sha256:57a87ae0009f
     children: []
   AUD-091:
     id: AUD-091
     title: Project Audit 20260805T091604Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:1726902c9b8d
+    fingerprint: sha256:ab942f0a3059
     children: []
   AUD-092:
     id: AUD-092
     title: Project Audit 20260805T091648Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:c5a7cb8c31f8
+    fingerprint: sha256:3d289d6eea9b
     children: []
   AUD-093:
     id: AUD-093
     title: Project Audit 20260805T092109Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:77876281e4a8
+    fingerprint: sha256:a65ec650921b
     children: []
   AUD-094:
     id: AUD-094
     title: Project Audit 20260805T093621Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -866,146 +866,146 @@ artifacts:
   AUD-098:
     id: AUD-098
     title: Project Audit 20260818T104824Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:1b99407f0c1b
+    fingerprint: sha256:a27d4b3c4b9c
     children: []
   AUD-099:
     id: AUD-099
     title: Project Audit 20260826T063814Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:95670b407d4f
+    fingerprint: sha256:13a8623aed88
     children: []
   AUD-100:
     id: AUD-100
     title: Project Audit 20260826T064707Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:46afb2b2f9af
+    fingerprint: sha256:d31823501c8c
     children: []
   AUD-101:
     id: AUD-101
     title: Project Audit 20260826T065226Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:4b985ce68956
+    fingerprint: sha256:16090ee8dd4d
     children: []
   AUD-102:
     id: AUD-102
     title: Project Audit 20260826T083434Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:3436b0e07776
+    fingerprint: sha256:3c2dfaf7b9a4
     children: []
   AUD-103:
     id: AUD-103
     title: Project Audit 20260826T083627Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:6d9c8cd6b140
+    fingerprint: sha256:7a11cdb70251
     children: []
   AUD-104:
     id: AUD-104
     title: Project Audit 20260826T083629Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:d815439fc95a
+    fingerprint: sha256:5709d1b343e8
     children: []
   AUD-105:
     id: AUD-105
     title: Project Audit 20260826T084202Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:2cc4845d4cae
+    fingerprint: sha256:412a652516d8
     children: []
   AUD-106:
     id: AUD-106
     title: Project Audit 20260826T092438Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:cd5bc21258ab
+    fingerprint: sha256:b2e373dab107
     children: []
   AUD-107:
     id: AUD-107
     title: Project Audit 20260826T183538Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:9d5a9e945080
+    fingerprint: sha256:08aa26b3aaf3
     children: []
   AUD-108:
     id: AUD-108
     title: Project Audit 20260830T084538Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:7ac0e91b89dd
+    fingerprint: sha256:d87e86c748f4
     children: []
   AUD-109:
     id: AUD-109
     title: Project Audit 20260830T085708Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:c1c138cff5ab
+    fingerprint: sha256:c08b39ce9c5f
     children: []
   AUD-110:
     id: AUD-110
     title: Project Audit 20260830T112403Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:3cfa41cfa443
+    fingerprint: sha256:cff6cd6a3bff
     children: []
   AUD-111:
     id: AUD-111
     title: Project Audit 20260830T112505Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:c2114c3dc1e4
+    fingerprint: sha256:54615fd07efa
     children: []
   AUD-112:
     id: AUD-112
     title: Project Audit 20260830T112535Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:fd2797f01d3b
+    fingerprint: sha256:ee1c94f23bef
     children: []
   AUD-113:
     id: AUD-113
     title: Project Audit 20260830T112550Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:edcde83f1f34
+    fingerprint: sha256:a79c29fd34a5
     children: []
   AUD-114:
     id: AUD-114
@@ -1064,97 +1064,97 @@ artifacts:
   AUD-120:
     id: AUD-120
     title: Project Audit 20260911T113942Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:8bff1307568e
+    fingerprint: sha256:d85da351eb12
     children: []
   AUD-121:
     id: AUD-121
     title: Project Audit 20260911T121153Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:24c8112e1839
+    fingerprint: sha256:2b2f22f484c2
     children: []
   AUD-122:
     id: AUD-122
     title: Project Audit 20260911T121848Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:29287602f503
+    fingerprint: sha256:f946ed2c145b
     children: []
   AUD-123:
     id: AUD-123
     title: Project Audit 20260911T133653Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:30f051d478bb
+    fingerprint: sha256:2b3c4ab600e7
     children: []
   AUD-124:
     id: AUD-124
     title: Project Audit 20260911T134346Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:a6443c0f0ae3
+    fingerprint: sha256:9039ad3bc42a
     children: []
   AUD-125:
     id: AUD-125
     title: Project Audit 20260912T180131Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:b9560130bf8e
+    fingerprint: sha256:c40b189260b3
     children: []
   AUD-126:
     id: AUD-126
     title: Project Audit 20260913T060753Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:bd0200418e84
+    fingerprint: sha256:8cbdb0065e30
     children: []
   AUD-127:
     id: AUD-127
     title: Project Audit 20260913T061644Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:191bfa2c427b
+    fingerprint: sha256:062668ca4a0f
     children: []
   AUD-128:
     id: AUD-128
     title: Project Audit 20260921T150325Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:4feb32f77241
+    fingerprint: sha256:9e31a90dbafc
     children: []
   AUD-129:
     id: AUD-129
     title: Project Audit 20260921T150419Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:0902b5354ccb
+    fingerprint: sha256:6873cabc475f
     children: []
   AUD-130:
     id: AUD-130
     title: Project Audit 20260925T103357Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
@@ -1163,47 +1163,20 @@ artifacts:
   AUD-131:
     id: AUD-131
     title: Project Audit 20260925T163408Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:07309df090ff
+    fingerprint: sha256:ce5b2ff7762b
     children: []
   AUD-132:
     id: AUD-132
     title: Project Audit 20260929T214406Z
-    status: open
+    status: closed
     tags:
     - project-audit
     - auto-generated
-    fingerprint: sha256:a8ddc379f046
-    children: []
-  AUD-PROJECTA-7b17:
-    id: AUD-PROJECTA-7b17
-    title: Project Audit 20260804T051208Z
-    status: open
-    tags:
-    - project-audit
-    - auto-generated
-    fingerprint: sha256:5af399b6d104
-    children: []
-  AUD-PROJECTA-e982:
-    id: AUD-PROJECTA-e982
-    title: Project Audit 20260809T094142Z
-    status: open
-    tags:
-    - project-audit
-    - auto-generated
-    fingerprint: sha256:e47ab9f49e29
-    children: []
-  AUD-PROJECTA-f7ce:
-    id: AUD-PROJECTA-f7ce
-    title: Project Audit 20260804T055507Z
-    status: open
-    tags:
-    - project-audit
-    - auto-generated
-    fingerprint: sha256:4f3dda97f7d5
+    fingerprint: sha256:6f420347c4c0
     children: []
   AUD-133:
     id: AUD-133
@@ -1214,4 +1187,31 @@ artifacts:
     - auto-generated
     fingerprint: sha256:42cadcdb68c3
     children: []
-next_id: 134
+  AUD-134:
+    id: AUD-134
+    title: Project Audit 20260804T051208Z
+    status: closed
+    tags:
+    - project-audit
+    - auto-generated
+    fingerprint: sha256:5da135126e0e
+    children: []
+  AUD-135:
+    id: AUD-135
+    title: Project Audit 20260809T094142Z
+    status: closed
+    tags:
+    - project-audit
+    - auto-generated
+    fingerprint: sha256:e47ab9f49e29
+    children: []
+  AUD-136:
+    id: AUD-136
+    title: Project Audit 20260804T055507Z
+    status: closed
+    tags:
+    - project-audit
+    - auto-generated
+    fingerprint: sha256:86e3fe5d72f2
+    children: []
+next_id: 137

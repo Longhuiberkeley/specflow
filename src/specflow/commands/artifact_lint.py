@@ -13,6 +13,7 @@ import yaml
 
 from specflow.core import findings as fnd
 from specflow.lib import artifacts as art_lib
+from specflow.lib.config import read_state
 from specflow.lib import draft_ids as draft_lib
 from specflow.lib import files as files_lib
 from specflow.lib import standards as standards_lib
@@ -26,8 +27,26 @@ from specflow.commands.cascade_status import cascade_targets
 CHECK_NAMES = ["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "fingerprint-drift", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "bp-application", "thinking-techniques", "autoresearch-logging", "autoresearch-comp-closure", "spike-lifecycle", "source-drift", "dec-risk-profile", "ac-observable", "nfr-category", "backfilled-links", "role-target", "dead-oracle"]
 
 def _emit(bucket: list, rule_id: str, subjects, severity: str, **args) -> None:
-    """Record one typed finding (REQ-053 AC3) beside a check's counter."""
+    """Record one typed finding (REQ-053 AC3) beside a check's counter.
+
+    ``subject_status`` / ``lean_path`` keyword args are classification
+    inputs for the staged and lean-path rules (``core.policy``); every other
+    keyword lands in the finding's args.
+    """
     bucket.append(fnd.make(rule_id, subjects, severity, **args))
+
+
+def _pre_planning(root: Path) -> bool:
+    """True while the project has not entered planning (``core.policy``
+    PRE_PLANNING_RULES): an approved REQ with nothing downstream is then the
+    expected state of discovery, so its planning-gap rows are accounting."""
+    from specflow.core.policy import PRE_PLANNING_PHASES
+
+    try:
+        current = read_state(root).get("current", "idle")
+    except Exception:
+        return False
+    return current in PRE_PLANNING_PHASES
 
 
 def _norm(text: str) -> str:
@@ -35,7 +54,7 @@ def _norm(text: str) -> str:
     return re.sub(r"\d+", "#", text.strip())
 
 
-# ── Findings-baseline ratchet (REQ-053 AC7, DEC-FINDINGS-79d8) ────
+# ── Findings-baseline ratchet (REQ-053 AC7, DEC-099) ────
 # Escalation is decided against the committed .specflow/findings-baseline.yaml
 # (keys = (rule_id, subjects)), never by run counters: on a full run an
 # escalating warning absent from the baseline fails the run; known keys are
@@ -100,7 +119,7 @@ def _run_check(
     elif check_name == "conflicts":
         return _check_conflicts(artifacts)
     elif check_name == "coverage":
-        return check_coverage(artifacts)
+        return check_coverage(artifacts, pre_planning=_pre_planning(root))
     elif check_name == "story-size":
         return _check_story_size(artifacts)
     elif check_name == "chain-report":
@@ -262,8 +281,10 @@ def _check_links(
     non_spike_orphans = [a for a in orphans if art_lib.get_prefix_from_id(a.id) != "SPIKE"]
     if non_spike_orphans:
         warnings += len(non_spike_orphans)
+        pre_planning = _pre_planning(root)
         for a in non_spike_orphans:
-            _emit(findings, "links/orphan", (a.id,), "warning")
+            _emit(findings, "links/orphan", (a.id,), "warning",
+                  pre_planning=pre_planning and art_lib.get_prefix_from_id(a.id) == "REQ")
         orphan_ids = ", ".join(a.id for a in non_spike_orphans[:5])
         if len(non_spike_orphans) > 5:
             orphan_ids += f" (+{len(non_spike_orphans) - 5} more)"
@@ -276,7 +297,10 @@ def _check_links(
     if missing_pairs:
         warnings += len(missing_pairs)
         for a, p in missing_pairs:
-            _emit(findings, "links/missing-v-pair", (a.id, p), "warning")
+            # Staged (DEC amending DEC-099): accounting while the
+            # spec is approved, escalating once it claims implemented/verified.
+            _emit(findings, "links/missing-v-pair", (a.id, p), "warning",
+                  subject_status=a.status)
         pair_details = ", ".join(f"{a.id} (no {p} verification)" for a, p in missing_pairs[:3])
         details.append(f"  ⚠ {len(missing_pairs)} missing verification pair(s): {pair_details}")
 
@@ -766,6 +790,8 @@ def _check_conflicts(
 
 def check_coverage(
     artifacts: list[art_lib.Artifact],
+    *,
+    pre_planning: bool = False,
 ) -> dict[str, str | int]:
     """Check REQ→ARCH→STORY→test coverage completeness at all V-model levels.
 
@@ -804,6 +830,8 @@ def check_coverage(
     # route each bucket to the right concern.
     structural_warnings = 0
     structural_details: list[str] = []
+    lean_path_warnings = 0
+    lean_path_details: list[str] = []
     verification_warnings = 0
     verification_details: list[str] = []
     # Approved-story chain-coverage tally (consumed by project-audit's header
@@ -854,21 +882,33 @@ def check_coverage(
 
     for req in reqs:
         linked_archs = req_to_archs.get(req.id, [])
+        linked_stories = req_to_stories.get(req.id, [])
         if linked_archs and req.id not in req_canonical_arch:
             derives_only_reqs.append(req.id)
         if not linked_archs and req.id not in req_canonical_arch:
+            # Lean path (DEC amending DEC-099): a REQ realised
+            # directly by a STORY needs no ARCH — the row still prints but
+            # is accounting. With no STORY either, coverage/no-story below
+            # carries the escalation.
             msg = f"  ⚠ [{req.id}] no ARCH derives_from this approved requirement"
             warnings += 1
-            _emit(findings, "coverage/no-arch", (req.id,), "warning")
-            structural_warnings += 1
+            _emit(findings, "coverage/no-arch", (req.id,), "warning",
+                  lean_path=bool(linked_stories), pre_planning=pre_planning)
             details.append(msg)
-            structural_details.append(msg)
+            if linked_stories:
+                # Lean path: a refinement-shape fact for project-audit's
+                # accounting "coverage-shape" concern, not a structural hole.
+                lean_path_warnings += 1
+                lean_path_details.append(msg)
+            else:
+                structural_warnings += 1
+                structural_details.append(msg)
 
-        linked_stories = req_to_stories.get(req.id, [])
         if not linked_stories:
             msg = f"  ⚠ [{req.id}] no STORY implements/derives_from this approved requirement"
             warnings += 1
-            _emit(findings, "coverage/no-story", (req.id,), "warning")
+            _emit(findings, "coverage/no-story", (req.id,), "warning",
+                  pre_planning=pre_planning)
             structural_warnings += 1
             details.append(msg)
             structural_details.append(msg)
@@ -909,7 +949,10 @@ def check_coverage(
                     )
                     warnings += 1
                     verification_warnings += 1
-                    _emit(findings, "coverage/no-test", (story.id, prefix, req.id), "warning")
+                    # Staged: accounting while the STORY is approved,
+                    # escalating once it claims implemented/verified.
+                    _emit(findings, "coverage/no-test", (story.id, prefix, req.id), "warning",
+                          subject_status=story.status)
                     details.append(msg)
                     verification_details.append(msg)
 
@@ -923,7 +966,7 @@ def check_coverage(
         accounting_detail = (
             f"  ℹ {len(ids)} approved REQ(s) refined only via legacy "
             f"'ARCH derives_from REQ' (canonical: REQ refined_by ARCH): "
-            f"{sample}{more}"
+            f"{sample}{more} → specflow update <REQ> --add-link <ARCH>:refined_by"
         )
 
     icon = GREEN + "✓" + NC if warnings == 0 else YELLOW + "⚠" + NC
@@ -946,6 +989,10 @@ def check_coverage(
         "structural_detail": "; ".join(structural_details) if structural_details else "",
         "verification_warning_count": verification_warnings,
         "verification_detail": "; ".join(verification_details) if verification_details else "",
+        # Lean-path no-ARCH rows (REQ realised directly by a STORY): accounting
+        # in lint (DEC-095) and routed by project_audit to "coverage-shape".
+        "lean_path_warning_count": lean_path_warnings,
+        "lean_path_detail": "; ".join(lean_path_details) if lean_path_details else "",
         # Approved-story chain-coverage tallies consumed by project-audit's
         # header metric (CHL-341): how many approved/implemented/verified
         # STORYs carry the full UT+IT+QT verified_by chain, out of how many
@@ -1081,9 +1128,22 @@ def _check_chain_report(
         details.append("  Partial chains (informational):")
         details.extend(partial_chains)
 
+    # One-line survey for the condensed (default) view; the histogram above
+    # is the --verbose detail.
+    if depth_counts:
+        summary = (
+            f"  ℹ chain survey: {len(approved_specs)} approved spec(s), "
+            f"depth {min(depth_counts)}–{max(depth_counts)}; "
+            f"{len(partial_chains)} chain(s) without a verification test "
+            f"(--verbose for the histogram)"
+        )
+    else:
+        summary = details[0]
+
     return {
         "status_icon": CYAN + "ℹ" + NC,
         "detail": "\n".join(details),
+        "summary": summary,
         "blocking_count": 0,
         "warning_count": 0,
     }
@@ -1570,8 +1630,10 @@ def _check_bp_application(
     Verification prose is emitted as advisory inspection context. The only
     executable verification fact is whether an in-scope BP declares the
     ``test`` method and its linked tests have reached ``verified`` status.
-    Legacy BPs without a provenance migration stamp and lifecycle artifacts
-    not modified after a BP's latest approval/update are outside this pass.
+    Which pairs are in scope is decided by ``practices.in_scope_bindings`` —
+    the same predicate ``brief`` uses — which owns the provenance-stamp skip
+    (DEC-089), the DEC-authorized tailoring drop, and the backfill grace for
+    legacy targets that predate a practice.
     """
     from specflow.lib import config as config_lib
     from specflow.lib import practices as practices_lib
@@ -1584,10 +1646,6 @@ def _check_bp_application(
         lint_cfg = {}
     strict = bool(lint_cfg.get("bp_evidence_strict", False))
     id_index = art_lib.build_id_index(artifacts)
-    targets = [
-        artifact for artifact in artifacts
-        if artifact.type in {"requirement", "architecture", "story"}
-    ]
     blocking = 0
     warnings = 0
     details: list[str] = []
@@ -1605,8 +1663,8 @@ def _check_bp_application(
             details.append(f"  ⚠ {message}")
 
     # A migration stamp is the release boundary: unstamped legacy BPs skip the
-    # evidence and tailoring check entirely (DEC-089).
-    dropped: set[str] = set()
+    # evidence and tailoring check entirely (DEC-089). An unauthorized drop is
+    # reported here; an authorized one is excluded by in_scope_bindings.
     for bp in artifacts:
         if bp.type != "best-practice" or not bp.frontmatter.get("provenance"):
             continue
@@ -1617,90 +1675,53 @@ def _check_bp_application(
             problem = practices_lib.tailoring_drop_problem(bp, id_index)
             if problem:
                 _bump(f"[{bp.id}] {problem}", "bp-application/tailoring", (bp.id,))
-            else:
-                dropped.add(bp.id)
 
     coverage: dict[str, list[int]] = {
-        "requirement": [0, 0],
-        "architecture": [0, 0],
-        "story": [0, 0],
+        art_type: [0, 0] for art_type in practices_lib.BINDING_TARGET_TYPES
     }
     advisory_practices: dict[str, art_lib.Artifact] = {}
     pair_count = 0
 
-    # Backfill grace is keyed on the git-tracked frontmatter date, never on
-    # filesystem mtime: git does not preserve mtimes, so a fresh clone stamps
-    # every file with checkout time in tree order — identical committed content
-    # would yield different lint results per environment (and a later edit to
-    # a BP would retroactively exempt every older-mtime artifact). DEC-089's
-    # grace must be deterministic across clones and CI.
-    def _lifecycle_date(artifact: art_lib.Artifact) -> date | None:
-        for field in ("modified", "created"):
-            raw = artifact.frontmatter.get(field)
-            if not isinstance(raw, str) or not raw.strip():
-                continue
-            try:
-                return date.fromisoformat(raw.strip()[:10])
-            except ValueError:
-                continue
-        return None
+    # Scope, provenance skip, and backfill grace live in the shared predicate
+    # so brief's Practice bindings and this check can never disagree.
+    for target, bp, bound, exempt_reason in practices_lib.in_scope_bindings(root, artifacts):
+        if exempt_reason is not None:
+            continue
 
-    for target in targets:
-        in_scope = practices_lib.load_active_best_practices(root, target)
-        target_date = _lifecycle_date(target)
-        for bp in in_scope:
-            if not bp.frontmatter.get("provenance") or bp.id in dropped:
-                continue
-            # Backfill grace: do not expose a legacy artifact to a practice
-            # approved/updated after that artifact was last written. When
-            # either side has no parseable frontmatter date the pair is
-            # checked (conservative: structural accounting beats a silent skip).
-            bp_date = _lifecycle_date(bp)
-            if (
-                target_date is not None
-                and bp_date is not None
-                and target_date <= bp_date
-            ):
-                continue
+        pair_count += 1
+        coverage[target.type][1] += 1
+        advisory_practices[bp.id] = bp
+        if not bound:
+            _bump(f"[{target.id}] in-scope BP {bp.id} is not linked via guided_by",
+                  "bp-application/unbound", (target.id, bp.id))
+            continue
 
-            pair_count += 1
-            coverage[target.type][1] += 1
-            advisory_practices[bp.id] = bp
-            bound = any(
-                link.role == "guided_by" and link.target == bp.id
-                for link in target.links
+        coverage[target.type][0] += 1
+        if bp.frontmatter.get("verification_method") != "test":
+            continue
+
+        linked_tests = [
+            id_index[link.target]
+            for link in target.links
+            if link.role == "verified_by"
+            and link.target in id_index
+            and id_index[link.target].type in {
+                "unit-test", "integration-test", "qualification-test",
+            }
+        ]
+        if not linked_tests:
+            _bump(
+                f"[{target.id}] BP {bp.id} uses test verification but has no linked verification test",
+                "bp-application/no-test", (target.id, bp.id),
             )
-            if not bound:
-                _bump(f"[{target.id}] in-scope BP {bp.id} is not linked via guided_by",
-                      "bp-application/unbound", (target.id, bp.id))
-                continue
-
-            coverage[target.type][0] += 1
-            if bp.frontmatter.get("verification_method") != "test":
-                continue
-
-            linked_tests = [
-                id_index[link.target]
-                for link in target.links
-                if link.role == "verified_by"
-                and link.target in id_index
-                and id_index[link.target].type in {
-                    "unit-test", "integration-test", "qualification-test",
-                }
-            ]
-            if not linked_tests:
+        else:
+            incomplete = [test.id for test in linked_tests if test.status != "verified"]
+            if incomplete:
                 _bump(
-                    f"[{target.id}] BP {bp.id} uses test verification but has no linked verification test",
-                    "bp-application/no-test", (target.id, bp.id),
+                    f"[{target.id}] BP {bp.id} verification test(s) not verified: "
+                    f"{', '.join(incomplete[:5])}",
+                    "bp-application/test-not-verified", (target.id, bp.id),
                 )
-            else:
-                incomplete = [test.id for test in linked_tests if test.status != "verified"]
-                if incomplete:
-                    _bump(
-                        f"[{target.id}] BP {bp.id} verification test(s) not verified: "
-                        f"{', '.join(incomplete[:5])}",
-                        "bp-application/test-not-verified", (target.id, bp.id),
-                    )
 
     if pair_count:
         for art_type, (bound, total) in coverage.items():
@@ -2698,9 +2719,18 @@ def run(root: Path, args: dict) -> int:
         print("   Run 'specflow init' first.")
         return 1
 
-    # --method llm is deprecated: all checks are now self-contained and deterministic.
-    # If someone passes --method llm, fall through to programmatic checks.
-    method = args.get("method", "programmatic")
+    # --method is accepted for compatibility with generated CI and ignored:
+    # every check is self-contained and deterministic.
+
+    # `specflow artifact-lint <ID>` is a common reflex; lint is repo-wide, so
+    # say so once and proceed (the ratchet/baseline are never scoped).
+    ids = [str(i) for i in (args.get("ids") or []) if str(i).strip()]
+    if ids:
+        print(
+            f"{CYAN}ℹ{NC} artifact-lint is repo-wide; ignoring {', '.join(ids)} "
+            f"— use --type <check> to narrow, or `specflow artifact-review <ID>` "
+            f"for one artifact"
+        )
 
     # Handle --gate mode
     check_type = args.get("type")
@@ -2752,14 +2782,30 @@ def run(root: Path, args: dict) -> int:
     total_blocking = sum(r["blocking_count"] for _, r in results)
     total_warnings = sum(r["warning_count"] for _, r in results)
 
-    # Display results
+    # Display results. Default view is condensed (F-005): every ✗, only the
+    # ⚠ lines that are new against the baseline, surveys as one line.
+    # --verbose (or a single --type run) prints every line as the check
+    # rendered it. Exit codes never depend on the view.
+    verbose = bool(args.get("verbose")) or bool(check_type)
     print(f"\n{CYAN}SpecFlow Artifact Lint{NC}")
     print(f"{CYAN}{'─' * 50}{NC}")
     label_width = 12
+    condensed_any = False
     for check_name, result in results:
         label = check_name.capitalize() + ":"
         label_padded = label.ljust(label_width)
-        print(f"  {label_padded} {result['status_icon']} {result['detail']}")
+        icon = result["status_icon"]
+        if result.get("warning_count", 0) and "✓" in icon:
+            icon = YELLOW + "⚠" + NC
+        detail = result["detail"]
+        if not verbose:
+            condensed = _condense_detail(check_name, result, verdict)
+            if condensed is not None:
+                detail = condensed
+                condensed_any = True
+        print(f"  {label_padded} {icon} {detail}")
+    if condensed_any:
+        print(f"  {CYAN}ℹ{NC} condensed view — `specflow artifact-lint --verbose` prints every line")
 
     if full_run:
         _render_ratchet(verdict, baseline_error)
@@ -2786,6 +2832,122 @@ def run(root: Path, args: dict) -> int:
         print(f"  Result: {GREEN}PASS{NC} (all checks clean)")
         print()
         return 0
+
+
+_DETAIL_MARKERS = "✗⚠ℹ"
+
+
+def _split_detail(detail: str) -> list[str]:
+    """Split a check's rendered detail into its item lines.
+
+    Checks join items with either newlines or ``; `` followed by a marker;
+    both shapes come apart here without touching the items themselves.
+    """
+    parts: list[str] = []
+    for chunk in detail.split("\n"):
+        pieces = re.split(r";\s+(?=[✗⚠ℹ])", chunk)
+        parts.append(pieces[0])
+        parts.extend("  " + piece.lstrip() for piece in pieces[1:])
+    return [p for p in parts if p.strip()]
+
+
+def _detail_marker(line: str) -> str:
+    stripped = line.strip()
+    return stripped[0] if stripped and stripped[0] in _DETAIL_MARKERS else ""
+
+
+def _subject_in_line(subject: str, line: str) -> bool:
+    """Whole-token match: ``REQ-001`` must not match ``REQ-0011`` or ``XREQ-001``."""
+    return re.search(rf"(?<![\w-]){re.escape(subject)}(?![\w-])", line) is not None
+
+
+def _line_names_new_finding(line: str, warn_findings: list, new_keys: set) -> bool:
+    """True when the ⚠ line is attributed to a finding that is new.
+
+    A rendered line is attributed to the finding(s) whose *every* subject
+    appears in it as a whole token; when several findings match (an orphan
+    and a missing-v-pair row can share a subject ID) the most specific ones —
+    most subjects matched — win, so an accounting line that merely mentions
+    the same ID as a new finding is not listed.
+    """
+    best: list = []
+    best_n = 0
+    for f in warn_findings:
+        if not f.subjects or not all(_subject_in_line(s, line) for s in f.subjects):
+            continue
+        n = len(f.subjects)
+        if n > best_n:
+            best, best_n = [f], n
+        elif n == best_n:
+            best.append(f)
+    return any(f.key in new_keys for f in best)
+
+
+def _condense_detail(check_name: str, result: dict, verdict) -> str | None:
+    """Condensed detail for one check, or ``None`` when nothing collapses.
+
+    - ✗ lines always stay.
+    - With the ratchet on, ⚠ lines are replaced by ``N known (baselined),
+      M new`` and only the lines naming a new finding are listed; accounting
+      warnings are counted, never listed (they are standing facts).
+    - Survey ℹ lines collapse: the per-wave listing, the chain histogram and
+      the BP advisory prose each become one line.
+    """
+    detail = str(result.get("detail", ""))
+    summary = result.get("summary")
+    if summary and check_name == "chain-report":
+        return str(summary)
+
+    lines = _split_detail(detail)
+    sep = "\n" if "\n" in detail else "; "
+    changed = False
+    kept: list[str] = []
+
+    warn_findings = [f for f in result.get("findings", []) if f.severity == "warning"]
+    if verdict.ratchet_on and warn_findings:
+        # Attribute by the check's own finding keys, not by rule-id prefix.
+        own_keys = {f.key for f in warn_findings}
+        new_keys = {f.key for f in verdict.new if f.key in own_keys}
+        known = [f for f in verdict.known if f.key in own_keys]
+        accounting = {f.key for f in warn_findings if f.klass == "accounting"}
+        # The status icon already carries ⚠; the header is plain text.
+        header = f"  {len(known)} known (baselined), {len(new_keys)} new"
+        if accounting:
+            header += f", {len(accounting)} accounting"
+        kept.append(header)
+        changed = True
+    else:
+        new_keys = None
+
+    advisory = 0
+    for line in lines:
+        marker = _detail_marker(line)
+        if marker == "⚠":
+            if new_keys is None:
+                kept.append(line)
+            elif _line_names_new_finding(line, warn_findings, new_keys):
+                kept.append(line)
+            continue
+        if marker == "ℹ":
+            if check_name == "wave-cycles" and re.match(r"\s*ℹ wave \d+:", line):
+                changed = True
+                continue
+            if check_name == "wave-cycles" and " wave(s)" in line:
+                line = line.rstrip() + " (--verbose lists each wave)"
+                changed = True
+            if check_name == "bp-application" and "advisory inspection item" in line:
+                advisory += 1
+                changed = True
+                continue
+        kept.append(line)
+    if advisory:
+        kept.append(
+            f"  ℹ {advisory} advisory inspection item(s) (not compiled; "
+            f"--verbose prints the Verification prose)"
+        )
+    if not changed:
+        return None
+    return sep.join(kept) if kept else detail
 
 
 def _render_ratchet(verdict, baseline_error) -> None:

@@ -831,7 +831,7 @@ artifacts:
   DEC-089:
     id: DEC-089
     title: 'Risk: two atomicity couplings gate the practice-spine release'
-    status: draft
+    status: approved
     tags: []
     fingerprint: sha256:d5f16a1e2b54
     children: []
@@ -888,8 +888,21 @@ artifacts:
     - platforms
     fingerprint: sha256:0f3b3e093a7e
     children: []
-  DEC-CHANGERE-066b:
-    id: DEC-CHANGERE-066b
+  DEC-095:
+    id: DEC-095
+    title: 'Staged findings classes: test-linkage rows are accounting until implemented;
+      authoring-shape advice is accounting (amends DEC-099)'
+    status: approved
+    tags:
+    - v1.17.2
+    - engine
+    - lint
+    - findings
+    - policy
+    fingerprint: sha256:d5ca8fe2da91
+    children: []
+  DEC-096:
+    id: DEC-096
     title: 'Change Record: fix: normalize all list-valued frontmatter fields, not
       just tags'
     status: approved
@@ -898,8 +911,8 @@ artifacts:
     - auto-generated
     fingerprint: sha256:52b829d853cf
     children: []
-  DEC-CHANGERE-7c39:
-    id: DEC-CHANGERE-7c39
+  DEC-097:
+    id: DEC-097
     title: 'Change Record: chore: trace v1.13.3 AC boundary patch'
     status: approved
     tags:
@@ -907,8 +920,8 @@ artifacts:
     - auto-generated
     fingerprint: sha256:6938a165bdf3
     children: []
-  DEC-CHANGERE-ed18:
-    id: DEC-CHANGERE-ed18
+  DEC-098:
+    id: DEC-098
     title: 'Change Record: chore: dogfood v1.13.2 ergonomics lifecycle'
     status: approved
     tags:
@@ -916,8 +929,8 @@ artifacts:
     - auto-generated
     fingerprint: sha256:2dd9aae04035
     children: []
-  DEC-FINDINGS-79d8:
-    id: DEC-FINDINGS-79d8
+  DEC-099:
+    id: DEC-099
     title: Findings-baseline ratchet replaces run-count escalation; escalating vs
       accounting classes
     status: approved
@@ -929,8 +942,8 @@ artifacts:
     - findings
     fingerprint: sha256:4f4e8390c770
     children: []
-  DEC-NORMALIZ-90e0:
-    id: DEC-NORMALIZ-90e0
+  DEC-100:
+    id: DEC-100
     title: Normalize list-valued frontmatter fields to prevent scalar-string corruption
       (tags char-split, thinking_techniques TypeError)
     status: approved
@@ -942,4 +955,4 @@ artifacts:
     - data-integrity
     fingerprint: sha256:aebb8deb1526
     children: []
-next_id: 95
+next_id: 101

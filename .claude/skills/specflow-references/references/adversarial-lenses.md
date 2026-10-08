@@ -64,6 +64,31 @@ The fallback is not a lesser mode — it *is* the reference implementation. Fan-
 
 16. **Cost-scaling** (`cost_scaling`) — At 10× usage, is cost linear? Sublinear? Superlinear? Where are the cost nonlinearities, and are we aware of them?
 
+### Research lenses
+
+Seven lenses probe ML/experimental artifacts (the autoresearch pack's COMP/LOOP/EXPT/FIND). They sit in the same catalog, are recorded the same way, and can be requested on any artifact; the per-artifact defaults below apply only to research types. `reproducibility` is in the catalog but in no default set — request it explicitly.
+
+17. **Leakage audit** (`leakage_audit`) — Target leakage, train/test contamination, look-ahead bias. Does any feature encode future information? Was preprocessing fit on the full dataset before splitting?
+
+18. **Overfitting / multiple comparisons** (`overfitting_multiple_comparisons`) — Is this result the max of noise over many trials? Pre-registered threshold? Selection bias? Does the best result carry an error bar?
+
+19. **Baseline sanity** (`baseline_sanity`) — Does a trivial baseline (majority class, global mean, last value, buy-and-hold, linear on raw features) match or beat the result?
+
+20. **Distribution shift** (`distribution_shift`) — Is the training distribution the deployment distribution? Train/val/test/live gaps, covariate and label shift, out-of-sample decay.
+
+21. **Ablation attribution** (`ablation_attribution`) — Which component drives the gain? Has each claimed improvement been isolated, or are changes confounded in one experiment?
+
+22. **Metric validity** (`metric_validity`) — Does the metric measure what matters? Class imbalance, proper scoring rules, calibration vs raw accuracy, alignment with the stated goal.
+
+23. **Reproducibility** (`reproducibility`) — Could someone reproduce this from what is written? Seeds, splits, hyperparameters, environment, pinned code version, deterministic preprocessing.
+
+| Research artifact | Default lenses |
+|-------------------|----------------|
+| **COMP** | `metric_validity`, `baseline_sanity`, `assumption_surfacing` |
+| **LOOP** | `premortem`, `outside_view` |
+| **EXPT** | `leakage_audit`, `overfitting_multiple_comparisons`, `distribution_shift`, `ablation_attribution` |
+| **FIND** | `five_whys`, `outside_view`, `competitor_framing`, `inversion` |
+
 ## Per-phase default sets
 
 Each lifecycle phase has a default set of lenses applied automatically. Users can request any lens from the catalog in any phase ("run a premortem on this REQ during discovery"). If the user says "go deep" or "be thorough", expand to the full catalog.
@@ -74,15 +99,15 @@ Each lifecycle phase has a default set of lenses applied automatically. Users ca
 | **Plan** | `premortem`, `dependency_shock`, `composition`, `stress_scale`, `worst_case_user` | +`cost_scaling` for paid services; +`regulator` if compliance-sensitive |
 | **Execute** | `worst_case_user`, `composition` | +`premortem` for complex stories with cross-cutting risk |
 | **Review (quick)** | `devils_advocate`, `premortem`, `assumption_surfacing`, `red_blue_team` | Any from full catalog per user request |
-| **Review (deep)** | All 16 available | User selects or "go deep" |
-| **Audit** | All 16 available | User selects via adversarial wings |
+| **Review (deep)** | All 23 available | User selects or "go deep" |
+| **Audit** | All 23 available | User selects via adversarial wings |
 | **Ship** | `temporal_drift`, `regulator` | +`cost_scaling` for paid services; +`premortem` if release has cross-cutting changes |
 
 > **Note on the Execute phase:** In addition to the two adversarial lenses listed above (`worst_case_user`, `composition`), the execute phase uses lightweight mental prompts (graceful degradation, partial-rollout safety, observability) that are not adversarial lenses. These are documented in `specflow-execute/references/thinking-techniques.md`. Only the two catalog lenses are recorded via `--thinking-techniques`.
 
 ## Recording applied lenses
 
-After applying thinking techniques to an artifact, record which techniques were applied (use the underscore catalog keys, e.g. `devils_advocate`; hyphenated names are rejected as unknown) — even if they passed cleanly (no findings):
+After applying thinking techniques to an artifact, record which techniques were applied (use the underscore catalog keys, e.g. `devils_advocate`; a hyphenated or misspelled name is still saved but warned as unknown, so check the warning) — even if they passed cleanly (no findings):
 
 ```
 specflow update <ARTIFACT_ID> --thinking-techniques <technique1,technique2>

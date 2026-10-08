@@ -218,7 +218,9 @@ class TestRefreshCommand:
         assert rc == 0
         out = capsys.readouterr().out
         assert "pack:autoresearch" in out
-        assert "managed file(s) differ" in out
+        # F-109: dry-run names the files instead of a bare count.
+        assert "would write" in out
+        assert ".specflow/schema/loop.yaml" in out
         assert not (refresh_project / ".specflow" / "schema" / "loop.yaml").exists()
 
     def test_active_pack_refresh_preserves_existing_without_force(

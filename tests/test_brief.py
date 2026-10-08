@@ -215,6 +215,8 @@ def test_brief_reports_bound_and_unbound_practice_pairs_per_type(
     assert "Practice bindings" in out
     for label in ("REQ", "ARCH", "STORY"):
         assert f"{label}: 1 bound / 1 unbound" in out
+    # No exempt rows (stamped BP, no legacy targets) → no grace-exempt tail.
+    assert "grace-exempt" not in out
 
 
 
@@ -809,3 +811,277 @@ def test_outcome_note_router_recommendation_in_next_skill():
         "executing", [mon], [], [], active_packs=["ops"],
     )
     assert "defect-from-monitor" in out
+
+
+# --- STORY-715 (v1.17.2): digest honesty — health lines, inventory, parity ---
+
+from test_practice_binding_parity import _counts_from_helper as _parity_counts
+from test_practice_binding_parity import _seed_fixture as _seed_parity_fixture
+
+
+def test_health_nags_domain_generic_is_the_opt_out(tmp_path: Path):
+    """F-074: `specflow domain set generic` silences the nag; the nag text
+    names that opt-out."""
+    unset = brief_cmd._health_nags(tmp_path, {"project": {"domain": ""}}, [], None)
+    assert any("specflow domain set generic" in n for n in unset)
+    generic = brief_cmd._health_nags(tmp_path, {"project": {"domain": "generic"}}, [], None)
+    assert not any("domain not set" in n for n in generic)
+
+
+def _slug_art(artifact_id: str, status: str) -> art_lib.Artifact:
+    return art_lib.Artifact(
+        path=Path(f"{artifact_id}.md"),
+        frontmatter={"id": artifact_id, "status": status},
+        body="b",
+    )
+
+
+def test_health_nags_draft_ids_past_draft_status(tmp_path: Path):
+    """F-066: slug ids that crossed the approval gate without renumber-drafts
+    get one Health line (names capped at 4); ids still in draft do not."""
+    arts = [
+        _slug_art("ARCH-LOUDFAIL-d87a", "implemented"),
+        _slug_art("DEC-CHANGERE-7c39", "approved"),
+        _slug_art("REQ-AUTORESE-d684", "verified"),
+        _slug_art("STORY-FOO-aaaa", "approved"),
+        _slug_art("STORY-BAR-bbbb", "open"),
+        _slug_art("STORY-STILL-cccc", "draft"),
+        _slug_art("STORY-001", "approved"),
+    ]
+    nags = brief_cmd._health_nags(tmp_path, {"project": {"domain": "quant"}}, arts, None)
+    line = next(n for n in nags if "draft ids" in n)
+    assert line.startswith("5 artifact(s) past draft still carry draft ids")
+    assert "ARCH-LOUDFAIL-d87a, DEC-CHANGERE-7c39, REQ-AUTORESE-d684, STORY-FOO-aaaa (+1 more)" in line
+    assert "specflow renumber-drafts" in line
+    assert "STORY-STILL-cccc" not in line
+
+
+def test_health_nags_draft_ids_silent_when_all_draft_or_numbered(tmp_path: Path):
+    arts = [_slug_art("STORY-STILL-cccc", "draft"), _slug_art("STORY-001", "approved")]
+    nags = brief_cmd._health_nags(tmp_path, {"project": {"domain": "quant"}}, arts, None)
+    assert not any("draft ids" in n for n in nags)
+
+
+def test_health_nags_draft_ids_silent_on_feature_branch(tmp_path: Path, monkeypatch):
+    from specflow.lib import draft_ids as draft_lib
+    monkeypatch.setattr(draft_lib, "is_feature_branch", lambda root: True)
+    arts = [_slug_art("STORY-FOO-aaaa", "approved")]
+    nags = brief_cmd._health_nags(tmp_path, {"project": {"domain": "quant"}}, arts, None)
+    assert not any("draft ids" in n for n in nags)
+
+
+def _install_shipped_skills(root: Path) -> Path:
+    import shutil
+
+    from specflow.commands import refresh as refresh_cmd
+
+    src = refresh_cmd._get_package_templates() / "skills" / "shared"
+    dst = root / ".claude" / "skills"
+    shutil.copytree(src, dst)
+    return dst
+
+
+def test_health_nags_stale_installed_skills(tmp_path: Path):
+    """F-031: an installed skill that differs from the shipped template (an
+    edited SKILL.md, a missing bundled skill) → one Health line → refresh."""
+    import shutil
+
+    dst = _install_shipped_skills(tmp_path)
+    (dst / "specflow-start" / "SKILL.md").write_text("uv run specflow brief\n", encoding="utf-8")
+    shutil.rmtree(dst / "specflow-doc")
+    nags = brief_cmd._health_nags(tmp_path, {"project": {"domain": "quant"}}, [], None)
+    line = next(n for n in nags if "differ from shipped templates" in n)
+    assert line.startswith("2 skill(s) differ from shipped templates")
+    assert "specflow-doc" in line and "specflow-start" in line
+    assert "`specflow refresh`" in line
+
+
+def test_health_nags_current_skills_are_silent(tmp_path: Path):
+    _install_shipped_skills(tmp_path)
+    nags = brief_cmd._health_nags(tmp_path, {"project": {"domain": "quant"}}, [], None)
+    assert not any("differ from shipped templates" in n for n in nags)
+
+
+def test_health_nags_skills_silent_without_skills_dir(tmp_path: Path):
+    """Platform detected (.claude/ exists) but nothing was ever installed →
+    silent; a project with no platform at all is silent too."""
+    (tmp_path / ".claude").mkdir()
+    nags = brief_cmd._health_nags(tmp_path, {"project": {"domain": "quant"}}, [], None)
+    assert not any("differ from shipped templates" in n for n in nags)
+    assert brief_cmd._stale_installed_skills(tmp_path) == []
+
+
+def test_health_nags_skills_cap_names_at_four(tmp_path: Path):
+    import shutil
+    dst = _install_shipped_skills(tmp_path)
+    for name in ("specflow-adapter", "specflow-audit", "specflow-doc", "specflow-init", "specflow-ops-x"):
+        shutil.rmtree(dst / name, ignore_errors=True)
+    stale = brief_cmd._stale_installed_skills(tmp_path)
+    assert stale == ["specflow-adapter", "specflow-audit", "specflow-doc", "specflow-init"]
+    nags = brief_cmd._health_nags(tmp_path, {"project": {"domain": "quant"}}, [], None)
+    line = next(n for n in nags if "differ from shipped templates" in n)
+    assert "+" not in line  # exactly four → no "+N more"
+
+
+def test_health_nags_stale_skills_on_secondary_host_need_all_platforms(tmp_path: Path):
+    """F-031: bare `specflow refresh` resolves to the first detected platform.
+    Stale skills only in a second host's tree (or in both) → the nag names
+    `--all-platforms`; stale only in the default host → bare refresh."""
+    import shutil
+
+    from specflow.commands import refresh as refresh_cmd
+    src = refresh_cmd._get_package_templates() / "skills" / "shared"
+    claude = _install_shipped_skills(tmp_path)          # default (first detected)
+    cursor = tmp_path / ".cursor" / "skills"
+    shutil.copytree(src, cursor)
+
+    # Only the secondary host is stale.
+    shutil.rmtree(cursor / "specflow-doc")
+    nags = brief_cmd._health_nags(tmp_path, {"project": {"domain": "quant"}}, [], None)
+    line = next(n for n in nags if "differ from shipped templates" in n)
+    assert line.endswith("`specflow refresh --all-platforms`")
+    assert line.startswith("1 skill(s)")
+
+    # Both stale → still --all-platforms, names de-duplicated.
+    shutil.rmtree(claude / "specflow-doc")
+    assert brief_cmd._stale_installed_skills(tmp_path) == ["specflow-doc"]
+    assert brief_cmd._stale_needs_all_platforms(tmp_path, brief_cmd._stale_skills_by_dir(tmp_path))
+
+    # Only the default host stale → bare refresh clears it.
+    shutil.rmtree(cursor)
+    shutil.copytree(src, cursor)
+    nags = brief_cmd._health_nags(tmp_path, {"project": {"domain": "quant"}}, [], None)
+    line = next(n for n in nags if "differ from shipped templates" in n)
+    assert line.endswith("`specflow refresh`")
+
+
+def _write_audit(root: Path, aud_id: str, status: str, auto: bool = True) -> None:
+    d = root / "_specflow" / "specs" / "audits"
+    d.mkdir(parents=True, exist_ok=True)
+    fm = {"id": aud_id, "title": aud_id, "type": "audit", "status": status}
+    if auto:
+        fm["tags"] = ["project-audit", "auto-generated"]
+    (d / f"{aud_id}.md").write_text(f"---\n{yaml.dump(fm)}---\nbody\n", encoding="utf-8")
+
+
+def test_brief_lists_auto_audit_records_on_their_own_line(project_root: Path, capsys):
+    """F-101: project-audit's open/unreviewed AUDs are history, not open work —
+    they leave the review bucket and get one dim line of their own; a
+    hand-authored AUD stays in the review bucket."""
+    schema = {"type": "audit", "prefix": "AUD", "category": "review",
+              "allowed_status": {"open": [], "closed": ["open"]}}
+    (project_root / ".specflow" / "schema" / "audit.yaml").write_text(yaml.dump(schema), encoding="utf-8")
+    for i in range(1, 4):
+        _write_audit(project_root, f"AUD-00{i}", "open")
+    _write_audit(project_root, "AUD-004", "closed")
+    _write_audit(project_root, "AUD-005", "open", auto=False)
+    assert brief_cmd.run(project_root, {}) == 0
+    out = capsys.readouterr().out
+    assert "audit log   4  auto-generated AUD records (1 closed, 3 open)" in out
+    assert "review      1  (1 open)" in out
+
+
+def test_brief_no_audit_line_without_auto_records(project_root: Path, capsys):
+    art_lib.create_artifact(project_root, "requirement", title="A req", status="approved", body="b")
+    brief_cmd.run(project_root, {})
+    assert "audit log" not in capsys.readouterr().out
+
+
+def test_bucket_breakdown_lines_only_for_large_concentrated_pending_buckets():
+    """F-035: '99 draft' reads '34 UT, 33 IT, 30 QT, +2 other'; done buckets
+    and small or diffuse buckets print nothing."""
+    from collections import Counter
+    by = {
+        "draft": Counter({"UT": 34, "IT": 33, "QT": 30, "ARCH": 1, "DDD": 1}),
+        "approved": Counter({"DEC": 98, "STORY": 6, "SPIKE": 1}),
+        "implemented": Counter({"UT": 47, "REQ": 41, "ARCH": 33, "DDD": 31, "QT": 22, "IT": 14}),
+        "open": Counter({"CHL": 1}),
+        "stale": Counter({"CHL": 25}),
+        "diffuse": Counter({f"T{i}": 5 for i in range(8)}),
+    }
+    lines = brief_cmd._bucket_breakdown_lines(by)
+    assert lines == [
+        "105 approved: 98 DEC, 6 STORY, 1 SPIKE",
+        "99 draft: 34 UT, 33 IT, 30 QT, +2 other",
+        "25 stale: 25 CHL",
+    ]
+    assert brief_cmd._bucket_breakdown_lines({}) == []
+
+
+def test_brief_since_hint_when_window_is_empty(project_root: Path, capsys, monkeypatch):
+    monkeypatch.setattr(brief_cmd, "_recent_changes", lambda root, since: [])
+    monkeypatch.setattr(brief_cmd, "_last_ledger_commit", lambda root: "2026-09-30 f042eac")
+    art_lib.create_artifact(project_root, "requirement", title="A req", status="approved", body="b")
+    brief_cmd.run(project_root, {})
+    out = capsys.readouterr().out
+    assert "(none) — last _specflow/ commit 2026-09-30 f042eac" in out
+    assert "specflow brief --since 2026-09-30" in out
+
+
+def test_brief_since_hint_silent_outside_git(project_root: Path, capsys, monkeypatch):
+    monkeypatch.setattr(brief_cmd, "_recent_changes", lambda root, since: [])
+    monkeypatch.setattr(brief_cmd, "_last_ledger_commit", lambda root: "")
+    brief_cmd.run(project_root, {})
+    out = capsys.readouterr().out
+    assert "    (none)\n" in out
+    assert "--since" not in out.split("Recent _specflow/ changes")[1]
+
+
+def test_brief_practice_bindings_match_lint_in_scope_numbers(tmp_path: Path, capsys):
+    """F-040: brief's bound+unbound per type == lint's in-scope numbers (one
+    predicate, practices.in_scope_bindings); exempt rows are tallied
+    separately and rendered only when non-zero."""
+    import yaml as _yaml
+
+    from specflow.lib import artifacts as _al
+    root = tmp_path / "project"
+    schema_dir = root / ".specflow" / "schema"
+    schema_dir.mkdir(parents=True)
+    repo = Path(__file__).resolve().parents[1]
+    for art_type in ("requirement", "architecture", "story", "best-practice", "decision"):
+        src = repo / "src/specflow/templates/schemas" / f"{art_type}.yaml"
+        (schema_dir / src.name).write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+        (root / "_specflow" / _al.TYPE_TO_DIR[art_type]).mkdir(parents=True, exist_ok=True)
+    (root / ".specflow/config.yaml").write_text(
+        _yaml.safe_dump({"project": {"name": "parity", "domain": "quant"}, "active_packs": []}),
+        encoding="utf-8",
+    )
+    (root / ".specflow/state.yaml").write_text(_yaml.safe_dump({"current": "planning", "history": []}), encoding="utf-8")
+    _seed_parity_fixture(root)
+    artifacts = _al.discover_artifacts(root)
+
+    summary = brief_cmd._practice_binding_summary(root, artifacts)
+    expected = _parity_counts(root, artifacts)
+    assert summary is not None
+    for art_type, c in expected.items():
+        assert summary[art_type]["bound"] == c["bound"]
+        assert summary[art_type]["unbound"] == c["unbound"]
+        assert summary[art_type]["exempt"] == c["exempt"]
+    assert summary["requirement"] == {"bound": 1, "unbound": 2, "exempt": 3}
+
+    assert brief_cmd.run(root, {}) == 0
+    out = capsys.readouterr().out
+    assert "REQ: 1 bound / 2 unbound" in out and "3 grace-exempt" in out
+    assert "STORY: 0 bound / 2 unbound" in out and "1 grace-exempt" in out
+
+
+def test_brief_healthy_project_prints_none_of_the_new_lines(project_root: Path, capsys):
+    """Cry-wolf guard for STORY-715: a healthy, up-to-date fixture project
+    prints no Health block, no audit-log line, no bucket breakdown, no draft
+    DEC / open DEF / draft-test notes and no draft-id line."""
+    cfg = yaml.safe_load((project_root / ".specflow" / "config.yaml").read_text(encoding="utf-8"))
+    cfg["project"]["domain"] = "generic"
+    (project_root / ".specflow" / "config.yaml").write_text(yaml.dump(cfg), encoding="utf-8")
+    (project_root / ".specflow" / "findings-baseline.yaml").write_text("entries: []\n", encoding="utf-8")
+    art_lib.create_artifact(project_root, "requirement", title="A req", status="approved", body="b")
+    art_lib.create_artifact(project_root, "architecture", title="An arch", status="approved", body="b")
+    art_lib.create_artifact(project_root, "story", title="A story", status="approved", body="b")
+    art_lib.create_artifact(project_root, "decision", title="A dec", status="approved", body="b")
+    assert brief_cmd.run(project_root, {}) == 0
+    out = capsys.readouterr().out
+    # (The minimal fixture schemas legitimately differ from the shipped ones,
+    # so the pre-existing schema-drift nag is not asserted either way.)
+    for needle in ("domain not set", "audit log", "draft ids", "differ from shipped",
+                   "open DEF", "draft DEC", "passing verify evidence", "grace-exempt",
+                   " other", "unexecuted", "--since"):
+        assert needle not in out, needle

@@ -12,8 +12,8 @@ links:
 created: '2026-09-13'
 fingerprint: sha256:f74c31c49988
 thinking_techniques:
-- assumption-surfacing
-modified: '2026-09-13'
+- assumption_surfacing
+modified: '2026-10-08'
 ---
 
 # Autoresearch methodology context architecture: thin checklists, rolling evaluation

@@ -9,9 +9,11 @@ five-section BP body, ...) so the prose cannot drift from the CLI again.
 from __future__ import annotations
 
 import re
+import shutil
 from pathlib import Path
 
 import pytest
+import yaml
 
 from specflow.lib import practices as practices_lib
 from specflow.lib.techniques import ALL_LENS_NAMES
@@ -295,3 +297,203 @@ class TestMirror:
                 live = _LIVE / p.relative_to(_SKILLS)
                 assert live.is_file(), live
                 assert live.read_bytes() == p.read_bytes(), live
+
+
+class TestWaveP12SkillParity:
+    """STORY-717: skill text matches the engine (link direction, statuses,
+    discover/start/ship flows, delegation guidance)."""
+
+    def test_plan_teaches_req_refined_by_arch(self):
+        text = _read("specflow-plan/SKILL.md")
+        assert "specflow update <REQ-ID> --add-link <ARCH-ID>:refined_by" in text
+        assert "specflow update <ARCH-ID> --add-link <DDD-ID>:refined_by" in text
+        assert '"role":"derives_from"' not in text
+        assert "Reuse any `draft` STORY that already `implements`" in text
+
+    def test_escalation_recipe_uses_canonical_direction(self):
+        text = _read("specflow-execute/references/escalation-and-promotion.md")
+        assert "specflow update REQ-0NN --add-link ARCH-0NN:refined_by" in text
+        assert "specflow update ARCH-0NN --add-link DDD-0NN:refined_by" in text
+        assert '{"target":"REQ-0NN","role":"derives_from"}' not in text
+        assert '{"target":"ARCH-0NN","role":"derives_from"}' not in text
+
+    def test_discover_exit_message_branches_on_lean_path(self):
+        text = _read("specflow-discover/SKILL.md")
+        exit_block = text[text.index("## Handoff checkpoint"): text.index("## Rules")]
+        assert "`specflow approve --type STORY`" in exit_block
+        assert "/specflow-execute" in exit_block and "/specflow-plan" in exit_block
+        assert "lean →" in exit_block and "bug →" in exit_block and "full →" in exit_block
+        # Lean/bug → execute hits the no-ARCH gate item; the exit names it and the
+        # execute skill treats it as the expected lean skip (reviewer blocker).
+        assert "CKL-GATE-004-01" in exit_block
+        execute = _read("specflow-execute/SKILL.md")
+        step1 = execute[execute.index("1. **Readiness gate**"): execute.index("2. **Scope the wave")]
+        assert "CKL-GATE-004-01" in step1 and "expected lean skip" in step1
+        # the DEF branch tells the agent the DEF stays open until work starts
+        assert "the DEF stays `open`" in exit_block
+
+    def test_discover_lean_path_routes_bugs_to_def(self):
+        text = _read("specflow-discover/SKILL.md")
+        lean = next(l for l in text.splitlines() if l.startswith("- **Lean**"))
+        assert "--type defect" in lean and ":fails_to_meet" in lean and ":exposed_by" in lean
+        # The fix STORY must carry BOTH links: `derives_from` the DEF alone fails
+        # the blocking story-linkage check once the STORY is approved.
+        assert "<REQ-ID>:implements" in lean and "<DEF-ID>:derives_from" in lean
+        assert "`derives_from` the DEF;" not in lean
+        for rel in ("specflow-execute/SKILL.md", "specflow-execute/references/status-lifecycle.md"):
+            text = _read(rel)
+            assert "<REQ-ID>:implements" in text and "<DEF-ID>:derives_from" in text, rel
+
+    def test_def_fix_story_recipe_passes_story_linkage(self):
+        """The recipe the skills teach survives lint: REQ:implements + DEF:derives_from."""
+        from specflow.commands import artifact_lint as lint_cmd
+        from specflow.lib import artifacts as art_lib
+
+        def story(links):
+            return art_lib.Artifact(
+                path=Path("STORY-002.md"),
+                frontmatter={"id": "STORY-002", "type": "story", "title": "fix", "status": "approved"},
+                body="",
+                links=[art_lib.Link(target=t, role=r) for t, r in links],
+            )
+
+        only_def = lint_cmd._check_story_linkage([story([("DEF-001", "derives_from")])])
+        assert only_def["blocking_count"] == 1
+        both = lint_cmd._check_story_linkage(
+            [story([("REQ-001", "implements"), ("DEF-001", "derives_from")])]
+        )
+        assert both["blocking_count"] == 0 and both["warning_count"] == 0
+
+    def test_discover_checks_ask_against_existing(self):
+        text = _read("specflow-discover/SKILL.md")
+        step1 = next(l for l in text.splitlines() if l.startswith("1. **Orient"))
+        assert "specflow list --type requirement" in step1
+        assert "quote both sides" in step1 and "never resolve it silently" in step1
+        assert "references/conflict-check.md" in text
+        assert (_SKILLS / "specflow-discover/references/conflict-check.md").is_file()
+
+    def test_discover_thinking_pointer_names_challenge_step(self):
+        text = _read("specflow-discover/references/thinking-techniques.md")
+        skill = _read("specflow-discover/SKILL.md")
+        assert "Step 5 for the DEC creation patterns" not in text
+        assert "Step 3 (**Challenge before writing**)" in text
+        assert "3. **Challenge before writing**" in skill
+
+    def test_start_router_splits_build_x_three_ways(self):
+        text = _read("specflow-start/SKILL.md")
+        line = next(l for l in text.splitlines() if '"build X"' in l)
+        assert line.index("/specflow-discover") < line.index("/specflow-plan") < line.index("/specflow-execute")
+        assert "with REQs already approved → `/specflow-execute`" not in text
+        # brief --next routes approved REQ + no ARCH to plan, so it cannot "already
+        # print which case applies" for the lean path; the line must say so.
+        assert "already prints which case applies" not in text
+        assert "lean path" in line and "/specflow-execute" in line and "implemented/verified" in line
+
+    def test_execute_def_pointer_and_baseline_wording(self):
+        text = _read("specflow-execute/SKILL.md")
+        assert "--type defect" in text and ":fails_to_meet" in text
+        assert "open → fixing → verified → closed" in text
+        assert "Re-run the step-3 baseline" in text
+        assert "step-3 gate" not in text
+
+    @pytest.mark.parametrize("rel", ["specflow-start/SKILL.md", "specflow-plan/SKILL.md", "specflow-execute/SKILL.md"])
+    def test_delegation_paragraph(self, rel):
+        text = _read(rel)
+        assert "## Delegating to subagents" in text
+        para = text[text.index("## Delegating to subagents"):].split("\n## ")[0]
+        for token in ("specflow brief --next", "exact STORY/REQ IDs", "sed -n 1,80p", "| head"):
+            assert token in para, token
+
+    def test_audit_names_real_challenge_statuses(self):
+        text = _read("specflow-audit/SKILL.md")
+        schema = yaml.safe_load((_ROOT / "src/specflow/templates/schemas/challenge.yaml").read_text(encoding="utf-8"))
+        assert "`done`" not in text
+        for status in ("addressed", "accepted", "stale"):
+            assert status in schema["allowed_status"] and f"`{status}`" in text
+        assert "specflow transitions <CHL-ID>" in text
+
+    @pytest.mark.parametrize("rel", ["specflow-audit/SKILL.md", "specflow-ship/SKILL.md"])
+    def test_findings_baseline_mentioned(self, rel):
+        text = _read(rel)
+        assert "specflow findings-baseline update --accept-new" in text
+        assert "approval-gated" in text
+
+    def test_ship_preflight_verification_and_handoff_tags(self):
+        text = _read("specflow-ship/SKILL.md")
+        assert "specflow renumber-drafts --dry-run" in text
+        assert text.index("renumber-drafts") < text.index("baseline create")
+        # renumber-drafts rewrites _specflow/ only: baselined findings on renumbered
+        # artifacts come back as new keys, so the pre-flight needs --accept-new.
+        preflight = next(l for l in text.splitlines() if "renumber-drafts --dry-run" in l)
+        assert "specflow findings-baseline update --accept-new" in preflight
+        assert "approval-gated" in preflight
+        assert "then `specflow findings-baseline update` so the baseline follows" not in text
+        # phase-set never gates — the verifying step is bookkeeping, not a precondition
+        assert "**Promote to verified (advisory):**" in text
+        assert "is a legal step" not in text
+        assert "phase-set never gates" in text
+        assert "specflow verify --all --dry-run" in text
+        assert "--gate verifying-to-complete" in text
+        assert text.index("verifying-to-complete") < text.index("document-changes")
+        assert 'specflow phase-set verifying --reason' in text
+        assert text.index("phase-set verifying") < text.index("phase-set complete")
+        handoff = next(l for l in text.splitlines() if "**Handoff:**" in l)
+        for tag in ("`[engine]`", "`[this repo]`", "`[you]`"):
+            assert tag in handoff
+        assert 'specflow create --type defect --title "<symptom>"' in handoff
+        # the no-self-approval rule still points at the baseline step
+        baseline_step = next(l for l in text.splitlines() if "**Baseline (after approval only)" in l)
+        step_no = baseline_step.split(".")[0]
+        assert f"never run step {step_no} on your own" in text
+
+    def test_init_preset_rule_and_ci_step(self):
+        text = _read("specflow-init/SKILL.md")
+        assert "regulated industry" not in text
+        rule = next(l for l in text.splitlines() if "The preset option defaults to" in l)
+        assert "`adoption`" in rule and "/specflow-pack-author" in rule
+        step6 = text[text.index("### 6."): text.index("### 7.")]
+        assert "may have already created" not in step6
+        assert "unless `--no-ci` was passed" in step6
+        assert "+ Generated .github/workflows/specflow.yml" in step6
+
+    def test_status_lifecycle_and_wave_docs_match_schemas(self):
+        lifecycle = _read("specflow-execute/references/status-lifecycle.md")
+        waves = _read("specflow-execute/references/wave-computation.md")
+        defect = yaml.safe_load((_ROOT / "src/specflow/templates/schemas/defect.yaml").read_text(encoding="utf-8"))
+        assert "`wontfix`" in lifecycle and "wontfix" in defect["allowed_status"]
+        assert "open → fixing" in lifecycle
+        assert "STORY-B `depends_on` STORY-A" in waves
+
+
+class TestDefectTransitions:
+    """STORY-717 AC4 / F-030: a DEF goes open → fixing without the ceremony hop."""
+
+    def test_shipped_schema_allows_open_to_fixing(self):
+        defect = yaml.safe_load((_ROOT / "src/specflow/templates/schemas/defect.yaml").read_text(encoding="utf-8"))
+        assert set(defect["allowed_status"]["fixing"]) == {"open", "investigating"}
+        assert set(defect["allowed_status"]["wontfix"]) == {"open", "investigating"}
+
+    def test_update_open_defect_to_fixing_succeeds(self, tmp_path: Path, capsys):
+        from specflow.commands import create as create_cmd
+        from specflow.commands import update as update_cmd
+        from specflow.lib import artifacts as art_lib
+
+        root = tmp_path / "proj"
+        schema_dir = root / ".specflow" / "schema"
+        schema_dir.mkdir(parents=True)
+        (root / ".specflow" / "standards").mkdir()
+        shutil.copy(_ROOT / "src/specflow/templates/schemas/defect.yaml", schema_dir / "defect.yaml")
+        (root / "_specflow" / "work" / "defects").mkdir(parents=True)
+
+        assert create_cmd.run(root, {
+            "type": "defect", "title": "Login redirect loops", "body": "redirect loops after login",
+            "skip_dedup_check": True,
+        }) == 0
+        defect = next(a for a in art_lib.discover_artifacts(root) if a.title == "Login redirect loops")
+        assert defect.status == "open"
+        rc = update_cmd.run(root, {"artifact_id": defect.id, "status": "fixing"})
+        out = capsys.readouterr().out
+        assert rc == 0, out
+        assert "Cannot transition" not in out
+        reloaded = next(a for a in art_lib.discover_artifacts(root) if a.id == defect.id)
+        assert reloaded.status == "fixing"

@@ -153,8 +153,21 @@ def retro_link(root: Path, filepath: str, target_id: str) -> bool:
 
     Returns:
         True if successful, False if target not found or file doesn't exist
+
+    The whole resolve-read-modify-write runs under the mutation lock so a
+    concurrent ``specflow update`` on the same artifact is never lost; the
+    write is atomic (DDD-034 I5) and only the ``output_files`` block is
+    rewritten (lib.frontmatter_patch), never the rest of the frontmatter.
     """
+    from specflow.lib import locks as locks_lib
+
     root = Path(root).resolve()
+    with locks_lib.mutation_lock(root, holder=f"retro-link:{target_id}"):
+        return _retro_link_locked(root, filepath, target_id)
+
+
+def _retro_link_locked(root: Path, filepath: str, target_id: str) -> bool:
+    from specflow.lib.frontmatter_patch import patch_block, split_frontmatter
 
     # Resolve the target artifact's path from its ID prefix.
     target_path = art_lib.resolve_link_target(root, target_id)
@@ -181,27 +194,30 @@ def retro_link(root: Path, filepath: str, target_id: str) -> bool:
     if not file_path.exists():
         return False
 
-    text = target_path.read_text(encoding="utf-8")
-    if not text.startswith("---"):
-        return False
-    end = text.find("---", 3)
-    if end == -1:
-        return False
+    rel_str = str(rel_path).replace("\\", "/")
 
-    fm = yaml.safe_load(text[3:end]) or {}
+    text = target_path.read_text(encoding="utf-8")
+    parts = split_frontmatter(text)
+    if parts is None:
+        return False
+    prefix, fm_text, rest = parts
+
+    try:
+        fm = yaml.safe_load(fm_text) or {}
+    except Exception:
+        return False
+    if not isinstance(fm, dict):
+        return False
     output_files = fm.get("output_files") or []
     if not isinstance(output_files, list):
         output_files = []
 
-    rel_str = str(rel_path).replace("\\", "/")
-    if rel_str not in output_files:
-        output_files.append(rel_str)
-        fm["output_files"] = output_files
+    if rel_str in output_files:
+        return True  # already linked: never touch the file
+    output_files.append(rel_str)
 
-    new_fm = yaml.dump(fm, default_flow_style=False, allow_unicode=True, sort_keys=False)
-    new_text = f"---\n{new_fm}---{text[end+3:]}"
-    target_path.write_text(new_text, encoding="utf-8")
-
+    new_text = prefix + patch_block(fm_text, "output_files", output_files) + rest
+    art_lib.write_artifact_text(root, target_path, new_text)
     return True
 
 

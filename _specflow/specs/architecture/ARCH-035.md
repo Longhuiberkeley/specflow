@@ -11,10 +11,10 @@ links:
   role: guided_by
 created: '2026-09-25'
 fingerprint: sha256:d9570f45e353
-modified: '2026-09-25'
+modified: '2026-10-08'
 thinking_techniques:
-- '[premortem'
-- dependency-shock]
+- premortem
+- dependency_shock
 ---
 
 # Practice spine: BP anatomy, provenance, lifecycle, and deterministic validation

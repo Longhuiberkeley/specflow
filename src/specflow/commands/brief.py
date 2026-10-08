@@ -17,7 +17,7 @@ from specflow.lib import artifacts as art_lib
 from specflow.lib import config as config_lib
 from specflow.lib import lint as lint_lib
 from specflow.lib.waves import compute_waves, filter_executable_stories
-from specflow.lib.display import RED, YELLOW, CYAN, BOLD, NC
+from specflow.lib.display import RED, YELLOW, CYAN, BOLD, DIM, NC
 
 # Category → the prefixes that belong to it, in lifecycle order.
 _CATEGORY_ORDER = ["spec", "work", "review", "research", "ops"]
@@ -150,56 +150,27 @@ def _practice_binding_summary(
     root: Path,
     artifacts: list[art_lib.Artifact],
 ) -> dict[str, dict[str, int]] | None:
-    """Count bound/unbound artifact-to-practice pairs by lifecycle type.
+    """Count bound/unbound/exempt artifact-to-practice pairs by lifecycle type.
 
-    Applicability is evaluated against approved BPs for each REQ, ARCH, and
-    STORY. Counts describe expected binding edges, so one artifact applicable
-    to multiple BPs contributes one pair per BP. A DEC-authorized dropped BP is
-    no longer in scope. Return None when the inventory has no applicable BP
-    pairs, keeping the brief quiet rather than printing zero rows.
+    The counts are artifact-lint's in-scope numbers: one row per applicable
+    (target, BP) pair from ``practices.in_scope_bindings`` — the single
+    applicability predicate lint's bp-application check reads — so brief and
+    lint always agree. ``exempt`` is an unstamped BP (no provenance stamp) or
+    a legacy-target grace pair; lint skips those rows and brief tallies them
+    separately. Return None when nothing is in scope (bound + unbound == 0),
+    keeping the brief quiet rather than printing zero rows.
     """
     from specflow.lib import practices as practices_lib
 
-    target_types = ("requirement", "architecture", "story")
-    counts = {art_type: {"bound": 0, "unbound": 0} for art_type in target_types}
-    approved_bps = [
-        artifact for artifact in artifacts
-        if artifact.type == "best-practice"
-        and practices_lib.status_resolves_approved(artifact.status)
-    ]
-    if not approved_bps:
-        return None
-
-    id_index = art_lib.build_id_index(artifacts)
-    applicable_pairs = 0
-    for target in artifacts:
-        if target.type not in counts:
-            continue
-        for bp in approved_bps:
-            if practices_lib.is_tailoring_dropped(bp, id_index):
-                continue
-            if "applicability" in bp.frontmatter:
-                applicable = practices_lib.applicability_matches(
-                    bp.frontmatter.get("applicability"), target, root
-                )
-            else:
-                applies_to_ids = {
-                    link.target for link in bp.links if link.role == "applies_to"
-                }
-                applicable = (
-                    target.id in applies_to_ids or bool(set(target.tags) & set(bp.tags))
-                )
-            if not applicable:
-                continue
-
-            applicable_pairs += 1
-            bound = any(
-                link.role == "guided_by" and link.target == bp.id
-                for link in target.links
-            )
-            counts[target.type]["bound" if bound else "unbound"] += 1
-
-    return counts if applicable_pairs else None
+    counts = {
+        art_type: {"bound": 0, "unbound": 0, "exempt": 0}
+        for art_type in practices_lib.BINDING_TARGET_TYPES
+    }
+    for target, _bp, bound, exempt_reason in practices_lib.in_scope_bindings(root, artifacts):
+        bucket = "exempt" if exempt_reason is not None else ("bound" if bound else "unbound")
+        counts[target.type][bucket] += 1
+    in_scope = sum(c["bound"] + c["unbound"] for c in counts.values())
+    return counts if in_scope else None
 
 
 def _knowledge_summary(root: Path, artifacts: list[art_lib.Artifact]) -> dict:
@@ -260,6 +231,59 @@ def _knowledge_summary(root: Path, artifacts: list[art_lib.Artifact]) -> dict:
     }
 
 
+# Statuses that mean the artifact is finished or retired — a status bucket
+# made of these is reference, not pending work, so it never gets a per-type
+# breakdown line (F-035 is about the opaque *pending* buckets: "99 draft",
+# "105 approved", "127 open").
+_DONE_STATUSES = frozenset({
+    "implemented", "verified", "closed", "accepted", "addressed", "completed",
+    "resolved", "wontfix", "retired",
+}) | frozenset(lint_lib.TERMINAL_STATUSES)
+_BREAKDOWN_MIN = 20
+
+
+def _bucket_breakdown_lines(by_status_type: dict[str, Counter[str]]) -> list[str]:
+    """Per-type breakdown for a large, concentrated pending bucket (F-035).
+
+    One line per status bucket that holds >= 20 artifacts AND whose top three
+    types hold >= 80% of it (so "99 draft" reads "34 UT, 33 IT, 30 QT, +2
+    other"). Cap 3 types + "+N other"; done/terminal statuses never qualify;
+    a small project prints nothing.
+    """
+    lines: list[str] = []
+    for status in sorted(by_status_type):
+        if status in _DONE_STATUSES:
+            continue
+        counter = by_status_type[status]
+        total = sum(counter.values())
+        if total < _BREAKDOWN_MIN:
+            continue
+        top = counter.most_common(3)
+        top_sum = sum(n for _t, n in top)
+        if top_sum * 5 < total * 4:
+            continue
+        parts = [f"{n} {t}" for t, n in top]
+        rest = total - top_sum
+        if rest:
+            parts.append(f"+{rest} other")
+        lines.append(f"{total} {status}: {', '.join(parts)}")
+    return lines
+
+
+def _last_ledger_commit(root: Path) -> str:
+    """'YYYY-MM-DD <sha>' of the last commit touching _specflow/, or ''."""
+    try:
+        result = subprocess.run(
+            ["git", "log", "-1", "--pretty=format:%ad %h", "--date=short", "--", "_specflow/"],
+            cwd=str(root), capture_output=True, text=True, timeout=15, check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    if result.returncode != 0:
+        return ""
+    return result.stdout.strip()
+
+
 def _recent_changes(root: Path, since: str) -> list[str]:
     """One-line-per-commit log of changes touching _specflow/ since `since`."""
     try:
@@ -275,6 +299,12 @@ def _recent_changes(root: Path, since: str) -> list[str]:
     return [ln for ln in result.stdout.splitlines() if ln.strip()]
 
 
+def _is_auto_record(a: art_lib.Artifact) -> bool:
+    """True for any tooling-stamped record (project-audit AUDs, change records)."""
+    tags = getattr(a, "tags", None) or []
+    return bool(set(tags) & {"change-record", "auto-generated", "project-audit"})
+
+
 def _is_auto_dec(a: art_lib.Artifact) -> bool:
     """True when a DEC is an auto-generated change/audit record, not a human-authored ADR.
 
@@ -283,10 +313,9 @@ def _is_auto_dec(a: art_lib.Artifact) -> bool:
     inflate both the unreviewed-DEC count and the blast-radius cone, drowning the real
     decision-review signal. Excluded everywhere brief surfaces "decisions to look at".
     """
-    if a.frontmatter.get("dec_kind") == "change_record":
+    if (getattr(a, "frontmatter", None) or {}).get("dec_kind") == "change_record":
         return True
-    tags = getattr(a, "tags", None) or []
-    return bool(set(tags) & {"change-record", "auto-generated", "project-audit"})
+    return _is_auto_record(a)
 
 
 def _recent_decisions(artifacts: list[art_lib.Artifact], limit: int = 5) -> list[tuple[str, str, str, str, str]]:
@@ -493,6 +522,126 @@ def _outcome_feedback_note(artifacts: list[art_lib.Artifact], active_packs: list
     return "\n".join(notes)
 
 
+# ── Shared story-progress helpers (F-002) ───────────────────────────
+# One definition of "done" and "non-terminal" for the router and the
+# status dashboard, so neither can drift back to counting only
+# `implemented`. Terminal stories (deprecated/superseded/cancelled) are
+# out of the denominator: a backlog of 102 verified + 70 implemented +
+# 4 deprecated stories is complete, not "still executing".
+_STORY_DONE_STATUSES = ("implemented", "verified")
+
+
+def story_progress(artifacts: list[art_lib.Artifact]) -> dict[str, int]:
+    """Count STORYs by lifecycle bucket: total, approved, done, non_terminal.
+
+    ``done`` = implemented + verified; ``non_terminal`` = every STORY whose
+    status is not in ``lint.TERMINAL_STATUSES``. A backlog is complete when
+    ``done >= non_terminal`` (and non_terminal > 0).
+    """
+    total = approved = done = terminal = 0
+    for a in artifacts:
+        if art_lib.get_prefix_from_id(a.id) != "STORY":
+            continue
+        total += 1
+        status = a.status or "draft"
+        if status == "approved":
+            approved += 1
+        if status in _STORY_DONE_STATUSES:
+            done += 1
+        if status in lint_lib.TERMINAL_STATUSES:
+            terminal += 1
+    return {
+        "total": total,
+        "approved": approved,
+        "done": done,
+        "non_terminal": total - terminal,
+    }
+
+
+def stories_complete(progress: dict[str, int]) -> bool:
+    """True when every non-terminal STORY is implemented or verified."""
+    return progress["non_terminal"] > 0 and progress["done"] >= progress["non_terminal"]
+
+
+def _lean_path_state(artifacts: list[art_lib.Artifact]) -> str | None:
+    """Discover's lean path: approved REQ + a STORY that ``implements`` it, no
+    ARCH by design — that never goes to /specflow-plan (the discover/start
+    skills say so; brief must agree).
+
+    Returns ``"execute"`` when at least one covering STORY is still
+    ``approved`` (execute has something to run), ``"done"`` when every lean
+    REQ is covered only by implemented/verified STORYs (review, then ship —
+    saying execute there would be the dishonest zero-executable signal F-002
+    removes elsewhere), and ``None`` when no approved REQ is on the lean
+    path or one of them lacks a covering STORY. A REQ with an ARCH realizing
+    it is on the full path and is never counted here.
+    """
+    realized: set[str] = set()
+    covered_by: dict[str, set[str]] = {}
+    for a in artifacts:
+        prefix = art_lib.get_prefix_from_id(a.id)
+        for lk in getattr(a, "links", None) or []:
+            if prefix == "ARCH" and lk.role == "derives_from":
+                realized.add(lk.target)
+            elif prefix == "REQ" and lk.role == "refined_by":
+                realized.add(a.id)
+            elif (
+                prefix == "STORY"
+                and lk.role == "implements"
+                and a.status in ("approved", *_STORY_DONE_STATUSES)
+            ):
+                covered_by.setdefault(lk.target, set()).add(a.status)
+    lean_reqs = [
+        a.id for a in artifacts
+        if art_lib.get_prefix_from_id(a.id) == "REQ"
+        and a.status == "approved"
+        and a.id not in realized
+    ]
+    if not lean_reqs or any(r not in covered_by for r in lean_reqs):
+        return None
+    if any("approved" in covered_by[r] for r in lean_reqs):
+        return "execute"
+    return "done"
+
+
+def _lean_path_ready(artifacts: list[art_lib.Artifact]) -> bool:
+    """True when the lean path applies at all (execute or done)."""
+    return _lean_path_state(artifacts) is not None
+
+
+_LEAN_CORE = {
+    "execute": ("Lean path: approved REQ(s) with an approved STORY and no ARCH by design "
+                "→ /specflow-execute."),
+    "done": ("Lean path: approved REQ(s) covered by implemented/verified STORY(s), no ARCH "
+             "by design → /specflow-artifact-review, then /specflow-ship."),
+}
+
+
+def _draft_dec_lines(artifacts: list[art_lib.Artifact]) -> list[str]:
+    """Non-auto draft DECs with the exact consent command each (F-007).
+
+    A draft DEC still carrying ``review_status: unreviewed`` is owned by the
+    unreviewed/blast-radius note below (review precedes approval) and is not
+    repeated here, so a DEC never appears in two notes.
+    """
+    lines: list[str] = []
+    for a in artifacts:
+        if art_lib.get_prefix_from_id(a.id) != "DEC" or (a.status or "draft") != "draft":
+            continue
+        if _is_auto_dec(a):
+            continue
+        if (getattr(a, "frontmatter", None) or {}).get("review_status") == "unreviewed":
+            continue
+        title = (getattr(a, "title", None) or "").strip() or "(untitled)"
+        lines.append(f"{a.id} — {title[:80]} → `specflow update {a.id} --status approved`")
+    return lines
+
+
+# DEF statuses that mean "still unresolved" (defect.yaml: open → investigating
+# → fixing → verified → closed, or wontfix).
+_DEF_OPEN_STATUSES = ("open", "investigating", "fixing")
+
+
 def _next_skill_recommendation(
     phase: str,
     artifacts: list[art_lib.Artifact],
@@ -505,8 +654,10 @@ def _next_skill_recommendation(
     """Deterministic next-skill recommendation from phase + inventory.
 
     Pure read of state — no heuristics, no LLM. Returns one human-actionable line,
-    plus an optional second line when an active subsystem (pack) has an
-    actionable state (a running LOOP, a breached/stale MONITOR).
+    plus optional append-only notes when an active subsystem (pack) has an
+    actionable state (a running LOOP, a breached/stale MONITOR), or when work
+    exists outside the phase's core line (open DEFs, draft DECs awaiting
+    approval, approved-but-unexecuted STORY/SPIKEs in verifying/complete).
     """
     active_packs = active_packs or []
 
@@ -518,14 +669,15 @@ def _next_skill_recommendation(
         return n
 
     if suspects:
-        return (f"{len(suspects)} suspect(s) open — resolve first: "
-                f"`specflow change-impact` to review, "
-                f"`specflow defect-from-suspect <ID> --req <REQ>` to file.")
+        return (f"{len(suspects)} suspect(s) open → /specflow-change-impact-review "
+                f"(`specflow change-impact` to inspect, "
+                f"`specflow defect-from-suspect <ID> --req <REQ>` to file).")
 
     reqs = _count("REQ")
     reqs_draft = _count("REQ", "draft")
     archs = _count("ARCH")
     stories = _count("STORY")
+    progress = story_progress(artifacts)
 
     # Consent lines: exact draft IDs + one-line impact, listed whenever the
     # core line points at a batch approval (STORY-660). Never count-only,
@@ -539,6 +691,11 @@ def _next_skill_recommendation(
             core = ("REQ(s) in draft → confirm with the user, then approve "
                     f"(`specflow approve --type REQ`), then /specflow-plan.")
             consent.extend(_draft_consent_lines(artifacts, "REQ"))
+        elif not archs and (lean := _lean_path_state(artifacts)):
+            # Any ARCH at all puts the project on the full path: a mixed
+            # project (some REQs realized by ARCH, a new lean one) reconciles
+            # in /specflow-plan, which owns the ARCH-or-not call per REQ.
+            core = _LEAN_CORE[lean]
         else:
             core = "REQs approved, no ARCH yet → /specflow-plan (decompose into architecture & stories)."
     elif phase == "specifying":
@@ -546,10 +703,12 @@ def _next_skill_recommendation(
             core = ("REQ(s) still draft → approve (`specflow approve --type REQ`) "
                     "before planning.")
             consent.extend(_draft_consent_lines(artifacts, "REQ"))
+        elif not archs and (lean := _lean_path_state(artifacts)):
+            core = _LEAN_CORE[lean]
         else:
             core = "REQs approved → /specflow-plan."
     elif phase == "planning":
-        approved_stories = _count("STORY", "approved")
+        approved_stories = progress["approved"]
         if not archs:
             core = "No ARCH yet → continue /specflow-plan (architecture decomposition)."
         elif approved_stories:
@@ -557,13 +716,23 @@ def _next_skill_recommendation(
         elif _count("STORY", "draft") or not stories:
             core = "Stories not approved yet → finish /specflow-plan and approve STORYs."
             consent.extend(_draft_consent_lines(artifacts, "STORY"))
-        elif _count("STORY", "implemented") + _count("STORY", "verified") == stories:
+        elif stories_complete(progress):
             core = ("No approved stories ready to execute; existing stories are complete → "
                     "/specflow-artifact-review, then /specflow-ship, or /specflow-plan "
                     "for new scope.")
         else:
             core = ("No approved stories ready to execute → /specflow-plan to reconcile "
                     "the backlog and approve the next scope.")
+        # Draft ARCH/DDD gate the execute hand-off in planning (F-035): list
+        # them with the exact batch-approval command, same consent vehicle.
+        draft_arch = _draft_consent_lines(artifacts, "ARCH")
+        draft_ddd = _draft_consent_lines(artifacts, "DDD")
+        if draft_arch:
+            consent.append("Draft ARCH awaiting approval (`specflow approve --type ARCH`):")
+            consent.extend(draft_arch)
+        if draft_ddd:
+            consent.append("Draft DDD awaiting approval (`specflow approve --type DDD`):")
+            consent.extend(draft_ddd)
     elif phase == "executing":
         # Core-signal honesty: the phase can be left on "executing" with zero
         # approved-or-beyond stories (a manual set_phase, a rewind, or a stale
@@ -575,11 +744,7 @@ def _next_skill_recommendation(
         # below fires independently (it reads history + done count, never this
         # guard), so a genuine rewind that left implemented stories behind is
         # preserved exactly.
-        approved_plus = (
-            _count("STORY", "approved")
-            + _count("STORY", "implemented")
-            + _count("STORY", "verified")
-        )
+        approved_plus = progress["approved"] + progress["done"]
         if approved_plus == 0:
             if not archs:
                 core = ("No approved stories to execute → /specflow-plan "
@@ -590,19 +755,30 @@ def _next_skill_recommendation(
             consent.extend(_draft_consent_lines(artifacts, "STORY"))
         elif next_wave:
             core = f"Next wave ready ({len(next_wave)} stories) → /specflow-execute (or `specflow go`)."
-        elif stories and _count("STORY", "implemented") >= stories:
+        elif stories_complete(progress):
             # Lifecycle is execute → artifact-review → ship. The router used to jump
             # straight to ship here, silently dropping the artifact-review step that
             # /specflow-execute's own exit message and AGENTS.md both document. If the
             # stories are already verified or V-model tests (UT/IT/QT) exist, review has
             # happened — otherwise insert /specflow-artifact-review before ship.
+            # "Complete" is done >= non-terminal (F-002): verified stories count as
+            # done and deprecated/superseded/cancelled ones leave the denominator,
+            # so a verified-heavy backlog no longer reads "Continue /specflow-execute".
             reviewed = _count("STORY", "verified") or (_count("UT") + _count("IT") + _count("QT"))
             if reviewed:
                 core = "All stories implemented & reviewed → /specflow-ship (release)."
             else:
                 core = "All stories implemented → /specflow-artifact-review, then /specflow-ship."
+        elif progress["approved"]:
+            # Approved stories exist but no executable wave came out of them
+            # (a dependency cycle or every approved story blocked on an
+            # unfinished dependency) — say so instead of a bare "continue".
+            core = (f"{progress['approved']} approved STORY(s) but no executable wave "
+                    "(blocked dependencies or a cycle) → `specflow phase-status`, "
+                    "then /specflow-plan to reconcile.")
         else:
-            core = "Continue /specflow-execute."
+            core = ("No approved stories ready to execute → /specflow-plan to reconcile "
+                    "the backlog and approve the next scope.")
     elif phase in ("verifying", "complete"):
         core = "Ready to release → /specflow-ship (or /specflow-audit for a health check first)."
     else:
@@ -615,6 +791,45 @@ def _next_skill_recommendation(
     outcome_note = _outcome_feedback_note(artifacts, active_packs)
     if outcome_note:
         notes.append(outcome_note)
+
+    # Work outside the phase's core line (F-007). Append-only, count + exact
+    # IDs, each fires only when the state exists so a quiet project adds no
+    # lines. These are the states consumer-project transcripts show the
+    # router was blind to for days: open defects, draft decisions waiting for
+    # a human approval, and approved work left behind once the phase moved on
+    # to verifying/complete.
+    open_defs = [
+        a.id for a in artifacts
+        if art_lib.get_prefix_from_id(a.id) == "DEF" and a.status in _DEF_OPEN_STATUSES
+    ]
+    if open_defs:
+        shown = ", ".join(open_defs[:3])
+        more = f", +{len(open_defs) - 3} more" if len(open_defs) > 3 else ""
+        notes.append(
+            f"{len(open_defs)} open DEF(s) ({shown}{more}) — unresolved defects; "
+            f"the fix STORY runs through /specflow-execute "
+            f"(`specflow trace <DEF>` for its link)."
+        )
+    draft_decs = _draft_dec_lines(artifacts)
+    if draft_decs:
+        notes.append(
+            f"{len(draft_decs)} draft DEC(s) await approval → present each to the user, "
+            f"then on their go-ahead:"
+        )
+        notes.extend(draft_decs)
+    if phase in ("verifying", "complete"):
+        unexecuted = [
+            a.id for a in artifacts
+            if art_lib.get_prefix_from_id(a.id) in ("STORY", "SPIKE") and a.status == "approved"
+        ]
+        if unexecuted:
+            shown = ", ".join(unexecuted[:5])
+            more = f", +{len(unexecuted) - 5} more" if len(unexecuted) > 5 else ""
+            notes.append(
+                f"{len(unexecuted)} approved STORY/SPIKE(s) unexecuted ({shown}{more}) "
+                f"→ /specflow-execute them (or `specflow update <ID> --status cancelled`) "
+                f"before shipping."
+            )
 
     # Backlog-aware advisory: a strategic rewind to specifying/planning can leave
     # implemented/verified stories in the backlog. The phase-based primary line
@@ -654,23 +869,32 @@ def _next_skill_recommendation(
     # policing: one advisory line, never blocking, never changes the exit code.
     # It fires only when a verify_command is actually declared, so projects that
     # don't use verification contracts see zero noise.
+    from specflow.lib.verification import run_matches_expected
+
     verify_types = {"UT", "IT", "QT", "STORY"}
     needs_verify: list[str] = []
+    # F-068: the mirror case — a DRAFT test that already carries passing run
+    # evidence. `specflow verify` records evidence without touching status, so
+    # these sit invisible to lint's status-cascade until someone approves them.
+    draft_with_evidence: list[str] = []
     for a in artifacts:
-        if art_lib.get_prefix_from_id(a.id) not in verify_types:
-            continue
-        if a.status not in ("implemented", "verified"):
+        prefix = art_lib.get_prefix_from_id(a.id)
+        if prefix not in verify_types:
             continue
         fm = getattr(a, "frontmatter", None) or {}
         if not fm.get("verify_command"):
             continue
         ran_at = fm.get("verify_run_at")
+        if a.status == "draft" and prefix != "STORY":
+            if ran_at and run_matches_expected(fm) is True:
+                draft_with_evidence.append(a.id)
+            continue
+        if a.status not in ("implemented", "verified"):
+            continue
         # Needs (re-)verification when never run, or when a recorded run failed
         # its contract — judged by the one shared expected-exit rule (declared
         # verify_exit_code, default 0), so a failing run with no declared code
         # is no longer dropped (STORY-699).
-        from specflow.lib.verification import run_matches_expected
-
         diverged = run_matches_expected(fm) is False
         if not ran_at or diverged:
             needs_verify.append(a.id)
@@ -682,6 +906,15 @@ def _next_skill_recommendation(
             f"matching verify_run evidence ({shown}{more}) → "
             f"`specflow verify <ID>` (or `specflow verify --all`)."
         )
+    if draft_with_evidence:
+        shown = ", ".join(draft_with_evidence[:5])
+        more = f", +{len(draft_with_evidence) - 5} more" if len(draft_with_evidence) > 5 else ""
+        notes.append(
+            f"{len(draft_with_evidence)} draft test(s) carry passing verify evidence "
+            f"({shown}{more}) → review each, then `specflow update <ID> --status approved` "
+            f"and `--status implemented` (`specflow approve --type UT` would also sweep "
+            f"drafts without evidence)."
+        )
 
     # W3.2: surface unreviewed decisions with their blast radius so the
     # brief→change-impact "what's unreviewed / what does it touch" ritual
@@ -689,6 +922,8 @@ def _next_skill_recommendation(
     # accounting-not-policing: fires only when an unreviewed DEC exists (a DEC
     # is created with review_status: unreviewed), so quiet projects stay quiet.
     # Reuses the same transitive downstream cone as change-impact / risk-tier.
+    # A draft DEC that is also unreviewed is surfaced here only (review comes
+    # before approval); the draft-DEC consent note above skips it (F-007).
     if root is not None:
         unreviewed_decs = [
             a for a in artifacts
@@ -710,7 +945,7 @@ def _next_skill_recommendation(
             notes.append(
                 f"{len(unreviewed_decs)} unreviewed DEC(s) ({ids}{more}) — blast "
                 f"radius {total_cone} downstream artifact(s) → "
-                f"`specflow change-impact` to inspect."
+                f"/specflow-change-impact-review (`specflow change-impact` to inspect)."
             )
 
     return core + "".join(f"\n{n}" for n in consent + notes)
@@ -734,10 +969,12 @@ def _health_nags(
     nags: list[str] = []
 
     # domain unset silently disables domain-aware checklists + review synthesis.
+    # `generic` is the documented opt-out (F-074): any non-empty value, that
+    # one included, silences this line for good.
     if not config.get("project", {}).get("domain"):
         nags.append(
             "domain not set — domain-aware checklists/review disabled "
-            "→ `specflow domain suggest`"
+            "→ `specflow domain suggest`, or `specflow domain set generic` to opt out"
         )
 
     # Stale stored fingerprints make future suspect classification unreliable;
@@ -763,7 +1000,7 @@ def _health_nags(
             )
 
     # Findings ratchet off: no committed baseline, so lint cannot tell new
-    # warning debt from known debt (DEC-FINDINGS-79d8; absent reads as empty
+    # warning debt from known debt (DEC-099; absent reads as empty
     # from v1.18.0).
     from specflow.core.findings_baseline import BASELINE_FILE
 
@@ -776,9 +1013,12 @@ def _health_nags(
     # Schema drift: installed base schemas diverged from shipped defaults.
     # Reuses refresh.py's classifier (new / identical / changed) so brief and
     # `specflow refresh --schemas` agree. Only *changed* schemas nag — new
-    # (missing) schemas are a no-risk `refresh --schemas` add, identical is
-    # clean, and pack-owned schemas never appear in the base templates, so a
-    # fresh project sees zero noise here.
+    # (missing) schemas are a no-risk `refresh --schemas` add and identical is
+    # clean. classify_schemas also classifies INSTALLED optional types
+    # (hazard/risk/control) except names an active pack owns
+    # (scaffold.pack_owned_schema_names); an uninstalled optional type is
+    # never "new", so opting out stays silent and a fresh project sees zero
+    # noise here.
     from specflow.commands import refresh as refresh_cmd
 
     _new, _identical, changed = refresh_cmd.classify_schemas(root)
@@ -791,7 +1031,108 @@ def _health_nags(
             f"`--schemas --force` restores shipped defaults"
         )
 
+    # Installed skills drifted from the shipped templates (F-031): a consumer
+    # on an old skill tree keeps following stale instructions (`uv run
+    # specflow`, missing skills) with nothing telling it to `specflow refresh`.
+    # Same hash diff refresh itself reports; a bundled skill missing from the
+    # install dir counts as a diff. Silent when no host platform is detected
+    # or the platform's skills dir does not exist (nothing was ever installed).
+    stale_by_dir = _stale_skills_by_dir(root)
+    stale_skills = _stale_installed_skills(root, stale_by_dir)
+    if stale_skills:
+        shown = ", ".join(stale_skills[:4])
+        more = f" (+{len(stale_skills) - 4} more)" if len(stale_skills) > 4 else ""
+        # Bare `specflow refresh` resolves to ONE platform (the first
+        # detected); stale skills in another host's tree need --all-platforms
+        # or the nag names a command that does not clear it.
+        flag = " --all-platforms" if _stale_needs_all_platforms(root, stale_by_dir) else ""
+        nags.append(
+            f"{len(stale_skills)} skill(s) differ from shipped templates "
+            f"({shown}{more}) → `specflow refresh{flag}`"
+        )
+
+    # Draft (slug) ids that crossed the approval gate without a renumber
+    # (F-066): `PREFIX-SLUG-hash4` ids are a feature-branch convenience that
+    # `specflow renumber-drafts` rewrites on main; once approved-or-later they
+    # are referenced from baselines, docs and CHANGELOGs and get harder to
+    # renumber every release. Silent on a feature branch (renumbering is a
+    # main-only act) and for ids still in draft.
+    from specflow.lib import draft_ids as draft_lib
+
+    if not draft_lib.is_feature_branch(root):
+        slug_ids = [
+            a.id for a in artifacts
+            if draft_lib.is_draft_id(a.id) and (a.status or "draft") != "draft"
+        ]
+        if slug_ids:
+            shown = ", ".join(slug_ids[:4])
+            more = f" (+{len(slug_ids) - 4} more)" if len(slug_ids) > 4 else ""
+            nags.append(
+                f"{len(slug_ids)} artifact(s) past draft still carry draft ids "
+                f"({shown}{more}) → `specflow renumber-drafts` on main"
+            )
+
     return nags
+
+
+def _stale_skills_by_dir(root: Path) -> dict[Path, list[str]]:
+    """Per installed skills dir, the shipped skills whose copy differs (or is
+    missing) there.
+
+    Reuses ``refresh._count_skill_diffs`` over every detected platform's
+    install dir (``platform.get_skills_install_dir``), de-duplicated across
+    hosts that share one dir. Dirs with nothing stale are omitted; {} when no
+    platform is detected or no install dir exists — never nags a project that
+    never installed skills.
+    """
+    from specflow.commands import refresh as refresh_cmd
+    from specflow.lib import platform as plat_lib
+
+    detected = plat_lib.detect_platforms(root)
+    if not detected:
+        return {}
+    skills_src = refresh_cmd._get_package_templates() / "skills" / "shared"
+    seen_dirs: set[Path] = set()
+    stale: dict[Path, list[str]] = {}
+    for code, _cfg in detected:
+        skills_dst = plat_lib.get_skills_install_dir(root, code)
+        if skills_dst in seen_dirs or not skills_dst.is_dir():
+            continue
+        seen_dirs.add(skills_dst)
+        _n, names = refresh_cmd._count_skill_diffs(skills_src, skills_dst)
+        if names:
+            stale[skills_dst] = names
+    return stale
+
+
+def _stale_installed_skills(
+    root: Path, stale_by_dir: dict[Path, list[str]] | None = None,
+) -> list[str]:
+    """Names of shipped skills whose installed copy differs (or is missing),
+    de-duplicated across host dirs, in shipped order."""
+    if stale_by_dir is None:
+        stale_by_dir = _stale_skills_by_dir(root)
+    names: list[str] = []
+    for dir_names in stale_by_dir.values():
+        for name in dir_names:
+            if name not in names:
+                names.append(name)
+    return names
+
+
+def _stale_needs_all_platforms(root: Path, stale_by_dir: dict[Path, list[str]]) -> bool:
+    """True when bare ``specflow refresh`` (one platform: the first detected)
+    would leave some stale dir untouched — more than one dir is stale, or the
+    only stale dir is not the default platform's."""
+    from specflow.lib import platform as plat_lib
+
+    if len(stale_by_dir) > 1:
+        return True
+    if not stale_by_dir:
+        return False
+    code, _cfg = plat_lib.detect_platform(root)
+    default_dir = plat_lib.get_skills_install_dir(root, code or "claude-code")
+    return default_dir not in stale_by_dir
 
 
 def run(root: Path, args: dict[str, Any]) -> int:
@@ -823,12 +1164,22 @@ def run(root: Path, args: dict[str, Any]) -> int:
             if isinstance(sch, dict) and sch.get("prefix"):
                 prefix_to_cat[sch["prefix"]] = sch.get("category", "spec")
 
+    # Auto-generated audit records (F-101): `specflow project-audit` stamps an
+    # AUD per run, open/unreviewed, and nothing closes the prior one. They are
+    # history, not open work, so they are tallied on their own line instead
+    # of inflating the review bucket's "open" count.
+    by_cat_type: dict[str, dict[str, Counter[str]]] = {}
+    auto_audit_status: Counter[str] = Counter()
     for art in artifacts:
         prefix = art_lib.get_prefix_from_id(art.id)
-        cat = prefix_to_cat.get(prefix, "spec")
         status = art.status or "draft"
+        if prefix == "AUD" and _is_auto_record(art):
+            auto_audit_status[status] += 1
+            continue
+        cat = prefix_to_cat.get(prefix, "spec")
         by_cat_status.setdefault(cat, {}).setdefault(status, 0)
         by_cat_status[cat][status] += 1
+        by_cat_type.setdefault(cat, {}).setdefault(status, Counter())[prefix or art.type] += 1
 
     suspects = [a for a in artifacts if a.suspect]
 
@@ -886,6 +1237,13 @@ def run(root: Path, args: dict[str, Any]) -> int:
         parts = [f"{n} {s}" for s, n in sorted(statuses.items())]
         total = sum(statuses.values())
         print(f"    {cat:<9} {total:>3}  ({', '.join(parts)})")
+        for ln in _bucket_breakdown_lines(by_cat_type.get(cat, {})):
+            print(f"    {DIM}{'':<9}      {ln}{NC}")
+    if auto_audit_status:
+        parts = [f"{n} {s}" for s, n in sorted(auto_audit_status.items())]
+        total = sum(auto_audit_status.values())
+        print(f"    {DIM}{'audit log':<9} {total:>3}  auto-generated AUD records "
+              f"({', '.join(parts)}) — history, not open work{NC}")
 
     health = _health_nags(root, config, artifacts, adoption)
     if health:
@@ -917,9 +1275,11 @@ def run(root: Path, args: dict[str, Any]) -> int:
             ("story", "STORY"),
         ):
             counts = practice_bindings[art_type]
+            exempt = counts.get("exempt", 0)
+            exempt_tail = f"{DIM} · {exempt} grace-exempt{NC}" if exempt > 0 else ""
             print(
                 f"    {label}: {counts['bound']} bound / "
-                f"{counts['unbound']} unbound"
+                f"{counts['unbound']} unbound{exempt_tail}"
             )
     # REQ AC-quality: one aggregate line (accounting, not policing). Clean line
     # (no ⚠) when zero aspirational; ⚠ surfaces the gap only when it exists.
@@ -938,7 +1298,8 @@ def run(root: Path, args: dict[str, Any]) -> int:
 
     if adoption is not None:
         type_parts = [f"{n} {t}" for t, n in sorted(adoption["by_type"].items())]
-        print(f"\n  {BOLD}Adoption{NC} (in progress)")
+        in_progress = " (in progress)" if adoption["orphan_count"] else " (coverage complete)"
+        print(f"\n  {BOLD}Adoption{NC}{in_progress}")
         print(f"    Coverage: {BOLD}{adoption['coverage_pct']:.1f}%{NC}   "
               f"({adoption['backfilled_count']} backfilled: {', '.join(type_parts) or 'none'})")
         if adoption["skeleton_archs"] or adoption["full_archs"]:
@@ -987,7 +1348,14 @@ def run(root: Path, args: dict[str, Any]) -> int:
         if len(recent) > 10:
             print(f"    … {len(recent) - 10} more commits")
     else:
-        print(f"    (none)")
+        # F-035: an empty window says nothing about when the ledger last
+        # moved — name the last _specflow/ commit and the flag that reaches it.
+        last = _last_ledger_commit(root)
+        if last:
+            print(f"    (none) — last _specflow/ commit {last} "
+                  f"→ {CYAN}specflow brief --since {last.split()[0]}{NC}")
+        else:
+            print(f"    (none)")
 
     print()
     return 0

@@ -39,8 +39,19 @@ artifacts:
     - rbac
     fingerprint: sha256:3233b1bf7d76
     children: []
-  SPIKE-BPSURFAC-710b:
-    id: SPIKE-BPSURFAC-710b
+  SPIKE-005:
+    id: SPIKE-005
+    title: "2026-10 ultracode improvement audit \u2014 handoff"
+    status: completed
+    tags:
+    - audit
+    - handoff
+    - ultracode
+    - v1.17.2
+    fingerprint: sha256:cd369199a37a
+    children: []
+  SPIKE-006:
+    id: SPIKE-006
     title: 'BP surface gaps: inert applies_to field + no wildcard; no promote-PREV/CHL
       to BP command'
     status: completed
@@ -51,8 +62,8 @@ artifacts:
     - ux
     fingerprint: sha256:5b732f9be3f9
     children: []
-  SPIKE-CHECKLIS-1a12:
-    id: SPIKE-CHECKLIS-1a12
+  SPIKE-007:
+    id: SPIKE-007
     title: 'Checklist/review behavior gaps: starved review to PREV capture; empty
       checklist results read as success'
     status: completed
@@ -63,4 +74,4 @@ artifacts:
     - observability
     fingerprint: sha256:ee1fdea97a1c
     children: []
-next_id: 5
+next_id: 8

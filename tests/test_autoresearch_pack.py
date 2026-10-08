@@ -22,12 +22,14 @@ from specflow.commands import trace as trace_cmd
 from specflow.lib import artifacts as art_lib
 from specflow.lib import scaffold as scaffold_lib
 
+from conftest import write_artifact
+
 PACKS_DIR = Path(__file__).parent.parent / "src" / "specflow" / "packs"
 
 RESEARCH_SCHEMAS = {
     "competition": {
         "prefix": "COMP",
-        "statuses": ["active", "paused", "completed", "archived"],
+        "statuses": ["active", "paused", "completed"],
     },
     "loop": {
         "prefix": "LOOP",
@@ -55,39 +57,8 @@ _BASE_STATUS_FLOW = {
 }
 
 
-def _write_artifact(
-    root: Path,
-    artifact_id: str,
-    art_type: str,
-    title: str,
-    status: str = "draft",
-    body: str = "",
-    links: list[dict] | None = None,
-    extra_fm: dict | None = None,
-) -> Path:
-    rel_dir = art_lib.TYPE_TO_DIR.get(art_type, "")
-    if not rel_dir:
-        raise ValueError(f"Unknown type: {art_type}")
-    target_dir = root / "_specflow" / rel_dir
-    target_dir.mkdir(parents=True, exist_ok=True)
-
-    fm: dict = {
-        "id": artifact_id,
-        "title": title,
-        "type": art_type,
-        "status": status,
-        "tags": [],
-        "suspect": False,
-        "links": links or [],
-    }
-    if extra_fm:
-        fm.update(extra_fm)
-
-    fm_yaml = yaml.dump(fm, default_flow_style=False, sort_keys=False)
-    content = f"---\n{fm_yaml}---\n\n# {title}\n\n{body}\n"
-    file_path = target_dir / f"{artifact_id}.md"
-    file_path.write_text(content, encoding="utf-8")
-    return file_path
+# Fixture artifacts go through the production writer (tests/conftest.py).
+_write_artifact = write_artifact
 
 
 def _make_art(
@@ -919,14 +890,33 @@ class TestStatusClosureReadiness:
         assert "COMP idle" in out
         assert "Deterministic accounting" not in out
 
-    def test_status_no_comp_still_errors(self, project_root: Path, capsys):
+    def test_status_no_comp_is_idle_not_an_error(self, project_root: Path, capsys):
+        # F-078: a COMP-less project is idle; `brief` exits 0 on it, so does status.
         rc = autoresearch_cmd.run(project_root, {
             "autoresearch_subcommand": "status",
         })
-        assert rc == 1
+        assert rc == 0
         out = capsys.readouterr().out
-        assert "No competitions found" in out
+        assert "No competitions" in out
+        assert "idle" in out
+        assert "✗" not in out
         assert "Closure-readiness" not in out
+
+    def test_status_explicit_missing_comp_still_errors(self, project_root: Path, capsys):
+        rc = autoresearch_cmd.run(project_root, {
+            "autoresearch_subcommand": "status", "competition": "COMP-404",
+        })
+        assert rc == 1
+        assert "not found" in capsys.readouterr().out
+
+    def test_comp_schema_has_no_archived_status(self, project_root: Path):
+        # F-112: `archived` was declared by the schema and used by nothing.
+        schema = yaml.safe_load(
+            (project_root / ".specflow" / "schema" / "competition.yaml").read_text(encoding="utf-8")
+        )
+        assert "archived" not in schema["allowed_status"]
+        arts = [_make_art("COMP-009", "competition", status="archived")]
+        assert lint_cmd._check_status(arts, project_root / ".specflow" / "schema")["blocking_count"] >= 1
 
     def test_confirmed_find_count_uses_both_resolver_paths(
         self, project_root: Path, capsys,

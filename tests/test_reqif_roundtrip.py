@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -211,3 +212,107 @@ class TestImportRoundTrip:
         art = next(a for a in artifacts if a.id == created_id)
         metadata = art.frontmatter.get("reqif_metadata", {})
         assert metadata.get("IBM_DOORS_CustomAttr") == "custom-value-123"
+
+
+# ── F-116: attribute values are escaped exactly once ─────────────────────────
+
+
+def _fresh_project(base: Path) -> Path:
+    """A second project root with the same schemas as the `project_root` fixture."""
+    root = base / "other"
+    for subdir in ["specs/requirements", "specs/architecture", "specs/detailed-design"]:
+        (root / "_specflow" / subdir).mkdir(parents=True, exist_ok=True)
+    schema_dir = root / ".specflow" / "schema"
+    schema_dir.mkdir(parents=True, exist_ok=True)
+    for art_type, prefix in [("requirement", "REQ"), ("architecture", "ARCH"), ("detailed-design", "DDD")]:
+        schema = {
+            "type": art_type,
+            "prefix": prefix,
+            "allowed_status": {"draft": [], "approved": ["draft"], "implemented": ["approved"], "verified": ["implemented"]},
+        }
+        (schema_dir / f"{art_type}.yaml").write_text(yaml.dump(schema), encoding="utf-8")
+    return root
+
+
+def _values_by_long_name(reqif_path: Path, identifier: str | None = None) -> dict[str, str]:
+    """Map LONG-NAME → THE-VALUE for one (or the only) SPEC-OBJECT in a file."""
+    tree = ET.fromstring(reqif_path.read_text(encoding="utf-8"))
+    ns = {"r": REQIF_NS}
+    objects = tree.findall(".//r:SPEC-OBJECT", ns)
+    if identifier is not None:
+        objects = [o for o in objects if o.attrib.get("IDENTIFIER") == identifier]
+    assert len(objects) == 1, [o.attrib.get("IDENTIFIER") for o in objects]
+    out: dict[str, str] = {}
+    for v in objects[0].findall("r:VALUES/r:ATTRIBUTE-VALUE-STRING", ns):
+        defn = v.find("r:DEFINITION", ns)
+        assert defn is not None
+        long_name = next(iter(defn)).attrib.get("LONG-NAME", "")
+        out[long_name] = v.attrib.get("THE-VALUE", "")
+    return out
+
+
+class TestSpecialCharacterRoundTrip:
+    TITLE = 'a < b & "c"'
+    BODY = 'Body with <tag>, an & ampersand, "quotes" and > sign.'
+    RATIONALE = 'because x > y && z'
+    EXTRA = 'doors "<value>" & more'
+
+    def test_export_escapes_each_character_once(self, project_root):
+        _write_artifact(project_root, "requirement", "REQ-001", self.TITLE, "approved",
+                        body=self.BODY, rationale=self.RATIONALE,
+                        reqif_metadata={"IBM_DOORS_CustomAttr": self.EXTRA})
+        out = project_root / "out.reqif"
+        assert reqif_lib.export_reqif(project_root, out)["ok"]
+
+        raw = out.read_text(encoding="utf-8")
+        # Exactly one layer of XML escaping on the wire ...
+        assert 'THE-VALUE="a &lt; b &amp; &quot;c&quot;"' in raw
+        assert "&amp;lt;" not in raw and "&amp;amp;" not in raw and "&amp;quot;" not in raw
+        # ... which the XML parser turns back into the original text.
+        values = _values_by_long_name(out)
+        assert values["ReqIF.Name"] == self.TITLE
+        assert values["ReqIF.Text"] == self.BODY
+        assert values["ReqIF.Description"] == self.RATIONALE
+        assert values["IBM_DOORS_CustomAttr"] == self.EXTRA
+
+    def test_export_import_export_is_stable(self, project_root, tmp_path):
+        _write_artifact(project_root, "requirement", "REQ-001", self.TITLE, "approved",
+                        body=self.BODY, rationale=self.RATIONALE,
+                        reqif_metadata={"IBM_DOORS_CustomAttr": self.EXTRA})
+        first = project_root / "first.reqif"
+        assert reqif_lib.export_reqif(project_root, first)["ok"]
+
+        other = _fresh_project(tmp_path)
+        imported = reqif_lib.import_reqif(other, first)
+        assert imported["ok"] and len(imported["created"]) == 1
+        new_id = imported["created"][0]
+        art = next(a for a in art_lib.discover_artifacts(other, "requirement") if a.id == new_id)
+        assert art.title == self.TITLE
+        # create_artifact prepends a "# {title}" heading on import, so the body
+        # is compared by containment (a pre-existing ReqIF.Text asymmetry, not
+        # an escaping one); the heading itself must carry the raw title.
+        assert self.BODY in art.body
+        assert f"# {self.TITLE}" in art.body
+        assert art.frontmatter.get("rationale") == self.RATIONALE
+        assert art.frontmatter["reqif_metadata"]["IBM_DOORS_CustomAttr"] == self.EXTRA
+
+        second = other / "second.reqif"
+        assert reqif_lib.export_reqif(other, second)["ok"]
+
+        v1 = _values_by_long_name(first, "REQ-001")
+        v2 = _values_by_long_name(second, new_id)
+        for key in ("ReqIF.Name", "ReqIF.Description", "IBM_DOORS_CustomAttr"):
+            assert v2[key] == v1[key], key
+        assert self.BODY in v2["ReqIF.Text"]
+
+        # Byte-stable on the wire: the serialized attribute is identical in
+        # both files, i.e. no entity layer was added by the round trip.
+        raw1 = first.read_text(encoding="utf-8")
+        raw2 = second.read_text(encoding="utf-8")
+        for key in ("ReqIF.Name", "ReqIF.Description", "IBM_DOORS_CustomAttr"):
+            pattern = (r'THE-VALUE="([^"]*)"[^>]*>\s*<DEFINITION>\s*'
+                       r'<ATTRIBUTE-DEFINITION-STRING[^>]*LONG-NAME="' + re.escape(key) + '"')
+            m1 = re.search(pattern, raw1)
+            m2 = re.search(pattern, raw2)
+            assert m1 and m2, key
+            assert m1.group(1) == m2.group(1), key

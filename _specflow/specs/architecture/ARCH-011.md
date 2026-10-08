@@ -11,9 +11,11 @@ links:
   role: verified_by
 created: '2026-04-22'
 fingerprint: sha256:f2f3094481f0
-thinking_techniques: [assumption-surfacing, devil's-advocate]
+thinking_techniques:
+- assumption_surfacing
+- devils_advocate
 version: 1
-modified: '2026-06-15'
+modified: '2026-10-08'
 ---
 
 # Tier 1 Conversational Routing

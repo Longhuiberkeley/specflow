@@ -113,9 +113,9 @@ The `specflow init` command installs a pre-commit hook automatically when `.git/
 
 If the project has no `.git/` directory yet, inform the user they can run `specflow hook install` after initializing git.
 
-### 6. Generate CI workflow (if requested)
+### 6. Confirm the CI workflow
 
-If a CI provider was specified and the adapters config was generated, the init command may have already created the workflow file. Verify from the output. If not, run:
+`specflow init` wrote `.github/workflows/specflow.yml` unless `--no-ci` was passed — look for `+ Generated .github/workflows/specflow.yml` in the output (an existing file is left as-is and reported with `! ... already exists`). Run `specflow ci generate` only when neither line appeared, or after a later `adapters.yaml` change:
 
 ```sh
 specflow ci generate
@@ -145,7 +145,7 @@ Then recommend:
 ## Rules
 
 - When offering the user choices for project type, presets, or CI, provide clear, bounded options.
-- The preset option should default to "None" unless the user indicates a regulated industry.
+- The preset option defaults to "None" unless the user chose Existing codebase (→ `adoption`) or names a pack they authored or installed locally (`.specflow/packs/<name>/`). No shipped preset is a compliance standard — a named standard routes to `/specflow-pack-author` after init.
 - The CI option defaults to GitHub Actions, which is what `specflow init` installs unless `--no-ci` is passed. (No GitLab/other adapter ships — for non-GitHub CI, route to `/specflow-adapter` instead of offering it.)
 - Every choice offered to the user includes "(Recommended)" on the suggested default.
 - Platform detection should be automatic when possible. Only ask when no marker is found.

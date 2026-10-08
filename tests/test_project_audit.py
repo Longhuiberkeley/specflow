@@ -293,6 +293,40 @@ class TestDryRun:
         # reliable witness that the writing path actually executed.
         assert (root / ".specflow" / "audits").exists()
 
+    def test_dry_run_prints_warn_findings_grouped_by_axis(self, tmp_path, capsys):
+        # F-033: with no report written, the dry run prints the error/warn
+        # findings it would gate on (info stays a count); the writing run
+        # keeps pointing at the report instead.
+        root = tmp_path / "project"
+        self._fixture(root)
+
+        rc_dry = audit_cmd.run(root, {"dry_run": True, "quick": True})
+        out_dry = capsys.readouterr().out
+        assert rc_dry == 2
+        assert "Findings (dry-run; error/warn only)" in out_dry
+        assert "[warn]" in out_dry and "REQ-001" in out_dry
+        assert "[info]" not in out_dry
+        head, _, _tail = out_dry.partition("Findings (dry-run")
+        _body, _, after = out_dry.partition("Findings (dry-run")
+        assert "vertical:" in after or "horizontal:" in after or "cross-cutting:" in after
+        assert "Report:   (dry-run — not written)" in after
+
+        rc_write = audit_cmd.run(root, {"dry_run": False, "quick": True})
+        out_write = capsys.readouterr().out
+        assert rc_write == rc_dry
+        assert "Findings (dry-run" not in out_write
+
+    def test_dry_run_findings_pass_through_redaction(self, tmp_path, capsys, monkeypatch):
+        from specflow.commands import project_audit as pa
+
+        monkeypatch.setattr(pa, "redact_text", lambda text: text.replace("REQ-001", "[REDACTED]"))
+        root = tmp_path / "project"
+        self._fixture(root)
+        audit_cmd.run(root, {"dry_run": True, "quick": True})
+        out = capsys.readouterr().out
+        _before, _, after = out.partition("Findings (dry-run")
+        assert "[REDACTED]" in after
+
 
 # ── v1.13 verification arc: accounting demotion of cry-wolf test warns ───────
 #
@@ -1060,7 +1094,7 @@ class TestAudSummaryStamping:
 
 
 # ── Baseline naming policy: drift selection + --baseline anchor ──────────────
-# CHL-NONSEMVE-c16b: (b) drift selection prefers semver-parseable release
+# CHL-351: (b) drift selection prefers semver-parseable release
 # baselines and falls back to the raw tail only when fewer than two names
 # parse; the --baseline flag is wired as an explicit drift anchor
 # (<baseline> → newest release), with warn + auto-fallback on an unknown
@@ -1949,3 +1983,45 @@ class TestNfrCoverageAccounting:
         assert stamps["summary_warns_escalating"] == 0
         assert stamps["summary_warns_accounting"] == 1
         assert stamps["summary_warns"] == 1
+
+
+# (e) lean path (DEC-095): a REQ realised directly by a STORY with no ARCH is a
+# refinement-shape fact — accounting under "coverage-shape" in both the
+# cross-cutting roll-up and the vertical thread row; an approved REQ with no
+# STORY stays structural ("completeness") and escalates.
+
+
+class TestLeanPathIsAccounting:
+    def _lean(self):
+        req = _art("REQ-001", "requirement", status="approved")
+        story = _art(
+            "STORY-001", "story", status="approved",
+            links=[art_lib.Link(target="REQ-001", role="implements")],
+        )
+        return [req, story]
+
+    def test_check_coverage_splits_lean_path_out_of_structural(self):
+        r = artifact_lint.check_coverage(self._lean())
+        assert r["lean_path_warning_count"] == 1
+        assert "REQ-001" in r["lean_path_detail"]
+        assert r["structural_warning_count"] == 0
+        # A REQ with no STORY at all is still a structural hole.
+        r2 = artifact_lint.check_coverage([_art("REQ-002", "requirement", status="approved")])
+        assert r2["lean_path_warning_count"] == 0
+        assert r2["structural_warning_count"] == 2  # no-arch + no-story
+
+    def test_vertical_lean_path_row_is_coverage_shape_accounting(self):
+        findings = audit_cmd._vertical_analysis(self._lean())
+        no_arch = [f for f in findings if "no ARCH" in f["message"]]
+        assert no_arch and no_arch[0]["concern"] == "coverage-shape"
+        assert "lean path" in no_arch[0]["message"]
+        escalating, accounting = audit_cmd._count_warns(no_arch)
+        assert (escalating, accounting) == (0, 1)
+
+    def test_cross_cutting_routes_lean_path_to_coverage_shape(self, tmp_path):
+        results = audit_cmd._cross_cutting_analysis(self._lean(), tmp_path)
+        shape = [f for f in results.get("coverage-shape", []) if "lean-path" in f["message"]]
+        assert len(shape) == 1 and shape[0]["severity"] == "warn"
+        assert not any("no ARCH" in f["message"] for f in results.get("completeness", []))
+        escalating, _ = audit_cmd._count_warns(shape)
+        assert escalating == 0

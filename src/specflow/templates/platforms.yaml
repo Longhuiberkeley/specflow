@@ -7,6 +7,14 @@
 #                     copy to the *install* dir (see get_skills_install_dir) —
 #                     for OpenCode that is .claude/skills, not this path.
 #   instruction_file: Where to inject pack context (AGENTS.md, CLAUDE.md, etc.)
+#                     Two Cursor conventions coexist on purpose: the injected
+#                     SpecFlow block lives in `.cursor/rules/specflow.md`
+#                     (plain Markdown, sentinel-bounded, rewritten in place by
+#                     init/refresh), while `specflow export --skills --format cursor-rules`
+#                     writes one `.cursor/rules/<skill>.mdc` per skill with
+#                     rule frontmatter. Renaming the injected file to `.mdc`
+#                     would need a sentinel migration for every existing
+#                     project, so it stays `.md` unless Cursor stops loading it.
 #   detection:        Directory/file markers used to auto-detect this platform
 #   legacy_dirs:      (optional) Old directories to clean up on reinstall. Only
 #                     specflow-owned entries (names starting with "specflow")
@@ -136,6 +144,8 @@ platforms:
   junie:
     name: "Junie"
     preferred: false
+    # Same skills_dir + instruction_file as codex: platform.get_skills_install_code
+    # resolves both to one install (the first registry entry with this dir).
     skills_dir: .agents/skills
     instruction_file: AGENTS.md
     detection:

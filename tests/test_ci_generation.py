@@ -57,7 +57,9 @@ def test_specflow_only_jobs_never_use_uv_run():
     assert "uv run specflow" not in flat
     # Instead, every specflow command bootstraps from the Git source.
     assert f"uvx --from git+{REPO}@v{__version__}" in flat
-    assert "specflow artifact-lint --method programmatic" in flat
+    assert "specflow artifact-lint" in flat
+    # F-085: `--method` is a no-op kept only for already-generated consumer CI.
+    assert "--method" not in text
 
 
 def test_change_impact_has_no_all_flag():
@@ -183,3 +185,115 @@ def test_repo_release_gate_no_continue_on_error():
     runs = [s["run"] for s in job["steps"] if "run" in s]
     flat = "\n".join(runs)
     assert "uv run specflow project-audit" in flat
+
+
+def test_repo_workflow_release_gate_checks_tag_against_package_version():
+    # F-058: a tag push must fail the release gate when the tag is not
+    # `v<specflow --version>`.
+    data = yaml.safe_load(_REPO_WORKFLOW.read_text(encoding="utf-8"))
+    job = data["jobs"]["specflow-release-gate"]
+    runs = "\n".join(s["run"] for s in job["steps"] if "run" in s)
+    assert "GITHUB_REF_NAME" in runs
+    assert "specflow --version" in runs
+    # The version check precedes the audit so a mis-tagged push fails fast.
+    names = [s.get("name", "") for s in job["steps"]]
+    assert names.index("Tag matches package version") < names.index("Release gate check")
+
+
+def test_repo_workflow_does_not_pass_method_flag():
+    # F-085: `--method` is a no-op; neither the repo workflow nor the generator
+    # should advertise it.
+    assert "--method" not in _REPO_WORKFLOW.read_text(encoding="utf-8")
+
+
+# ── `specflow ci generate` write safety (F-129) ──────────────────────────────
+
+from specflow.commands import ci as ci_cmd  # noqa: E402
+
+
+def _ci_project(tmp_path):
+    root = tmp_path / "proj"
+    (root / ".specflow").mkdir(parents=True)
+    (root / ".specflow" / "adapters.yaml").write_text(
+        "ci:\n  provider: github-actions\n  operations: [artifact-lint]\n", encoding="utf-8"
+    )
+    return root
+
+
+def test_ci_generate_writes_new_file_then_reports_unchanged(tmp_path, capsys):
+    root = _ci_project(tmp_path)
+    assert ci_cmd.run(root, {"ci_subcommand": "generate"}) == 0
+    wf = root / ".github" / "workflows" / "specflow.yml"
+    assert wf.exists()
+    assert "Wrote" in capsys.readouterr().out
+    assert ci_cmd.run(root, {"ci_subcommand": "generate"}) == 0
+    out = capsys.readouterr().out
+    assert "unchanged" in out and "Wrote" not in out
+
+
+def test_ci_generate_preserves_hand_edited_workflow_and_names_the_flags(tmp_path, capsys):
+    root = _ci_project(tmp_path)
+    wf = root / ".github" / "workflows" / "specflow.yml"
+    wf.parent.mkdir(parents=True)
+    wf.write_text("name: mine\n", encoding="utf-8")
+    assert ci_cmd.run(root, {"ci_subcommand": "generate"}) == 0
+    out = capsys.readouterr().out
+    assert wf.read_text(encoding="utf-8") == "name: mine\n"
+    assert "left as-is" in out
+    assert "specflow ci generate --force" in out and "--dry-run" in out
+    assert not (root / ".specflow" / "cache" / "backups").exists()
+
+
+def test_ci_generate_dry_run_writes_nothing(tmp_path, capsys):
+    root = _ci_project(tmp_path)
+    assert ci_cmd.run(root, {"ci_subcommand": "generate", "dry_run": True}) == 0
+    assert not (root / ".github").exists()
+    assert "would be written" in capsys.readouterr().out
+    wf = root / ".github" / "workflows" / "specflow.yml"
+    wf.parent.mkdir(parents=True)
+    wf.write_text("name: mine\n", encoding="utf-8")
+    assert ci_cmd.run(root, {"ci_subcommand": "generate", "dry_run": True, "force": True}) == 0
+    assert wf.read_text(encoding="utf-8") == "name: mine\n"
+    out = capsys.readouterr().out
+    assert "differs" in out
+    # The warning promises a preview, so dry-run shows the unified diff.
+    assert "--- .github/workflows/specflow.yml (existing)" in out
+    assert "+++ .github/workflows/specflow.yml (generated)" in out
+    assert "-name: mine" in out and "+name: SpecFlow" in out
+
+
+def test_bounded_diff_caps_long_output():
+    a = "\n".join(f"a{i}" for i in range(200))
+    b = "\n".join(f"b{i}" for i in range(200))
+    lines = ci_cmd._bounded_diff(a, b, "x.yml")
+    assert len(lines) == ci_cmd._DIFF_LINE_LIMIT + 1
+    assert lines[-1].startswith("... (") and lines[-1].endswith("more diff lines)")
+
+
+def test_cli_ci_generate_accepts_dry_run_and_force(tmp_path, monkeypatch, capsys):
+    """Parser wiring for the flags the preserve warning advertises (cli.py)."""
+    from specflow import cli
+    root = _ci_project(tmp_path)
+    monkeypatch.chdir(root)
+    assert cli.main(["ci", "generate", "--dry-run"]) == 0
+    assert not (root / ".github").exists()
+    wf = root / ".github" / "workflows" / "specflow.yml"
+    wf.parent.mkdir(parents=True)
+    wf.write_text("name: mine\n", encoding="utf-8")
+    assert cli.main(["ci", "generate"]) == 0
+    assert wf.read_text(encoding="utf-8") == "name: mine\n"
+    assert cli.main(["ci", "generate", "--force"]) == 0
+    assert wf.read_text(encoding="utf-8") != "name: mine\n"
+    capsys.readouterr()
+
+
+def test_ci_generate_force_backs_up_then_overwrites(tmp_path, capsys):
+    root = _ci_project(tmp_path)
+    wf = root / ".github" / "workflows" / "specflow.yml"
+    wf.parent.mkdir(parents=True)
+    wf.write_text("name: mine\n", encoding="utf-8")
+    assert ci_cmd.run(root, {"ci_subcommand": "generate", "force": True}) == 0
+    assert "specflow-pass-1" in wf.read_text(encoding="utf-8")
+    backups = list((root / ".specflow" / "cache" / "backups").glob("*/ci/specflow.yml"))
+    assert len(backups) == 1 and backups[0].read_text(encoding="utf-8") == "name: mine\n"
+    assert "Backed up" in capsys.readouterr().out

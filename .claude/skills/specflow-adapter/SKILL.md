@@ -1,6 +1,6 @@
 ---
 name: specflow-adapter
-description: "Configure CI spec validation, import/export artifacts, or team RBAC."
+description: "Configure CI spec validation, import/export artifacts, or team RBAC, or refresh installed skills/schemas after a SpecFlow upgrade."
 ---
 
 Extra text narrows scope — still run the deterministic core first.
@@ -53,11 +53,11 @@ Route to the appropriate section below based on the user's choice.
    - `change-impact` — **advisory** (blast-radius review on PRs; the job never fails the run)
    - `project-audit` — **advisory** (full audit on push to main; uploads the report, never fails the run)
 4. Write config to `.specflow/adapters.yaml`
-5. Generate workflow: `specflow ci generate`
-6. Install pre-commit hook: `specflow hook install`
+5. Generate workflow: `specflow ci generate` (`--dry-run` previews; an existing file that differs is preserved with a warning unless `--force`, which backs it up first)
+6. Install pre-commit hook: `specflow hook install` — it resolves git's hooks directory (worktrees, `core.hooksPath`) and refuses to replace a hook it does not own; users of pre-commit/lefthook/husky keep their hook and call `specflow hook pre-commit` from it (that hook stays theirs on every re-run), or run `specflow hook install --force` (backs the old hook up). A global `core.hooksPath` is refused without `--force`.
 7. Report what was generated and where
 
-**Existing CI coexistence:** SpecFlow generates its own workflow file (e.g., `.github/workflows/specflow.yml`) — it does not modify or overwrite existing CI workflows. Both run side by side.
+**Existing CI coexistence:** SpecFlow writes only its own workflow file (e.g., `.github/workflows/specflow.yml`); other workflows are never touched and run side by side. If that one file already exists with different content, `ci generate` leaves it as-is and warns — overwrite only with `--force`.
 
 **CI provider switching:** Change the `ci.provider` field in `.specflow/adapters.yaml`, then run `specflow ci generate` again. The new provider's workflow replaces the old one.
 
@@ -127,9 +127,9 @@ This rule is automatic when roles are configured. No additional setup needed.
 
 #### Generate CODEOWNERS
 
-Run `specflow init` to regenerate the `CODEOWNERS` file from the role configuration. This ensures GitHub requires reviews from the right people for spec directories.
+`specflow init` writes `CODEOWNERS` from the role configuration only when the file is absent — an existing one is left untouched (even with `--force`). To update it, hand-merge the ownership block, or rename the file and rerun `specflow init`. CODEOWNERS makes GitHub require reviews from the right people for spec directories.
 
-Explain: for real enforcement, combine with **GitHub branch protection** (require PR reviews, require signed commits). The pre-commit hook is advisory — it warns but can be bypassed. Branch protection is the hard gate.
+Explain: the pre-commit hook blocks on RBAC, broken links and schema failures, and warns on status cascade, story linkage and suspects — a local layer. For durable enforcement combine with **GitHub branch protection** (require PR reviews, require signed commits) and the `ci-gate` job: branch protection + CI are the hard gate.
 
 #### Write configuration
 
@@ -141,7 +141,7 @@ Update `.specflow/config.yaml` with the team section. Do not overwrite other con
 
 ### 2D. Skill and Schema Upgrades
 
-After upgrading SpecFlow, refresh copied assets through the universal CLI:
+Canonical upgrade procedure (other skills point here). After upgrading SpecFlow, refresh copied assets through the universal CLI, then re-run `specflow hook install` so the hook picks up fixes:
 
 1. Preview schema changes: `specflow refresh --schemas --dry-run`.
 2. Install missing schemas while preserving local drift: `specflow refresh --schemas`.
@@ -161,10 +161,10 @@ Each exported skill inlines its skill-local `references/**/*.md`, producing self
 
 ## Rules
 
-- Never overwrite existing CI workflow files without confirmation. The `specflow ci generate` command replaces files; always warn the user first.
-- When switching CI providers, mention that the old provider's workflow file should be manually deleted if it's at a different path.
+- `specflow ci generate` preserves an existing workflow file that differs (warning only); confirm with the user before passing `--force`. When switching CI providers, mention that the old provider's workflow file should be manually deleted if it's at a different path.
+- When reporting open items, tag each one `[engine]` (SpecFlow itself), `[this repo]` (the project's artifacts/config) or `[you]` (a decision only the user can take); for `[engine]` items suggest `specflow create --type defect --title "<title>"` as a suggestion, never silently.
 - RBAC is only enforced when role lists are non-empty. Always explain the solo-dev default.
-- The pre-commit hook is advisory. Always explain that real enforcement requires platform-level branch protection.
+- The pre-commit hook blocks on RBAC, links and schema and warns on the rest; it is the local layer. Always explain that durable enforcement is branch protection plus CI.
 
 ## References
 

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 import yaml
 
 from specflow.commands import pack_validate as pv
@@ -59,3 +60,27 @@ def test_pack_still_validates_and_installs(tmp_path: Path, capsys):
     assert result["ok"], result
     ids = {c["id"] for s in standards_lib.load_standards(root) for c in s.get("clauses", [])}
     assert {"DEMO-1", "DEMO-5"} <= ids
+
+
+# STORY-712 AC4 (F-106): the pack-author references describe the real fixture.
+_PACK_AUTHOR_REFS = [
+    PACKS_DIR.parent / "templates" / "skills" / "shared" / "specflow-pack-author" / "references" / name
+    for name in ("example-packs.md", "pack-structure.md")
+]
+
+
+@pytest.mark.parametrize("ref", _PACK_AUTHOR_REFS, ids=[p.name for p in _PACK_AUTHOR_REFS])
+def test_pack_author_references_match_the_real_fixture(ref: Path):
+    text = ref.read_text(encoding="utf-8")
+    assert "iso26262-demo" in text
+    assert "DEMO-1" in text
+    # The pre-v1.17.0 shape: a bundled hazard schema and ISO-numbered clause ids.
+    assert "schemas/hazard.yaml" not in text
+    assert "ISO26262-3.7" not in text
+    assert "specs/hazards" not in text
+
+
+def test_pack_structure_layout_lists_checklists():
+    text = (_PACK_AUTHOR_REFS[1]).read_text(encoding="utf-8")
+    layout = text.split("## pack.yaml")[0]
+    assert "checklists/" in layout, "pack-structure.md layout omits the checklists/ dir init copies"

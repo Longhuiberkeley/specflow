@@ -15,9 +15,10 @@ links:
 - target: REQ-033
   role: derives_from
 created: '2026-06-07'
-modified: '2026-06-15'
+modified: '2026-10-08'
 fingerprint: sha256:5eedd44d4af3
-thinking_techniques: [assumption-surfacing]
+thinking_techniques:
+- assumption_surfacing
 ---
 
 # Dynamic status dashboard for research categories

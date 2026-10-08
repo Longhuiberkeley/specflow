@@ -8,11 +8,11 @@ links:
 - target: REQ-026
   role: derives_from
 created: '2026-05-04'
-modified: '2026-08-10'
+modified: '2026-10-08'
 fingerprint: sha256:a1e55914cd09
 thinking_techniques:
-- assumption-surfacing
-- devil's-advocate
+- assumption_surfacing
+- devils_advocate
 rationale: 'Fully implemented: SPIDR, wave-cycle, DDD selection, decision guidance,
   and the bundled no-API handbook fallback now ship with executable evidence.'
 ---

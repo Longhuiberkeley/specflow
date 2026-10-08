@@ -8,7 +8,7 @@ The challenge engine operates in two modes:
 
 ## Proactive Mode
 
-Proactive challenges are checklist items with `mode: proactive`. They trigger during `specflow checklist-run --proactive`.
+Proactive challenges are checklist items with `mode: proactive`. They trigger during `specflow checklist-run --proactive` (and `specflow artifact-review --proactive`): when no blocking automated check failed, each item prints as `⚡ [severity] <check>` followed by a `Hint:` line carrying its `llm_prompt` (when it has one). The host agent evaluates the hint itself — there is no separate prompt builder and no external call.
 
 ### What proactive challenges do:
 1. Enumerate every branching path for each artifact:
@@ -16,7 +16,7 @@ Proactive challenges are checklist items with `mode: proactive`. They trigger du
    - What if an external system is slow/down?
    - What if the user acts out of order?
 2. Flag any path without a defined handling strategy
-3. Persist findings in the artifact's `edge_cases_identified` frontmatter field
+3. Record the findings in the artifact's `edge_cases_identified` frontmatter field (`specflow update <ID> --set edge_cases_identified=...`) — the agent writes it; the command only prints the hints
 
 ### Decision artifacts
 

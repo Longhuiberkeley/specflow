@@ -599,7 +599,7 @@ class TestLintRunIntegration:
 
 class TestFindingsBaselineRatchet:
     """Escalation is decided against the committed findings baseline, never by
-    run counters (DEC-FINDINGS-79d8). Replaces the STORY-663 3-run counter."""
+    run counters (DEC-099). Replaces the STORY-663 3-run counter."""
 
     def _seed_persistent_warning(self, root: Path) -> None:
         # Draft STORY with no links → orphan warning (links check) + draft

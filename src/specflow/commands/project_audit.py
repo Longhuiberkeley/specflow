@@ -412,7 +412,16 @@ def _vertical_analysis(artifacts: list[art_lib.Artifact]) -> list[dict[str, str]
         has_ddd = any(art_lib.get_prefix_from_id(a) == "DDD" for a in thread_arts)
         has_stories = len(story_ids) > 0
 
-        if not has_arch:
+        if not has_arch and has_stories:
+            # Lean path (DEC-095): the REQ is realised directly by a STORY —
+            # a refinement-shape fact, accounting under "coverage-shape",
+            # consistent with lint's coverage/no-arch class on the lean path.
+            findings.append({
+                "severity": "warn",
+                "concern": "coverage-shape",
+                "message": f"{req.id}: no ARCH refinement (lean path: realised directly by a STORY)",
+            })
+        elif not has_arch:
             findings.append({
                 "severity": "warn",
                 "message": f"{req.id}: no ARCH refinement in V-model thread",
@@ -539,6 +548,7 @@ def _cross_cutting_analysis(
         struct_n = int(lint_result.get("structural_warning_count", 0))
         verif_n = int(lint_result.get("verification_warning_count", 0))
         shape_n = int(lint_result.get("accounting_count", 0))
+        lean_n = int(lint_result.get("lean_path_warning_count", 0))
         if struct_n > 0:
             results.setdefault("completeness", []).append({
                 "severity": "warn",
@@ -566,6 +576,17 @@ def _cross_cutting_analysis(
                 "severity": "info",
                 "concern": "coverage-shape",
                 "message": str(lint_result.get("accounting_detail", "")).strip().lstrip("ℹ").strip(),
+            })
+        # Lean path (DEC-095): REQs realised directly by a STORY with no ARCH.
+        # Accounting under "coverage-shape" — printed and stamped, never exit 2.
+        if lean_n > 0:
+            results.setdefault("coverage-shape", []).append({
+                "severity": "warn",
+                "concern": "coverage-shape",
+                "message": (
+                    f"{lean_n} lean-path REQ(s) realised directly by a STORY, no ARCH: "
+                    f"{lint_result.get('lean_path_detail', '')[:200]}"
+                ),
             })
 
     _run_lens(results, "coverage", _coverage)
@@ -1258,6 +1279,29 @@ def _collect_all_findings(
     return all_f
 
 
+_DRY_RUN_AXES = ("horizontal", "vertical", "cross-cutting")
+
+
+def _print_dry_run_findings(findings: list[dict[str, str]]) -> None:
+    """Print error/warn findings grouped by axis (F-033 dry-run visibility)."""
+    actionable = [f for f in findings if f.get("severity") in ("error", "warn")]
+    if not actionable:
+        return
+    print(f"  {BOLD}Findings (dry-run; error/warn only){NC}")
+    for axis in _DRY_RUN_AXES:
+        items = [f for f in actionable if f.get("axis") == axis]
+        if not items:
+            continue
+        print(f"  {axis}:")
+        for f in items:
+            sev = f.get("severity", "")
+            color = RED if sev == "error" else YELLOW
+            group = f.get("concern") or f.get("type") or ""
+            tag = f" ({group})" if group and axis != "vertical" else ""
+            print(redact_text(f"    {color}[{sev}]{NC}{tag} {f.get('message', '')}"))
+    print()
+
+
 def _count_warns(findings: list[dict[str, str]]) -> tuple[int, int]:
     """Split warn-severity findings into (escalating, accounting) counts.
 
@@ -1526,7 +1570,7 @@ def run(root: Path, args: dict[str, Any]) -> int:
     artifacts = _sample_artifacts(artifacts, sample_pct)
     print(f"  Artifacts: {len(artifacts)}" + (f" (sampled {sample_pct}%)" if sample_pct < 100 else ""))
 
-    # --baseline drift anchor (CHL-NONSEMVE-c16b): resolved once and shared
+    # --baseline drift anchor (CHL-351): resolved once and shared
     # by the cross-cutting drift diff and the scope line. An unknown name
     # warns and falls back to the auto pair (accounting-not-policing: a typo
     # in the anchor never fails the audit). Anchored runs bypass the findings
@@ -1803,6 +1847,10 @@ def run(root: Path, args: dict[str, Any]) -> int:
     print()
     print(_SEP)
     if dry_run:
+        # No report file: print the actionable findings here so a read-only
+        # session or CI sees what it would gate on. Through redact_text
+        # like every written report (REQ-038); info stays a count.
+        _print_dry_run_findings(all_findings)
         print(f"  Report:   (dry-run — not written)")
     else:
         print(f"  Report:   {report_path.relative_to(root)}")

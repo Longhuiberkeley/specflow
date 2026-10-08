@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from datetime import date, datetime
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -297,18 +298,24 @@ def load_active_best_practices(
     only legacy BPs without that field fall back to applies_to links and tag
     intersection.
     """
-    bp_dir = root / "_specflow" / "specs" / "best-practices"
-    if not bp_dir.is_dir():
-        return []
+    return applicable_best_practices(_load_best_practices(root), artifact, root)
 
+
+def applicable_best_practices(
+    practices: list[art_lib.Artifact],
+    artifact: art_lib.Artifact,
+    root: Path | None = None,
+) -> list[art_lib.Artifact]:
+    """Filter already-loaded BPs to those applicable and approved for ``artifact``.
+
+    Pure counterpart of :func:`load_active_best_practices` so callers that
+    evaluate many targets parse the practice files once. Semantics are
+    identical: applicability predicate first, legacy applies_to/tag fallback
+    for BPs without one, and approved status as the final filter.
+    """
     artifact_tags = set(artifact.tags)
     applicable: list[art_lib.Artifact] = []
-    for bp_file in sorted(bp_dir.glob("*.md")):
-        if bp_file.name.startswith("_"):
-            continue
-        bp = art_lib.parse_artifact(bp_file)
-        if not bp:
-            continue
+    for bp in practices:
         if "applicability" in bp.frontmatter:
             matched = applicability_matches(bp.frontmatter.get("applicability"), artifact, root)
         else:
@@ -319,6 +326,125 @@ def load_active_best_practices(
 
     # Status is deliberately the final filter, after predicate/tag matching.
     return [bp for bp in applicable if status_resolves_approved(bp.status)]
+
+
+def _load_best_practices(root: Path) -> list[art_lib.Artifact]:
+    """Parse every non-underscore BP file under ``_specflow/specs/best-practices``."""
+    practices: list[art_lib.Artifact] = []
+    for bp_file in _best_practice_files(root):
+        bp = art_lib.parse_artifact(bp_file)
+        if bp:
+            practices.append(bp)
+    return practices
+
+
+def lifecycle_date(
+    artifact: art_lib.Artifact,
+    fields: tuple[str, ...] = ("created", "modified"),
+) -> date | None:
+    """Return the first parseable frontmatter date among ``fields``.
+
+    Keyed on git-tracked frontmatter, never on filesystem mtime: git does not
+    preserve mtimes, so a fresh clone stamps every file with checkout time and
+    identical committed content would lint differently per environment.
+    Accepts both quoted (``str``) and bare YAML dates (``date``/``datetime``);
+    a bare ``created: 2026-04-10`` is a real date, not a missing one.
+    """
+    for field in fields:
+        raw = artifact.frontmatter.get(field)
+        if isinstance(raw, datetime):
+            return raw.date()
+        if isinstance(raw, date):
+            return raw
+        if not isinstance(raw, str) or not raw.strip():
+            continue
+        try:
+            return date.fromisoformat(raw.strip()[:10])
+        except ValueError:
+            continue
+    return None
+
+
+BINDING_TARGET_TYPES: tuple[str, ...] = ("requirement", "architecture", "story")
+EXEMPT_UNSTAMPED = "unstamped"
+EXEMPT_GRACE = "grace"
+
+
+def in_scope_bindings(
+    root: Path,
+    artifacts: list[art_lib.Artifact],
+) -> list[tuple[art_lib.Artifact, art_lib.Artifact, bool, str | None]]:
+    """Enumerate every applicable (target, practice) pair with its scope verdict.
+
+    The single applicability predicate shared by ``artifact-lint``
+    bp-application and ``brief`` Practice bindings, so both report the same
+    counts. Each row is ``(target, bp, bound, exempt_reason)`` where ``bound``
+    is whether ``target`` links ``bp`` via ``guided_by`` and ``exempt_reason``
+    is ``None`` (in scope, accountable), :data:`EXEMPT_UNSTAMPED`, or
+    :data:`EXEMPT_GRACE`. Targets are REQ/ARCH/STORY; practices are the
+    approved BPs applicable to each target (:func:`applicable_best_practices`).
+
+    Exclusions and exemptions, in order:
+
+    * A BP whose dropped tailoring is authorized by an approved DEC is out of
+      scope entirely and produces no rows (``is_tailoring_dropped``); a drop
+      with a problem stays in scope — reporting the problem is the caller's job.
+      This applies to stamped and unstamped BPs alike: an authorized drop is
+      the strongest exclusion, so an unstamped-but-dropped BP yields no rows
+      rather than ``unstamped`` exempt rows (lint is unaffected because it
+      skips exempt rows; only brief's exempt tally sees the difference).
+    * ``unstamped``: a BP without a provenance migration stamp. The stamp is
+      the release boundary (DEC-089): legacy practices are never accounted.
+    * ``grace``: backfill grace for a legacy target. Keyed on the target's
+      ``created`` date (``modified`` only when ``created`` is absent) against
+      the BP's latest ``modified``/``created`` date: a target that predates the
+      practice is exempt. Deliberately NOT keyed on the target's ``modified``
+      date — a body-only wording edit or a CLI frontmatter write bumps
+      ``modified`` and would silently pull an old artifact into scope, firing
+      one accounting line per applicable BP (cry-wolf). Re-binding a legacy
+      artifact is an explicit act: a ``guided_by`` link. Hence a **bound**
+      pair is never grace-exempt — the link is the author's declaration that
+      the artifact was written against the practice, so it is counted and its
+      verification evidence is checked. When either side has no parseable
+      date the pair is in scope (conservative: accounting beats a silent skip).
+
+      The horizon is asymmetric by design: the target side is fixed for life
+      (``created``) while the BP side moves with ``modified``. Any CLI write
+      to a BP (status, tags, a wording edit) therefore moves the grace horizon
+      forward permanently for every unbound legacy target created before that
+      write — those targets no longer re-enter scope when they are next
+      edited. That is silent under-accounting, never a false alarm. Follow-up
+      (v1.18): key the BP side on an approval or provenance-stamp date rather
+      than ``modified`` so routine BP edits do not widen the grace window.
+    """
+    id_index = art_lib.build_id_index(artifacts)
+    practices = [
+        bp for bp in _load_best_practices(root)
+        if not is_tailoring_dropped(bp, id_index)
+    ]
+    rows: list[tuple[art_lib.Artifact, art_lib.Artifact, bool, str | None]] = []
+    for target in artifacts:
+        if target.type not in BINDING_TARGET_TYPES:
+            continue
+        target_date = lifecycle_date(target, ("created", "modified"))
+        for bp in applicable_best_practices(practices, target, root):
+            bound = any(
+                link.role == "guided_by" and link.target == bp.id
+                for link in target.links
+            )
+            exempt: str | None = None
+            if not bp.frontmatter.get("provenance"):
+                exempt = EXEMPT_UNSTAMPED
+            elif not bound:
+                bp_date = lifecycle_date(bp, ("modified", "created"))
+                if (
+                    target_date is not None
+                    and bp_date is not None
+                    and target_date <= bp_date
+                ):
+                    exempt = EXEMPT_GRACE
+            rows.append((target, bp, bound, exempt))
+    return rows
 
 
 def _best_practice_files(root: Path) -> list[Path]:

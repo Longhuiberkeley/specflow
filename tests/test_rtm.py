@@ -275,3 +275,220 @@ def _find_row(rows, req_id: str):
         if r["req"].id == req_id:
             return r
     return None
+
+
+# ── --gaps hides terminal REQs (STORY-716 AC4, F-034) ────────────────────────
+
+_TERMINAL_REQ = """---
+id: REQ-003
+title: Retired requirement
+type: requirement
+status: deprecated
+created: '2026-01-01'
+---
+Body.
+"""
+
+
+def test_gaps_hides_terminal_reqs_with_footer(project_root: Path, capsys):
+    _write(project_root / "_specflow/specs/requirements/REQ-003.md", _TERMINAL_REQ)
+    rc = rtm_cmd.run(project_root, {"format": "table", "gaps": True})
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "REQ-002" in out, "a live gap row still shows"
+    assert "REQ-003" not in out
+    assert "1 terminal REQ(s) hidden; --include-terminal to show" in out
+
+
+def test_gaps_include_terminal_shows_them_without_footer(project_root: Path, capsys):
+    _write(project_root / "_specflow/specs/requirements/REQ-003.md", _TERMINAL_REQ)
+    rtm_cmd.run(project_root, {"format": "table", "gaps": True, "include_terminal": True})
+    out = capsys.readouterr().out
+    assert "REQ-003 (deprecated)" in out
+    assert "terminal REQ(s) hidden" not in out
+
+
+def test_gaps_csv_has_no_footer(project_root: Path, capsys):
+    _write(project_root / "_specflow/specs/requirements/REQ-003.md", _TERMINAL_REQ)
+    rtm_cmd.run(project_root, {"format": "csv", "gaps": True})
+    out = capsys.readouterr().out
+    assert "REQ-003" not in out
+    assert "terminal REQ(s) hidden" not in out
+    assert out.splitlines()[0] == "req,status,arch,story,tests,gap"
+
+
+def test_full_matrix_still_lists_terminal_reqs(project_root: Path, capsys):
+    _write(project_root / "_specflow/specs/requirements/REQ-003.md", _TERMINAL_REQ)
+    rtm_cmd.run(project_root, {"format": "table"})
+    out = capsys.readouterr().out
+    assert "REQ-003 (deprecated)" in out
+    assert "terminal REQ(s) hidden" not in out
+
+
+# ── canonical parent-held refinement (F-009 engine half) ─────────────────────
+
+def _canonical_chain(root: Path) -> None:
+    """REQ-010 refined_by ARCH-010 refined_by DDD-010 — links held by the parent only."""
+    base = root / "_specflow"
+    _write(base / "specs/requirements/REQ-010.md", """---
+id: REQ-010
+title: Canonical-shape requirement
+type: requirement
+status: approved
+created: '2026-01-01'
+links:
+- target: ARCH-010
+  role: refined_by
+---
+Body.
+""")
+    _write(base / "specs/architecture/ARCH-010.md", """---
+id: ARCH-010
+title: Canonical-shape architecture
+type: architecture
+status: approved
+created: '2026-01-01'
+links:
+- target: DDD-010
+  role: refined_by
+---
+Body.
+""")
+    _write(base / "specs/detailed-design/DDD-010.md", """---
+id: DDD-010
+title: Canonical-shape design
+type: detailed-design
+status: approved
+created: '2026-01-01'
+---
+Body.
+""")
+    _write(base / "specs/integration-tests/IT-010.md", """---
+id: IT-010
+title: IT for ARCH-010
+type: integration-test
+status: approved
+created: '2026-01-01'
+links:
+- target: ARCH-010
+  role: verified_by
+---
+Body.
+""")
+    _write(base / "specs/unit-tests/UT-010.md", """---
+id: UT-010
+title: UT for DDD-010
+type: unit-test
+status: approved
+created: '2026-01-01'
+links:
+- target: DDD-010
+  role: verified_by
+---
+Body.
+""")
+
+
+def test_parent_held_refined_by_fills_arch_and_tests(project_root: Path):
+    _canonical_chain(project_root)
+    row = _find_row(_rows(project_root, {}), "REQ-010")
+    assert [a.id for a in row["archs"]] == ["ARCH-010"]
+    assert sorted(t.id for t in row["tests"]) == ["IT-010", "UT-010"]
+    assert row["gaps"] == ["STORY"]
+
+
+def test_child_held_legacy_shape_still_resolves(project_root: Path):
+    # The fixture's REQ-001 is refined both ways; ARCH-001 must appear once.
+    row = _find_row(_rows(project_root, {}), "REQ-001")
+    assert [a.id for a in row["archs"]] == ["ARCH-001"]
+
+
+def test_compute_chain_depth_follows_parent_held_refinement(project_root: Path):
+    from specflow.lib import artifacts as art_lib
+
+    _canonical_chain(project_root)
+    artifacts = art_lib.discover_artifacts(project_root)
+    path = art_lib.compute_chain_depth("REQ-010", art_lib.build_id_index(artifacts))
+    assert path[:3] == ["REQ-010", "ARCH-010", "DDD-010"]
+    assert path[-1] == "UT-010"
+
+
+def test_compute_chain_depth_ignores_legacy_child_held_refined_by(project_root: Path):
+    """A legacy ``DDD refined_by ARCH`` (child-held, pointing up) must not be
+    followed as if it were a parent-held refinement: walking it would climb from
+    DDD-X sideways into ARCH-B and REQ-B, inflating REQ-A's chain (P-11 blocker)."""
+    from specflow.lib import artifacts as art_lib
+
+    base = project_root / "_specflow"
+    _write(base / "specs/requirements/REQ-020.md", """---
+id: REQ-020
+title: REQ-A
+type: requirement
+status: approved
+created: '2026-01-01'
+---
+Body.
+""")
+    _write(base / "specs/requirements/REQ-021.md", """---
+id: REQ-021
+title: REQ-B
+type: requirement
+status: approved
+created: '2026-01-01'
+---
+Body.
+""")
+    _write(base / "specs/architecture/ARCH-020.md", """---
+id: ARCH-020
+title: ARCH-A
+type: architecture
+status: approved
+created: '2026-01-01'
+links:
+- target: REQ-020
+  role: derives_from
+---
+Body.
+""")
+    _write(base / "specs/architecture/ARCH-021.md", """---
+id: ARCH-021
+title: ARCH-B
+type: architecture
+status: approved
+created: '2026-01-01'
+links:
+- target: REQ-021
+  role: derives_from
+---
+Body.
+""")
+    _write(base / "specs/detailed-design/DDD-020.md", """---
+id: DDD-020
+title: DDD-X (legacy child-held refined_by)
+type: detailed-design
+status: approved
+created: '2026-01-01'
+links:
+- target: ARCH-020
+  role: refined_by
+- target: ARCH-021
+  role: refined_by
+---
+Body.
+""")
+    artifacts = art_lib.discover_artifacts(project_root)
+    path = art_lib.compute_chain_depth("REQ-020", art_lib.build_id_index(artifacts))
+    assert path[:2] == ["REQ-020", "ARCH-020"]
+    assert "ARCH-021" not in path
+    assert "REQ-021" not in path
+    # The legacy child-held edge still counts downstream (ARCH-020 -> DDD-020).
+    assert "DDD-020" in path
+
+
+def test_cli_parses_rtm_gaps_include_terminal():
+    """The `--gaps` footer advertises `--include-terminal`; the parser must accept it."""
+    from specflow.cli import build_parser
+
+    ns = build_parser().parse_args(["rtm", "--gaps", "--include-terminal"])
+    assert ns.gaps is True
+    assert ns.include_terminal is True

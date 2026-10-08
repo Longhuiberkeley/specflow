@@ -188,3 +188,25 @@ def test_cli_init_then_refresh_keep_format_version(tmp_path: Path, monkeypatch):
     assert _cfg(root)["format_version"] == 1
     assert cli.main(["refresh"]) == 0
     assert _cfg(root)["format_version"] == 1
+
+
+def test_cli_silent_without_format_version_and_refresh_stamps_it(tmp_path: Path, monkeypatch, capsys):
+    """Brownfield: a repo initialised before format_version existed (STORY-718).
+
+    Reads must stay silent (no cry-wolf upgrade warning) and the first
+    ``refresh`` stamps the key without touching anything else.
+    """
+    root = tmp_path / "p"
+    (root / ".claude").mkdir(parents=True)
+    _write_cfg(root, {"project": {"name": "legacy"}, "active_packs": []})
+    assert "format_version" not in _cfg(root)
+    monkeypatch.chdir(root)
+
+    cli.main(["transitions", "STORY-001"])
+    assert UPGRADE not in capsys.readouterr().err
+    assert config_lib.format_version_mismatch(root) is None
+
+    assert cli.main(["refresh", "--no-skills", "--no-context"]) == 0
+    cfg = _cfg(root)
+    assert cfg["format_version"] == config_lib.SUPPORTED_FORMAT_VERSION
+    assert cfg["project"] == {"name": "legacy"}

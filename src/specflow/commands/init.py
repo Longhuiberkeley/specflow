@@ -1,8 +1,6 @@
 """specflow init — Scaffold a SpecFlow project."""
 
 import shutil
-import stat
-from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
@@ -13,7 +11,6 @@ from specflow.lib import rbac as rbac_lib
 from specflow.lib import scaffold as scaffold_lib
 from specflow.lib import config as config_lib
 from specflow.lib.adapters import load_adapters_config, get_adapter
-from specflow.lib.adapters.github_actions import _DEFAULT_HOOK_SCRIPT
 
 
 def _apply_preset(root: Path, preset: str, platform_code: str | None = None) -> int:
@@ -62,14 +59,22 @@ def _get_package_templates() -> Path:
     return Path(__file__).parent.parent / "templates"
 
 
-def _install_optional_types(root: Path, type_names: list[str]) -> int:
+def _install_optional_types(root: Path, type_names: list[str], *, force: bool = False) -> int:
     """Install optional artifact type schemas from templates/schemas/optional/.
+
+    An already-installed type is skipped; with ``force`` (``init --force
+    --with-types X``) a requested type whose installed copy drifted from the
+    shipped template is reset to it, matching what ``--force`` does to the
+    base schemas (the backup taken earlier in the run holds the old copy).
+    Drift in an installed optional type is otherwise surfaced by
+    ``specflow refresh --schemas`` / ``brief`` like any base schema.
 
     Returns 0 on success, 1 on error.
     """
     optional_dir = _get_package_templates() / "schemas" / "optional"
     schema_dst = root / ".specflow" / "schema"
     schema_dst.mkdir(parents=True, exist_ok=True)
+    available = sorted(f.stem for f in optional_dir.glob("*.yaml")) if optional_dir.is_dir() else []
 
     installed = []
     for type_name in type_names:
@@ -78,7 +83,7 @@ def _install_optional_types(root: Path, type_names: list[str]) -> int:
             continue
         src = optional_dir / f"{type_name}.yaml"
         if not src.exists():
-            print(f"  x Optional type '{type_name}' not found (available: hazard, risk, control)")
+            print(f"  x Optional type '{type_name}' not found (available: {', '.join(available)})")
             return 1
 
         data = yaml.safe_load(src.read_text(encoding="utf-8"))
@@ -88,7 +93,11 @@ def _install_optional_types(root: Path, type_names: list[str]) -> int:
 
         dst = schema_dst / f"{type_name}.yaml"
         if dst.exists():
-            print(f"  = Type '{type_name}' already installed — skipping")
+            if force and dst.read_bytes() != src.read_bytes():
+                shutil.copy2(str(src), str(dst))
+                print(f"  + Type '{type_name}' reset to the shipped schema (--force)")
+            else:
+                print(f"  = Type '{type_name}' already installed — skipping")
             continue
 
         shutil.copy2(str(src), str(dst))
@@ -180,7 +189,7 @@ def _multi_platform_warning(root: Path, installed_code: str, explicit_platform: 
     return (
         f"⚠ Multiple AI-host platforms detected: {installed_code} (installed), {others_str}. "
         f"Skills were installed only for {install_code} "
-        f"(OpenCode reads .claude/skills; other hosts need their own copy). "
+        f"(hosts that share its skills tree are covered; other hosts need their own copy). "
         f"Run 'specflow refresh --platform <code>' for each other host, "
         f"or 'specflow refresh --all-platforms'."
         f"{leftover_note}"
@@ -217,7 +226,10 @@ def run(root: Path, args: dict) -> int:
     is_reinit = (specflow_dir / "config.yaml").exists()
 
     if is_reinit and force:
-        backup_dir = specflow_dir / "cache" / "backups" / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        backup_dir = scaffold_lib.backup_run_dir(root)
+        previous_packs = [
+            str(p) for p in (config_lib.read_config(root) or {}).get("active_packs", []) or []
+        ]
         try:
             backup_dir.mkdir(parents=True, exist_ok=True)
             backed_up = config_lib.backup_specflow_internals(root, backup_dir)
@@ -227,7 +239,15 @@ def run(root: Path, args: dict) -> int:
             print(f"  x Backup failed: {e}. Aborting --force re-init.")
             return 1
 
-        print("  + --force: clean re-initialization")
+        reset_note = "config.yaml, state.yaml and schema/ reset to fresh defaults"
+        if previous_packs:
+            reset_note += (
+                f"; active_packs cleared ({', '.join(previous_packs)}) along with their "
+                "pack artifact_types"
+            )
+            if not args.get("preset"):
+                reset_note += " — re-apply with --preset"
+        print(f"  + --force: clean re-initialization — {reset_note}")
         is_reinit = False
         _force_overwrite_schemas = True
     else:
@@ -272,13 +292,19 @@ def run(root: Path, args: dict) -> int:
         config_lib.write_state(root, state)
         print("  + state.yaml written")
 
-        # DEC-FINDINGS-79d8: new projects start with the findings ratchet on
+        # DEC-099: new projects start with the findings ratchet on
         # (an empty baseline, written by the baseline command's routine).
+        # F-117: a --force re-init keeps an existing baseline — it is accepted
+        # debt, not scaffolding, and emptying it would silently re-arm every
+        # accepted finding.
         from specflow.commands.findings_baseline import write_baseline
         from specflow.core.findings_baseline import BASELINE_FILE
 
-        write_baseline(root, set())
-        print(f"  + {BASELINE_FILE} written (empty — findings ratchet on)")
+        if (root / BASELINE_FILE).exists():
+            print(f"  = {BASELINE_FILE} kept (existing accepted findings preserved)")
+        else:
+            write_baseline(root, set())
+            print(f"  + {BASELINE_FILE} written (empty — findings ratchet on)")
 
     domain = args.get("domain")
     domain_tags_str = args.get("domain_tags", "")
@@ -304,7 +330,7 @@ def run(root: Path, args: dict) -> int:
     dest_rel = dest.relative_to(root)
     if install_code != platform_code:
         print(f"  Installing skills for {platform_name} into {dest_rel} "
-              f"(OpenCode reads .claude/skills; not copying a second tree)...")
+              f"(shared with {install_code}; not copying a second tree)...")
     else:
         print(f"  Installing skills for {platform_name}...")
     _install_skills(root, platform_code)
@@ -335,7 +361,7 @@ def run(root: Path, args: dict) -> int:
         type_names = [t.strip() for t in with_types.split(",") if t.strip()]
         if type_names:
             print(f"  Installing optional artifact types: {', '.join(type_names)}...")
-            if _install_optional_types(root, type_names) != 0:
+            if _install_optional_types(root, type_names, force=force) != 0:
                 return 1
 
     _install_pre_commit_hook(root)
@@ -373,19 +399,35 @@ def run(root: Path, args: dict) -> int:
 
 
 def _install_pre_commit_hook(root: Path) -> None:
-    git_dir = root / ".git"
-    if not git_dir.is_dir():
+    """Install the pre-commit hook via the installer shared with ``specflow hook install``.
+
+    Resolves the hooks directory through git (linked worktrees, core.hooksPath),
+    never replaces a hook specflow does not own, and reports what happened.
+    """
+    from specflow.commands import hook as hook_cmd
+
+    res = hook_cmd.install_pre_commit_hook(root, force=False)
+    status, display = res["status"], res["display"]
+    if status == "not-git":
+        print("  ! Not a git repository (or not its top level) -- run `specflow hook install` after `git init`")
         return
-    hooks_dir = git_dir / "hooks"
-    hooks_dir.mkdir(parents=True, exist_ok=True)
-    hook_path = hooks_dir / "pre-commit"
-    if hook_path.exists() and "specflow hook pre-commit" not in hook_path.read_text(encoding="utf-8", errors="ignore"):
-        print(f"  ! .git/hooks/pre-commit exists and is not specflow-owned -- leaving as-is")
+    if status == "refused-hooks-path":
+        print(f"  ! core.hooksPath={res['hooks_path']} is set in your {res['hooks_path_scope']} "
+              f"git config -- not installing a machine-wide hook")
+        print(f"    (set a repo-local core.hooksPath, or install anyway: {hook_cmd.FORCE_HINT})")
         return
-    hook_path.write_text(_DEFAULT_HOOK_SCRIPT, encoding="utf-8")
-    mode = hook_path.stat().st_mode
-    hook_path.chmod(mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-    print(f"  + Installed .git/hooks/pre-commit")
+    if status == "refused":
+        print(f"  ! {display} exists and is not specflow-owned -- leaving as-is")
+        print(f"    (replace it after a backup: {hook_cmd.FORCE_HINT})")
+        return
+    if res["backup"] is not None:
+        print(f"  ! Backed up the previous hook to {hook_cmd._display_path(root, res['backup'])}")
+    if status == "unchanged":
+        print(f"  = {display} already up to date")
+    else:
+        print(f"  + Installed {display}")
+    if res["hooks_path"]:
+        print(f"    note: core.hooksPath={res['hooks_path']} -- git runs hooks from there")
 
 
 def _render_codeowners(root: Path) -> None:

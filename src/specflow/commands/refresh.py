@@ -48,19 +48,20 @@ def _count_skill_diffs(skills_src: Path, skills_dst: Path) -> tuple[int, list[st
     return len(changed), changed
 
 
-def _install_skills(root: Path, platform_code: str, *, dry_run: bool = False) -> int:
+def _install_skills(root: Path, platform_code: str) -> int:
     """Copy skills from package templates to platform skills directory.
 
-    Returns the number of skills installed.
+    Always writes — the caller decides on dry-run before calling. Returns
+    the number of skill directories copied (every shipped skill is
+    re-copied; the caller reports only the ones that actually changed).
+    Legacy-dir cleanup is the caller's job (``_refresh_platform_specific``)
+    so it also runs when the skills are already current.
     """
     template_dir = _get_package_templates()
     skills_src = template_dir / "skills" / "shared"
     skills_dst = plat_lib.get_skills_install_dir(root, platform_code)
 
     skills_dst.mkdir(parents=True, exist_ok=True)
-
-    # STORY-685: only specflow-owned entries; never the instruction file's dir.
-    plat_lib.cleanup_legacy_dirs(root, platform_code, dry_run=dry_run)
 
     count = 0
     for skill_dir in skills_src.iterdir():
@@ -83,28 +84,53 @@ def classify_schemas(root: Path, template_dir: Path | None = None) -> tuple[list
       - identical: installed file exists and matches the package byte-for-byte
       - changed:   installed file exists but differs from the package (drift)
 
-    Only base ``templates/schemas/*.yaml`` are considered; pack-added schemas
-    that live only in ``.specflow/schema/`` are never classified, so pack-owned
-    drift does not pollute the base-schema signal.
+    Base ``templates/schemas/*.yaml`` are always considered. Optional types
+    (``templates/schemas/optional/*.yaml``, installed via
+    ``init --with-types``) are considered ONLY when already installed — an
+    uninstalled optional type is never reported as ``new``, so opting out
+    stays silent while an installed copy still gets a drift signal.
+    Pack-added schemas that live only in ``.specflow/schema/`` are never
+    classified, and an optional core name that an ACTIVE pack owns (its
+    manifest adds the type, or it ships ``schemas/<name>.yaml``) is skipped
+    too, so pack-owned drift does not pollute the base-schema signal.
     """
     if template_dir is None:
         template_dir = _get_package_templates()
-    schema_src = template_dir / "schemas"
     schema_dst = root / ".specflow" / "schema"
     new: list[str] = []
     identical: list[str] = []
     changed: list[str] = []
-    if not schema_src.is_dir():
-        return new, identical, changed
-    for yaml_file in sorted(schema_src.glob("*.yaml")):
+    for yaml_file, installed_only in _shipped_schema_files(template_dir, root):
         dst_file = schema_dst / yaml_file.name
         if not dst_file.exists():
-            new.append(yaml_file.stem)
+            if not installed_only:
+                new.append(yaml_file.stem)
         elif dst_file.read_bytes() == yaml_file.read_bytes():
             identical.append(yaml_file.stem)
         else:
             changed.append(yaml_file.stem)
     return new, identical, changed
+
+
+def _shipped_schema_files(template_dir: Path, root: Path) -> list[tuple[Path, bool]]:
+    """``(template, installed_only)`` for base schemas then optional types.
+
+    An optional type that an active pack owns is left out entirely: the
+    installed ``.specflow/schema/<name>.yaml`` is the PACK's file (synced by
+    ``refresh --packs``), not a drifted copy of the core optional schema.
+    """
+    schema_src = template_dir / "schemas"
+    files: list[tuple[Path, bool]] = []
+    if schema_src.is_dir():
+        files.extend((f, False) for f in sorted(schema_src.glob("*.yaml")))
+    optional_src = schema_src / "optional"
+    if optional_src.is_dir():
+        active_packs = (config_lib.read_config(root) or {}).get("active_packs", []) or []
+        pack_owned = scaffold_lib.pack_owned_schema_names(root, active_packs)
+        files.extend(
+            (f, True) for f in sorted(optional_src.glob("*.yaml")) if f.stem not in pack_owned
+        )
+    return files
 
 
 def _update_schemas(root: Path, template_dir: Path, *, force: bool = False) -> tuple[int, list[str], list[str]]:
@@ -115,19 +141,22 @@ def _update_schemas(root: Path, template_dir: Path, *, force: bool = False) -> t
     overwriting silently would lose intentional drift. ``force`` explicitly
     replaces drifted schemas with the shipped defaults.
 
+    Installed optional types (``schemas/optional/``) follow the same rule;
+    an optional type that is not installed, or that an active pack owns, is
+    never written here (even with ``force``).
+
     Returns ``(written_count, preserved_changed, replaced_changed)``.
     """
-    schema_src = template_dir / "schemas"
     schema_dst = root / ".specflow" / "schema"
     schema_dst.mkdir(parents=True, exist_ok=True)
     written = 0
     preserved: list[str] = []
     replaced: list[str] = []
-    if not schema_src.is_dir():
-        return 0, preserved, replaced
-    for yaml_file in sorted(schema_src.glob("*.yaml")):
+    for yaml_file, installed_only in _shipped_schema_files(template_dir, root):
         dst_file = schema_dst / yaml_file.name
         if not dst_file.exists():
+            if installed_only:
+                continue
             shutil.copy2(str(yaml_file), str(dst_file))
             written += 1
         elif dst_file.read_bytes() != yaml_file.read_bytes():
@@ -169,9 +198,16 @@ def _refresh_platform_specific(
     if do_skills:
         skills_src = template_dir / "skills" / "shared"
         skills_dst = plat_lib.get_skills_install_dir(root, platform_code)
-        remapped = plat_lib.get_skills_install_code(platform_code) != platform_code
-        dest_note = " → .claude/skills (OpenCode reads this tree)" if remapped else ""
+        install_code = plat_lib.get_skills_install_code(platform_code)
+        dest_note = ""
+        if install_code != platform_code:
+            dest_rel = skills_dst.relative_to(root).as_posix()
+            dest_note = f" → {dest_rel} (shared with {install_code})"
         leftovers = plat_lib.leftover_specflow_skills(root, platform_code)
+        # STORY-685: legacy cleanup runs before any copy or context injection,
+        # and (F-130) runs even when the skills are already current — a
+        # leftover `.claude/commands/specflow-*` is stale either way.
+        legacy_removed = plat_lib.cleanup_legacy_dirs(root, platform_code, dry_run=dry_run)
         changed_count, changed_names = _count_skill_diffs(skills_src, skills_dst)
         if dry_run:
             if changed_count:
@@ -183,13 +219,16 @@ def _refresh_platform_specific(
                 summary.append(("skills", f"up to date{dest_note}"))
         else:
             if changed_count:
-                installed = _install_skills(root, platform_code, dry_run=False)
+                _install_skills(root, platform_code)
                 summary.append((
                     "skills",
-                    f"{installed} installed ({', '.join(changed_names)}){dest_note}",
+                    f"{len(changed_names)} installed ({', '.join(changed_names)}){dest_note}",
                 ))
             else:
                 summary.append(("skills", f"up to date{dest_note}"))
+        if legacy_removed:
+            verb = "would remove" if dry_run else "removed"
+            summary.append(("skills-legacy", f"{verb} {', '.join(legacy_removed)}"))
         if leftovers:
             summary.append((
                 "skills-leftover",
@@ -237,6 +276,7 @@ def _refresh_shared(
     do_schemas: bool,
     do_checklists: bool,
     force_schemas: bool,
+    backup_stamp: str | None = None,
 ) -> list[tuple[str, str]]:
     """Run the refresh steps that are not platform-scoped (schemas, checklists)."""
     summary: list[tuple[str, str]] = []
@@ -251,7 +291,7 @@ def _refresh_shared(
         verb = "would remove" if dry_run else "removed"
         summary.append(("config", f"{verb} stale version: {legacy_version} (format_version is the stamp)"))
 
-    # ── Findings ratchet migration (DEC-FINDINGS-79d8) ──────────
+    # ── Findings ratchet migration (DEC-099) ──────────
     from specflow.commands.artifact_lint import LEGACY_HISTORY_FILE
     from specflow.core.findings_baseline import BASELINE_FILE
 
@@ -346,12 +386,30 @@ def _refresh_shared(
     if do_checklists:
         summary.append(("checklists", _refresh_checklists(
             root, template_dir, dry_run=dry_run, force=force_schemas,
+            backup_stamp=backup_stamp,
         )))
 
     return summary
 
 
-def _refresh_checklists(root: Path, template_dir: Path, *, dry_run: bool, force: bool) -> str:
+_LIST_CAP = 8
+
+
+def _list_paths(paths: list[str], cap: int = _LIST_CAP) -> str:
+    """``a, b, c (+N more)`` — enough to see what moved without a wall of paths."""
+    shown = ", ".join(paths[:cap])
+    more = len(paths) - cap
+    return f"{shown} (+{more} more)" if more > 0 else shown
+
+
+def _refresh_checklists(
+    root: Path,
+    template_dir: Path,
+    *,
+    dry_run: bool,
+    force: bool,
+    backup_stamp: str | None = None,
+) -> str:
     """Write missing checklists, repair unparseable ones, and replace drifted
     ones only with ``--force`` (STORY-687: fixed templates must reach
     projects initialised before the fix)."""
@@ -366,7 +424,7 @@ def _refresh_checklists(root: Path, template_dir: Path, *, dry_run: bool, force:
             verb = "would replace" if force else "would preserve"
             parts.append(f"{verb} {len(status['drifted'])} changed: {', '.join(status['drifted'])}")
         return "; ".join(parts) or "up to date"
-    result = scaffold_lib.copy_checklists(root, template_dir, force=force)
+    result = scaffold_lib.copy_checklists(root, template_dir, force=force, backup_stamp=backup_stamp)
     parts = []
     if result["missing"]:
         parts.append(f"{len(result['missing'])} written")
@@ -380,8 +438,8 @@ def _refresh_checklists(root: Path, template_dir: Path, *, dry_run: bool, force:
                 f"{len(result['drifted'])} preserved (changed): {', '.join(result['drifted'])}"
                 " — run `specflow refresh --checklists --force` to take the shipped version"
             )
-    if result["replaced"]:
-        parts.append("backups in .specflow/cache/backups/")
+    if result.get("backup_dir"):
+        parts.append(f"backups in {result['backup_dir']}/checklists/")
     return "; ".join(parts) or "up to date"
 
 
@@ -391,8 +449,13 @@ def _refresh_active_packs(
     *,
     dry_run: bool,
     force: bool,
+    backup_stamp: str | None = None,
 ) -> list[tuple[str, str]]:
-    """Preview or refresh assets for packs listed in project config."""
+    """Preview or refresh assets for packs listed in project config.
+
+    Names every differing / written / preserved / backed-up path (capped at
+    ``_LIST_CAP`` + "more") so a user can see WHICH generated file moved.
+    """
     summary: list[tuple[str, str]] = []
     active_packs = (config_lib.read_config(root) or {}).get("active_packs", []) or []
     for pack_name in active_packs:
@@ -404,18 +467,36 @@ def _refresh_active_packs(
             continue
         changes = preview["changes"]
         if dry_run:
-            detail = f"{len(changes)} managed file(s) differ" if changes else "up to date"
+            if changes:
+                new = [str(dst.relative_to(root).as_posix()) for _s, dst, _k in changes if not dst.exists()]
+                differ = [str(dst.relative_to(root).as_posix()) for _s, dst, _k in changes if dst.exists()]
+                parts = []
+                if new:
+                    parts.append(f"would write {len(new)} new: {_list_paths(new)}")
+                if differ:
+                    verb = "would replace" if force else "would preserve"
+                    parts.append(f"{verb} {len(differ)} changed: {_list_paths(differ)}")
+                detail = "; ".join(parts)
+            else:
+                detail = "up to date"
             summary.append((f"pack:{pack_name}", detail))
             continue
         result = scaffold_lib.refresh_pack(
-            root, pack_name, packs_dir, platform_codes, force=force,
+            root, pack_name, packs_dir, platform_codes, force=force, backup_stamp=backup_stamp,
         )
-        written = len(result.get("written", []))
-        preserved = len(result.get("preserved", []))
-        detail = f"{written} written"
+        written = result.get("written", [])
+        preserved = result.get("preserved", [])
+        parts = []
+        if written:
+            parts.append(f"{len(written)} written: {_list_paths(written)}")
         if preserved:
-            detail += f", {preserved} preserved (use --force to replace)"
-        summary.append((f"pack:{pack_name}", detail))
+            parts.append(
+                f"{len(preserved)} preserved (changed): {_list_paths(preserved)}"
+                " — run `specflow refresh --packs --force` to take the pack version"
+            )
+        if result.get("backup_dir"):
+            parts.append(f"backups in {result['backup_dir']}/packs/{pack_name}/")
+        summary.append((f"pack:{pack_name}", "; ".join(parts) or "up to date"))
     if not active_packs:
         summary.append(("packs", "no active packs"))
     return summary
@@ -433,6 +514,7 @@ def _run_all_platforms(root: Path, detected: list[tuple[str, dict]], args: dict)
     force_schemas = args.get("force", False)
 
     template_dir = _get_package_templates()
+    backup_stamp = scaffold_lib.backup_run_dir(root).name
 
     if dry_run:
         print(f"  [dry-run] Refresh preview for {len(detected)} platform(s):")
@@ -450,9 +532,10 @@ def _run_all_platforms(root: Path, detected: list[tuple[str, dict]], args: dict)
             dry_run=dry_run, do_skills=do_skills_here, do_context=do_context,
         )
         if do_skills and not do_skills_here:
+            shared_dir = plat_lib.get_skills_install_dir(root, platform_code).relative_to(root).as_posix()
             platform_summary.insert(0, (
                 "skills",
-                f"shared with {install_code} (.claude/skills) — not copied again",
+                f"shared with {install_code} ({shared_dir}) — not copied again",
             ))
         leftovers = plat_lib.leftover_specflow_skills(root, platform_code)
         if leftovers and not any(label == "skills-leftover" for label, _ in platform_summary):
@@ -468,7 +551,7 @@ def _run_all_platforms(root: Path, detected: list[tuple[str, dict]], args: dict)
     shared_summary = _refresh_shared(
         root, template_dir,
         dry_run=dry_run, do_schemas=do_schemas, do_checklists=do_checklists,
-        force_schemas=force_schemas,
+        force_schemas=force_schemas, backup_stamp=backup_stamp,
     )
     if args.get("packs", False):
         shared_summary.extend(_refresh_active_packs(
@@ -476,6 +559,7 @@ def _run_all_platforms(root: Path, detected: list[tuple[str, dict]], args: dict)
             [code for code, _ in detected],
             dry_run=dry_run,
             force=force_schemas,
+            backup_stamp=backup_stamp,
         ))
     if shared_summary:
         print("    shared:")
@@ -533,6 +617,7 @@ def run(root: Path, args: dict) -> int:
     force_schemas = args.get("force", False)
 
     template_dir = _get_package_templates()
+    backup_stamp = scaffold_lib.backup_run_dir(root).name
 
     summary = _refresh_platform_specific(
         root, platform_code, template_dir,
@@ -561,7 +646,7 @@ def run(root: Path, args: dict) -> int:
     summary.extend(_refresh_shared(
         root, template_dir,
         dry_run=dry_run, do_schemas=do_schemas, do_checklists=do_checklists,
-        force_schemas=force_schemas,
+        force_schemas=force_schemas, backup_stamp=backup_stamp,
     ))
     if args.get("packs", False):
         summary.extend(_refresh_active_packs(
@@ -569,6 +654,7 @@ def run(root: Path, args: dict) -> int:
             [platform_code],
             dry_run=dry_run,
             force=force_schemas,
+            backup_stamp=backup_stamp,
         ))
 
     # ── Summary ─────────────────────────────────────────────────

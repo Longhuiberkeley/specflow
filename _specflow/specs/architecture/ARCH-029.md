@@ -18,9 +18,9 @@ summary: 'Architecture of the REQ-038 privacy gate: (1) a deterministic denylist
   that ships in the mirror changes. History rewrite (git filter-repo) is out of scope
   for the gate and tracked as a separate owner decision.'
 fingerprint: sha256:6bd010cdbfc6
-modified: '2026-09-13'
+modified: '2026-10-08'
 thinking_techniques:
-- assumption-surfacing
+- assumption_surfacing
 ---
 
 # Privacy gate: denylist release check + sanctioned-exception model

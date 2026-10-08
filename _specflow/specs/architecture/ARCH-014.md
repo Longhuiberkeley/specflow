@@ -8,9 +8,10 @@ links:
 - target: REQ-009
   role: derives_from
 created: '2026-04-22'
-modified: '2026-06-15'
+modified: '2026-10-08'
 fingerprint: sha256:dae45f1d864e
-thinking_techniques: [assumption-surfacing]
+thinking_techniques:
+- assumption_surfacing
 ---
 
 # Test Engine

@@ -209,7 +209,7 @@ class TestParseSetFieldsDottedKeys:
             )
 
     def test_flat_typo_suggests_closest(self):
-        with pytest.raises(ValueError, match="Did you mean"):
+        with pytest.raises(ValueError, match="(?i)did you mean"):
             art_lib.parse_set_fields(["rationalee=x"], known_keys=["rationale"])
 
     def test_flat_unknown_not_close_passes_through(self):

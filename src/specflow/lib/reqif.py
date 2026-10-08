@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import datetime as _dt
 import hashlib
-import html
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
@@ -284,11 +283,13 @@ def export_reqif(root: Path, output_path: Path) -> dict[str, Any]:
             "SpecFlow.Tags": ",".join(art.tags),
             "SpecFlow.Type": art.type,
         }
+        # ElementTree escapes <, >, &, " in attribute values on write, so the
+        # raw string goes in; pre-escaping would double-encode (F-116).
         for long_name, value in mapping.items():
             attr = ET.SubElement(
                 values,
                 "ATTRIBUTE-VALUE-STRING",
-                {"THE-VALUE": html.escape(str(value or ""), quote=True)},
+                {"THE-VALUE": str(value or "")},
             )
             defn = ET.SubElement(attr, "DEFINITION")
             ET.SubElement(defn, "ATTRIBUTE-DEFINITION-STRING", {
@@ -304,7 +305,7 @@ def export_reqif(root: Path, output_path: Path) -> dict[str, Any]:
                 attr = ET.SubElement(
                     values,
                     "ATTRIBUTE-VALUE-STRING",
-                    {"THE-VALUE": html.escape(str(v or ""), quote=True)},
+                    {"THE-VALUE": str(v or "")},
                 )
                 defn = ET.SubElement(attr, "DEFINITION")
                 ET.SubElement(defn, "ATTRIBUTE-DEFINITION-STRING", {

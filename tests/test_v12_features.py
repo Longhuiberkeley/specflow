@@ -467,6 +467,12 @@ class TestInitForce:
         assert backups_dir.exists()
         backup_dirs = list(backups_dir.iterdir())
         assert len(backup_dirs) >= 1
+        # F-117: the backup is a real snapshot (config + schema here; this
+        # hand-built fixture has no baseline/checklists — see
+        # test_scaffold_refresh_hygiene for the full set).
+        run_dir = backup_dirs[0]
+        assert (run_dir / "config.yaml").exists()
+        assert (run_dir / "schema").is_dir()
 
     def test_force_fresh_state(self, project_root: Path):
         state = config_lib.read_state(project_root)

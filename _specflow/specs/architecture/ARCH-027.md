@@ -4,8 +4,8 @@ title: "Autoresearch pack \u2014 schema-driven capability surface"
 type: architecture
 status: implemented
 priority: high
-rationale: 'Refines REQ-AUTORESE-d684 and REQ-035: both requirements refine the same
-  opt-in autoresearch pack architecture (schema-as-contract, CLI subcommands, harness-agnostic
+rationale: 'Refines REQ-062 and REQ-035: both requirements refine the same opt-in
+  autoresearch pack architecture (schema-as-contract, CLI subcommands, harness-agnostic
   context injection, generic frontmatter writer + domain-aware lint). Retroactive
   design record of shipped capability; no new work authorized.'
 tags:
@@ -16,7 +16,7 @@ tags:
 - domain-aware
 suspect: false
 links:
-- target: REQ-AUTORESE-d684
+- target: REQ-062
   role: derives_from
 - target: REQ-035
   role: derives_from
@@ -25,15 +25,16 @@ links:
 - target: ARCH-023
   role: derives_from
 created: '2026-08-03'
-fingerprint: sha256:a4cf4564638d
+fingerprint: sha256:8daf7ce33155
 thinking_techniques:
-- assumption-surfacing
-modified: '2026-09-13'
+- assumption_surfacing
+modified: '2026-10-08'
+version: 1
 ---
 
 # Autoresearch pack — schema-driven capability surface
 
-Refines REQ-AUTORESE-d684 (pack v0.2.0: multi-criteria, CLI subcommand,
+Refines REQ-062 (pack v0.2.0: multi-criteria, CLI subcommand,
 harness-agnosticism) and REQ-035 (enhanced logging, objectives, domain-aware
 checks). Both requirements refine the SAME pack architecture, so one ARCH
 records it. This is a retroactive design record of capability already shipped
@@ -103,14 +104,14 @@ documented as derived from `goals`/`success_criteria`.
 
 ## Responsibility
 
-- **Pack manifest + context injection** satisfy REQ-AUTORESE-d684 ACs 6–8
+- **Pack manifest + context injection** satisfy REQ-062 ACs 6–8
   (SKILL references CLI backends; `context_snippet` + idempotent injection;
   `platforms.yaml.instruction_file`).
 - **CLI subcommand tree** satisfies AC 5 (plan|run|review|leaderboard, multi-COMP
   via `--competition`/`--all`).
 - **Schema extensibility + `--set` writer + domain-aware lint** satisfy REQ-035
   (schema extensions, protocol updates, CLI enforcement, goal-driven quality).
-- **`auxiliary_metrics` + multi-criteria docs** satisfy REQ-AUTORESE-d684 ACs 1–4.
+- **`auxiliary_metrics` + multi-criteria docs** satisfy REQ-062 ACs 1–4.
 
 ## Options considered
 
@@ -118,7 +119,7 @@ documented as derived from `goals`/`success_criteria`.
   for non-research projects and forgo the harness-agnostic install path
   (ARCH-022 establishes the pack-as-boundary decision).
 - **Protocol inlined in the SKILL.** Rejected — non-reproducible across hosts;
-  the CLI backend keeps behavior deterministic and testable (REQ-AUTORESE-d684 AC 6).
+  the CLI backend keeps behavior deterministic and testable (REQ-062 AC 6).
 
 ## Verification
 

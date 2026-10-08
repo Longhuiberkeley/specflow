@@ -7,6 +7,7 @@
 | Link pattern | Interpretation |
 |-------------|----------------|
 | STORY-B `derives_from` STORY-A | Hard dependency: B after A |
+| STORY-B `depends_on` STORY-A | Hard dependency: B after A (ordering only — no decomposition implied) |
 | STORY-B and STORY-C both `specified_by` DDD-001 | Soft dependency: B before C (by ID order, likely touch same code) |
 | STORY-B and STORY-C both `guided_by` ARCH-001 | No dependency (different implementations of same interface) |
 

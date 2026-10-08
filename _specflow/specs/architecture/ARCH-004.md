@@ -18,9 +18,13 @@ links:
 - target: REQ-017
   role: derives_from
 created: '2026-04-21'
-modified: '2026-04-21'
+modified: '2026-10-08'
 fingerprint: sha256:9358bc85b477
-thinking_techniques: [assumption-surfacing, devil's-advocate, premortem, worst-case-user]
+thinking_techniques:
+- assumption_surfacing
+- devils_advocate
+- premortem
+- worst_case_user
 version: 2
 ---
 

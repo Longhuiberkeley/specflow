@@ -10,16 +10,43 @@ from specflow import __version__
 
 
 
-def _find_project_root() -> Path:
-    """Find the project root (current working directory)."""
-    return Path.cwd()
+def _find_project_root(start: Path | None = None) -> Path:
+    """Return the project root for every command except ``init``.
+
+    The nearest directory — the current one or any ancestor — that holds a
+    ``.specflow/`` directory. ``cd _specflow/work && specflow trace DEC-001``
+    therefore resolves against the enclosing project instead of reporting
+    "Artifact 'DEC-001' not found". With no project in the ancestry the current
+    directory is returned unchanged, so commands that need no project (and the
+    "not initialized" messages of those that do) behave exactly as before.
+    There is deliberately no env or flag override.
+    """
+    cwd = (start or Path.cwd()).resolve()
+    for candidate in (cwd, *cwd.parents):
+        if (candidate / ".specflow").is_dir():
+            return candidate
+    return cwd
+
+
+def _enclosing_project_root(cwd: Path) -> Path | None:
+    """Nearest strict ancestor of ``cwd`` that is already a SpecFlow project."""
+    for parent in cwd.resolve().parents:
+        if (parent / ".specflow").is_dir():
+            return parent
+    return None
 
 
 # ── Command handlers ──────────────────────────────────────────────
 
 def cmd_init(args: argparse.Namespace) -> int:
     from specflow.commands import init as init_cmd
-    root = _find_project_root()
+    # init always scaffolds the current directory: it is the one command that
+    # defines where a project root is, so it must not walk up to an ancestor.
+    root = Path.cwd()
+    enclosing = _enclosing_project_root(root)
+    if enclosing is not None:
+        print(f"note: {enclosing} is already a SpecFlow project; "
+              f"initializing a nested project in {root}")
     return init_cmd.run(root, vars(args))
 
 
@@ -327,6 +354,55 @@ def cmd_risk_tier(args: argparse.Namespace) -> int:
     return cmd.run(root, vars(args))
 
 
+# ── Help epilogs and the read-only allow-list ─────────────────────
+# create/update are the most re-read help pages in agent transcripts. Two
+# worked examples, plus the one shell-word rule that explains most retries.
+_CREATE_EPILOG = """\
+examples:
+  specflow create --type story --title "Walk up to the project root" --add-link REQ-059:implements
+  specflow create --type decision --title "Keep argparse" --rationale "no new dependency" --set risk_profile.confidence=high
+
+each flag and its value are separate shell words (--tags cli,ux — never one quoted "--tags cli,ux");
+the fields a type accepts: specflow schema <type>
+"""
+
+_UPDATE_EPILOG = """\
+examples:
+  specflow update STORY-713 --status implemented
+  specflow update STORY-713 --add-link REQ-059:implements --set tags='["cli","ux"]'
+
+each flag and its value are separate shell words (--add-link REQ-059:implements — never one quoted
+"--add-link REQ-059:implements"); the fields a type accepts: specflow schema <type>
+"""
+
+# Commands whose help carries a "(read-only)" marker: they never change
+# artifacts, state, config, schemas, indexes or baselines under _specflow/ or
+# .specflow/ (a missing per-type index may still be rebuilt as a cache, and
+# findings/audit caches live under .specflow/cache/). Keyed by the space-joined
+# command path. tests/test_cli_hints.py cross-checks the markers against this
+# list, scans each command module for write calls, and runs the commands
+# against a scaffolded project asserting the tree is unchanged.
+READ_ONLY_COMMANDS: frozenset[str] = frozenset({
+    "status", "brief", "trace", "transitions", "list", "schema", "rtm",
+    "risk-tier", "phase-status", "locks", "pack-validate", "ci-gate",
+    "rbac check", "standards gaps", "patterns list", "patterns show",
+    "detect dead-code", "detect similarity", "detect stale-docs",
+    "adopt status", "domain show", "domain suggest", "baseline diff",
+    "findings-baseline diff", "practices validate",
+    "autoresearch status", "autoresearch frontier", "autoresearch review",
+    "autoresearch leaderboard",
+})
+
+# Read-only by default; the named flag or positional turns on writes. The help
+# of each names the writer so consumers stop over-fencing them.
+READ_ONLY_UNLESS: dict[str, str] = {
+    "artifact-lint": "--fix",
+    "change-impact": "--resolve/--flag",
+    "fingerprint-refresh": "targets",
+    "detect orphan-code": "--retro-link/--adopt",
+}
+
+
 # ── Parser builders ───────────────────────────────────────────────
 
 def _add_init_parser(subparsers):
@@ -337,7 +413,9 @@ def _add_init_parser(subparsers):
     p.add_argument("--no-ci", action="store_true", dest="no_ci", help="Skip CI workflow installation")
     p.add_argument("--domain", help="Project domain (e.g., embedded, api-service, web-app, quant, ml)")
     p.add_argument("--domain-tags", dest="domain_tags", help="Comma-separated domain tags (e.g., real-time,safety-critical)")
-    p.add_argument("--force", action="store_true", help="Force clean re-initialization (backs up existing config/state/schemas)")
+    p.add_argument("--force", action="store_true",
+                   help="Force clean re-initialization (backs up config/state/schemas/checklists/findings baseline/source "
+                        "fingerprints to .specflow/cache/backups/<timestamp>/ first; keeps an existing findings baseline)")
 
 
 def _add_refresh_parser(subparsers):
@@ -348,17 +426,20 @@ def _add_refresh_parser(subparsers):
     p.add_argument("--schemas", action="store_true", help="Also update base schema files (writes missing; preserves drifted unless --force)")
     p.add_argument("--checklists", action="store_true", help="Also update base checklist templates (writes missing, repairs unparseable; preserves changed unless --force)")
     p.add_argument("--packs", action="store_true", help="Also refresh assets for configured active packs")
-    p.add_argument("--force", action="store_true", help="Replace drifted generated schemas/checklists/pack skills")
-    p.add_argument("--dry-run", action="store_true", dest="dry_run", help="Show what would change without writing")
+    p.add_argument("--force", action="store_true",
+                   help="Replace drifted generated schemas/checklists/pack files; each overwritten file is first backed up "
+                        "under .specflow/cache/backups/<timestamp>/")
+    p.add_argument("--dry-run", action="store_true", dest="dry_run",
+                   help="Show what would change without writing (read-only with --dry-run)")
     p.add_argument("--all-platforms", action="store_true", dest="all_platforms", help="Refresh skills for every detected platform, not just one")
 
 
 def _add_status_parser(subparsers):
-    subparsers.add_parser("status", help="Show project dashboard")
+    subparsers.add_parser("status", help="Show project dashboard (read-only)")
 
 
 def _add_brief_parser(subparsers):
-    p = subparsers.add_parser("brief", help="One-call recall digest: phase, inventory, suspects, next wave, recent changes")
+    p = subparsers.add_parser("brief", help="One-call recall digest: phase, inventory, suspects, next wave, recent changes (read-only)")
     p.add_argument("--since", help="Recent-changes window for git log (default: '7 days ago')")
     p.add_argument("--next", action="store_true", help="Print only the deterministic next-skill recommendation and exit")
 
@@ -366,7 +447,10 @@ def _add_brief_parser(subparsers):
 def _add_create_parser(subparsers):
     from specflow.lib import lint as lint_lib
 
-    p = subparsers.add_parser("create", help="Create a new artifact")
+    p = subparsers.add_parser(
+        "create", help="Create a new artifact",
+        epilog=_CREATE_EPILOG, formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     p.add_argument("--type", help="Artifact type (required unless --from-standard is used)")
     p.add_argument("--title", help="Artifact title (required unless --from-standard is used)")
     p.add_argument("--from-standard", dest="from_standard", help="Create a REQ from a standard clause ID")
@@ -380,7 +464,8 @@ def _add_create_parser(subparsers):
                    help="Append a link (repeatable; dedups on target+role). Append-style parity with `specflow update --add-link`.")
     p.add_argument("--body", default="", help="Markdown body content")
     p.add_argument("--force", action="store_true", help="Skip duplicate-check prompt")
-    p.add_argument("--skip-dedup-check", action="store_true", dest="skip_dedup_check", help="Bypass search-before-create")
+    p.add_argument("--skip-dedup-check", action="store_true", dest="skip_dedup_check",
+                   help="Bypass search-before-create (non-interactive runs surface candidates and proceed without it)")
     # Create-boundary vocabulary gate (CHL-344 A4): choices are generated from
     # lib.lint.NFR_CATEGORIES — the single source of truth — so help prose can
     # never drift from the enforced values again. The generic freeform path
@@ -399,7 +484,7 @@ def _add_create_parser(subparsers):
 def _add_standards_parser(subparsers):
     p = subparsers.add_parser("standards", help="Manage standards")
     sub = p.add_subparsers(dest="standards_subcommand")
-    gaps_p = sub.add_parser("gaps", help="List uncovered standard clauses")
+    gaps_p = sub.add_parser("gaps", help="List uncovered standard clauses (read-only)")
     gaps_p.add_argument("--standard", help="Standard name (auto-detect if omitted)")
     gaps_p.add_argument("--json", action="store_true", dest="json", help="Output as JSON")
 
@@ -436,7 +521,7 @@ def _add_practices_parser(subparsers):
         "--verbose", action="store_true",
         help="Print full practice bodies instead of the title index",
     )
-    sub.add_parser("validate", help="Validate BP anatomy, metadata, and supersession lineage")
+    sub.add_parser("validate", help="Validate BP anatomy, metadata, and supersession lineage (read-only)")
     migrate_p = sub.add_parser("migrate", help="Stamp provenance on legacy BP artifacts")
     migrate_p.add_argument(
         "--dry-run", action="store_true", dest="dry_run",
@@ -448,23 +533,28 @@ def _add_domain_parser(subparsers):
     p = subparsers.add_parser("domain", help="Get or set the project's domain (drives domain-aware checklists and review synthesis)")
     sub = p.add_subparsers(dest="domain_subcommand")
     set_p = sub.add_parser("set", help="Set the project domain")
-    set_p.add_argument("name", help="Domain identifier (e.g., embedded, api-service, web-app, quant, ml, data-science). Freeform — a matching domain-checklist (quant/ml/…) is surfaced when set.")
+    set_p.add_argument("name", help="Domain identifier (e.g., embedded, api-service, web-app, quant, ml, data-science). "
+                                    "Freeform — a matching domain-checklist (quant/ml/…) is surfaced when set; "
+                                    "'generic' records that no domain checklist applies (silences the brief reminder).")
     set_p.add_argument("--tag", action="append", default=[], dest="tags",
                        help="Domain tag (repeatable, e.g., --tag real-time --tag phi)")
-    sub.add_parser("show", help="Show the current project domain")
-    sub.add_parser("suggest", help="Detect a likely domain from dependency signals (does not set it)")
+    sub.add_parser("show", help="Show the current project domain (read-only)")
+    sub.add_parser("suggest", help="Detect a likely domain from dependency signals (read-only; does not set it)")
 
 
 def _add_patterns_parser(subparsers):
     p = subparsers.add_parser("patterns", help="Inspect learned prevention patterns")
     sub = p.add_subparsers(dest="patterns_subcommand")
-    sub.add_parser("list", help="List all learned patterns")
-    show_p = sub.add_parser("show", help="Show a specific pattern's full YAML")
+    sub.add_parser("list", help="List all learned patterns (read-only)")
+    show_p = sub.add_parser("show", help="Show a specific pattern's full YAML (read-only)")
     show_p.add_argument("pattern_id", help="Pattern ID (e.g., PREV-001)")
 
 
 def _add_update_parser(subparsers):
-    p = subparsers.add_parser("update", help="Update an artifact's frontmatter")
+    p = subparsers.add_parser(
+        "update", help="Update an artifact's frontmatter",
+        epilog=_UPDATE_EPILOG, formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     p.add_argument("artifact_id", help="Artifact ID to update")
     p.add_argument("--status", help="New status")
     p.add_argument("--title", help="New title")
@@ -481,13 +571,17 @@ def _add_update_parser(subparsers):
     p.add_argument("--body", default="", help="Markdown body content (replaces the entire body; stdin auto-read when piped)")
     p.add_argument("--ac", dest="ac", help="Replace (or insert) the '## Acceptance Criteria' section of the body; other sections are preserved")
     p.add_argument("--set", action="append", dest="set_fields", metavar="KEY=VALUE",
-                   help="Set an arbitrary frontmatter field (repeatable). Value is parsed as JSON if possible, else kept as a string. "
-                        "E.g. --set failure_analysis='...' --set goals='[\"...\"]'")
+                   help="KEY=VALUE (JSON parsed); KEY=null removes KEY, including list fields such as tags/output_files — "
+                        "status/title/links use their own flags and required/identity fields cannot be removed; "
+                        "id/type/created/suspect/evaluator_fingerprint are reserved. Repeatable; "
+                        "`specflow schema <type>` lists the declared fields.")
 
 
 def _add_go_parser(subparsers):
-    p = subparsers.add_parser("go", help="Execute approved stories in parallel waves")
-    p.add_argument("--dry-run", action="store_true", dest="dry_run", help="Show wave plan without executing")
+    p = subparsers.add_parser("go", help="Execute approved stories in parallel waves "
+                                         "(writes: runs each story and updates its status; --dry-run only shows the wave plan)")
+    p.add_argument("--dry-run", action="store_true", dest="dry_run",
+                   help="Show the wave plan without executing or updating any story (read-only with --dry-run)")
     p.add_argument("--wave", type=int, help="Execute only a specific wave number")
     p.add_argument("--timeout", type=int, default=600, help="Per-story timeout (default: 600)")
 
@@ -509,7 +603,7 @@ def _add_approve_parser(subparsers):
 
 
 def _add_phase_status_parser(subparsers):
-    subparsers.add_parser("phase-status", help="Read-only advisory: is the current phase ready to close?")
+    subparsers.add_parser("phase-status", help="Advisory: is the current phase ready to close? (read-only)")
 
 
 def _add_phase_set_parser(subparsers):
@@ -526,21 +620,28 @@ def _add_cascade_status_parser(subparsers):
 
 
 def _add_reconcile_parser(subparsers):
-    p = subparsers.add_parser("reconcile", help="Auto-detect implemented stories and update status")
+    p = subparsers.add_parser("reconcile", help="Auto-detect implemented stories: moves approved STORYs to implemented "
+                                                "and cascades linked ARCH/DDD (approved -> implemented) unless --no-cascade")
     p.add_argument("--dry-run", action="store_true", dest="dry_run", help="Preview changes without writing")
     p.add_argument("--no-cascade", action="store_false", dest="cascade", help="Skip cascading to linked ARCH/DDD")
 
 
 def _add_artifact_lint_parser(subparsers):
-    p = subparsers.add_parser("artifact-lint", help="Run deterministic validation checks on artifacts")
+    p = subparsers.add_parser("artifact-lint", help="Run deterministic validation checks on artifacts (read-only; writes only with --fix)")
     # Choices derive from artifact_lint.CHECK_NAMES (single source of truth;
     # a static copy drifted before — nfr-category/backfilled-links were
     # unreachable from the CLI) plus the meta "gate" alias handled in run().
     from specflow.commands.artifact_lint import CHECK_NAMES as _LINT_CHECKS
+    p.add_argument("ids", nargs="*", metavar="ID",
+                   help="Artifact ID(s), accepted for convenience: the run stays repo-wide (narrow with --type)")
     p.add_argument("--type", choices=[*_LINT_CHECKS, "gate"], help="Run only a specific check")
     p.add_argument("--fix", action="store_true", help="Auto-fix (rebuild indexes, recompute fingerprints)")
     p.add_argument("--gate", help="Phase-gate checklist name")
-    p.add_argument("--method", choices=["programmatic", "llm"], default="programmatic", help="Validation method")
+    p.add_argument("--verbose", action="store_true",
+                   help="Print every finding line, including ones already in the findings baseline, and the full wave survey")
+    # Accepted for compatibility with generated CI workflows; the value is
+    # ignored (validation is always programmatic), so it is hidden from --help.
+    p.add_argument("--method", choices=["programmatic", "llm"], default="programmatic", help=argparse.SUPPRESS)
     p.add_argument("--as-of", dest="as_of", metavar="YYYY-MM-DD",
                    help="Date that time-dependent checks (SPIKE staleness) measure against (default: today, UTC)")
 
@@ -568,7 +669,7 @@ def _add_pack_validate_parser(subparsers):
     p = subparsers.add_parser(
         "pack-validate",
         help="Validate a pack directory: pack.yaml schema, referenced skills exist, "
-             "no 'uv run' in shipped skill scripts",
+             "no 'uv run' in shipped skill scripts (read-only)",
     )
     p.add_argument("pack_dir", help="Path to the pack directory (e.g. .specflow/packs/<name>/)")
 
@@ -588,7 +689,7 @@ def _add_baseline_parser(subparsers):
     create_p = sub.add_parser("create", help="Create a new immutable baseline snapshot")
     create_p.add_argument("baseline_name", help="Baseline name")
     create_p.add_argument("--evidence", action="store_true", help="Generate compliance evidence report")
-    diff_p = sub.add_parser("diff", help="Compare two baselines")
+    diff_p = sub.add_parser("diff", help="Compare two baselines (read-only)")
     diff_p.add_argument("baseline_a", help="First baseline name")
     diff_p.add_argument("baseline_b", help="Second baseline name")
 
@@ -601,14 +702,17 @@ def _add_document_changes_parser(subparsers):
 def _add_hook_parser(subparsers):
     p = subparsers.add_parser("hook", help="Manage git hooks for RBAC enforcement")
     sub = p.add_subparsers(dest="hook_subcommand")
-    sub.add_parser("install", help="Install .git/hooks/pre-commit")
+    install_p = sub.add_parser("install", help="Install the specflow pre-commit hook where git runs hooks from")
+    install_p.add_argument("--force", action="store_true",
+                           help="Replace a pre-commit hook specflow does not own, or install into a global "
+                                "core.hooksPath (a backup is taken first)")
     sub.add_parser("pre-commit", help="Run the pre-commit check")
 
 
 def _add_rbac_parser(subparsers):
     p = subparsers.add_parser("rbac", help="RBAC introspection: resolved roles and transition authorization")
     sub = p.add_subparsers(dest="rbac_subcommand")
-    check_p = sub.add_parser("check", help="Show resolved roles for an author; optionally test a status-transition authorization")
+    check_p = sub.add_parser("check", help="Show resolved roles for an author; optionally test a status-transition authorization (read-only)")
     check_p.add_argument("--email", help="Author email to resolve (default: git config user.email)")
     check_p.add_argument("--type", help="Artifact type/ID to check (used with --to-status)")
     check_p.add_argument("--to-status", dest="to_status", help="Target status to check authorization for (used with --type)")
@@ -641,20 +745,21 @@ def _add_export_parser(subparsers):
 def _add_detect_parser(subparsers):
     p = subparsers.add_parser("detect", help="Project-hygiene scans (dead code, similarity, orphans, stale docs)")
     sub = p.add_subparsers(dest="detect_subcommand")
-    dp = sub.add_parser("dead-code", help="Report unreferenced functions/classes")
+    dp = sub.add_parser("dead-code", help="Report unreferenced functions/classes (read-only)")
     dp.add_argument("--src-dir", dest="src_dir", default="src", help="Source root (default: src)")
-    sp = sub.add_parser("similarity", help="Report near-identical function pairs")
+    sp = sub.add_parser("similarity", help="Report near-identical function pairs (read-only)")
     sp.add_argument("--src-dir", dest="src_dir", default="src", help="Source root (default: src)")
     sp.add_argument("--min-statements", dest="min_statements", type=int, default=10, help="Min function length")
     sp.add_argument("--threshold", type=float, default=0.9, help="Jaccard similarity threshold")
-    op = sub.add_parser("orphan-code", help="Report source files not referenced by any STORY/REQ/ARCH/DDD")
+    op = sub.add_parser("orphan-code", help="Report source files not referenced by any STORY/REQ/ARCH/DDD "
+                                           "(read-only; writes only with --retro-link or --adopt)")
     op.add_argument("--retro-link", dest="retro_link_target",
                     help="Artifact ID (STORY/ARCH/DDD/REQ) to retroactively link all orphan files to")
     op.add_argument("--adopt", dest="adopt_target",
                     help="One-step adoption: retro-link all orphan files into ARCH's output_files AND create a backfilled STORY (tagged 'backfilled') tracing to it")
     op.add_argument("--story-title", dest="story_title",
                     help="Title for the backfilled STORY created by --adopt (default: auto-generated)")
-    sub.add_parser("stale-docs", help="Report docs citing superseded/cancelled/deprecated artifacts")
+    sub.add_parser("stale-docs", help="Report docs citing superseded/cancelled/deprecated artifacts (read-only)")
 
 
 def _add_adopt_parser(subparsers):
@@ -662,7 +767,7 @@ def _add_adopt_parser(subparsers):
     sub = p.add_subparsers(dest="adopt_subcommand")
     status_p = sub.add_parser(
         "status",
-        help="Adoption completeness: project/boundary view, or per-artifact for a given ID",
+        help="Adoption completeness: project/boundary view, or per-artifact for a given ID (read-only)",
     )
     status_p.add_argument(
         "target", nargs="?", default=None,
@@ -671,9 +776,11 @@ def _add_adopt_parser(subparsers):
 
 
 def _add_change_impact_parser(subparsers):
-    p = subparsers.add_parser("change-impact", help="Report and resolve suspect flags")
+    p = subparsers.add_parser("change-impact", help="Report suspect flags (read-only; writes only with --resolve or --flag)")
     p.add_argument("artifact_id", nargs="?", help="Filter by source artifact ID")
-    p.add_argument("--resolve", help="Resolve suspect flag on artifact ID")
+    p.add_argument("--resolve", metavar="ID",
+                   help="Clear the suspect flag on ID and close the impact-log events that flagged it "
+                        "(on a non-suspect ID, only stale events are closed)")
     p.add_argument("--flag", action="store_true", help="Flag matched artifacts as suspect (source-file impact)")
 
 
@@ -695,8 +802,9 @@ def _add_defect_from_monitor_parser(subparsers):
 
 
 def _add_fingerprint_refresh_parser(subparsers):
-    p = subparsers.add_parser("fingerprint-refresh", help="Update fingerprint without suspect cascade")
-    p.add_argument("targets", nargs="*", help="Artifact IDs (preferred) or file paths. With none given, lists stale fingerprints without modifying anything.")
+    p = subparsers.add_parser("fingerprint-refresh",
+                              help="Update fingerprint without suspect cascade (read-only with no targets: lists stale fingerprints)")
+    p.add_argument("targets", nargs="*", help="Artifact IDs (preferred) or file paths. With none given, lists stale fingerprints (read-only; writes only with targets).")
     p.add_argument("--source", action="store_true",
                    help="Source-drift store instead: seed missing output_files hashes, or re-accept current hashes for the given IDs")
     p.add_argument("--all", dest="all_", action="store_true",
@@ -719,12 +827,13 @@ def _add_unlock_parser(subparsers):
 
 
 def _add_locks_parser(subparsers):
-    subparsers.add_parser("locks", help="List all active locks")
+    subparsers.add_parser("locks", help="List all active locks (read-only)")
 
 
 def _add_rebuild_index_parser(subparsers):
     p = subparsers.add_parser("rebuild-index", help="Regenerate stale _index.yaml files")
-    p.add_argument("--type", help="Rebuild only one artifact type (default: all)")
+    p.add_argument("--type", help="Rebuild only one artifact type, given as the canonical name (requirement), "
+                                  "its ID prefix (REQ) or an alias (req, Requirement); default: all")
 
 
 def _add_split_parser(subparsers):
@@ -744,28 +853,35 @@ def _add_merge_parser(subparsers):
 def _add_ci_parser(subparsers):
     p = subparsers.add_parser("ci", help="CI adapter commands")
     sub = p.add_subparsers(dest="ci_subcommand")
-    sub.add_parser("generate", help="Generate CI workflow files from adapters.yaml")
+    gen_p = sub.add_parser("generate", help="Generate CI workflow files from adapters.yaml "
+                                            "(an existing file that differs is preserved unless --force)")
+    gen_p.add_argument("--force", action="store_true",
+                       help="Overwrite a workflow file that differs from the generated content "
+                            "(backed up first under .specflow/cache/backups/<timestamp>/ci/)")
+    gen_p.add_argument("--dry-run", action="store_true", dest="dry_run",
+                       help="Report new / unchanged / differs (with a diff) without writing anything")
 
 
 def _add_trace_parser(subparsers):
-    p = subparsers.add_parser("trace", help="Display traceability chain for an artifact")
+    p = subparsers.add_parser("trace", help="Display traceability chain for an artifact (read-only)")
     p.add_argument("artifact_id", help="Artifact ID to trace")
 
 
 def _add_rtm_parser(subparsers):
-    p = subparsers.add_parser("rtm", help="Requirements traceability matrix (REQ -> ARCH/STORY -> tests, bidirectional)")
+    p = subparsers.add_parser("rtm", help="Requirements traceability matrix (REQ -> ARCH/STORY -> tests, bidirectional; read-only)")
     p.add_argument("--req", help="Filter to a single REQ ID")
     p.add_argument("--format", choices=["table", "markdown", "csv"], default="table", help="Output format (default: table)")
     p.add_argument("--gaps", action="store_true", help="Only show rows with at least one empty column")
+    p.add_argument("--include-terminal", dest="include_terminal", action="store_true", help="With --gaps, also list REQs in a terminal status (cancelled/deprecated/superseded)")
 
 
 def _add_transitions_parser(subparsers):
-    p = subparsers.add_parser("transitions", help="Show legal next statuses and the transition map for an artifact")
+    p = subparsers.add_parser("transitions", help="Show legal next statuses and the transition map for an artifact (read-only)")
     p.add_argument("artifact_id", help="Artifact ID to inspect")
 
 
 def _add_list_parser(subparsers):
-    p = subparsers.add_parser("list", help="List artifacts with optional filters")
+    p = subparsers.add_parser("list", help="List artifacts with optional filters (read-only)")
     p.add_argument("--type", help="Filter by artifact type or prefix (e.g. requirement, defect, REQ)")
     p.add_argument("--status", help="Filter by status")
     p.add_argument("--tags", help="Filter by tags (comma-separated; any-overlap)")
@@ -773,18 +889,18 @@ def _add_list_parser(subparsers):
 
 
 def _add_schema_parser(subparsers):
-    p = subparsers.add_parser("schema", help="Show the schema (fields + transition map) for an artifact type")
+    p = subparsers.add_parser("schema", help="Show the schema (fields + transition map) for an artifact type (read-only)")
     p.add_argument("type", help="Artifact type or alias (e.g. requirement, dec, DEF)")
 
 
 def _add_risk_tier_parser(subparsers):
     p = subparsers.add_parser("risk-tier",
-                              help="Print the computed risk tier for a change set (READ-ONLY; gates nothing)")
+                              help="Print the computed risk tier for a change set (read-only; gates nothing)")
     p.add_argument("ids", nargs="+", help="Artifact ID(s) in the change set")
 
 
 def _add_ci_gate_parser(subparsers):
-    p = subparsers.add_parser("ci-gate", help="Run RBAC checks on a PR diff (server-side)")
+    p = subparsers.add_parser("ci-gate", help="Run RBAC checks on a PR diff (server-side; read-only)")
     p.add_argument("--base", required=True, help="Base git ref (e.g., origin/main)")
     p.add_argument("--head", required=True, help="Head git ref or commit sha (e.g., the pull-request head sha)")
 
@@ -803,7 +919,7 @@ def _add_verify_parser(subparsers):
     p.add_argument("--evidence-file", action="store_true", dest="evidence_file",
                    help="Also hash the first verify_evidence file match and record its mtime")
     p.add_argument("--dry-run", action="store_true", dest="dry_run",
-                   help="Print each verify_command without executing or writing anything")
+                   help="Print each verify_command without executing or writing anything (read-only with --dry-run)")
     p.add_argument("--timeout", type=int, default=600, help="Per-command timeout in seconds (default: 600)")
     p.add_argument("--seed-prev", action="store_true", dest="seed_prev",
                    help="Opt-in outcome feedback: seed a PREV prevention pattern for each divergent verify_command (never blocks)")
@@ -819,9 +935,9 @@ def _add_autoresearch_parser(subparsers):
     plan_p.add_argument("--mode", help="LOOP mode: explore / exploit / validate (triggers create/update)")
     plan_p.add_argument("--budget", type=int, help="Iteration budget for the LOOP (triggers create/update)")
     plan_p.add_argument("--knowledge-input", dest="knowledge_input",
-                        help="Comma-separated or JSON list of FIND IDs to seed knowledge_input")
+                        help="Comma-separated or JSON list of FIND IDs to seed knowledge_input (triggers create/update)")
     plan_p.add_argument("--inherit", dest="inherit_loop",
-                        help="Seed a follow-up LOOP agenda from a completed LOOP")
+                        help="Seed a follow-up LOOP agenda from a completed or plateaued LOOP (triggers create/update)")
     plan_p.add_argument("--title", help="LOOP title (create only; default '<mode> loop on <COMP>')")
     plan_p.add_argument("--status", choices=["draft", "running"],
                         help="LOOP status at create/update (default: draft; 'running' starts it)")
@@ -829,7 +945,7 @@ def _add_autoresearch_parser(subparsers):
     plan_p.add_argument("--start", action="store_true",
                         help="Transition the LOOP to running (draft→running); gated against concurrent LOOPs")
     plan_p.add_argument("--create", action="store_true",
-                        help="Force create/update intent even when --mode/--budget are omitted")
+                        help="Force create/update intent even when --mode/--budget are omitted (triggers create/update)")
 
     run_p = sub.add_parser("run", help="Execute the loop protocol against a COMP (starts a draft LOOP unless --no-start)")
     run_p.add_argument("--competition", help="Competition ID (default: auto-detect)")
@@ -840,21 +956,21 @@ def _add_autoresearch_parser(subparsers):
     status_p = sub.add_parser(
         "status",
         help="Show deterministic LOOP readiness and progress accounting "
-             "(exit 0=clear, 3=warn, 1/2=fail — stop on fail)",
+             "(read-only; exit 0=clear, 3=warn, 1/2=fail — stop on fail)",
     )
     status_p.add_argument("--competition", help="Competition ID (default: auto-detect)")
     status_p.add_argument("--loop", help="LOOP ID (default: running or draft LOOP for the COMP)")
 
-    frontier_p = sub.add_parser("frontier", help="Show the COMP research-frontier ledger")
+    frontier_p = sub.add_parser("frontier", help="Show the COMP research-frontier ledger (read-only)")
     frontier_p.add_argument("--comp", "--competition", dest="comp",
                             help="COMP ID or directory containing one (default: auto-detect)")
     frontier_p.add_argument("--json", action="store_true", help="Emit the full frontier ledger as JSON")
 
-    review_p = sub.add_parser("review", help="Review FINDs, leaderboard, and loop history")
+    review_p = sub.add_parser("review", help="Review FINDs, leaderboard, and loop history (read-only)")
     review_p.add_argument("--competition", help="Competition ID (default: auto-detect)")
     review_p.add_argument("--top", type=int, default=5, help="Number of top EXPTs to show (default: 5)")
 
-    lb_p = sub.add_parser("leaderboard", help="Top EXPTs ranked by primary metric")
+    lb_p = sub.add_parser("leaderboard", help="Top EXPTs ranked by primary metric (read-only)")
     lb_p.add_argument("--competition", help="Competition ID (omit with --all)")
     lb_p.add_argument("--all", action="store_true", help="Show leaderboard across all competitions")
     lb_p.add_argument("--top", type=int, default=10, help="Number of EXPTs per competition (default: 10)")
@@ -907,6 +1023,9 @@ commands by workflow phase:
   Research:   autoresearch
   Adoption:   adopt (brownfield; install via /specflow-init --preset adoption)
   Packs:      pack-validate (pack structure; no 'uv run' in shipped scripts)
+
+"(read-only)" in a command's help: it never changes _specflow/ or .specflow/ state.
+Flags and values are separate shell words: --add-link REQ-002:implements, not "--add-link REQ-002:implements".
 """
 
 
@@ -929,12 +1048,13 @@ def _add_project_audit_args(p):
     p.add_argument("--sample-pct", dest="sample_pct", type=int, default=100,
                    help="Sample percentage for STORYs (default: 100)")
     p.add_argument("--dry-run", action="store_true", dest="dry_run",
-                   help="Print findings without writing snapshot, AUD/CHL artifacts, or cache")
+                   help="Print findings without writing snapshot, AUD/CHL artifacts, or cache (read-only with --dry-run)")
 
 
 def cmd_standards(args: argparse.Namespace) -> int:
     if args.standards_subcommand == "gaps":
         return cmd_standards_gaps(args)
+    print("error: standards subcommand required (gaps)", file=sys.stderr)
     return 1
 
 
@@ -965,11 +1085,12 @@ def cmd_domain(args: argparse.Namespace) -> int:
             print(f"  confirm with: specflow domain set {domain}")
         else:
             print(f"no domain detected — {reason}")
+            print("  no domain checklist applies? record that with: specflow domain set generic")
         return 0
     if sub == "show":
         domain, tags = get_domain(root)
         if not domain:
-            print("(no domain set — run `specflow domain set <name>` to enable domain-aware checklists)")
+            print("(no domain set — run `specflow domain set <name>` to enable domain-aware checklists, or `specflow domain set generic` to opt out)")
             return 0
         print(f"domain: {domain}")
         if tags:
@@ -977,6 +1098,16 @@ def cmd_domain(args: argparse.Namespace) -> int:
         return 0
     print("error: subcommand required (set | show)", file=sys.stderr)
     return 1
+
+# Curated cross-command slips, keyed by (invoked leaf path, flag): each entry
+# carries the form that works on the invoked command. The hint fires only for
+# these pairs — a flag that merely exists somewhere else in the parser tree
+# (--json, --force, --verbose, ...) gets the scoped did-you-mean instead, so the
+# hint channel never names unrelated commands (no cry-wolf).
+_SIBLING_FLAG_HINTS: dict[tuple[str, str], str] = {
+    ("update", "--nfr-category"): "--set non_functional_category=<value>",
+}
+
 
 class _HintParser(argparse.ArgumentParser):
     """ArgumentParser that surfaces a "did you mean" suggestion on the two most
@@ -1017,6 +1148,15 @@ class _HintParser(argparse.ArgumentParser):
         m = re.search(r"unrecognized arguments: (-{1,2}[A-Za-z][\w-]*)", message)
         if m:
             token = m.group(1)
+            # A flag and its value collapsed into one shell word
+            # (`"--add-link REQ-002:implements"`, typically an unquoted $3 in a
+            # wrapper script). argparse treats a dash-token containing a space
+            # as a positional, so the fuzzy match below would suggest the very
+            # flag the user already typed. Name the real cause instead.
+            collapsed = self._collapsed_shell_word(token)
+            if collapsed is not None:
+                return (f'hint: "{collapsed}" was passed as one shell word — quote each '
+                        'flag and value separately (or use "$@" in a wrapper script).')
             # W2.1: --confidence is the single most-repeated agent error — the
             # field lives inside the risk_profile map, not as a standalone flag.
             # Point at the nested --set form on the two commands that write it.
@@ -1032,6 +1172,18 @@ class _HintParser(argparse.ArgumentParser):
                 return ("hint: confidence is a key of the risk_profile map on "
                         "decision artifacts — on a DEC, use "
                         "--set risk_profile.confidence=<value>.")
+            # A curated create-only flag typed on update (`update
+            # --nfr-category`): name the owning command — verified against the
+            # parser tree, so the hint never steers at a form that would itself
+            # fail — and the equivalent that works here. Anything else falls
+            # through to the did-you-mean scoped to the invoked command.
+            leaf = self._invoked_leaf_path()
+            equivalent = _SIBLING_FLAG_HINTS.get((leaf or "", token))
+            owners = self._commands_with_option(token) if equivalent else []
+            if equivalent and owners:
+                owner_text = " / ".join(f"`specflow {o}`" for o in owners[:2])
+                return (f"hint: {token} is a {owner_text} flag; `specflow {leaf}` has no such flag. "
+                        f"On {leaf}, use {equivalent}.")
             matches = difflib.get_close_matches(
                 token, self._scoped_option_strings(), n=2, cutoff=0.5
             )
@@ -1039,6 +1191,60 @@ class _HintParser(argparse.ArgumentParser):
                 return f'did you mean: {", ".join(matches)}?'
             return None
         return None
+
+    def _collapsed_shell_word(self, token: str) -> str | None:
+        """The argv word argparse rejected as ``token``, when that word is a
+        dash-option carrying whitespace (``"--add-link REQ-002:implements"``).
+
+        Matching on ``token`` keeps a legitimate dash-leading value such as
+        ``--body "-x y z"`` from being blamed when the real error is an
+        unrelated flag elsewhere on the line.
+        """
+        argv = getattr(self, "_argv_snapshot", None) or []
+        for tok in argv:
+            if re.match(r"^-{1,2}[A-Za-z][\w-]*\s+\S", tok) and tok.split()[0] == token:
+                return tok
+        return None
+
+    def _commands_with_option(self, token: str) -> list[str]:
+        """Space-joined paths of every subcommand that declares ``token``
+        verbatim, excluding the invoked leaf (which, by construction, does not)."""
+        leaf = self._invoked_leaf_path()
+        found: list[str] = []
+
+        def walk(parser: argparse.ArgumentParser, path: list[str]) -> None:
+            for action in parser._actions:
+                if isinstance(action, argparse._SubParsersAction):
+                    for name, sub in action.choices.items():
+                        walk(sub, [*path, name])
+                elif token in action.option_strings and path and " ".join(path) != leaf:
+                    found.append(" ".join(path))
+
+        walk(self, [])
+        # dedupe, preserve order
+        seen: set[str] = set()
+        return [f for f in found if not (f in seen or seen.add(f))]
+
+    def _invoked_leaf_path(self) -> str | None:
+        """Space-joined path of the deepest subcommand the argv snapshot
+        names (``domain set``, ``detect orphan-code``), or None."""
+        argv = getattr(self, "_argv_snapshot", None) or []
+        parser: argparse.ArgumentParser = self
+        path: list[str] = []
+        i = 0
+        while True:
+            sub_action = next((a for a in parser._actions
+                               if isinstance(a, argparse._SubParsersAction)), None)
+            if sub_action is None:
+                break
+            nxt = next(((j, tok) for j, tok in enumerate(argv[i:], start=i)
+                        if tok in sub_action.choices), None)
+            if nxt is None:
+                break
+            i, tok = nxt[0] + 1, nxt[1]
+            path.append(tok)
+            parser = sub_action.choices[tok]
+        return " ".join(path) or None
 
     def _invoked_subcommand_name(self) -> str | None:
         """Return the top-level subcommand name from the argv snapshot, if any."""

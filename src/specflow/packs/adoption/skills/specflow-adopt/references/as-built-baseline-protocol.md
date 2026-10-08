@@ -33,6 +33,8 @@ SpecFlow is accounting, not policing. When you backfill an artifact for code tha
 | Spec matches shipped behavior, reviewed | `approved` |
 | Genuinely still in flux / aspirational | `draft` (rare in adoption — you're recording what *is*) |
 
+Decisions (DEC) take only `approved` or `draft` — the decision schema has no `implemented`/`verified`, so a backfilled DEC records "this is what we decided" with `--status approved`.
+
 Do not force backfilled artifacts through `draft → approved → implemented`. That's the forward lifecycle; adoption records the endpoint.
 
 ## Provenance: tags + rationale, no new fields

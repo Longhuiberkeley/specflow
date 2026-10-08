@@ -17,9 +17,10 @@ links:
 - target: ARCH-023
   role: refined_by
 created: '2026-06-07'
-modified: '2026-06-15'
+modified: '2026-10-08'
 fingerprint: sha256:667cabf7f862
-thinking_techniques: [assumption-surfacing]
+thinking_techniques:
+- assumption_surfacing
 ---
 
 # Research-aware traceability chain

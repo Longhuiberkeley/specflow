@@ -885,7 +885,7 @@ artifacts:
     tags:
     - baselines
     - semver
-    - CHL-NONSEMVE-c16b
+    - CHL-351
     - REQ-035
     fingerprint: sha256:6fc057fe0db5
     children: []
@@ -1543,7 +1543,8 @@ artifacts:
     children: []
   STORY-704:
     id: STORY-704
-    title: Retire the Gemini CLI host and gemini-toml export
+    title: Typed Finding records for every lint check and audit lens; byte-identical
+      rendering
     status: verified
     tags:
     - v1.17.1
@@ -1554,7 +1555,7 @@ artifacts:
     children: []
   STORY-705:
     id: STORY-705
-    title: Drop the stale config version key; refresh bumps the CI workflow pin
+    title: Committed findings-baseline ratchet replaces run-count escalation
     status: verified
     tags:
     - v1.17.1
@@ -1563,37 +1564,154 @@ artifacts:
     - lint
     fingerprint: sha256:87df847d1ee6
     children: []
-  STORY-ADDAUXIL-c7bd:
-    id: STORY-ADDAUXIL-c7bd
+  STORY-707:
+    id: STORY-707
+    title: 'Wave P-1: artifact writers use the locked path; artifact-review stops
+      rewriting and pre-stamping'
+    status: verified
+    tags:
+    - v1.17.2
+    fingerprint: sha256:004719cc130a
+    children: []
+  STORY-708:
+    id: STORY-708
+    title: 'Wave P-2: pre-commit hook PATH guard, worktree hooks dir, staged deletions,
+      foreign-hook safety; CI and adapter skill truth'
+    status: verified
+    tags:
+    - v1.17.2
+    fingerprint: sha256:88490474d57d
+    children: []
+  STORY-709:
+    id: STORY-709
+    title: "Wave P-3: refresh/init/scaffold hygiene \u2014 pack standards sync, backups,\
+      \ sentinel safety, optional schemas, codex/junie, legacy dirs"
+    status: verified
+    tags:
+    - v1.17.2
+    fingerprint: sha256:e9de626b87bc
+    children: []
+  STORY-710:
+    id: STORY-710
+    title: "Wave P-4: standards and ReqIF correctness \u2014 double-escape, malformed\
+      \ YAML, dead-end hints, silent exits"
+    status: verified
+    tags:
+    - v1.17.2
+    fingerprint: sha256:b356b7cfa730
+    children: []
+  STORY-711:
+    id: STORY-711
+    title: 'Wave P-5: one practice-binding predicate for brief and lint; thinking_techniques
+      catalog sweep'
+    status: verified
+    tags:
+    - v1.17.2
+    fingerprint: sha256:e9de361b4930
+    children: []
+  STORY-712:
+    id: STORY-712
+    title: 'Wave P-6: docs, README, ROADMAP, CHANGELOG, AGENTS.md and pack-reference
+      consistency with guard tests'
+    status: verified
+    tags:
+    - v1.17.2
+    fingerprint: sha256:6f6c17dd3eef
+    children: []
+  STORY-713:
+    id: STORY-713
+    title: 'Wave P-8: CLI root walk-up, hint parser, read-only help labels, scoped
+      lint hint, verbose flag'
+    status: verified
+    tags:
+    - v1.17.2
+    fingerprint: sha256:a222cd9cf725
+    children: []
+  STORY-714:
+    id: STORY-714
+    title: 'Wave P-9: stdin EOF guard, reserved --set keys, title index sync, no-op
+      fingerprint refresh, impact-log noise, dedup gate'
+    status: verified
+    tags:
+    - v1.17.2
+    fingerprint: sha256:75891357e37f
+    children: []
+  STORY-715:
+    id: STORY-715
+    title: "Wave P-10: brief and status honesty \u2014 routing, DEF/DEC/unexecuted\
+      \ notes, stale skills, buckets, adopt wording, coverage line"
+    status: verified
+    tags:
+    - v1.17.2
+    fingerprint: sha256:35d5773b833e
+    children: []
+  STORY-716:
+    id: STORY-716
+    title: 'Wave P-11: findings policy classes for pre-implementation rows; lint known/new
+      rendering; rtm, verify, project-audit de-noise'
+    status: verified
+    tags:
+    - v1.17.2
+    fingerprint: sha256:94fc020cd31c
+    children: []
+  STORY-717:
+    id: STORY-717
+    title: "Wave P-12: core skill text parity \u2014 link direction, vocabulary tables,\
+      \ statuses, discover/start/ship flows, delegation guidance"
+    status: verified
+    tags:
+    - v1.17.2
+    fingerprint: sha256:f3d29816052f
+    children: []
+  STORY-718:
+    id: STORY-718
+    title: "Wave P-13: tests and CI hygiene \u2014 executor tests, un-skip practice\
+      \ tests, handler tests, release consistency, wheel smoke PATH, brownfield fixture"
+    status: verified
+    tags:
+    - v1.17.2
+    fingerprint: sha256:3ed2bc027de6
+    children: []
+  STORY-719:
+    id: STORY-719
+    title: 'Ledger housekeeping: renumber draft-slug IDs, approve draft tests with
+      evidence, close superseded AUDs, retire dead checklist dirs'
+    status: verified
+    tags:
+    - v1.17.2
+    fingerprint: sha256:799cacbdb00c
+    children: []
+  STORY-721:
+    id: STORY-721
     title: Add auxiliary_metrics field to EXPT schema and update test coverage
     status: verified
     tags: []
     fingerprint: sha256:c73031c9d86f
     children: []
-  STORY-ADDCLI-0e15:
-    id: STORY-ADDCLI-0e15
+  STORY-722:
+    id: STORY-722
     title: Add CLI subcommand specflow autoresearch with plan/run/review/leaderboard
     status: verified
     tags: []
     fingerprint: sha256:90a19484fc11
     children: []
-  STORY-ADDMULTI-0f54:
-    id: STORY-ADDMULTI-0f54
+  STORY-723:
+    id: STORY-723
     title: Add multi-criteria and anti-leakage documentation to competition-setup-protocol
     status: verified
     tags: []
     fingerprint: sha256:d0fdc70e2da3
     children: []
-  STORY-ARTIFACT-a39a:
-    id: STORY-ARTIFACT-a39a
+  STORY-724:
+    id: STORY-724
     title: 'artifact-lint quality gates: empty-AC error and NFR threshold warning'
     status: implemented
     tags:
     - v1.12.0
     fingerprint: sha256:e45e9f28f9d1
     children: []
-  STORY-FIXACCEP-f941:
-    id: STORY-FIXACCEP-f941
+  STORY-725:
+    id: STORY-725
     title: Fix Acceptance Criteria mutation boundaries (v1.13.3)
     status: implemented
     tags:
@@ -1602,47 +1720,47 @@ artifacts:
     - ac-mutation
     fingerprint: sha256:0090ff56379c
     children: []
-  STORY-KEEPRELE-37de:
-    id: STORY-KEEPRELE-37de
+  STORY-726:
+    id: STORY-726
     title: Keep release evidence RTM complete when verified REQs exist
     status: implemented
     tags: []
     fingerprint: sha256:387b32f39e7f
     children: []
-  STORY-MULTIHOS-63a5:
-    id: STORY-MULTIHOS-63a5
+  STORY-727:
+    id: STORY-727
     title: multi-host platform detection warning and refresh --all-platforms
     status: implemented
     tags:
     - v1.12.0
     fingerprint: sha256:2647c67c8626
     children: []
-  STORY-PHASESET-d470:
-    id: STORY-PHASESET-d470
+  STORY-728:
+    id: STORY-728
     title: 'phase-set command: reverse-lifecycle phase accounting'
     status: implemented
     tags:
     - v1.12.0
     fingerprint: sha256:be7f291787f3
     children: []
-  STORY-RBACCHEC-e356:
-    id: STORY-RBACCHEC-e356
+  STORY-729:
+    id: STORY-729
     title: 'rbac check command: author role resolution and transition authorization'
     status: implemented
     tags:
     - v1.12.0
     fingerprint: sha256:52d7c708196c
     children: []
-  STORY-RTMCOMMA-1d6f:
-    id: STORY-RTMCOMMA-1d6f
+  STORY-730:
+    id: STORY-730
     title: 'rtm command: bidirectional requirements traceability matrix'
     status: implemented
     tags:
     - v1.12.0
     fingerprint: sha256:a72a3ec06af0
     children: []
-  STORY-SHIPV1-cbb2:
-    id: STORY-SHIPV1-cbb2
+  STORY-731:
+    id: STORY-731
     title: Ship v1.13.2 transcript-mined CLI ergonomics
     status: implemented
     tags:
@@ -1651,26 +1769,26 @@ artifacts:
     - dogfood
     fingerprint: sha256:2a64bb3f9eef
     children: []
-  STORY-SMALLFIX-621b:
-    id: STORY-SMALLFIX-621b
+  STORY-732:
+    id: STORY-732
     title: Small fixes - concurrent-LOOP gate, noise probe, test cleanup
     status: verified
     tags: []
     fingerprint: sha256:6ef30b99260e
     children: []
-  STORY-SUPERSES-c408:
-    id: STORY-SUPERSES-c408
+  STORY-733:
+    id: STORY-733
     title: supersession status and supersedes role for REQ/ARCH/DDD schemas
     status: implemented
     tags:
     - v1.12.0
     fingerprint: sha256:8dd2644969f0
     children: []
-  STORY-UPDATESK-86fb:
-    id: STORY-UPDATESK-86fb
+  STORY-734:
+    id: STORY-734
     title: Update SKILL.md to thin CLI wrapper and add pack context injection
     status: verified
     tags: []
     fingerprint: sha256:a557ed85a54a
     children: []
-next_id: 707
+next_id: 735

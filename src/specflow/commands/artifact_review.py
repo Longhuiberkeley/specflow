@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import shlex
 import shutil
 import sys
 from pathlib import Path
@@ -12,44 +13,49 @@ from specflow.lib import artifacts as art_lib
 from specflow.lib import checklists
 from specflow.lib import challenges as chl_lib
 from specflow.lib import learning as learn_lib
-from specflow.lib.analysis import find_dead_code, find_similar_functions
 from specflow.lib.display import YELLOW_DIM, CYAN, NC, BOLD
-from specflow.lib.techniques import generate_technique_prompts, TechniqueFinding, ARTIFACT_LEVEL_DEFAULT_LENSES
+from specflow.lib.techniques import generate_technique_prompts, TechniqueFinding
 
 
-def _bootstrap_challenge_schema(root: Path) -> None:
+_PKG_SCHEMAS = Path(__file__).resolve().parent.parent / "templates" / "schemas"
+
+
+def _bootstrap_schema(root: Path, name: str, index_dir: Path | None = None) -> None:
+    """Install the shipped ``<name>.yaml`` schema into ``.specflow/schema/`` when
+    the project pre-dates that artifact type (quiet heal; ``init`` and
+    ``refresh --schemas`` are the loud paths).
+
+    The template is resolved relative to the installed package, never to the
+    project root. ``index_dir`` (optional) gets an empty ``_index.yaml`` when
+    the schema is installed and the index is missing.
+    """
     schema_dir = root / ".specflow" / "schema"
     if not schema_dir.exists():
         return
-    dst = schema_dir / "challenge.yaml"
-    if not dst.exists():
-        src = root / "src" / "specflow" / "templates" / "schemas" / "challenge.yaml"
-        if src.exists():
-            shutil.copy(str(src), str(dst))
+    dst = schema_dir / f"{name}.yaml"
+    if dst.exists():
+        return
+    src = _PKG_SCHEMAS / f"{name}.yaml"
+    if not src.exists():
+        return
+    shutil.copy(str(src), str(dst))
+    if index_dir is not None:
+        index_dir.mkdir(parents=True, exist_ok=True)
+        index = index_dir / "_index.yaml"
+        if not index.exists():
+            from specflow.lib import locks as locks_lib
+
+            locks_lib.locked_exclusive_write(root, index, "artifacts: {}\nnext_id: 1\n")
 
 
-def _run_hygiene_silently(root: Path) -> list[TechniqueFinding]:
-    findings = []
-    # Dead code
-    symbols = find_dead_code(root, src_dir="src")
-    if symbols:
-        findings.append(TechniqueFinding(
-            title=f"Dead Code Detected ({len(symbols)} symbols)",
-            rationale=f"Found {len(symbols)} unreferenced top-level symbols. Informational only.",
-            severity="info",
-            technique="detect:dead-code"
-        ))
-        
-    # Similarity
-    pairs = find_similar_functions(root, src_dir="src", min_statements=10, threshold=0.9)
-    if pairs:
-        findings.append(TechniqueFinding(
-            title=f"Code Similarity Detected ({len(pairs)} pairs)",
-            rationale=f"Found {len(pairs)} near-duplicate functions. Informational only.",
-            severity="info",
-            technique="detect:similarity"
-        ))
-    return findings
+def _bootstrap_challenge_schema(root: Path) -> None:
+    _bootstrap_schema(root, "challenge")
+
+
+def _bootstrap_review_schema(root: Path) -> None:
+    """Ensure review.yaml is present in .specflow/schema/ for repos that
+    pre-date the REVIEW artifact type."""
+    _bootstrap_schema(root, "review", index_dir=root / "_specflow" / "specs" / "reviews")
 
 
 def _format_prompt(
@@ -115,27 +121,6 @@ def _create_chl_artifacts(
         review_id=review_id,
         dedup=False,
     )
-
-
-def _bootstrap_review_schema(root: Path) -> None:
-    """Ensure review.yaml is present in .specflow/schema/ for repos that
-    pre-date the REVIEW artifact type."""
-    schema_dir = root / ".specflow" / "schema"
-    if not schema_dir.exists():
-        return
-    dst = schema_dir / "review.yaml"
-    if dst.exists():
-        return
-    pkg_template = Path(__file__).parent.parent / "templates" / "schemas" / "review.yaml"
-    if pkg_template.exists():
-        shutil.copy(str(pkg_template), str(dst))
-        review_dir = root / "_specflow" / "specs" / "reviews"
-        review_dir.mkdir(parents=True, exist_ok=True)
-        index = review_dir / "_index.yaml"
-        if not index.exists():
-            from specflow.lib import locks as locks_lib
-
-            locks_lib.locked_exclusive_write(root, index, "artifacts: {}\nnext_id: 1\n")
 
 
 def emit_review_pass(
@@ -288,34 +273,53 @@ def _record_techniques_on_artifacts(
             )
 
 
+def _recording_command(targets: list[art_lib.Artifact], techniques: list[str]) -> list[str]:
+    """The exact ``specflow update`` line(s) that record applied lenses.
+
+    SpecFlow never stamps ``thinking_techniques`` itself: the record means the
+    host agent actually applied the lens, so the agent runs this after the
+    review (adversarial-lenses.md "Recording applied lenses"). Stamping before
+    the review would silence the ``unchallenged`` lint for nothing.
+    """
+    techs = shlex.quote(",".join(techniques))  # e.g. devil's-advocate needs quoting
+    return [f"specflow update {art.id} --thinking-techniques {techs}" for art in targets]
+
+
 def run(root: Path, args: dict[str, Any]) -> int:
     _bootstrap_challenge_schema(root)
     _bootstrap_review_schema(root)
     depth = args.get("depth") or "quick"
+    artifact_id = args.get("artifact_id")
+    review_all = bool(args.get("all", False))
 
-    # 1. Silent detect pre-step
-    hygiene_findings = _run_hygiene_silently(root)
-    
-    # 2. Deterministic lint + checklist
+    # 1. Deterministic lint (read-only).
     lint_rc = artifact_lint.run(root, {})
-    
+    if lint_rc not in (0, 1):
+        return 3
+
+    # No target and no --all: lint only. The checklist sweep records a
+    # checklists_applied timestamp on every artifact it visits, so it never
+    # runs implicitly over the whole project (F-019).
+    if not artifact_id and not review_all:
+        print(f"\n{YELLOW_DIM}No artifact given — ran lint only. "
+              f"Pass <ARTIFACT_ID> for one artifact or --all for the checklist sweep.{NC}")
+        return 2 if lint_rc == 1 else 0
+
+    # 2. Checklist pass (writes checklists_applied on each target).
     check_args = {
-        "artifact_id": args.get("artifact_id"),
-        "all": args.get("all", False),
+        "artifact_id": artifact_id,
+        "all": review_all,
         "gate": args.get("gate"),
         "proactive": args.get("proactive", False),
         "dedup": False,
     }
-    if not check_args["artifact_id"] and not check_args["all"]:
-        check_args["all"] = True
-
     check_rc = checklist_run.run(root, check_args)
-    if lint_rc not in (0, 1) or check_rc not in (0, 1):
+    if check_rc not in (0, 1):
         return 3
-        
+
     if depth == "quick":
         return 2 if (lint_rc == 1 or check_rc == 1) else 0
-        
+
     # 3. Target collection
     targets = _get_target_artifacts(root, args)
     if not targets:
@@ -353,18 +357,19 @@ def run(root: Path, args: dict[str, Any]) -> int:
                 for p in prompts:
                     print(f"\n  ┌─ {p.technique} → {p.artifact_id}")
                     print(f"  │ {p.diversity_hint}")
-                    print(f"  ├─ SYSTEM:")
+                    print("  ├─ SYSTEM:")
                     print(p.system_prompt)
-                    print(f"  ├─ USER:")
+                    print("  ├─ USER:")
                     print(p.user_prompt)
-                    print(f"  └─ (host agent applies this technique with its own intelligence — no external API call)")
+                    print("  └─ (host agent applies this technique with its own intelligence — no external API call)")
 
-            _record_techniques_on_artifacts(root, targets, techniques)
-                
-    # 6. Hygiene findings (these do not have target_id naturally, but we can assign to root or skip CHL)
-    findings.extend(hygiene_findings)
-    
-    # 7. Create REVIEW + CHL artifacts (one REVIEW per target, CHLs linked back)
+            # The lenses are recorded only after the host agent has applied
+            # them — by the agent, with this exact command (never auto-stamped).
+            print(f"\n  {BOLD}After applying the lenses, record them:{NC}")
+            for line in _recording_command(targets, techniques):
+                print(f"    {line}")
+
+    # 6. Create REVIEW + CHL artifacts (one REVIEW per target, CHLs linked back)
     created = 0
     if any(f.severity != "info" for f in findings):
         print("\nCreating REVIEW + CHL artifacts for findings...")
@@ -376,16 +381,13 @@ def run(root: Path, args: dict[str, Any]) -> int:
             if outcome.get("ok"):
                 created += len(outcome.get("chl_ids", []))
 
-        # For findings without a target_id (hygiene), we just skip CHL creation for now
-        # since their severity is 'info'.
-
-    # 8. Create learned patterns from significant findings
+    # 7. Create learned patterns from significant findings
     learnable = [f for f in findings if f.severity in learn_lib.LEARNABLE_SEVERITIES]
     if learnable:
         print("\nCreating prevention patterns from findings...")
         _create_learned_patterns(root, targets, findings)
-        
+
     if created > 0 or lint_rc == 1 or check_rc == 1:
         return 2
-        
+
     return 0

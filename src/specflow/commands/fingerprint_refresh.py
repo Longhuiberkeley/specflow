@@ -104,7 +104,7 @@ def run(root: Path, args: dict[str, Any]) -> int:
         if result.get("changed", False):
             print(f"{GREEN}✓ Tweaked {artifact.id}{NC} — fingerprint updated (minor, no cascade)")
         else:
-            print(f"{GREEN}✓ {artifact.id}{NC} — no fingerprint change detected")
+            print(f"{GREEN}✓ {artifact.id}{NC} — fingerprint already current (nothing written)")
 
     # Non-zero only if ALL targets failed; partial success is still exit 0.
     return 1 if failures == total else 0

@@ -20,6 +20,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 PACKS_DIR = Path(__file__).parent.parent / "src" / "specflow" / "packs"
 _ANSI = re.compile(r"\x1b\[[0-9;]*m")
 
@@ -88,6 +90,7 @@ def run_adopt_worked_example(root: Path) -> list[subprocess.CompletedProcess]:
 
 # ── adoption ────────────────────────────────────────────────────────────────
 
+@pytest.mark.slow
 def test_adoption_sequence_is_healthy(tmp_path: Path):
     root = new_project(tmp_path, "adoption", "adopt")
     (root / "src" / "payments").mkdir(parents=True)
@@ -111,6 +114,7 @@ def test_adoption_sequence_is_healthy(tmp_path: Path):
 
 # ── ops ─────────────────────────────────────────────────────────────────────
 
+@pytest.mark.slow
 def test_ops_sequence_is_healthy(tmp_path: Path):
     root = new_project(tmp_path, "ops", "ops")
     steps = [
@@ -138,6 +142,7 @@ def test_ops_sequence_is_healthy(tmp_path: Path):
 
 # ── autoresearch ────────────────────────────────────────────────────────────
 
+@pytest.mark.slow
 def test_autoresearch_sequence_is_healthy(tmp_path: Path):
     root = new_project(tmp_path, "autoresearch", "ar")
     (root / "verify.py").write_text("print(0.80)\n")
@@ -245,6 +250,7 @@ def run_core_lifecycle(tmp_path: Path) -> Path:
     return root
 
 
+@pytest.mark.slow
 def test_core_lifecycle_is_healthy(tmp_path: Path):
     root = run_core_lifecycle(tmp_path)
     lint = sf(root, "artifact-lint")
@@ -258,6 +264,7 @@ def test_core_lifecycle_is_healthy(tmp_path: Path):
     assert len(lines) == 1 and "/specflow-ship" in lines[0], brief.stdout
 
 
+@pytest.mark.slow
 def test_core_lifecycle_spidr_is_quiet(tmp_path: Path):
     # STORY-695: was a strict xfail while spidr-coverage warned on lean changes.
     assert_healthy(run_core_lifecycle(tmp_path))

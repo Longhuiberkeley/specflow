@@ -95,12 +95,15 @@ def test_refresh_packs_applies_local_pack_changes(tmp_path: Path):
         "name: local-review\nnote: v2\nitems: []\n"
     )
     (pack / "schemas" / "local-extra.yaml").write_text("type: local-extra\n")
+    # F-103: standards/ is part of the sync too.
+    (pack / "standards" / "local-std.yaml").write_text("id: LOCAL-STD\nclauses: [edited]\n")
 
     rc = refresh_cmd.run(root, {"platform": "claude-code", "packs": True, "force": True})
 
     assert rc == 0
     assert "v2" in (root / ".specflow" / "checklists" / "review" / "local-review.yaml").read_text()
     assert (root / ".specflow" / "schema" / "local-extra.yaml").exists()
+    assert "edited" in (root / ".specflow" / "standards" / "local-std.yaml").read_text()
 
 
 def test_refresh_packs_dry_run_resolves_local_pack(tmp_path: Path, capsys):

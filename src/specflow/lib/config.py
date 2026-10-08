@@ -278,7 +278,14 @@ def warn_format_version_once(root: Path) -> None:
 
 
 def backup_specflow_internals(root: Path, backup_dir: Path) -> list[str]:
-    """Backup .specflow/ internals (config, state, schemas) to backup_dir.
+    """Backup .specflow/ internals to backup_dir before ``init --force`` resets.
+
+    config.yaml, state.yaml and schema/ are what the reset rewrites; the
+    findings baseline, checklists/ and source fingerprints are accepted debt,
+    user edits and drift state that would be expensive to reconstruct, so
+    they ride along even though the reset itself keeps them (F-117). The
+    literal names stay inline: tests/test_single_index_writer.py exempts
+    this copy by matching them here.
 
     Returns list of backed-up file paths relative to root.
     """
@@ -286,20 +293,22 @@ def backup_specflow_internals(root: Path, backup_dir: Path) -> list[str]:
 
     backed_up: list[str] = []
     specflow_dir = root / ".specflow"
+    backup_dir.mkdir(parents=True, exist_ok=True)
 
-    for name in ("config.yaml", "state.yaml"):
+    for name in ("config.yaml", "state.yaml", "findings-baseline.yaml", "source-fingerprints.yaml"):
         src = specflow_dir / name
         if src.exists():
             shutil.copy2(str(src), str(backup_dir / name))
             backed_up.append(f".specflow/{name}")
 
-    schema_src = specflow_dir / "schema"
-    schema_dst = backup_dir / "schema"
-    if schema_src.exists():
-        if schema_dst.exists():
-            shutil.rmtree(str(schema_dst))
-        shutil.copytree(str(schema_src), str(schema_dst))
-        backed_up.append(".specflow/schema/")
+    for name in ("schema", "checklists"):
+        tree_src = specflow_dir / name
+        tree_dst = backup_dir / name
+        if tree_src.is_dir():
+            if tree_dst.exists():
+                shutil.rmtree(str(tree_dst))
+            shutil.copytree(str(tree_src), str(tree_dst))
+            backed_up.append(f".specflow/{name}/")
 
     return backed_up
 

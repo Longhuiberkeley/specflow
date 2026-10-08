@@ -306,7 +306,7 @@ artifacts:
     id: IT-037
     title: Dual-host AGENTS.md injection, sentinel migration, and CLAUDE.md bridge
       flows
-    status: draft
+    status: verified
     tags:
     - backfilled
     - verification-contract
@@ -325,7 +325,7 @@ artifacts:
   IT-039:
     id: IT-039
     title: Injected instruction surface stays coherent after refresh
-    status: draft
+    status: verified
     tags:
     - backfilled
     - verification-contract
@@ -334,7 +334,7 @@ artifacts:
   IT-040:
     id: IT-040
     title: Orphan-code gate green on the real repo
-    status: draft
+    status: verified
     tags:
     - backfilled
     - verification-contract
@@ -343,7 +343,7 @@ artifacts:
   IT-041:
     id: IT-041
     title: STORY-637 real-repo trace integration
-    status: draft
+    status: verified
     tags:
     - verification-contract
     fingerprint: sha256:aaebed5a0936
@@ -351,7 +351,7 @@ artifacts:
   IT-042:
     id: IT-042
     title: STORY-638 cross-process create race integration
-    status: draft
+    status: verified
     tags:
     - verification-contract
     fingerprint: sha256:58a5fae97b5c
@@ -359,7 +359,7 @@ artifacts:
   IT-043:
     id: IT-043
     title: STORY-639 role-target check on the real repo via CLI
-    status: draft
+    status: verified
     tags:
     - verification-contract
     fingerprint: sha256:5a508322a12f
@@ -367,7 +367,7 @@ artifacts:
   IT-044:
     id: IT-044
     title: STORY-640 creation gate at the CLI boundary
-    status: draft
+    status: verified
     tags:
     - verification-contract
     fingerprint: sha256:c0278e118147
@@ -375,7 +375,7 @@ artifacts:
   IT-045:
     id: IT-045
     title: STORY-641 live skill tree carries the approval gate
-    status: draft
+    status: verified
     tags:
     - verification-contract
     fingerprint: sha256:6935ac61165e
@@ -384,28 +384,28 @@ artifacts:
     id: IT-046
     title: 'STORY-646 integration contracts: skill mirror byte-equality + schema/pack
       integration'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:f88b33faa16a
     children: []
   IT-047:
     id: IT-047
     title: 'Privacy denylist gate: script + CI wiring + pytest guard (DDD-029)'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:07cf1cc27603
     children: []
   IT-048:
     id: IT-048
     title: 'Quant checklist thin rewrite: privacy gate + skill surfaces clean'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:0cc4367cbf50
     children: []
   IT-049:
     id: IT-049
     title: Gate script consumes the shared pattern (no embedded drift)
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:989a5e419b94
     children: []
@@ -413,7 +413,7 @@ artifacts:
     id: IT-050
     title: 'Autoresearch CLI integration: status codes, closure readiness, schema
       pins (STORY-650..655)'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:2cde75552e9f
     children: []
@@ -421,7 +421,7 @@ artifacts:
     id: IT-051
     title: 'Context-arc integration: live/shipped mirror byte-equality + dogfood CLI
       (STORY-656..659)'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:94e9d899c9b7
     children: []
@@ -429,21 +429,21 @@ artifacts:
     id: IT-052
     title: "CLI-surface integration: argparse\u2192command wiring, autoresearch status\
       \ codes (STORY-660..663)"
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:bd7fa50d11a0
     children: []
   IT-053:
     id: IT-053
     title: 'Invariant-sheet integration: pack contents parse and route (STORY-664)'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:5d631002793a
     children: []
   IT-054:
     id: IT-054
     title: Autoresearch pack protocol and schema integration (STORY-665)
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:0d4aef723bc6
     children: []
@@ -771,4 +771,108 @@ artifacts:
     tags: []
     fingerprint: sha256:8e06eee9c2d5
     children: []
-next_id: 99
+  IT-099:
+    id: IT-099
+    title: 'Integration tests for STORY-707: artifact writers use the locked path;
+      artifact-review stops rewriting '
+    status: implemented
+    tags: []
+    fingerprint: sha256:dd66d8223ecb
+    children: []
+  IT-100:
+    id: IT-100
+    title: 'Integration tests for STORY-708: pre-commit hook PATH guard, worktree
+      hooks dir, staged deletions, fore'
+    status: implemented
+    tags: []
+    fingerprint: sha256:04b01f599b3f
+    children: []
+  IT-101:
+    id: IT-101
+    title: "Integration tests for STORY-709: refresh/init/scaffold hygiene \u2014\
+      \ pack standards sync, backups, sentinel"
+    status: implemented
+    tags: []
+    fingerprint: sha256:95c4a2ac466c
+    children: []
+  IT-102:
+    id: IT-102
+    title: "Integration tests for STORY-710: standards and ReqIF correctness \u2014\
+      \ double-escape, malformed YAML, dead-"
+    status: implemented
+    tags: []
+    fingerprint: sha256:1c74883c3017
+    children: []
+  IT-103:
+    id: IT-103
+    title: 'Integration tests for STORY-711: one practice-binding predicate for brief
+      and lint; thinking_techniques'
+    status: implemented
+    tags: []
+    fingerprint: sha256:db75f822fc2f
+    children: []
+  IT-104:
+    id: IT-104
+    title: 'Integration tests for STORY-712: docs, README, ROADMAP, CHANGELOG, AGENTS.md
+      and pack-reference consist'
+    status: implemented
+    tags: []
+    fingerprint: sha256:0b29754b159a
+    children: []
+  IT-105:
+    id: IT-105
+    title: 'Integration tests for STORY-713: CLI root walk-up, hint parser, read-only
+      help labels, scoped lint hint'
+    status: implemented
+    tags: []
+    fingerprint: sha256:d784ddda6341
+    children: []
+  IT-106:
+    id: IT-106
+    title: 'Integration tests for STORY-714: stdin EOF guard, reserved --set keys,
+      title index sync, no-op fingerpr'
+    status: implemented
+    tags: []
+    fingerprint: sha256:3fcd65776110
+    children: []
+  IT-107:
+    id: IT-107
+    title: "Integration tests for STORY-715: brief and status honesty \u2014 routing,\
+      \ DEF/DEC/unexecuted notes, stale sk"
+    status: implemented
+    tags: []
+    fingerprint: sha256:6687273de244
+    children: []
+  IT-108:
+    id: IT-108
+    title: 'Integration tests for STORY-716: findings policy classes for pre-implementation
+      rows; lint known/new re'
+    status: implemented
+    tags: []
+    fingerprint: sha256:48f4755dfb28
+    children: []
+  IT-109:
+    id: IT-109
+    title: "Integration tests for STORY-717: core skill text parity \u2014 link direction,\
+      \ vocabulary tables, statuses, "
+    status: implemented
+    tags: []
+    fingerprint: sha256:5a2819d59a2e
+    children: []
+  IT-110:
+    id: IT-110
+    title: "Integration tests for STORY-718: tests and CI hygiene \u2014 executor\
+      \ tests, un-skip practice tests, handler"
+    status: implemented
+    tags: []
+    fingerprint: sha256:ba2e711589dd
+    children: []
+  IT-111:
+    id: IT-111
+    title: 'Integration tests for STORY-719: renumber draft-slug IDs, approve draft
+      tests with evidence, close supe'
+    status: implemented
+    tags: []
+    fingerprint: sha256:d26b5d1e3b06
+    children: []
+next_id: 112

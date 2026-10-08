@@ -7,7 +7,7 @@ optional_fields: [priority, version, rationale, tags, suspect, fingerprint, link
 allowed_status:
   open: []
   investigating: [open]
-  fixing: [investigating]
+  fixing: [open, investigating]
   verified: [fixing]
   closed: [verified]
   wontfix: [open, investigating]

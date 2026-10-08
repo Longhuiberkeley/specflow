@@ -199,3 +199,25 @@ def test_fresh_init_creates_nested_instruction_file(tmp_path: Path, code: str):
     text = (root / cfg["instruction_file"]).read_text(encoding="utf-8")
     assert _BASE_START in text
     assert _PACK_START in text
+
+
+# ── 5. Malformed sentinels are repaired, never crash, never grow (F-123) ─────
+
+@pytest.mark.parametrize("code", _ALL_PLATFORMS)
+def test_reinject_repairs_missing_end_marker_on_every_platform(tmp_path: Path, code: str):
+    cfg = plat_lib.get_platform(code)
+    root = tmp_path / "proj"
+    root.mkdir()
+    inst = root / cfg["instruction_file"]
+    inst.parent.mkdir(parents=True, exist_ok=True)
+    inst.write_text(f"user intro\n{_BASE_START}\nstale body\n", encoding="utf-8")
+    templates = Path(scaffold_lib.__file__).resolve().parents[1] / "templates"
+
+    assert scaffold_lib.inject_base_context(root, templates, code) is True
+    text = inst.read_text(encoding="utf-8")
+    assert text.count(_BASE_START) == 1
+    assert text.count(scaffold_lib._BASE_SENTINEL_END) == 1
+    assert "user intro" in text
+
+    assert scaffold_lib.inject_base_context(root, templates, code) is False
+    assert inst.read_text(encoding="utf-8") == text

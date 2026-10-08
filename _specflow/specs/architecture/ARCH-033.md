@@ -12,8 +12,8 @@ links:
 created: '2026-09-13'
 fingerprint: sha256:cd8de45116b1
 thinking_techniques:
-- assumption-surfacing
-modified: '2026-09-13'
+- assumption_surfacing
+modified: '2026-10-08'
 ---
 
 # Ops RUN lifecycle architecture: reversible pause

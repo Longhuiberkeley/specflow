@@ -195,7 +195,7 @@ def test_bp_application_blocks_only_with_strict_opt_in(project_root: Path):
 
 
 def test_bp_application_warning_is_accounting_never_escalates(project_root: Path, capsys):
-    """bp-application is accounting (DEC-FINDINGS-79d8): its warnings never
+    """bp-application is accounting (DEC-099): its warnings never
     fail a full run, even with a baseline that does not record them."""
     from specflow.commands import findings_baseline
     from specflow.core.policy import klass_for
@@ -248,7 +248,7 @@ def test_bp_application_grace_is_frontmatter_date_keyed_not_mtime(
     bp_path = _bp(project_root, modified="2026-06-01")
     req_path = _write_artifact(
         project_root, "REQ-001", "requirement",
-        extra={"modified": "2026-07-01"},
+        extra={"created": "2026-07-01", "modified": "2026-07-01"},
     )
     # REQ is newer in frontmatter but older on disk → still checked.
     os.utime(req_path, ns=(bp_path.stat().st_mtime_ns - 1_000_000,) * 2)
@@ -257,10 +257,59 @@ def test_bp_application_grace_is_frontmatter_date_keyed_not_mtime(
     # REQ is older in frontmatter but newer on disk → still skipped.
     req_path = _write_artifact(
         project_root, "REQ-001", "requirement",
-        extra={"modified": "2026-05-01"},
+        extra={"created": "2026-05-01", "modified": "2026-05-01"},
     )
     os.utime(req_path, ns=(bp_path.stat().st_mtime_ns + 1_000_000,) * 2)
     assert _bp_application(project_root)["warning_count"] == 0
+
+
+def test_bp_application_grace_is_keyed_on_created_not_modified(project_root: Path):
+    """A body-only wording edit (or any CLI write) bumps ``modified``; that must
+    not pull a legacy artifact into scope and fire one line per applicable BP.
+    Grace is keyed on ``created`` — the artifact predates the practice."""
+    _bp(project_root, modified="2026-06-01")
+    _write_artifact(
+        project_root, "REQ-001", "requirement",
+        extra={"created": "2026-01-01", "modified": "2026-09-30"},
+    )
+
+    result = _bp_application(project_root)
+
+    assert result["warning_count"] == 0
+    assert "REQ-001" not in result["detail"]
+
+
+def test_bp_application_bound_legacy_pair_is_counted_not_graced(project_root: Path):
+    """A guided_by link is an explicit re-binding: the pair is accounted (and
+    its evidence checked) even though the target predates the practice."""
+    _bp(project_root, modified="2026-06-01")
+    _write_artifact(
+        project_root, "REQ-001", "requirement",
+        links=[{"target": "BP-001", "role": "guided_by"}],
+        extra={"created": "2026-01-01", "modified": "2026-01-01"},
+    )
+
+    result = _bp_application(project_root)
+
+    assert result["warning_count"] == 0
+    assert "requirement: 1/1 in-scope BP binding(s) bound; 0 unbound" in result["detail"]
+
+
+def test_bp_application_grace_reads_bare_yaml_dates(project_root: Path):
+    """``created: 2026-01-01`` (unquoted) parses as a date object, not a str;
+    it is a real date and must grant grace exactly like the quoted form."""
+    _bp(project_root, modified="2026-06-01")
+    path = _write_artifact(project_root, "REQ-001", "requirement")
+    text = path.read_text(encoding="utf-8").replace("created: '2026-01-01'", "created: 2026-01-01")
+    assert "created: 2026-01-01" in text
+    path.write_text(text, encoding="utf-8")
+    parsed = art_lib.parse_artifact(path)
+    assert not isinstance(parsed.frontmatter["created"], str)
+
+    result = _bp_application(project_root)
+
+    assert result["warning_count"] == 0
+    assert "REQ-001" not in result["detail"]
 
 
 def test_bp_application_checks_test_verification_status(project_root: Path):

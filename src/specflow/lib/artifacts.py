@@ -37,11 +37,20 @@ def _normalize_str_list(raw: Any) -> list[str]:
     ``TypeError``. Normalizing at the read boundary makes every consumer safe
     regardless of how the value was written. Applies to every field in
     :data:`_LIST_VALUED_KEYS`.
+
+    A scalar wrapped in YAML-flow brackets (``"[premortem, dependency_shock]"``
+    — a CLI value quoted as a whole, which JSON rejects because the items are
+    unquoted) is unwrapped before the split; otherwise the brackets ride along
+    on the first and last items (``"[premortem"``, ``"dependency_shock]"``).
+    Only the outer pair is stripped; item spelling is never canonicalised here.
     """
     if raw is None:
         return []
     if isinstance(raw, str):
-        return [t.strip() for t in raw.split(",") if t.strip()]
+        text = raw.strip()
+        if len(text) >= 2 and text[0] == "[" and text[-1] == "]":
+            text = text[1:-1]
+        return [t.strip() for t in text.split(",") if t.strip()]
     if isinstance(raw, (list, tuple)):
         # ``str(None)`` is the truthy ``"None"``, so guard ``t is not None``
         # explicitly or a null element becomes a phantom ``"None"`` tag.
@@ -128,7 +137,8 @@ def parse_set_fields(
                 matches = difflib.get_close_matches(key, known_keys, n=1, cutoff=0.6)
                 if matches:
                     raise ValueError(
-                        f"Unknown --set field '{key}'. Did you mean '{matches[0]}'?"
+                        f"Unknown --set field '{key}' (did you mean '{matches[0]}'?) "
+                        "— see `specflow schema <type>` for the declared fields"
                     )
             fields[key] = value
     return fields
@@ -275,6 +285,30 @@ TYPE_ALIASES: dict[str, str] = {
 }
 
 
+# Frontmatter keys that fix an artifact's identity. They are written once by
+# create and never through a generic ``--set``: a rewritten ``id`` leaves the
+# file name and index key behind, a rewritten ``type`` re-routes the status
+# map, and ``created`` is the audit anchor. One set, shared by every command
+# that accepts ``--set`` (update, create, autoresearch log), each value being
+# the pointer to the command that legitimately changes that aspect.
+IDENTITY_SET_KEYS: dict[str, str] = {
+    "id": (
+        "ids are allocated at create time — use 'specflow renumber-drafts' "
+        "for draft slug ids, or 'specflow split' / 'specflow merge' to restructure"
+    ),
+    "type": (
+        "an artifact's type is fixed at create — create one of the right type "
+        "and retire this one via 'specflow merge'"
+    ),
+    "created": "the creation date is stamped once at create and never rewritten",
+}
+
+# Sentinel for ``update_artifact(key=UNSET)``: remove ``key`` from the
+# frontmatter. ``None`` keeps its long-standing "leave untouched" meaning for
+# the many library callers that pass optional kwargs through unchanged.
+UNSET: Any = object()
+
+
 def normalize_type(s: str) -> str:
     """Normalize an artifact type string to its canonical form.
 
@@ -351,6 +385,10 @@ V_MODEL_PAIRS: dict[str, str] = {
 
 # The test types that can pair a spec (find_missing_v_pairs, STORY-680).
 _V_PAIR_TEST_TYPES = frozenset(V_MODEL_PAIRS.values())
+# Spec statuses find_missing_v_pairs does not examine: not yet approved, or
+# retired. Mirrors lint.TERMINAL_STATUSES (not imported: lib/lint depends on
+# this module).
+_V_PAIR_SKIP_STATUSES = frozenset({"draft", "cancelled", "deprecated", "superseded"})
 
 
 @dataclass
@@ -771,6 +809,10 @@ def find_missing_v_pairs(artifacts: list[Artifact]) -> list[tuple[Artifact, str]
     laxness only (see the DEC citing REQ-012/REQ-013), keeping the metrics
     distinct.
 
+    Specs that are still ``draft`` or already terminal (cancelled,
+    deprecated, superseded) are not examined: a pair is owed from approval
+    onward, and nothing is owed to a retired spec (v1.17.2 de-noise).
+
     Returns list of (spec_artifact, missing_test_prefix) tuples, where
     missing_test_prefix is the paired TEST prefix (e.g. ``QT`` for a REQ).
     """
@@ -789,6 +831,8 @@ def find_missing_v_pairs(artifacts: list[Artifact]) -> list[tuple[Artifact, str]
     for art in artifacts:
         spec_type = art.type
         if spec_type not in V_MODEL_PAIRS:
+            continue
+        if art.status in _V_PAIR_SKIP_STATUSES:
             continue
 
         test_type = V_MODEL_PAIRS[spec_type]
@@ -1007,6 +1051,15 @@ _CHAIN_DEPTH_ROLES = frozenset({
     "belongs_to", "operates_on", "condenses",
 })
 
+# Parent-held ``refined_by`` is followed downstream only along the canonical
+# refinement pairs (DEC-091).  Legacy child-held ``DDD refined_by ARCH`` links
+# point *up* the V-model; following them from a DDD would climb sideways into
+# unrelated REQs and inflate the chain depth.
+_PARENT_HELD_REFINES: dict[str, frozenset[str]] = {
+    "requirement": frozenset({"architecture"}),
+    "architecture": frozenset({"detailed-design"}),
+}
+
 
 def compute_chain_depth(
     artifact_id: str,
@@ -1016,6 +1069,9 @@ def compute_chain_depth(
 
     Returns a list of IDs representing the chain path, or [artifact_id] if no downstream links.
     Only structural trace roles count as chain edges (see ``_CHAIN_DEPTH_ROLES``).
+    A downstream edge is either held by the child (``ARCH derives_from REQ``,
+    ``UT verified_by DDD``) or by the parent as the canonical ``refined_by``
+    (``REQ refined_by ARCH``, DEC-091); both are followed.
     """
     visited: set[str] = set()
     deepest: list[str] = [artifact_id]
@@ -1025,6 +1081,21 @@ def compute_chain_depth(
         if current_id in visited:
             return
         visited.add(current_id)
+        # Canonical parent-held refinement: the current spec names its children.
+        # Only downstream type pairs count (REQ->ARCH, ARCH->DDD); a legacy
+        # child-held ``DDD refined_by ARCH`` must not be walked upward.
+        current = id_index.get(current_id)
+        allowed = _PARENT_HELD_REFINES.get(current.type, frozenset()) if current else frozenset()
+        for link in (current.links if current else []):
+            if link.role != "refined_by" or link.target in visited:
+                continue
+            target = id_index.get(link.target)
+            if target is None or target.type not in allowed:
+                continue
+            new_path = path + [link.target]
+            if len(new_path) > len(deepest):
+                deepest = new_path
+            _walk(link.target, new_path)
         for art_id, art in id_index.items():
             if art_id in visited:
                 continue
@@ -1676,20 +1747,38 @@ def _update_locked(
     from datetime import date
 
     body_override = updates.pop("body", None)
+    before_fm = dict(fm)
+    before_fm.pop("modified", None)
+    old_body = text[end + 3:].strip()
     for key, value in updates.items():
         if key == "output_files" and value is None:
             fm.pop("output_files", None)
+        elif value is UNSET:
+            fm.pop(key, None)
         elif value is not None:
             fm[key] = value
-    fm["modified"] = date.today().isoformat()
 
-    body = body_override.strip() if body_override is not None else text[end + 3:].strip()
+    body = body_override.strip() if body_override is not None else old_body
     fingerprint = compute_fingerprint(body)
-    fm["fingerprint"] = fingerprint
 
-    new_text = "---\n" + yaml.dump(fm, default_flow_style=False, sort_keys=False) + "---\n\n" + body + "\n"
-    locks_lib.atomic_write(file_path, new_text)
+    # A write that changes nothing (same status re-applied, KEY=null on an
+    # absent key, identical body) must not rewrite the file, bump `modified`,
+    # or report success as "Updated": callers print "No changes to apply".
+    # A stale on-disk fingerprint counts as a change (it gets repaired).
+    after_fm = dict(fm)
+    after_fm.pop("modified", None)
+    after_fm["fingerprint"] = fingerprint
+    changed = not (after_fm == before_fm and body == old_body)
+    if changed:
+        fm["modified"] = date.today().isoformat()
+        fm["fingerprint"] = fingerprint
+        new_text = "---\n" + yaml.dump(fm, default_flow_style=False, sort_keys=False) + "---\n\n" + body + "\n"
+        locks_lib.atomic_write(file_path, new_text)
 
+    # The index is re-synced even on a no-op file write: a crash between the
+    # file write and the index write (tests/formal I5) must converge on the
+    # rerun, so the entry is always brought in step with the file and written
+    # back only when it actually differs.
     prefix = get_prefix_from_id(artifact_id)
     type_name = PREFIX_TO_TYPE.get(prefix, "")
     rel_dir = TYPE_TO_DIR.get(type_name, "")
@@ -1697,13 +1786,26 @@ def _update_locked(
         index_path = root / "_specflow" / rel_dir / "_index.yaml"
         index_data = _read_index(index_path)
         if artifact_id in index_data.get("artifacts", {}):
-            index_data["artifacts"][artifact_id]["status"] = fm.get("status", "draft")
-            index_data["artifacts"][artifact_id]["fingerprint"] = fingerprint
-            if "tags" in fm:
-                index_data["artifacts"][artifact_id]["tags"] = _normalize_str_list(fm.get("tags"))
-            _write_index(index_path, index_data)
+            entry = index_data["artifacts"][artifact_id]
+            synced = dict(entry)
+            synced["status"] = fm.get("status", "draft")
+            synced["fingerprint"] = fingerprint
+            # `--title` / `--set title=` used to leave the index title stale
+            # until a full reconcile; keep every indexed field in step.
+            if "title" in fm:
+                synced["title"] = fm["title"]
+            # Always mirror the file (rebuild-index writes `tags: []` for an
+            # artifact without tags), so `--set tags=null` cannot leave the
+            # removed tags behind in the index.
+            synced["tags"] = _normalize_str_list(fm.get("tags"))
+            if synced != entry:
+                index_data["artifacts"][artifact_id] = synced
+                _write_index(index_path, index_data)
 
-    return {"ok": True, "id": artifact_id, "path": str(file_path), "fingerprint": fingerprint}
+    result = {"ok": True, "id": artifact_id, "path": str(file_path), "fingerprint": fingerprint}
+    if not changed:
+        result["changed"] = False
+    return result
 
 
 def rebuild_index(root: Path, artifact_type: str | None = None) -> dict[str, Any]:
@@ -1762,7 +1864,7 @@ def _rebuild_dir_index(target_dir: Path, atype: str | None = None) -> dict[str, 
 
         base_id = get_base_id(art.id)
         # Only canonical numeric IDs advance next_id. Draft IDs end with a
-        # short hash (for example STORY-FIXACCEP-f941); even an all-digit
+        # short hash (for example STORY-725); even an all-digit
         # hash is not an allocated sequence number.
         from specflow.lib import draft_ids as draft_lib
         last_segment = base_id.rsplit("-", 1)[-1]

@@ -12,15 +12,20 @@ specflow transitions <ID>
 
 ```
 open → investigating → fixing → verified → closed
+open → fixing                      (legal when the cause is already known)
+open | investigating → wontfix     (terminal)
 ```
 
 | Status | Meaning |
 |--------|---------|
 | `open` | Defect reported, not yet triaged |
-| `investigating` | Root cause analysis in progress |
-| `fixing` | Fix is being implemented |
+| `investigating` | Root cause analysis in progress (optional — skip it when the cause is known) |
+| `fixing` | Fix is being implemented; reachable from `open` or `investigating` |
 | `verified` | Fix confirmed by test |
 | `closed` | Resolved (by STORY or commit) |
+| `wontfix` | Terminal: will not be fixed — put the reason in `--rationale`; reachable from `open` or `investigating` |
+
+A bug against an approved REQ is a DEF, not a new REQ: `specflow create --type defect --title "<symptom>" --add-link <REQ-ID>:fails_to_meet` (plus `--add-link <TEST-ID>:exposed_by` when a test caught it); the fix STORY links both the REQ and the DEF — `specflow create --type story --title "<fix>" --add-link <REQ-ID>:implements --add-link <DEF-ID>:derives_from` (`implements` satisfies the blocking story-linkage check; `derives_from` alone does not).
 
 ## Terminal States (Retiring an Artifact)
 

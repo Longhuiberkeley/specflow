@@ -264,3 +264,59 @@ class TestAdoptionD20Content:
         )
         assert "adopt status" in skill
         assert "skeleton-first" in skill or "skeleton first" in skill.lower()
+
+
+# ── 6. Status pairs the skill teaches are legal (F-108) ─────────────────────
+
+import itertools
+import re
+
+_SCHEMA_DIR = PACKS_DIR.parent / "templates" / "schemas"
+_PAIR_RE = re.compile(r"--type\s+(<[^>]+>|[\w-]+)(?:\s+\S+)*?\s+--status\s+(<[^>]+>|[\w-]+)")
+
+
+def _alternatives(token: str) -> list[str]:
+    """`<a|b>` (optionally escaped as `<a\\|b>`) → [a, b]; a bare word → [word]."""
+    inner = token.strip("<>").replace("\\|", "|")
+    return [part.strip() for part in inner.split("|") if part.strip()]
+
+
+def _allowed_statuses() -> dict[str, set[str]]:
+    out: dict[str, set[str]] = {}
+    for path in _SCHEMA_DIR.rglob("*.yaml"):
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        if isinstance(data, dict) and data.get("type") and isinstance(data.get("allowed_status"), dict):
+            out[data["type"]] = set(data["allowed_status"])
+    return out
+
+
+def _adoption_prose_files() -> list[Path]:
+    skill_dir = PACKS_DIR / "adoption" / "skills" / ADOPT_SKILL
+    return [PACKS_DIR / "adoption" / "README.md", skill_dir / "SKILL.md"] + [
+        skill_dir / "references" / name for name in REFERENCE_FILES
+    ]
+
+
+class TestTaughtStatusPairsAreLegal:
+    """Every `--type X --status Y` the pack teaches must be creatable: the
+    decision schema has no implemented/verified, so a DEC backfill row that
+    offered them failed loudly at `create` (F-108)."""
+
+    def test_pairs_are_found(self):
+        pairs = [m for p in _adoption_prose_files() for m in _PAIR_RE.finditer(p.read_text(encoding="utf-8"))]
+        assert pairs, "no --type/--status pairs found; regex drifted from the prose"
+
+    def test_every_taught_pair_is_in_the_schema(self):
+        allowed = _allowed_statuses()
+        assert "decision" in allowed and "implemented" not in allowed["decision"]
+        bad: list[str] = []
+        for path in _adoption_prose_files():
+            for m in _PAIR_RE.finditer(path.read_text(encoding="utf-8")):
+                for art_type, status in itertools.product(_alternatives(m.group(1)), _alternatives(m.group(2))):
+                    if art_type.startswith("{"):
+                        continue  # placeholder, not a type name
+                    if art_type not in allowed:
+                        bad.append(f"{path.name}: unknown type {art_type!r}")
+                    elif status not in allowed[art_type]:
+                        bad.append(f"{path.name}: --type {art_type} --status {status} (allowed: {sorted(allowed[art_type])})")
+        assert not bad, "\n".join(bad)

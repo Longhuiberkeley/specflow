@@ -161,7 +161,7 @@ class TestVPairRequiresPairedTestType:
     def test_non_test_verifier_is_missing(self):
         # AC1: a verified_by from a non-test artifact does not pair the spec.
         arts = [
-            _art("REQ-001", "requirement"),
+            _art("REQ-001", "requirement", "approved"),
             _art("STORY-001", "story", links=[("REQ-001", "verified_by")]),
         ]
         missing = art_lib.find_missing_v_pairs(arts)
@@ -170,7 +170,7 @@ class TestVPairRequiresPairedTestType:
     def test_wrong_level_test_is_missing(self):
         # A UT verifying a REQ is not the REQ's paired QT.
         arts = [
-            _art("REQ-001", "requirement"),
+            _art("REQ-001", "requirement", "approved"),
             _art("UT-001", "unit-test", links=[("REQ-001", "verified_by")]),
         ]
         missing = art_lib.find_missing_v_pairs(arts)
@@ -193,7 +193,7 @@ class TestVPairRequiresPairedTestType:
 
     def test_spec_outgoing_verified_by_to_wrong_type_is_missing(self):
         arts = [
-            _art("DDD-001", "detailed-design", links=[("QT-001", "verified_by")]),
+            _art("DDD-001", "detailed-design", "approved", links=[("QT-001", "verified_by")]),
             _art("QT-001", "qualification-test"),
         ]
         missing = art_lib.find_missing_v_pairs(arts)
@@ -202,15 +202,18 @@ class TestVPairRequiresPairedTestType:
     def test_returns_paired_test_prefix(self):
         # AC3: tuple carries the paired TEST prefix, matching the docstring.
         arts = [
-            _art("REQ-001", "requirement"),
-            _art("ARCH-001", "architecture"),
-            _art("DDD-001", "detailed-design"),
+            _art("REQ-001", "requirement", "approved"),
+            _art("ARCH-001", "architecture", "implemented"),
+            _art("DDD-001", "detailed-design", "verified"),
+            # Not yet approved / retired specs owe no pair (v1.17.2).
+            _art("REQ-002", "requirement", "draft"),
+            _art("ARCH-002", "architecture", "deprecated"),
         ]
         got = {a.id: p for a, p in art_lib.find_missing_v_pairs(arts)}
         assert got == {"REQ-001": "QT", "ARCH-001": "IT", "DDD-001": "UT"}
 
     def test_links_check_renders_test_prefix(self, tmp_path):
-        arts = [_art("REQ-001", "requirement")]
+        arts = [_art("REQ-001", "requirement", "approved")]
         result = lint_cmd._check_links(arts, tmp_path)
         assert "REQ-001 (no QT verification)" in result["detail"]
 

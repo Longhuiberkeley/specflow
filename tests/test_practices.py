@@ -5,18 +5,17 @@ from __future__ import annotations
 import socket
 from pathlib import Path
 
-import pytest
 import yaml
+from conftest import DOGFOOD_SEED_BP_IDS, shipped_dogfood_seed_bps
 
-from specflow.commands.artifact_lint import _check_status
-from specflow.commands import practices as practices_cmd
 from specflow.commands import init as init_cmd
+from specflow.commands import practices as practices_cmd
 from specflow.commands import refresh as refresh_cmd
+from specflow.commands.artifact_lint import _check_status
 from specflow.lib import artifacts as art_lib
 from specflow.lib import lint as lint_lib
 from specflow.lib import practices
 from specflow.lib import scaffold as scaffold_lib
-
 
 _STATUS_MAP_BYTES = (
     b"allowed_status:\n"
@@ -24,7 +23,7 @@ _STATUS_MAP_BYTES = (
     b"  approved: [draft, active]\n"
     b"  superseded: [approved, active]\n"
 )
-_DOGFOOD_BP_IDS = {f"BP-{index:03}" for index in range(2, 8)}
+_DOGFOOD_BP_IDS = set(DOGFOOD_SEED_BP_IDS)
 
 
 def _write_bp(
@@ -79,13 +78,14 @@ def _file_body_bytes(path: Path) -> bytes:
 
 
 def _shipped_dogfood_bps() -> list[art_lib.Artifact]:
-    bp_dir = Path(__file__).parents[1] / "_specflow/specs/best-practices"
-    paths = sorted(bp_dir.glob("BP-*.md"))
-    if {path.stem for path in paths} != _DOGFOOD_BP_IDS:
-        pytest.skip("the shipped dogfood BP-002..BP-007 set has changed")
-    practices = [art_lib.parse_artifact(path) for path in paths]
-    assert all(practice is not None for practice in practices)
-    return [practice for practice in practices if practice is not None]
+    """The seed-generated dogfood BPs (BP-002..BP-007), hard-asserted present.
+
+    Filtered to the known seed ids rather than globbed: learned practices such
+    as BP-008 live beside them and must not turn these tests into skips.
+    """
+    practices = shipped_dogfood_seed_bps(Path(__file__).parents[1])
+    assert {practice.id for practice in practices} == _DOGFOOD_BP_IDS
+    return practices
 
 
 def _old_loader(root: Path, artifact: art_lib.Artifact) -> list[str]:
@@ -253,7 +253,7 @@ def test_practices_validate_still_enforces_anatomy_on_authored_provenance(
 def test_shipped_dogfood_bps_pass_practices_validate():
     root = Path(__file__).parents[1]
     shipped = _shipped_dogfood_bps()
-    assert shipped  # skip guard lives in the helper
+    assert len(shipped) == len(_DOGFOOD_BP_IDS)
     assert practices.validate_practices(root) == []
 
 

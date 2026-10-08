@@ -1,4 +1,4 @@
-"""STORY-ADDAUXIL-c7bd: optional ``auxiliary_metrics`` field on the EXPT schema.
+"""STORY-721: optional ``auxiliary_metrics`` field on the EXPT schema.
 
 Dedicated coverage of the story's three binding acceptance criteria:
 

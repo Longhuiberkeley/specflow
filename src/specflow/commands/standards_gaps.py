@@ -20,6 +20,15 @@ def run(root: Path, args: dict) -> int:
 
     result = std_lib.check_compliance(root, standard_name)
     if not result["ok"]:
+        if result.get("none_installed"):
+            # A project without standards is healthy: neutral note, exit 0.
+            message = result.get("error", std_lib.NO_STANDARDS_MESSAGE)
+            if use_json:
+                print(json.dumps({"standard": None, "installed": [], "gaps": [],
+                                  "message": message}, indent=2))
+            else:
+                print(f"{DIM}{message}{NC}")
+            return 0
         print(f"{RED}✗ {result.get('error', 'Failed to check compliance.')}{NC}")
         return 1
 
@@ -80,11 +89,18 @@ def _print_dashboard(result: dict, root: Path, standard_name: str | None) -> int
         clause_title = clause.get("clause_title", "")
         severity = clause.get("severity", "medium")
         remediation = clause.get("remediation", "")
+        command = clause.get("command", "")
+        if command:
+            # The JSON payload keeps the command inside `remediation`; the
+            # dashboard shows it on its own line instead of a second arrow.
+            remediation = remediation.removesuffix(f" → {command}")
 
         sev_label = _SEVERITY_LABEL.get(severity, "MED ")
         print(f"    [{CYAN}{sev_label}{NC}]  {clause_id} — {clause_title}")
         if remediation:
             print(f"           {DIM}→ {remediation}{NC}")
+        if command:
+            print(f"           {DIM}run: {command}{NC}")
 
     print()
     return 0

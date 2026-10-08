@@ -1,0 +1,27 @@
+---
+id: STORY-722
+title: Add CLI subcommand specflow autoresearch with plan/run/review/leaderboard
+type: story
+status: verified
+suspect: false
+links:
+- target: REQ-062
+  role: implements
+- target: UT-040
+  role: verified_by
+created: '2026-05-16'
+fingerprint: sha256:90a19484fc11
+output_files:
+- src/specflow/commands/autoresearch.py
+- tests/test_autoresearch_cli.py
+modified: '2026-08-04'
+---
+
+# Add CLI subcommand specflow autoresearch with plan/run/review/leaderboard
+
+## Acceptance Criteria
+
+1. `specflow autoresearch plan` creates or updates a LOOP artifact with mode, budget, and knowledge_input
+2. `specflow autoresearch run` executes the autonomous loop protocol against a COMP
+3. `specflow autoresearch review` displays FINDs and EXPTs for a given COMP with status summaries
+4. `specflow autoresearch leaderboard` ranks EXPTs by metric value with grouping support

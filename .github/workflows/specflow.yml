@@ -20,7 +20,7 @@ jobs:
       - name: Install SpecFlow
         run: uv sync
       - name: Validate artifacts (deterministic, zero tokens)
-        run: uv run specflow artifact-lint --method programmatic
+        run: uv run specflow artifact-lint
   privacy-denylist-gate:
     # REQ-038 / DDD-029: the public repo must not contain personal project
     # context. Single source of truth: scripts/denylist_gate.py (also pinned
@@ -43,6 +43,10 @@ jobs:
         python-version: ["3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
+        with:
+          # tests/test_brownfield_upgrade.py needs a reachable v* release tag;
+          # the default shallow checkout has none and the module skips.
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -153,6 +157,12 @@ jobs:
         run: pip install uv
       - name: Install SpecFlow
         run: uv sync
+      - name: Tag matches package version
+        # The pushed tag must equal v<specflow --version>; pyproject.toml and
+        # __init__.py are checked against each other by the test suite.
+        run: |
+          ver="$(uv run specflow --version | awk '{print $NF}')"
+          test "$GITHUB_REF_NAME" = "v$ver" || { echo "tag $GITHUB_REF_NAME does not match package version v$ver"; exit 1; }
       - name: Release gate check
         run: uv run specflow project-audit && echo "Release gate passed"
       - name: Privacy denylist gate (release-authoritative)

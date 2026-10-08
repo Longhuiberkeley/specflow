@@ -1,6 +1,6 @@
 """specflow findings-baseline — the only writer of the findings baseline.
 
-REQ-053 AC7/AC8, DEC-FINDINGS-79d8. ``update`` records the escalating lint
+REQ-053 AC7/AC8, DEC-099. ``update`` records the escalating lint
 warnings a project accepts as known debt in ``.specflow/findings-baseline.yaml``:
 
 - absent file: seed every current escalating-warning key;

@@ -304,24 +304,24 @@ artifacts:
     children: []
   QT-038:
     id: QT-038
-    title: 'Qualification Test for REQ-AUTORESE-d684: Autoresearch pack v0.2.0'
+    title: 'Qualification Test for REQ-062: Autoresearch pack v0.2.0'
     status: implemented
     tags:
     - backfilled
     - verification-contract
     - autoresearch
-    - REQ-AUTORESE-d684
+    - REQ-062
     - v0.2.0
     fingerprint: sha256:83a4d5c754b3
     children: []
   QT-039:
     id: QT-039
-    title: 'Qualification Test for REQ-DEFERRED-5cea: Deferred lifecycle capabilities'
+    title: 'Qualification Test for REQ-063: Deferred lifecycle capabilities'
     status: verified
     tags:
     - backfilled
     - verification-contract
-    - REQ-DEFERRED-5cea
+    - REQ-063
     - lifecycle
     - v1.12
     - accounting-not-policing
@@ -329,14 +329,13 @@ artifacts:
     children: []
   QT-040:
     id: QT-040
-    title: 'Qualification Test for REQ-TRANSCRI-24b7: Transcript-mined CLI authoring
-      ergonomics'
+    title: 'Qualification Test for REQ-064: Transcript-mined CLI authoring ergonomics'
     status: verified
     tags:
     - backfilled
     - verification-contract
     - v1.13.2
-    - REQ-TRANSCRI-24b7
+    - REQ-064
     - ergonomics
     fingerprint: sha256:d4dbf6b019c2
     children: []
@@ -377,7 +376,7 @@ artifacts:
     id: QT-044
     title: 'Dual-host project qualification: one skill tree + bridged instruction
       surface'
-    status: draft
+    status: verified
     tags:
     - backfilled
     - verification-contract
@@ -387,7 +386,7 @@ artifacts:
   QT-045:
     id: QT-045
     title: v1.14.1 full test suite green
-    status: draft
+    status: verified
     tags:
     - backfilled
     - verification-contract
@@ -396,7 +395,7 @@ artifacts:
   QT-046:
     id: QT-046
     title: 'v1.14.1 release gate: project-audit CLEAN'
-    status: draft
+    status: verified
     tags:
     - backfilled
     - verification-contract
@@ -405,7 +404,7 @@ artifacts:
   QT-047:
     id: QT-047
     title: STORY-637 suite qualification (v1.14.2)
-    status: draft
+    status: verified
     tags:
     - verification-contract
     fingerprint: sha256:2cf008b9d5dc
@@ -413,7 +412,7 @@ artifacts:
   QT-048:
     id: QT-048
     title: STORY-638..641 suite qualification (v1.14.3)
-    status: draft
+    status: verified
     tags:
     - verification-contract
     fingerprint: sha256:82f1c30984c2
@@ -421,35 +420,35 @@ artifacts:
   QT-049:
     id: QT-049
     title: STORY-646 suite qualification (v1.14.5)
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:43ab1aaf262b
     children: []
   QT-050:
     id: QT-050
     title: v1.14.6 suite qualification (STORY-647 + STORY-648)
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:52ced48f9081
     children: []
   QT-051:
     id: QT-051
     title: v1.14.6-post suite qualification (STORY-649)
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:e56b6180862b
     children: []
   QT-052:
     id: QT-052
     title: Upgrade-arc suite qualification (STORY-650..664, REQ-042 arc)
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:c8fc27579ef8
     children: []
   QT-053:
     id: QT-053
     title: Autoresearch arc suite qualification (STORY-665, REQ-043)
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:24894fa3317d
     children: []
@@ -783,4 +782,108 @@ artifacts:
     tags: []
     fingerprint: sha256:100b00728d4e
     children: []
-next_id: 100
+  QT-100:
+    id: QT-100
+    title: 'Qualification tests for STORY-707: artifact writers use the locked path;
+      artifact-review stops rewriting '
+    status: implemented
+    tags: []
+    fingerprint: sha256:1ea0fadcf6cc
+    children: []
+  QT-101:
+    id: QT-101
+    title: 'Qualification tests for STORY-708: pre-commit hook PATH guard, worktree
+      hooks dir, staged deletions, fore'
+    status: implemented
+    tags: []
+    fingerprint: sha256:1b8318a0e3f5
+    children: []
+  QT-102:
+    id: QT-102
+    title: "Qualification tests for STORY-709: refresh/init/scaffold hygiene \u2014\
+      \ pack standards sync, backups, sentinel"
+    status: implemented
+    tags: []
+    fingerprint: sha256:e7c77dbd4cad
+    children: []
+  QT-103:
+    id: QT-103
+    title: "Qualification tests for STORY-710: standards and ReqIF correctness \u2014\
+      \ double-escape, malformed YAML, dead-"
+    status: implemented
+    tags: []
+    fingerprint: sha256:efb99a6f9ba7
+    children: []
+  QT-104:
+    id: QT-104
+    title: 'Qualification tests for STORY-711: one practice-binding predicate for
+      brief and lint; thinking_techniques'
+    status: implemented
+    tags: []
+    fingerprint: sha256:baa78e83b8cc
+    children: []
+  QT-105:
+    id: QT-105
+    title: 'Qualification tests for STORY-712: docs, README, ROADMAP, CHANGELOG, AGENTS.md
+      and pack-reference consist'
+    status: implemented
+    tags: []
+    fingerprint: sha256:c66dc77a2552
+    children: []
+  QT-106:
+    id: QT-106
+    title: 'Qualification tests for STORY-713: CLI root walk-up, hint parser, read-only
+      help labels, scoped lint hint'
+    status: implemented
+    tags: []
+    fingerprint: sha256:2d66e44233db
+    children: []
+  QT-107:
+    id: QT-107
+    title: 'Qualification tests for STORY-714: stdin EOF guard, reserved --set keys,
+      title index sync, no-op fingerpr'
+    status: implemented
+    tags: []
+    fingerprint: sha256:659f9b831bb3
+    children: []
+  QT-108:
+    id: QT-108
+    title: "Qualification tests for STORY-715: brief and status honesty \u2014 routing,\
+      \ DEF/DEC/unexecuted notes, stale sk"
+    status: implemented
+    tags: []
+    fingerprint: sha256:15aa1ba41c5a
+    children: []
+  QT-109:
+    id: QT-109
+    title: 'Qualification tests for STORY-716: findings policy classes for pre-implementation
+      rows; lint known/new re'
+    status: implemented
+    tags: []
+    fingerprint: sha256:686acd7b8582
+    children: []
+  QT-110:
+    id: QT-110
+    title: "Qualification tests for STORY-717: core skill text parity \u2014 link\
+      \ direction, vocabulary tables, statuses, "
+    status: implemented
+    tags: []
+    fingerprint: sha256:86007bcbf57c
+    children: []
+  QT-111:
+    id: QT-111
+    title: "Qualification tests for STORY-718: tests and CI hygiene \u2014 executor\
+      \ tests, un-skip practice tests, handler"
+    status: implemented
+    tags: []
+    fingerprint: sha256:e43db75f4426
+    children: []
+  QT-112:
+    id: QT-112
+    title: 'Qualification tests for STORY-719: renumber draft-slug IDs, approve draft
+      tests with evidence, close supe'
+    status: implemented
+    tags: []
+    fingerprint: sha256:ccd087283480
+    children: []
+next_id: 113

@@ -281,10 +281,10 @@ artifacts:
     - index
     - concurrency
     - invariants
-    fingerprint: sha256:df4c26cd3a64
+    fingerprint: sha256:43efa2faaec3
     children: []
-  DDD-LOUDFAIL-3e02:
-    id: DDD-LOUDFAIL-3e02
+  DDD-035:
+    id: DDD-035
     title: "Loud-failure and advisory ergonomics \u2014 detailed design (v1.13.2)"
     status: implemented
     tags:
@@ -293,4 +293,4 @@ artifacts:
     - detailed-design
     fingerprint: sha256:303166b07fa8
     children: []
-next_id: 35
+next_id: 36

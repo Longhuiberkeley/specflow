@@ -8,9 +8,10 @@ links:
 - target: REQ-023
   role: derives_from
 created: '2026-05-04'
-modified: '2026-05-04'
+modified: '2026-10-08'
 fingerprint: sha256:88f0010c1fb2
-thinking_techniques: [assumption-surfacing]
+thinking_techniques:
+- assumption_surfacing
 ---
 
 # Spec Quality Gate

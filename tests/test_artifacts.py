@@ -220,7 +220,7 @@ class TestFindMissingVPairs:
     def test_missing_verification(self):
         a1 = art_lib.Artifact(
             path=Path("a.md"),
-            frontmatter={"id": "REQ-001", "type": "requirement"},
+            frontmatter={"id": "REQ-001", "type": "requirement", "status": "approved"},
             body="",
             links=[],
         )

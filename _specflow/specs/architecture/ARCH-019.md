@@ -10,9 +10,11 @@ links:
 - target: ARCH-018
   role: derives_from
 created: '2026-05-04'
-modified: '2026-05-05'
+modified: '2026-10-08'
 fingerprint: sha256:c8d3e4d5924b
-thinking_techniques: [assumption-surfacing, devil's-advocate]
+thinking_techniques:
+- assumption_surfacing
+- devils_advocate
 ---
 
 # Reverse Impact Engine

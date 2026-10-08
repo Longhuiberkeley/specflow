@@ -21,10 +21,10 @@ links:
 - target: REQ-031
   role: derives_from
 created: '2026-05-15'
-modified: '2026-09-13'
+modified: '2026-10-08'
 fingerprint: sha256:4d3692a0394e
 thinking_techniques:
-- assumption-surfacing
+- assumption_surfacing
 ---
 
 # Four-tier research artifact hierarchy

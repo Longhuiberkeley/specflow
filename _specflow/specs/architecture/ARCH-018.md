@@ -8,9 +8,10 @@ links:
 - target: REQ-024
   role: derives_from
 created: '2026-05-04'
-modified: '2026-05-04'
+modified: '2026-10-08'
 fingerprint: sha256:34da9eef4d92
-thinking_techniques: [assumption-surfacing]
+thinking_techniques:
+- assumption_surfacing
 ---
 
 # File Traceability Layer

@@ -18,9 +18,11 @@ links:
 - target: REQ-032
   role: derives_from
 created: '2026-05-15'
-modified: '2026-06-15'
+modified: '2026-10-08'
 fingerprint: sha256:13275b1aa6fc
-thinking_techniques: [assumption-surfacing, devil's-advocate]
+thinking_techniques:
+- assumption_surfacing
+- devils_advocate
 ---
 
 # Pack-as-integration-boundary for autoresearch

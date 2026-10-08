@@ -69,7 +69,7 @@ Bring an existing codebase into SpecFlow by **recording its current state**, the
   - **UT/IT/QT only where an existing test maps cleanly** to a backfilled spec — link `verified_by`. Don't fabricate.
   - Tag every backfilled artifact: `--tags backfilled`.
   - Record provenance in `--rationale` (e.g. `"Backfilled from src/auth/ at adoption-v0"`; or `"README vs code conflict — user confirmed code authoritative"`).
-  - **Set status honestly, and sanction it.** `implemented` for code that exists, `verified` where a test confirms it, `approved` for specs that match shipped reality. Creating past `draft` is gated: every backfill `create` carries `--sanctioned "as-built: <why this status is true>"` (kept as `sanctioned_justification`); without it `create` exits 1. Accounting, not policing.
+  - **Set status honestly, and sanction it.** `implemented` for code that exists, `verified` where a test confirms it, `approved` for specs that match shipped reality (a DEC is `approved` at most — the decision schema has no `implemented`/`verified`). Creating past `draft` is gated: every backfill `create` carries `--sanctioned "as-built: <why this status is true>"` (kept as `sanctioned_justification`); without it `create` exits 1. Accounting, not policing.
   - **Worked example** (an ARCH plus the existing test that verifies it): see below. The ARCH body needs ~50+ words under a `## Component`-style header, or lint warns.
 
 - **4 · As-built baseline.** `specflow baseline create adoption-v0 --evidence` (or `adoption-<boundary>-v0` for an interim checkpoint in a multi-pass adoption). State plainly: this is the handshake — from here, drift is measured against this snapshot. Record the docs surface in the baseline `--rationale` (e.g. `"...; docs surface registered: docs/ (N files), README.md"`) so the knowledge baseline is acknowledged at adoption — pre-existing docs aren't orphaned or silently stale.
@@ -138,7 +138,8 @@ Everything this skill does is composed from CLI commands — no new Python per p
 | Artifact completeness | `specflow adopt status <ID>` |
 | Orphan scan | `specflow detect orphan-code` |
 | Backfill ARCH (code-link) | the worked example below (`--sanctioned` is required with `--status implemented`) |
-| Backfill REQ/DDD/DEC | same shape: `--type <requirement\|detailed-design\|decision> --status <approved\|implemented\|verified> --sanctioned "as-built: …" --tags backfilled --rationale "…"` |
+| Backfill REQ/DDD | same shape: `--type <requirement\|detailed-design> --status <approved\|implemented\|verified> --sanctioned "as-built: …" --tags backfilled --rationale "…"` |
+| Backfill DEC | `--type decision --status approved --sanctioned "as-built: …" --tags backfilled --rationale "…"` (decisions have no `implemented`/`verified`) |
 | Open conflicts | `specflow list --tags needs-decision` |
 | Snapshot | `specflow baseline create adoption-v0 --evidence` |
 | Widen a glob (per boundary) | `specflow update ARCH-NNN --output-files '<glob>,<glob>'` |

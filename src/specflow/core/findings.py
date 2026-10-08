@@ -53,9 +53,17 @@ def make(
     severity: str,
     *,
     text: str | None = None,
+    subject_status: str | None = None,
+    lean_path: bool = False,
+    pre_planning: bool = False,
     **args: Any,
 ) -> Finding:
-    """Build a Finding; its class comes from the one policy table."""
+    """Build a Finding; its class comes from the one policy table.
+
+    ``subject_status``, ``lean_path`` and ``pre_planning`` are classification inputs only
+    (``policy.klass_for``): they are not stored, so they never touch the
+    key or the args.
+    """
     from specflow.core.policy import klass_for
 
     if severity not in SEVERITIES:
@@ -63,7 +71,9 @@ def make(
     if isinstance(subjects, str):
         subjects = (subjects,)
     frozen_args = tuple(sorted((k, _freeze(v)) for k, v in args.items()))
-    return Finding(rule_id, tuple(subjects), severity, klass_for(rule_id), frozen_args, text)
+    klass = klass_for(rule_id, subject_status=subject_status, lean_path=lean_path,
+                      pre_planning=pre_planning)
+    return Finding(rule_id, tuple(subjects), severity, klass, frozen_args, text)
 
 
 def _freeze(value: Any) -> Any:

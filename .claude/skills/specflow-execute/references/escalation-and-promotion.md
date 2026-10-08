@@ -33,18 +33,20 @@ specflow create --type requirement --title "Binance historical OHLCV data loader
   --rationale "Promoted from SPIKE-003, which proved the REST klines endpoint can backfill 2y of 1m bars." \
   --links '[{"target":"SPIKE-003","role":"derives_from"}]'
 
-# 2. If it defines an interface other code calls, capture HOW it's structured.
+# 2. If it defines an interface other code calls, capture HOW it's structured,
+#    then hang it under the REQ — the REQ holds the canonical refined_by link.
 specflow create --type architecture --title "Market-data ingestion module" \
   --status approved \
-  --sanctioned "User confirmed the SPIKE promotion (their confirm is the approval)" \
-  --links '[{"target":"REQ-0NN","role":"derives_from"}]'
+  --sanctioned "User confirmed the SPIKE promotion (their confirm is the approval)"
+specflow update REQ-0NN --add-link ARCH-0NN:refined_by
 
 # 3. If it has non-trivial internal logic (state, transforms, protocol, retries),
-#    add a DDD (see the plan skill's references/ddd-selection.md for the 6-question test).
+#    add a DDD (see the plan skill's references/ddd-selection.md for the 6-question test),
+#    linked from its ARCH in the same direction.
 specflow create --type detailed-design --title "Klines backfill + rate-limit handling" \
   --status approved \
-  --sanctioned "User confirmed the SPIKE promotion (their confirm is the approval)" \
-  --links '[{"target":"ARCH-0NN","role":"derives_from"}]'
+  --sanctioned "User confirmed the SPIKE promotion (their confirm is the approval)"
+specflow update ARCH-0NN --add-link DDD-0NN:refined_by
 ```
 
 Copy the spike's findings into the new artifact's `rationale`/body so the knowledge isn't stranded in a closed SPIKE. Leave the SPIKE as-is (`completed`) — the `derives_from` link is the bridge.

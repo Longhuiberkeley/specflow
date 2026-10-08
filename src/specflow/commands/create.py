@@ -11,6 +11,7 @@ from specflow.lib import evaluator_fingerprint as evaluator_lib
 from specflow.lib import standards as std_lib
 from specflow.lib.dedup import find_similar_to
 from specflow.lib.display import RED, GREEN, YELLOW, YELLOW_DIM, CYAN, NC
+from specflow.lib.stdin_probe import stdin_has_data
 
 
 # Keys in --set KEY=VALUE that collide with a dedicated create_artifact()
@@ -28,6 +29,8 @@ _RESERVED_SET_KEYS: dict[str, str | None] = {
     "non_functional_category": "--nfr-category",
     "root": None,
     "artifact_id": None,
+    # Identity keys (shared set, lib/artifacts.py): allocated by create itself.
+    **{key: None for key in art_lib.IDENTITY_SET_KEYS},
 }
 
 
@@ -54,20 +57,29 @@ def _merge_set_links(links: list[dict[str, str]], extra_fields: dict) -> str | N
     return '--set links must be a JSON array of {"target","role"} objects'
 
 
-def _lookup_standard_clause(root: Path, clause_id: str) -> dict | None:
-    standards = std_lib.load_standards(root)
+def _lookup_standard_clause(root: Path, clause_id: str) -> tuple[dict | None, dict[str, str]]:
+    """Find ``clause_id`` across installed standards.
+
+    Returns ``(clause, errors)`` where ``errors`` maps every installed standard
+    that could not be loaded to its error, so a clause that lives in a
+    malformed file is reported as unreadable rather than "not found".
+    """
+    standards, errors = std_lib.load_standards_checked(root)
     for std in standards:
         for clause in std.get("clauses", []):
             if isinstance(clause, dict) and clause.get("id") == clause_id:
-                return clause
-    return None
+                return clause, errors
+    return None, errors
 
 
 def run(root: Path, args: dict) -> int:
     root = root.resolve()
 
     from_standard = args.get("from_standard")
-    artifact_type = args.get("type", "")
+    # Normalize once: every later consumer (schema lookup, dedup's same-type
+    # filter, the role-target advisory) sees the canonical name, so `--type
+    # REQ` / `req` behave exactly like `--type requirement`.
+    artifact_type = art_lib.normalize_type(args.get("type") or "")
     title = args.get("title", "")
     status = args.get("status")
     priority = args.get("priority")
@@ -104,8 +116,7 @@ def run(root: Path, args: dict) -> int:
     try:
         known_keys: list[str] | None = None
         if artifact_type:
-            norm_type = art_lib.normalize_type(artifact_type)
-            _schema = art_lib._read_schema(root / ".specflow" / "schema", norm_type)
+            _schema = art_lib._read_schema(root / ".specflow" / "schema", artifact_type)
             if _schema is not None:
                 known_keys = list(_schema.get("optional_fields", []))
                 # Required fields are legitimate --set targets too (e.g. the
@@ -149,10 +160,12 @@ def run(root: Path, args: dict) -> int:
             return 1
 
     if from_standard:
-        clause = _lookup_standard_clause(root, from_standard)
+        clause, std_errors = _lookup_standard_clause(root, from_standard)
         if not clause:
             print(f"{RED}✗ Standard clause '{from_standard}' not found. "
                   f"Check installed packs in .specflow/standards/.{NC}")
+            for name, err in sorted(std_errors.items()):
+                print(f"{YELLOW}  ⚠ standard '{name}' could not be read: {err}{NC}")
             return 1
         artifact_type = "requirement"
         title = clause.get("title", f"Compliance with {from_standard}")
@@ -173,7 +186,7 @@ def run(root: Path, args: dict) -> int:
     # of the bundle (competition-setup-protocol.md) — one gameable number is
     # exactly the loss-hacking surface REQ-047 removes. Deterministic setup
     # structure, not measurement: this gates nothing about research results.
-    if art_lib.normalize_type(artifact_type) == "competition":
+    if artifact_type == "competition":
         domain = str(extra_fields.get("domain") or "").strip().casefold()
         if domain == "quant":
             bundle = extra_fields.get("metric_bundle")
@@ -198,8 +211,7 @@ def run(root: Path, args: dict) -> int:
     # let create_artifact emit the enriched no-schema error (its schema check
     # runs before status validation).
     if status is None:
-        norm_type = art_lib.normalize_type(artifact_type)
-        schema = art_lib._read_schema(root / ".specflow" / "schema", norm_type)
+        schema = art_lib._read_schema(root / ".specflow" / "schema", artifact_type)
         if schema is not None:
             status = art_lib.initial_status(schema)
 
@@ -215,7 +227,7 @@ def run(root: Path, args: dict) -> int:
     # stays gate-free.
     explicit_status = args.get("status")
     if explicit_status is not None:
-        norm_type = art_lib.normalize_type(artifact_type or "")
+        norm_type = artifact_type
         schema = art_lib._read_schema(root / ".specflow" / "schema", norm_type)
         if schema is not None:
             allowed = schema.get("allowed_status", {})
@@ -245,8 +257,7 @@ def run(root: Path, args: dict) -> int:
                     extra_fields["sanctioned_justification"] = sanctioned
 
     if status is None:
-        norm_type = art_lib.normalize_type(artifact_type)
-        schema = art_lib._read_schema(root / ".specflow" / "schema", norm_type)
+        schema = art_lib._read_schema(root / ".specflow" / "schema", artifact_type)
         if schema is not None:
             allowed = sorted(schema.get("allowed_status", {}).keys())
             print(f"{RED}✗ Type '{artifact_type}' has no unambiguous initial status. "
@@ -255,12 +266,11 @@ def run(root: Path, args: dict) -> int:
 
     tags = [t.strip() for t in tags_str.split(",") if t.strip()] if tags_str else None
 
-    if not body and not sys.stdin.isatty():
-        import select
-        # Only read stdin if data is actually available (not a hanging pipe).
-        # select() with timeout=0 returns immediately; avoids blocking on empty pipes.
-        if select.select([sys.stdin], [], [], 0.0)[0]:
-            body = sys.stdin.read()
+    if not body and stdin_has_data():
+        # Only read stdin when bytes are really waiting: an idle open pipe
+        # never blocks, and EOF-only stdin (</dev/null, a closed empty pipe)
+        # leaves the body empty instead of reading ''.
+        body = sys.stdin.read()
 
     if not args.get("skip_dedup_check", False):
         existing = art_lib.discover_artifacts(root)
@@ -279,9 +289,11 @@ def run(root: Path, args: dict) -> int:
             if args.get("force", False):
                 print(f"{YELLOW_DIM}  --force supplied, proceeding anyway{NC}")
             elif not sys.stdin.isatty():
-                print(f"{RED}✗ Non-interactive mode cannot prompt for duplicates. "
-                      f"Re-run with --force to create anyway.{NC}")
-                return 1
+                # No one to ask: surface the candidates and proceed. Blocking
+                # here only taught agents to pass --skip-dedup-check --force
+                # on every create, which hid the candidates entirely.
+                print(f"{YELLOW_DIM}  non-interactive: proceeding — review the "
+                      f"candidates above, or 'specflow merge' afterwards{NC}")
             else:
                 try:
                     reply = input("Create anyway? [y/N]: ").strip().lower()
@@ -299,7 +311,7 @@ def run(root: Path, args: dict) -> int:
     # must not chase a mutated harness (churn rule; rolling-evaluation.md).
     evaluator_fingerprint = None
     if (
-        art_lib.normalize_type(artifact_type) == "competition"
+        artifact_type == "competition"
         and "evaluator_fingerprint" not in extra_fields
     ):
         verify_command = extra_fields.get("verify_command")
@@ -330,8 +342,16 @@ def run(root: Path, args: dict) -> int:
             print(f"  Evaluator fingerprint: {evaluator_fingerprint} (recorded at setup)")
         if links:
             from specflow.lib import role_targets as rt
-            for hint in rt.advisory_for_entries(art_lib.normalize_type(args.get("type", "")), links):
+            for hint in rt.advisory_for_entries(artifact_type, links):
                 print(f"{YELLOW}  {hint}{NC}")
+        # REQ/STORY authoring convention, stated once at create time: lint
+        # and the skills already ask for a numbered '## Acceptance Criteria'
+        # section; say so now rather than at the next artifact-lint run.
+        if artifact_type in ("requirement", "story"):
+            from specflow.lib import lint as lint_lib
+            if lint_lib.count_acceptance_criteria_headings(body or "") == 0:
+                print(f"{CYAN}  ℹ no '## Acceptance Criteria' section — add one with: "
+                      f"specflow update {result['id']} --ac \"1. Given/When/Then …\"{NC}")
         return 0
     else:
         print(f"{RED}✗ {result['error']}{NC}")

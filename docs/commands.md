@@ -180,8 +180,8 @@ The deterministic core always runs first in every path; the agent layer only add
 **Composes:** `specflow project-audit`
 
 **Flow:**
-1. **Deterministic core** (zero questions) — runs horizontal + vertical + cross-cutting checks via `specflow project-audit`
-2. Offer **adversarial wings** — up to 16 lenses (security, performance, coupling, edge cases) via parallel subagents (Recommended: Yes, if preparing for a release/milestone)
+1. **Deterministic core** (zero questions) — runs horizontal + vertical + cross-cutting checks via `specflow project-audit`; `specflow findings-baseline diff` separates new lint findings from the known debt recorded in `.specflow/findings-baseline.yaml`
+2. Offer **adversarial wings** — the full lens catalog, 23 lenses (security, performance, coupling, edge cases, research) via parallel subagents (Recommended: Yes, if preparing for a release/milestone)
 3. Create AUD artifact for overall run and CHL artifacts for specific findings
 4. Present severity breakdown, links to artifacts, next steps
 
@@ -199,7 +199,7 @@ The deterministic core always runs first in every path; the agent layer only add
 
 **Flow:**
 1. Confirm the release tag (proposed from the last tag)
-2. Re-run the test suite and `project-audit --quick` — a red suite blocks the release
+2. Re-run the test suite and `project-audit --quick` — a red suite blocks the release; `specflow artifact-lint` must be green against the committed findings baseline (new escalating findings are fixed, or accepted as known debt with `findings-baseline update --accept-new` on the user's go-ahead)
 3. Generate the DEC trail since the previous tag
 4. Adversarial lens pass, then present the release summary (DEC list, audit summary, risk profile)
 5. **Approval gate** — audit severity ≥ error warns; the release proceeds only on the user's explicit go-ahead
@@ -291,4 +291,4 @@ The deterministic core always runs first in every path; the agent layer only add
 - `.git/hooks/pre-commit` (pre-commit hook)
 - `CODEOWNERS` (role-based code ownership)
 
-**Key rules:** Never overwrite existing CI workflows without confirmation. Explain that pre-commit hooks are advisory — real enforcement requires platform branch protection. RBAC is only active when role lists are non-empty.
+**Key rules:** `specflow ci generate` preserves an existing workflow file that differs (warn; `--force` backs it up and overwrites, `--dry-run` previews). The pre-commit hook blocks on RBAC, broken links and schema failures and warns on the rest — the local layer; durable enforcement is branch protection plus CI. `specflow hook install` never replaces a hook it does not own. RBAC is only active when role lists are non-empty.

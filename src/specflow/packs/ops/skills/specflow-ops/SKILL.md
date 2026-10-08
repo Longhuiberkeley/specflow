@@ -25,8 +25,7 @@ Domain-neutral by design. Quant specifics (drift, oos_decay) belong in the quant
      --set environment=<env> \
      --set deployed_ref=<path/version, fingerprint if known> \
      --set deployed_at=<date> \
-     --links <REQ-NNN|ARCH-NNN|EXPT-NNN>:derives_from \
-     --skip-dedup-check
+     --links <REQ-NNN|ARCH-NNN|EXPT-NNN>:derives_from
    ```
 3. **Confirm** `specflow artifact-lint` shows no findings for the RUN, then present: TLDR (what went live, from what, satisfying what), one next step. Only after the user acknowledges the deployment do you transition the RUN: `specflow update RUN-NNN --status live` — **you never mark a RUN `live` on your own authority; "it deployed" is your claim, "it's live" is the user's call — including resuming a paused RUN.** Same rule for MONITOR `flagged → resolved`: present the breach evidence and the remediation, the user confirms resolution.
 
@@ -45,8 +44,7 @@ Domain-neutral by design. Quant specifics (drift, oos_decay) belong in the quant
      --set 'signals={"<key>": "<note>"}' \
      --set health=<ok|degraded|breached> \
      --set 'captures={"<source>": <count>, "freshest_age_min": <n>}' \
-     --links RUN-NNN:belongs_to \
-     --skip-dedup-check
+     --links RUN-NNN:belongs_to
    ```
 3. **On a breach** (`health: breached` or a signal crosses a threshold defined in a REQ):
    - Set the MONITOR `status: flagged` (`specflow update MON-NNN --status flagged`).

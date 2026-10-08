@@ -13,10 +13,10 @@ created: '2026-09-25'
 fingerprint: sha256:225cba543bec
 thinking_techniques:
 - premortem
-- dependency-shock
+- dependency_shock
 - worst_case_user
 - composition
-modified: '2026-09-25'
+modified: '2026-10-08'
 ---
 
 # bp-application evidence check with tailoring and migration stamp (REQ-045)

@@ -215,3 +215,150 @@ class TestExecutingPhaseApprovedGuard:
             approved_stories=2,
         )
         assert "/specflow-execute" in suggestion
+
+
+class TestChainAgreesWithMissingPairs:
+    """F-080: one V-pair metric on the dashboard. The 'Chain a/b' fraction is
+    derived from find_missing_v_pairs, so b - a == the 'N missing verification
+    pairs' count on the same screen — a STORY's verified_by (wrong type) no
+    longer counts a REQ as verified."""
+
+    def _arts(self):
+        return [
+            _make_art("REQ-001", "requirement"),                       # paired by QT
+            _make_art("QT-001", "qualification-test",
+                      links=[art_lib.Link(target="REQ-001", role="verified_by")]),
+            _make_art("REQ-002", "requirement"),                       # only a STORY claims it
+            _make_art("STORY-001", "story",
+                      links=[art_lib.Link(target="REQ-002", role="verified_by")]),
+            _make_art("DDD-001", "detailed-design"),                   # paired by UT
+            _make_art("UT-001", "unit-test",
+                      links=[art_lib.Link(target="DDD-001", role="verified_by")]),
+            _make_art("ARCH-001", "architecture"),                     # unpaired
+        ]
+
+    def test_chain_total_minus_verified_equals_missing_pairs(self):
+        arts = self._arts()
+        cov = _compute_coverage(arts)
+        health = status_cmd._count_link_health(arts)
+        assert cov["chain_total"] - cov["chain_verified"] == health["missing_pairs"]
+        assert cov["chain_verified"] == 2
+        assert health["missing_pairs"] == 2
+
+    def test_story_verified_by_does_not_pair_a_req(self):
+        arts = [
+            _make_art("REQ-002", "requirement"),
+            _make_art("STORY-001", "story",
+                      links=[art_lib.Link(target="REQ-002", role="verified_by")]),
+        ]
+        cov = _compute_coverage(arts)
+        assert cov["chain_verified"] == 0
+
+    def test_dashboard_numbers_agree_end_to_end(self, tmp_path: Path, capsys):
+        import re
+        _scaffold_project(tmp_path)
+        art_lib.create_artifact(tmp_path, "requirement", title="R1", status="approved", body="b")
+        art_lib.create_artifact(tmp_path, "requirement", title="R2", status="approved", body="b")
+        art_lib.create_artifact(
+            tmp_path, "qualification-test", title="Q1", status="approved", body="b",
+            links=[{"target": "REQ-001", "role": "verified_by"}],
+        )
+        status_cmd.run(tmp_path, {})
+        out = capsys.readouterr().out
+        missing = int(re.search(r"(\d+) missing verification pairs", out).group(1))
+        a, b = map(int, re.search(r"Chain \d+% \((\d+)/(\d+)\)", out).group(1, 2))
+        assert b - a == missing == 1
+
+
+class TestStatusLineFromCounter:
+    """F-080: the Status line renders every status present, core lifecycle
+    first, so artifacts in open/closed/accepted/… are no longer hidden."""
+
+    def test_render_order_core_then_extras_sorted(self):
+        by_status = {"open": 3, "draft": 1, "accepted": 2, "verified": 4, "closed": 1}
+        assert status_cmd._status_render_order(by_status)[:7] == status_cmd._CORE_STATUS_ORDER
+        assert status_cmd._status_render_order(by_status)[7:] == ["accepted", "closed", "open"]
+
+    def test_dashboard_shows_non_core_statuses(self, tmp_path: Path, capsys):
+        _scaffold_project(tmp_path)
+        art_lib.create_artifact(tmp_path, "requirement", title="R1", status="approved", body="b")
+        art_lib.create_artifact(tmp_path, "defect", title="D1", status="open", body="b")
+        status_cmd.run(tmp_path, {})
+        out = capsys.readouterr().out
+        status_line = next(ln for ln in out.splitlines() if ln.strip().startswith("Status:"))
+        assert "1 approved" in status_line and "1 open" in status_line
+
+
+class TestSuggestActionExecutableStories:
+    """F-002 (status half): zero executable (approved) stories never yields
+    'use /specflow-execute', whatever the implemented/verified mix."""
+
+    def test_executing_done_backlog_routes_to_review_then_ship(self, tmp_path):
+        s = status_cmd._suggest_action(
+            tmp_path, "executing", {"STORY": 176},
+            approved_stories=172, executable_stories=0, stories_done=True,
+        )
+        assert "/specflow-execute" not in s
+        assert "/specflow-artifact-review" in s and "/specflow-ship" in s
+
+    def test_executing_pending_backlog_routes_to_plan_reconcile(self, tmp_path):
+        s = status_cmd._suggest_action(
+            tmp_path, "executing", {"STORY": 3},
+            approved_stories=1, executable_stories=0, stories_done=False,
+        )
+        assert "/specflow-execute" not in s
+        assert "/specflow-plan" in s and "reconcile" in s
+
+    def test_planning_pending_backlog_never_says_execute(self, tmp_path):
+        """Planning, implemented + draft mix (0 approved): brief says
+        'finish /specflow-plan'; status must not say execute."""
+        s = status_cmd._suggest_action(
+            tmp_path, "planning", {"REQ": 1, "ARCH": 1, "STORY": 8},
+            approved_stories=5, executable_stories=0, stories_done=False,
+        )
+        assert "/specflow-execute" not in s
+        assert "/specflow-plan" in s
+
+    def test_planning_with_executable_stories_says_execute(self, tmp_path):
+        s = status_cmd._suggest_action(
+            tmp_path, "planning", {"REQ": 1, "ARCH": 1, "STORY": 8},
+            approved_stories=5, executable_stories=2, stories_done=False,
+        )
+        assert "/specflow-execute" in s
+
+    def test_run_planning_implemented_plus_draft_routes_to_plan(self, tmp_path: Path, capsys):
+        """End to end: planning phase, implemented + draft stories, nothing
+        approved → the dashboard agrees with brief (plan, not execute)."""
+        _scaffold_project(tmp_path)
+        config_lib.write_state(tmp_path, {"current": "planning", "history": []})
+        art_lib.create_artifact(tmp_path, "requirement", title="R1", status="approved", body="b")
+        art_lib.create_artifact(tmp_path, "architecture", title="A1", status="approved", body="b")
+        art_lib.create_artifact(tmp_path, "story", title="S1", status="implemented", body="b")
+        art_lib.create_artifact(tmp_path, "story", title="S2", status="draft", body="b")
+        status_cmd.run(tmp_path, {})
+        out = capsys.readouterr().out
+        suggestion = next(ln for ln in out.splitlines() if "→" in ln)
+        assert "/specflow-execute" not in suggestion
+        assert "/specflow-plan" in suggestion
+
+    def test_planning_done_backlog_routes_to_review(self, tmp_path):
+        s = status_cmd._suggest_action(
+            tmp_path, "planning", {"STORY": 3},
+            approved_stories=3, executable_stories=0, stories_done=True,
+        )
+        assert "/specflow-artifact-review" in s
+
+    def test_run_passes_live_story_progress(self, tmp_path: Path, capsys):
+        """End to end on a project whose stories are all verified/implemented
+        plus one deprecated: the dashboard must not say execute."""
+        _scaffold_project(tmp_path)
+        config_lib.write_state(tmp_path, {"current": "executing", "history": []})
+        art_lib.create_artifact(tmp_path, "requirement", title="R1", status="approved", body="b")
+        art_lib.create_artifact(tmp_path, "story", title="S1", status="verified", body="b")
+        art_lib.create_artifact(tmp_path, "story", title="S2", status="implemented", body="b")
+        art_lib.create_artifact(tmp_path, "story", title="S3", status="deprecated", body="b")
+        status_cmd.run(tmp_path, {})
+        out = capsys.readouterr().out
+        suggestion = next(ln for ln in out.splitlines() if "→" in ln)
+        assert "/specflow-execute" not in suggestion
+        assert "/specflow-artifact-review" in suggestion

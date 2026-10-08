@@ -8,9 +8,11 @@ links:
 - target: REQ-027
   role: derives_from
 created: '2026-05-04'
-modified: '2026-05-05'
+modified: '2026-10-08'
 fingerprint: sha256:c11a474075c1
-thinking_techniques: [assumption-surfacing, devil's-advocate]
+thinking_techniques:
+- assumption_surfacing
+- devils_advocate
 ---
 
 # Skill Continuity Layer

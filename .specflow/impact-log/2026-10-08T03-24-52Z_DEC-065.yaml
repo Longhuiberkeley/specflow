@@ -1,0 +1,10 @@
+changed: DEC-065
+change_type: content_modified
+fingerprint_old: sha256:f87fd79e5dd4
+fingerprint_new: sha256:c6d676539166
+update_type: minor
+flagged_suspects: []
+resolved: true
+timestamp: '2026-10-08T03:24:52Z'
+resolved_by: system
+resolved_at: '2026-10-08T03:24:52Z'

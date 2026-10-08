@@ -153,7 +153,7 @@ specflow autoresearch plan --competition COMP-001 --mode explore --budget 50 \
   --knowledge-input FIND-001,FIND-002
 ```
 
-- `--knowledge-input` loads confirmed FINDs; `--inherit LOOP-NNN` seeds the agenda from a completed LOOP; `--title` names it. Re-running `plan` updates the single draft LOOP (`--loop LOOP-NNN` targets another); `--start` moves it to `running`, gated against a concurrent LOOP (pass `--create` with it when you give neither `--mode` nor `--budget`, or `plan` only prints the checklist); `specflow autoresearch run` also starts a draft LOOP.
+- `--knowledge-input` loads confirmed FINDs; `--inherit LOOP-NNN` seeds the agenda from a completed or plateaued LOOP (not an aborted one); `--title` names it. Re-running `plan` updates the single draft LOOP (`--loop LOOP-NNN` targets another); `--start` moves it to `running`, gated against a concurrent LOOP (pass `--create` with it when you give neither `--mode` nor `--budget`, or `plan` only prints the checklist); `specflow autoresearch run` also starts a draft LOOP.
 - `plan` has no flag for the goal, research questions or agenda: set those with `specflow update LOOP-NNN --set KEY=VALUE` (repeatable; values parse as JSON when possible).
 
 **Walk the research ladder once, here.** This is the only place the full Goal → Thesis → Research Question chain gets explicitly stepped through. After LOOP creation it's pinned in the artifacts and Phase 2a just stays mindful of it.
@@ -354,7 +354,7 @@ Autoresearch burns context windows fast. A 50-iteration LOOP can accumulate doze
 ## Rules
 
 - Always use `specflow create` for new EXPT and FIND artifacts — never edit artifact files directly
-- Prefer `specflow autoresearch log` over raw `specflow create --type experiment` + `specflow update LOOP-NNN` — it is atomic and context-cheaper
+- Prefer `specflow autoresearch log` over raw `specflow create --type experiment` + `specflow update LOOP-NNN` — it is atomic and context-cheaper. It owns `competition` (read from the `--loop` LOOP), `loop`, `status`, `title`, `links`, `research_progress` and `evaluator_fingerprint`: never pass those via `--set` — the command refuses and names the flag to use instead
 - Always use `specflow update` for LOOP status transitions and running totals
 - EXPT status is terminal — once created (kept/discarded/crashed/no_op), it never changes
 - Each EXPT tests one coherent hypothesis; coordinated component changes are allowed when logged as serving it

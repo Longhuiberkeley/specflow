@@ -160,7 +160,7 @@ def _baseline_section(root: Path, baseline_name: str) -> list[str]:
     lines.append(f"**Artifacts**: {len(arts)}")
     lines.append(f"")
 
-    # Predecessor selection (CHL-NONSEMVE-c16b): same semver-prefer policy as
+    # Predecessor selection (CHL-351): same semver-prefer policy as
     # project-audit's drift pair. Build the ordered prefix up to (and
     # including) this baseline, then select the release pair within it:
     #   - semver target with a prior release → the pair ends at this

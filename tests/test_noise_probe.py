@@ -1,4 +1,4 @@
-"""AC2 of STORY-SMALLFIX-621b: noise variance probe tests.
+"""AC2 of STORY-732: noise variance probe tests.
 
 The autoresearch loop must verify that metric variance is below a configurable
 threshold before trusting single-run EXPT results. These tests pin the

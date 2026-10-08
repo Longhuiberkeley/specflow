@@ -12,7 +12,9 @@ tags:
 - core
 suspect: false
 fingerprint: sha256:4c258ae314a4
-thinking_techniques: [assumption-surfacing, devil's-advocate]
+thinking_techniques:
+- assumption_surfacing
+- devils_advocate
 links:
 - target: REQ-002
   role: derives_from
@@ -26,7 +28,7 @@ checklists_applied:
   timestamp: '2026-04-11T13:45:49Z'
 - checklist: check-ARCH-002
   timestamp: '2026-04-14T17:03:22Z'
-modified: '2026-04-21'
+modified: '2026-10-08'
 version: 1
 ---
 

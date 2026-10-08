@@ -96,22 +96,22 @@ def _compute_coverage(artifacts: list[art_lib.Artifact]) -> dict[str, Any]:
     story_pct = (story_with_test / story_total * 100) if story_total > 0 else None
     avg_tests = (total_tests / story_total) if story_total > 0 else 0.0
 
-    spec_types = list(art_lib.V_MODEL_PAIRS.keys())
-    total_spec = 0
-    verified_spec = 0
-    for a in artifacts:
-        if a.type in spec_types:
-            total_spec += 1
-            has_v = False
-            for other in artifacts:
-                for link in other.links:
-                    if link.target == a.id and link.role == "verified_by":
-                        has_v = True
-                        break
-                if has_v:
-                    break
-            if has_v:
-                verified_spec += 1
+    # Chain coverage is derived from the ONE V-pair metric (F-080): a spec is
+    # verified when ``find_missing_v_pairs`` does not list it, so the
+    # "Chain a/b" fraction and the "N missing verification pairs" link-health
+    # count on the same screen always agree (b - a == N). The old local walk
+    # accepted a ``verified_by`` from ANY artifact type and disagreed with the
+    # paired-type rule by a few specs.
+    missing_pairs = art_lib.find_missing_v_pairs(artifacts)
+    # Same scope as the pair check: specs it does not examine (draft or
+    # retired, ``_V_PAIR_SKIP_STATUSES``) leave the denominator too, else the
+    # subtraction would credit them as verified.
+    skip = getattr(art_lib, "_V_PAIR_SKIP_STATUSES", frozenset())
+    total_spec = sum(
+        1 for a in artifacts
+        if a.type in art_lib.V_MODEL_PAIRS and (a.status or "draft") not in skip
+    )
+    verified_spec = total_spec - len(missing_pairs)
     chain_pct = (verified_spec / total_spec * 100) if total_spec > 0 else None
 
     return {
@@ -126,6 +126,16 @@ def _compute_coverage(artifacts: list[art_lib.Artifact]) -> dict[str, Any]:
         "chain_verified": verified_spec,
         "chain_pct": chain_pct,
     }
+
+
+_CORE_STATUS_ORDER = ["draft", "approved", "implemented", "verified",
+                      "superseded", "deprecated", "cancelled"]
+
+
+def _status_render_order(by_status: dict[str, int]) -> list[str]:
+    """Core lifecycle statuses first, then every other present status sorted."""
+    extra = sorted(s for s in by_status if s not in _CORE_STATUS_ORDER)
+    return _CORE_STATUS_ORDER + extra
 
 
 def _count_issues(artifacts: list[art_lib.Artifact]) -> int:
@@ -158,6 +168,8 @@ def _suggest_action(
     phase: str,
     artifact_counts: dict[str, int],
     approved_stories: int = 0,
+    executable_stories: int | None = None,
+    stories_done: bool = False,
 ) -> str:
     """Suggest next action based on current phase and artifact state.
 
@@ -166,8 +178,18 @@ def _suggest_action(
     must not claim execute when the backlog is empty of approved stories — a
     stale or manually-rewound phase can leave "executing" set with nothing to
     run, and routing to /specflow-execute there is a dishonest signal.
+
+    ``executable_stories`` is the ``waves.filter_executable_stories`` count
+    (status == approved, the only stories execute can run); ``stories_done``
+    is ``brief.stories_complete`` (every non-terminal STORY implemented or
+    verified). With zero executable stories the suggestion routes to
+    review/ship when the backlog is done, else to plan to reconcile — never
+    "use /specflow-execute" (F-002). ``None`` falls back to
+    ``approved_stories`` for callers that predate the split.
     """
     total = sum(artifact_counts.values())
+    if executable_stories is None:
+        executable_stories = approved_stories
 
     if total == 0:
         return "Use /specflow-discover to capture your first requirement"
@@ -190,10 +212,20 @@ def _suggest_action(
             return "Use /specflow-plan to decompose requirements into stories"
         if approved_stories == 0:
             return "No approved stories ready to execute → use /specflow-plan to reconcile or approve the next scope"
+        if executable_stories == 0:
+            if stories_done:
+                return "All stories implemented/verified → use /specflow-artifact-review, then /specflow-ship, or /specflow-plan for new scope"
+            # implemented + draft mix, nothing approved: brief says
+            # "Stories not approved yet → finish /specflow-plan"; agree.
+            return "No approved stories ready to execute → use /specflow-plan to reconcile the backlog and approve the next scope"
         return "Review architecture and stories, then use /specflow-execute"
     elif phase == "executing":
         if approved_stories == 0:
             return "No approved stories to execute → use /specflow-plan to create and approve stories"
+        if executable_stories == 0:
+            if stories_done:
+                return "All stories implemented/verified → use /specflow-artifact-review, then /specflow-ship"
+            return "No approved stories ready to execute → use /specflow-plan to reconcile the backlog and approve the next scope"
         return "Use /specflow-execute to implement story waves"
     elif phase == "verifying":
         return "Use /specflow-artifact-review to review artifacts"
@@ -268,10 +300,12 @@ def run(root: Path, args: dict) -> int:
             label = CATEGORY_LABELS.get(cat_name, cat_name.title() + ":")
             print(f"  {label:<9} {' | '.join(parts)}")
 
-    # Status distribution
+    # Status distribution — rendered from the actual counter (F-080): the
+    # core lifecycle order first, then every other status the schemas use
+    # (open/closed/accepted/addressed/stale/completed/wontfix/…) so no
+    # artifact is hidden from the dashboard.
     status_parts = []
-    for s in ["draft", "approved", "implemented", "verified",
-              "superseded", "deprecated", "cancelled"]:
+    for s in _status_render_order(by_status):
         c = by_status.get(s, 0)
         if c > 0:
             status_parts.append(f"{c} {s}")
@@ -308,12 +342,19 @@ def run(root: Path, args: dict) -> int:
     if issues > 0:
         print(f"\n  {YELLOW}⚠ Issues: {issues} artifact(s) flagged as suspect{NC}")
 
-    # Suggested next action
-    approved_stories = sum(
-        1 for a in all_artifacts
-        if a.type == "story" and a.status in ("approved", "implemented", "verified")
+    # Suggested next action — the same story-progress arithmetic brief uses
+    # (one helper, so status and brief --next cannot disagree).
+    from specflow.commands.brief import stories_complete, story_progress
+    from specflow.lib.waves import filter_executable_stories
+
+    story_artifacts = [a for a in all_artifacts if a.type == "story"]
+    progress = story_progress(all_artifacts)
+    suggestion = _suggest_action(
+        root, phase, by_type,
+        approved_stories=progress["approved"] + progress["done"],
+        executable_stories=len(filter_executable_stories(story_artifacts)),
+        stories_done=stories_complete(progress),
     )
-    suggestion = _suggest_action(root, phase, by_type, approved_stories)
     print(f"\n  → {suggestion}")
     print()
 

@@ -32,7 +32,7 @@ Which is authoritative? (code / README / both-wrong-please-clarify)
 
 Whatever the user decides, encode it:
 
-- The **winning** source becomes the artifact's content (status `implemented`/`verified`/`approved` as warranted).
+- The **winning** source becomes the artifact's content (status `implemented`/`verified`/`approved` as warranted; a DEC is `approved` at most).
 - The resolution goes in `rationale`: `"README↔code conflict on token format — user confirmed code authoritative; README flagged stale (2026-06-14)"`.
 - If the **losing** source is a real defect (README claims something the code doesn't do), offer to open a DEF: `specflow create --type defect --title "README claims JWT but code uses opaque tokens" --links '[{"target":"REQ-NNN","role":"fails_to_meet"}]'`.
 

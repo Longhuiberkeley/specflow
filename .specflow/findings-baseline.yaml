@@ -1,18 +1,4 @@
 # Managed by `specflow findings-baseline update` — do not hand-edit
 # (REQ-053 AC7/AC8). Escalating lint warnings accepted as known debt.
 format: 1
-entries:
-- rule: links/missing-v-pair
-  subjects: [ARCH-032, IT]
-- rule: links/missing-v-pair
-  subjects: [ARCH-033, IT]
-- rule: links/missing-v-pair
-  subjects: [ARCH-039, IT]
-- rule: links/missing-v-pair
-  subjects: [ARCH-040, IT]
-- rule: links/missing-v-pair
-  subjects: [DDD-029, UT]
-- rule: links/missing-v-pair
-  subjects: [DDD-033, UT]
-- rule: links/missing-v-pair
-  subjects: [REQ-054, QT]
+entries: []

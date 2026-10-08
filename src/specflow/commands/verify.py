@@ -9,8 +9,11 @@ only:
   - timeout (subprocess exceeded ``--timeout``)
   - subprocess spawn failure
 
-An artifact with no ``verify_command`` is reported as
-``no verification contract declared — skipped`` and still exits 0.
+An artifact named explicitly with no ``verify_command`` is reported as
+``no verification contract declared — skipped`` and still exits 0. In
+discovery mode (``--all``, ``--type``, or no args) contract-less artifacts
+are skipped silently and counted in one trailing summary line — an ``--all``
+sweep over a mature repo would otherwise print one line per artifact.
 
 Batch output is one line per artifact, e.g.::
 
@@ -83,10 +86,17 @@ def run(root: Path, args: dict[str, Any]) -> int:
     seeded = 0
 
     # ── Run each artifact's verification contract ────────────────
+    discovery = not ids
+    skipped_silently = 0
     for art in artifacts:
         command = art.frontmatter.get("verify_command", "")
         if not command:
-            print(f"{YELLOW}→ {art.id}: no verification contract declared — skipped{NC}")
+            # The filter is the missing field, never the type: a STORY with
+            # a contract runs, a UT without one is skipped.
+            if discovery:
+                skipped_silently += 1
+            else:
+                print(f"{YELLOW}→ {art.id}: no verification contract declared — skipped{NC}")
             continue
 
         if dry_run:
@@ -159,5 +169,12 @@ def run(root: Path, args: dict[str, Any]) -> int:
                     f"expected={expected}) — run with --seed-prev to seed a "
                     f"prevention pattern"
                 )
+
+    if skipped_silently:
+        ran = len(artifacts) - skipped_silently
+        print(
+            f"{YELLOW}→ {skipped_silently} artifact(s) with no verify_command "
+            f"skipped; {ran} with a contract{NC}"
+        )
 
     return exit_code

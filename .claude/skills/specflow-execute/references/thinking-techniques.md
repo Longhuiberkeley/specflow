@@ -1,6 +1,6 @@
 # Thinking Techniques for Execution
 
-For the full 16-lens catalog and per-phase defaults, see
+For the full 23-lens catalog and per-phase defaults, see
 `../specflow-references/references/adversarial-lenses.md`.
 
 ## Catalog lenses for Execution

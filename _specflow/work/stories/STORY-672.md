@@ -15,8 +15,8 @@ created: '2026-09-25'
 fingerprint: sha256:35326d62fe8c
 thinking_techniques:
 - premortem
-- dependency-shock
-modified: '2026-09-25'
+- dependency_shock
+modified: '2026-10-08'
 ---
 
 # Autoresearch frontier ledger and move menu (REQ-046)

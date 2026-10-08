@@ -224,6 +224,36 @@ def staged_artifact_changes(root: Path) -> list[dict[str, Any]]:
     return changes
 
 
+def staged_specflow_paths(root: Path) -> list[str]:
+    """Return every staged artifact path under ``_specflow/``, any change kind.
+
+    Unlike :func:`staged_artifact_changes` (additions and modifications only,
+    because its callers read the staged frontmatter), this includes staged
+    deletions, renames and copies (``--diff-filter=ACMRD``), so a commit whose
+    only artifact change is a ``git rm`` of a linked REQ, or a hand ``git mv``,
+    still triggers the hook's link and schema lints. For a rename the NEW path
+    is reported. Index files (``_index.yaml``) are excluded, as before.
+
+    Caveat: the lints the hook runs read the working tree, not the index; the
+    list only decides WHETHER they run.
+    """
+    diff = _run_git(root, [
+        "diff", "--cached", "--name-only", "-M", "--diff-filter=ACMRD",
+        "--", "_specflow/",
+    ])
+    if diff.returncode != 0:
+        return []
+    paths: list[str] = []
+    for line in diff.stdout.splitlines():
+        path = line.strip()
+        if not path or not path.endswith(".md"):
+            continue
+        if path.rsplit("/", 1)[-1].startswith("_"):
+            continue
+        paths.append(path)
+    return paths
+
+
 def _parse_staged_frontmatter(root: Path, spec: str) -> dict[str, Any] | None:
     """Read `git show <spec>` and parse its YAML frontmatter."""
     result = _run_git(root, ["show", spec])

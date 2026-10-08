@@ -4,11 +4,11 @@ title: "Deferred lifecycle capabilities \u2014 accounting-based command surfaces
 type: architecture
 status: implemented
 priority: medium
-rationale: "Refines REQ-DEFERRED-5cea: the six deferred lifecycle capabilities (phase-set\
-  \ accounting, RTM, RBAC check, supersession, AC/NFR gates, multi-host) are unified\
-  \ by being accounting/recording surfaces over the existing artifact graph \u2014\
-  \ none becomes a gate. Retroactive design record of v1.12.0 shipped capability;\
-  \ no new types or link roles."
+rationale: "Refines REQ-063: the six deferred lifecycle capabilities (phase-set accounting,\
+  \ RTM, RBAC check, supersession, AC/NFR gates, multi-host) are unified by being\
+  \ accounting/recording surfaces over the existing artifact graph \u2014 none becomes\
+  \ a gate. Retroactive design record of v1.12.0 shipped capability; no new types\
+  \ or link roles."
 tags:
 - lifecycle
 - architecture
@@ -16,19 +16,19 @@ tags:
 - v1.12
 suspect: false
 links:
-- target: REQ-DEFERRED-5cea
+- target: REQ-063
   role: derives_from
 created: '2026-08-03'
-fingerprint: sha256:174bed332720
-version: 1
+fingerprint: sha256:17d596cd42eb
+version: 2
 thinking_techniques:
-- assumption-surfacing
-modified: '2026-09-13'
+- assumption_surfacing
+modified: '2026-10-08'
 ---
 
 # Deferred lifecycle capabilities — accounting-based command surfaces
 
-Refines REQ-DEFERRED-5cea: the six capabilities deferred from the 2026-07 UX
+Refines REQ-063: the six capabilities deferred from the 2026-07 UX
 gap analysis and shipped in v1.12.0. Retroactive design record of shipped
 capability. The unifying architectural property is that every one of the six
 is an ACCOUNTING surface — it records, queries, or warns — and none becomes a

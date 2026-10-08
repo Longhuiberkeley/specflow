@@ -3,12 +3,12 @@ id: STORY-630
 title: Enforce semver baseline naming and prefer releases in drift selection
 type: story
 status: verified
-rationale: Addresses CHL-NONSEMVE-c16b (non-semver baseline names can outrank release
-  baselines; --baseline audit flag dead).
+rationale: Addresses CHL-351 (non-semver baseline names can outrank release baselines;
+  --baseline audit flag dead).
 tags:
 - baselines
 - semver
-- CHL-NONSEMVE-c16b
+- CHL-351
 - REQ-035
 suspect: false
 links:
@@ -21,7 +21,7 @@ links:
 - target: QT-043
   role: verified_by
 created: '2026-08-05'
-fingerprint: sha256:6fc057fe0db5
+fingerprint: sha256:657ddb94aa88
 output_files:
 - src/specflow/lib/baselines.py
 - src/specflow/commands/project_audit.py
@@ -34,14 +34,14 @@ output_files:
 - tests/test_nfr_category.py
 - tests/test_backfilled_guard.py
 modified: '2026-08-05'
-version: 1
+version: 2
 ---
 
 # Enforce semver baseline naming and prefer releases in drift selection
 
 ## Context
 
-Semver-parseable baselines sort before freeform names, while newest/predecessor selection callers take the tail of the list. A project mixing release tags with names such as `snapshot` can therefore diff the freeform baseline instead of the newest release, and the documented `project-audit --baseline` flag was never consumed (CHL-NONSEMVE-c16b).
+Semver-parseable baselines sort before freeform names, while newest/predecessor selection callers take the tail of the list. A project mixing release tags with names such as `snapshot` can therefore diff the freeform baseline instead of the newest release, and the documented `project-audit --baseline` flag was never consumed (CHL-351).
 
 ## Acceptance Criteria
 

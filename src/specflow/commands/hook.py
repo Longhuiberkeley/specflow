@@ -1,15 +1,18 @@
 """specflow hook — Install and run git hooks for RBAC enforcement.
 
 Subcommands:
-  specflow hook install       — Write .git/hooks/pre-commit
-  specflow hook pre-commit    — Run pre-commit validation (called by the hook)
+  specflow hook install [--force]  — Write the pre-commit hook into the directory
+                                     git runs hooks from (worktree/core.hooksPath aware)
+  specflow hook pre-commit         — Run pre-commit validation (called by the hook)
 """
 
 from __future__ import annotations
 
 import os
+import shutil
 import stat
 import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
@@ -19,7 +22,7 @@ from specflow.lib import config as config_lib
 from specflow.lib import git_utils
 from specflow.lib import rbac as rbac_lib
 from specflow.lib.adapters import load_adapters_config, get_adapter
-from specflow.lib.adapters.github_actions import _DEFAULT_HOOK_SCRIPT
+from specflow.lib.adapters.github_actions import _DEFAULT_HOOK_SCRIPT, _SPECFLOW_REPO
 from specflow.lib.display import RED, GREEN, YELLOW, NC
 
 
@@ -39,20 +42,138 @@ def _hook_template(root: Path) -> str:
     return _DEFAULT_HOOK_SCRIPT
 
 
-def _install(root: Path) -> int:
-    git_dir = root / ".git"
-    if not git_dir.is_dir():
-        print(f"{RED}✗ Not a git repository: {root}{NC}")
-        return 1
+# Header line every specflow-written hook starts with (identical across
+# released templates, so older specflow hooks still upgrade in place). A hook
+# without it belongs to someone else -- including a user's own hook that merely
+# CALLS `specflow hook pre-commit`, which is exactly what the refusal message
+# and the adapter skill tell pre-commit/lefthook/husky users to do.
+HOOK_OWNERSHIP_MARKER = "# specflow pre-commit hook — installed by"
+HOOK_DELEGATE_LINE = "specflow hook pre-commit"
+FORCE_HINT = "specflow hook install --force"
+_INSTALL_HINT = f"uv tool install git+{_SPECFLOW_REPO}"
 
-    hooks_dir = git_dir / "hooks"
-    hooks_dir.mkdir(parents=True, exist_ok=True)
+
+def backup_file(root: Path, path: Path, category: str) -> Path:
+    """Copy ``path`` under ``.specflow/cache/backups/<timestamp>/<category>/``.
+
+    Same convention ``refresh``/scaffold use for replaced checklists. Returns
+    the backup path.
+    """
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    backup_root = root / ".specflow" / "cache" / "backups" / stamp / category
+    backup_root.mkdir(parents=True, exist_ok=True)
+    backup = backup_root / path.name
+    shutil.copy2(str(path), str(backup))
+    return backup
+
+
+def _display_path(root: Path, path: Path) -> str:
+    try:
+        return str(path.relative_to(root))
+    except ValueError:
+        return str(path)
+
+
+def install_pre_commit_hook(root: Path, *, force: bool = False) -> dict:
+    """Install the specflow pre-commit hook; shared by ``init`` and ``hook install``.
+
+    Resolves the hooks directory through git (linked worktrees and
+    ``core.hooksPath`` included) and never replaces a hook it does not own
+    unless ``force``. Any existing hook whose content differs from the template
+    (foreign under ``force``, or an older specflow hook) is backed up under
+    ``.specflow/cache/backups/<ts>/hooks/`` before it is rewritten. A
+    ``core.hooksPath`` from the global or system git config is shared by every
+    repository on the machine, so installing there is also refused unless
+    ``force``.
+    Returns ``{"status", "path", "display", "backup", "hooks_path",
+    "hooks_path_scope"}`` where ``status`` is one of ``installed``,
+    ``unchanged``, ``refused``, ``refused-hooks-path`` or ``not-git``; callers
+    print in their own style.
+    """
+    hooks_path, scope = git_utils.core_hooks_path_scoped(root)
+    result: dict = {
+        "status": "not-git", "path": None, "display": "", "backup": None,
+        "hooks_path": hooks_path, "hooks_path_scope": scope,
+    }
+    hooks_dir = git_utils.hooks_dir(root)
+    if hooks_dir is None:
+        return result
     hook_path = hooks_dir / "pre-commit"
-    hook_path.write_text(_hook_template(root), encoding="utf-8")
-    mode = hook_path.stat().st_mode
-    hook_path.chmod(mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-    print(f"{GREEN}✓ Installed .git/hooks/pre-commit{NC}")
+    result["path"] = hook_path
+    result["display"] = _display_path(root, hook_path)
+    if hooks_path and scope in ("global", "system") and not force:
+        result["status"] = "refused-hooks-path"
+        return result
+    script = _hook_template(root)
+
+    if hook_path.exists():
+        existing = hook_path.read_text(encoding="utf-8", errors="ignore")
+        if existing == script:
+            _ensure_executable(hook_path)
+            result["status"] = "unchanged"
+            return result
+        if HOOK_OWNERSHIP_MARKER not in existing and not force:
+            result["status"] = "refused"
+            return result
+        result["backup"] = backup_file(root, hook_path, "hooks")
+
+    hooks_dir.mkdir(parents=True, exist_ok=True)
+    hook_path.write_text(script, encoding="utf-8")
+    _ensure_executable(hook_path)
+    result["status"] = "installed"
+    return result
+
+
+def _ensure_executable(path: Path) -> None:
+    mode = path.stat().st_mode
+    path.chmod(mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+
+
+def _install(root: Path, force: bool = False) -> int:
+    res = install_pre_commit_hook(root, force=force)
+    status, display = res["status"], res["display"]
+    if status == "not-git":
+        print(f"{RED}✗ Not a git repository (or not its top-level directory): {root}{NC}")
+        return 1
+    if status == "refused-hooks-path":
+        print(f"{RED}✗ core.hooksPath={res['hooks_path']} comes from your "
+              f"{res['hooks_path_scope']} git config -- left as-is{NC}")
+        print("  A hook installed there would run in every repository on this machine.")
+        print("  Set a repo-local path first (git config core.hooksPath <dir>),")
+        print(f"  or install there anyway: {FORCE_HINT}")
+        return 1
+    if status == "refused":
+        print(f"{RED}✗ {display} exists and is not specflow-owned -- left as-is{NC}")
+        print(f"  Replace it (a backup is taken first): {FORCE_HINT}")
+        print(f"  Or keep your hook and add this line to it: {HOOK_DELEGATE_LINE}")
+        return 1
+    if res["backup"] is not None:
+        print(f"{YELLOW}! Backed up the previous hook to {_display_path(root, res['backup'])}{NC}")
+    if status == "unchanged":
+        print(f"{GREEN}✓ {display} is up to date{NC}")
+    else:
+        print(f"{GREEN}✓ Installed {display}{NC}")
+    if res["hooks_path"]:
+        print(f"  {YELLOW}note:{NC} core.hooksPath={res['hooks_path']} -- git runs hooks from there, not .git/hooks")
     return 0
+
+
+def _run_lint(root: Path, check_type: str) -> subprocess.CompletedProcess | None:
+    """Run ``specflow artifact-lint --type <check_type>``; None when the CLI is not on PATH."""
+    try:
+        return subprocess.run(
+            ["specflow", "artifact-lint", "--type", check_type],
+            capture_output=True, text=True, cwd=str(root), check=False,
+        )
+    except FileNotFoundError:
+        return None
+
+
+def _not_on_path_message(check_type: str) -> str:
+    return (
+        f"cannot run `specflow artifact-lint --type {check_type}`: 'specflow' is "
+        f"not on PATH (install: {_INSTALL_HINT})"
+    )
 
 
 def _pre_commit(root: Path) -> int:
@@ -65,8 +186,12 @@ def _pre_commit(root: Path) -> int:
         return 1
 
     author = os.environ.get("GIT_AUTHOR_EMAIL") or rbac_lib.current_git_author_email(root)
+    # RBAC reads staged frontmatter, so it sees additions/modifications only;
+    # the link and schema lints must also run when the only staged artifact
+    # change is a deletion or rename (a removed REQ breaks inbound links).
     changes = rbac_lib.staged_artifact_changes(root)
-    if not changes:
+    staged_paths = rbac_lib.staged_specflow_paths(root)
+    if not changes and not staged_paths:
         return 0
 
     failures: list[str] = []
@@ -101,10 +226,10 @@ def _pre_commit(root: Path) -> int:
         return 1
 
     # Link integrity check (blocking — broken links are corrupted accounting)
-    link_result = subprocess.run(
-        ["specflow", "artifact-lint", "--type", "links"],
-        capture_output=True, text=True, cwd=str(root), check=False,
-    )
+    link_result = _run_lint(root, "links")
+    if link_result is None:
+        print(f"{RED}✗ specflow pre-commit: {_not_on_path_message('links')}{NC}")
+        return 1
     if link_result.returncode != 0:
         print(f"{RED}✗ specflow pre-commit: link integrity check failed{NC}")
         print(link_result.stdout[-2000:] if len(link_result.stdout) > 2000 else link_result.stdout)
@@ -112,10 +237,10 @@ def _pre_commit(root: Path) -> int:
         return 1
 
     # Schema validation (blocking — schema violations produce invalid artifacts)
-    schema_result = subprocess.run(
-        ["specflow", "artifact-lint", "--type", "schema"],
-        capture_output=True, text=True, cwd=str(root), check=False,
-    )
+    schema_result = _run_lint(root, "schema")
+    if schema_result is None:
+        print(f"{RED}✗ specflow pre-commit: {_not_on_path_message('schema')}{NC}")
+        return 1
     if schema_result.returncode != 0:
         print(f"{RED}✗ specflow pre-commit: schema validation failed{NC}")
         print(schema_result.stdout[-2000:] if len(schema_result.stdout) > 2000 else schema_result.stdout)
@@ -128,10 +253,10 @@ def _pre_commit(root: Path) -> int:
     # status-cascade and story-linkage: real signals worth surfacing early, but
     # not worth aborting a commit over.
     for check_type in ("status-cascade", "story-linkage"):
-        advisory = subprocess.run(
-            ["specflow", "artifact-lint", "--type", check_type],
-            capture_output=True, text=True, cwd=str(root), check=False,
-        )
+        advisory = _run_lint(root, check_type)
+        if advisory is None:
+            print(f"{YELLOW}⚠ specflow pre-commit: {_not_on_path_message(check_type)}{NC}")
+            break
         # Surface findings whether blocking OR warning-only. artifact-lint
         # exits 0 for warning-only output, so gating on returncode alone left
         # the common cascade signals (e.g. "STORY verified but its REQ is still
@@ -161,7 +286,7 @@ def run(root: Path, args: dict) -> int:
     root = root.resolve()
     sub = args.get("hook_subcommand")
     if sub == "install":
-        return _install(root)
+        return _install(root, force=bool(args.get("force")))
     if sub == "pre-commit":
         return _pre_commit(root)
     print(f"{RED}✗ unknown hook subcommand: {sub}{NC}")

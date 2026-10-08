@@ -15,10 +15,10 @@ created: '2026-09-25'
 fingerprint: sha256:87a1e6ff20fc
 thinking_techniques:
 - premortem
-- dependency-shock
+- dependency_shock
 - worst_case_user
 - composition
-modified: '2026-09-25'
+modified: '2026-10-08'
 ---
 
 # Practices validate, practices migrate, applicability-first loader (REQ-044)

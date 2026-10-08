@@ -8,14 +8,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import yaml
 import pytest
+import yaml
+from conftest import DOGFOOD_SEED_BP_IDS, shipped_dogfood_seed_bps
 
 from specflow.commands import handbook as handbook_cmd
 from specflow.lib import artifacts as art_lib
 from specflow.lib import handbook as handbook_lib
 from specflow.lib import practices_seed
-
 
 _SCHEMA_TYPES = [
     ("requirement", "REQ"), ("architecture", "ARCH"), ("detailed-design", "DDD"),
@@ -158,15 +158,13 @@ class TestHandbookLibrary:
 
     def test_shipped_dogfood_bp_content_matches_regenerated_output(self):
         """The renderer retains content of the shipped dogfood practices."""
-        bp_dir = Path(__file__).parents[1] / "_specflow/specs/best-practices"
-        paths = sorted(bp_dir.glob("BP-*.md"))
-        expected_ids = {f"BP-{index:03}" for index in range(2, 8)}
-        if {path.stem for path in paths} != expected_ids:
-            pytest.skip("the shipped dogfood BP-002..BP-007 set has changed")
+        # Seed-generated BPs only (BP-002..BP-007): a learned practice such as
+        # BP-008 has extra sections and is not seed-equivalent by design.
+        expected_ids = set(DOGFOOD_SEED_BP_IDS)
+        artifacts = shipped_dogfood_seed_bps(Path(__file__).parents[1])
+        assert {a.id for a in artifacts} == expected_ids
 
-        for path in paths:
-            artifact = art_lib.parse_artifact(path)
-            assert artifact is not None
+        for artifact in artifacts:
             original_sections = _body_sections(artifact.body)
             seed = practices_seed.Practice(
                 title=artifact.title,

@@ -2,7 +2,7 @@ format_version: 1
 project:
   name: specflow
   created: '2026-04-10'
-  domain: ''
+  domain: generic
   domain_tags: []
 impact_analysis:
   auto_flag: true
@@ -26,4 +26,3 @@ docs:
   extra_files: []
   exclude:
   - docs/.archive/**
-

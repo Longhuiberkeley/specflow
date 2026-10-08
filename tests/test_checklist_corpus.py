@@ -260,3 +260,24 @@ def test_dead_parallel_checklist_runner_removed_from_lint():
     assert not hasattr(lint_lib, "run_automated_checklist")
     assert "discover_checklists" not in lint_lib.__all__
     assert "run_automated_checklist" not in lint_lib.__all__
+
+
+# ── Live dogfood dirs are routable (STORY-712 / F-128) ──────────────────────
+
+_REPO_ROOT = _SRC.parent.parent
+_LIVE_CHECKLISTS = _REPO_ROOT / ".specflow" / "checklists"
+# Every category a loader in lib/checklists.py reads. A directory outside this
+# set silently drops its items (readiness/ sat unread from v1.1.0 to v1.17.1).
+_ROUTABLE_CATEGORIES = {"in-process", "review", "shared", "phase-gates", "domain", "learned"}
+
+
+@pytest.mark.skipif(not _LIVE_CHECKLISTS.is_dir(), reason="no live .specflow/checklists in this checkout")
+def test_live_checklist_dirs_are_routable():
+    live = {p.name for p in _LIVE_CHECKLISTS.iterdir() if p.is_dir()}
+    unroutable = live - _ROUTABLE_CATEGORIES
+    assert not unroutable, f"no loader reads .specflow/checklists/{sorted(unroutable)}; move or delete them"
+
+
+def test_routable_categories_cover_shipped_templates():
+    shipped = {p.name for p in _TEMPLATES.iterdir() if p.is_dir()}
+    assert shipped <= _ROUTABLE_CATEGORIES, shipped - _ROUTABLE_CATEGORIES

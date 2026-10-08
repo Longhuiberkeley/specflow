@@ -7,7 +7,6 @@ import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
 import yaml
 
@@ -513,7 +512,9 @@ def persist_results(
     recorded and keep an otherwise-passing outcome at ``incomplete``.
     """
     log_dir = root / ".specflow" / "checklist-log"
-    log_dir.mkdir(parents=True, exist_ok=True)
+    from specflow.lib.scaffold import ensure_scratch_gitignore
+
+    ensure_scratch_gitignore(log_dir)
 
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%SZ")
     filename = f"{ts}_{checklist_id}.yaml"
@@ -554,9 +555,12 @@ def persist_results(
     if parse_errors:
         log_data["parse_errors"] = list(parse_errors)
 
-    path.write_text(
-        yaml.dump(log_data, default_flow_style=False, sort_keys=False),
-        encoding="utf-8",
+    from specflow.lib import locks as locks_lib
+
+    # Atomic (temp file + os.replace) under the mutation lock, like every
+    # other SpecFlow writer: a crash never leaves a torn log (DDD-034 I5).
+    locks_lib.locked_write(
+        root, path, yaml.dump(log_data, default_flow_style=False, sort_keys=False)
     )
     return path
 
@@ -567,44 +571,56 @@ def update_artifact_checklists_applied(
     checklist_id: str,
     timestamp: str,
 ) -> None:
-    """Upsert a checklist execution record (updates timestamp if already present, appends if new)."""
-    from specflow.lib.artifacts import resolve_link_target
+    """Upsert a checklist execution record (updates timestamp if already present, appends if new).
 
-    file_path = resolve_link_target(root, artifact_id)
-    if file_path is None:
-        return
+    Only the ``checklists_applied`` block is rewritten (lib.frontmatter_patch);
+    when the record is already present with the same timestamp nothing is
+    written at all. The whole read-modify-write runs under the mutation lock
+    and the write is atomic (DDD-034 I5), so a concurrent ``specflow update``
+    can neither be lost nor see a torn file. Entries in the block that are
+    not mappings are dropped: they are not records and cannot be upserted.
+    """
+    from specflow.lib import locks as locks_lib
+    from specflow.lib.artifacts import resolve_link_target, write_artifact_text
+    from specflow.lib.frontmatter_patch import patch_block, split_frontmatter
 
-    try:
-        text = file_path.read_text(encoding="utf-8").strip()
-    except Exception:
-        return
+    with locks_lib.mutation_lock(root, holder=f"checklist:{artifact_id}"):
+        file_path = resolve_link_target(root, artifact_id)
+        if file_path is None:
+            return
 
-    if not text.startswith("---"):
-        return
+        try:
+            text = file_path.read_text(encoding="utf-8")
+        except Exception:
+            return
 
-    end = text.find("---", 3)
-    if end == -1:
-        return
+        parts = split_frontmatter(text)
+        if parts is None:
+            return
+        prefix, fm_text, rest = parts
 
-    try:
-        fm = yaml.safe_load(text[3:end])
-    except Exception:
-        return
+        try:
+            fm = yaml.safe_load(fm_text)
+        except Exception:
+            return
 
-    if not isinstance(fm, dict):
-        return
+        if not isinstance(fm, dict):
+            return
 
-    applied = fm.get("checklists_applied", [])
-    if not isinstance(applied, list):
-        applied = []
+        applied = fm.get("checklists_applied", [])
+        if not isinstance(applied, list):
+            applied = []
+        applied = [e for e in applied if isinstance(e, dict)]
 
-    existing = next((e for e in applied if e.get("checklist") == checklist_id), None)
-    if existing is not None:
-        existing["timestamp"] = timestamp
-    else:
-        applied.append({"checklist": checklist_id, "timestamp": timestamp})
-    fm["checklists_applied"] = applied
+        existing = next((e for e in applied if e.get("checklist") == checklist_id), None)
+        if existing is not None:
+            if existing.get("timestamp") == timestamp:
+                return  # unchanged: never touch the file
+            existing["timestamp"] = timestamp
+        else:
+            applied.append({"checklist": checklist_id, "timestamp": timestamp})
 
-    body = text[end + 3:].strip()
-    new_text = "---\n" + yaml.dump(fm, default_flow_style=False, sort_keys=False) + "---\n\n" + body + "\n"
-    file_path.write_text(new_text, encoding="utf-8")
+        new_text = prefix + patch_block(fm_text, "checklists_applied", applied) + rest
+        if new_text == text:
+            return
+        write_artifact_text(root, file_path, new_text)

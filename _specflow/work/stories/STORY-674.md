@@ -13,8 +13,8 @@ created: '2026-09-25'
 fingerprint: sha256:989b4509f92b
 thinking_techniques:
 - premortem
-- dependency-shock
-modified: '2026-09-25'
+- dependency_shock
+modified: '2026-10-08'
 ---
 
 # Error-analysis protocol and analysis iterations (REQ-046)

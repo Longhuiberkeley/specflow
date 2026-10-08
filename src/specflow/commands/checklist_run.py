@@ -10,7 +10,7 @@ from specflow.lib.checklists import (
     run_automated_pass,
     update_artifact_checklists_applied,
 )
-from specflow.lib.challenge import extract_proactive_items, format_proactive_prompt
+from specflow.lib.challenge import extract_proactive_items
 from specflow.lib.dedup import find_duplicates, write_candidates_file
 from specflow.lib.display import RED, GREEN, YELLOW, BOLD, NC
 
@@ -74,22 +74,25 @@ def _check_artifact(
     if blocking_failed:
         print(f"\n  {RED}Blocking automated check failed — agent checks skipped.{NC}")
 
+    # Proactive challenges get their own section (with the hint the host
+    # agent needs); listed once, not again under the agent-judged items.
+    proactive_items = extract_proactive_items(assembled) if proactive else []
+    proactive_ids = {i.id for i in proactive_items}
+
     # Agent-judged items (listed for the host agent to evaluate)
-    llm_items = [i for i in assembled.items if not i.automated]
+    llm_items = [i for i in assembled.items if not i.automated and i.id not in proactive_ids]
     if llm_items and not blocking_failed:
         print(f"\n  Agent-judged checks ({len(llm_items)} pending):")
         for item in llm_items:
             mode_label = f" [{item.mode}]" if item.mode != "standard" else ""
             print(f"    • [{item.severity}]{mode_label} {item.check}")
 
-    # Proactive challenges
-    if proactive and not blocking_failed:
-        proactive_items = extract_proactive_items(assembled)
-        if proactive_items:
-            print(f"\n  Proactive challenges ({len(proactive_items)}):")
-            prompt = format_proactive_prompt(artifact, proactive_items)
-            for item in proactive_items:
-                print(f"    ⚡ {item.check}")
+    if proactive_items and not blocking_failed:
+        print(f"\n  Proactive challenges ({len(proactive_items)}):")
+        for item in proactive_items:
+            print(f"    ⚡ [{item.severity}] {item.check}")
+            if item.llm_prompt:
+                print(f"      Hint: {item.llm_prompt}")
 
     # Persist results
     from datetime import datetime, timezone

@@ -5,8 +5,6 @@ description: "Author a standards compliance pack from a PDF, URL, or pasted text
 
 Extra text narrows scope — still run the deterministic core first.
 
----
-
 # SpecFlow Pack Author
 
 Guide the user through agent-assisted creation of a standards compliance pack. The pack is written to `.specflow/packs/{name}/`, where `specflow init --preset {name}` resolves it by name.
@@ -19,8 +17,8 @@ Ask the user what source they want to build the pack from:
 
 | Source | How to handle |
 |--------|---------------|
-| **PDF file** | Read the PDF with the `Read` tool. Extract clause structure (section numbers, titles, descriptions). |
-| **URL** | Fetch the URL with the `WebFetch` tool. Extract clause structure from the page content. |
+| **PDF file** | Read the PDF with your host's file/PDF reading capability; if it has none, ask the user to paste the text. Extract clause structure (section numbers, titles, descriptions). |
+| **URL** | Fetch the URL with your host's web-fetch capability; if it has none, ask the user to paste the page text. Extract clause structure from the page content. |
 | **Pasted text** | Ask the user to paste the standard text. Extract clause structure. |
 
 For each source, extract:
@@ -167,6 +165,8 @@ Present a summary to the user:
 ```
 
 **Exit message:** "The pack is at `.specflow/packs/{name}/`. To install it, run `specflow init --preset {name}` (the pack is picked up from that directory), or use `/specflow-init` and name it as the preset."
+
+Next: run `/specflow-discover`, or `specflow create --from-standard <clause-id>` for each uncovered clause that `specflow standards gaps` lists.
 
 ## Rules
 

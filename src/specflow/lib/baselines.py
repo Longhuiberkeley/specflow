@@ -17,7 +17,7 @@ import yaml
 from specflow.lib import artifacts as art_lib
 from specflow.lib import git_utils
 
-# Create-time naming policy (CHL-NONSEMVE-c16b): new baselines must be
+# Create-time naming policy (CHL-351): new baselines must be
 # semver-shaped so semver-aware selection (select_release_pair) always has
 # release versions to prefer. Accepts v1.0, v1.13.5, v1.13.5-rc1; rejects
 # freeform names like 'snapshot' or 'a'. Freeform baselines already on disk
@@ -219,7 +219,7 @@ def list_baselines(root: Path) -> list[str]:
 def select_release_pair(baselines: list[str]) -> list[str]:
     """Select the drift-comparison pair, preferring semver-parseable releases.
 
-    Selection policy (CHL-NONSEMVE-c16b): newest/predecessor callers must
+    Selection policy (CHL-351): newest/predecessor callers must
     compare release versions, not freeform names such as ``snapshot`` that a
     mixed project may carry. Filter to names the same predicate used for
     sorting (``_semver_parts``) accepts and take the two newest. When fewer

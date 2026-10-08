@@ -114,15 +114,15 @@ Full walkthrough in the [getting-started guide](docs/getting-started.md).
 |---------|-----|
 | **Zero-token CI validation** | Schema, links, status, fingerprints, coverage — deterministic Python, no LLM required |
 | **V-model traceability** | REQ → ARCH → DDD → UT/IT/QT, fully linked and linted; `specflow rtm --gaps` renders the bidirectional matrix with per-row gap markers |
-| **Verification contracts** *(new)* | UT/IT/QT/STORY declare a `verify_command`; `specflow verify <ID> | --all` runs it and records `verify_run_*` evidence so `verified` is machine-checked, not asserted. A failing run is **recorded, never blocking** — accounting, not policing |
-| **Computed risk tiers** *(new)* | `specflow risk-tier <IDs>` derives a minimum approval tier (0 light / 1 normal / 2 stop) from the change set's intrinsic properties (read-only); `document-changes` records it on the DEC's `risk_profile`. The tier **gates nothing** — it is a recorded floor; downgrade below it only with a recorded justification |
+| **Verification contracts** | UT/IT/QT/STORY declare a `verify_command`; `specflow verify <ID> | --all` runs it and records `verify_run_*` evidence so `verified` is machine-checked, not asserted. A failing run is **recorded, never blocking** — accounting, not policing |
+| **Computed risk tiers** | `specflow risk-tier <IDs>` derives a minimum approval tier (0 light / 1 normal / 2 stop) from the change set's intrinsic properties (read-only); `document-changes` records it on the DEC's `risk_profile`. The tier **gates nothing** — it is a recorded floor; downgrade below it only with a recorded justification |
 | **Bring-your-own-standard** | Drop a PDF, URL, or pasted text. SpecFlow extracts clauses into schemas your artifacts can link to; coverage is tracked, compliance is not certified |
 | **Immutable baselines** | Snapshot, diff, and generate audit evidence between releases |
 | **First-class Claude Code + OpenCode** | SpecFlow skills install once, into `.claude/skills`. OpenCode2 already reads that tree — a second copy in `.opencode/skills` would silently override it. Other hosts still get their own dir. `specflow init` warns if a leftover `.opencode/skills/specflow-*` exists; `specflow refresh --all-platforms` syncs hosts that do not share the Claude tree |
 | **Autoresearch loops** | Define a competition + verify command, let your assistant iterate; every experiment becomes a tracked artifact |
-| **Docs knowledge surface** *(new)* | `docs/` + root markdown is a recognized surface — `@ID`-cited, shown in `specflow brief`, staleness-warned, never an artifact type |
-| **Accounting-only phase rewinds** *(new)* | `specflow phase-set <phase> --reason "..."` records a forward or reverse phase move (e.g. "go back to requirements") — never blocks, keeps `brief --next` honest |
-| **RBAC check** *(new)* | `specflow rbac check` resolves your git-author team roles and can test a status-transition authorization; reports "single-user mode" cleanly when no team config exists |
+| **Docs knowledge surface** | `docs/` + root markdown is a recognized surface — `@ID`-cited, shown in `specflow brief`, staleness-warned, never an artifact type |
+| **Accounting-only phase rewinds** | `specflow phase-set <phase> --reason "..."` records a forward or reverse phase move (e.g. "go back to requirements") — never blocks, keeps `brief --next` honest |
+| **RBAC check** | `specflow rbac check` resolves your git-author team roles and can test a status-transition authorization; reports "single-user mode" cleanly when no team config exists |
 | **1 runtime dependency** | Just `pyyaml`. Everything else is stdlib. |
 
 ## Skills (auto-trigger from chat; slash optional)
@@ -148,7 +148,7 @@ All core skills accept freeform context. `/specflow-audit I'm worried about REQ 
 
 Replies already lead with the answer (a short TLDR is in the injected `AGENTS.md`). The optional `tldr-communication` pack (`specflow init --preset tldr-communication`) only adds a small reply-style block to the instruction file — you do not need it, or to ask for a TLDR.
 
-## Autoresearch — autonomous research loops (new in v1.6.0)
+## Autoresearch — autonomous research loops
 
 If your project lives on a measurable metric (Sharpe ratio, F1 score, BLEU, P99 latency — anything a shell command can print as one number), the **autoresearch pack** turns SpecFlow into an autonomous experimentation lab.
 
@@ -179,7 +179,7 @@ What you get out of the box:
 
 Adapted from [Karpathy's autoresearch](https://github.com/karpathy/autoresearch) via [autoresearch_fork](https://github.com/Longhuiberkeley/autoresearch_fork) and [Claude Autoresearch](https://github.com/uditgoenka/autoresearch), then folded into SpecFlow's artifact/V-model model.
 
-## Ops — live deployments & observations (new in v1.10.0)
+## Ops — live deployments & observations
 
 Most of SpecFlow records what you *build*. The optional **ops pack** records what you *run*: a "deployed-and-observed" memory class with two domain-neutral artifact types.
 
@@ -197,7 +197,7 @@ specflow brief --next    # flags a breached or unobserved live RUN when ops is a
 
 The framework also **adapts artifact guidance to your domain**: `specflow domain suggest` proposes a domain from your dependency manifests (quant/ml seeded), and `discover`/`plan` surface a per-domain **concept→artifact map** so "is this a REQ, a STORY, an autoresearch goal, or a RUN?" is answered at decision time — with the *why* — instead of requiring you to know the boundaries.
 
-## Docs — the knowledge surface (new in v1.11.0)
+## Docs — the knowledge surface
 
 `docs/` and root markdown (README, AGENTS, CHANGELOG, …) is a **recognized knowledge surface** — indexed, citable, and flagged when stale — but **never a lifecycle artifact type**. There's no `DOC` prefix, no status field, no change record when you edit a doc; git history is the change log.
 
@@ -244,7 +244,7 @@ specflow artifact-lint
 specflow project-audit
 ```
 
-Full reference: [CLI reference](docs/cli-reference.md). 30 subcommands.
+Full reference: [CLI reference](docs/cli-reference.md) — every subcommand, organized by workflow phase (`specflow --help` lists them; a test keeps the reference complete).
 
 ## Directory layout
 
@@ -266,7 +266,7 @@ Everything is Markdown with YAML frontmatter. Your repo is the database.
 uv tool install git+https://github.com/Longhuiberkeley/specflow
 
 # Pin to a release
-uv tool install git+https://github.com/Longhuiberkeley/specflow@v1.13.8
+uv tool install git+https://github.com/Longhuiberkeley/specflow@v1.17.2
 
 # Run without installing (ephemeral)
 uvx --from git+https://github.com/Longhuiberkeley/specflow specflow init
@@ -291,9 +291,11 @@ This creates `_specflow/` and `.specflow/` in your repo, and copies skill files 
 - [Command reference](docs/commands.md) — per-skill interface spec
 - [CLI reference](docs/cli-reference.md) — raw CLI for CI
 - [Architecture](docs/architecture.md) — technical design
-- [Design decisions](docs/decisions.md) — resolved trade-offs
+- [Design decisions](docs/decisions.md) — historical prose log (the normative `DEC-*` records live in `_specflow/work/decisions/`)
 - [Team setup](docs/team-setup.md) — RBAC and role-based access
 - [Authoring a pack](docs/authoring-a-pack.md) — creating compliance packs
+- [Authoring an adapter](docs/authoring-an-adapter.md) — CI providers and exchange formats
+- [Skill standards](docs/skill-standards.md) — derived rendering of DEC-083 / ARCH-030
 
 ## Roadmap
 

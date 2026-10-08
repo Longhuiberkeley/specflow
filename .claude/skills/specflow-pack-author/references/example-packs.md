@@ -2,13 +2,12 @@
 
 ## iso26262-demo (Bundled)
 
-Shipped with SpecFlow as a test fixture, not a real compliance pack. Shape only:
+Shipped with SpecFlow as a test fixture, not a compliance pack. It exercises the standards-pack machinery (`pack-validate`, standards loading, `complies_with` links) and nothing else. `specflow init` does not offer it. Shape:
 
 ```
 iso26262-demo/
 ├── pack.yaml
 ├── standards/iso26262-demo.yaml
-├── schemas/hazard.yaml
 └── README.md
 ```
 
@@ -16,18 +15,15 @@ iso26262-demo/
 ```yaml
 name: iso26262-demo
 version: "0.1-demo"
-description: "ISO 26262 demo pack — minimal stubs to prove pack architecture. NOT a real compliance pack."
-adds_artifact_types:
-  - hazard
-adds_directories:
-  - specs/hazards
+description: "Test fixture: five placeholder clauses (DEMO-1..DEMO-5) that exercise the standards-pack machinery. NOT a compliance pack; the ids are not ISO 26262 numbering."
+adds_artifact_types: []
+adds_directories: []
 ```
 
 **standards/iso26262-demo.yaml:**
-5 stub clauses from ISO 26262 parts 3, 4, 6, and 8.
+Five placeholder clauses, `DEMO-1` to `DEMO-5`, whose titles are ISO 26262-shaped topics (hazard analysis, safety goals, unit design, unit verification, configuration management). The ids match neither edition of ISO 26262 and must not be cited as compliance evidence.
 
-**schemas/hazard.yaml:**
-Single schema for the `hazard` artifact type with ASIL-related optional fields.
+**No `schemas/`:** the pack adds no artifact type. The `hazard` type it used to duplicate is a core optional schema — enable it with `specflow init --with-types hazard`.
 
 ## Minimal Pack (Template)
 

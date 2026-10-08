@@ -23,8 +23,13 @@ from __future__ import annotations
 
 import contextlib
 import io
+import json
 import os
 import pathlib
+import subprocess
+import sys
+import textwrap
+import time
 from pathlib import Path
 from typing import Callable
 
@@ -200,6 +205,27 @@ def _op_migrate(root: Path) -> None:
     assert not res["errors"], res["errors"]
 
 
+def _op_checklist_run(root: Path) -> None:
+    """checklist-run: the checklist log plus the checklists_applied record
+    (STORY-707: both writers go through the locked atomic path)."""
+    from specflow.commands import checklist_run
+
+    with contextlib.redirect_stdout(io.StringIO()):
+        assert checklist_run.run(root, {"artifact_id": "REQ-001"}) == 0
+
+
+def _setup_retro_link(root: Path) -> None:
+    _setup_basic(root)
+    (root / "src").mkdir()
+    (root / "src" / "one.py").write_text("x = 1\n", encoding="utf-8")
+
+
+def _op_retro_link(root: Path) -> None:
+    from specflow.lib import orphans
+
+    assert orphans.retro_link(root, "src/one.py", "STORY-001") is True
+
+
 OPS: dict[str, tuple[Callable[[Path], None], Callable[[Path], None]]] = {
     "create": (_setup_basic, _op_create),
     "update": (_setup_basic, _op_update),
@@ -209,6 +235,8 @@ OPS: dict[str, tuple[Callable[[Path], None], Callable[[Path], None]]] = {
     "merge": (_setup_merge, _op_merge),
     "split": (_setup_split, _op_split),
     "practices-migrate": (_setup_migrate, _op_migrate),
+    "checklist-run": (_setup_basic, _op_checklist_run),
+    "retro-link": (_setup_retro_link, _op_retro_link),
 }
 
 
@@ -272,3 +300,109 @@ def test_I5_harness_counts_every_write_primitive(tmp_path: Path):
         with write_counter(crash_at=1, mode="torn"):
             (tmp_path / "t").write_text("abcdef")
     assert (tmp_path / "t").read_text() == "abc"
+
+
+# ---------------------------------------------------------------------------
+# Races: the record-only writers against `specflow update` (STORY-707, I4)
+#
+# Same shape as tests/formal/test_index_store_barriers.py: two real processes
+# released by a file barrier. The writer under test gets an injected sleep
+# between its read and its write (in ``split_frontmatter``, which only runs
+# under the lock on the fixed code), so a read outside the lock would let the
+# concurrent update land in the gap and be overwritten by the stale copy.
+
+_RACE_WORKER = textwrap.dedent(
+    r"""
+    import json, sys, time
+    from pathlib import Path
+
+    root = Path(sys.argv[1]); mode = sys.argv[2]; n = int(sys.argv[3])
+    barrier = Path(sys.argv[4]); delay = float(sys.argv[5])
+
+    from specflow.lib import artifacts as art_lib
+    from specflow.lib import frontmatter_patch
+
+    if delay:
+        _orig_split = frontmatter_patch.split_frontmatter
+        def _slow_split(text):
+            parts = _orig_split(text)
+            time.sleep(delay)
+            return parts
+        frontmatter_patch.split_frontmatter = _slow_split
+
+    while not barrier.exists():
+        time.sleep(0.002)
+
+    out = {"errors": []}
+    if mode == "checklist":
+        from specflow.lib.checklists import update_artifact_checklists_applied
+        for i in range(n):
+            update_artifact_checklists_applied(
+                root, "REQ-001", "check-REQ-001", f"2026-01-01T00:{i // 60:02d}:{i % 60:02d}Z")
+    elif mode == "retro":
+        from specflow.lib import orphans
+        for i in range(n):
+            if not orphans.retro_link(root, f"src/f{i}.py", "STORY-001"):
+                out["errors"].append(f"retro_link f{i}")
+    elif mode == "update":
+        for i in range(n):
+            r = art_lib.update_artifact(root, sys.argv[6], tags=[f"t{i}"])
+            if not r.get("ok"):
+                out["errors"].append(r.get("error"))
+    print("RESULT " + json.dumps(out))
+    """
+)
+
+
+def _race(tmp: Path, root: Path, writer: str, target: str, n: int) -> list[dict]:
+    script = tmp / "race_worker.py"
+    script.write_text(_RACE_WORKER, encoding="utf-8")
+    barrier = tmp / "go"
+
+    def spawn(mode: str, delay: float) -> subprocess.Popen:
+        return subprocess.Popen(
+            [sys.executable, str(script), str(root), mode, str(n), str(barrier), str(delay), target],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+        )
+
+    procs = [spawn(writer, 0.01), spawn("update", 0.0)]
+    time.sleep(0.3)
+    barrier.write_text("go", encoding="utf-8")
+    results = []
+    for p in procs:
+        out, err = p.communicate(timeout=180)
+        assert p.returncode == 0, f"worker crashed: {err[-2000:]}"
+        line = [ln for ln in out.splitlines() if ln.startswith("RESULT ")][-1]
+        results.append(json.loads(line[len("RESULT "):]))
+    return results
+
+
+def test_I4_checklist_record_rmw_vs_update_loses_no_update(tmp_path: Path):
+    """checklist-run's checklists_applied record racing `update --tags`."""
+    root = scaffold(tmp_path)
+    _setup_basic(root)
+    n = 25
+    writer, updater = _race(tmp_path, root, "checklist", "REQ-001", n)
+    assert not writer["errors"] and not updater["errors"], (writer, updater)
+    art = art_lib.parse_artifact(art_lib.resolve_link_target(root, "REQ-001"))
+    assert art.tags == [f"t{n - 1}"], f"update lost under the checklist writer: {art.tags}"
+    applied = art.frontmatter.get("checklists_applied")
+    assert applied == [{"checklist": "check-REQ-001",
+                        "timestamp": f"2026-01-01T00:{(n - 1) // 60:02d}:{(n - 1) % 60:02d}Z"}], applied
+    assert not invariant_violations(root)
+
+
+def test_I4_retro_link_rmw_vs_update_loses_no_update(tmp_path: Path):
+    """retro-link's output_files record racing `update --tags`."""
+    root = scaffold(tmp_path)
+    _setup_basic(root)
+    n = 25
+    (root / "src").mkdir()
+    for i in range(n):
+        (root / "src" / f"f{i}.py").write_text("", encoding="utf-8")
+    writer, updater = _race(tmp_path, root, "retro", "STORY-001", n)
+    assert not writer["errors"] and not updater["errors"], (writer, updater)
+    art = art_lib.parse_artifact(art_lib.resolve_link_target(root, "STORY-001"))
+    assert art.tags == [f"t{n - 1}"], f"update lost under retro-link: {art.tags}"
+    assert art.output_files == [f"src/f{i}.py" for i in range(n)], art.output_files
+    assert not invariant_violations(root)

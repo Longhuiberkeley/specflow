@@ -12,7 +12,7 @@ suspect: false
 links:
 - target: REQ-053
   role: implements
-- target: DEC-FINDINGS-79d8
+- target: DEC-099
   role: guided_by
 created: '2026-09-30'
 fingerprint: sha256:cba96df20853

@@ -14,14 +14,23 @@ _FIELD_SEP = "\x1f"  # ASCII unit separator
 
 
 def _run_git(root: Path, args: list[str]) -> subprocess.CompletedProcess[str]:
-    """Run a git command in the given directory, capturing output."""
-    return subprocess.run(
-        ["git", *args],
-        capture_output=True,
-        text=True,
-        cwd=str(root),
-        check=False,
-    )
+    """Run a git command in the given directory, capturing output.
+
+    A machine without a ``git`` binary yields a failed result (returncode 127)
+    instead of raising, so every caller degrades to its not-a-repo path.
+    """
+    try:
+        return subprocess.run(
+            ["git", *args],
+            capture_output=True,
+            text=True,
+            cwd=str(root),
+            check=False,
+        )
+    except FileNotFoundError:
+        return subprocess.CompletedProcess(
+            ["git", *args], 127, "", "git: command not found"
+        )
 
 
 def is_git_repo(root: Path) -> bool:
@@ -36,6 +45,18 @@ def get_current_sha(root: Path) -> str:
     if result.returncode != 0:
         return ""
     return result.stdout.strip()
+
+
+def get_commit_timestamp(root: Path, sha: str) -> str | None:
+    """Committer timestamp of ``sha`` as strict ISO-8601 (``git show -s
+    --format=%cI``, e.g. ``2026-10-08T10:15:00+02:00``), or ``None`` when
+    the ref does not resolve, ``root`` is not a repository, or git is absent.
+    Offset-aware: callers that compare against UTC strings normalise it."""
+    result = _run_git(root, ["show", "-s", "--format=%cI", sha])
+    if result.returncode != 0:
+        return None
+    value = result.stdout.strip()
+    return value or None
 
 
 def resolve_ref(root: Path, ref: str) -> str:
@@ -185,3 +206,70 @@ def file_history(
         })
     entries.reverse()
     return entries
+
+
+def core_hooks_path(root: Path) -> str:
+    """Return the configured ``core.hooksPath`` for ``root``, or '' when unset.
+
+    When set (husky, lefthook and similar tools do this), git ignores
+    ``.git/hooks`` entirely, so a hook installed there is never run.
+    """
+    return core_hooks_path_scoped(root)[0]
+
+
+def core_hooks_path_scoped(root: Path) -> tuple[str, str]:
+    """Return ``(core.hooksPath, scope)`` for ``root``; ``('', '')`` when unset.
+
+    ``scope`` is git's config scope (``local``, ``worktree``, ``global``,
+    ``system``, ``command``). A global or system hooks path is shared by every
+    repository on the machine, so an installer must not write there blindly.
+    """
+    result = _run_git(root, ["config", "--show-scope", "--get", "core.hooksPath"])
+    if result.returncode != 0 or not result.stdout.strip():
+        return "", ""
+    scope, _, value = result.stdout.strip().partition("\t")
+    if not value:  # very old git without --show-scope support printed no scope
+        return scope.strip(), ""
+    return value.strip(), scope.strip()
+
+
+def toplevel(root: Path) -> Path | None:
+    """Return the top-level directory of the working tree containing ``root``.
+
+    None outside a git working tree (or without a git binary).
+    """
+    result = _run_git(root, ["rev-parse", "--show-toplevel"])
+    if result.returncode != 0 or not result.stdout.strip():
+        return None
+    return Path(result.stdout.strip()).resolve()
+
+
+def hooks_dir(root: Path) -> Path | None:
+    """Return the directory git runs hooks from for ``root``, or None.
+
+    ``root`` must be the top level of its working tree: a project nested inside
+    another repository (a monorepo subdirectory, a dotfiles repo in ``$HOME``)
+    returns None rather than the parent repository's hooks directory, where the
+    hook would run with the wrong cwd and silently check nothing.
+
+    Uses ``git rev-parse --git-path hooks`` so linked worktrees (where
+    ``root/.git`` is a file pointing at the common dir) and ``core.hooksPath``
+    overrides both resolve to the directory git actually reads. The result is
+    resolved against ``root`` (git prints it relative to the cwd). Falls back
+    to ``root/.git/hooks`` when git itself is unavailable but a ``.git``
+    directory exists.
+    """
+    top = toplevel(root)
+    if top is None:
+        if (root / ".git").is_dir() and _run_git(root, ["--version"]).returncode == 127:
+            return (root / ".git" / "hooks").resolve()
+        return None
+    if top != root.resolve():
+        return None
+    result = _run_git(root, ["rev-parse", "--git-path", "hooks"])
+    if result.returncode == 0 and result.stdout.strip():
+        raw = Path(result.stdout.strip())
+        return (raw if raw.is_absolute() else root / raw).resolve()
+    if (root / ".git").exists():
+        return (root / ".git" / "hooks").resolve()
+    return None

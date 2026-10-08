@@ -70,9 +70,28 @@ _SKILLS_CONSUME_CLAUDE = frozenset({"opencode"})
 
 
 def get_skills_install_code(platform_code: str) -> str:
-    """Platform whose ``skills_dir`` should receive SpecFlow + pack skills."""
+    """Platform whose ``skills_dir`` should receive SpecFlow + pack skills.
+
+    Two rules, both registry-driven in effect:
+
+    - a host that consumes another host's tree (OpenCode → ``.claude/skills``)
+      maps to that host;
+    - hosts that declare the SAME ``skills_dir`` (Codex and Junie both read
+      ``.agents/skills``) map to the first such entry in registry order, so
+      the tree is installed once and never reported as "installed only for"
+      one of them.
+    """
     if platform_code in _SKILLS_CONSUME_CLAUDE:
         return "claude-code"
+    cfg = get_platform(platform_code)
+    if not cfg or not cfg.get("skills_dir"):
+        return platform_code
+    target = cfg["skills_dir"]
+    for code, other in _load_registry().items():
+        if code in _SKILLS_CONSUME_CLAUDE:
+            continue
+        if other.get("skills_dir") == target:
+            return code
     return platform_code
 
 
@@ -110,9 +129,9 @@ def leftover_specflow_skills(root: Path, platform_code: str) -> list[str]:
     Same-ID leftovers in ``.opencode/skills`` silently override ``.claude/skills``
     on OpenCode. Callers should warn; we do not delete them.
     """
-    if get_skills_install_code(platform_code) == platform_code:
-        return []
     own = get_skills_dir(root, platform_code)
+    if own == get_skills_install_dir(root, platform_code):
+        return []  # the host's own tree IS the install tree (incl. shared dirs)
     if not own.is_dir():
         return []
     return sorted(

@@ -12,10 +12,10 @@ tags:
 - ai
 - progressive-disclosure
 suspect: false
-fingerprint: sha256:cbf9400d206a
+fingerprint: sha256:4da90df7ea7d
 thinking_techniques:
-- assumption-surfacing
-- devil's-advocate
+- assumption_surfacing
+- devils_advocate
 links:
 - target: REQ-004
   role: derives_from
@@ -27,7 +27,7 @@ checklists_applied:
   timestamp: '2026-04-11T13:45:49Z'
 - checklist: check-ARCH-003
   timestamp: '2026-04-14T17:03:22Z'
-modified: '2026-06-15'
+modified: '2026-10-08'
 version: 1
 ---
 
@@ -56,9 +56,9 @@ on demand when run in a consumer project that uses them.
 | Roo Code | `.roo/skills/` | ✅ | — |
 | Kiro | `.kiro/skills/` | ✅ | — |
 | KiloCoder | `.kilocoder/skills/` | ✅ | — |
-| Codex | `.codex/skills/` | ✅ | — |
+| Codex | `.agents/skills/` (shared with Junie) | ✅ | — |
 | Trae | `.trae/skills/` | ✅ | — |
-| Junie | `.junie/skills/` | ✅ | — |
+| Junie | `.agents/skills/` (shared with Codex; one install) | ✅ | — |
 
 Platform auto-detection during `specflow init` scans for these directories.
 
@@ -83,7 +83,7 @@ Each skill is a directory containing:
 
 ```
 specflow-discover/
-├── SKILL.md              # Required: Core instructions and triggers (<500 lines)
+├── SKILL.md              # Required: Core instructions and triggers (lean router; budgeted, see below)
 ├── references/           # Optional: Domain knowledge loaded ON DEMAND
 │   ├── readiness-assessment.md
 │   ├── domain-checklists/
@@ -101,7 +101,7 @@ specflow-discover/
 ### `SKILL.md` (The Core)
 - **Frontmatter**: `name` and `description` in YAML
 - **Description**: The ONLY thing the agent reads to decide whether to trigger
-- **Body**: Imperative, high-level workflow instructions. Under 500 lines.
+- **Body**: Imperative, high-level workflow instructions. DEC-083 sets the outer cap at 500 lines; the enforced budgets are 120 lines for core skills and 300 for pack skills, with named per-file ceilings that may only shrink (tests/test_reference_lint.py).
 - **Single Agent Persona**: No explicit personas. One generalized agent scales ceremony to ambiguity.
 - **Progressive Loading**: ~50 tokens at startup, full content on invocation.
 
@@ -159,7 +159,7 @@ Each skill is a self-contained directory (SKILL.md + references/ + scripts/) reg
 
 ## Responsibility
 
-- SKILL.md: workflow instructions and trigger conditions (under 500 lines)
+- SKILL.md: workflow instructions and trigger conditions (lean router within the enforced line budget)
 - references/: on-demand domain knowledge loaded only when relevant
 - scripts/: zero-token deterministic operations delegated to shell/Python
 
@@ -176,7 +176,7 @@ User invokes skill → platform loads SKILL.md description (~50 tokens) → on i
 ## Skill Standards Compliance
 
 All skills conform to `docs/skill-standards.md`:
-- SKILL.md under 500 lines
+- SKILL.md within the enforced line budget (120 core / 300 pack; 500 outer cap per DEC-083)
 - `name` and `description` in frontmatter
 - `references/` for domain knowledge (on-demand)
 - `scripts/` for deterministic operations (zero-token)

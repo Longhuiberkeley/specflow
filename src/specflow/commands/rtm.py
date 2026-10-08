@@ -10,9 +10,15 @@ at its target — so finding "what verifies/decomposes X" means scanning every
 other artifact for a link whose `target` is X.
 
 No new link-role vocabulary is invented here (frozen per D-18). Decomposition
-uses the schema-allowed roles `derives_from`/`refined_by` (DEC-032 made
-`derives_from` canonical for ARCH, but older DDD links still use `refined_by`
-in the wild — both are accepted rather than silently "fixed"). Verification
+uses the schema-allowed roles `derives_from`/`refined_by` as held by the child
+(`ARCH derives_from REQ`, `DDD refined_by ARCH` — the legacy shapes; both are
+accepted rather than silently "fixed"). The canonical shape since v1.14.2 is
+held by the upstream spec (`REQ refined_by ARCH`, `ARCH refined_by DDD`, see
+DEC-091); `_children_of` follows both: a child-held `derives_from`/`refined_by`
+pointing at the parent, or a parent-held `refined_by` pointing at the child.
+Under `--gaps`, REQs in a terminal status (cancelled/deprecated/superseded,
+`lib/lint.py` TERMINAL_STATUSES) are hidden behind a footer count — nothing is
+owed to a retired requirement; `--include-terminal` shows them. Verification
 uses `verified_by` (test -> spec) and STORY implementation uses `implements`
 (STORY -> REQ), exactly as `status.py`'s coverage math already assumes.
 """
@@ -26,6 +32,7 @@ from typing import Any
 
 from specflow.lib import artifacts as art_lib
 from specflow.lib.display import RED, GREEN, YELLOW, BOLD, DIM, NC
+from specflow.lib.lint import TERMINAL_STATUSES
 
 _DECOMPOSE_ROLES = {"derives_from", "refined_by"}
 
@@ -36,10 +43,19 @@ def _children_of(
     roles: set[str],
     artifacts: list[art_lib.Artifact],
 ) -> list[art_lib.Artifact]:
-    """Artifacts of `child_type` holding a link {target: parent_id, role in roles}."""
+    """Artifacts of `child_type` reachable from `parent_id` either way:
+    the child holds {target: parent_id, role in roles} (legacy / test-held), or the
+    parent holds {target: child.id, role: refined_by} (canonical since v1.14.2)."""
     out: list[art_lib.Artifact] = []
+    parent = next((a for a in artifacts if a.id == parent_id), None)
+    parent_held = {
+        l.target for l in (parent.links if parent else []) if l.role == "refined_by"
+    } if "refined_by" in roles else set()
     for art in artifacts:
         if art.type != child_type:
+            continue
+        if art.id in parent_held:
+            out.append(art)
             continue
         for link in art.links:
             if link.target == parent_id and link.role in roles:
@@ -194,8 +210,15 @@ def run(root: Path, args: dict[str, Any]) -> int:
 
     rows = [_row_for_req(r, artifacts) for r in reqs]
 
+    hidden_terminal = 0
     if args.get("gaps"):
         rows = [r for r in rows if r["gaps"]]
+        if not args.get("include_terminal"):
+            # A retired REQ owes no ARCH/STORY/tests: hide it from the gap
+            # list (it still appears in the full matrix) and say how many.
+            visible = [r for r in rows if r["req"].status not in TERMINAL_STATUSES]
+            hidden_terminal = len(rows) - len(visible)
+            rows = visible
 
     orphans = _orphan_tests(artifacts)
 
@@ -206,5 +229,8 @@ def run(root: Path, args: dict[str, Any]) -> int:
         _render_csv(rows, orphans)
     else:
         _render_table(rows, orphans)
+
+    if hidden_terminal and fmt != "csv":
+        print(f"{DIM}{hidden_terminal} terminal REQ(s) hidden; --include-terminal to show{NC}")
 
     return 0

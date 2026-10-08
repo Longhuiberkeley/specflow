@@ -15,29 +15,40 @@ For the slash command surface, see [commands.md](commands.md). For the lifecycle
 Scaffold a SpecFlow project in the current directory.
 
 ```bash
-specflow init [--preset PRESET] [--no-ci]
+specflow init [--platform PLATFORM] [--preset PRESET] [--with-types TYPES] [--no-ci] [--domain DOMAIN] [--domain-tags TAGS] [--force]
 ```
 
 | Flag | Purpose |
 |------|---------|
-| `--preset` | Industry pack preset (e.g., `iso26262-demo`, `adoption` for existing codebases) |
+| `--platform` | AI platform code (e.g., `claude-code`, `cursor`, `windsurf`). Defaults to the detected platform. |
+| `--preset` | Comma-separated packs to install (e.g., `autoresearch`, `ops`, `tldr-communication`, `adoption` for existing codebases, `iso26262-demo`) |
+| `--with-types` | Comma-separated optional artifact types to enable (e.g., `hazard,risk,control`) |
 | `--no-ci` | Skip CI workflow installation (CI workflow is installed by default) |
+| `--domain` | Project domain (e.g., `embedded`, `api-service`, `web-app`, `quant`, `ml`) |
+| `--domain-tags` | Comma-separated domain tags (e.g., `real-time,safety-critical`) |
+| `--force` | Force a clean re-initialization (backs up existing config/state/schemas first) |
+
+`init` also writes an empty `.specflow/findings-baseline.yaml`, so new projects start with the lint ratchet on (see [`specflow findings-baseline`](#specflow-findings-baseline)).
 
 ### `specflow refresh`
 
 Update the copied skills, agent-context block, and templates in this repo to match the installed SpecFlow version — without a full re-init. Run this after upgrading SpecFlow (`uv tool install --force git+https://github.com/Longhuiberkeley/specflow`) so new routing triggers, lifecycle fixes, and reference docs land in `.claude/skills/` (and the other platform skill dirs). It is the only way installed skills stay current after an upgrade. (SpecFlow is distributed from Git only — not on PyPI — so install and upgrade always use the Git source.)
 
 ```bash
-specflow refresh [--platform <code>] [--schemas [--force]] [--dry-run]
+specflow refresh [--platform <code>] [--all-platforms] [--no-skills] [--no-context] [--schemas] [--checklists] [--packs] [--force] [--dry-run]
 ```
 
 | Flag | Purpose |
 |------|---------|
 | `--platform` | Target a specific platform's skill dir (e.g., `opencode`, `codex`). Defaults to the detected/installed platform. |
 | `--all-platforms` | Refresh skills for every detected AI-host platform dir, not just one |
+| `--no-skills` | Skip the skill update |
+| `--no-context` | Skip the agent-context re-injection into the instruction file |
 | `--schemas` | Also update base schema files. Installs missing schemas; **preserves** schemas that have drifted from shipped defaults (prints which ones). |
-| `--force` | With `--schemas`, replaces drifted schemas with shipped defaults instead of preserving them. |
-| `--dry-run` | Classify every schema as new / identical / changed and report without writing anything. |
+| `--checklists` | Also update base checklist templates (writes missing, repairs unparseable; preserves changed unless `--force`) |
+| `--packs` | Also refresh assets for the configured active packs |
+| `--force` | Replace drifted generated schemas, checklists, and pack skills with shipped defaults instead of preserving them (applies to `--schemas`, `--checklists`, `--packs`). |
+| `--dry-run` | Show what would change (new / identical / changed) without writing anything. |
 
 `--schemas` is safe by default: a schema you (or prior tooling) edited is never silently overwritten — it is preserved with an actionable hint (`run specflow refresh --schemas --force to replace`). `--force` explicitly restores shipped defaults for drifted schemas. `brief` surfaces the same drift signal as a health nag.
 
@@ -131,6 +142,23 @@ specflow update ARTIFACT_ID --links '[{"target": "ARCH-007", "role": "implements
 
 `--links` cannot be combined with `--add-link`/`--remove-link` (ambiguous), and `--ac`, `--body`, and `--set body=` are pairwise exclusive (they all write the body). Malformed link input fails with an error and leaves the artifact untouched. A `--status` not in the type's `allowed_status` is rejected (with a did-you-mean hint); an artifact whose current status is itself invalid can be corrected to any legal status via `--status` (repair path — it is never locked out of the CLI). A dotted `--set` key whose head is not a declared nested-map field fails loudly; an unknown flat `--set` key that is a near-miss of a known field errors with a suggestion — except keys already present in the artifact's frontmatter, which are established custom fields and always pass through. Passing `--confidence` to `create` or `update` (no such flag exists) hints at `--set risk_profile.confidence=<value>` on DEC artifacts, where `risk_profile` is declared; advisory only.
 
+### `specflow approve`
+
+Move every artifact of one type from one status to the next in a single call — the bulk form of `update --status`, for the moment a reviewer says "approve all the draft REQs".
+
+```bash
+specflow approve --type REQ [--status draft] [--target-status approved] [--yes]
+```
+
+| Flag | Purpose |
+|------|---------|
+| `--type` | ID prefix or type name to approve (e.g. `REQ`, `STORY`, `requirement`); required |
+| `--status` | Only move artifacts currently in this status (default: `draft`) |
+| `--target-status` | Status to move them to (default: `approved`) |
+| `--yes` | Skip the confirmation prompt (CI / scripted use) |
+
+Approval is a human act: the command prints the full ID list and asks for one confirmation; skills never auto-invoke it inside a flow, and it never reads past approvals to size or skip the batch. The agent presents the exact `approve --type …` line (as `specflow brief` does, with the draft IDs and their impact) and runs it only on the user's go-ahead. The same transition legality as `update --status` applies, so an illegal target is rejected per artifact with the legal predecessor states (`Allowed from: …`) and a `specflow transitions <ID>` hint.
+
 ---
 
 ## Execute Phase
@@ -175,6 +203,38 @@ specflow phase-set PHASE [--reason TEXT]
 |------|---------|
 | `PHASE` | Target phase: `idle`, `discovering`, `specifying`, `planning`, `executing`, `verifying`, `complete` |
 | `--reason` | Why the phase is being set (recorded in history) |
+
+### `specflow phase-status`
+
+Readiness view for the current phase: which gate-checklist items pass, which block, and what to run next. Read-only — `phase-set` records moves, `phase-status` reports readiness.
+
+```bash
+specflow phase-status
+```
+
+### `specflow cascade-status`
+
+Cascade a STORY's status to its linked ARCH/DDD (and, with `--include-req`, the REQ) when every sibling has reached the same status; writes only legal transitions and fails loudly otherwise. `--dry-run` previews the writes.
+
+```bash
+specflow cascade-status STORY-001 [--include-req] [--dry-run]
+```
+
+### `specflow reconcile`
+
+Promote `approved` STORYs that already have implementation evidence (declared output files on disk or git commits naming the story) to `implemented`; `--no-cascade` skips the follow-on ARCH/DDD cascade, `--dry-run` previews.
+
+```bash
+specflow reconcile [--dry-run] [--no-cascade]
+```
+
+### `specflow generate-tests`
+
+Create UT/IT/QT stub artifacts for implemented spec artifacts that lack their V-model pair; `--from ID` targets one artifact, `--dry-run` lists what would be created.
+
+```bash
+specflow generate-tests [--from ID] [--dry-run]
+```
 
 ### `specflow verify`
 
@@ -255,6 +315,16 @@ learning:
     - premortem
 ```
 
+### `specflow practices`
+
+Manage the bundled best-practice (BP) seeds and their provenance: `seed` lists or creates the bundled generic/domain practices (no API key), `validate` checks BP anatomy, metadata, and supersession lineage, and `migrate` stamps provenance on legacy BP artifacts. The old `handbook generate` form is a deprecated alias for `practices seed`.
+
+```bash
+specflow practices seed [--create] [--verbose]     # title index by default; --create writes draft BPs
+specflow practices validate
+specflow practices migrate [--dry-run]
+```
+
 ---
 
 ## Introspection
@@ -270,6 +340,16 @@ specflow transitions ARTIFACT_ID
 ```
 
 Prints the artifact's current type/status, its legal next states, and the full transition table for the type. The same hint is printed whenever `update --status` is rejected.
+
+### `specflow trace`
+
+Walk one artifact's lineage in both directions: upstream sources and standards (what it derives from, implements, or complies with) and downstream implementation and verification (what refines, implements, or verifies it), plus the chain depth. The answer to "what supersedes / implements / verifies X?" — inverse roles are queried here, never authored.
+
+```bash
+specflow trace ARTIFACT_ID
+```
+
+`specflow brief` is the project-wide digest; `trace` is the per-ID follow-up it points at. Memory recall in the agent context is built on the pair.
 
 ### `specflow list`
 
@@ -313,23 +393,48 @@ The deterministic floor is Tier 2 when the change is **irreversible** (a status 
 Run deterministic validation checks on artifacts. Zero tokens. Findings that already fire append a deterministic one-command `→ fix:` remedy where one exists (typo status → `update --status`, stale fingerprint → `fingerprint-refresh`, missing/empty AC → `update --ac`); genuinely-ambiguous findings get no hint. No new warnings, exit codes unchanged.
 
 ```bash
-specflow artifact-lint [--type CHECK] [--fix] [--gate GATE] [--method {programmatic,llm}]
+specflow artifact-lint [ID ...] [--type CHECK] [--fix] [--gate GATE] [--as-of YYYY-MM-DD] [--verbose]
 ```
+
+| Flag | Purpose |
+|------|---------|
+| `--type` | Run only one check. The full list of check names is printed by the command's `--help`; a selection is described below. |
+| `--fix` | Auto-fix the mechanical findings (rebuild indexes, recompute fingerprints) |
+| `--gate` | Run one phase-gate checklist by name |
+| `ID ...` | Positional artifact IDs, accepted for convenience: the run stays repo-wide and prints a one-line note that the IDs were ignored. Narrow with `--type`, or use `specflow artifact-review <ID>` for one artifact |
+| `--as-of` | Date that time-dependent checks (SPIKE staleness) measure against (default: today, UTC). Makes a run reproducible. |
+| `--verbose` | List every finding, including the ones already recorded in the findings baseline. By default a check with baselined findings prints `N known (baselined), M new` and lists only the new lines. |
+| `--method` | Hidden (not in `--help`); accepted and ignored for compatibility with previously generated CI. Every check is deterministic, so `--method llm` behaves exactly like a bare run |
+
+The authoritative list of `--type` names is the command's `--help`; the ones most often run alone:
 
 | Check Type | What it validates |
 |------------|-------------------|
 | `schema` | Required fields, ID format, status values |
 | `links` | Link integrity, orphan detection, V-model pairs |
-| `status` | Status lifecycle consistency |
-| `ids` | ID uniqueness, format, dot-notation depth |
-| `fingerprints` | Content fingerprint staleness |
-| `acceptance` | REQs have acceptance criteria |
-| `conflicts` | Cross-REQ constraint contradictions |
 | `coverage` | REQ→STORY→test completeness |
-| `story-size` | Story decomposition heuristics |
-| `dec-risk-profile` | Advisory: approved DEC has no persisted `risk_profile` (warn-only, never in `--type gate`) |
-| `ac-observable` | Advisory: REQ-level count of aspirational acceptance criteria (observable vs aspirational vs unclassified; warn-only, never in `--type gate`) |
 | `gate` | Phase-gate checklist validation |
+
+Advisory checks such as `dec-risk-profile` and `ac-observable` are warn-only and never part of `--type gate`.
+
+A full run (no `--type`) is read-only and prints an `Inputs:` line (the as-of date and the source-drift store state); its exit code depends only on the repository, that date, and the committed findings baseline below. Escalating warnings not recorded in the baseline fail the run; accounting-class checks (fingerprint-drift, bp-application, dead-oracle, conflicts, quality, ac-observable, dec-risk-profile, spike staleness) never escalate (@DEC-099).
+
+### `specflow findings-baseline`
+
+The lint ratchet. `.specflow/findings-baseline.yaml` is the committed list of known escalating findings; a full `artifact-lint` run fails on an escalating finding that is **not** in it, treats recorded ones as known debt, and ratchets resolved ones out. This replaced the run-count escalation (`.specflow/lint-warning-history.yaml`) in v1.17.1 (@DEC-099).
+
+```bash
+specflow findings-baseline update [--accept-new] [--as-of YYYY-MM-DD]
+specflow findings-baseline diff [--as-of YYYY-MM-DD]
+```
+
+| Subcommand | Purpose |
+|------------|---------|
+| `update` | The only writer of the baseline (under the mutation lock). Seeds it when absent and drops resolved keys whenever it writes. New keys are written only with `--accept-new` (approval-gated: each accepted key is printed); with unaccepted new keys it writes nothing (resolved keys included) and exits 1. |
+| `diff` | Read-only: lists new, known, and resolved findings against the baseline. Exit 1 when there are new findings, so CI can use it as a check. |
+| `--as-of` | Both subcommands: the date time-dependent checks measure against (same meaning as `artifact-lint --as-of`), so the keys match a reproducible lint run |
+
+`init` writes an empty baseline, so new projects start with the ratchet on. Upgrading an existing project: run `specflow findings-baseline update` once and commit the file — until then the ratchet is off and every full lint run prints a hint. After `renumber-drafts`, run `findings-baseline update --accept-new` in the same change (the keys include the renamed IDs). **Sunset (v1.18.0):** an absent baseline reads as empty, i.e. every escalating finding is new.
 
 ### `specflow checklist-run`
 
@@ -341,19 +446,23 @@ specflow checklist-run [ARTIFACT_ID] [--all] [--gate GATE] [--proactive] [--dedu
 
 ### `specflow artifact-review`
 
-Compose lint, checklist review, and thinking technique prompts.
+Compose lint, checklist review, and thinking technique prompts. The only artifact write is the `checklists_applied` stamp on each target; the checklist pass also writes a local log under `.specflow/checklist-log/`, and missing challenge/review schemas are bootstrapped on first use.
 
 ```bash
-specflow artifact-review [ARTIFACT_ID] [--all] [--depth {quick,normal,deep}] [--techniques TECHNIQUES] [--gate GATE]
+specflow artifact-review [ARTIFACT_ID] [--all] [--depth {quick,normal,deep}] [--techniques TECHNIQUES] [--gate GATE] [--proactive]
 ```
 
 | Flag | Purpose |
 |------|---------|
-| `--all` | Review all artifacts |
+| `--all` | Review all artifacts (the checklist sweep) |
 | `--depth` | `quick` (lint+checklist), `normal` (add agent-judged checks), `deep` (add thinking technique prompts) |
-| `--techniques` | Comma-separated techniques for `--depth deep` |
+| `--techniques` | Comma-separated techniques for `--depth deep` (prompted for when omitted) |
 | `--gate` | Phase-gate checklist |
-| `--proactive` | Include proactive challenge items |
+| `--proactive` | Include proactive challenge items — shown when no blocking automated check failed; each prints with a `Hint:` line (the item's `llm_prompt`, when it has one) for the host agent to evaluate |
+
+- **No ID and no `--all`:** runs lint only and says so. The checklist sweep stamps `checklists_applied` on every artifact it visits, so it never runs implicitly over the whole project.
+- **`--depth deep`:** prints each lens as a self-contained prompt for the host agent, then the exact recording command — `specflow update <ID> --thinking-techniques <a,b>` — to run *after* the lenses have been applied. The CLI never stamps `thinking_techniques` itself; stamping before the review would silence the `unchallenged` lint for nothing.
+- Findings are reported, not written back: the review pass creates no REVIEW, CHL or PREV artifacts (learned patterns come from `specflow done` and `specflow verify --seed-prev`).
 
 ### `specflow project-audit`
 
@@ -399,7 +508,7 @@ specflow baseline create TAG
 specflow baseline diff BASELINE_A BASELINE_B
 ```
 
-Names must be semver-shaped (`v1.2`, `v1.2.3`, `v1.2.3-rc1`): freeform names are rejected at create time so drift selection always has release versions to prefer (@CHL-NONSEMVE-c16b). Pre-existing freeform baselines are grandfathered — baselines are write-once, so nothing on disk is migrated or rejected after the fact.
+Names must be semver-shaped (`v1.2`, `v1.2.3`, `v1.2.3-rc1`): freeform names are rejected at create time so drift selection always has release versions to prefer (@CHL-351). Pre-existing freeform baselines are grandfathered — baselines are write-once, so nothing on disk is migrated or rejected after the fact.
 
 ### `specflow autoresearch`
 
@@ -487,8 +596,15 @@ The MONITOR's `observed_at` / `health` / `metrics` / `signals` / `captures` are 
 Generate CI workflow files from `adapters.yaml` configuration.
 
 ```bash
-specflow ci generate
+specflow ci generate [--force] [--dry-run]
 ```
+
+| Flag | Purpose |
+|------|---------|
+| `--force` | Overwrite a workflow file that differs from the generated content, after backing it up under `.specflow/cache/backups/<timestamp>/ci/` |
+| `--dry-run` | Report what would happen (`new` / `unchanged` / `differs`, with a unified diff for a file that differs) without writing anything |
+
+An existing file that is byte-identical to the generated content is reported `unchanged`. One that differs is preserved with a warning (hand edits are the user's) and the command prints the `--force` and `--dry-run` hints; nothing is overwritten without `--force`.
 
 ### `specflow rbac check`
 
@@ -506,11 +622,20 @@ specflow rbac check [--email EMAIL] [--type TYPE --to-status STATUS]
 
 ### `specflow hook install`
 
-Install `.git/hooks/pre-commit` for pre-commit validation.
+Install the specflow pre-commit hook into the directory git actually runs hooks from — resolved with `git rev-parse --git-path hooks`, so linked worktrees and a `core.hooksPath` override both land in the right place (a `note:` names the hooks path when one is set). `specflow init` calls the same installer.
 
 ```bash
-specflow hook install
+specflow hook install [--force]
 ```
+
+| Flag | Purpose |
+|------|---------|
+| `--force` | Replace a hook specflow does not own, or install into a global/system `core.hooksPath`; the previous hook is backed up first |
+
+- **Ownership** is the template's header line (`# specflow pre-commit hook — installed by …`). A hook that carries it is upgraded in place (or reported `up to date` when identical); one without it belongs to someone else and is left as-is with exit 1 — the message offers `specflow hook install --force`, or keeping your own hook (pre-commit framework, lefthook, husky) and adding the line `specflow hook pre-commit` to it.
+- **Backups:** any hook that is rewritten (foreign under `--force`, or an older specflow hook) is first copied to `.specflow/cache/backups/<timestamp>/hooks/pre-commit`.
+- A `core.hooksPath` from the global or system git config is shared by every repository on the machine, so installing there is refused unless `--force`.
+- Not a git repository, or not the top level of its working tree (a project nested inside another repository): exit 1, nothing written.
 
 ### `specflow hook pre-commit`
 
@@ -518,6 +643,22 @@ Run the pre-commit check (called by the git hook).
 
 ```bash
 specflow hook pre-commit
+```
+
+### `specflow ci-gate`
+
+Server-side RBAC gate for pull requests: walks every commit in `base..head` that touched an artifact and checks each consecutive status pair for schema legality, authorization of that commit's author, and that author's independence from the file's earlier authors — a PR is judged as a history, so an unauthorized intermediate approval cannot hide behind a clean net diff. With no team roles configured every check passes. Git-only, provider-agnostic.
+
+```bash
+specflow ci-gate --base origin/main --head "$GITHUB_SHA"
+```
+
+### `specflow pack-validate`
+
+Validate a standards/compliance pack directory: `pack.yaml` manifest fields, the `SKILL.md` of every skill the pack adds, the standards and schema file layout, and the bare-`specflow` invocation rule for shipped skill scripts. The shipped `validate-pack.sh` defers to it.
+
+```bash
+specflow pack-validate .specflow/packs/<name>/
 ```
 
 ---

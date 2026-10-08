@@ -26,10 +26,14 @@ A thin, host-neutral router: orient on project state, then point at the right ne
    - (b) → `/specflow-change-impact-review`
    - (c) → `/specflow-audit`
 
-   Another: "build X" with no REQs yet → `/specflow-discover`; with REQs already approved → `/specflow-execute`.
+   Another: "build X" — no REQs yet → `/specflow-discover`; approved REQs but no STORYs → `/specflow-plan`; approved STORYs (or a trivial change that still needs a STORY) → `/specflow-execute`. `brief --next` routes approved REQs with no STORY to `/specflow-plan`; the discover lean path (one REQ + one STORY, no ARCH by design) goes to `/specflow-execute` while a covering STORY is approved, and to `/specflow-artifact-review` → `/specflow-ship` once every covering STORY is implemented/verified.
    Docs intent — "write/update the docs or README", "cite the spec from a doc", "are the docs stale / out of date" → `/specflow-doc`.
 
 5. **Do not call the Skill tool yourself.** Tell the user which slash-command to run. This keeps routing host-neutral — it works identically on Claude Code, OpenCode, Codex, and the ALM/CLI lane.
+
+## Delegating to subagents
+
+When you fan work out to subagents, each brief carries: the skill to follow (name it — `/specflow-execute`, `/specflow-plan` — so the subagent reads that SKILL.md first), the current `specflow brief --next` output, and the exact STORY/REQ IDs in scope — never "the next story". Allocate IDs serially in the parent before fan-out (`specflow create ...` once per artifact, then pass the IDs); parallel creates race the index. Tell subagents to read skill references with a bounded read (`sed -n 1,80p <file>`, or the host's file-read tool with a line range), never `cat <file> | head` — a closed pipe aborts the command. Subagents report back the IDs they changed and the exact `specflow update ...` commands they ran; the parent runs `specflow artifact-lint` once after the wave.
 
 ## Rules
 - Always run `brief --next` first — the recommendation is deterministic and free.

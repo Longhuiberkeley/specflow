@@ -134,7 +134,7 @@ class TestGenerateEvidenceReport:
 
 
 class TestPredecessorSelection:
-    """CHL-NONSEMVE-c16b: the Baseline Snapshot's diff predecessor follows the
+    """CHL-351: the Baseline Snapshot's diff predecessor follows the
     semver-prefer policy — a release target diffs against the previous
     release; a freeform target with >=2 releases on disk diffs against the
     newest release instead of a freeform sibling; pure-freeform histories

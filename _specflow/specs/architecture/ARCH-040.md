@@ -19,11 +19,11 @@ links:
   role: guided_by
 created: '2026-09-30'
 thinking_techniques:
-- assumption-surfacing
+- assumption_surfacing
 - premortem
-- devil's-advocate
+- devils_advocate
 fingerprint: sha256:6f851214ea4b
-modified: '2026-09-30'
+modified: '2026-10-08'
 ---
 
 # Shipped-surface guards, pack resolution and format versioning

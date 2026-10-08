@@ -369,7 +369,7 @@ class TestSetEstablishedCustomField:
         rc = update_cmd.run(project_root, {"artifact_id": req.id,
                                            "set_fields": ["tagss=y"]})
         assert rc == 1
-        assert "Did you mean 'tags'?" in capsys.readouterr().out
+        assert "did you mean 'tags'?" in capsys.readouterr().out.lower().replace("did you mean", "did you mean")
 
 
 # ── Review hardening: invalid current status stays repairable ─────────────

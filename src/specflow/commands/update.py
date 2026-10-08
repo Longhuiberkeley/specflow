@@ -9,21 +9,40 @@ from pathlib import Path
 from specflow.lib import artifacts as art_lib
 from specflow.lib import defects as defects_lib
 from specflow.lib.display import RED, GREEN, YELLOW, NC
+from specflow.lib.stdin_probe import stdin_has_data
 
 _SENTINEL_NAMES = {"lean_assessment"}
 
 # Frontmatter keys owned by their producer commands, never writable through
 # the generic frontmatter editor even though the type schema declares them.
-# `evaluator_fingerprint` is the frozen setup identity of a COMP and the
-# per-EXPT harness stamp (REQ-047/STORY-676): a hand-set value would launder
-# evaluator drift (the same threat model `autoresearch log` enforces). The
-# schema lists it under optional_fields, so parse_set_fields alone accepts it.
+# Identity keys (id/type/created) come from the one shared set in
+# lib/artifacts.py; `suspect` is owned by the impact log (a hand-cleared flag
+# would bypass the resolution record); `evaluator_fingerprint` is the frozen
+# setup identity of a COMP and the per-EXPT harness stamp (REQ-047/STORY-676):
+# a hand-set value would launder evaluator drift (the same threat model
+# `autoresearch log` enforces). The schema lists it under optional_fields, so
+# parse_set_fields alone accepts it.
 _RESERVED_SET_KEYS = {
+    **art_lib.IDENTITY_SET_KEYS,
+    "suspect": (
+        "suspect flags are managed by the impact log — clear one with "
+        "'specflow change-impact --resolve <ID>', raise them with "
+        "'specflow change-impact --flag'"
+    ),
     "evaluator_fingerprint": (
         "stamped by the harness at COMP setup and by "
         "'specflow autoresearch log' for EXPTs — edit the evaluator or create "
         "a successor COMP instead"
     ),
+}
+
+# `--set KEY=null` removes KEY from the frontmatter. Required/identity fields
+# and the dedicated-flag fields below can never be removed this way; each
+# value names the flag that legitimately changes that field.
+_NULL_PROTECTED_KEYS = {
+    "status": "every artifact has a status — use --status to transition it",
+    "title": "every artifact has a title — use --title to rename it",
+    "links": "use --links '[]' to clear the links or --remove-link TARGET for one",
 }
 
 # Artifact-ID-shaped tokens (e.g. ARCH-007, DEF-3). A target gets a "not
@@ -90,6 +109,28 @@ def run(root: Path, args: dict) -> int:
             print(f"{RED}✗ --set {key} is reserved ({_RESERVED_SET_KEYS[key]}).{NC}")
         return 1
 
+    # `--set KEY=null` means "remove KEY". It used to parse to None, which the
+    # writer silently skipped while the command still printed "✓ Updated".
+    # The RAW entries are scanned, not the parsed values: parse_set_fields
+    # normalizes list-valued keys (tags, output_files, thinking_techniques)
+    # from null to [], which would write an empty list instead of removing
+    # the key. Required fields (schema) and the dedicated-flag fields stay
+    # protected; an empty body is the existing no-op (handled below).
+    null_keys = _null_set_keys(args.get("set_fields"))
+    required_keys = set(_schema_required_keys(root, existing_fm))
+    for key in list(updates):
+        if key not in null_keys or key == "body":
+            continue
+        if key in _NULL_PROTECTED_KEYS:
+            print(f"{RED}✗ --set {key}=null: '{key}' cannot be removed with --set; "
+                  f"{_NULL_PROTECTED_KEYS[key]}.{NC}")
+            return 1
+        if key in required_keys:
+            print(f"{RED}✗ --set {key}=null: '{key}' is required on this artifact "
+                  f"and cannot be removed.{NC}")
+            return 1
+        updates[key] = art_lib.UNSET
+
     # Validate a --set links= payload the same way as an explicit --links flag,
     # so malformed entries fail loudly here instead of being written raw by
     # update_artifact. Remember whether --set supplied links for the conflict
@@ -102,10 +143,10 @@ def run(root: Path, args: dict) -> int:
     # --set body= with an empty value is a no-op (consistent with the --body
     # flag, where an empty string never reaches the writer). Without this, an
     # empty value silently wipes the whole body with exit 0.
-    if set_provided_body and not str(updates["body"]).strip():
+    if set_provided_body and (updates["body"] is None or not str(updates["body"]).strip()):
         updates.pop("body")
         set_provided_body = False
-    if set_provided_links:
+    if set_provided_links and updates["links"] is not art_lib.UNSET:
         raw_links = updates["links"]
         if isinstance(raw_links, str):
             try:
@@ -220,7 +261,10 @@ def run(root: Path, args: dict) -> int:
 
     thinking_techniques_str = args.get("thinking_techniques")
     if thinking_techniques_str:
-        new_techniques = [t.strip() for t in thinking_techniques_str.split(",") if t.strip()]
+        # Same normaliser as the read boundary: a value quoted as a whole
+        # ("[premortem, dependency_shock]") is unwrapped instead of writing
+        # the bracketed tokens "[premortem" / "dependency_shock]".
+        new_techniques = art_lib._normalize_str_list(thinking_techniques_str)
         if new_techniques:
             from specflow.lib.techniques import ALL_LENS_NAMES
             unknown = [t for t in new_techniques if t not in ALL_LENS_NAMES and t not in _SENTINEL_NAMES]
@@ -280,33 +324,19 @@ def run(root: Path, args: dict) -> int:
         updates["body"] = lint_lib.set_acceptance_criteria(_ac_art.body, ac_text)
     elif body:
         updates["body"] = body
-    elif not sys.stdin.isatty():
-        import select
+    elif stdin_has_data():
         # Only read stdin for a dedicated body-only update. With other field
         # updates, even a readable pipe may still be open (partial streaming
         # input), so reading to EOF could hang; detect presence without
-        # consuming and advise instead.
-        try:
-            readable = bool(select.select([sys.stdin], [], [], 0.0)[0])
-        except (OSError, ValueError):
-            readable = False
-            # pytest capture / StringIO has no fileno(). A one-character
-            # seekable probe is safe and restores the original position.
-            try:
-                if sys.stdin.seekable():
-                    pos = sys.stdin.tell()
-                    readable = bool(sys.stdin.read(1))
-                    sys.stdin.seek(pos)
-            except Exception:
-                readable = False
-
-        if readable and (updates or has_output_files_update):
+        # consuming and advise instead. EOF-only stdin (</dev/null, an empty
+        # closed pipe, an agent harness) is not data and stays silent.
+        if updates or has_output_files_update:
             print(f"{YELLOW}⚠ Stdin data ignored (body NOT replaced) because "
                   f"other fields are updated in the same call. To replace "
                   f"the body, run a dedicated "
                   f"'specflow update {artifact_id}' with the piped body "
                   f"and no other flags, or use --body.{NC}")
-        elif readable:
+        else:
             piped = sys.stdin.read()
             if piped:
                 updates["body"] = piped
@@ -320,6 +350,9 @@ def run(root: Path, args: dict) -> int:
     result = art_lib.update_artifact(root=root, artifact_id=artifact_id, **updates)
 
     if result["ok"]:
+        if result.get("changed") is False:
+            print(f"{GREEN}✓ No changes to apply to {result['id']}{NC}")
+            return 0
         print(f"{GREEN}✓ Updated {result['id']}{NC}")
         # DEF closure hook: trigger reactive challenge-engine pattern extraction
         # when a defect transitions to `closed`. Best-effort — failures here
@@ -343,6 +376,33 @@ def run(root: Path, args: dict) -> int:
     else:
         print(f"{RED}✗ {result['error']}{NC}")
         return 1
+
+
+def _null_set_keys(set_list: list[str] | None) -> set[str]:
+    """Flat keys whose raw ``--set`` value is JSON ``null`` (remove-key requests).
+
+    Dotted keys (``map.sub=null``) are nested-map edits handled by
+    ``parse_set_fields`` and are not removal requests.
+    """
+    keys: set[str] = set()
+    for entry in set_list or []:
+        if "=" not in entry:
+            continue
+        key, raw = entry.split("=", 1)
+        key = key.strip()
+        if key and "." not in key and raw.strip() == "null":
+            keys.add(key)
+    return keys
+
+
+def _schema_required_keys(root: Path, existing_fm: dict | None) -> list[str]:
+    """Required-field names of the artifact's type schema (empty when unknown)."""
+    if not existing_fm:
+        return []
+    schema = art_lib._read_schema(root / ".specflow" / "schema", existing_fm.get("type", ""))
+    if not schema:
+        return []
+    return [str(k) for k in schema.get("required_fields", []) or []]
 
 
 # ── Link-management helpers (A1) ──────────────────────────────────────

@@ -13,8 +13,8 @@ created: '2026-09-25'
 fingerprint: sha256:bb9678cd9e21
 thinking_techniques:
 - premortem
-- dependency-shock
-modified: '2026-09-25'
+- dependency_shock
+modified: '2026-10-08'
 ---
 
 # Evaluator fingerprint and drift routing (REQ-047)

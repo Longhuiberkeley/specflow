@@ -26,7 +26,7 @@ links:
   role: verified_by
 - target: QT-028
   role: verified_by
-- target: SPIKE-CHECKLIS-1a12
+- target: SPIKE-007
   role: derives_from
 created: '2026-08-10'
 fingerprint: sha256:7642a070b2c7

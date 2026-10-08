@@ -8,9 +8,11 @@ links:
 - target: REQ-022
   role: derives_from
 created: '2026-05-04'
-modified: '2026-05-04'
+modified: '2026-10-08'
 fingerprint: sha256:829c96b2d7ea
-thinking_techniques: [assumption-surfacing, devil's-advocate]
+thinking_techniques:
+- assumption_surfacing
+- devils_advocate
 ---
 
 # Init Upgrade Engine

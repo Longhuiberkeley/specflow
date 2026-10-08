@@ -17,6 +17,15 @@ from specflow.lib import artifacts as art_lib
 
 _SEVERITY_ORDER = {"high": 0, "medium": 1, "low": 2}
 
+# Shown when `.specflow/standards/` holds no YAML. Deliberately neutral: no
+# shipped preset carries a standard, so pointing at `init --preset` was a dead
+# end. The only route to a standard is authoring (or copying) a pack.
+NO_STANDARDS_MESSAGE = (
+    "No standards installed in this project (nothing under .specflow/standards/). "
+    "Author a standards pack with /specflow-pack-author; it is written to "
+    ".specflow/packs/<name>/."
+)
+
 REMEDIATION_MAP: dict[str, str] = {
     "safety": "Consider creating a requirement with tags: [hazard, safety]",
     "security": "Consider creating a requirement with tags: [security, threat-model]",
@@ -75,12 +84,20 @@ def get_clause_by_id(root: Path, clause_id: str) -> dict[str, Any] | None:
     return None
 
 
+def remediation_command(clause_id: str) -> str:
+    """The deterministic CLI command that scaffolds a draft REQ for a clause."""
+    return f"specflow create --from-standard {clause_id}"
+
+
 def suggest_remediation(clause: dict[str, Any]) -> str:
     category = clause.get("category", "functional")
     severity = clause.get("severity", "medium")
     base = REMEDIATION_MAP.get(category, REMEDIATION_MAP["functional"])
     if severity == "high":
         base += " (high severity — prioritize)"
+    clause_id = clause.get("id", "")
+    if clause_id:
+        base += f" → {remediation_command(clause_id)}"
     return base
 
 
@@ -97,6 +114,18 @@ def _standards_dir(root: Path) -> Path:
     return root / ".specflow" / "standards"
 
 
+def _display_path(path: Path, root: Path) -> str:
+    """Render ``path`` relative to ``root`` for messages.
+
+    Compliance errors are copied into evidence packs, so an absolute path would
+    make the exported pack machine-specific.
+    """
+    try:
+        return path.relative_to(root).as_posix()
+    except ValueError:
+        return str(path)
+
+
 def list_installed_standards(root: Path) -> list[str]:
     """Return the names of installed standards (file stems, sorted)."""
     d = _standards_dir(root)
@@ -105,33 +134,69 @@ def list_installed_standards(root: Path) -> list[str]:
     return sorted(p.stem for p in d.glob("*.yaml"))
 
 
-def load_standard(root: Path, standard_name: str) -> dict[str, Any] | None:
-    """Load a single standard file by name (without .yaml extension)."""
+def load_standard_checked(
+    root: Path, standard_name: str
+) -> tuple[dict[str, Any] | None, str | None]:
+    """Load a single standard file by name, reporting why it could not be used.
+
+    Returns ``(data, None)`` on success, otherwise ``(None, error)`` where the
+    error names the file and distinguishes a missing file from a YAML parse
+    failure and from a file whose top level is not a mapping. ``load_standard``
+    is the error-blind convenience wrapper around this.
+    """
     path = _standards_dir(root) / f"{standard_name}.yaml"
+    shown = _display_path(path, root)
     if not path.exists():
-        return None
+        return None, f"Standard '{standard_name}' not found ({shown})."
     try:
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    except Exception:
-        return None
+    except (yaml.YAMLError, OSError, UnicodeDecodeError) as exc:
+        detail = " ".join(str(exc).split())
+        return None, f"Standard '{standard_name}' is unreadable ({shown}): {detail}"
     if not isinstance(data, dict):
-        return None
+        return None, (
+            f"Standard '{standard_name}' must be a YAML mapping with a "
+            f"'clauses' list ({shown}); got {type(data).__name__}."
+        )
+    return data, None
+
+
+def load_standard(root: Path, standard_name: str) -> dict[str, Any] | None:
+    """Load a single standard file by name (without .yaml extension)."""
+    data, _error = load_standard_checked(root, standard_name)
     return data
+
+
+def load_standards_checked(
+    root: Path, standard_name: str | None = None
+) -> tuple[list[dict[str, Any]], dict[str, str]]:
+    """Load one or all installed standards, returning ``(loaded, errors)``.
+
+    ``errors`` maps the name of every installed standard that could not be
+    loaded to its error message, so callers can surface a malformed file
+    instead of silently treating it as absent.
+    """
+    names = [standard_name] if standard_name else list_installed_standards(root)
+    results: list[dict[str, Any]] = []
+    errors: dict[str, str] = {}
+    for name in names:
+        data, error = load_standard_checked(root, name)
+        if data is not None:
+            results.append(data)
+        elif error:
+            errors[name] = error
+    return results, errors
 
 
 def load_standards(
     root: Path, standard_name: str | None = None
 ) -> list[dict[str, Any]]:
-    """Load one or all standards installed in the project."""
-    if standard_name:
-        data = load_standard(root, standard_name)
-        return [data] if data else []
+    """Load one or all standards installed in the project.
 
-    results: list[dict[str, Any]] = []
-    for name in list_installed_standards(root):
-        data = load_standard(root, name)
-        if data:
-            results.append(data)
+    Unreadable files are left out of the result; use ``load_standards_checked``
+    to learn which ones and why.
+    """
+    results, _errors = load_standards_checked(root, standard_name)
     return results
 
 
@@ -158,12 +223,12 @@ def check_compliance(
     """
     installed = list_installed_standards(root)
     if not installed:
+        # Not an error: a project without standards is healthy. Callers that
+        # print this should stay neutral and exit 0 (accounting, not policing).
         return {
             "ok": False,
-            "error": (
-                "No standards installed in this project. "
-                "Run 'specflow init --preset <preset>' to install a standards pack."
-            ),
+            "none_installed": True,
+            "error": NO_STANDARDS_MESSAGE,
             "available": [],
         }
 
@@ -171,19 +236,22 @@ def check_compliance(
         if len(installed) == 1:
             standard_name = installed[0]
         else:
+            _loaded, errors = load_standards_checked(root)
+            message = "Multiple standards installed; specify --standard <name>."
+            if errors:
+                message += " Unreadable: " + "; ".join(errors[n] for n in sorted(errors))
             return {
                 "ok": False,
-                "error": (
-                    "Multiple standards installed; specify --standard <name>."
-                ),
+                "error": message,
                 "available": installed,
+                "unreadable": errors,
             }
 
-    standard = load_standard(root, standard_name)
+    standard, load_error = load_standard_checked(root, standard_name)
     if standard is None:
         return {
             "ok": False,
-            "error": f"Standard '{standard_name}' not found.",
+            "error": load_error or f"Standard '{standard_name}' not found.",
             "available": installed,
         }
 
@@ -213,6 +281,7 @@ def check_compliance(
             covered.append(entry)
         else:
             entry["remediation"] = suggest_remediation(clause)
+            entry["command"] = remediation_command(clause_id)
             uncovered.append(entry)
 
     uncovered = _sort_uncovered(uncovered)

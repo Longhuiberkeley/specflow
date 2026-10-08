@@ -104,6 +104,7 @@ def test_finding_counts_match_counters_on_fixture(project: Path):
     _assert_parity(project)
 
 
+@pytest.mark.slow
 def test_finding_counts_match_counters_on_this_repo():
     """The dogfood corpus exercises most checks; parity must hold there too."""
     _assert_parity(REPO)

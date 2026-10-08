@@ -105,10 +105,24 @@ def bump_workflow_pin(root: Path, *, dry_run: bool = False) -> dict:
 # (not ``uv run specflow``) so it works in a consuming project, where specflow is
 # installed as a tool on PATH (``uv tool install git+...``) and is NOT a declared
 # project dependency — the same reason generated CI uses ``uvx --from git+...``.
+#
+# The PATH guard runs before ``exec``: a missing ``specflow`` otherwise fails as
+# an opaque ``exit 127`` on every commit (hooks installed through an ephemeral
+# ``uvx`` bootstrap, GUI git clients with a non-login PATH, or after
+# ``uv tool uninstall``). The guard names the install command instead.
+_HOOK_PATH_GUARD_MESSAGE = (
+    "specflow pre-commit: 'specflow' is not on PATH, so SpecFlow checks did not run."
+)
 _DEFAULT_HOOK_SCRIPT = (
     "#!/usr/bin/env bash\n"
     "# specflow pre-commit hook — installed by `specflow hook install` or `specflow init`\n"
     "# Delegates to the Python CLI so the logic stays version-controlled.\n"
+    "if ! command -v specflow >/dev/null 2>&1; then\n"
+    f"  echo \"{_HOOK_PATH_GUARD_MESSAGE}\" >&2\n"
+    f"  echo \"  Install it: uv tool install git+{_SPECFLOW_REPO}\" >&2\n"
+    "  echo \"  (GUI git clients: make sure the tool directory is on the PATH they inherit.)\" >&2\n"
+    "  exit 1\n"
+    "fi\n"
     "exec specflow hook pre-commit \"$@\"\n"
 )
 
@@ -134,7 +148,7 @@ _PASS1 = """\
       - name: Install uv
         run: pip install uv
       - name: Validate artifacts (deterministic, zero tokens)
-        run: uvx --from __SPECFLOW_SOURCE__ specflow artifact-lint --method programmatic
+        run: uvx --from __SPECFLOW_SOURCE__ specflow artifact-lint
 """
 
 _CHANGE_IMPACT = """\

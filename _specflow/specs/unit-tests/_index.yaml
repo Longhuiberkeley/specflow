@@ -356,7 +356,7 @@ artifacts:
     - autoresearch
     - skill-refactor
     - REQ-AUTORESE
-    fingerprint: sha256:2cdf6f3d910d
+    fingerprint: sha256:ff2cf7bbcff2
     children: []
   UT-045:
     id: UT-045
@@ -407,7 +407,7 @@ artifacts:
     tags:
     - backfilled
     - verification-contract
-    - REQ-DEFERRED-5cea
+    - REQ-063
     - v1.12.0
     fingerprint: sha256:b53b91bd6229
     children: []
@@ -418,7 +418,7 @@ artifacts:
     tags:
     - backfilled
     - verification-contract
-    - REQ-DEFERRED-5cea
+    - REQ-063
     - v1.12.0
     fingerprint: sha256:d33d6d1d227f
     children: []
@@ -429,7 +429,7 @@ artifacts:
     tags:
     - backfilled
     - verification-contract
-    - REQ-DEFERRED-5cea
+    - REQ-063
     - v1.12.0
     fingerprint: sha256:881e630065fc
     children: []
@@ -440,7 +440,7 @@ artifacts:
     tags:
     - backfilled
     - verification-contract
-    - REQ-DEFERRED-5cea
+    - REQ-063
     - v1.12.0
     fingerprint: sha256:b8d3f080237b
     children: []
@@ -451,7 +451,7 @@ artifacts:
     tags:
     - backfilled
     - verification-contract
-    - REQ-DEFERRED-5cea
+    - REQ-063
     - v1.12.0
     fingerprint: sha256:f6c7f845837d
     children: []
@@ -462,7 +462,7 @@ artifacts:
     tags:
     - backfilled
     - verification-contract
-    - REQ-DEFERRED-5cea
+    - REQ-063
     - v1.12.0
     fingerprint: sha256:1b87a34e5d0c
     children: []
@@ -473,7 +473,7 @@ artifacts:
     tags:
     - backfilled
     - verification-contract
-    - REQ-TRANSCRI-24b7
+    - REQ-064
     - v1.13.3
     fingerprint: sha256:211c83d6d507
     children: []
@@ -484,7 +484,7 @@ artifacts:
     tags:
     - backfilled
     - verification-contract
-    - REQ-TRANSCRI-24b7
+    - REQ-064
     - v1.13.2
     fingerprint: sha256:7d73c114150b
     children: []
@@ -646,7 +646,7 @@ artifacts:
   UT-069:
     id: UT-069
     title: Dual-host skill install remap (platform.get_skills_install_dir / init no-delete)
-    status: draft
+    status: verified
     tags:
     - backfilled
     - verification-contract
@@ -656,7 +656,7 @@ artifacts:
   UT-070:
     id: UT-070
     title: Type-aware trace direction semantics (is_upstream_edge / chain-depth roles)
-    status: draft
+    status: verified
     tags:
     - backfilled
     - verification-contract
@@ -665,7 +665,7 @@ artifacts:
   UT-071:
     id: UT-071
     title: No-self-approval guardrail phrases + agent-context budget
-    status: draft
+    status: verified
     tags:
     - backfilled
     - verification-contract
@@ -674,7 +674,7 @@ artifacts:
   UT-072:
     id: UT-072
     title: Autoresearch CLI writes traceable link edges
-    status: draft
+    status: verified
     tags:
     - backfilled
     - verification-contract
@@ -683,7 +683,7 @@ artifacts:
   UT-073:
     id: UT-073
     title: 'Release-gate closure: orphan-code zero on the dogfood repo'
-    status: draft
+    status: verified
     tags:
     - backfilled
     - verification-contract
@@ -692,7 +692,7 @@ artifacts:
   UT-074:
     id: UT-074
     title: STORY-637 direction/guard/crash regression tests
-    status: draft
+    status: verified
     tags:
     - verification-contract
     fingerprint: sha256:a28f56393477
@@ -700,7 +700,7 @@ artifacts:
   UT-075:
     id: UT-075
     title: STORY-638 atomic create locking tests
-    status: draft
+    status: verified
     tags:
     - verification-contract
     fingerprint: sha256:fa40fc798675
@@ -708,7 +708,7 @@ artifacts:
   UT-076:
     id: UT-076
     title: STORY-639 role-target matrix tests
-    status: draft
+    status: verified
     tags:
     - verification-contract
     fingerprint: sha256:5bc42ed39d9d
@@ -716,7 +716,7 @@ artifacts:
   UT-077:
     id: UT-077
     title: STORY-640 creation-status gate tests
-    status: draft
+    status: verified
     tags:
     - verification-contract
     fingerprint: sha256:2cc1a494f84a
@@ -724,7 +724,7 @@ artifacts:
   UT-078:
     id: UT-078
     title: STORY-641 hardened guardrail assertions + mutation checks
-    status: draft
+    status: verified
     tags:
     - verification-contract
     fingerprint: sha256:033af7d71f54
@@ -733,28 +733,28 @@ artifacts:
     id: UT-079
     title: 'STORY-646 unit contracts: brief escalation credit + condensation lint
       acceptance'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:cabd35718053
     children: []
   UT-080:
     id: UT-080
     title: 'v1.14.6 locking tests: lint/schema registrations + brief vanished symmetry'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:b0522145db4c
     children: []
   UT-081:
     id: UT-081
     title: "Quant checklist thin rewrite: template\u2194mirror byte-equality (DEC-078)"
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:6bec605ade90
     children: []
   UT-082:
     id: UT-082
     title: 'redact_text: token classes, idempotence, prose-safety'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:a8b6ddd80b25
     children: []
@@ -762,14 +762,14 @@ artifacts:
     id: UT-083
     title: 'COMP lifecycle unit pins: closure lint, reversible pause, creation gates
       (STORY-650..652)'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:abd2e0e914be
     children: []
   UT-084:
     id: UT-084
     title: Rolling evaluation + thin domain checklists + ops RUN pause unit pins (STORY-653..655)
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:38124556aa6c
     children: []
@@ -777,7 +777,7 @@ artifacts:
     id: UT-085
     title: 'Minimal-context unit pins: agent-context, pack snippets, skill surfaces
       (STORY-656..659)'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:3755e6aea7fe
     children: []
@@ -785,21 +785,21 @@ artifacts:
     id: UT-086
     title: 'CLI-surface unit pins: brief consent, handbook index, hook routing, backstops
       (STORY-660..663)'
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:7d612f03c312
     children: []
   UT-087:
     id: UT-087
     title: Autoresearch invariant-sheet unit pins (STORY-664)
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:4fc0d20e8631
     children: []
   UT-088:
     id: UT-088
     title: Autoresearch evidence-sensitive reassessment unit pins (STORY-665)
-    status: draft
+    status: verified
     tags: []
     fingerprint: sha256:4f79bd037e28
     children: []
@@ -1122,13 +1122,6 @@ artifacts:
     tags: []
     fingerprint: sha256:da42135f76d2
     children: []
-  UT-EVIDENCE-9a3d:
-    id: UT-EVIDENCE-9a3d
-    title: Evidence RTM includes mixed eligible REQ statuses
-    status: implemented
-    tags: []
-    fingerprint: sha256:cd2ebadd80c8
-    children: []
   UT-133:
     id: UT-133
     title: 'Finding records: key excludes args, class from the policy table, two problems
@@ -1166,4 +1159,115 @@ artifacts:
     tags: []
     fingerprint: sha256:83742fd1ba88
     children: []
-next_id: 138
+  UT-138:
+    id: UT-138
+    title: Evidence RTM includes mixed eligible REQ statuses
+    status: implemented
+    tags: []
+    fingerprint: sha256:cd2ebadd80c8
+    children: []
+  UT-139:
+    id: UT-139
+    title: 'Unit tests for STORY-707: artifact writers use the locked path; artifact-review
+      stops rewriting '
+    status: implemented
+    tags: []
+    fingerprint: sha256:9bd27c8f7f46
+    children: []
+  UT-140:
+    id: UT-140
+    title: 'Unit tests for STORY-708: pre-commit hook PATH guard, worktree hooks dir,
+      staged deletions, fore'
+    status: implemented
+    tags: []
+    fingerprint: sha256:b105b22b9cb2
+    children: []
+  UT-141:
+    id: UT-141
+    title: "Unit tests for STORY-709: refresh/init/scaffold hygiene \u2014 pack standards\
+      \ sync, backups, sentinel"
+    status: implemented
+    tags: []
+    fingerprint: sha256:942b89468792
+    children: []
+  UT-142:
+    id: UT-142
+    title: "Unit tests for STORY-710: standards and ReqIF correctness \u2014 double-escape,\
+      \ malformed YAML, dead-"
+    status: implemented
+    tags: []
+    fingerprint: sha256:0cf4c364018d
+    children: []
+  UT-143:
+    id: UT-143
+    title: 'Unit tests for STORY-711: one practice-binding predicate for brief and
+      lint; thinking_techniques'
+    status: implemented
+    tags: []
+    fingerprint: sha256:5df5fdd681ce
+    children: []
+  UT-144:
+    id: UT-144
+    title: 'Unit tests for STORY-712: docs, README, ROADMAP, CHANGELOG, AGENTS.md
+      and pack-reference consist'
+    status: implemented
+    tags: []
+    fingerprint: sha256:d8c717ca1ace
+    children: []
+  UT-145:
+    id: UT-145
+    title: 'Unit tests for STORY-713: CLI root walk-up, hint parser, read-only help
+      labels, scoped lint hint'
+    status: implemented
+    tags: []
+    fingerprint: sha256:02602d40bb8e
+    children: []
+  UT-146:
+    id: UT-146
+    title: 'Unit tests for STORY-714: stdin EOF guard, reserved --set keys, title
+      index sync, no-op fingerpr'
+    status: implemented
+    tags: []
+    fingerprint: sha256:163e6e083d86
+    children: []
+  UT-147:
+    id: UT-147
+    title: "Unit tests for STORY-715: brief and status honesty \u2014 routing, DEF/DEC/unexecuted\
+      \ notes, stale sk"
+    status: implemented
+    tags: []
+    fingerprint: sha256:fb3ee97f97ba
+    children: []
+  UT-148:
+    id: UT-148
+    title: 'Unit tests for STORY-716: findings policy classes for pre-implementation
+      rows; lint known/new re'
+    status: implemented
+    tags: []
+    fingerprint: sha256:5387849e542c
+    children: []
+  UT-149:
+    id: UT-149
+    title: "Unit tests for STORY-717: core skill text parity \u2014 link direction,\
+      \ vocabulary tables, statuses, "
+    status: implemented
+    tags: []
+    fingerprint: sha256:652558dd8443
+    children: []
+  UT-150:
+    id: UT-150
+    title: "Unit tests for STORY-718: tests and CI hygiene \u2014 executor tests,\
+      \ un-skip practice tests, handler"
+    status: implemented
+    tags: []
+    fingerprint: sha256:842708011e41
+    children: []
+  UT-151:
+    id: UT-151
+    title: 'Unit tests for STORY-719: renumber draft-slug IDs, approve draft tests
+      with evidence, close supe'
+    status: implemented
+    tags: []
+    fingerprint: sha256:21c3b9a3fbb1
+    children: []
+next_id: 152
