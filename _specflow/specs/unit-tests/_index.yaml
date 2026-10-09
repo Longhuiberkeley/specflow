@@ -1270,4 +1270,12 @@ artifacts:
     tags: []
     fingerprint: sha256:21c3b9a3fbb1
     children: []
-next_id: 152
+  UT-152:
+    id: UT-152
+    title: 'Unit contract for tests/test_project_audit_ddd_shape.py: ddd-shape accounting
+      row class, concern-less escalation parity, truthful DDD-thread walk (STORY-735)'
+    status: implemented
+    tags: []
+    fingerprint: sha256:57f6de7ee2ac
+    children: []
+next_id: 153

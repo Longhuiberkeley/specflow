@@ -15,7 +15,7 @@ links:
   role: implements
 created: '2026-09-30'
 fingerprint: sha256:7b64ff801e55
-modified: '2026-09-30'
+modified: '2026-10-09'
 output_files:
 - src/specflow/lib/checklists.py
 - src/specflow/lib/lint.py
@@ -31,6 +31,7 @@ output_files:
 - src/specflow/commands/refresh.py
 - src/specflow/cli.py
 - tests/test_refresh_checklists.py
+- tests/test_init_checklist_categories.py
 ---
 
 # Shipped checklists: story-writing rewrite, per-artifact scope, dead surfaces, corpus test

@@ -36,8 +36,8 @@ def _key(root: Path, **kw) -> str:
 
 
 class TestCacheKeyInputs:
-    def test_generation_is_6(self):
-        assert audit_cmd._CACHE_GENERATION == 6
+    def test_generation_is_7(self):
+        assert audit_cmd._CACHE_GENERATION == 7
 
     def test_unchanged_repo_reuses_key(self, tmp_path):
         root = _project(tmp_path)

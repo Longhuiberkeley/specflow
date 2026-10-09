@@ -14,7 +14,7 @@ links:
   role: implements
 created: '2026-10-08'
 fingerprint: sha256:6f6c17dd3eef
-modified: '2026-10-08'
+modified: '2026-10-09'
 output_files:
 - .claude/skills/specflow-adapter/SKILL.md
 - .claude/skills/specflow-artifact-review/SKILL.md
@@ -71,6 +71,7 @@ output_files:
 - tests/test_learning_lenses.py
 - tests/test_readme_pin.py
 - tests/test_scaffold_scratch_gitignore.py
+- tests/test_review_skill_doc_parity.py
 ---
 
 # Wave P-6: docs, README, ROADMAP, CHANGELOG, AGENTS.md and pack-reference consistency with guard tests

@@ -47,8 +47,8 @@ _SEP = "─" * 58
 # (summary_warns_accounting), and mint CHLs, but NEVER drive the exit-2
 # (warnings) code; only structural warns escalate. Every lens with accounting
 # treatment (docs-staleness, verification, ac-coverage, ac-observability,
-# nfr-coverage) obeys BOTH rules: one severity per problem class, and
-# accounting warns tell the truth without holding the gate.
+# nfr-coverage, ddd-shape) obeys BOTH rules: one severity per problem class,
+# and accounting warns tell the truth without holding the gate.
 #
 # Cross-cutting concerns whose warn-severity findings are ACCOUNTING ONLY:
 # surfaced in the report and printed for review, but excluded from the warn
@@ -94,6 +94,17 @@ _ACCOUNTING_CONCERNS: frozenset[str] = frozenset({
     # Accounting, not policing — never escalates: the lens emits INFO only;
     # registration keeps it non-escalating even if a caller stamped a warn.
     "coverage-shape",
+    # ddd-shape: the vertical 'ARCH exists but no DDD refinement' row, ONLY
+    # when the REQ's V-model thread already has an implementing STORY (DEC-101,
+    # amends DEC-099). Accounting, not policing — never escalates: predicate —
+    # a REQ whose V-model thread has an implementing STORY owes no DDD
+    # refinement; the ddd-selection 6-question tree legitimately answered NO
+    # and the work is realised, so the row is refinement-shape bookkeeping.
+    # The concern-less rows (no ARCH, no STORY) keep escalating — gate
+    # equivalence with the pre-DEC-101 audit is preserved for genuine V-model
+    # holes. Deliberately NOT lens:general (that is the shared rule id of the
+    # escalating no-ARCH/no-STORY rows — registering it would blind the gate).
+    "ddd-shape",
 })
 
 
@@ -143,7 +154,12 @@ _AUD_OUTPUT_TYPES = frozenset({"challenge", "audit"})
 # mode (--quick / --standard). Pre-gen-6 a docs edit or a new source file
 # replayed stale findings. The same bump also carries the STORY-679
 # coverage-shape bucket and the STORY-683 lens-error bucket.
-_CACHE_GENERATION = 6
+# gen 7 (DEC-101): the vertical DDD-refinement row gained the ddd-shape
+# concern classification (accounting when the thread has an implementing
+# STORY) and the DDD walk learned the parent-held / specified_by shapes —
+# concern classification is part of the cached findings (gen-3 doctrine), so
+# a gen-6 cache would replay the row with its old escalating treatment.
+_CACHE_GENERATION = 7
 
 # Audit-relevant frontmatter fields folded into the project cache fingerprint
 # (gen 5). The body fingerprint captures content drift; these are the STABLE
@@ -393,12 +409,44 @@ def _vertical_analysis(artifacts: list[art_lib.Artifact]) -> list[dict[str, str]
                         thread_arts.append(other.id)
                         thread_links[other.id] = req.id
 
+        # Truthful DDD walk (DEC-101): credit a DDD onto the thread via ALL
+        # three legal shapes — (i) DDD-held refined_by/derives_from targeting a
+        # thread member, (ii) the canonical PARENT-HELD shape (an ARCH's own
+        # links[] carrying refined_by → DDD, mirroring check_coverage's
+        # parent-held credit in artifact_lint), and (iii) the legal DDD-held
+        # specified_by → ARCH/REQ shape (role_targets: detailed-design).
+        # Pre-fix the walk only saw (i), so e.g. DDD-033 (specified_by
+        # ARCH-039) was invisible and REQ-052/053 printed a false
+        # 'ARCH exists but no DDD refinement' row.
+        ddds_in_thread: set[str] = set()
         for other in artifacts:
+            if art_lib.get_prefix_from_id(other.id) != "DDD":
+                continue
             for link in other.links:
-                if link.target in thread_arts and link.role in ("refined_by", "derives_from"):
-                    if art_lib.get_prefix_from_id(other.id) == "DDD":
+                if link.target in thread_arts and link.role in (
+                    "refined_by", "derives_from", "specified_by",
+                ):
+                    if other.id not in ddds_in_thread:
+                        ddds_in_thread.add(other.id)
                         thread_arts.append(other.id)
                         thread_links[other.id] = link.target
+        # Parent-held credit mirrors check_coverage: the refining DDD must
+        # resolve to an artifact. A dangling refined_by id is not a DDD and
+        # must not silence the row.
+        for member_id in list(thread_arts):
+            member = id_index.get(member_id)
+            if member is None:
+                continue
+            for link in member.links:
+                if link.role != "refined_by":
+                    continue
+                target = id_index.get(link.target)
+                if target is None or art_lib.get_prefix_from_id(target.id) != "DDD":
+                    continue
+                if target.id not in ddds_in_thread:
+                    ddds_in_thread.add(target.id)
+                    thread_arts.append(target.id)
+                    thread_links[target.id] = member_id
 
         story_ids: list[str] = []
         for other in artifacts:
@@ -427,10 +475,20 @@ def _vertical_analysis(artifacts: list[art_lib.Artifact]) -> list[dict[str, str]
                 "message": f"{req.id}: no ARCH refinement in V-model thread",
             })
         if not has_ddd and has_arch:
-            findings.append({
+            finding: dict[str, str] = {
                 "severity": "warn",
                 "message": f"{req.id}: ARCH exists but no DDD refinement",
-            })
+            }
+            # DEC-101 predicate: a REQ whose V-model thread has an implementing
+            # STORY owes no DDD refinement — the ddd-selection tree said NO and
+            # the work is realised, so the row is accounting (ddd-shape), not a
+            # gate blocker. has_stories FALSE → the row stays concern-less and
+            # escalates: gate equivalence with the pre-DEC-101 audit for a REQ
+            # that has neither DDD nor STORY. Do NOT 'simplify' by stamping the
+            # concern unconditionally — that would silence the escalating case.
+            if has_stories:
+                finding["concern"] = "ddd-shape"
+            findings.append(finding)
         if not has_stories:
             findings.append({
                 "severity": "warn",

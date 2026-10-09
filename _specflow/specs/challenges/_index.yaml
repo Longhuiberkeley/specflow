@@ -901,4 +901,11 @@ artifacts:
     tags: []
     fingerprint: sha256:2a3d1132d093
     children: []
-next_id: 357
+  CHL-357:
+    id: CHL-357
+    title: Audit cross-cutting/coverage-shape findings
+    status: open
+    tags: []
+    fingerprint: sha256:709c4b79dbba
+    children: []
+next_id: 358

@@ -886,4 +886,12 @@ artifacts:
     tags: []
     fingerprint: sha256:ccd087283480
     children: []
-next_id: 113
+  QT-113:
+    id: QT-113
+    title: 'End-to-end qualification: project-audit --dry-run on a fixture shows the
+      no-DDD row as ddd-shape accounting and exits 0 (STORY-735)'
+    status: implemented
+    tags: []
+    fingerprint: sha256:85e0e632c02b
+    children: []
+next_id: 114

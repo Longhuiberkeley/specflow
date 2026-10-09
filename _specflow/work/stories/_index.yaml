@@ -1791,4 +1791,11 @@ artifacts:
     tags: []
     fingerprint: sha256:a557ed85a54a
     children: []
-next_id: 735
+  STORY-735:
+    id: STORY-735
+    title: Audit ddd-shape accounting class and truthful DDD-thread walk (v1.17.3)
+    status: verified
+    tags: []
+    fingerprint: sha256:7900dc443e8c
+    children: []
+next_id: 736

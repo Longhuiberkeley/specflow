@@ -16,7 +16,7 @@ links:
   role: guided_by
 created: '2026-09-30'
 fingerprint: sha256:b272d39a77dd
-modified: '2026-09-30'
+modified: '2026-10-09'
 output_files:
 - src/specflow/core/findings.py
 - src/specflow/core/policy.py
@@ -24,6 +24,7 @@ output_files:
 - src/specflow/lib/role_targets.py
 - src/specflow/lib/waves.py
 - tests/test_findings_model.py
+- src/specflow/core/__init__.py
 ---
 
 # Typed Finding records for every lint check and audit lens; byte-identical rendering

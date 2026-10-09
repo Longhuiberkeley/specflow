@@ -875,4 +875,12 @@ artifacts:
     tags: []
     fingerprint: sha256:d26b5d1e3b06
     children: []
-next_id: 112
+  IT-112:
+    id: IT-112
+    title: 'Integration: ddd-shape rows flow through the shared policy classifier
+      and findings model to an accounting exit (STORY-735)'
+    status: implemented
+    tags: []
+    fingerprint: sha256:144f99b020ed
+    children: []
+next_id: 113

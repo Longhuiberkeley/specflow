@@ -9,7 +9,9 @@ links:
   role: implements
 created: '2026-09-13'
 fingerprint: sha256:72e3360fe3ba
-modified: '2026-09-13'
+modified: '2026-10-09'
+output_files:
+- src/specflow/commands/pack_validate.py
 ---
 
 # CLI backstops: 3-run escalation, pack-validate, autoresearch status codes

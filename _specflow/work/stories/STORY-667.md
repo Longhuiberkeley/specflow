@@ -16,7 +16,9 @@ thinking_techniques:
 - dependency_shock
 - worst_case_user
 - composition
-modified: '2026-10-08'
+modified: '2026-10-09'
+output_files:
+- src/specflow/lib/practices_seed.py
 ---
 
 # Practices seed split and handbook deprecation (REQ-044)

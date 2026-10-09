@@ -16,7 +16,7 @@ links:
   role: guided_by
 created: '2026-09-30'
 fingerprint: sha256:87df847d1ee6
-modified: '2026-09-30'
+modified: '2026-10-09'
 output_files:
 - src/specflow/core/findings_baseline.py
 - src/specflow/commands/findings_baseline.py
@@ -25,6 +25,7 @@ output_files:
 - tests/test_findings_baseline_cmd.py
 - tests/test_findings_policy.py
 - tests/test_single_index_writer.py
+- tests/test_v1171_cli_qualification.py
 ---
 
 # Committed findings-baseline ratchet replaces run-count escalation

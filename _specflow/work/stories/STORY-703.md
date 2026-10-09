@@ -16,7 +16,7 @@ links:
   role: guided_by
 created: '2026-09-30'
 fingerprint: sha256:cba96df20853
-modified: '2026-09-30'
+modified: '2026-10-09'
 output_files:
 - src/specflow/lib/source_drift.py
 - src/specflow/commands/fingerprint_refresh.py

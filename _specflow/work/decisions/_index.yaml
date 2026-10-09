@@ -955,4 +955,12 @@ artifacts:
     - data-integrity
     fingerprint: sha256:aebb8deb1526
     children: []
-next_id: 101
+  DEC-101:
+    id: DEC-101
+    title: 'Staged DDD-shape accounting: a REQ whose V-model thread has an implementing
+      STORY owes no DDD refinement (amends DEC-099)'
+    status: approved
+    tags: []
+    fingerprint: sha256:6ea63e72841f
+    children: []
+next_id: 102

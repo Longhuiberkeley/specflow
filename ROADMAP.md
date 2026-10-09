@@ -4,6 +4,11 @@ SpecFlow ships incrementally. This document tracks what shipped in each release,
 
 For the original implementation plan (phase breakdown, dependency graph — now historical, superseded by the release history below), see [docs/.archive/plan.md](docs/.archive/plan.md).
 
+## v1.17.3
+
+- **Gate-greening patch (frontier-review AMEND verdict, DEC-101, STORY-735)** — the tag-run Release gate goes green for the first time since v1.16.0 (0 escalating audit warns; AUD-137). Both halves landed before the tag: the engine policy change (staged `ddd-shape` accounting — a REQ whose V-model thread has an implementing STORY owes no DDD refinement, amends DEC-099; truthful DDD-thread walk crediting parent-held `refined_by` and DDD-held `specified_by` shapes; cache generation 6 → 7) AND the 9-orphan ledger trace (9 files retro-linked via `output_files` onto their true implementing STORYs). Concern-less no-ARCH/no-STORY rows keep escalating; `audit/lens:general` is never registered accounting.
+- DEC-084 remains draft (deferral record) and stays out of scope for this patch.
+
 ## v1.17.2
 
 - **Audit-driven patch (SPIKE-005, REQ-059..061, DEC-095, STORY-707..719)** — 141 verified findings from a two-batch ultracode audit of the engine, skills, docs, ledger and ~1,785 consumer/dogfood chat transcripts; 13 waves: staged findings classes and lean-path/pre-planning accounting (no day-0 FAIL), stdin EOF and `NO_COLOR` fixes, root walk-up, CLI hints and read-only markers, `brief --next` routing and notes, lint known/new rendering, locked record-only writers, ReqIF escaping, hook/CI safety, refresh/init hygiene, skill-text parity with guard tests, docs/README/AGENTS consistency, executor/brownfield/release-consistency tests.
