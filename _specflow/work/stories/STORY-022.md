@@ -28,11 +28,22 @@ created: '2026-04-14'
 checklists_applied:
 - checklist: check-STORY-022
   timestamp: '2026-04-14T17:03:23Z'
-modified: '2026-06-15'
+modified: '2026-10-18'
 fingerprint: sha256:cff4bb0a1d4f
 version: 3
 output_files:
 - src/specflow/lib/skill_export.py
+- scripts/artifact-lint-fingerprints.sh
+- scripts/artifact-lint-gate.sh
+- scripts/artifact-lint-ids.sh
+- scripts/artifact-lint-links.sh
+- scripts/artifact-lint-schema.sh
+- scripts/artifact-lint-status.sh
+- scripts/checklist-run-acceptance.sh
+- src/specflow/commands/fingerprint_refresh.py
+- src/specflow/templates/checklists/in-process/requirement-writing.yaml
+- src/specflow/templates/checklists/phase-gates/discovering-to-specifying.yaml
+- src/specflow/templates/checklists/phase-gates/specifying-to-planning.yaml
 ---
 
 # Ship command rename and thin-skill wrappers for all Tier 2/3 CLI commands

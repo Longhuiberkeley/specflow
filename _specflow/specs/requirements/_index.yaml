@@ -648,4 +648,15 @@ artifacts:
     - functional
     fingerprint: sha256:8790897152a6
     children: []
-next_id: 71
+  REQ-071:
+    id: REQ-071
+    title: "Ledger bodies and test specs reflect the engine as built \u2014 wave 2\
+      \ (ARCH/DDD rewrites, test-spec promotion, output_files truth)"
+    status: verified
+    tags:
+    - consistency
+    - v1.17.8
+    - functional
+    fingerprint: sha256:c6762f819a95
+    children: []
+next_id: 72

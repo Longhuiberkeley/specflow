@@ -32,11 +32,9 @@ links:
 checklists_applied:
 - checklist: check-STORY-031
   timestamp: '2026-04-14T17:03:23Z'
-modified: '2026-04-22'
+modified: '2026-10-18'
 fingerprint: sha256:6caf80005302
 version: 2
-output_files:
-- src/specflow/lib/display.py
 ---
 
 # Install UX — one-line install path and getting-started tutorial

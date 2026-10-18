@@ -806,98 +806,98 @@ artifacts:
   UT-089:
     id: UT-089
     title: 'Unit Test for DDD-032: Practice loader and transitional status map semantics'
-    status: draft
+    status: implemented
     tags: []
-    fingerprint: sha256:6c829f465977
+    fingerprint: sha256:6b803541504e
     children: []
   UT-090:
     id: UT-090
     title: Practice anatomy and status-map unit pins (STORY-666)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:37a15ddd16a2
     children: []
   UT-091:
     id: UT-091
     title: Practices seed stability and alias delegation pins (STORY-667)
-    status: draft
+    status: implemented
     tags: []
-    fingerprint: sha256:d80fc368e507
+    fingerprint: sha256:0ab428765ac0
     children: []
   UT-092:
     id: UT-092
     title: Practices validate, migrate, and loader pins (STORY-668)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:be0df725a71c
     children: []
   UT-093:
     id: UT-093
     title: Frontier ledger computation pins (DDD-031)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:b9f75f770c8e
     children: []
   UT-094:
     id: UT-094
     title: guided_by role legality and depth pins (STORY-669)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:1b8fc1f10774
     children: []
   UT-095:
     id: UT-095
     title: bp-application check semantics pins (STORY-670)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:15de4d59edb4
     children: []
   UT-096:
     id: UT-096
     title: Brief bound/unbound practice accounting pins (STORY-671)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:7cf1477c0ee4
     children: []
   UT-097:
     id: UT-097
     title: Frontier ledger computation pins (STORY-672)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:2870adb7b68d
     children: []
   UT-098:
     id: UT-098
     title: EDA applicability accounting pin (STORY-673)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:0c038f9db6c5
     children: []
   UT-099:
     id: UT-099
     title: Analysis iteration category pin (STORY-674)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:42969ea83fa9
     children: []
   UT-100:
     id: UT-100
     title: plan --inherit seeding pins (STORY-675)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:0aeb8410f340
     children: []
   UT-101:
     id: UT-101
     title: Evaluator fingerprint computation pins (STORY-676)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:6c3777544385
     children: []
   UT-102:
     id: UT-102
     title: Jump and guard computation pins (STORY-677)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:cea5a2b44eec
     children: []
@@ -1281,14 +1281,14 @@ artifacts:
   UT-153:
     id: UT-153
     title: Unit tests for STORY-736 lint negative fixtures
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:4e16b93896a9
     children: []
   UT-154:
     id: UT-154
     title: Unit tests for STORY-737 evidence-label sentence pins
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:c3c44995678e
     children: []
@@ -1387,4 +1387,27 @@ artifacts:
     tags: []
     fingerprint: sha256:56db2567fe7d
     children: []
-next_id: 168
+  UT-168:
+    id: UT-168
+    title: 'Unit tests for STORY-751: rewritten ARCH/DDD bodies carry no stale engine
+      names and one rewrite line'
+    status: implemented
+    tags: []
+    fingerprint: sha256:7c3efb41a527
+    children: []
+  UT-169:
+    id: UT-169
+    title: 'Unit tests for STORY-752: no draft spec under a claimed parent, promoted
+      specs carry evidence, cited test files exist'
+    status: implemented
+    tags: []
+    fingerprint: sha256:bada29b13f4f
+    children: []
+  UT-170:
+    id: UT-170
+    title: 'Unit tests for STORY-753: output_files lint clean after the truth sweep'
+    status: implemented
+    tags: []
+    fingerprint: sha256:f6b274ec7ede
+    children: []
+next_id: 171

@@ -26,9 +26,18 @@ created: '2026-04-14'
 checklists_applied:
 - checklist: check-STORY-026
   timestamp: '2026-04-14T17:03:23Z'
-modified: '2026-04-22'
+modified: '2026-10-18'
 fingerprint: sha256:992a519742d4
 version: 1
+output_files:
+- src/specflow/lib/adapters/__init__.py
+- src/specflow/lib/adapters/base.py
+- src/specflow/lib/adapters/github_actions.py
+- src/specflow/lib/adapters/reqif.py
+- src/specflow/commands/ci.py
+- src/specflow/commands/export_cmd.py
+- src/specflow/commands/import_cmd.py
+- src/specflow/templates/adapters.yaml
 ---
 
 # Build the unified adapter framework

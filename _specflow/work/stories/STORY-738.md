@@ -24,7 +24,6 @@ output_files:
 - tests/test_go_executor.py
 - tests/test_cli_hints.py
 - src/specflow/lib/orphans.py
-- src/specflow/lib/orphans.py
 - docs/architecture.md
 thinking_techniques:
 - worst_case_user

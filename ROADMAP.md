@@ -4,6 +4,12 @@ SpecFlow ships incrementally. This document tracks what shipped in each release,
 
 For the original implementation plan (phase breakdown, dependency graph — now historical, superseded by the release history below), see [docs/.archive/plan.md](docs/.archive/plan.md).
 
+## v1.17.8
+
+- **SPIKE-008 ledger wave 2 (REQ-071, STORY-751..753)** — 19 ARCH/DDD bodies rewritten against the engine as built; 52 draft test specs promoted with real verify commands (QT-058..061 stay draft under deprecated REQs: no terminal status exists for test specs); output_files truth sweep with orphan-code at 0.
+- **Engine gaps recorded, not built:** test-spec status map needs `cancelled`; `fingerprint-refresh` leaves `modified` untouched; `source-fingerprints.yaml` is never pruned when a STORY's `output_files` empties; `cli.py:941` autoresearch help lists four of eight subcommands; `lib/practices_seed.py` docstring names `handbook generate`; `lib/impact.reverse_impact` is uncalled; `adopt status` lists merged ARCHs; PREV-003 text still cites REQ-035 (`patterns update` sets tags only); files no STORY implements (lib/docs.py and tests/test_docs.py among them) want backfilled STORYs; severity-vocabulary unification (minor); `lib/standards.NO_STANDARDS_MESSAGE` contradicts the shipped iso26262-demo standard.
+- **Consumer rollout pending (owner):** run `githubcode/specflow-consumer-rollout.sh v1.17.8` for cs2_bet, HKJC_betting_sys, arbitrage_project and its two worktrees (all on v1.17.3), then require both "Pass 1 — programmatic validation" and "CI gate (RBAC)" in branch protection. Framing trigger still to be dogfooded in a fresh host session.
+
 ## v1.17.7
 
 - **Consistency-review burn-down (SPIKE-008, DEC-105, REQ-070, STORY-745..749, DEF-021..023)** — 214 drift sites between prose, packs, checklists, docs and ledger and the engine as built; every blocking/warning site fixed. Owner decisions: delegated autonomy narrowed to the direct user in-session (never a release or Tier 2); release process records the ledger before the commit (no backfill of v1.17.2..6); adoption baseline `v0.0.0-adoption.<n>`; open status categories; severity mapping documented; GitHub gate wording measured from GitHub docs (require both display-named checks, ci-gate default on, CODEOWNERS any-of). Engine: deterministic `ci generate`, complete-phase routing, open categories, RBAC staged-rename, role matrix vs schema, severity rank, shared ARCH depth rule.

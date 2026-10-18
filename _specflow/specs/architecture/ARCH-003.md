@@ -12,7 +12,7 @@ tags:
 - ai
 - progressive-disclosure
 suspect: false
-fingerprint: sha256:9d0ad5db2087
+fingerprint: sha256:223dcdd6c2e2
 thinking_techniques:
 - assumption_surfacing
 - devils_advocate
@@ -28,56 +28,55 @@ checklists_applied:
 - checklist: check-ARCH-003
   timestamp: '2026-04-14T17:03:22Z'
 modified: '2026-10-08'
-version: 3
+version: 4
 ---
 
 # Skill & Platform System
 
+> Rewritten 2026-10-18 against the engine as built (SPIKE-008 R1-027, R1-102); earlier text described a 14-platform registry at `src/specflow/platforms.yaml` including Gemini CLI, 10 skills, per-platform facades and a `create --type standard` pack-author backend.
+
 The skill system bridges the SpecFlow Python CLI with AI agent platforms through modular, self-contained skill directories. It follows the progressive disclosure pattern: minimal context always loaded, detailed references loaded on demand.
 
-## Platform Support (14 Registered, 4 Instantiated in v0.2.0)
+## Platform Support (13 Registered)
 
-> Amended 2026-10-18 (SPIKE-008 R1-027, R1-102): the registry is `src/specflow/templates/platforms.yaml` with 13 platforms; Gemini CLI was removed (DEC-094). The shipped skill set also includes specflow-start and specflow-doc, and pack-author has no `create --type standard` backend. Counts and paths in this body are historical.
+13 platforms are registered in `src/specflow/templates/platforms.yaml` and loaded by `lib/platform.py` (`get_all_platforms()`, `detect_platform()`, `detect_platforms()`). Gemini CLI was retired (DEC-094). Each entry names the host's own `skills_dir`, the `instruction_file` that receives the injected SpecFlow context, `detection` markers, and optional `legacy_dirs`. `specflow init` installs skills into the directory returned by `platform.get_skills_install_dir()`, which is not always the host's own `skills_dir`: OpenCode already reads `.claude/skills`, so SpecFlow installs there for it, and hosts that declare the same `skills_dir` (Codex and Junie) share one install.
 
-14 platforms are registered in `src/specflow/platforms.yaml` and known to
-the platform-detection code in `lib/platform.py`. In the v0.2.0 repo, only
-4 platform directories are actually instantiated (the "Instantiated"
-column); the rest are dispatch targets that `specflow init` will scaffold
-on demand when run in a consumer project that uses them.
+| Platform | Registry key | `skills_dir` | SpecFlow skills installed to | `instruction_file` |
+|----------|--------------|--------------|------------------------------|--------------------|
+| Claude Code | `claude-code` | `.claude/skills` | `.claude/skills` | `AGENTS.md` |
+| Cursor | `cursor` | `.cursor/skills` | `.cursor/skills` | `.cursor/rules/specflow.md` |
+| Windsurf | `windsurf` | `.windsurf/skills` | `.windsurf/skills` | `.windsurf/rules/specflow.md` |
+| Cline | `cline` | `.cline/skills` | `.cline/skills` | `.clinerules/specflow.md` |
+| OpenCode | `opencode` | `.opencode/skills` | `.claude/skills` (OpenCode reads it) | `AGENTS.md` |
+| GitHub Copilot | `github-copilot` | `.github/skills` | `.github/skills` | `.github/copilot-instructions.md` |
+| Roo Code | `roo` | `.roo/skills` | `.roo/skills` | `.roo/rules/specflow.md` |
+| QwenCoder | `qwen` | `.qwen/skills` | `.qwen/skills` | `.qwen/rules/specflow.md` |
+| Kiro | `kiro` | `.kiro/skills` | `.kiro/skills` | `.kiro/steering/specflow.md` |
+| KiloCoder | `kilocode` | `.kilocode/skills` | `.kilocode/skills` | `.kilocode/rules/specflow.md` |
+| Codex | `codex` | `.agents/skills` | `.agents/skills` (shared with Junie) | `AGENTS.md` |
+| Trae | `trae` | `.trae/skills` | `.trae/skills` | `.trae/rules/specflow.md` |
+| Junie | `junie` | `.agents/skills` | `.agents/skills` (shared with Codex; one install) | `AGENTS.md` |
 
-| Platform | Directory | Registered | Instantiated in v0.2.0 |
-|----------|-----------|------------|------------------------|
-| Claude Code | `.claude/skills/` | ✅ | ✅ (Primary) |
-| Gemini CLI | `.gemini/skills/` | ✅ | ✅ |
-| OpenCode | `.opencode/skills/` | ✅ | ✅ |
-| QwenCoder | `.qwen/skills/` | ✅ | ✅ |
-| Cursor | `.cursor/skills/` | ✅ | — |
-| Windsurf | `.windsurf/skills/` | ✅ | — |
-| Cline | `.cline/skills/` | ✅ | — |
-| GitHub Copilot | `.github/copilot/skills/` | ✅ | — |
-| Roo Code | `.roo/skills/` | ✅ | — |
-| Kiro | `.kiro/skills/` | ✅ | — |
-| KiloCoder | `.kilocoder/skills/` | ✅ | — |
-| Codex | `.agents/skills/` (shared with Junie) | ✅ | — |
-| Trae | `.trae/skills/` | ✅ | — |
-| Junie | `.agents/skills/` (shared with Codex; one install) | ✅ | — |
+Platform auto-detection during `specflow init` scans for each entry's `detection` markers (for example `.claude/`, `.cursor/`).
 
-Platform auto-detection during `specflow init` scans for these directories.
-
-## Skill Inventory (10 Tier-1 Skills)
+## Skill Inventory (12 Core Skills)
 
 | Skill | Purpose | CLI Backend |
 |-------|---------|-------------|
-| `/specflow-init` | Bootstrap project, install skills, optional CI | `specflow init` |
-| `/specflow-discover` | Progressive disclosure requirement capture | `specflow create --type requirement` |
-| `/specflow-plan` | Architecture proposal, DDD creation, SPIDR story decomposition | `specflow create --type architecture`, `create --type story` |
-| `/specflow-execute` | Wave-based story implementation with status updates | `specflow go`, `specflow done`, `specflow generate-tests` |
-| `/specflow-artifact-review` | Lint + checklists + LLM judgment + adversarial lenses | `specflow artifact-lint`, `specflow checklist-run`, `specflow artifact-review` |
-| `/specflow-change-impact-review` | Blast-radius review of unreviewed change records | `specflow change-impact` |
-| `/specflow-audit` | Full-project health review (deterministic core + adversarial wings) | `specflow project-audit` |
-| `/specflow-ship` | Baseline creation, DEC trail, quick audit, advisory gate | `specflow baseline create`, `specflow document-changes`, `specflow project-audit --quick` |
-| `/specflow-pack-author` | Standards compliance pack authoring from PDF/URL/text | `specflow create --type standard` (indirect) |
-| `/specflow-adapter` | CI setup, exchange (ReqIF), standards ingestion, team RBAC | `specflow ci generate`, `specflow hook install`, `specflow import/export` |
+| `/specflow-init` | Bootstrap project, install skills, optional CI | `specflow init`, `specflow refresh`, `specflow practices seed`, `specflow ci generate`, `specflow hook install` |
+| `/specflow-discover` | Shape a fuzzy idea; author or revise REQs | `specflow create`, `specflow update`, `specflow approve`, `specflow phase-set`, `specflow standards gaps` |
+| `/specflow-plan` | Decompose approved REQs into ARCH/DDD/STORY | `specflow create`, `specflow update`, `specflow artifact-lint`, `specflow go`, `specflow risk-tier` |
+| `/specflow-execute` | Implement approved STORYs with status updates | `specflow go`, `specflow update`, `specflow artifact-lint`, `specflow verify`, `specflow done`, `specflow generate-tests` |
+| `/specflow-artifact-review` | Lint + checklists + agent judgment + thinking-technique lenses | `specflow artifact-review`, `specflow checklist-run`, `specflow update`, `specflow fingerprint-refresh` |
+| `/specflow-change-impact-review` | Blast-radius review of recent DECs | `specflow change-impact`, `specflow detect stale-docs`, `specflow update` |
+| `/specflow-audit` | Whole-project health review producing AUD and CHL | `specflow project-audit`, `specflow findings-baseline`, `specflow rtm`, `specflow standards gaps`, `specflow detect orphan-code` |
+| `/specflow-ship` | Baseline, change records, audit, release summary | `specflow project-audit --quick`, `specflow baseline create`, `specflow document-changes`, `specflow findings-baseline update`, `specflow verify` |
+| `/specflow-pack-author` | Standards compliance pack authoring from PDF/URL/text | `specflow pack-validate`, `specflow create --from-standard`, `specflow standards gaps`, `specflow refresh --packs` |
+| `/specflow-adapter` | CI setup, exchange (ReqIF), team RBAC, post-upgrade refresh | `specflow ci generate`, `specflow hook install`, `specflow import`/`export`, `specflow refresh` |
+| `/specflow-doc` | Cite specs from docs, find stale docs, keep decisions in artifacts | `specflow detect stale-docs`, `specflow brief`, `specflow project-audit` |
+| `/specflow-start` | Router when the next step is unknown | `specflow brief --next` |
+
+The shipped tree also holds `specflow-references/`, a support directory of shared `references/` files (no `SKILL.md`). `platform.get_skill_names()` lists the 12 skills.
 
 ## Skill Anatomy
 
@@ -86,18 +85,27 @@ Each skill is a directory containing:
 ```
 specflow-discover/
 ├── SKILL.md              # Required: Core instructions and triggers (lean router; budgeted, see below)
-├── references/           # Optional: Domain knowledge loaded ON DEMAND
-│   ├── readiness-assessment.md
-│   ├── domain-checklists/
-│   │   ├── web-app.md
-│   │   ├── cli-tool.md
-│   │   ├── api-service.md
-│   │   ├── embedded.md
-│   │   └── mobile.md
-│   ├── normative-language.md
-│   ├── spidr-decomposition.md
-│   └── cross-cutting.md
-└── scripts/              # Optional: Zero-token deterministic operations
+└── references/           # Optional: Domain knowledge loaded ON DEMAND
+    ├── readiness-assessment.md
+    ├── domain-checklists/
+    │   ├── web-app.md
+    │   ├── cli-tool.md
+    │   ├── api-service.md
+    │   ├── data-pipeline.md
+    │   ├── embedded.md
+    │   ├── library.md
+    │   ├── ml.md
+    │   ├── mobile.md
+    │   └── quant.md
+    ├── conflict-check.md
+    ├── cross-cutting.md
+    ├── framing.md
+    ├── level-boundaries.md
+    ├── normative-language.md
+    └── thinking-techniques.md
+
+specflow-pack-author/
+└── scripts/              # Optional: Zero-token deterministic operations (validate-pack.sh)
 ```
 
 ### `SKILL.md` (The Core)
@@ -118,7 +126,7 @@ specflow-discover/
 
 ## Unified Skill Templates
 
-All 14 registered platforms share the same skill content via `src/specflow/templates/skills/shared/`:
+All 13 registered platforms share the same skill content via `src/specflow/templates/skills/shared/`:
 - `specflow-init/SKILL.md`
 - `specflow-discover/SKILL.md` + `references/`
 - `specflow-plan/SKILL.md`
@@ -127,16 +135,19 @@ All 14 registered platforms share the same skill content via `src/specflow/templ
 - `specflow-change-impact-review/SKILL.md`
 - `specflow-audit/SKILL.md`
 - `specflow-ship/SKILL.md`
-- `specflow-pack-author/SKILL.md`
+- `specflow-pack-author/SKILL.md` + `scripts/`
 - `specflow-adapter/SKILL.md`
+- `specflow-doc/SKILL.md`
+- `specflow-start/SKILL.md`
+- `specflow-references/references/` (support files, no `SKILL.md`)
 
-Platform-specific wrappers (e.g., `.claude/skills/`) are thin facades that reference the shared templates.
+There are no per-platform facades: `init` (`commands/init.py:_install_skills`) copies every directory of the shared tree whole into the platform's install directory, replacing any existing copy.
 
 ## Progressive Disclosure in Practice
 
 ### Always Loaded (~50 tokens)
 The skill's YAML `description` field:
-> "Use when the user wants to discover and specify requirements for a new feature."
+> "Shape a fuzzy idea, or author/revise REQs when the requested change has no approved requirements yet, or rewind to requirements."
 
 ### On Invocation (~500 tokens)
 The `SKILL.md` body: Workflow steps, decision points, readiness criteria.
@@ -145,8 +156,8 @@ The `SKILL.md` body: Workflow steps, decision points, readiness criteria.
 Files in `references/` loaded only when relevant:
 - Domain checklists for project type
 - Cross-cutting concern checklists
-- SPIDR decomposition guides
-- EARS quality guidance
+- Framing and level-boundary guides
+- Normative-language (EARS) guidance
 
 ### Zero-Token
 Scripts in `scripts/` executed directly — no tokens consumed.
@@ -157,7 +168,7 @@ The skill system exposes a uniform interface through `/specflow-*` skill invocat
 
 ## Component
 
-Each skill is a self-contained directory (SKILL.md + references/ + scripts/) registered across 14 platforms via shared templates in `src/specflow/templates/skills/shared/`.
+Each skill is a self-contained directory (SKILL.md + optional references/ + optional scripts/) installed for all 13 registered platforms from the shared templates in `src/specflow/templates/skills/shared/`.
 
 ## Responsibility
 
@@ -171,8 +182,8 @@ User invokes skill → platform loads SKILL.md description (~50 tokens) → on i
 
 ## Dependencies
 
-- `src/specflow/platforms.yaml` — platform registry
-- `lib/platform.py` — platform detection and skills directory resolution
+- `src/specflow/templates/platforms.yaml` — platform registry
+- `lib/platform.py` — platform detection and skills install-directory resolution
 - `src/specflow/templates/skills/shared/` — unified skill content
 
 ## Skill Standards Compliance

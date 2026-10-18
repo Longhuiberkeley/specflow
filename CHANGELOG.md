@@ -4,6 +4,24 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.17.8] - 2026-10-18
+
+### Highlights
+- **Ledger wave 2 of the SPIKE-008 burn-down (REQ-071, STORY-751..753).** The 19 ARCH/DDD bodies that v1.17.7 could only annotate are rewritten against the engine as built — ARCH-001/003/004/005/007/009/010/011/014/015/016/017/018/019/020/025/027/031/035 and DDD-020 now name the real modules, signatures, flags and counts (argparse not Click, sha256 identifiers and plain XML in ReqIF export, per-commit ci-gate history walk, format-version helpers, `practices seed` not `best_practices.py`, COMP/LOOP/EXPT trace renderers, 13 platforms, 12 invocable skills plus the references directory), each with one rewrite line replacing the amendment notes. A guard test keeps the stale names out.
+- **Test specs tell the truth.** 52 draft UT/IT/QT specs under implemented or verified parents (practice spine UT-089..102 / IT-055..070 / QT-054..057 / QT-062..073, UT-153/154, IT-113/114, QT-114/115) now carry a `verify_command` and `output_files` pointing at the real tests and were promoted after `specflow verify` exit 0; dead `tests/*.py` citations in spec bodies point at the files that hold those tests today. QT-058..061 stay draft under deprecated REQ-048..051 with a retirement note because the test-spec status map has no terminal status (engine gap recorded on the ROADMAP).
+- **output_files truth sweep.** Verified STORYs whose auto-captured `output_files` named files another STORY introduced were corrected (STORY-043 group and the pre-v1.13 stories), the source-fingerprint store re-seeded, orphan-code stays at 0; files no STORY implements are named on the ROADMAP for backfilled stories rather than silently reassigned.
+
+### Fixes
+- Ledger only; no engine change in this release.
+
+### Decisions / Docs
+- REQ-071 verified (derives_from SPIKE-008, guided_by DEC-105); STORY-751..753 verified with UT-168..170 / IT-128..130 / QT-129..131 (`specflow verify` exit 0). DEC-084 remains draft.
+- ROADMAP: engine gaps found on the way — test-spec schemas need a terminal status (`cancelled`), `fingerprint-refresh` does not bump `modified`, `source-fingerprints.yaml` keeps entries for stories cleared to empty `output_files`, `cli.py` autoresearch help names four of eight subcommands, `lib/practices_seed.py` docstring still names `handbook generate`, `lib/impact.reverse_impact` has no callers; severity-vocabulary unification stays a minor-release item.
+
+### Tests
+- +46 (3424 → 3470): `tests/test_arch_bodies_current.py` (stale-name and rewrite-line guards for the 20 bodies), `tests/test_spec_promotion_state.py` (no draft spec under a claimed parent, promoted specs carry evidence, every cited test path exists), one practice-spine integration test in `tests/test_practices.py`.
+- Total: 3470 tests passing (19 skipped, 1 strict xfail for DEF-014)
+
 ## [1.17.7] - 2026-10-18
 
 ### Highlights

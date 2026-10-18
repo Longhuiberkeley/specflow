@@ -288,7 +288,7 @@ artifacts:
     - verification-contract
     - evidence
     - REQ-015
-    fingerprint: sha256:1bb23f8c261f
+    fingerprint: sha256:8111078847ee
     children: []
   IT-036:
     id: IT-036
@@ -451,112 +451,112 @@ artifacts:
     id: IT-055
     title: 'Integration Test for ARCH-035: Practice spine: BP anatomy, provenance,
       lifecycle, and deterministic validation'
-    status: draft
+    status: implemented
     tags: []
-    fingerprint: sha256:0cd8796bd286
+    fingerprint: sha256:bb746da0d6d2
     children: []
   IT-056:
     id: IT-056
     title: BP schema integration across lint and create (STORY-666)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:a3cf04ff5f60
     children: []
   IT-057:
     id: IT-057
     title: Handbook alias produces equivalent practices (STORY-667)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:d0298d2a9a9e
     children: []
   IT-058:
     id: IT-058
     title: Migration fold-in across refresh, init, and pack apply (STORY-668)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:7ed385b56032
     children: []
   IT-059:
     id: IT-059
     title: guided_by link role integration across artifact types (ARCH-036)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:7f3ce0fcb933
     children: []
   IT-060:
     id: IT-060
     title: Frontier ledger integration on fixture COMP (ARCH-037)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:6437ac118e35
     children: []
   IT-061:
     id: IT-061
     title: Integrity guard integration on fixture COMP (ARCH-038)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:22ba0dc20337
     children: []
   IT-062:
     id: IT-062
     title: guided_by edge renders through trace (STORY-669)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:5613479a0750
     children: []
   IT-063:
     id: IT-063
     title: bp-application coverage arithmetic end to end (STORY-670)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:923abf277163
     children: []
   IT-064:
     id: IT-064
     title: Brief binding section omission (STORY-671)
-    status: draft
+    status: implemented
     tags: []
-    fingerprint: sha256:4ee3bef03efd
+    fingerprint: sha256:6315f1430d1d
     children: []
   IT-065:
     id: IT-065
     title: Frontier CLI rendering and json ledger (STORY-672)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:acb6116fa20d
     children: []
   IT-066:
     id: IT-066
     title: EDA lens wiring and agenda revision advisory (STORY-673)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:13518bfdb44b
     children: []
   IT-067:
     id: IT-067
     title: Error-analysis protocol pack integration (STORY-674)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:742b653bc2c8
     children: []
   IT-068:
     id: IT-068
     title: Condensation gate and top-3 ranking integration (STORY-675)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:384f11350556
     children: []
   IT-069:
     id: IT-069
     title: Fingerprint freeze and drift routing integration (STORY-676)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:1bfe9e825e13
     children: []
   IT-070:
     id: IT-070
     title: Guard advisories and quant bundle integration (STORY-677)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:c71c88ef596d
     children: []
@@ -886,14 +886,14 @@ artifacts:
   IT-113:
     id: IT-113
     title: Integration tests for STORY-736 lint negative fixtures
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:2a906c0752d0
     children: []
   IT-114:
     id: IT-114
     title: Integration tests for STORY-737 evidence-label skill pointers
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:4a6efc8f0d5d
     children: []
@@ -994,4 +994,27 @@ artifacts:
     tags: []
     fingerprint: sha256:c8166c514384
     children: []
-next_id: 128
+  IT-128:
+    id: IT-128
+    title: 'Integration tests for STORY-751: fingerprints and links clean after the
+      rewrites'
+    status: implemented
+    tags: []
+    fingerprint: sha256:da523073dc56
+    children: []
+  IT-129:
+    id: IT-129
+    title: 'Integration tests for STORY-752: coverage lint clean after promotion'
+    status: implemented
+    tags: []
+    fingerprint: sha256:b9be20d4b3b4
+    children: []
+  IT-130:
+    id: IT-130
+    title: 'Integration tests for STORY-753: source-drift store consistent with the
+      re-seeded stories'
+    status: implemented
+    tags: []
+    fingerprint: sha256:9544bac2031e
+    children: []
+next_id: 131

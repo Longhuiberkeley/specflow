@@ -1,0 +1,10 @@
+changed: QT-018
+change_type: content_modified
+fingerprint_old: sha256:e9177887e3ae
+fingerprint_new: sha256:0c6c73eb3604
+update_type: minor
+flagged_suspects: []
+resolved: true
+timestamp: '2026-10-18T14:42:23Z'
+resolved_by: system
+resolved_at: '2026-10-18T14:42:23Z'

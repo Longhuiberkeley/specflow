@@ -26,11 +26,10 @@ created: '2026-04-14'
 checklists_applied:
 - checklist: check-STORY-027
   timestamp: '2026-04-14T17:03:23Z'
-modified: '2026-04-22'
+modified: '2026-10-18'
 fingerprint: sha256:9c0476d6bc9e
 version: 2
 output_files:
-- src/specflow/commands/adopt.py
 - src/specflow/commands/locks.py
 - src/specflow/commands/merge.py
 - src/specflow/commands/rebuild_index.py
@@ -38,9 +37,6 @@ output_files:
 - src/specflow/commands/unlock.py
 - src/specflow/lib/dedup.py
 - src/specflow/lib/rbac.py
-- src/specflow/packs/adoption/pack.yaml
-- tests/test_adoption_mechanics.py
-- tests/test_adoption_pack.py
 ---
 
 # Expose recovery primitives as CLI commands and clean up dead code

@@ -21,7 +21,7 @@ links:
 - target: QT-013
   role: verified_by
 created: '2026-04-21'
-modified: '2026-04-22'
+modified: '2026-10-18'
 fingerprint: sha256:d87a2091f072
 version: 1
 output_files:
@@ -31,8 +31,6 @@ output_files:
 - src/specflow/commands/transitions.py
 - src/specflow/templates/schemas/requirement.yaml
 - tests/test_cli_commands.py
-- tests/test_v124_ergonomics.py
-- tests/test_v12_features.py
 ---
 
 # Remove deprecated CLI aliases and fix requirement schema

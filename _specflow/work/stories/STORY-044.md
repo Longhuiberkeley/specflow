@@ -21,9 +21,12 @@ links:
 - target: IT-001
   role: verified_by
 created: '2026-04-21'
-modified: '2026-04-22'
+modified: '2026-10-18'
 fingerprint: sha256:1951bbd87bce
 version: 1
+output_files:
+- src/specflow/lib/reqif.py
+- tests/test_reqif_roundtrip.py
 ---
 
 # Fix ReqIF round-trip quality: stable UUIDs, schema fix, tests, ARCH/DDD export

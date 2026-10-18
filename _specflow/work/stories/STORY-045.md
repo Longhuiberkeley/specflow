@@ -23,9 +23,12 @@ links:
 - target: QT-012
   role: verified_by
 created: '2026-04-21'
-modified: '2026-04-22'
+modified: '2026-10-18'
 fingerprint: sha256:d0d41ed8b5f6
 version: 1
+output_files:
+- src/specflow/commands/generate_tests.py
+- tests/test_generate_tests.py
 ---
 
 # Add specflow generate-tests command and update execute skill

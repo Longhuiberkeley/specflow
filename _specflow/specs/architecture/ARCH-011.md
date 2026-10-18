@@ -10,33 +10,33 @@ links:
 - target: IT-013
   role: verified_by
 created: '2026-04-22'
-fingerprint: sha256:931e28e2e2df
+fingerprint: sha256:cd4f5ec8d692
 thinking_techniques:
 - assumption_surfacing
 - devils_advocate
-version: 2
+version: 3
 modified: '2026-10-08'
 ---
 
 # Tier 1 Conversational Routing
 
+> Rewritten 2026-10-18 against the engine as built (SPIKE-008 R1-105); earlier text described 10 core skills and a default route to specflow-execute.
+
 ## Component
 
-The skill ecosystem lives in `.claude/skills/` (or the platform-equivalent directory resolved by `lib/platform.py`). Each skill is a directory containing a `SKILL.md` entry point and optional `references/` and `scripts/` subdirectories. The agent loads a skill via the skill tool when a user utterance matches the skill's trigger description.
+Skills are installed into the host's skills directory resolved by `lib/platform.py` (`get_skills_install_dir()`; `.claude/skills/` for Claude Code, one of the 13 platforms registered in `src/specflow/templates/platforms.yaml`). The shipped source is `src/specflow/templates/skills/shared/`, which `init` and `refresh` copy; in this repo the live `.claude/skills/` tree mirrors it byte for byte. Each skill is a directory containing a `SKILL.md` entry point and optional `references/` and `scripts/` subdirectories. The agent loads a skill when a user utterance matches the `description` in the skill's SKILL.md frontmatter.
 
 ## Structure
 
-- **Core skills** (10 directories): `specflow-discover`, `specflow-plan`, `specflow-execute`, `specflow-artifact-review`, `specflow-audit`, `specflow-change-impact-review`, `specflow-ship`, `specflow-init`, `specflow-adapter`, `specflow-pack-author`.
-- **Pack skills**: installed at runtime by `apply_pack()` from `pack.yaml`'s `adds_skills` field into the platform skills directory.
-- **Routing heuristic**: The agent matches user intent to the closest skill trigger phrase. Ambiguous requests default to `specflow-execute` for implementation work.
-
-> Amended 2026-10-18 (SPIKE-008 R1-105): there are 12 core skills, the 10 above plus specflow-doc and specflow-start (`get_skill_names()`, lib/platform.py:203); specflow-references is a support directory. When the next step is unclear, routing goes through specflow-start (`specflow brief --next`), not a default to specflow-execute.
+- **Core skills** (13 directories): the 12 skills named by `get_skill_names()` in `lib/platform.py` — `specflow-init`, `specflow-discover`, `specflow-plan`, `specflow-execute`, `specflow-artifact-review`, `specflow-change-impact-review`, `specflow-audit`, `specflow-ship`, `specflow-pack-author`, `specflow-adapter`, `specflow-doc`, `specflow-start` — plus `specflow-references`, a support directory of shared reference files (no SKILL.md).
+- **Pack skills**: installed by `apply_pack()` (`lib/scaffold.py`) from `pack.yaml`'s `adds_skills` field into the platform skills install directory, without overwriting an existing skill.
+- **Routing heuristic**: The agent matches user intent to the closest skill description. When the next step is unclear, `specflow-start` routes: it sends a project without `.specflow/` to `/specflow-init`, otherwise runs `specflow brief --next` and names the next skill.
 
 ## Interface
 
-- **SKILL.md**: Markdown file with YAML-like sections defining trigger phrases, workflow steps, and references to scripts.
+- **SKILL.md**: Markdown file with YAML frontmatter (`name`, and `description`, which is the trigger) followed by the workflow steps and pointers to references and scripts.
 - **References directory**: Domain knowledge documents the skill injects into context (protocols, checklists, escalation rules).
-- **Scripts directory**: Deterministic shell/Python scripts the skill invokes for zero-token validation (e.g., `artifact-lint`, `project-audit`).
+- **Scripts directory**: Deterministic shell scripts that wrap CLI calls; the only one shipped is `specflow-pack-author/scripts/validate-pack.sh`, which delegates to `specflow pack-validate`. Other zero-token checks are CLI commands the skills call directly (e.g., `specflow artifact-lint`, `specflow project-audit`).
 
 ## Responsibility
 

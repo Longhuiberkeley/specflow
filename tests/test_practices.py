@@ -609,3 +609,27 @@ def test_apply_pack_and_refresh_pack_stamp_provenance(tmp_path: Path):
         "approved": ["draft", "active"],
         "superseded": ["approved", "active"],
     }
+
+
+def test_cli_create_with_anatomy_fields_round_trips_through_validation(
+    tmp_path: Path, monkeypatch,
+):
+    """IT-056: `create --set` anatomy fields survive schema validation."""
+    from specflow import cli
+
+    assert init_cmd.run(tmp_path, {"platform": "opencode", "no_ci": True}) == 0
+    monkeypatch.chdir(tmp_path)
+    body = practices.render_practice_body(
+        "Do the practice.", "For relevant work.", "A decision record.",
+        "Inspect the record.", "It avoids ambiguity.",
+    )
+    assert cli.main([
+        "create", "--type", "best-practice", "--title", "Round-trip practice",
+        "--skip-dedup-check", "--body", body,
+        "--set", "provenance=bundled", "--set", "source=SEED-GENERIC-01",
+        "--set", "verification_method=inspection", "--set", "strength=recommended",
+    ]) == 0
+    bps = [a for a in art_lib.discover_artifacts(tmp_path) if a.id.startswith("BP-")]
+    assert [a.frontmatter["provenance"] for a in bps] == ["bundled"]
+    assert bps[0].frontmatter["verification_method"] == "inspection"
+    assert practices.validate_practices(tmp_path) == []

@@ -21,15 +21,11 @@ links:
 - target: IT-001
   role: verified_by
 created: '2026-04-21'
-modified: '2026-04-22'
+modified: '2026-10-18'
 fingerprint: sha256:8f982267b23d
 version: 1
 output_files:
-- src/specflow/commands/generate_tests.py
 - src/specflow/commands/status.py
-- src/specflow/lib/reqif.py
-- tests/test_generate_tests.py
-- tests/test_reqif_roundtrip.py
 - tests/test_status_coverage.py
 ---
 

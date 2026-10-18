@@ -155,7 +155,7 @@ artifacts:
     - ids
     - branching
     - P7
-    fingerprint: sha256:c4a2d22865de
+    fingerprint: sha256:949cd520fcbe
     children: []
   STORY-016:
     id: STORY-016
@@ -231,7 +231,7 @@ artifacts:
     - skills
     - M1-clarity
     - spidr-interface
-    fingerprint: sha256:ea3bae1e6e1b
+    fingerprint: sha256:cff4bb0a1d4f
     children: []
   STORY-023:
     id: STORY-023
@@ -250,7 +250,7 @@ artifacts:
     - review
     - quality
     - M1-clarity
-    fingerprint: sha256:b95df92dbbbb
+    fingerprint: sha256:32fc29f0bcca
     children: []
   STORY-025:
     id: STORY-025
@@ -280,7 +280,7 @@ artifacts:
     - cleanup
     - CLI
     - M2-extensible
-    fingerprint: sha256:283b8b4cca4f
+    fingerprint: sha256:9c0476d6bc9e
     children: []
   STORY-028:
     id: STORY-028
@@ -319,7 +319,7 @@ artifacts:
     - UX
     - documentation
     - M3-depth
-    fingerprint: sha256:9a3927cd99b2
+    fingerprint: sha256:6caf80005302
     children: []
   STORY-032:
     id: STORY-032
@@ -340,7 +340,7 @@ artifacts:
     - UX
     - skills
     - M4-ux
-    fingerprint: sha256:e150f32f8b00
+    fingerprint: sha256:a482337d52d4
     children: []
   STORY-034:
     id: STORY-034
@@ -1950,4 +1950,33 @@ artifacts:
     - v1.17.7
     fingerprint: sha256:983e9ca9aae5
     children: []
-next_id: 751
+  STORY-751:
+    id: STORY-751
+    title: Rewrite 19 ARCH/DDD bodies to the engine as built (SPIKE-008 ARCH rows)
+    status: verified
+    tags:
+    - consistency
+    - v1.17.8
+    fingerprint: sha256:a3778d1a96c3
+    children: []
+  STORY-752:
+    id: STORY-752
+    title: Promote or close the 56 draft UT/IT/QT specs and repair stale test-file
+      citations
+    status: verified
+    tags:
+    - consistency
+    - v1.17.8
+    fingerprint: sha256:555e51de503b
+    children: []
+  STORY-753:
+    id: STORY-753
+    title: 'output_files truth sweep: move or drop auto-captured files that other
+      stories implement'
+    status: verified
+    tags:
+    - consistency
+    - v1.17.8
+    fingerprint: sha256:6b2b821ee816
+    children: []
+next_id: 754

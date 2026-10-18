@@ -27,9 +27,12 @@ checklists_applied:
   timestamp: '2026-04-11T13:45:49Z'
 - checklist: check-STORY-015
   timestamp: '2026-04-14T17:03:23Z'
-modified: '2026-04-22'
+modified: '2026-10-18'
 fingerprint: sha256:949cd520fcbe
 version: 2
+output_files:
+- src/specflow/lib/draft_ids.py
+- src/specflow/commands/renumber_drafts.py
 ---
 
 # Implement draft IDs on branches with CI renumbering on merge

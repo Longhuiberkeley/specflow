@@ -14,7 +14,7 @@ links:
   role: implements
 created: '2026-10-08'
 fingerprint: sha256:75891357e37f
-modified: '2026-10-09'
+modified: '2026-10-18'
 output_files:
 - src/specflow/commands/autoresearch.py
 - src/specflow/commands/change_impact.py
@@ -27,6 +27,7 @@ output_files:
 - src/specflow/packs/ops/skills/specflow-ops/SKILL.md
 - tests/test_p9_writers_stdin_impact.py
 - tests/test_display_colors.py
+- src/specflow/lib/display.py
 ---
 
 # Wave P-9: stdin EOF guard, reserved --set keys, title index sync, no-op fingerprint refresh, impact-log noise, dedup gate

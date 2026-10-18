@@ -27,15 +27,13 @@ links:
 created: '2026-04-17'
 fingerprint: sha256:a482337d52d4
 version: 3
-modified: '2026-04-22'
+modified: '2026-10-18'
 output_files:
 - src/specflow/commands/approve.py
 - src/specflow/commands/create.py
 - src/specflow/commands/standards_gaps.py
-- src/specflow/packs/tldr-communication/pack.yaml
 - src/specflow/templates/platforms.yaml
 - src/specflow/templates/skills/shared/specflow-pack-author/scripts/validate-pack.sh
-- tests/test_tldr_pack.py
 ---
 
 # Build the 9 Tier 1 conversational skills — init, audit, ship + modifications

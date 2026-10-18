@@ -455,28 +455,28 @@ artifacts:
   QT-054:
     id: QT-054
     title: Qualify the practice spine (REQ-044)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:f1c1dc5a508f
     children: []
   QT-055:
     id: QT-055
     title: Qualify practice application and enforcement (REQ-045)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:0013b5e1001a
     children: []
   QT-056:
     id: QT-056
     title: Qualify autoresearch steering and analysis (REQ-046)
-    status: draft
+    status: implemented
     tags: []
-    fingerprint: sha256:fb20ec8b48a5
+    fingerprint: sha256:e8f673245cbb
     children: []
   QT-057:
     id: QT-057
     title: Qualify research integrity guards (REQ-047)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:7496162a774b
     children: []
@@ -511,84 +511,84 @@ artifacts:
   QT-062:
     id: QT-062
     title: Qualify BP anatomy and lifecycle (STORY-666)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:69dbe135f518
     children: []
   QT-063:
     id: QT-063
     title: Qualify seed split (STORY-667)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:01852af9178a
     children: []
   QT-064:
     id: QT-064
     title: Qualify practices migrate safety (STORY-668)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:a7b1fa674354
     children: []
   QT-065:
     id: QT-065
     title: Qualify guided_by binding (STORY-669)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:776361ee1ee8
     children: []
   QT-066:
     id: QT-066
     title: Qualify bp-application enforcement posture (STORY-670)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:9f8138e9b7e9
     children: []
   QT-067:
     id: QT-067
     title: Qualify brief practice accounting (STORY-671)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:e0915f29341a
     children: []
   QT-068:
     id: QT-068
     title: Qualify frontier stagnation advisories (STORY-672)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:3c2a8f06724e
     children: []
   QT-069:
     id: QT-069
     title: Qualify EDA lens flow (STORY-673)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:4d6ae47507be
     children: []
   QT-070:
     id: QT-070
     title: Qualify analysis-first iteration (STORY-674)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:f083b2797f8a
     children: []
   QT-071:
     id: QT-071
     title: Qualify LOOP knowledge flow (STORY-675)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:004c9835761b
     children: []
   QT-072:
     id: QT-072
     title: Qualify evaluator drift handling (STORY-676)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:1bfd55f23221
     children: []
   QT-073:
     id: QT-073
     title: Qualify loss-hacking resistance (STORY-677)
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:d44ef36b494a
     children: []
@@ -897,14 +897,14 @@ artifacts:
   QT-114:
     id: QT-114
     title: Qualification test for REQ-065 lint negative-fixture coverage
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:a906932d2db0
     children: []
   QT-115:
     id: QT-115
     title: Qualification test for REQ-066 evidence-labeled claims
-    status: draft
+    status: implemented
     tags: []
     fingerprint: sha256:3cec075297f5
     children: []
@@ -1003,4 +1003,26 @@ artifacts:
     tags: []
     fingerprint: sha256:8ea23a221e6f
     children: []
-next_id: 129
+  QT-129:
+    id: QT-129
+    title: 'Qualification for STORY-751: rewritten bodies plus shipped prose still
+      parse against the CLI'
+    status: implemented
+    tags: []
+    fingerprint: sha256:0cf054c9338a
+    children: []
+  QT-130:
+    id: QT-130
+    title: 'Qualification for STORY-752: promotion state and dead-oracle suites'
+    status: implemented
+    tags: []
+    fingerprint: sha256:44d1f1ce42ff
+    children: []
+  QT-131:
+    id: QT-131
+    title: 'Qualification for STORY-753: zero orphan source files'
+    status: implemented
+    tags: []
+    fingerprint: sha256:a18d5e00743d
+    children: []
+next_id: 132

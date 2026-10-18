@@ -9,59 +9,61 @@ links:
   role: derives_from
 created: '2026-05-04'
 modified: '2026-10-08'
-fingerprint: sha256:f6209427bf3a
+fingerprint: sha256:75c8167aecc6
 thinking_techniques:
 - assumption_surfacing
 - devils_advocate
 rationale: 'Fully implemented: SPIDR, wave-cycle, DDD selection, decision guidance,
   and the bundled no-API handbook fallback now ship with executable evidence.'
-version: 1
+version: 2
 ---
 
 # Decomposition Guidance System
 
-Provides deterministic validation and reference guidance for decomposition completeness. Includes SPIDR dimension coverage checks, story dependency cycle detection, bundled generic best practices, DDD selection guidance, and plan-skill decision artifact creation.
+> Rewritten 2026-10-18 against the engine as built (SPIKE-008 R1-034); earlier text described a `best_practices.py` / `templates/best-practices/` API-key fallback and plan Step 3 creating DEC artifacts (the plan skill now reads discover's DECs and writes option briefs before a contested ARCH).
+
+Provides deterministic validation and reference guidance for decomposition completeness. Includes SPIDR dimension coverage checks, story dependency cycle detection, a bundled best-practice seed catalogue, DDD selection guidance, and plan-skill decision guidance.
 
 ## Package Structure
 
 ```
-src/specflow/commands/artifact_lint.py       — New checks: spidr-coverage, wave-cycles
-src/specflow/lib/best_practices.py           — Bundled generic BP fallback
-src/specflow/templates/best-practices/       — Generic phase BP YAML files
-.claude/skills/specflow-plan/references/     — ddd-selection.md (new reference doc)
-.claude/skills/specflow-plan/SKILL.md        — Updated: DEC creation in Step 3
+src/specflow/commands/artifact_lint.py       — checks spidr-coverage (_check_spidr_coverage) and wave-cycles (_check_wave_cycles)
+src/specflow/lib/practices_seed.py           — bundled generic + domain best-practice seed catalogue (no external API)
+src/specflow/commands/practices.py           — `specflow practices seed [--create] [--verbose]`
+src/specflow/commands/handbook.py            — deprecated `handbook generate` alias delegating to `practices seed`
+.claude/skills/specflow-plan/references/     — ddd-selection.md (6-question DDD checklist)
+.claude/skills/specflow-plan/SKILL.md        — Step 2 loads discover's DECs and seeds BPs; Step 3 option briefs; Step 4 DDD selection
 ```
 
 ## Component Responsibilities
 
-1. **SPIDR Coverage Checker**: Scans story tags for `spidr-*` prefixes. Reports which of the 5 dimensions (spike, path, interface, data, rules) have zero stories. Warning-only, not blocking.
+1. **SPIDR Coverage Checker**: Scans story tags for `spidr-*` prefixes. Reports which of the 5 dimensions (spike, path, interface, data, rules) have zero stories, as warning `spidr-coverage/dimension`; with fewer stories than dimensions the gaps are informational only. Never blocking.
 
-2. **Wave Cycle Detector**: Imports `compute_waves()` from `waves.py`. Runs during `artifact-lint --type wave-cycles`. Reports circular dependencies and stories with excessive (>3) dependencies.
+2. **Wave Cycle Detector**: Imports `compute_waves()` from `lib/waves.py`. Runs with every `artifact-lint` and alone via `artifact-lint --type wave-cycles`. Reports circular dependencies (`wave-cycles/cycle`) and stories with excessive (>3) dependencies (`wave-cycles/fan-in`), as warnings.
 
-3. **Generic BP Bundler**: Ships 3-5 universal best-practice YAML files in `templates/best-practices/`. When `handbook generate` is called without an API key, copies these as fallback instead of failing.
-
-> Amended 2026-10-18 (SPIKE-008 R1-034): `lib/best_practices.py`, `templates/best-practices/` and `copy_generic_fallback` no longer exist. The bundled catalogue is `lib/practices_seed.py`, surfaced by `specflow practices seed [--create]`; `handbook generate` is a deprecated alias for it, and no API key is involved.
+3. **Bundled Practice Seeds**: `lib/practices_seed.py` is the single source of truth for the bundled catalogue: universal generic practices plus domain practices selected by `project.domain` (`generate_handbook(root)` returns them with `source: "bundled"`). `specflow practices seed` lists them and `--create` drafts BP artifacts for the user to approve; no API key is involved. `specflow handbook generate` remains as a stderr-warned deprecated alias for `practices seed`.
 
 4. **DDD Selection Guide**: Reference document with a 6-question decision checklist. Not enforced by lint — used by the plan skill during Step 4 to decide which ARCHs need DDD artifacts.
 
-5. **Plan Decision Recorder**: Skill instruction update. During Step 3, when significant architectural choices are made, the plan skill creates DEC artifacts to make choices traceable and feed back into the handbook system.
+5. **Plan Decision Guidance**: Skill instruction. In Step 2 the plan skill loads the DECs that discover's challenge step created; in Step 3, when a component's structure is a real choice (irreversible, a new external dependency, or two plausible approaches), it writes 2-3 one-paragraph option briefs with the user before the ARCH, and it surfaces key decisions in the approval presentation.
 
 ## Interfaces
 
-- `_check_spidr_coverage(artifacts) -> (blocking, warnings, details)` — new lint check
-- `_check_wave_cycles(root) -> (blocking, warnings, details)` — new lint check
-- `best_practices.copy_generic_fallback(cache_path, phase)` — fallback copy
-- New reference: `references/ddd-selection.md`
+- `_check_spidr_coverage(artifacts) -> dict` — the `spidr-coverage` lint check (shared check-result dict)
+- `_check_wave_cycles(artifacts, root) -> dict` — the `wave-cycles` lint check
+- `practices_seed.generate_handbook(root) -> dict` and `practices_seed.get_practices(domain) -> list[Practice]` — the bundled catalogue
+- CLI: `specflow practices seed [--create] [--verbose]`; `specflow handbook generate` (deprecated alias)
+- Reference: `references/ddd-selection.md`
 
 ## Dependencies
 
-- Existing `waves.py` for cycle detection
-- Existing `best_practices.py` for handbook generation
-- Existing DEC artifact type and create command
+- Existing `lib/waves.py` for cycle detection
+- `lib/practices_seed.py` and `lib/config.get_domain` for the bundled practice catalogue
+- Existing DEC artifact type (DECs created by discover's challenge step)
 - Story tag convention (`tags:` field in frontmatter)
 
 ## Data Flow
 
-1. `artifact-lint` runs spidr-coverage and wave-cycles alongside existing checks
-2. `handbook generate` falls back to bundled generic BPs when no API key
-3. Plan skill reads ddd-selection.md during Step 4, creates DEC artifacts in Step 3
+1. `artifact-lint` runs spidr-coverage and wave-cycles alongside the other checks
+2. `specflow practices seed` (or the deprecated `handbook generate`) reads the project domain and lists or drafts the bundled practices, with no API key
+3. Plan skill loads discover's DECs and seeds BPs in Step 2, writes option briefs for contested components in Step 3, and reads ddd-selection.md in Step 4

@@ -26,16 +26,10 @@ created: '2026-04-14'
 checklists_applied:
 - checklist: check-STORY-024
   timestamp: '2026-04-14T17:03:23Z'
-modified: '2026-04-22'
+modified: '2026-10-18'
 fingerprint: sha256:32fc29f0bcca
 version: 2
 output_files:
-- src/specflow/commands/ci.py
-- src/specflow/commands/export_cmd.py
-- src/specflow/commands/import_cmd.py
-- src/specflow/lib/adapters/base.py
-- src/specflow/lib/adapters/github_actions.py
-- src/specflow/lib/adapters/reqif.py
 - src/specflow/lib/techniques/__init__.py
 - src/specflow/lib/techniques/assumption_surfacing.py
 - src/specflow/lib/techniques/devils_advocate.py
