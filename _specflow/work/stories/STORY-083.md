@@ -15,8 +15,8 @@ links:
 - target: ARCH-022
   role: specified_by
 created: '2026-08-02'
-fingerprint: sha256:2f37303ac6d9
-version: 2
+fingerprint: sha256:4acebb70a18b
+version: 3
 thinking_techniques:
 - worst_case_user
 - composition
@@ -32,7 +32,10 @@ Refresh configured active-pack schemas, skills, checklists, and context safely. 
 
 ## Acceptance Criteria
 
-1. `specflow refresh` previews every schema/skill/checklist/context change before writing anything.
+1. `specflow refresh --dry-run` previews every schema/skill/checklist/context change before writing anything.
+
+> Amended 2026-10-18 (SPIKE-008 R1-141): the preview is `--dry-run` only (commands/refresh.py). A plain `specflow refresh` writes without a confirmation step; it still preserves drifted files unless `--force` and backs up what it overwrites.
+
 2. Local `_specflow/` artifacts are never modified by a pack-asset refresh.
 3. A locally edited shipped asset is preserved by default and replaced only under explicit `--force`.
 4. Re-running refresh is idempotent: a second run reports nothing to change.

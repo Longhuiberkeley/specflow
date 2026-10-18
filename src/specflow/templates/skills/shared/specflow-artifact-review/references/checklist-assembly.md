@@ -3,7 +3,7 @@
 **Assembly is owned by `specflow checklist-run`** — the command assembles the full set (artifact-type, shared/tag-matched, phase-gate, learned, and matching best-practice sources), deduplicates, sorts automated-first, runs, persists to `.specflow/checklist-log/`, and updates `checklists_applied`. This file documents what it composes from and how to author items — it does not restate the algorithm.
 
 - `specflow checklist-run <ID>` — assembled checklist for one artifact; `--all` for every artifact; `--proactive` adds challenge items; `--dedup` runs the tier-1 + tier-2 duplicate-detection pipeline (review the generated candidates — similarity is not automatic duplication).
-- Sources live in `.specflow/checklists/`: `in-process/` (per artifact type), `review/` (per artifact type), `shared/` (matched via `applies_to` tags/types; none ship by default — bring your own), `phase-gates/` (matched by filename `<from>-to-<to>.yaml`, loaded with `--gate` or before a transition; `phase_from`/`phase_to` in the file are metadata only), `domain/` (the `domain` set in `config.yaml`), `learned/` (prevention patterns from past defects). Other directories are not read.
+- Sources live in `.specflow/checklists/`: `in-process/` (per artifact type), `review/` (per artifact type), `shared/` (matched via `applies_to` tags/types; none ship by default — bring your own), `phase-gates/` (matched by filename `<from>-to-<to>.yaml`, loaded only with `--gate <from>-to-<to>` — no status or phase transition loads or runs them; `phase_from`/`phase_to` in the file are metadata only), `domain/` (the `domain` set in `config.yaml`), `learned/` (prevention patterns from past defects). Other directories are not read.
 
 ## Item Modes
 
@@ -32,3 +32,5 @@ items:
     script: "specflow artifact-lint --type acceptance"
     severity: blocking
 ```
+
+An automated script receives the artifact path as `$1`. `specflow artifact-lint` ignores it and runs repo-wide, so the item above passes or fails on the whole project; read `"$1"` in the script for a per-artifact check.

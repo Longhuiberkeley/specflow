@@ -637,7 +637,13 @@ def test_staged_specflow_paths_sees_deletions_and_renames(tmp_path):
     (root / "_specflow/specs/requirements/_index.yaml").write_text("{a: 1}\n", encoding="utf-8")
     _git(root, "add", "_specflow/specs/requirements/_index.yaml")
 
-    assert rbac_lib.staged_artifact_changes(root) == []  # unchanged contract: A/M only
+    # STORY-748 (DEF-023): renames are reported with their HEAD path; a pure
+    # `git mv` carries the same status on both sides, so RBAC skips it.
+    changes = rbac_lib.staged_artifact_changes(root)
+    assert [(c["old_path"], c["path"]) for c in changes] == [(
+        "_specflow/specs/requirements/REQ-002.md", "_specflow/specs/requirements/REQ-003.md",
+    )]
+    assert changes[0]["old_status"] == changes[0]["new_status"] == "approved"
     paths = rbac_lib.staged_specflow_paths(root)
     assert "_specflow/specs/requirements/REQ-001.md" in paths
     assert "_specflow/specs/requirements/REQ-003.md" in paths

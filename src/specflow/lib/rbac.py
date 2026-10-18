@@ -187,18 +187,30 @@ def current_git_author_email(root: Path) -> str:
 def staged_artifact_changes(root: Path) -> list[dict[str, Any]]:
     """Return frontmatter diffs for staged _specflow/**.md files.
 
+    Covers additions, modifications and renames (``-M --diff-filter=AMR``).
     For each staged file, returns:
-      {path, old_status, new_status, old_fm, new_fm}
-    `old_*` values are taken from `HEAD:<path>` (empty/None if file is new).
-    `new_*` values are taken from the staged index (`:<path>`).
+      {path, old_path, old_status, new_status, old_fm, new_fm}
+    `path` is the staged (new) path; `old_path` is the HEAD path, which
+    differs from `path` only for a rename. `old_*` values are taken from
+    `HEAD:<old_path>` (empty if the file is new); `new_*` values from the
+    staged index (`:<path>`). A staged `git mv` that also changes status is
+    therefore evaluated instead of skipped (DEF-023).
     """
-    diff = _run_git(root, ["diff", "--cached", "--name-only", "--diff-filter=AM"])
+    diff = _run_git(root, ["diff", "--cached", "--name-status", "-M", "--diff-filter=AMR"])
     if diff.returncode != 0:
         return []
 
     changes: list[dict[str, Any]] = []
     for line in diff.stdout.splitlines():
-        path = line.strip()
+        fields = line.rstrip("\n").split("\t")
+        if len(fields) < 2:
+            continue
+        kind = fields[0][:1]
+        if kind == "R" and len(fields) >= 3:
+            old_path, path = fields[1].strip(), fields[2].strip()
+        else:
+            path = fields[1].strip()
+            old_path = path
         if not path:
             continue
         if not path.startswith("_specflow/"):
@@ -210,11 +222,12 @@ def staged_artifact_changes(root: Path) -> list[dict[str, Any]]:
             continue
 
         new_fm = _parse_staged_frontmatter(root, f":{path}")
-        old_fm = _parse_staged_frontmatter(root, f"HEAD:{path}")
+        old_fm = _parse_staged_frontmatter(root, f"HEAD:{old_path}")
 
         changes.append(
             {
                 "path": path,
+                "old_path": old_path,
                 "old_status": (old_fm or {}).get("status", ""),
                 "new_status": (new_fm or {}).get("status", ""),
                 "old_fm": old_fm or {},
@@ -227,9 +240,9 @@ def staged_artifact_changes(root: Path) -> list[dict[str, Any]]:
 def staged_specflow_paths(root: Path) -> list[str]:
     """Return every staged artifact path under ``_specflow/``, any change kind.
 
-    Unlike :func:`staged_artifact_changes` (additions and modifications only,
-    because its callers read the staged frontmatter), this includes staged
-    deletions, renames and copies (``--diff-filter=ACMRD``), so a commit whose
+    Unlike :func:`staged_artifact_changes` (additions, modifications and
+    renames, because its callers read the staged frontmatter), this includes
+    staged deletions and copies (``--diff-filter=ACMRD``), so a commit whose
     only artifact change is a ``git rm`` of a linked REQ, or a hand ``git mv``,
     still triggers the hook's link and schema lints. For a rename the NEW path
     is reported. Index files (``_index.yaml``) are excluded, as before.

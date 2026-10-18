@@ -74,4 +74,17 @@ artifacts:
     - observability
     fingerprint: sha256:ee1fdea97a1c
     children: []
-next_id: 8
+  SPIKE-008:
+    id: SPIKE-008
+    title: "2026-10 consistency review (skills \u2194 CLI \u2194 ledger \u2194 docs)\
+      \ \u2014 handoff"
+    status: completed
+    tags:
+    - audit
+    - handoff
+    - ultracode
+    - consistency
+    - v1.17.7
+    fingerprint: sha256:cb7b897fb2d3
+    children: []
+next_id: 9

@@ -1342,4 +1342,49 @@ artifacts:
     tags: []
     fingerprint: sha256:3704c86adc5d
     children: []
-next_id: 162
+  UT-162:
+    id: UT-162
+    title: 'Unit tests for STORY-745: SPIKE-008 skill sentence and checklist pins,
+      delegation carve-out mirrored'
+    status: implemented
+    tags: []
+    fingerprint: sha256:4b25c921a92e
+    children: []
+  UT-163:
+    id: UT-163
+    title: 'Unit tests for STORY-746: every baseline name in shipped prose is semver-shaped'
+    status: implemented
+    tags: []
+    fingerprint: sha256:8e6dc5f0e2cb
+    children: []
+  UT-164:
+    id: UT-164
+    title: 'Unit tests for STORY-747: init hook-path prose pin'
+    status: implemented
+    tags: []
+    fingerprint: sha256:3cad0a3abe19
+    children: []
+  UT-165:
+    id: UT-165
+    title: 'Unit tests for STORY-748: deterministic ci job order, ci-gate default,
+      patterns text, role matrix vs schemas, severity rank'
+    status: implemented
+    tags: []
+    fingerprint: sha256:5ef19bb963db
+    children: []
+  UT-166:
+    id: UT-166
+    title: 'Unit tests for STORY-749: AGENTS.md release process records the ledger
+      before the release commit'
+    status: implemented
+    tags: []
+    fingerprint: sha256:0910f682931b
+    children: []
+  UT-167:
+    id: UT-167
+    title: 'Unit tests for STORY-750: renumbered pairing in diff_baselines'
+    status: implemented
+    tags: []
+    fingerprint: sha256:56db2567fe7d
+    children: []
+next_id: 168

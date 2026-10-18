@@ -164,7 +164,7 @@ Present a summary to the user:
 - **Reuse across projects:** copy the whole `.specflow/packs/{name}/` directory into each project's `.specflow/packs/`.
 ```
 
-**Exit message:** "The pack is at `.specflow/packs/{name}/`. To install it, run `specflow init --preset {name}` (the pack is picked up from that directory), or use `/specflow-init` and name it as the preset."
+**Exit message:** "The pack is at `.specflow/packs/{name}/`. To install it, run `specflow init --preset {name}` (the pack is picked up from that directory; on an initialized project init runs in merge mode)."
 
 Next: run `/specflow-discover`, or `specflow create --from-standard <clause-id>` for each uncovered clause that `specflow standards gaps` lists.
 

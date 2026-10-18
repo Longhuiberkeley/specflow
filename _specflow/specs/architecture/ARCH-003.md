@@ -12,7 +12,7 @@ tags:
 - ai
 - progressive-disclosure
 suspect: false
-fingerprint: sha256:4da90df7ea7d
+fingerprint: sha256:9d0ad5db2087
 thinking_techniques:
 - assumption_surfacing
 - devils_advocate
@@ -28,7 +28,7 @@ checklists_applied:
 - checklist: check-ARCH-003
   timestamp: '2026-04-14T17:03:22Z'
 modified: '2026-10-08'
-version: 1
+version: 3
 ---
 
 # Skill & Platform System
@@ -36,6 +36,8 @@ version: 1
 The skill system bridges the SpecFlow Python CLI with AI agent platforms through modular, self-contained skill directories. It follows the progressive disclosure pattern: minimal context always loaded, detailed references loaded on demand.
 
 ## Platform Support (14 Registered, 4 Instantiated in v0.2.0)
+
+> Amended 2026-10-18 (SPIKE-008 R1-027, R1-102): the registry is `src/specflow/templates/platforms.yaml` with 13 platforms; Gemini CLI was removed (DEC-094). The shipped skill set also includes specflow-start and specflow-doc, and pack-author has no `create --type standard` backend. Counts and paths in this body are historical.
 
 14 platforms are registered in `src/specflow/platforms.yaml` and known to
 the platform-detection code in `lib/platform.py`. In the v0.2.0 repo, only

@@ -41,7 +41,7 @@ specflow autoresearch log --loop LOOP-NNN --status kept --metric-value 0.84 \
   --set sweep_results='[{"train_months":6,"auc":0.81},{"train_months":12,"auc":0.84},{"train_months":24,"auc":0.83}]'
 ```
 
-One EXPT per **config family**. Sweeps of window size / embargo / fold count are local scripts + `sweep_results` on that one EXPT — same rule as loop protocol Phase 2e (no blind parameter sweeps). Do not burn consecutive iterations on `train_months: 11 → 12 → 13`.
+One EXPT per **config family**. Sweeps of window size / embargo / fold count are local scripts + `sweep_results` on that one EXPT — same rule as loop protocol Phase 2 (no blind parameter sweeps). Do not burn consecutive iterations on `train_months: 11 → 12 → 13`.
 
 ### `validation` vs `validate` (do not conflate)
 
@@ -99,9 +99,9 @@ specflow create --type competition --title "Churn screener — next window" \
   --set split_method="walk-forward 12mo/1mo" --set window_end=2026-12-31 \
   --links '[{"target":"COMP-001","role":"derives_from"}]'
 
-specflow create --type loop --title "Carry forward confirmed FINDs" \
-  --set competition=COMP-002 --set mode=explore --set budget=40 \
-  --set knowledge_input='["FIND-003","FIND-007"]'
+# LOOP via plan: it writes the operates_on edge that `specflow trace` follows
+specflow autoresearch plan --competition COMP-002 --mode explore --budget 40 \
+  --knowledge-input FIND-003,FIND-007 --title "Carry forward confirmed FINDs"
 ```
 
 COMP-per-window mutation vs chained frozen COMPs: the latter is the rule. A chain of frozen COMPs keeps each leaderboard comparable; in-place window edits do not.

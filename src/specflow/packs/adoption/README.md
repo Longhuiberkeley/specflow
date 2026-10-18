@@ -11,7 +11,7 @@ SpecFlow's core lifecycle is greenfield: `init → discover → plan → execute
 1. **Frame** — asks what the project aims to do, the scope of this adoption pass, and the key decisions you want captured.
 2. **Inventory + detect conflicts** — scans code, docs, tests, and commit history. When sources disagree (README vs code, doc vs test), it **asks you** which is authoritative rather than guessing.
 3. **Backfill (DEC-057 model)** — creates **one ARCH per component** (with `output_files` as a package glob linking the code), plus REQ/DDD/DEC where they add value. **STORY is NOT backfilled** — it's reserved for forward action and appears only when someone changes adopted code. Each artifact is tagged `backfilled` with honest status (`implemented`/`verified` for code that exists; a DEC is `approved` at most) and provenance in `rationale`.
-4. **As-built baseline** — `specflow baseline create adoption-v0 --evidence`. From here, drift is measured against this snapshot, not from zero.
+4. **As-built baseline** — `specflow baseline create v0.0.0-adoption.1 --evidence` (each later cut takes the next `<n>`; the highest is the headline), then `specflow fingerprint-refresh --source` to seed the source fingerprints. From here, `specflow adopt status` reports drift as files changed since that seed, not from zero.
 5. **Wire remaining files & completeness check** — widens each ARCH glob with `update --output-files` (the project-wide `--retro-link` is a final-pass sweep only); runs `specflow adopt status` to confirm coverage rose and to surface any artifacts whose completeness is in doubt.
 6. **Hand off** — forward work uses `/specflow-discover` → plan → execute as normal. Any future change to an adopted component creates a real STORY `specified_by` that component's ARCH.
 
@@ -28,7 +28,7 @@ Greenfield users (who started with `/specflow-init`) never need this. Only brown
 A single pass can't adopt a large codebase — context can't hold it, you can't review hundreds of artifacts at once, and the team won't freeze development while adoption runs. So adoption is **boundary-scoped, resumable, and skeleton-first**:
 
 - **Skeleton-first** is the default huge-repo strategy: one ARCH per component (with a package glob) across the *whole* project gets every component under coverage with 15-30 artifacts, not 300. Then **deepen** (add REQ/DDD/tests) for the components `specflow adopt status` flags as high-churn, thin, or unverified.
-- One subsystem per pass; `specflow adopt status` is the boundary dashboard; interim baselines are checkpoints. It interleaves with forward work — new features keep flowing through `/specflow-discover`, tagged apart from `backfilled` records. See `skills/specflow-adopt/references/incremental-adoption-protocol.md`.
+- One subsystem per pass; `specflow adopt status` is the boundary dashboard; interim checkpoints are the earlier `v0.0.0-adoption.<n>` cuts. It interleaves with forward work — new features keep flowing through `/specflow-discover`, tagged apart from `backfilled` records. See `skills/specflow-adopt/references/incremental-adoption-protocol.md`.
 
 ## What it does NOT add
 

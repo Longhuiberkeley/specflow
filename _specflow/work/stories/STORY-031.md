@@ -1,6 +1,6 @@
 ---
 id: STORY-031
-title: Install UX — one-line install path and getting-started tutorial
+title: "Install UX \u2014 one-line install path and getting-started tutorial"
 type: story
 status: verified
 priority: high
@@ -33,8 +33,8 @@ checklists_applied:
 - checklist: check-STORY-031
   timestamp: '2026-04-14T17:03:23Z'
 modified: '2026-04-22'
-fingerprint: sha256:9a3927cd99b2
-version: 1
+fingerprint: sha256:6caf80005302
+version: 2
 output_files:
 - src/specflow/lib/display.py
 ---
@@ -47,7 +47,7 @@ Public-launch prerequisite: establish a one-line install path, populate README.m
 
 ### Deliverables
 
-1. **One-line install** — `uv tool install specflow` or equivalent `uvx` path works end-to-end. Verify package metadata in `pyproject.toml` is complete (description, classifiers, URLs, entry points).
+1. **One-line install** — `uv tool install git+https://github.com/Longhuiberkeley/specflow` or equivalent `uvx` path works end-to-end. Verify package metadata in `pyproject.toml` is complete (description, classifiers, URLs, entry points).
 
 2. **README.md install section** — Install command, quick-verify (`specflow --help`), link to `docs/getting-started.md`.
 
@@ -57,7 +57,9 @@ Public-launch prerequisite: establish a one-line install path, populate README.m
 
 ## Acceptance Criteria
 
-1. `uv tool install specflow` (or the documented equivalent) installs the CLI and `specflow --help` works with no additional setup
+1. `uv tool install git+https://github.com/Longhuiberkeley/specflow` (or the documented equivalent) installs the CLI and `specflow --help` works with no additional setup
+
+> Amended 2026-10-18 (SPIKE-008 R1-133): the PyPI `specflow` name is an unrelated package. SpecFlow installs from Git only (AGENTS.md section 6), and the install commands above now say so.
 
 2. `pyproject.toml` contains complete package metadata: description, version, classifiers, project URLs, and entry point
 

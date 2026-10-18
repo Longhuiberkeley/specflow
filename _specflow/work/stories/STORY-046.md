@@ -25,8 +25,8 @@ links:
   role: verified_by
 created: '2026-04-22'
 modified: '2026-04-22'
-fingerprint: sha256:307c26741722
-version: 1
+fingerprint: sha256:44f1ee283ca1
+version: 3
 output_files:
 - src/specflow/lib/evidence.py
 - tests/test_evidence.py
@@ -34,7 +34,7 @@ output_files:
 
 # Add compliance evidence report to specflow ship
 
-Add `--evidence` flag to the ship workflow that generates a deterministic compliance evidence report alongside the baseline.
+Add `--evidence` flag to `specflow baseline create` (run by the /specflow-ship skill) that generates a deterministic compliance evidence report alongside the baseline.
 
 ## Description
 
@@ -44,12 +44,14 @@ The report generator is a new module (`lib/evidence.py` or similar) that compose
 
 ## Acceptance Criteria
 
-1. Given `specflow ship --evidence`, when the command runs, then a Markdown evidence report is generated in `.specflow/baselines/` alongside the baseline
+1. Given `specflow baseline create <tag> --evidence` (run by the /specflow-ship skill), when the command runs, then a Markdown evidence report is generated in `.specflow/baselines/` alongside the baseline
 2. Given verified REQs, when the report is generated, then it includes a traceability matrix showing REQ → ARCH → DDD → UT/IT/QT chains
 3. Given test artifacts with status, when the report is generated, then it includes a test results summary (pass/fail per test)
 4. Given a baseline and its predecessor, when the report is generated, then it includes the baseline snapshot with diff from previous
 5. Given installed standards, when the report is generated, then it includes per-standard coverage (covered/uncovered clauses)
 6. Given the full test suite, when `uv run pytest` is run, then all existing plus new tests pass
+
+> Amended 2026-10-18 (SPIKE-008 R1-136): no `specflow ship` CLI command exists; `--evidence` is a flag on `specflow baseline create <tag>` (cli.py:701), which the /specflow-ship skill runs.
 
 ## Out of Scope
 
@@ -60,5 +62,5 @@ The report generator is a new module (`lib/evidence.py` or similar) that compose
 ## Dependencies
 
 - REQ-015 approved
-- `specflow ship` command exists
+- `baseline create` exists (the /specflow-ship skill drives it; there is no `specflow ship` CLI command)
 - `lib/baselines.py`, `lib/standards.py`, `lib/artifacts.py` available

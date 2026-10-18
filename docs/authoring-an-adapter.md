@@ -10,7 +10,7 @@ config-driven dispatch system. An adapter is a Python class that inherits from
 |------|---------|------------------|
 | **CI generation** | `generate_ci_workflow()`, `get_hook_script()` | GitHub Actions, GitLab CI |
 | **Artifact exchange** | `import_artifacts()`, `export_artifacts()` | ReqIF, Jira CSV |
-| **Standards ingestion** | `ingest_standard()` | PDF parser, YAML importer |
+| **Standards ingestion** | `ingest_standard()` | (hook only: no command dispatches it yet; standards packs are authored with `/specflow-pack-author`) |
 
 An adapter can implement any combination of these. The built-in GitHub Actions
 adapter only does CI; the built-in ReqIF adapter only does exchange.
@@ -50,7 +50,7 @@ import specflow.lib.adapters.my_adapter  # noqa: F401
 | `generate_ci_workflow(ops)` | raises `NotImplementedError` | Adapter can produce CI workflow files |
 | `import_artifacts(source)` | raises `NotImplementedError` | Adapter can read an external format |
 | `export_artifacts(dest)` | raises `NotImplementedError` | Adapter can write an external format |
-| `ingest_standard(source)` | raises `NotImplementedError` | Adapter can parse a standards document |
+| `ingest_standard(source)` | raises `NotImplementedError` | Reserved: no command calls it yet |
 | `get_hook_script()` | raises `NotImplementedError` | Adapter can provide a pre-commit hook script |
 
 Only override the methods you declare in `supported_operations`. Callers check
@@ -74,11 +74,14 @@ standards: []
 ```
 
 Call `load_adapters_config(root)` to read this file. It falls back to sensible
-defaults when the file is absent.
+defaults when the file is absent; a section present in the file replaces the
+default section whole. `exchange` entries are informational only: `specflow import`
+and `specflow export` take `--adapter` from the command line and never read them,
+so `direction` has no effect.
 
 ## CLI integration
 
-Three CLI commands dispatch through adapters:
+Four CLI commands dispatch through adapters:
 
 | Command | What it does |
 |---------|-------------|
@@ -112,7 +115,7 @@ specflow-validate:
 
 _GITLAB_HOOK = """\
 #!/usr/bin/env bash
-# specflow pre-commit hook (GitLab variant)
+# specflow pre-commit hook — installed by specflow (GitLab variant)
 exec specflow hook pre-commit "$@"
 """
 
@@ -129,16 +132,23 @@ class GitLabCIAdapter(Adapter):
         return _GITLAB_HOOK
 ```
 
+The hook header must start with `# specflow pre-commit hook — installed by`:
+`specflow hook install` treats a hook without that marker as foreign and refuses
+to replace it without `--force`.
+
 After adding this file and importing it in `__init__.py`, users switch providers
-by editing `.specflow/adapters.yaml`:
+by editing `.specflow/adapters.yaml`. The `ci` section replaces the default whole,
+so keep `operations` in it (`ci generate` fails when the list is empty):
 
 ```yaml
 ci:
   provider: gitlab-ci
+  operations: [artifact-lint, change-impact, project-audit]
 ```
 
-Running `specflow ci generate` then writes `.gitlab-ci.yml` instead of
-`.github/workflows/specflow.yml`.
+Running `specflow ci generate` then writes `.gitlab-ci.yml`. It does not remove
+a previously generated `.github/workflows/specflow.yml`; delete that file by hand,
+or both pipelines keep running.
 
 ## Registry API
 

@@ -249,6 +249,54 @@ def newest_release(baselines: list[str]) -> str | None:
     return semver[-1] if semver else None
 
 
+def _pair_renumbered(
+    arts_a: dict[str, Any],
+    arts_b: dict[str, Any],
+    added: list[dict[str, str]],
+    removed: list[dict[str, str]],
+) -> list[dict[str, str]]:
+    """Pull rename pairs out of ``added``/``removed`` (both mutated in place).
+
+    A removed id and an added id of the same type prefix are one artifact
+    when their fingerprints are equal (body unchanged across the rename) or,
+    failing that, when their titles are equal (renumbered then edited). Each
+    added id is consumed at most once; fingerprint matches are resolved
+    before title matches so an edited twin never steals an exact match.
+    """
+    def _prefix(art_id: str) -> str:
+        return art_id.split("-", 1)[0]
+
+    pairs: list[dict[str, str]] = []
+    taken: set[str] = set()
+    for key in ("fingerprint", "title"):
+        for rm in list(removed):
+            old_entry = arts_a.get(rm["id"], {}) or {}
+            want = old_entry.get(key, "")
+            if not want:
+                continue
+            for ad in added:
+                if ad["id"] in taken or _prefix(ad["id"]) != _prefix(rm["id"]):
+                    continue
+                new_entry = arts_b.get(ad["id"], {}) or {}
+                if new_entry.get(key, "") != want:
+                    continue
+                taken.add(ad["id"])
+                pairs.append(
+                    {
+                        "old": rm["id"],
+                        "new": ad["id"],
+                        "status": new_entry.get("status", ""),
+                        "title": new_entry.get("title", old_entry.get("title", "")),
+                        "matched_by": key,
+                    }
+                )
+                removed.remove(rm)
+                break
+    added[:] = [ad for ad in added if ad["id"] not in taken]
+    pairs.sort(key=lambda e: (e["old"], e["new"]))
+    return pairs
+
+
 def diff_baselines(root: Path, name_a: str, name_b: str) -> dict[str, Any]:
     """Compare two baselines and report changes from A to B.
 
@@ -256,6 +304,10 @@ def diff_baselines(root: Path, name_a: str, name_b: str) -> dict[str, Any]:
       - ok: bool
       - added: artifacts in B but not A
       - removed: artifacts in A but not B
+      - renumbered: pairs (old id in A, new id in B) of the same type whose
+        fingerprint or title match — a draft renumbered by ``renumber-drafts``
+        is a rename, not a removal plus an addition (SPIKE-008 / DEF-024);
+        such pairs are excluded from ``added`` and ``removed``
       - status_changed: same ID, different status
       - fingerprint_changed: same ID, same status, different fingerprint
       - (on error) error: str
@@ -295,6 +347,8 @@ def diff_baselines(root: Path, name_a: str, name_b: str) -> dict[str, Any]:
             }
         )
 
+    renumbered = _pair_renumbered(arts_a, arts_b, added, removed)
+
     for art_id in sorted(set(arts_a) & set(arts_b)):
         a = arts_a[art_id]
         b = arts_b[art_id]
@@ -328,6 +382,7 @@ def diff_baselines(root: Path, name_a: str, name_b: str) -> dict[str, Any]:
         "name_b": name_b,
         "added": added,
         "removed": removed,
+        "renumbered": renumbered,
         "status_changed": status_changed,
         "fingerprint_changed": fingerprint_changed,
     }

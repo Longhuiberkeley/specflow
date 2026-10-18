@@ -98,8 +98,7 @@ Each lifecycle phase has a default set of lenses applied automatically. Users ca
 | **Discover** | `devils_advocate`, `assumption_surfacing`, `five_whys`, `regulator` | +`stress_scale` if performance-related; +`worst_case_user` for public-facing features |
 | **Plan** | `premortem`, `dependency_shock`, `composition`, `stress_scale`, `worst_case_user` | +`cost_scaling` for paid services; +`regulator` if compliance-sensitive |
 | **Execute** | `worst_case_user`, `composition` | +`premortem` for complex stories with cross-cutting risk |
-| **Review (quick)** | `devils_advocate`, `premortem`, `assumption_surfacing`, `red_blue_team` | Any from full catalog per user request |
-| **Review (deep)** | All 23 available | User selects or "go deep" |
+| **Review (default starter set)** | `devils_advocate`, `premortem`, `assumption_surfacing`, `red_blue_team` — what `artifact-review --depth deep` emits with no `--techniques` for software artifacts (research artifacts get research defaults); `--depth quick` and `normal` run no lenses | All 23 only via `--techniques` or the user selecting them |
 | **Audit** | All 23 available | User selects via adversarial wings |
 | **Ship** | `temporal_drift`, `regulator` | +`cost_scaling` for paid services; +`premortem` if release has cross-cutting changes |
 
@@ -114,7 +113,7 @@ specflow update <ARTIFACT_ID> --thinking-techniques <technique1,technique2>
 ```
 
 This updates the artifact's `thinking_techniques` frontmatter field, enabling:
-- `artifact-lint` to warn on approved artifacts that were never challenged
+- `artifact-lint` to warn on approved, implemented or verified REQ, ARCH and DDD artifacts that were never challenged
 - Future reviews to see what was already applied (avoid duplication)
 - The BP feedback loop to incorporate findings into regenerated best practices
 

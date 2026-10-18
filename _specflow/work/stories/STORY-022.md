@@ -29,8 +29,8 @@ checklists_applied:
 - checklist: check-STORY-022
   timestamp: '2026-04-14T17:03:23Z'
 modified: '2026-06-15'
-fingerprint: sha256:ea3bae1e6e1b
-version: 1
+fingerprint: sha256:cff4bb0a1d4f
+version: 3
 output_files:
 - src/specflow/lib/skill_export.py
 ---
@@ -80,6 +80,8 @@ Create minimal skill directories under `.claude/skills/` for Tier 2/3 commands t
 ## Acceptance Criteria
 
 1. All old command names still work as hidden aliases (print deprecation warning to stderr) for one release cycle
+
+> Amended 2026-10-18 (SPIKE-008 R1-131): the one-release alias window has ended: cli.py registers none of the old names, and `verify` is now an unrelated command. Thin-skill wrappers (AC7) were folded into the current skill set, and shipped skill scripts (for example specflow-pack-author/scripts/validate-pack.sh) call bare `specflow` (AGENTS.md section 6). The repo-only scripts/*.sh (artifact-lint-*.sh, change-impact.sh, checklist-run-acceptance.sh) still use `exec uv run specflow`, which works only in this repo, where specflow is a project dependency; they are not shipped in the wheel. The other wrapper scripts named in AC4 were removed.
 
 2. `specflow --help` lists all commands using new names only, grouped by workflow phase (Discover / Plan / Execute / Review / Release / CI) using argparse subparser groups
 

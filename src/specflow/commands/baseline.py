@@ -78,6 +78,13 @@ def _run_diff(root: Path, args: dict[str, Any]) -> int:
         [f"- {e['id']}  [{e['status']}]  {e['title']}" for e in removed],
     )
     _print_section(
+        "Renumbered",
+        [
+            f"~ {e['old']} → {e['new']}  [{e['status']}]  {e['title']}"
+            for e in result.get("renumbered", [])
+        ],
+    )
+    _print_section(
         "Status Changed",
         [f"~ {e['id']}  {e['old']} → {e['new']}" for e in status_changed],
     )
@@ -92,6 +99,7 @@ def _run_diff(root: Path, args: dict[str, Any]) -> int:
     print(_SEPARATOR)
     print(
         f"  Summary: {len(added)} added, {len(removed)} removed, "
+        f"{len(result.get('renumbered', []))} renumbered, "
         f"{len(status_changed)} status changes, {len(fp_changed)} content changes"
     )
     return 0

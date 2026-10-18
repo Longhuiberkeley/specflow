@@ -278,6 +278,37 @@ def test_complete_phase_same_note():
     assert "1 approved STORY/SPIKE(s) unexecuted" in out
 
 
+# ── STORY-748 / DEF-022: complete routes to the next cycle, not back to ship ──
+
+def test_complete_phase_routes_to_discover():
+    out = _next("complete", [_art("STORY-001", "verified")])
+    first = out.splitlines()[0]
+    assert first.startswith("Released → /specflow-discover (next cycle)")
+    assert "/specflow-audit" in first
+    assert "/specflow-ship" not in first
+
+
+def test_complete_phase_unexecuted_note_does_not_say_shipping():
+    out = _next("complete", [_art("STORY-002", "approved")])
+    assert "before the next cycle" in out and "before shipping" not in out
+    assert "before shipping" in _next("verifying", [_art("STORY-002", "approved")])
+
+
+def test_verifying_phase_still_routes_to_ship():
+    out = _next("verifying", [_art("STORY-001", "verified")])
+    assert out.splitlines()[0].startswith("Ready to release → /specflow-ship")
+
+
+def test_brief_category_order_core_then_extras_sorted():
+    # STORY-748 (D4): core four in lifecycle order, then extras sorted.
+    assert brief_cmd._ordered_categories({"ops", "work", "spec", "zeta"}) == [
+        "spec", "work", "ops", "zeta",
+    ]
+    assert brief_cmd._ordered_categories({"research", "review", "spec", "work"}) == [
+        "spec", "work", "review", "research",
+    ]
+
+
 def test_executing_phase_does_not_add_unexecuted_note():
     out = _next("executing", [_art("STORY-002", "approved")], next_wave=["STORY-002"])
     assert "unexecuted" not in out

@@ -4,6 +4,35 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.17.7] - 2026-10-18
+
+### Highlights
+- **Consistency-review burn-down (SPIKE-008, DEC-105, REQ-070, STORY-745..749, DEF-021..023).** Two read-only review rounds over v1.17.6 (806 agents, every finding refuted three ways) found 214 places where skill prose, pack prose, checklists, docs or ledger bodies described an earlier engine; this patch fixes every blocking and warning site and most info sites. Two were blocking: the adoption pack told users to cut `baseline create adoption-v0`, which the semver name rule has rejected since v1.13.5, and its merge recipe used `update --links` (which replaces the whole link list) instead of `specflow merge`. The as-built baseline is now `v0.0.0-adoption.<n>` (highest n is the headline; a legacy `adoption-v0.yaml` stays valid and is anchored with `project-audit --baseline adoption-v0`), and a new test validates every baseline name in shipped prose against the engine rule.
+- **Six owner decisions recorded in DEC-105.** D1 the delegated-autonomy clause stays and is narrowed once in `approval-presentation.md` (only the direct user in the current session can delegate; never a release or a Tier 2 action), with every skill gate pointing at it; D2 the release process now records the ledger (`document-changes`, `baseline create --evidence`, `phase-set complete`) before the release commit, and v1.17.2..v1.17.6 are deliberately not backfilled (a backfill would snapshot today's ledger under old tags), so this release's baseline pairs with v1.17.1; D3 the adoption name above; D4 `specflow status` renders every schema category present (known four first, extras sorted; the ops pack's RUN/MON finally get a row) and `brief` uses the same open set; D5 the audit `error/warn/info` to `blocking/warning/info` mapping is documented and `_severity_rank` ranks `warning` correctly, with full unification deferred; D6 GitHub facts measured from docs.github.com — required checks are selected by the job display name, a skipped required check counts as passing, several owners on one CODEOWNERS line is any-of — so generated job names are unchanged, team-setup (skill and docs) requires both "Pass 1 — programmatic validation" and "CI gate (RBAC)", `ci-gate` joins the default `ci.operations`, and CODEOWNERS is documented as any-of with role separation enforced by ci-gate.
+- **Prose now states what the engine does:** `change-impact --flag` is a write and HEAD-only (the cone comes from `trace`); `artifact-review` prints lens prompts only at `--depth deep`; REQ-to-REQ `derives_from` is provenance, ordering comes from STORY `depends_on`; `init` always passes `--platform`, so the skill itself points at `refresh --all-platforms` when several host markers exist; phase-gate warnings do not escalate at transitions and the `verifying-to-complete` gate no longer carries items that can never fail or always fail on a first release; execute's exit names `/specflow-artifact-review` before `done`; audit and change-impact-review record a CHL `resolution`; PREV sources (DEF closure, `done`, `verify --seed-prev`), `patterns update|retire` and inert patterns are taught; the FIND/LOOP recipes carry their link edges; docs/architecture.md describes the live execute skill, impact-log naming, the fingerprint-only magnitude rule and the real baseline YAML.
+
+### Features
+- `specflow status` and `brief` group by every schema category present (DEF-021 against REQ-033); `ops` has a label.
+- `brief --next` in phase `complete` routes to `/specflow-discover` for the next cycle; `verifying` still routes to `/specflow-ship` (DEF-022 against REQ-060).
+- Default `ci.operations` include `ci-gate`; `ci generate` emits jobs in config order, so an unchanged configuration is byte-identical across runs (`PYTHONHASHSEED` test). Job ids and display names are unchanged.
+- `adopt status` and `brief` share one ARCH depth rule (`full` = parent REQ and child DDD, otherwise `skeleton`; `isolated` is gone).
+
+### Fixes
+- Local pre-commit RBAC now evaluates a staged rename that also changes status (`--name-status -M --diff-filter=AMR`, old frontmatter read from the old path) (DEF-023 against REQ-008).
+- Role-target matrix no longer judges a detailed-design `guided_by` the schema does not allow; a test asserts every matrix pair is schema-allowed.
+- `patterns list` empty-state names the real PREV sources; `_severity_rank` ranks `warning`; `detect orphan-code --retro-link` and `export --output` help texts match behaviour; audit cache generation 8 → 10.
+- Ledger: dated amendment notes on REQ-001/002/003/005/011/014/015/017/024/026/032/037/046/057/062/067 and 24 STORYs whose bodies named renamed commands or removed behaviour (`validate`, `specflow-impact`, `ship --evidence`, `handbook generate`, `practices list --scope`, `--evidence-file PATH`, go auto-commit); REQ-044/047 cascaded to implemented; PREV-003 retagged; DEF-001 relinked.
+- Baseline diff pairs a renumbered artifact (same type, equal fingerprint or, failing that, equal title) and reports it as renumbered instead of removed plus added; `project-audit` baseline drift emits info rows for the pair, `baseline diff` prints a Renumbered section (DEF-024 against REQ-005, STORY-750, UT-167). Found while cutting this release's baseline: 37 drafts renumbered since v1.17.1 would otherwise have failed the release gate.
+- Dogfood: this repo's installed checklists refreshed to the shipped versions (`refresh --checklists --force`).
+
+### Decisions / Docs
+- SPIKE-008 (completed; full tables), DEC-105 (approved, six decisions), REQ-070 verified, STORY-745..749 verified with UT-162..166 / IT-122..126 / QT-123..127 (`specflow verify` exit 0), DEF-021..024 closed (PREV-022..025 seeded). docs: architecture, authoring-a-pack (Option B now `init --preset`), authoring-an-adapter, decisions D-05/06/09/11/19, commands, comparison, getting-started, cli-reference, team-setup, lifecycle, README badge 3.11+. AGENTS.md release process step 9 records the ledger. Baselines v1.17.2..v1.17.6 intentionally absent (see D2). DEC-084 remains draft.
+- Deferred to v1.17.8 (SPIKE-008): ARCH/DDD body rewrites (ARCH-001/003/004/007/009/010/011/015/016/017/018/020/025/027/031/035, DDD-020 carry notes only), test-spec promotion, output_files misattribution sweep, stale test-file citations in IT/QT/UT, STORY-035 descope, severity unification.
+
+### Tests
+- +134 (3290 → 3424): SPIKE-008 sentence pins (80) and checklist pins, `tests/test_prose_baseline_names.py`, `tests/test_engine_consistency_story748.py`, `tests/test_status_categories.py`, `tests/test_brief_routing.py` (complete phase), `tests/test_rbac.py` staged rename, `tests/test_ci_generation.py` hash-seed determinism and ci-gate default, `tests/test_adopt_depth_unified.py`, `tests/test_init_hook_path_prose.py`, `tests/test_link_roles_doc.py`, `tests/test_release_ledger_step.py`, `TestDiffRenumbered` in `tests/test_baselines.py`.
+- Total: 3424 tests passing (19 skipped, 1 strict xfail for DEF-014)
+
 ## [1.17.6] - 2026-10-18
 
 ### Highlights

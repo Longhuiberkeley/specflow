@@ -26,28 +26,30 @@ links:
   role: verified_by
 created: '2026-04-11'
 modified: '2026-04-22'
-fingerprint: sha256:bde4ab3a1b2e
+fingerprint: sha256:ec91f14f2bda
 checklists_applied:
 - checklist: check-STORY-008
   timestamp: '2026-04-11T13:45:49Z'
 - checklist: check-STORY-008
   timestamp: '2026-04-14T17:03:22Z'
-version: 1
+version: 2
 ---
 
 # Assemble context-specific review criteria for specflow check
 
 ## Description
 
-Implement the specflow check command that assembles unique review criteria per artifact by combining artifact-type checklists, domain-tag checklists, shared checklists, and learned prevention patterns. Runs automated checks first (zero tokens), then LLM-judged checks. Review is never generic.
+Implement the specflow checklist-run command that assembles unique review criteria per artifact by combining artifact-type checklists, domain-tag checklists, shared checklists, and learned prevention patterns. Runs automated checks first (zero tokens), then LLM-judged checks. Review is never generic.
 
 ## Acceptance Criteria
 
-1. Given REQ-001 tagged [security, auth], when specflow check REQ-001 runs, then the review loads requirement-writing.yaml (type checklist) + authentication.yaml (shared checklist matching auth tag) + any PREV-*.yaml matching security/auth tags, and presents the combined unique criteria set
+1. Given REQ-001 tagged [security, auth], when specflow checklist-run REQ-001 runs, then the review loads requirement-writing.yaml (type checklist) + authentication.yaml (shared checklist matching auth tag) + any PREV-*.yaml matching security/auth tags, and presents the combined unique criteria set
 
 2. Given the assembled checklist has 3 automated items and 4 LLM-judged items, when a blocking automated item fails, then only the automated results are shown, LLM-judged items are NOT executed (saving tokens), and the user is told to fix the blocking issue first
 
-3. Given no checklists match the artifact's type or tags (e.g., a SPIKE with unusual tags), when specflow check runs, then a warning is shown that no domain-specific criteria were found and only the base artifact-type checklist is applied
+3. Given no checklists match the artifact's type or tags (e.g., a SPIKE with unusual tags), when specflow checklist-run runs, then a warning is shown that no domain-specific criteria were found and only the base artifact-type checklist is applied
+
+> Amended 2026-10-18 (SPIKE-008 R1-127): there is no top-level `specflow check`; criteria assembly runs as `specflow checklist-run [ID]` (cli.py:687), and the text now names it.
 
 4. Given the review completes, then results are persisted to .specflow/checklist-log/ as a timestamped YAML file and the artifact's checklists_applied frontmatter is updated with the checklist ID and timestamp
 

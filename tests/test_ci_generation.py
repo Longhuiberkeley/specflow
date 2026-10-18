@@ -10,6 +10,9 @@ regression and the ``pytest`` job's legitimate use of ``uv sync``.
 
 from __future__ import annotations
 
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 import yaml
@@ -100,13 +103,70 @@ def test_ci_gate_diffs_origin_base_against_pr_head_sha():
     assert "pull_request" in job["if"]
 
 
+def _template_default_ops():
+    tpl = Path(__file__).resolve().parents[1] / "src" / "specflow" / "templates" / "adapters.yaml"
+    return yaml.safe_load(tpl.read_text(encoding="utf-8"))["ci"]["operations"]
+
+
 def test_default_ops_produce_expected_jobs():
-    text = _generate(["artifact-lint", "change-impact", "project-audit"])
+    # STORY-748 (D6): the shipped default operations include ci-gate, so a
+    # fresh project's workflow carries the RBAC gate job (it passes when no
+    # team roles are configured).
+    ops = _template_default_ops()
+    assert ops == ["artifact-lint", "ci-gate", "change-impact", "project-audit"]
+    text = _generate(ops)
     assert set(_job_runs(text)) == {
         "specflow-pass-1",
+        "specflow-ci-gate",
         "specflow-change-impact",
         "specflow-project-audit",
     }
+
+
+def test_job_order_follows_config_order():
+    # STORY-748: jobs render in config order (de-duplicated), not set order.
+    ops = ["project-audit", "release-gate", "ci-gate", "change-impact", "pytest", "ci-gate"]
+    jobs = yaml.safe_load(_generate(ops))["jobs"]
+    assert list(jobs) == [
+        "specflow-pass-1", "specflow-project-audit", "specflow-release-gate",
+        "specflow-ci-gate", "specflow-change-impact", "pytest",
+    ]
+    # Display names (what GitHub required checks match) are unchanged.
+    assert jobs["specflow-pass-1"]["name"] == "Pass 1 — programmatic validation"
+    assert jobs["specflow-ci-gate"]["name"] == "CI gate (RBAC)"
+
+
+def test_render_is_identical_across_hash_seeds():
+    # STORY-748 AC1: iterating a set made the job order depend on
+    # PYTHONHASHSEED, so two runs on one config emitted different bytes.
+    code = (
+        "import sys\n"
+        "from specflow.lib.adapters.github_actions import GitHubActionsAdapter\n"
+        "ops = ['artifact-lint', 'ci-gate', 'change-impact', 'project-audit', 'release-gate', 'pytest']\n"
+        "sys.stdout.write(list(GitHubActionsAdapter().generate_ci_workflow(ops).values())[0])\n"
+    )
+    src = str(Path(__file__).resolve().parents[1] / "src")
+    outs = []
+    for seed in ("1", "2", "3"):
+        env = dict(os.environ, PYTHONHASHSEED=seed)
+        env["PYTHONPATH"] = src + os.pathsep + env.get("PYTHONPATH", "")
+        res = subprocess.run([sys.executable, "-c", code], env=env,
+                             capture_output=True, check=True)
+        outs.append(res.stdout)
+    assert outs[0] == outs[1] == outs[2]
+    assert b"specflow-ci-gate:" in outs[0]
+
+
+def test_fresh_init_workflow_contains_ci_gate(tmp_path):
+    # STORY-748 AC1: `specflow init` copies the template adapters.yaml and
+    # generates the workflow from it; the ci-gate job is in the default set.
+    from specflow.commands import init as init_cmd
+
+    root = tmp_path / "fresh"
+    root.mkdir()
+    assert init_cmd.run(root, {"platform": "claude-code"}) == 0
+    wf = (root / ".github" / "workflows" / "specflow.yml").read_text(encoding="utf-8")
+    assert "specflow-ci-gate" in yaml.safe_load(wf)["jobs"]
 
 
 def test_pass1_always_present():

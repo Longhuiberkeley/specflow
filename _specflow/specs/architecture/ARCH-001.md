@@ -11,7 +11,7 @@ tags:
 - python
 - core
 suspect: false
-fingerprint: sha256:9796f65acf40
+fingerprint: sha256:b93f246dbee4
 thinking_techniques:
 - assumption_surfacing
 - devils_advocate
@@ -25,7 +25,7 @@ checklists_applied:
 - checklist: check-ARCH-001
   timestamp: '2026-04-14T17:03:22Z'
 modified: '2026-10-08'
-version: 1
+version: 2
 ---
 
 # CLI Core
@@ -111,7 +111,7 @@ src/specflow/
 
 ## Entry Point (`cli.py`)
 
-The main entry point uses `argparse` with subparsers. 29 top-level subcommands are registered in `cli.py` via a dispatch dict with lazy imports:
+The main entry point uses `argparse` with subparsers. 53 top-level subcommands (29 when this was written) are registered in `cli.py` via a dispatch dict with lazy imports:
 
 ```python
 def cmd_<name>(args: argparse.Namespace) -> int:
@@ -119,6 +119,8 @@ def cmd_<name>(args: argparse.Namespace) -> int:
     root = _find_project_root()
     return cmd.run(root, vars(args))
 ```
+
+> Amended 2026-10-18 (SPIKE-008 R1-101): the package tree and counts are historical. cli.py now registers 53 top-level subcommands, measured from `specflow --help` (brief, approve, verify, rtm, patterns, autoresearch, adopt, risk-tier, rbac, phase-set and more; see cli.py). `specflow standards gaps` lives in commands/standards_gaps.py, not commands/standards.py. lib/standards.py exposes `check_compliance()` and the `load_standards*` loaders, not `gap_analysis()`. lib/ holds 46 modules. `ci-gate` is a top-level subcommand, not a `ci` subcommand.
 
 The `main()` function:
 1. Parses arguments

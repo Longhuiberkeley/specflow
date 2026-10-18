@@ -11,17 +11,20 @@ links:
 - target: ARCH-037
   role: guided_by
 created: '2026-09-25'
-fingerprint: sha256:22d9c0ca75fd
+fingerprint: sha256:a0dd1dc58c52
 thinking_techniques:
 - premortem
 - dependency_shock
 modified: '2026-10-08'
+version: 1
 ---
 
 # Knowledge flow: plan --inherit, condensation requirement, top-3 status, adjacent-field lens (REQ-046)
 
 ## Story
-Ship the knowledge-flow pieces: autoresearch plan --inherit LOOP-NNN machine-seeding the next agenda from unexplored_directions, open entries, and the latest condensation brief; review requires a condensation brief at LOOP completion (replacing the iteration-count existence check); status output ranks and caps to the top three actionable signals; landscape-resurvey.md gains the adjacent-field practice lens (Kaggle, quant, experiment design) consulted via practices list --scope framing.
+Ship the knowledge-flow pieces: autoresearch plan --inherit LOOP-NNN machine-seeding the next agenda from unexplored_directions, open entries, and the latest condensation brief; review requires a condensation brief at LOOP completion (replacing the iteration-count existence check); status output ranks and caps to the top three actionable signals; landscape-resurvey.md gains the adjacent-field practice lens (Kaggle, quant, experiment design) consulted via `specflow list --type best-practice`.
+
+> Amended 2026-10-18 (SPIKE-008 R1-042): the scope named `practices list --scope framing`, which does not exist; the pack consults `specflow list --type best-practice`.
 
 ## Acceptance Criteria
 1. Given a completed LOOP, when plan --inherit runs, then the seeded agenda cites unexplored_directions, open entries, and the brief with rationales.

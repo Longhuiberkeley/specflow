@@ -16,8 +16,9 @@ A doc citing an `approved` / `implemented` / `verified` / `draft` artifact is **
 
 ## Severity: warning, always
 
-- `specflow detect stale-docs` and the `docs-staleness` concern in `specflow project-audit`
-  emit findings at severity **`warn`** (or `info` when all citations are current).
+- The `docs-staleness` concern in `specflow project-audit` emits findings at severity
+  **`warn`** (or `info` when all citations are current); `specflow detect stale-docs` prints
+  the same stale citations as a plain warning-style listing with no severity label.
 - Stale docs **never** escalate an audit exit code, **never** appear in the commit hook,
   and **never** block a commit. This is accounting, not policing — docs are prose, and a
   stale citation is a nudge to review, not a defect.
@@ -39,7 +40,7 @@ Pick whichever fits:
    (e.g. historical context). The warning is advisory; you may leave it.
 3. **Rewrite the prose** if the doc no longer needs the reference.
 
-After resolving, run `specflow rebuild-index` then `specflow detect stale-docs` to confirm.
+After resolving, run `specflow detect stale-docs` to confirm (it reads docs and artifacts live from disk; no `rebuild-index` needed).
 
 ## How staleness relates to drift
 

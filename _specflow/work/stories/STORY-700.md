@@ -10,13 +10,13 @@ tags:
 - semver
 suspect: false
 links:
-- target: REQ-035
-  role: implements
 - target: DEF-001
   role: derives_from
+- target: REQ-005
+  role: implements
 created: '2026-09-30'
 fingerprint: sha256:cacb862383e2
-modified: '2026-09-30'
+modified: '2026-10-18'
 output_files:
 - src/specflow/lib/baselines.py
 - tests/test_baseline_ordering.py

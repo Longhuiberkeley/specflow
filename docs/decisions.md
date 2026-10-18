@@ -76,9 +76,9 @@ Each decision documents the context, options considered, the resolution, and rat
 - One file per event, timestamp-first naming
 - One file per event, artifact-first naming
 
-**Decision:** One file per event, artifact-first naming (`REQ-001_2026-03-20T14-30-00Z.yaml`). Stored in `.specflow/impact-log/`. Timestamp + artifact ID makes filenames unique.
+**Decision:** One file per event. As built, the engine uses timestamp-first naming (`2026-03-20T14-30-00Z_REQ-001.yaml`, with a `-2` suffix on a same-second collision; the artifact-first option was not kept). Stored in `.specflow/impact-log/`. Timestamp + artifact ID makes filenames unique.
 
-**Rationale:** Artifact-first naming enables fast querying: "show me everything that happened to REQ-001" is just a glob of `REQ-001_*.yaml`. Near-zero merge conflict probability since different developers rarely modify the same artifact simultaneously. Same pattern applies to `checklist-log/`.
+**Rationale:** Timestamp-first files sort chronologically, and "show me everything that happened to REQ-001" is still one glob: `*_REQ-001*.yaml`. Near-zero merge conflict probability since different developers rarely modify the same artifact simultaneously. Same pattern applies to `checklist-log/`.
 
 ---
 
@@ -86,14 +86,15 @@ Each decision documents the context, options considered, the resolution, and rat
 
 **Context:** Duplicate detection requires comparing artifacts. At scale (1000+ artifacts), pairwise comparison is O(N^2).
 
-**Decision:** On-demand computation, no pre-cached embeddings. Four-tier approach where each tier filters candidates for the next:
+**Decision:** On-demand computation, nothing pre-cached. As built, a three-tier approach where each tier filters candidates for the next:
 
 1. Tag overlap (zero cost, instant) — same tags = surface match
-2. TF-IDF title similarity (zero cost, fast) — keyword overlap
-3. Local embeddings (on-device compute) — semantic similarity, only for candidates surviving tiers 1-2
-4. LLM (token cost) — only for ambiguous 0.6-0.9 cosine similarity range
+2. TF-IDF similarity (zero cost, fast, stdlib only) — keyword overlap
+3. Confirmation by the host agent in a skill (token cost) — only for candidates surviving tiers 1-2
 
-**Rationale:** Tag/keyword search eliminates most false candidates before any computation. Local embeddings (all-MiniLM-L6-v2) compute in milliseconds per candidate. Full dedup scans are infrequent (before milestones) and fast enough locally. Pre-caching embeddings adds complexity for minimal gain — YAGNI.
+A local-embeddings tier was planned between TF-IDF and the agent and dropped: SpecFlow ships no model and no embedding dependency.
+
+**Rationale:** Tag/keyword search eliminates most false candidates before any computation. Full dedup scans are infrequent (before milestones) and fast enough locally. Pre-caching adds complexity for minimal gain — YAGNI.
 
 ---
 
@@ -121,7 +122,7 @@ Each decision documents the context, options considered, the resolution, and rat
 
 **Context:** Enterprises using DOORS or Polarion need interchange via the ReqIF standard.
 
-**Decision:** Implemented in P7 (STORY-018). Full ReqIF 1.2 import and export via `specflow import --adapter reqif` and `specflow export --adapter reqif`. Uses Python's `xml.etree.ElementTree` with no external dependencies. Round-trip preservation of unmapped attributes via `reqif_metadata` frontmatter field. Export covers requirements only; architecture, design, and test export deferred. Bidirectional sync (third verb) deferred.
+**Decision:** Implemented in P7 (STORY-018). Full ReqIF 1.2 import and export via `specflow import --adapter reqif` and `specflow export --adapter reqif`. Uses Python's `xml.etree.ElementTree` with no external dependencies. Round-trip preservation of unmapped attributes via `reqif_metadata` frontmatter field. Export covers REQ, ARCH and DDD; test-artifact export deferred. Bidirectional sync (third verb) deferred.
 
 **Rationale:** ReqIF interchange is essential for supply-chain collaboration with DOORS/Polarion users. The Python implementation replaces the originally planned shell-script approach for maintainability and testability.
 
@@ -144,7 +145,7 @@ Each decision documents the context, options considered, the resolution, and rat
 **Decision:** 3-tier defense, all zero-token:
 1. `update_type: minor` frontmatter field — user explicitly declares cosmetic edits
 2. `specflow fingerprint-refresh` command — convenience wrapper
-3. Magnitude heuristic fallback — git-based ratio check (<5% = auto-classify minor)
+3. Conservative default — an unchanged fingerprint is minor; any fingerprint change cascades as semantic (the planned git ratio heuristic was never implemented: the ratio is not computable where the classification runs)
 
 **Rationale:** Explicit intent is better than LLM or Levenshtein guessing. Levenshtein on multi-line markdown is unreliable. LLM calls in pre-commit hooks are slow and expensive. The frontmatter field is explicit, instant, and free. Conservative default: when in doubt, cascade.
 
@@ -244,7 +245,7 @@ Each decision documents the context, options considered, the resolution, and rat
 
 **Context:** SpecFlow's narrative and tooling were greenfield-only: `init → discover → plan → execute → ship`, with ReqIF the sole import path. A team with an *existing* codebase had no guided way in — they'd hand-author every artifact for code that already exists, or pretend to start at day zero. Yet the primitives for adoption already existed and were lifecycle-agnostic: `create` accepts any valid status directly (no transition prerequisite), `baseline create` snapshots whatever artifacts exist regardless of status, and `detect orphan-code --retro-link` plus `reconcile` already do retroactive code↔artifact linking.
 
-**Decision:** Adoption is delivered as an **opt-in `adoption` pack** (not a core skill), because greenfield users who started with `/specflow-init` never need it — only brownfield adopters install it (`/specflow-init --preset adoption`). The pack adds a single skill, `/specflow-adopt`, that drives the existing CLI (zero new Python). The one new concept is the **as-built baseline**: inventory the project → backfill core artifacts (REQ/ARCH/DDD/STORY/DEC/UT/IT/QT) describing what already exists → cut `baseline adoption-v0`, the reference point from which `ship`/`audit`/`change-impact-review` measure drift. Provenance is recorded with **existing fields only** — `tags: [backfilled]` + `rationale` — no new status, no new artifact type, no schema change (consistent with D-18's frozen-vocabulary discipline). Adoption is **incremental and resumable**, not one-shot: one subsystem boundary per pass, `detect orphan-code` as the progress meter, interleaved with forward work (new features stay un-`backfilled`, governed by the normal lifecycle). Conflicting sources (README↔code, doc↔test) are surfaced to the user, never silently resolved.
+**Decision:** Adoption is delivered as an **opt-in `adoption` pack** (not a core skill), because greenfield users who started with `/specflow-init` never need it — only brownfield adopters install it (`/specflow-init --preset adoption`). The pack adds a single skill, `/specflow-adopt`, that drives the existing CLI (zero new Python). The one new concept is the **as-built baseline**: inventory the project → backfill core artifacts (REQ/ARCH/DDD/STORY/DEC/UT/IT/QT) describing what already exists → cut the as-built baseline (originally `adoption-v0`; now `v0.0.0-adoption.<n>`, because baseline names must be semver-shaped), the reference point from which `ship`/`audit`/`change-impact-review` measure drift. Provenance is recorded with **existing fields only** — `tags: [backfilled]` + `rationale` — no new status, no new artifact type, no schema change (consistent with D-18's frozen-vocabulary discipline). Adoption is **incremental and resumable**, not one-shot: one subsystem boundary per pass, `detect orphan-code` as the progress meter, interleaved with forward work (new features stay un-`backfilled`, governed by the normal lifecycle). Conflicting sources (README↔code, doc↔test) are surfaced to the user, never silently resolved.
 
 **Rationale:** Greenfield-lean core + opt-in pack matches the autoresearch pack model and keeps SpecFlow unburdened for the common case. Recording reality at honest statuses (`implemented`/`verified` for code that exists) honors accounting-not-policing without contorting the forward lifecycle. Reusing `create`/`baseline`/`detect`/`reconcile` means adoption adds no new code paths to maintain and can't drift from core semantics. The as-built baseline turns "migration" into a handshake: you don't leave anything, you capture what exists and govern change from there.
 
@@ -296,7 +297,7 @@ The default huge-repo strategy becomes **skeleton-first**: one ARCH per componen
 2. **Indexed + visible.** `lib/docs.py` discovers docs (reusing `compute_fingerprint`); `specflow rebuild-index` writes a derived `_specflow/docs-index.yaml` cache; `specflow brief` and `specflow adopt status` show a Docs surface block. No state file — files on disk remain source of truth.
 3. **Citable both ways; no new link role.** Docs cite artifacts with inline `@ID` markers (`@ARCH-007`, `@DEC-018.2`); `extract_citations` (schema-driven prefix set so pack types count) + `build_reverse_index` map artifact → citing docs. The reverse direction is an optional `doc_refs:` frontmatter field (metadata, not a link role). D-18 respected.
 4. **Staleness = warning only.** `check_stale` flags docs citing superseded/cancelled/deprecated artifacts; surfaced in `specflow detect stale-docs` and as a non-blocking `docs-staleness` audit concern. Never in the commit hook; never escalates an audit exit.
-5. **Absorbed on adoption.** `/specflow-adopt` registers the docs surface at `adoption-v0`, so a mid-project start doesn't orphan existing docs.
+5. **Absorbed on adoption.** The docs surface is recognized automatically from the config `docs:` block, so a mid-project start doesn't orphan existing docs; nothing is registered in the as-built baseline, which records artifacts only. Committing the `_specflow/docs-index.yaml` cache from `specflow rebuild-index` at adoption makes later doc drift visible in `git diff`.
 
 Docs are NOT artifacts: no `DOC` prefix, no status, no `_index.yaml` lifecycle entry, no DEC on edit. The existing guards (`is_spec_artifact_path`, `discover_artifacts` scope, `document_changes.py` path filter) are unchanged. A new `/specflow-doc` skill (concise SKILL.md + 4 reference files) is the authoring/citing/syncing UX; `init`/`adopt`/`audit`/`brief` fold the surface in automatically. The one new CLI subcommand is `specflow detect stale-docs`.
 

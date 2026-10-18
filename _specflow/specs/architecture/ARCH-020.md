@@ -9,12 +9,13 @@ links:
   role: derives_from
 created: '2026-05-04'
 modified: '2026-10-08'
-fingerprint: sha256:a1e55914cd09
+fingerprint: sha256:f6209427bf3a
 thinking_techniques:
 - assumption_surfacing
 - devils_advocate
 rationale: 'Fully implemented: SPIDR, wave-cycle, DDD selection, decision guidance,
   and the bundled no-API handbook fallback now ship with executable evidence.'
+version: 1
 ---
 
 # Decomposition Guidance System
@@ -38,6 +39,8 @@ src/specflow/templates/best-practices/       — Generic phase BP YAML files
 2. **Wave Cycle Detector**: Imports `compute_waves()` from `waves.py`. Runs during `artifact-lint --type wave-cycles`. Reports circular dependencies and stories with excessive (>3) dependencies.
 
 3. **Generic BP Bundler**: Ships 3-5 universal best-practice YAML files in `templates/best-practices/`. When `handbook generate` is called without an API key, copies these as fallback instead of failing.
+
+> Amended 2026-10-18 (SPIKE-008 R1-034): `lib/best_practices.py`, `templates/best-practices/` and `copy_generic_fallback` no longer exist. The bundled catalogue is `lib/practices_seed.py`, surfaced by `specflow practices seed [--create]`; `handbook generate` is a deprecated alias for it, and no API key is involved.
 
 4. **DDD Selection Guide**: Reference document with a 6-question decision checklist. Not enforced by lint — used by the plan skill during Step 4 to decide which ARCHs need DDD artifacts.
 

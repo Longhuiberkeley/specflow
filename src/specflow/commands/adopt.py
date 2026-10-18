@@ -207,12 +207,19 @@ def _provenance(art: art_lib.Artifact) -> dict[str, Any]:
 
 
 def _depth_label(has_parent: bool, has_children: bool) -> str:
-    """skeleton = missing spec above or detail below; full = V-model complete."""
-    if has_parent and has_children:
-        return "full"
-    if not has_parent and not has_children:
-        return "isolated"
-    return "skeleton"
+    """ARCH depth: full = parent REQ and child DDD; skeleton = anything less.
+
+    A bare ARCH (no REQ, no DDD) is the skeleton-sweep shape, so it is
+    `skeleton` too. `brief` and `adopt status` share this via `arch_depth`.
+    """
+    return "full" if has_parent and has_children else "skeleton"
+
+
+def arch_depth(artifacts: list[art_lib.Artifact], arch: art_lib.Artifact) -> str:
+    """The one ARCH depth definition used by `adopt status` and `brief`."""
+    has_parent = bool(_parents(artifacts, arch.id, {"REQ"}))
+    has_children = bool(_children(artifacts, arch.id, {"DDD"}))
+    return _depth_label(has_parent, has_children)
 
 
 def _drift_for_artifact(root: Path, art: art_lib.Artifact) -> list[str]:
@@ -481,10 +488,13 @@ def _render_artifact_view(root: Path, artifacts: list[art_lib.Artifact],
         depth = _depth_label(has_parent, has_children)
         depth_note = ""
         if depth == "skeleton":
-            missing = "parent REQ" if not has_parent else "child detail (DDD)"
+            if not has_parent and not has_children:
+                missing = "parent REQ and child detail (DDD)"
+            elif not has_parent:
+                missing = "parent REQ"
+            else:
+                missing = "child detail (DDD)"
             depth_note = f" — missing {missing}"
-        elif depth == "isolated":
-            depth_note = " — no parent REQ or child DDD links"
     print(f"  {BOLD}Depth:{NC}      {depth}{depth_note}")
 
     # Gaps — only the derivable ones, surfaced as warnings.

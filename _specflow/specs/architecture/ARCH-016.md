@@ -9,10 +9,11 @@ links:
   role: derives_from
 created: '2026-05-04'
 modified: '2026-10-08'
-fingerprint: sha256:829c96b2d7ea
+fingerprint: sha256:b70d3b3a81f6
 thinking_techniques:
 - assumption_surfacing
 - devils_advocate
+version: 1
 ---
 
 # Init Upgrade Engine
@@ -44,6 +45,9 @@ src/specflow/lib/scaffold.py      — Incremental schema copy (merge, not replac
 - `init.run()` — detects upgrade vs. fresh init, delegates to merge or create path
 - `config.merge_config(existing, defaults) -> dict` — merges user values over defaults
 - `config.read_version(root) -> str | None` — reads version stamp
+
+> Amended 2026-10-18 (SPIKE-008 R1-032): `read_version` and `scaffold.merge_schemas` do not exist. The stamp is now a format version (`_read_format_version`, `stamp_format_version`, `format_version_mismatch` in lib/config.py), schemas are copied by `create_internal_dirs(root, template_dir, overwrite_schemas=...)`, and re-init reports added config fields rather than a version delta.
+
 - `scaffold.merge_schemas(src, dst)` — incremental file copy
 
 ## Dependencies

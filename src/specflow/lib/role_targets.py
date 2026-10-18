@@ -74,7 +74,9 @@ ROLE_TARGET_MATRIX: dict[str, dict[str, frozenset[str]]] = {
         "complies_with": frozenset(_SPEC_TYPES),
         "supersedes": frozenset(_SPEC_TYPES | {"best-practice", "finding"}),
         "specified_by": frozenset({"architecture", "requirement"}),
-        "guided_by": frozenset({"decision", "best-practice"}),
+        # No guided_by row: the detailed-design schema does not list that
+        # role, and a matrix row would read as blessing it. The schema is the
+        # truth (every row here is a role the type's schema allows).
     },
     # --- work ------------------------------------------------------------
     "story": {
@@ -108,7 +110,8 @@ ROLE_TARGET_MATRIX: dict[str, dict[str, frozenset[str]]] = {
     },
     # --- research hierarchy -------------------------------------------------
     "competition": {
-        "operates_on": frozenset({"competition"}),
+        # No operates_on row: that role belongs to LOOP (LOOP operates_on
+        # COMP) and the competition schema does not list it.
         "guided_by": frozenset({"decision", "best-practice"} | _SPEC_TYPES),
     },
     "loop": {
@@ -126,9 +129,9 @@ ROLE_TARGET_MATRIX: dict[str, dict[str, frozenset[str]]] = {
     },
     # --- ops ------------------------------------------------------------------
     "run": {
+        # No guided_by row: the run schema does not list that role.
         "implements": frozenset(_SPEC_TYPES),
         "complies_with": frozenset(_SPEC_TYPES),
-        "guided_by": frozenset({"decision", "best-practice"} | _SPEC_TYPES),
     },
     "monitor": {
         "belongs_to": frozenset({"run", "monitor"}),

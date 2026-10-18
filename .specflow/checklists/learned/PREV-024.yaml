@@ -1,0 +1,20 @@
+id: PREV-024
+name: 'Prevent recurrence of: Local pre-commit RBAC check skips a staged rename that
+  also changes status (diff-filter=AM drops R entries) (violated REQ-008)'
+discovered_from: DEF-023
+mode: reactive
+pattern: 'Prevent recurrence of: Local pre-commit RBAC check skips a staged rename
+  that also changes status (diff-filter=AM drops R entries) (violated REQ-008)'
+applies_to:
+  tags:
+  - consistency
+  - rbac
+  - ci
+  - adapters
+items:
+- id: PREV-024-01
+  check: Verify that changes touching REQ-008 have a regression test covering the
+    failure mode of DEF-023.
+  severity: warning
+  automated: false
+  mode: reactive

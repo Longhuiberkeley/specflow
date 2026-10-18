@@ -291,10 +291,12 @@ class GitHubActionsAdapter(Adapter):
         (substituted into each ``__SPECFLOW_SOURCE__`` sentinel), so the
         consuming project never has to declare specflow as a dependency.
         """
-        ops_set = set(ops)
         parts = [_HEADER, _PASS1]
 
-        for op in ops_set:
+        # Config order, de-duplicated. A ``set`` here made the job order depend
+        # on PYTHONHASHSEED, so two runs on the same config emitted different
+        # bytes and `ci generate` reported a spurious diff.
+        for op in dict.fromkeys(ops):
             if op == "artifact-lint":
                 continue  # already in pass-1
             block = _OP_JOBS.get(op)

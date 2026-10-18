@@ -25,6 +25,7 @@ specflow create --type finding \
   --status draft \
   --set competition=COMP-001 \
   --set source_loop=LOOP-001 \
+  --links '[{"target":"COMP-001","role":"belongs_to"},{"target":"LOOP-001","role":"condenses"}]' \
   --set confidence=medium \
   --set summary="Tenure/usage features drove the largest gains; model changes had minimal impact."
 ```

@@ -10,11 +10,12 @@ links:
 - target: DEC-085
   role: guided_by
 created: '2026-09-25'
-fingerprint: sha256:d9570f45e353
+fingerprint: sha256:e5dcd2f6c995
 modified: '2026-10-08'
 thinking_techniques:
 - premortem
 - dependency_shock
+version: 1
 ---
 
 # Practice spine: BP anatomy, provenance, lifecycle, and deterministic validation
@@ -29,7 +30,9 @@ Own the best-practice data model: the five-section anatomy (Practice / Applies w
 - load_active_best_practices rewrite lives here; consumers (checklists, ci, brief) keep their signatures
 
 ## Dependencies
-Downstream of artifact schema loading; upstream of guidance application (ARCH-034), profile (later increment), and all skill surfaces. No LLM inference anywhere in this component.
+Downstream of artifact schema loading; upstream of guidance application (ARCH-036), profile (later increment), and all skill surfaces. No LLM inference anywhere in this component.
+
+> Amended 2026-10-18 (SPIKE-008 R1-111): the guidance-application cross-reference was ARCH-034 (the autoresearch evidence model); corrected in place to ARCH-036.
 
 ## Data flow
 best-practice.yaml schema -> create/update -> practices validate (anatomy, taxonomy, provenance resolvability, lineage) -> practices migrate stamps provenance on legacy BPs -> applicability-first loader feeds checklists/ci/brief.

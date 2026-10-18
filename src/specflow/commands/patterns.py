@@ -27,7 +27,9 @@ def run(root: Path, args: dict[str, Any]) -> int:
 def cmd_list(root: Path, args: dict[str, Any]) -> int:
     patterns = list_learned_patterns(root)
     if not patterns:
-        print("(no learned patterns — patterns accumulate from artifact reviews with blocking/warning findings)")
+        print("(no learned patterns — they are seeded when a DEF closes, by "
+              "`specflow done --auto`, or by `specflow verify --seed-prev`; "
+              "retired patterns are hidden)")
         return 0
     print(f"\nLearned prevention patterns: {len(patterns)}\n")
     for p in patterns:

@@ -9,7 +9,7 @@ Extra text narrows scope — still run the deterministic core first.
 
 Capture requirements as REQ artifacts. Two depths, decided per exchange — assess readiness silently, don't interrogate:
 
-- **Lean** — a bounded change ("add dark mode"): one REQ + one STORY, both `draft`, then the approval gate below. A bug against an **approved** REQ ("fix the login redirect") is a DEF, not a new REQ: `specflow create --type defect --title "<symptom>" --add-link <REQ-ID>:fails_to_meet` (add `--add-link <TEST-ID>:exposed_by` when a test caught it) plus a fix STORY that links **both** `--add-link <REQ-ID>:implements --add-link <DEF-ID>:derives_from` (`implements` is what the blocking story-linkage check reads — `derives_from` the DEF alone fails lint once the STORY is approved); the DEF starts `open` and needs no approval gate.
+- **Lean** — a bounded change ("add dark mode"): one REQ + one STORY, both `draft`, then the approval gate below. A bug against an **approved** REQ ("fix the login redirect") is a DEF, not a new REQ: `specflow create --type defect --title "<symptom>" --add-link <REQ-ID>:fails_to_meet` (add `--add-link <TEST-ID>:exposed_by` when a test caught it) plus a fix STORY that links **both** `--add-link <REQ-ID>:implements --add-link <DEF-ID>:derives_from` (the blocking story-linkage check needs a link to a REQ/ARCH/DDD — use `implements`; `derives_from` the DEF alone fails lint once the STORY is approved); the DEF starts `open` and needs no approval gate.
 - **Full** — everything else: elicit until the problem, users, success criteria, scope IN/OUT, constraints, and anti-requirements are clear, then proceed. `references/readiness-assessment.md` lists the dimensions to check.
 
 ## Workflow
@@ -21,14 +21,14 @@ Capture requirements as REQ artifacts. Two depths, decided per exchange — asse
    - `specflow create --type decision --title "Dropped: <summary>" --status approved --sanctioned "user just made this drop decision in conversation — quote their instruction in the rationale" --body "<rationale>"`
    - `specflow create --type decision --title "Assumption: <text>" --status draft --body "<assumption, consequence if wrong, validation>"`
    - `specflow create --type decision --title "Risk: <text>" --status draft --body "<risk, likelihood, impact, mitigation>"`
-4. **Inter-REQ dependencies:** when one requirement depends on another, record it — `specflow update <dependent-REQ> --add-link <prerequisite-REQ>:derives_from` (drives story wave ordering at plan time).
+4. **Inter-REQ dependencies:** when one requirement depends on another, record it — `specflow update <dependent-REQ> --add-link <prerequisite-REQ>:derives_from` (provenance only — `specflow go` orders STORYs by STORY `depends_on`/`derives_from` links, which plan adds).
 5. **Create REQs** (`specflow create --type requirement ...`, status `draft`). Write bodies per `references/normative-language.md` — RFC 2119 keywords, no ambiguity words, one obligation per REQ, Given/When/Then acceptance criteria (happy path + error/edge). Record techniques actually applied: `specflow update <REQ-ID> --thinking-techniques <...>`. When the ask was framed, link the ruling: `specflow update <REQ-ID> --add-link <framing-DEC-ID>:guided_by`. Link each in-scope approved best practice so it guides the REQ: `specflow update <REQ-ID> --add-link <BP-ID>:guided_by` (the link goes on the REQ, pointing at the BP).
 6. **Domain (full path, only if unset):** `specflow domain suggest` → confirm with the user → `specflow domain set <type> --tag <tag>`. Question sets: `references/domain-checklists/<type>.md`; cross-cutting concerns: `references/cross-cutting.md`; best practices come deterministically from `specflow practices seed` (preview) and `specflow practices seed --create` (writes draft BPs the user approves; authoring guide: `../specflow-references/references/bp-authoring.md`).
 7. **Validate:** `specflow artifact-lint` and `specflow practices validate`.
 
 ## Approval gate (I1)
 
-**You must NOT self-approve.** REQs stay `draft` until the user explicitly confirms; only then `specflow update <ID> --status approved`. Present per `../specflow-references/references/approval-presentation.md` — TLDR, what each REQ does in plain terms, changes inline, key decisions, action options — and make it the approve-or-improve loop.
+**You must NOT self-approve.** REQs stay `draft` until the user explicitly confirms; only then `specflow update <ID> --status approved`. Present per `../specflow-references/references/approval-presentation.md` — TLDR, what each REQ does in plain terms, changes inline, key decisions, action options — and make it the approve-or-improve loop. (delegated autonomy: see `../specflow-references/references/approval-presentation.md`, Delegated autonomy.)
 
 **Exit message** (branch on the path taken — lean and bug already have their STORY, so they skip `/specflow-plan`):
 
@@ -36,7 +36,7 @@ Capture requirements as REQ artifacts. Two depths, decided per exchange — asse
 ## Handoff checkpoint
 **Accomplished:** REQ-<id>s (N requirements, draft)<; STORY-<id> (lean path, draft)><; DEF-<id> (open) + fix STORY-<id> (draft)>.
 **Pending / blocked:** artifacts are draft — need human approval before the next step. <open assumption/risk DECs>
-**Exact next command:** lean → `specflow approve --type REQ` and `specflow approve --type STORY`, then `/specflow-execute` (with no ARCH in the project its gate item CKL-GATE-004-01 fires — execute step 1 names it as the expected lean skip; `brief --next` routes a REQ covered by an approved STORY to `/specflow-execute`, and to `/specflow-artifact-review` → `/specflow-ship` once every covering STORY is implemented/verified) · bug → `specflow approve --type STORY` for the fix STORY (the DEF stays `open` and moves to `fixing` when work starts), then `/specflow-execute` · full → `specflow approve --type REQ`, then `/specflow-plan`.
+**Exact next command:** lean → `specflow approve --type REQ` and `specflow approve --type STORY`, then `/specflow-execute` (with no ARCH in the project its gate item CKL-GATE-004-01 fires — execute step 1 names it as the expected lean skip; `brief --next` routes a REQ covered by an approved STORY to `/specflow-execute`, and to `/specflow-artifact-review` → `/specflow-ship` once every approved covering STORY is implemented/verified — draft STORYs are not counted) · bug → `specflow approve --type STORY` for the fix STORY (the DEF stays `open` and moves to `fixing` when work starts), then `/specflow-execute` · full → `specflow approve --type REQ`, then `/specflow-plan`.
 ```
 
 ## Rules

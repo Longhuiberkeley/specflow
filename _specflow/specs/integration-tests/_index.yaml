@@ -947,4 +947,51 @@ artifacts:
     tags: []
     fingerprint: sha256:ecbfbf894198
     children: []
-next_id: 122
+  IT-122:
+    id: IT-122
+    title: 'Integration tests for STORY-745: reference lint budgets and approval guardrail
+      with the carve-out'
+    status: implemented
+    tags: []
+    fingerprint: sha256:18d1b7a4dee4
+    children: []
+  IT-123:
+    id: IT-123
+    title: 'Integration tests for STORY-746: one ARCH depth rule shared by adopt status
+      and brief'
+    status: implemented
+    tags: []
+    fingerprint: sha256:ff6f2c19503d
+    children: []
+  IT-124:
+    id: IT-124
+    title: 'Integration tests for STORY-747: link-role table scoped to core schemas'
+    status: implemented
+    tags: []
+    fingerprint: sha256:0053b096a828
+    children: []
+  IT-125:
+    id: IT-125
+    title: 'Integration tests for STORY-748: open status categories and complete-phase
+      brief routing'
+    status: implemented
+    tags: []
+    fingerprint: sha256:a1baf4cc107a
+    children: []
+  IT-126:
+    id: IT-126
+    title: 'Integration tests for STORY-749: no stale fingerprints after the amendment
+      sweep'
+    status: implemented
+    tags: []
+    fingerprint: sha256:f95e15896afa
+    children: []
+  IT-127:
+    id: IT-127
+    title: 'Integration tests for STORY-750: project-audit baseline-drift lens and
+      cache generation with renumber pairing'
+    status: implemented
+    tags: []
+    fingerprint: sha256:c8166c514384
+    children: []
+next_id: 128

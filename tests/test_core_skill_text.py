@@ -734,3 +734,234 @@ class TestDefectTransitions:
         assert "Cannot transition" not in out
         reloaded = next(a for a in art_lib.discover_artifacts(root) if a.id == defect.id)
         assert reloaded.status == "fixing"
+
+
+# ---------------------------------------------------------------------------
+# SPIKE-008 W-1 (STORY-745): every changed normative sentence is pinned —
+# the new wording must be present and the quoted stale claim must be gone.
+# Each tuple: (row, path under the shipped skill tree, must contain, must not contain).
+# ---------------------------------------------------------------------------
+
+_AP = "specflow-references/references/approval-presentation.md"
+_D1_PTR = "(delegated autonomy: see `../specflow-references/references/approval-presentation.md`, Delegated autonomy.)"
+
+_SPIKE008_PINS = [
+    # SPIKE-008 R1-184 (D1 carve-out)
+    ("R1-184", _AP, "a delegation of approvals is valid only when the direct user grants it in the current session, and it MUST NOT cover a release or any action `specflow risk-tier` (or your own escalation) rates Tier 2", None),
+    # SPIKE-008 R1-184 (D1 gate pointers)
+    ("R1-184", "specflow-discover/SKILL.md", _D1_PTR, None),
+    # SPIKE-008 R1-184
+    ("R1-184", "specflow-plan/SKILL.md", _D1_PTR, None),
+    # SPIKE-008 R1-184
+    ("R1-184", "specflow-execute/SKILL.md", _D1_PTR, None),
+    # SPIKE-008 R1-184
+    ("R1-184", "specflow-audit/SKILL.md", _D1_PTR, None),
+    # SPIKE-008 R1-184
+    ("R1-184", "specflow-artifact-review/SKILL.md", _D1_PTR, None),
+    # SPIKE-008 R1-184
+    ("R1-184", "specflow-change-impact-review/SKILL.md", _D1_PTR, None),
+    # SPIKE-008 R1-170
+    ("R1-170", _AP, "a standalone `specflow risk-tier` cannot see it, so rate a release or baseline action Tier 2 yourself", None),
+    # SPIKE-008 R1-171
+    ("R1-171", _AP, "Reversible **AND** an empty downstream cone **AND** high confidence", "small blast radius **AND** high confidence"),
+    # SPIKE-008 R2-029
+    ("R2-029", _AP, "The CLI floors Tier 0 only at a cone of 0; a cone of 1–7 computes Tier 1, 8 or more Tier 2.", None),
+    # SPIKE-008 R1-047
+    ("R1-047", "specflow-adapter/SKILL.md", "the old provider's workflow file is never removed, so delete it by hand", "The new provider's workflow replaces the old one."),
+    # SPIKE-008 R1-148
+    ("R1-148", "specflow-adapter/SKILL.md", "`pytest` — **blocking**", None),
+    # SPIKE-008 R1-149
+    ("R1-149", "specflow-adapter/SKILL.md", "full audit on pushes to main/master and `v*` tags", "full audit on push to main"),
+    # SPIKE-008 R1-150
+    ("R1-150", "specflow-adapter/SKILL.md", "It walks each commit in `base..head` per changed artifact", "it uses only `git diff` between two refs"),
+    # SPIKE-008 R2-018
+    ("R2-018", "specflow-adapter/SKILL.md", "With no team roles configured it passes everything.", None),
+    # SPIKE-008 R1-151
+    ("R1-151", "specflow-adapter/SKILL.md", "the `exchange` section of `.specflow/adapters.yaml` is informational — import/export never read it", "Read current config: `.specflow/adapters.yaml` → `exchange` section"),
+    # SPIKE-008 R1-174
+    ("R1-174", "specflow-adapter/SKILL.md", "the sanctioned place to edit `adapters.yaml` and the `team` section of `config.yaml`", "the sanctioned place to edit both files"),
+    # SPIKE-008 R2-014
+    ("R2-014", "specflow-adapter/SKILL.md", "Files land under `<dir>/.cursor/rules`, `<dir>/.codex/agents` or `<dir>/.rules/rules`", None),
+    # SPIKE-008 R1-048 (D6)
+    ("R1-048", "specflow-adapter/SKILL.md", "both `Pass 1 — programmatic validation` and `CI gate (RBAC)` checks", None),
+    # SPIKE-008 R1-048 (D6)
+    ("R1-048", "specflow-adapter/references/team-setup.md", "require BOTH status checks by their display names — GitHub matches a required check on the job's `name:`, not its id", "require the `specflow-pass-1` status check"),
+    # SPIKE-008 R1-048 (D6)
+    ("R1-048", "specflow-adapter/references/team-setup.md", "| `CI gate (RBAC)` | `specflow-ci-gate` | pull requests only (`specflow ci-gate`) | `ci-gate` in `ci.operations`, then `specflow ci generate` — an existing workflow is left as-is, so regenerate it with `--force`", None),
+    # SPIKE-008 R1-048 (D6 CODEOWNERS any-of)
+    ("R1-048", "specflow-adapter/references/team-setup.md", "a line with several owners is any-of — one listed owner's review satisfies it", None),
+    # SPIKE-008 R1-048
+    ("R1-048", "specflow-adapter/references/adapter-framework.md", "distinct job ids (`specflow-pass-1`, `specflow-ci-gate`, …; the optional `pytest` job is the unprefixed exception)", "distinct job names (`specflow-pass-1`, etc.)"),
+    # SPIKE-008 R1-152
+    ("R1-152", "specflow-adapter/references/team-setup.md", "`policy.verification_statuses` triggering", None),
+    # SPIKE-008 R2-020
+    ("R2-020", "specflow-adapter/references/team-setup.md", "on every commit that stages a `_specflow/` artifact (code-only commits skip it)", None),
+    # SPIKE-008 R1-058
+    ("R1-058", "specflow-artifact-review/SKILL.md", "the default `--depth quick` stops there, `--depth normal` adds the agent-judged prompts, and `--depth deep` adds lens prompts plus the recording line", "composes lint, assembled checklists, and lens prompts in one call"),
+    # SPIKE-008 R1-175
+    ("R1-175", "specflow-artifact-review/SKILL.md", "learned prevention patterns come from DEF closure (`specflow update <DEF-ID> --status closed`)", None),
+    # SPIKE-008 R1-049
+    ("R1-049", "specflow-artifact-review/references/severity-levels.md", "fewer than 2 acceptance criteria", "fewer than 3 acceptance criteria"),
+    # SPIKE-008 R1-050
+    ("R1-050", "specflow-artifact-review/references/severity-levels.md", "Gate warnings stay warnings: nothing runs a gate on a status or phase transition", "escalate to **blocking** during phase transitions"),
+    # SPIKE-008 R1-177 (D5 mapping)
+    ("R1-177", "specflow-artifact-review/references/severity-levels.md", "| `error` | `blocking` |\n| `warn` | `warning` |\n| `info` | `info` |", None),
+    # SPIKE-008 R1-050
+    ("R1-050", "specflow-artifact-review/references/checklist-assembly.md", "loaded only with `--gate <from>-to-<to>`", "loaded with `--gate` or before a transition"),
+    # SPIKE-008 R1-155
+    ("R1-155", "specflow-artifact-review/references/checklist-assembly.md", "`specflow artifact-lint` ignores it and runs repo-wide", None),
+    # SPIKE-008 R2-021
+    ("R2-021", "specflow-artifact-review/references/challenge-engine.md", "**DEF closure** — `specflow update <DEF-ID> --status closed` seeds a PREV", "After work completes, `specflow done` extracts prevention patterns."),
+    # SPIKE-008 R1-153
+    ("R1-153", "specflow-artifact-review/references/challenge-engine.md", "skipping any with `retired: true`", None),
+    # SPIKE-008 R1-154
+    ("R1-154", "specflow-artifact-review/references/challenge-engine.md", "listed under \"Agent-judged checks\" with a `[reactive]` label", "Items appear in the \"reactive\" section"),
+    # SPIKE-008 R1-176
+    ("R1-176", "specflow-audit/SKILL.md", "Project-audit findings cannot be baselined", None),
+    # SPIKE-008 R1-156
+    ("R1-156", "specflow-audit/SKILL.md", "for `accepted`, also record why with `specflow update <CHL-ID> --set resolution=\"<reason>\"`", None),
+    # SPIKE-008 R1-051
+    ("R1-051", "specflow-change-impact-review/SKILL.md", "empty is normal for a fresh or never-edited DEC, never proof of an empty cone", None),
+    # SPIKE-008 R1-051
+    ("R1-051", "specflow-change-impact-review/SKILL.md", "`specflow trace <DEC_ID>` gives the cone", None),
+    # SPIKE-008 R1-177
+    ("R1-177", "specflow-change-impact-review/SKILL.md", "--set severity=<blocking|warning|info>", "--set severity=<level>"),
+    # SPIKE-008 R1-052
+    ("R1-052", "specflow-discover/SKILL.md", "(provenance only — `specflow go` orders STORYs by STORY `depends_on`/`derives_from` links, which plan adds)", "drives story wave ordering"),
+    # SPIKE-008 R1-052
+    ("R1-052", "specflow-plan/references/link-roles.md", "provenance only — wave ordering reads STORY links", "drives story wave ordering"),
+    # SPIKE-008 R1-052
+    ("R1-052", "specflow-plan/SKILL.md", "Ordering between STORYs is a STORY `depends_on` STORY link", None),
+    # SPIKE-008 R1-157
+    ("R1-157", "specflow-discover/SKILL.md", "the blocking story-linkage check needs a link to a REQ/ARCH/DDD", "`implements` is what the blocking story-linkage check reads"),
+    # SPIKE-008 R1-158
+    ("R1-158", "specflow-discover/SKILL.md", "once every approved covering STORY is implemented/verified — draft STORYs are not counted", None),
+    # SPIKE-008 R1-165
+    ("R1-165", "specflow-plan/SKILL.md", "aim for 3+ Given/When/Then acceptance criteria — lint warns below 2 or above 8", "≥3 Given/When/Then"),
+    # SPIKE-008 R1-165
+    ("R1-165", "specflow-plan/references/story-writing.md", "(lint warns below 2 or above 8)", "Minimum 3 per story"),
+    # SPIKE-008 R1-173
+    ("R1-173", "specflow-plan/SKILL.md", "so every subagent works on stable IDs", "parallel creates race the index"),
+    # SPIKE-008 R1-173
+    ("R1-173", "specflow-execute/SKILL.md", "so every subagent works on stable IDs", "parallel creates race the index"),
+    # SPIKE-008 R1-173
+    ("R1-173", "specflow-start/SKILL.md", "so every subagent works on stable IDs", "parallel creates race the index"),
+    # SPIKE-008 R1-056
+    ("R1-056", "specflow-plan/references/link-roles.md", "Inert: no test-run type ships and nothing reads the role — do not author it", "TR-001 executes QT-001"),
+    # SPIKE-008 R1-166
+    ("R1-166", "specflow-plan/references/link-roles.md", "REVIEW-001 review_of STORY-001", "REV-001"),
+    # SPIKE-008 R1-167
+    ("R1-167", "specflow-plan/references/link-roles.md", "- `guided_by` — links to a framing DEC or an in-scope approved BP", None),
+    # SPIKE-008 R1-059
+    ("R1-059", "specflow-execute/SKILL.md", "name the next skill: `/specflow-artifact-review`, then `/specflow-ship`", None),
+    # SPIKE-008 R1-059
+    ("R1-059", "specflow-execute/SKILL.md", "`specflow done` moves the phase to `verifying`, where `brief --next` routes straight to `/specflow-ship`", None),
+    # SPIKE-008 R1-180
+    ("R1-180", "specflow-execute/SKILL.md", "**Baseline first:** write the failing test(s) for the STORY's acceptance criteria", None),
+    # SPIKE-008 R1-180
+    ("R1-180", "specflow-execute/SKILL.md", "`specflow generate-tests` creates the V-model UT/IT/QT artifacts, not the red test", None),
+    # SPIKE-008 R1-181
+    ("R1-181", "specflow-execute/SKILL.md", "4. **Repeated failure** — after two failed fixes on one check", None),
+    # SPIKE-008 R1-182
+    ("R1-182", "specflow-execute/references/wave-computation.md", "It never implements, changes status, stages or commits.", "stories in a wave run simultaneously"),
+    # SPIKE-008 R1-162
+    ("R1-162", "specflow-execute/references/verification-contracts.md", "| `verify_run_command_hash` | `specflow verify` |", None),
+    # SPIKE-008 R1-060
+    ("R1-060", "specflow-init/SKILL.md", "the CLI's multi-host warning is suppressed under an explicit `--platform`, which this skill always passes", "`specflow init` also warns when multiple AI-host platform dirs are detected"),
+    # SPIKE-008 R1-055
+    ("R1-055", "specflow-init/SKILL.md", "need `specflow refresh --all-platforms` after init", None),
+    # SPIKE-008 R1-054
+    ("R1-054", "specflow-init/SKILL.md", "it persists the domain classification; init does not seed best practices", "attempts to generate project-level best practices"),
+    # SPIKE-008 R1-164
+    ("R1-164", "specflow-init/SKILL.md", "add `--schemas --checklists` (and `--packs`) to receive schema, checklist and pack updates", None),
+    # SPIKE-008 R2-026
+    ("R2-026", "specflow-init/SKILL.md", "The SpecFlow block between the sentinels is rewritten in place", "Only append the SpecFlow block."),
+    # SPIKE-008 R2-025
+    ("R2-025", "specflow-init/SKILL.md", "which loads it only through a `CLAUDE.md` containing `@AGENTS.md`", None),
+    # SPIKE-008 R1-183
+    ("R1-183", "specflow-pack-author/SKILL.md", "on an initialized project init runs in merge mode", "or use `/specflow-init` and name it as the preset"),
+    # SPIKE-008 R1-172
+    ("R1-172", "specflow-ship/SKILL.md", "`renumber-drafts` rewrites `_specflow/` and `.specflow/impact-log/`", "rewrites `_specflow/` only"),
+    # SPIKE-008 R1-172
+    ("R1-172", "specflow-ship/SKILL.md", "it refuses on a feature branch, exit 1", None),
+    # SPIKE-008 R1-053
+    ("R1-053", "specflow-doc/references/citation-syntax.md", "or a draft/coded-family body `<SLUG>-<hex4>` (e.g. `@STORY-VPSPROB-0a17`)", "`NUMBER` is 3–5 digits."),
+    # SPIKE-008 R1-160
+    ("R1-160", "specflow-doc/references/citation-syntax.md", "a REQ, ARCH, DDD or DEC may name related docs", None),
+    # SPIKE-008 R1-159
+    ("R1-159", "specflow-doc/SKILL.md", "(bare form only; a type argument skips it)", None),
+    # SPIKE-008 R1-161
+    ("R1-161", "specflow-doc/references/staleness-rules.md", "no `rebuild-index` needed", "run `specflow rebuild-index` then `specflow detect stale-docs`"),
+    # SPIKE-008 R1-057
+    ("R1-057", "specflow-references/references/bp-authoring.md", "the project domain is not consulted", "tag match against `specflow domain`"),
+    # SPIKE-008 R1-168
+    ("R1-168", "specflow-references/references/adversarial-lenses.md", "**Review (default starter set)**", "**Review (quick)**"),
+    # SPIKE-008 R1-169
+    ("R1-169", "specflow-references/references/adversarial-lenses.md", "warn on approved, implemented or verified REQ, ARCH and DDD artifacts that were never challenged", None),
+    # SPIKE-008 R1-179
+    ("R1-179", "specflow-discover/references/framing.md", "`--rationale \"<quote the user's verdict>\" --status approved` (still exactly one framing DEC)", None),
+    # SPIKE-008 R1-178
+    ("R1-178", "specflow-discover/references/conflict-check.md", "`specflow update <OLD-DEC-ID> --status superseded`", None),
+]
+
+
+@pytest.mark.parametrize(
+    "row,rel,present,absent", _SPIKE008_PINS, ids=[f"{p[0]}-{p[1]}" for p in _SPIKE008_PINS]
+)
+def test_spike008_skill_sentence_pinned(row, rel, present, absent):
+    shipped = _read(rel)
+    assert present in shipped, f"{row}: {rel} lost the corrected sentence"
+    if absent:
+        assert absent not in shipped, f"{row}: {rel} still carries the stale claim"
+    assert (_LIVE / rel).read_text(encoding="utf-8") == shipped, f"{rel}: live mirror drifted"
+
+
+def _gate_items(rel: str) -> dict:
+    data = yaml.safe_load((_ROOT / "src/specflow/templates/checklists" / rel).read_text(encoding="utf-8"))
+    return {i["id"]: i for i in data["items"]}
+
+
+class TestSpike008Checklists:
+    def test_req_approved_gate_item_is_agent_judged(self):
+        # SPIKE-008 R2-002
+        item = _gate_items("phase-gates/specifying-to-planning.yaml")["CKL-GATE-003-01"]
+        assert item["automated"] is False
+        assert "specflow list --type requirement --status draft" in item["llm_prompt"]
+        assert "script" not in item
+
+    def test_story_gate_item_claims_only_existence(self):
+        # SPIKE-008 R2-002
+        item = _gate_items("phase-gates/planning-to-executing.yaml")["CKL-GATE-004-03"]
+        assert item["check"] == "STORY artifacts exist"
+
+    def test_fingerprint_gate_items_do_not_claim_blocking_or_suspects(self):
+        # SPIKE-008 R2-003
+        assert _gate_items("phase-gates/verifying-to-complete.yaml")["CKL-GATE-006-02"]["severity"] == "warning"
+        # SPIKE-008 R2-003
+        check = _gate_items("phase-gates/executing-to-verifying.yaml")["CKL-GATE-005-04"]["check"]
+        assert "No suspect flags" not in check and "Fingerprints are current" in check
+
+    def test_release_gate_matches_ship_advisory_and_baseline_timing(self):
+        gate6 = _gate_items("phase-gates/verifying-to-complete.yaml")
+        # SPIKE-008 R2-004
+        assert gate6["CKL-GATE-006-01"]["severity"] == "warning"
+        # SPIKE-008 R2-004
+        assert "creates this release's baseline after this gate" in gate6["CKL-GATE-006-07"]["check"]
+
+    def test_in_process_items_state_what_the_script_checks(self):
+        # SPIKE-008 R2-016
+        check = _gate_items("in-process/requirement-writing.yaml")["CKL-IP-001-02"]["check"]
+        assert not check.startswith("Every statement")
+        # SPIKE-008 R2-015
+        check = _gate_items("in-process/story-writing.yaml")["CKL-IP-004-01"]["check"]
+        assert "the role is checked, not the target" in check
+
+
+def test_agent_context_delegation_carve_out_mirrored():
+    # SPIKE-008 R1-184 (D1): the always-on block narrows delegation and AGENTS.md mirrors it.
+    ctx = _CONTEXT.read_text(encoding="utf-8")
+    assert "Under delegated autonomy granted by the direct user in this session (never for a release or a risk-tier 2 action)" in ctx
+    agents = (_ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    block = agents.split("<!-- SpecFlow section (auto-generated, do not edit manually) -->\n", 1)[1]
+    block = block.split("<!-- End SpecFlow section -->", 1)[0]
+    assert block.strip() == ctx.strip()

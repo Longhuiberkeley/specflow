@@ -13,7 +13,7 @@ links:
 - target: REQ-057
   role: implements
 created: '2026-10-08'
-fingerprint: sha256:3ed2bc027de6
+fingerprint: sha256:e6b3663e0b5f
 modified: '2026-10-08'
 output_files:
 - pyproject.toml
@@ -33,6 +33,7 @@ output_files:
 - tests/test_phase_status_cmd.py
 - tests/test_practices.py
 - tests/test_release_consistency.py
+version: 1
 ---
 
 # Wave P-13: tests and CI hygiene — executor tests, un-skip practice tests, handler tests, release consistency, wheel smoke PATH, brownfield fixture
@@ -44,5 +45,8 @@ Findings F-056, F-098, F-013, F-055, F-057, F-058 (test), F-059, F-012.
 
 - [ ] AC1: Given tests/test_practices.py and test_handbook.py, when run with -rs, then zero skips.
 - [ ] AC2: Given auto_commit_wave in a temp git repo, when run, then it commits staged files and returns False when nothing is staged.
+
+> Amended 2026-10-18 (SPIKE-008 R1-146): superseded by STORY-738 and DEC-103 (DEF-020): `auto_commit_wave` was removed and `specflow go` never commits.
+
 - [ ] AC3: Given pyproject, __init__ and CHANGELOG head, when compared by a test, then they agree.
 - [ ] AC4: Given a git archive of the previous tag, when read-only commands run against it, then no Traceback and only documented exit codes.

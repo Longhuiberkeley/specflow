@@ -1,6 +1,6 @@
 ---
 id: STORY-033
-title: Build the 9 Tier 1 conversational skills — init, audit, ship + modifications
+title: "Build the 9 Tier 1 conversational skills \u2014 init, audit, ship + modifications"
 type: story
 status: verified
 priority: high
@@ -25,8 +25,8 @@ links:
 - target: UT-014
   role: verified_by
 created: '2026-04-17'
-fingerprint: sha256:e150f32f8b00
-version: 2
+fingerprint: sha256:a482337d52d4
+version: 3
 modified: '2026-04-22'
 output_files:
 - src/specflow/commands/approve.py
@@ -159,6 +159,8 @@ This is a step insertion, not a rewrite. The existing lean/full discovery paths 
 17. `/specflow-discover` runs `specflow standards gaps` silently after readiness check and offers to scaffold REQs from uncovered clauses
 18. `specflow create --from-standard` fails with a clear error message when the clause ID is not found in installed standards
 19. `src/specflow/lib/platform.py` exposes both `get_skills_platform_dir()` (target install dir, unchanged) and `get_skills_template_dir()` (returns `"shared"`); `get_skill_names()` returns all 9 skill names
+
+> Amended 2026-10-18 (SPIKE-008 R1-134): `get_skills_template_dir()` does not exist; the template directory is the fixed `shared` path. `get_skill_names()` returns 12 names (adds specflow-adapter, specflow-doc and specflow-start). ACs 1, 3 and 19 describe the 9-skill surface as it shipped then.
 
 ## Out of Scope
 

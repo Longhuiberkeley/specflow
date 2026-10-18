@@ -19,13 +19,13 @@ links:
   role: derives_from
 created: '2026-04-21'
 modified: '2026-10-08'
-fingerprint: sha256:9358bc85b477
+fingerprint: sha256:00b1f075bcf1
 thinking_techniques:
 - assumption_surfacing
 - devils_advocate
 - premortem
 - worst_case_user
-version: 2
+version: 4
 ---
 
 # Compliance & Exchange Subsystem
@@ -48,6 +48,9 @@ Provides supply-chain interchange, compliance tracking, and immutable project sn
 **Export path** (`specflow export --adapter reqif`):
 1. Collect artifacts by type (REQ, ARCH, DDD, UT, IT, QT)
 2. Generate deterministic UUIDs: `uuid5(NAMESPACE_OID, artifact_id + content_hash)`
+
+> Amended 2026-10-18 (SPIKE-008 R1-028): `export_reqif` uses no uuid5 and no ZIP. Element ids come from `_new_id()` (sha256 of prefix and seed, lib/reqif.py:332), the SPEC-OBJECT identifier is the artifact id, and the output is plain ReqIF XML. AC3's command is `specflow standards gaps` (not `standards-gaps`), and optional schemas live in `src/specflow/templates/schemas/optional/` (SPIKE-008 R1-103).
+
 3. Map SpecFlow frontmatter to ReqIF `<ATTRIBUTE-VALUE-*>` elements
 4. Preserve `reqif_metadata` as custom attributes
 5. Package as `.reqifz` ZIP archive

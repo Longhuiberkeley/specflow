@@ -7,8 +7,8 @@ version: 1
 items:
   - id: CKL-GATE-003-01
     check: "All REQ artifacts have status: approved"
-    automated: true
-    script: "specflow artifact-lint --type status"
+    automated: false
+    llm_prompt: "List the draft requirements (`specflow list --type requirement --status draft`). Confirm every REQ in scope for planning is approved (deprecated, superseded and cancelled REQs are out of scope). Flag each in-scope REQ still in draft. (`artifact-lint --type status` only checks that statuses are legal, not that they reached approved.)"
     severity: blocking
 
   - id: CKL-GATE-003-02

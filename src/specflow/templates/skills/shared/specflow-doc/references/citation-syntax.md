@@ -7,16 +7,16 @@ frontmatter required, no link role, no schema change (respects the frozen link-r
 ## Grammar
 
 ```
-@<PREFIX>-<NUMBER>[.<SUB>]
+@<PREFIX>-<BODY>[.<SUB>]
 ```
 
 - `PREFIX` is any registered artifact prefix, read live from `.specflow/schema/*.yaml`
   (so pack-added types count): `REQ`, `ARCH`, `DDD`, `UT`, `IT`, `QT`, `BP`, `STORY`,
   `SPIKE`, `DEC`, `DEF`, `AUD`, `CHL`, `REVIEW`, plus pack prefixes (e.g. `HAZ`, `RUN`).
-- `NUMBER` is 3–5 digits.
-- `.<SUB>` is an optional child id (e.g. `@REQ-001.2`).
+- `BODY` is 3–5 digits, or a draft/coded-family body `<SLUG>-<hex4>` (e.g. `@STORY-VPSPROB-0a17`).
+- `.<SUB>` is an optional child id of 1–3 digits, numeric bodies only (e.g. `@REQ-001.2`).
 
-Valid: `@ARCH-007`, `@DEC-018`, `@REQ-001.2`, `@DEC-018.2`.
+Valid: `@ARCH-007`, `@DEC-018`, `@REQ-001.2`, `@DEC-018.2`, `@STORY-VPSPROB-0a17`.
 Rejected: `@user`, `email@host.com`, `DEC-019` (no `@`).
 
 ## Where citations are detected
@@ -47,8 +47,8 @@ staleness — both recompute live from disk (the cache is for inspection, not th
 ## The other direction (artifact → doc)
 
 Citation is primarily doc → artifact (the `@ID` markers above). The reverse direction
-is optional: an artifact may name related docs via an optional `doc_refs:` frontmatter
-field (a list of repo-relative paths). `doc_refs` is metadata, not a link role — it
+is optional: a REQ, ARCH, DDD or DEC may name related docs via an optional `doc_refs:`
+frontmatter field (a list of repo-relative paths; the other schemas do not declare it). `doc_refs` is metadata, not a link role — it
 never affects traceability or the link validator.
 
 ## Why `@ID` and not free text?

@@ -409,7 +409,7 @@ artifacts:
   REQ-044:
     id: REQ-044
     title: Uniform best-practice anatomy with provenance and deterministic validation
-    status: approved
+    status: implemented
     tags: []
     fingerprint: sha256:9cfd00ceb075
     children: []
@@ -430,7 +430,7 @@ artifacts:
   REQ-047:
     id: REQ-047
     title: Deterministic research integrity guards against metric gaming
-    status: approved
+    status: implemented
     tags: []
     fingerprint: sha256:14cee12d7279
     children: []
@@ -637,4 +637,15 @@ artifacts:
     - skills
     fingerprint: sha256:acc31127a7b2
     children: []
-next_id: 70
+  REQ-070:
+    id: REQ-070
+    title: Shipped prose, docs and ledger describe the engine as built (2026-10 consistency
+      review)
+    status: verified
+    tags:
+    - consistency
+    - v1.17.7
+    - functional
+    fingerprint: sha256:8790897152a6
+    children: []
+next_id: 71

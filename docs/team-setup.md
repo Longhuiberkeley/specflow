@@ -64,7 +64,7 @@ When roles are configured, SpecFlow automatically enforces **implementer != veri
 
 1. When transitioning an artifact to a verification status (e.g., `verified`)
 2. SpecFlow checks `git log` for prior authors of that artifact file
-3. If the current committer's email appears in prior authors, the transition is blocked
+3. If the current author email (`GIT_AUTHOR_EMAIL`, else `git config user.email`; the commit author `%ae` in CI) appears among the prior authors, the transition is blocked. The committer identity is never consulted.
 
 This prevents self-verification — a key requirement in ASPICE, ISO 26262, DO-178C, and similar standards.
 
@@ -88,13 +88,14 @@ When no explicit `directory_ownership` is configured, all spec directories defau
 
 ## Enforcement Layers
 
-RBAC enforcement has three layers, each stronger than the last:
+RBAC enforcement has four layers, each stronger than the last:
 
 | Layer | How | Strength | Setup |
 |-------|-----|----------|-------|
 | **Pre-commit hook** | `specflow hook pre-commit` on every commit: blocks on RBAC, broken links and schema failures; warns on status cascade, story linkage and suspects | Local layer — branch protection + CI are the durable gate | Installed by `/specflow-init` or `specflow hook install` (never replaces a hook it does not own — one of yours that calls `specflow hook pre-commit` stays yours; `--force` backs it up first) |
 | **CODEOWNERS** | GitHub requires reviews from designated people | Requires GitHub to enforce PR reviews | Written by `specflow init` when absent (an existing file is left untouched) |
-| **Branch protection** | GitHub: require PR reviews, require signed commits | Full enforcement — the hard gate | Manual setup in GitHub Settings |
+| **CI gate** | `specflow ci-gate` in the `CI gate (RBAC)` job: walks every commit in the PR and checks each status step for schema legality, the role of that commit's author, and independence from the file's earlier authors. Runs on pull requests only; passes when no roles are configured | Server-side — catches a local hook skipped with `git commit --no-verify` | Add `ci-gate` to `ci.operations` in `.specflow/adapters.yaml`, then `specflow ci generate` (`--force` replaces an existing workflow after backing it up) |
+| **Branch protection** | GitHub: require PR reviews, require signed commits, require the status checks | Full enforcement — the hard gate | Manual setup in GitHub Settings |
 
 ### Recommended GitHub Configuration
 
@@ -104,9 +105,9 @@ For full enforcement, configure branch protection in GitHub:
 2. Enable **Require a pull request before merging**
 3. Enable **Require approvals** (1+ reviewers)
 4. Enable **Require signed commits**
-5. Enable **Require status checks to pass** → select `specflow-pass-1`
+5. Enable **Require status checks to pass** and select BOTH checks by their display names: **Pass 1 — programmatic validation** (job `specflow-pass-1`, runs `specflow artifact-lint`; it does not check RBAC) and **CI gate (RBAC)** (job `specflow-ci-gate`, runs `specflow ci-gate`). GitHub matches required checks by the job's display name. The CI gate exists only when `ci-gate` is in `ci.operations`; it runs on pull requests only, and GitHub counts a skipped required check as passing.
 
-The pre-commit hook catches violations locally (fast feedback). Branch protection catches anything that slips through (hard gate).
+The pre-commit hook catches violations locally (fast feedback). The CI gate re-checks RBAC and independence server-side, and branch protection makes both checks required (hard gate).
 
 ## Worked Example: Automotive ASPICE Team
 
@@ -135,8 +136,8 @@ With this configuration:
 - System architect or project lead must approve requirements and architecture
 - QA engineer is the only one who can mark artifacts as verified
 - QA engineer cannot verify their own implementations (independence rule)
-- Safety manager is a required reviewer for requirements
-- CODEOWNERS ensures GitHub enforces these reviews on PRs
+- Safety manager is among the eligible code owners for requirements: CODEOWNERS puts every owner of a directory on one line, and GitHub accepts a review from any one of them, so the safety manager is not individually required
+- CODEOWNERS makes GitHub request a code-owner review on PRs; role separation on status transitions is enforced by the CI gate, not by CODEOWNERS
 
 ## Troubleshooting
 

@@ -12,7 +12,7 @@ examples read `HOLDER role TARGET`.
 | `verified_by` | test → spec/STORY | V-model verification pairing. `specflow generate-tests` writes the link on the test, pointing at the spec; a spec or STORY may also name its own tests (both shapes satisfy lint's v-pair coverage; `specflow rtm` follows only the test-held link) | UT-001 verified_by DDD-001 |
 | `implements` | STORY → REQ | Story implements a requirement | STORY-001 implements REQ-001 |
 | `guided_by` | STORY → ARCH | Story follows architecture | STORY-001 guided_by ARCH-001 |
-| `guided_by` | REQ/ARCH/STORY → BP | Artifact is shaped by an approved best practice (link on the artifact, pointing at the BP) | ARCH-001 guided_by BP-004 |
+| `guided_by` | REQ/ARCH/STORY → BP (REQ/ARCH also → DEC) | Artifact is shaped by an approved best practice or a ruling DEC (link on the artifact, pointing at the BP/DEC) | ARCH-001 guided_by BP-004 |
 | `specified_by` | STORY → DDD | Story implements a design | STORY-001 specified_by DDD-001 |
 | `depends_on` | STORY → STORY | Hard ordering dependency without decomposition (B runs after A); `specflow go` treats it exactly like `derives_from` | STORY-002 depends_on STORY-001 |
 | `supersedes` | successor → retired artifact | Replacement carrying the intent forward; pair with `status: superseded` on the old artifact | REQ-010 supersedes REQ-003 |
@@ -23,9 +23,9 @@ examples read `HOLDER role TARGET`.
 | `exposed_by` | DEF → test/artifact | What surfaced the defect: the failing test, or the suspect artifact for `specflow defect-from-suspect` | DEF-001 exposed_by UT-004 |
 | `addresses` | DEC/DEF → defect/spec/STORY | What the decision or fix resolves | DEC-001 addresses DEF-001 |
 | `challenges` | CHL → artifact | The artifact a challenge questions (written by the audit and review commands) | CHL-001 challenges ARCH-001 |
-| `review_of` | REV → artifact | The artifact a `specflow artifact-review` run examined | REV-001 review_of STORY-001 |
-| `refers_to` | AUD/CHL/REV → artifact | Informational back-reference (an AUD to what it covered, a CHL to its REV) | CHL-001 refers_to REV-001 |
-| `executes` | test-run → test | Test execution record | TR-001 executes QT-001 |
+| `review_of` | REVIEW → artifact | The artifact a `specflow artifact-review` run examined | REVIEW-001 review_of STORY-001 |
+| `refers_to` | AUD/CHL/REVIEW → artifact | Informational back-reference (an AUD to what it covered, a CHL to its REVIEW) | CHL-001 refers_to REVIEW-001 |
+| `executes` | (reserved) | Inert: no test-run type ships and nothing reads the role — do not author it | — |
 | `mitigated_by` | hazard/risk → control | Safety context — only with the optional `hazard` / `risk` / `control` types | HAZ-001 mitigated_by CTRL-001 |
 
 > **The vocabulary is frozen and behavior-paired.** A link role only exists when a query or
@@ -55,10 +55,10 @@ Use `status: superseded` (plus the successor's `supersedes` link), `status: canc
 ### Requirement (REQ)
 - `refined_by` — links to the ARCH that refines it (the REQ holds the link — canonical)
 - `verified_by` — names its QT (optional; `generate-tests` writes the QT-side link)
-- `derives_from` — links to a prerequisite REQ (optional; drives story wave ordering)
+- `derives_from` — links to a prerequisite REQ (optional; provenance only — wave ordering reads STORY links)
 - `complies_with` — links to a standard clause
 - `validated_by` — links to a checklist
-- `guided_by` — links to an in-scope approved BP
+- `guided_by` — links to a framing DEC or an in-scope approved BP
 - `supersedes` — links to the REQ it replaces
 
 ### Architecture (ARCH)
@@ -87,7 +87,7 @@ Use `status: superseded` (plus the successor's `supersedes` link), `status: canc
 
 ### Tests (UT / IT / QT)
 - `verified_by` — links to the spec or STORY this test verifies (what `generate-tests` writes)
-- `executes` — links to the test a run record executed
+- `executes` — reserved and inert (no test-run type ships); do not author it
 - `derives_from` — provenance
 
 ### Defect (DEF)
@@ -109,10 +109,10 @@ Use `status: superseded` (plus the successor's `supersedes` link), `status: canc
 - `derives_from` — what the spike probes
 - `guided_by` — a DEC or BP that framed it
 
-### Review artifacts (AUD / CHL / REV) — written by the commands, never by hand
+### Review artifacts (AUD / CHL / REVIEW) — written by the commands, never by hand
 - AUD: `refers_to` the artifacts it covered
-- CHL: `challenges` the questioned artifact, `refers_to` its REV
-- REV: `review_of` the reviewed artifact, `refers_to` related artifacts
+- CHL: `challenges` the questioned artifact, `refers_to` its REVIEW
+- REVIEW: `review_of` the reviewed artifact, `refers_to` related artifacts
 
 ## Common Linking Patterns
 

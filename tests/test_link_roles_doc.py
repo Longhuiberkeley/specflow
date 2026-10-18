@@ -126,7 +126,7 @@ _SECTION_SCHEMAS: dict[str, tuple[str, ...]] = {
     "DEC": ("decision",),
     "BP": ("best-practice",),
     "SPIKE": ("spike",),
-    "AUD / CHL / REV": ("audit", "challenge", "review"),
+    "AUD / CHL / REVIEW": ("audit", "challenge", "review"),
 }
 
 

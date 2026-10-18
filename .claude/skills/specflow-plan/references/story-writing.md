@@ -8,9 +8,9 @@ Avoid: "Dark mode" (too vague) · "The system shall support dark mode" (that's a
 
 Frontmatter (id, status, links, dates) is CLI-managed — create stories with `specflow create --type story` and change them with `specflow update`; never hand-write the YAML.
 
-## Acceptance Criteria: ≥3, Given/When/Then
+## Acceptance Criteria: 3+, Given/When/Then
 
-1. **Minimum 3 per story**: happy path + 2 error/edge cases.
+1. **Aim for 3+ per story**: happy path + 2 error/edge cases (lint warns below 2 or above 8).
 2. **Given-When-Then format**, each criterion testable without ambiguity.
 3. **Outcomes, not implementation** — criteria state what, never how.
 
@@ -32,6 +32,6 @@ Each story delivers **end-to-end user value** through all layers it touches (UI 
 - **Bad (horizontal):** "Create database tables" / "Build the API endpoints" / "Create the registration UI" — three stories, none independently testable.
 - **Good (vertical):** "User can register with email and password" (form → endpoint → validation → insert) — independently testable, observable value.
 
-Sizing: more than 7 AC → split · depends on 3+ other stories → restructure · a story under an hour → merge with a neighbor.
+Sizing: more than 7 AC → consider a split (lint warns above 8) · depends on 3+ other stories → restructure · a story under an hour → merge with a neighbor.
 
 Always include an explicit `## Out of Scope` section — it is the scope-creep boundary.

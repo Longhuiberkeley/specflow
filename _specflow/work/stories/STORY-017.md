@@ -28,8 +28,8 @@ checklists_applied:
 - checklist: check-STORY-017
   timestamp: '2026-04-14T17:03:23Z'
 modified: '2026-04-22'
-fingerprint: sha256:802ee56ce791
-version: 1
+fingerprint: sha256:66345bdb0bfc
+version: 2
 ---
 
 # Implement CI integration job with two-pass validation
@@ -40,7 +40,9 @@ Implement a CI pipeline job template that runs SpecFlow validation as part of th
 
 ## Acceptance Criteria
 
-1. Given specflow init is run with CI integration enabled, then a CI job template is generated (GitHub Actions YAML) that runs specflow validate as a build step with zero-token checks only by default
+1. Given specflow init is run with CI integration enabled, then a CI job template is generated (GitHub Actions YAML) that runs specflow artifact-lint as a build step with zero-token checks only by default
+
+> Amended 2026-10-18 (SPIKE-008 R1-130): `specflow validate` was renamed to `specflow artifact-lint` by STORY-022.
 
 2. Given the CI job runs on a PR with a broken link in an artifact, then the programmatic validation fails, the LLM-judged checks are skipped (saving tokens), and the PR check shows a failing status with the specific error
 

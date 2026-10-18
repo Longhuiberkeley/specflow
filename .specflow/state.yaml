@@ -1,4 +1,4 @@
-current: executing
+current: complete
 history:
 - phase: idle
   entered: '2026-04-10'
@@ -44,4 +44,8 @@ history:
   entered: '2026-09-25'
   reason: 'STORY-666..677 approved (user: get those done); implementing vNext increments
     1-4'
+  exited: '2026-10-18'
+- phase: complete
+  entered: '2026-10-18'
+  reason: released v1.17.7
 created: '2026-04-10'

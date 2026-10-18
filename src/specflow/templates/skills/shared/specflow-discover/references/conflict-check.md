@@ -47,6 +47,7 @@ specflow create --type decision --title "Ruling: <one line>" --status approved \
 - Contradicted REQ → the successor carries a `supersedes` link, then
   `specflow update <OLD-REQ-ID> --status superseded` (Rules in SKILL.md).
 - README vs code → the DEC names which one is the spec; `/specflow-doc` fixes the prose later.
+- Overturned approved DEC (a `Dropped:`/kill ruling that no longer holds) → `specflow update <OLD-DEC-ID> --status superseded`, and name it in the new DEC's body.
 - Nothing contradicted → no DEC; say so in one line and move on.
 
 ## 5. What the deterministic layer already does

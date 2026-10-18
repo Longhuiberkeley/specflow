@@ -11,10 +11,11 @@ links:
   role: derives_from
 created: '2026-05-04'
 modified: '2026-10-08'
-fingerprint: sha256:c8d3e4d5924b
+fingerprint: sha256:c3d0299a0fe7
 thinking_techniques:
 - assumption_surfacing
 - devils_advocate
+version: 1
 ---
 
 # Reverse Impact Engine
@@ -28,6 +29,8 @@ src/specflow/lib/impact.py            — reverse_impact() function, glob matchi
 src/specflow/commands/change_impact.py — extended report with source file section
 src/specflow/commands/document_changes.py — expanded to read source file changes
 ```
+
+> Amended 2026-10-18 (SPIKE-008 R1-108): document_changes.py reads spec-artifact paths only (`is_spec_artifact_path`, commands/document_changes.py:119). Source-file reverse impact is wired only in commands/change_impact.py through `query_reverse_impact` and `flag_suspects_from_matches`; index values are (id, match_type, pattern) tuples.
 
 ## Component Responsibilities
 

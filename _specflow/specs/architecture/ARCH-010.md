@@ -10,11 +10,11 @@ links:
 - target: IT-012
   role: verified_by
 created: '2026-04-22'
-fingerprint: sha256:f5769d8f0da2
+fingerprint: sha256:86590298b612
 thinking_techniques:
 - assumption_surfacing
 - devils_advocate
-version: 1
+version: 2
 modified: '2026-10-08'
 ---
 
@@ -23,6 +23,8 @@ modified: '2026-10-08'
 ## Component
 
 The CLI entry point (`cli.py`) registers all commands as Click groups. Each command delegates to a thin wrapper function that parses arguments, resolves filesystem paths, and calls the corresponding library function in `src/specflow/lib/`. This separation keeps the CLI surface declarative while library modules remain independently testable.
+
+> Amended 2026-10-18 (SPIKE-008 R1-031): cli.py uses argparse subparsers, not Click. The Adapter ABC (lib/adapters/base.py) declares `supported_operations` and the methods generate_ci_workflow, import_artifacts, export_artifacts, ingest_standard and get_hook_script; there is no `detect()` or `run()`.
 
 ## Interface
 

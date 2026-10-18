@@ -52,7 +52,7 @@ Interface specs for each `/specflow-*` slash command. For a lifecycle overview, 
 **Flow:**
 0. Frame a fuzzy idea first (only when readiness is near zero): ≤5 questions with recommended answers, premise ledger, option briefs plus do-nothing, hard stop, go / clarify / kill DEC tagged `framing`
 1. Read project state; assess existing artifacts
-2. Progressive disclosure conversation — one question at a time
+2. Elicitation conversation — lean path after a complete first message, full path otherwise
 3. Silent readiness assessment after each exchange (problem clarity, users, scope, success criteria)
 4. **Standards gap check** — silently run `specflow standards gaps`; if uncovered clauses found, offer to scaffold REQs via `specflow create --from-standard <clause-id>`
 5. Lean path (1 exchange) or full path (multi-exchange with domain deep-dive and cross-cutting concerns)
@@ -64,7 +64,7 @@ Interface specs for each `/specflow-*` slash command. For a lifecycle overview, 
 - For lean path: `_specflow/work/stories/STORY-*.md`
 - `.specflow/state.yaml` (phase transition)
 
-**Key rules:** five-question framing cap, then a 15-20 question elicitation cap; escape hatch on "move on"/"skip"; `(Recommended)` labels on defaults; no self-approval of framing DECs.
+**Key rules:** five-question cap for framing only (elicitation has no numeric cap; readiness is assessed silently each exchange); escape hatch on "move on"/"skip"; `(Recommended)` labels on defaults; no self-approval of framing DECs.
 
 ---
 
@@ -87,7 +87,7 @@ Interface specs for each `/specflow-*` slash command. For a lifecycle overview, 
 - `_specflow/specs/architecture/ARCH-*.md`
 - `_specflow/specs/detailed-design/DDD-*.md`
 - `_specflow/work/stories/STORY-*.md`
-- Links: REQ→ARCH (`derives_from`), ARCH→DDD (`refined_by`), STORY→{REQ,ARCH,DDD}
+- Links: REQ `refined_by` ARCH, ARCH `refined_by` DDD (the upper artifact holds the link; `ARCH derives_from REQ` is the legacy shape), STORY→{REQ,ARCH,DDD}
 
 ---
 
@@ -140,12 +140,11 @@ The deterministic core always runs first in every path; the agent layer only add
 **Composes:** `specflow artifact-lint`, `specflow checklist-run`
 
 **Flow:**
-1. Run deterministic validation (`specflow artifact-lint`) — zero tokens, all 6 checks
-2. If blocking issues found, report and stop
-3. Show status dashboard (`specflow status`)
-4. Assemble review checklists by artifact type, domain tags, phase gates, and learned patterns
-5. Display agent-judged checks for the host agent to evaluate (self-contained, no external API)
-6. Report findings by severity: blocking, warning, info
+1. Run deterministic validation (`specflow artifact-review <ID>` composes `specflow artifact-lint`) — zero tokens, all deterministic checks
+2. Stop only on blocking findings that name the artifact under review; blockers on other artifacts are reported as context
+3. Assemble review checklists by artifact type, domain tags, phase gates, and learned patterns
+4. Display agent-judged checks for the host agent to evaluate (self-contained, no external API)
+5. Report findings by severity: blocking, warning, info
 
 **Writes:**
 - `_specflow/specs/challenges/CHL-*.md` for findings (status `open`)
@@ -158,7 +157,7 @@ The deterministic core always runs first in every path; the agent layer only add
 
 **One-line:** Blast-radius review of recent commits/PRs via unreviewed change records.
 
-**Composes:** `specflow document-changes` (precondition if no unreviewed DECs), `specflow change-impact`
+**Composes:** `specflow change-impact` (run `specflow document-changes` upstream first if you want change records for recent commits; the skill itself does not call it)
 
 **Flow:**
 1. Discover all DEC artifacts with `review_status: unreviewed`; if none found, exit cleanly (idempotent)
@@ -196,19 +195,21 @@ The deterministic core always runs first in every path; the agent layer only add
 
 **One-line:** Release workflow — verify, change records, lens pass, approval, then the immutable baseline.
 
-**Composes:** `specflow document-changes`, `specflow project-audit --quick`, `specflow baseline create`, `specflow phase-set`
+**Composes:** `specflow renumber-drafts`, `specflow findings-baseline`, `specflow project-audit --quick`, `specflow verify`, `specflow phase-set`, `specflow document-changes`, `specflow risk-tier`, `specflow baseline create --evidence`
 
 **Flow:**
-1. Confirm the release tag (proposed from the last tag)
+1. Confirm the release tag (proposed from the last tag); pre-flight `specflow renumber-drafts` so slug IDs get sequential IDs before a baseline cites them, then accept the renumbered findings with `findings-baseline update --accept-new` on the user's go-ahead
 2. Re-run the test suite and `project-audit --quick` — a red suite blocks the release; `specflow artifact-lint` must be green against the committed findings baseline (new escalating findings are fixed, or accepted as known debt with `findings-baseline update --accept-new` on the user's go-ahead)
-3. Generate the DEC trail since the previous tag
-4. Adversarial lens pass, then present the release summary (DEC list, audit summary, risk profile)
-5. **Approval gate** — audit severity ≥ error warns; the release proceeds only on the user's explicit go-ahead
-6. After approval: create the baseline, record `phase-set complete`, and hand off
+3. Promote to verified (advisory): `specflow verify --all`, the `verifying-to-complete` gate, one Tier 2 `implemented → verified` batch on the user's go-ahead, then `phase-set verifying`
+4. Generate the DEC trail since the previous tag
+5. Adversarial lens pass, then present the release summary (DEC list, audit summary, risk profile from `specflow risk-tier`, confidence persisted on the DEC)
+6. **Approval gate** — audit severity ≥ error warns; the release proceeds only on the user's explicit go-ahead
+7. After approval: `baseline create <tag> --evidence`, record `phase-set complete`, and hand off
 
 **Writes:**
-- `.specflow/baselines/{tag}.yaml`
-- `_specflow/work/decisions/DEC-*.md` (change records)
+- `.specflow/baselines/{tag}.yaml` and `{tag}-evidence.md`
+- `_specflow/work/decisions/DEC-*.md` (change records) and DEC `risk_profile.confidence`
+- Renumbered artifact IDs, `verified` statuses on approval, `.specflow/findings-baseline.yaml`
 - Audit report
 
 **Never:** skip the quick audit step.
@@ -236,18 +237,18 @@ The deterministic core always runs first in every path; the agent layer only add
 
 ## Best Practice Artifacts (BP)
 
-**One-line:** Domain-specific best practices as first-class SpecFlow artifacts, generated by the agent and traceable through the artifact graph.
+**One-line:** Domain-specific best practices as first-class SpecFlow artifacts, seeded deterministically and traceable through the artifact graph.
 
-**Composes:** `specflow create --type best-practice`
+**Composes:** `specflow practices seed`, `specflow practices validate`, `specflow create --type best-practice`
 
 **Flow:**
-1. **During discover** — agent generates project-level BPs based on domain classification (3-5 BPs covering key domain practices).
-2. **During plan** — agent generates phase-specific BPs for architecture, detailed design, and stories.
-3. **During execute** — agent reads and enforces BPs, recording which were applied via `--thinking-techniques`.
+1. **During discover** — `specflow practices seed` previews the domain's practices; `specflow practices seed --create` writes them as draft BPs the user approves.
+2. **During plan** — in-scope approved BPs are bound to the work with `guided_by` links (REQ, ARCH or STORY holds `--add-link <BP-ID>:guided_by`); plan seeds BPs the same way if none exist yet.
+3. **During execute** — the agent applies the bound BPs; `specflow artifact-lint` (`bp-application`) checks application from those graph bindings and test status.
 
 **Writes:** `_specflow/specs/best-practices/BP-NNN.md`
 
-**Key property:** BPs are traceable artifacts with `derives_from` (→ standards), `applies_to` (→ REQ/ARCH/DDD/STORY), and `supersedes` (→ older BPs). If a BP is wrong, supersede it and trace the impact. No external API calls — the agent generates BPs from its own knowledge.
+**Key property:** BPs are traceable artifacts with `derives_from` (→ standards), `applies_to` (→ REQ/ARCH/DDD/STORY), and `supersedes` (→ older BPs). If a BP is wrong, supersede it and trace the impact. No external API calls.
 
 ---
 
@@ -289,7 +290,7 @@ The deterministic core always runs first in every path; the agent layer only add
 - `.specflow/adapters.yaml` (CI, exchange config)
 - `.specflow/config.yaml` (team roles and policies)
 - `.github/workflows/specflow.yml` (CI workflow)
-- `.git/hooks/pre-commit` (pre-commit hook)
+- `pre-commit` in the git hooks directory git actually runs (honors `core.hooksPath`; a hooksPath from global or system config is refused unless `--force`)
 - `CODEOWNERS` (role-based code ownership)
 
 **Key rules:** `specflow ci generate` preserves an existing workflow file that differs (warn; `--force` backs it up and overwrites, `--dry-run` previews). The pre-commit hook blocks on RBAC, broken links and schema failures and warns on the rest — the local layer; durable enforcement is branch protection plus CI. `specflow hook install` never replaces a hook it does not own. RBAC is only active when role lists are non-empty.

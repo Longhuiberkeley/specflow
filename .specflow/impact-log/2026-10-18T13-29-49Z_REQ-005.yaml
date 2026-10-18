@@ -1,0 +1,10 @@
+changed: REQ-005
+change_type: content_modified
+fingerprint_old: sha256:6f99e7a3c664
+fingerprint_new: sha256:55e23a214317
+update_type: minor
+flagged_suspects: []
+resolved: true
+timestamp: '2026-10-18T13:29:49Z'
+resolved_by: system
+resolved_at: '2026-10-18T13:29:49Z'

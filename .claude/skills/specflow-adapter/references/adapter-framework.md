@@ -46,6 +46,7 @@ ci:
     - artifact-lint
     - change-impact
     - project-audit
+    - ci-gate
 
 exchange:
   - name: reqif
@@ -80,4 +81,4 @@ exchange:
 
 ## CI Coexistence
 
-SpecFlow generates its own dedicated workflow file (`.github/workflows/specflow.yml`) and does not modify any existing CI files. Multiple workflows coexist in the same repository. The generated workflow uses distinct job names (`specflow-pass-1`, etc.) to avoid collisions.
+SpecFlow generates its own dedicated workflow file (`.github/workflows/specflow.yml`) and does not modify any existing CI files. Multiple workflows coexist in the same repository. The generated workflow uses distinct job ids (`specflow-pass-1`, `specflow-ci-gate`, …; the optional `pytest` job is the unprefixed exception) to avoid collisions. Branch protection matches a required check on the job's display `name:` — require `Pass 1 — programmatic validation` and `CI gate (RBAC)` (`team-setup.md`).

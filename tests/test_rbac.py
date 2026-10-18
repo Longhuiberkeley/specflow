@@ -201,3 +201,51 @@ class TestCheckIndependenceHistory:
         # Without upto, HEAD history includes bob's commit (pre-commit semantics).
         ok, _ = rbac_lib.check_independence(root, final, "verified", "bob@company.com")
         assert not ok
+
+
+class TestStagedRenameWithStatusChange:
+    """STORY-748 / DEF-023: a staged `git mv` that also changes status was
+    filtered out (``--diff-filter=AM``), so the hook never checked it."""
+
+    def _stage_rename_to_verified(self, root: Path, final: str) -> str:
+        moved = "_specflow/specs/requirements/REQ-002.md"
+        _git(root, "mv", final, moved)
+        _req(root, moved, "REQ-002", "verified")
+        _git(root, "add", "-A")
+        return moved
+
+    def test_lib_reports_rename_with_old_frontmatter_from_head(self, tmp_path: Path):
+        root, final = _renamed_repo(tmp_path)
+        moved = self._stage_rename_to_verified(root, final)
+        changes = rbac_lib.staged_artifact_changes(root)
+        assert len(changes) == 1
+        c = changes[0]
+        assert (c["old_path"], c["path"]) == (final, moved)
+        assert c["old_status"] == "implemented"
+        assert c["new_status"] == "verified"
+
+    def test_hook_checks_author_role_on_staged_rename(self, tmp_path: Path, monkeypatch, capsys):
+        from specflow.commands import hook as hook_cmd
+
+        root, final = _renamed_repo(tmp_path)
+        self._stage_rename_to_verified(root, final)
+        monkeypatch.setenv("GIT_AUTHOR_EMAIL", "alice@company.com")
+        assert hook_cmd._pre_commit(root) == 1
+        out = capsys.readouterr().out
+        assert "RBAC check failed" in out
+
+    def test_hook_checks_independence_through_head_path(self, tmp_path: Path, monkeypatch, capsys):
+        from specflow.commands import hook as hook_cmd
+
+        root, final = _renamed_repo(tmp_path)
+        # alice may verify by role, but she implemented the artifact under its
+        # HEAD path; the staged new path has no history of its own yet.
+        _write_config(root, {
+            "roles": {"reviewer": ["alice@company.com"], "approver": []},
+            "policy": {"transitions": {"verified": ["reviewer"]},
+                       "verification_statuses": ["verified"]},
+        })
+        self._stage_rename_to_verified(root, final)
+        monkeypatch.setenv("GIT_AUTHOR_EMAIL", "alice@company.com")
+        assert hook_cmd._pre_commit(root) == 1
+        assert "Independence violation" in capsys.readouterr().out

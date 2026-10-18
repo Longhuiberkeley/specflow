@@ -1,0 +1,20 @@
+id: PREV-023
+name: 'Prevent recurrence of: brief --next in phase complete routes back to /specflow-ship
+  instead of the next cycle (violated REQ-060)'
+discovered_from: DEF-022
+mode: reactive
+pattern: 'Prevent recurrence of: brief --next in phase complete routes back to /specflow-ship
+  instead of the next cycle (violated REQ-060)'
+applies_to:
+  tags:
+  - consistency
+  - brief
+  - cry-wolf
+  - accounting-not-policing
+items:
+- id: PREV-023-01
+  check: Verify that changes touching REQ-060 have a regression test covering the
+    failure mode of DEF-022.
+  severity: warning
+  automated: false
+  mode: reactive

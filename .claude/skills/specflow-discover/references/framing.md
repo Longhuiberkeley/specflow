@@ -46,4 +46,4 @@ Framing decides WHETHER and WHICH; elicitation decides WHAT. It runs inside `/sp
 
 ## Exit
 
-- End framing with the discover handoff checkpoint, naming the DEC ID and its verdict, and the exact next command: go → discover step 1 in the same conversation · clarify → `specflow update <DEC-ID> --status approved` once resolved, or the SPIKE route above · kill → nothing further.
+- End framing with the discover handoff checkpoint, naming the DEC ID and its verdict, and the exact next command: go → discover step 1 in the same conversation · clarify → once resolved, `specflow update <DEC-ID> --title "Go: <idea>"` (or `"Dropped: <idea>"`) `--rationale "<quote the user's verdict>" --status approved` (still exactly one framing DEC), or the SPIKE route above · kill → nothing further.

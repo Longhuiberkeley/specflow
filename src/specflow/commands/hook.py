@@ -186,9 +186,9 @@ def _pre_commit(root: Path) -> int:
         return 1
 
     author = os.environ.get("GIT_AUTHOR_EMAIL") or rbac_lib.current_git_author_email(root)
-    # RBAC reads staged frontmatter, so it sees additions/modifications only;
-    # the link and schema lints must also run when the only staged artifact
-    # change is a deletion or rename (a removed REQ breaks inbound links).
+    # RBAC reads staged frontmatter, so it sees additions, modifications and
+    # renames; the link and schema lints must also run when the only staged
+    # artifact change is a deletion (a removed REQ breaks inbound links).
     changes = rbac_lib.staged_artifact_changes(root)
     staged_paths = rbac_lib.staged_specflow_paths(root)
     if not changes and not staged_paths:
@@ -211,7 +211,10 @@ def _pre_commit(root: Path) -> int:
             failures.append(reason)
             continue
 
-        ok, reason = rbac_lib.check_independence(root, path, new_status, author)
+        # A staged rename has no history at its new path yet; read the
+        # implementer history from the HEAD path (DEF-023).
+        history_path = change.get("old_path") or path
+        ok, reason = rbac_lib.check_independence(root, history_path, new_status, author)
         if not ok:
             failures.append(reason)
 

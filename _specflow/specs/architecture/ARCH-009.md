@@ -17,12 +17,12 @@ links:
 - target: REQ-005
   role: derives_from
 created: '2026-04-22'
-fingerprint: sha256:76c8786760f1
+fingerprint: sha256:8bb2c4e63ade
 thinking_techniques:
 - assumption_surfacing
 - devils_advocate
 - red_blue_team
-version: 2
+version: 3
 modified: '2026-10-08'
 ---
 
@@ -35,6 +35,8 @@ The CI gate enforces RBAC policies on artifact status transitions in pull reques
 ### CI Gate Command (`commands/hook.py`)
 
 `specflow ci-gate --base <ref> --head <ref>` performs server-side RBAC enforcement:
+
+> Amended 2026-10-18 (SPIKE-008 R1-030): since STORY-698, ci-gate walks each changed artifact's commits in `base...head` oldest-first, follows renames, and checks every consecutive status step for schema legality, that commit author's role and independence from earlier authors (commands/hook.py:296). The generated workflow passes `--head ${{ github.event.pull_request.head.sha }}`, not `head_ref`.
 
 1. Run `git diff --name-only` between base and head refs, filter to `_specflow/**/*.md`.
 2. Extract commit author email from `git log`.

@@ -17,7 +17,12 @@ CATEGORY_LABELS = {
     "work": "Work:",
     "review": "Reviews:",
     "research": "Research:",
+    "ops": "Ops:",
 }
+
+# Core categories render first, in this order; any other category a schema
+# declares (a pack's "ops", a user-authored one) follows, sorted (DEF-021).
+CORE_CATEGORIES = ["spec", "work", "review", "research"]
 
 
 def _count_by_type(artifacts: list[art_lib.Artifact]) -> dict[str, int]:
@@ -144,8 +149,12 @@ def _count_issues(artifacts: list[art_lib.Artifact]) -> int:
 
 
 def _load_categories(root: Path) -> dict[str, list[str]]:
-    """Read all installed schemas and group prefixes by category."""
-    categories: dict[str, list[str]] = {"spec": [], "work": [], "review": [], "research": []}
+    """Read all installed schemas and group prefixes by category.
+
+    The four core categories are always present; any other category a schema
+    declares gets its own key instead of being dropped.
+    """
+    categories: dict[str, list[str]] = {c: [] for c in CORE_CATEGORIES}
     schema_dir = root / ".specflow" / "schema"
     if not schema_dir.exists():
         return categories
@@ -157,9 +166,9 @@ def _load_categories(root: Path) -> dict[str, list[str]]:
         if not isinstance(schema, dict):
             continue
         prefix = schema.get("prefix")
-        cat = schema.get("category", "spec")
-        if cat in categories and prefix:
-            categories[cat].append(prefix)
+        cat = schema.get("category") or "spec"
+        if prefix:
+            categories.setdefault(str(cat), []).append(prefix)
     return categories
 
 
@@ -230,7 +239,8 @@ def _suggest_action(
     elif phase == "verifying":
         return "Use /specflow-artifact-review to review artifacts"
     elif phase == "complete":
-        return "Use /specflow-ship to close the phase"
+        # Released: the next step is the next cycle, not ship again (DEF-022).
+        return "Released → use /specflow-discover for the next cycle (/specflow-audit for a health check first)"
 
     return "Run 'specflow artifact-lint' to check artifact integrity"
 
@@ -287,7 +297,8 @@ def run(root: Path, args: dict) -> int:
     print(f"  Created:   {created}")
 
     categories = _load_categories(root)
-    for cat_name in ["spec", "work", "review", "research"]:
+    extras = sorted(c for c in categories if c not in CORE_CATEGORIES)
+    for cat_name in CORE_CATEGORIES + extras:
         prefixes = categories.get(cat_name, [])
         if not prefixes:
             continue

@@ -10,10 +10,11 @@ links:
 - target: REQ-039
   role: derives_from
 created: '2026-09-13'
-fingerprint: sha256:c1710dbcd31b
+fingerprint: sha256:3a264155235a
 thinking_techniques:
 - assumption_surfacing
 modified: '2026-10-08'
+version: 1
 ---
 
 # COMP lifecycle architecture: closure gate, reversible pause, closure accounting
@@ -21,6 +22,8 @@ modified: '2026-10-08'
 ## Structure
 
 The competition lifecycle (REQ-039) has three components: a closure gate on the `competition` schema (active → completed requires every `goals` entry satisfied-with-confirmed-FIND-evidence or explicitly abandoned-with-reason, plus direct-user confirmation — no self-approval, mirroring the FIND gate), a reversible paused state (the `initial_statuses` schema key names the creation roots; paused → active is legal, so pausing no longer strands a competition), and deterministic closure accounting in `specflow autoresearch status` (goals met, confirmed FINDs, open agenda directions).
+
+> Amended 2026-10-18 (SPIKE-008 R1-110): the `competition` schema carries no closure gate; its transition map allows active → completed (packs/autoresearch/schemas/competition.yaml:51). The closure gate is a protocol-level human gate (references/competition-setup-protocol.md), backed by warn-only lint (`_check_autoresearch_comp_closure`) and the read-only closure accounting in `specflow autoresearch status`. `specflow update COMP-N --status completed` is not refused by the engine.
 
 ## Responsibilities
 

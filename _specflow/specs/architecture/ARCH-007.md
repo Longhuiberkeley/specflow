@@ -17,11 +17,11 @@ links:
 - target: REQ-003
   role: derives_from
 created: '2026-04-22'
-fingerprint: sha256:683906d8a098
+fingerprint: sha256:619deb611e12
 thinking_techniques:
 - assumption_surfacing
 - devils_advocate
-version: 2
+version: 3
 modified: '2026-10-08'
 ---
 
@@ -42,6 +42,8 @@ The core algorithm is a bidirectional BFS over the artifact link graph:
 ### CLI Command (`commands/trace.py`)
 
 `specflow trace <ID>` renders the chain as an indented tree showing each linked artifact's ID, type, title, and status. Supports direction filtering (`--direction upstream|downstream|both`).
+
+> Amended 2026-10-18 (SPIKE-008 R1-029): `specflow trace` takes only the artifact id (cli.py:876) and always traces both directions. The signatures are `trace_chain(artifact_id, id_index, direction='both')` and `compute_chain_depth(artifact_id, id_index)` in lib/artifacts.py.
 
 ### Chain Report (`commands/artifact_lint.py`)
 

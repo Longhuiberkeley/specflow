@@ -8,12 +8,13 @@ links:
 - target: REQ-053
   role: implements
 created: '2026-10-09'
-fingerprint: sha256:7900dc443e8c
+fingerprint: sha256:9ea6529fbe8c
 modified: '2026-10-09'
 output_files:
 - src/specflow/commands/project_audit.py
 - tests/test_project_audit_cache_key.py
 - tests/test_project_audit_ddd_shape.py
+version: 1
 ---
 
 # Audit ddd-shape accounting class and truthful DDD-thread walk (v1.17.3)
@@ -32,3 +33,5 @@ Tests: tests/test_project_audit_ddd_shape.py (new), tests/test_project_audit_cac
 2. Given an approved REQ whose thread has an ARCH but no STORY and no DDD, when project-audit runs, then the no-DDD row SHALL carry no concern and SHALL escalate.
 3. Given a DDD linked to a thread ARCH via parent-held refined_by or DDD-held specified_by, when the vertical walk runs, then the DDD SHALL be credited and no no-DDD row SHALL emit (REQ-052/053 regression).
 4. Given the changed lens semantics, when the findings cache is consulted, then _CACHE_GENERATION SHALL be 7 so gen-6 replays cannot shadow the new concern classification.
+
+> Amended 2026-10-18 (SPIKE-008 R1-147): 7 was a floor, not an invariant. Later stories bumped `_CACHE_GENERATION` (8 by STORY-740); tests/test_project_audit_cache_key.py pins the current value.

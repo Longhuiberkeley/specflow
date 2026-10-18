@@ -9,9 +9,10 @@ links:
   role: derives_from
 created: '2026-04-22'
 modified: '2026-10-08'
-fingerprint: sha256:8bd625c65830
+fingerprint: sha256:bcdcd7a87d76
 thinking_techniques:
 - assumption_surfacing
+version: 1
 ---
 
 # Deprecation Cleanup
@@ -34,5 +35,8 @@ Removes eight deprecated CLI aliases from `cli.py` and fixes a schema inconsiste
 ## Dependencies
 
 - `cli.py` for alias definitions (Click command registration).
+
+> Amended 2026-10-18 (SPIKE-008 R1-031): cli.py registers commands with argparse subparsers, not Click.
+
 - `.specflow/schema/requirement.yaml` for the schema fix.
 - `lib/lint.py` for post-cleanup validation.

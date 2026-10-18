@@ -19,8 +19,15 @@ from specflow.lib import lint as lint_lib
 from specflow.lib.waves import compute_waves, filter_executable_stories
 from specflow.lib.display import RED, YELLOW, CYAN, BOLD, DIM, NC
 
-# Category → the prefixes that belong to it, in lifecycle order.
-_CATEGORY_ORDER = ["spec", "work", "review", "research", "ops"]
+# Core categories in lifecycle order. Any other schema category (a pack's
+# "ops", or one a user-authored schema declares) renders after these, sorted.
+_CATEGORY_ORDER = ["spec", "work", "review", "research"]
+
+
+def _ordered_categories(present) -> list[str]:
+    """Core categories first (in lifecycle order), then every extra sorted."""
+    present = set(present)
+    return [c for c in _CATEGORY_ORDER if c in present] + sorted(present - set(_CATEGORY_ORDER))
 
 
 def _draft_consent_lines(
@@ -81,23 +88,13 @@ def _adoption_summary(root: Path, artifacts: list[art_lib.Artifact]) -> dict | N
     for a in backfilled:
         by_type[art_lib.get_prefix_from_id(a.id) or a.type] += 1
 
-    # Depth distribution for ARCHs: skeleton (no parent REQ) vs full (has REQ).
+    # Depth distribution for ARCHs, using the same definition as
+    # `adopt status`: full = parent REQ and child DDD; skeleton = anything less.
+    from specflow.commands.adopt import arch_depth
+
     archs = [a for a in artifacts if art_lib.get_prefix_from_id(a.id) == "ARCH"]
-    skeleton_archs = 0
-    full_archs = 0
-    for arch in archs:
-        has_parent = any(
-            lk.role == "derives_from" and art_lib.get_prefix_from_id(lk.target) == "REQ"
-            for lk in arch.links
-        ) or any(
-            lk.role == "refined_by" and lk.target == arch.id
-            for a2 in artifacts if art_lib.get_prefix_from_id(a2.id) == "REQ"
-            for lk in a2.links
-        )
-        if has_parent:
-            full_archs += 1
-        else:
-            skeleton_archs += 1
+    full_archs = sum(1 for arch in archs if arch_depth(artifacts, arch) == "full")
+    skeleton_archs = len(archs) - full_archs
 
     return {
         "coverage_pct": coverage,
@@ -861,8 +858,13 @@ def _next_skill_recommendation(
         else:
             core = ("No approved stories ready to execute → /specflow-plan to reconcile "
                     "the backlog and approve the next scope.")
-    elif phase in ("verifying", "complete"):
+    elif phase == "verifying":
         core = "Ready to release → /specflow-ship (or /specflow-audit for a health check first)."
+    elif phase == "complete":
+        # A released cycle routes to the next one. Pointing back at ship here
+        # sent agents round the release loop again (DEF-022).
+        core = ("Released → /specflow-discover (next cycle); "
+                "/specflow-audit for a health check first.")
     else:
         core = f"Phase '{phase}' — run `specflow brief` for the full digest."
 
@@ -910,7 +912,7 @@ def _next_skill_recommendation(
             notes.append(
                 f"{len(unexecuted)} approved STORY/SPIKE(s) unexecuted ({shown}{more}) "
                 f"→ /specflow-execute them (or `specflow update <ID> --status cancelled`) "
-                f"before shipping."
+                f"{'before shipping' if phase == 'verifying' else 'before the next cycle'}."
             )
 
     # Backlog-aware advisory: a strategic rewind to specifying/planning can leave
@@ -947,9 +949,8 @@ def _next_skill_recommendation(
     # STORY that DECLARES a verify_command but carries no recorded run evidence
     # (or a recorded run whose exit code diverged from the declared expected
     # code) wants `specflow verify`. This is the deterministic frontmatter query
-    # behind the /specflow-start router's verify nudge — accounting, not
-    # policing: one advisory line, never blocking, never changes the exit code.
-    # It fires only when a verify_command is actually declared, so projects that
+    # behind the `brief --next` verify advisory — accounting, not policing:
+    # one advisory line, never blocking, never changes the exit code. It fires only when a verify_command is actually declared, so projects that
     # don't use verification contracts see zero noise.
     from specflow.lib.verification import run_matches_expected
 
@@ -1244,7 +1245,7 @@ def run(root: Path, args: dict[str, Any]) -> int:
             except Exception:
                 continue
             if isinstance(sch, dict) and sch.get("prefix"):
-                prefix_to_cat[sch["prefix"]] = sch.get("category", "spec")
+                prefix_to_cat[sch["prefix"]] = str(sch.get("category") or "spec")
 
     # Auto-generated audit records (F-101): `specflow project-audit` stamps an
     # AUD per run, open/unreviewed, and nothing closes the prior one. They are
@@ -1323,7 +1324,7 @@ def run(root: Path, args: dict[str, Any]) -> int:
         print(f"  {YELLOW}⚠ Working tree{NC}: {wt_line}")
 
     print(f"\n  {BOLD}Inventory{NC}")
-    for cat in _CATEGORY_ORDER:
+    for cat in _ordered_categories(by_cat_status):
         statuses = by_cat_status.get(cat)
         if not statuses:
             continue

@@ -19,9 +19,10 @@ links:
   role: guided_by
 created: '2026-05-15'
 modified: '2026-06-15'
-fingerprint: sha256:4f5d8d729f6c
+fingerprint: sha256:33f869bf81ab
 output_files:
 - src/specflow/packs/__init__.py
+version: 1
 ---
 
 # Extend apply_pack with skill installation step
@@ -34,6 +35,9 @@ output_files:
 
 - `src/specflow/lib/scaffold.py:116-192` — add Step 5 inside `apply_pack`
 - Use `platform.detect_platform()` + `platform.get_skills_dir()` (no changes needed there)
+
+> Amended 2026-10-18 (SPIKE-008 R1-140): the line range is stale. Step 5 lives in `apply_pack()` in lib/scaffold.py and resolves the target with `platform.get_skills_install_dir()`.
+
 - Extend return dict with `skills_added: [<name>...]`
 
 ## Acceptance Criteria

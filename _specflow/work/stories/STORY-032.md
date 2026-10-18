@@ -26,8 +26,8 @@ links:
 - target: UT-014
   role: verified_by
 created: '2026-04-17'
-fingerprint: sha256:84a65b667115
-version: 2
+fingerprint: sha256:b9a983981a78
+version: 3
 modified: '2026-04-22'
 ---
 
@@ -58,6 +58,9 @@ This story is the **cleanup phase**: delete the 16 skill directories that are ov
 ## Acceptance Criteria
 
 1. Exactly 9 skill directories remain in `.claude/skills/`: `specflow-init`, `specflow-discover`, `specflow-plan`, `specflow-execute`, `specflow-artifact-review`, `specflow-change-impact-review`, `specflow-audit`, `specflow-ship`, `specflow-pack-author` (init/audit/ship may be placeholder stubs if STORY-033 has not yet landed)
+
+> Amended 2026-10-18 (SPIKE-008 R1-134): the surface later grew to 12 skills (adds specflow-adapter, specflow-doc and specflow-start; `get_skill_names()`, lib/platform.py:203) plus the specflow-references support directory.
+
 2. `uv run specflow --help` shows all 25 CLI commands with no errors
 3. `uv run specflow artifact-lint` runs successfully (Tier 3 commands still work as CLI)
 4. `uv run specflow status` runs successfully (Tier 2 commands still work as CLI)

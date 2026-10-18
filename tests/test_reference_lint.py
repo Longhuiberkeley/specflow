@@ -43,8 +43,8 @@ RULES: list[tuple[str, re.Pattern[str]]] = [
 CORE_BUDGET = 120
 PACK_BUDGET = 300
 BUDGET_EXCEPTIONS: dict[str, int] = {
-    "src/specflow/templates/skills/shared/specflow-adapter/SKILL.md": 176,
-    "src/specflow/templates/skills/shared/specflow-init/SKILL.md": 157,
+    "src/specflow/templates/skills/shared/specflow-adapter/SKILL.md": 175,
+    "src/specflow/templates/skills/shared/specflow-init/SKILL.md": 154,
     "src/specflow/templates/skills/shared/specflow-pack-author/SKILL.md": 187,
     "src/specflow/packs/autoresearch/skills/specflow-autoresearch/SKILL.md": 383,
 }

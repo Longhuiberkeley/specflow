@@ -10,11 +10,11 @@ links:
 - target: IT-013
   role: verified_by
 created: '2026-04-22'
-fingerprint: sha256:f2f3094481f0
+fingerprint: sha256:931e28e2e2df
 thinking_techniques:
 - assumption_surfacing
 - devils_advocate
-version: 1
+version: 2
 modified: '2026-10-08'
 ---
 
@@ -29,6 +29,8 @@ The skill ecosystem lives in `.claude/skills/` (or the platform-equivalent direc
 - **Core skills** (10 directories): `specflow-discover`, `specflow-plan`, `specflow-execute`, `specflow-artifact-review`, `specflow-audit`, `specflow-change-impact-review`, `specflow-ship`, `specflow-init`, `specflow-adapter`, `specflow-pack-author`.
 - **Pack skills**: installed at runtime by `apply_pack()` from `pack.yaml`'s `adds_skills` field into the platform skills directory.
 - **Routing heuristic**: The agent matches user intent to the closest skill trigger phrase. Ambiguous requests default to `specflow-execute` for implementation work.
+
+> Amended 2026-10-18 (SPIKE-008 R1-105): there are 12 core skills, the 10 above plus specflow-doc and specflow-start (`get_skill_names()`, lib/platform.py:203); specflow-references is a support directory. When the next step is unclear, routing goes through specflow-start (`specflow brief --next`), not a default to specflow-execute.
 
 ## Interface
 

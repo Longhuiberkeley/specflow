@@ -1,0 +1,21 @@
+id: PREV-025
+name: 'Prevent recurrence of: project-audit baseline drift reports a renumbered draft
+  as removed since last baseline (violated REQ-005)'
+discovered_from: DEF-024
+mode: reactive
+pattern: 'Prevent recurrence of: project-audit baseline drift reports a renumbered
+  draft as removed since last baseline (violated REQ-005)'
+applies_to:
+  tags:
+  - consistency
+  - functional
+  - cross-platform
+  - compliance
+  - baselines
+items:
+- id: PREV-025-01
+  check: Verify that changes touching REQ-005 have a regression test covering the
+    failure mode of DEF-024.
+  severity: warning
+  automated: false
+  mode: reactive

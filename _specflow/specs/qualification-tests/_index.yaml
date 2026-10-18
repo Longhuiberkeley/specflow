@@ -957,4 +957,50 @@ artifacts:
     tags: []
     fingerprint: sha256:8597893843b5
     children: []
-next_id: 123
+  QT-123:
+    id: QT-123
+    title: 'Qualification for STORY-745: live and shipped skill trees byte-identical'
+    status: implemented
+    tags: []
+    fingerprint: sha256:31dcd4f0ec44
+    children: []
+  QT-124:
+    id: QT-124
+    title: 'Qualification for STORY-746: pack prose parses against the CLI and adoption
+      pack tests pass'
+    status: implemented
+    tags: []
+    fingerprint: sha256:e7ba002fc6d2
+    children: []
+  QT-125:
+    id: QT-125
+    title: 'Qualification for STORY-747: documented commands parse, cli-reference
+      covers every subparser, README pin'
+    status: implemented
+    tags: []
+    fingerprint: sha256:a51258d499be
+    children: []
+  QT-126:
+    id: QT-126
+    title: 'Qualification for STORY-748: CI generation, RBAC staged rename, hook and
+      audit cache key suites'
+    status: implemented
+    tags: []
+    fingerprint: sha256:630ab2cc3d6d
+    children: []
+  QT-127:
+    id: QT-127
+    title: 'Qualification for STORY-749: amended prose still parses against the CLI'
+    status: implemented
+    tags: []
+    fingerprint: sha256:796dd10b8131
+    children: []
+  QT-128:
+    id: QT-128
+    title: "Qualification for STORY-750: baseline diff v1.17.1 \u2192 v1.17.7 reports\
+      \ renumbered drafts, zero removed"
+    status: implemented
+    tags: []
+    fingerprint: sha256:8ea23a221e6f
+    children: []
+next_id: 129

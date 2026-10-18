@@ -250,3 +250,60 @@ class TestNewestRelease:
     def test_newest_release_none_when_no_semver(self):
         assert baseline_lib.newest_release(["snapshot", "wip"]) is None
         assert baseline_lib.newest_release([]) is None
+
+
+class TestDiffRenumbered:
+    """DEF-024 / SPIKE-008: a draft renumbered between two baselines is one
+    artifact, not a removal plus an addition."""
+
+    def _write(self, tmp_path: Path, name: str, arts: dict) -> None:
+        d = tmp_path / ".specflow" / "baselines"
+        (d / f"{name}.yaml").write_text(
+            yaml.dump({"name": name, "artifacts": arts}, default_flow_style=False), encoding="utf-8"
+        )
+
+    def test_fingerprint_match_pairs_and_excludes(self, tmp_path: Path):
+        _scaffold(tmp_path)
+        self._write(tmp_path, "a", {
+            "STORY-ADDCLI-0e15": {"status": "draft", "fingerprint": "sha256:111", "title": "Add CLI", "type": "story"},
+            "REQ-001": {"status": "approved", "fingerprint": "sha256:aaa", "title": "T", "type": "requirement"},
+        })
+        self._write(tmp_path, "b", {
+            "STORY-722": {"status": "verified", "fingerprint": "sha256:111", "title": "Add CLI", "type": "story"},
+            "REQ-001": {"status": "approved", "fingerprint": "sha256:aaa", "title": "T", "type": "requirement"},
+        })
+        result = baseline_lib.diff_baselines(tmp_path, "a", "b")
+        assert result["ok"]
+        assert result["added"] == [] and result["removed"] == []
+        assert result["renumbered"] == [{
+            "old": "STORY-ADDCLI-0e15", "new": "STORY-722", "status": "verified",
+            "title": "Add CLI", "matched_by": "fingerprint",
+        }]
+
+    def test_title_match_when_body_edited_after_rename(self, tmp_path: Path):
+        _scaffold(tmp_path)
+        self._write(tmp_path, "a", {
+            "DEC-NORMALIZ-90e0": {"status": "draft", "fingerprint": "sha256:old", "title": "Normalize lists", "type": "decision"},
+        })
+        self._write(tmp_path, "b", {
+            "DEC-100": {"status": "approved", "fingerprint": "sha256:new", "title": "Normalize lists", "type": "decision"},
+        })
+        result = baseline_lib.diff_baselines(tmp_path, "a", "b")
+        assert [(r["old"], r["new"], r["matched_by"]) for r in result["renumbered"]] == [
+            ("DEC-NORMALIZ-90e0", "DEC-100", "title")
+        ]
+        assert result["removed"] == [] and result["added"] == []
+
+    def test_no_cross_type_or_unmatched_pairing(self, tmp_path: Path):
+        _scaffold(tmp_path)
+        self._write(tmp_path, "a", {
+            "REQ-SLUG-1111": {"status": "draft", "fingerprint": "sha256:x", "title": "Same title", "type": "requirement"},
+            "STORY-GONE-2222": {"status": "draft", "fingerprint": "sha256:y", "title": "Deleted story", "type": "story"},
+        })
+        self._write(tmp_path, "b", {
+            "STORY-900": {"status": "draft", "fingerprint": "sha256:x", "title": "Same title", "type": "story"},
+        })
+        result = baseline_lib.diff_baselines(tmp_path, "a", "b")
+        assert result["renumbered"] == []
+        assert [e["id"] for e in result["removed"]] == ["REQ-SLUG-1111", "STORY-GONE-2222"]
+        assert [e["id"] for e in result["added"]] == ["STORY-900"]

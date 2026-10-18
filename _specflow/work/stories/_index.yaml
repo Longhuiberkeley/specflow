@@ -1886,4 +1886,68 @@ artifacts:
     - skills
     fingerprint: sha256:19cd0e4dbe2b
     children: []
-next_id: 745
+  STORY-745:
+    id: STORY-745
+    title: 'W-1 agent-safety prose: fix every blocking/warning skill and checklist
+      site from SPIKE-008 in both skill trees, add the D1 approval carve-out, pin
+      changed sentences'
+    status: verified
+    tags:
+    - consistency
+    - v1.17.7
+    fingerprint: sha256:8847036d0d97
+    children: []
+  STORY-746:
+    id: STORY-746
+    title: 'W-1b pack prose: adoption baseline name v0.0.0-adoption.<n>, merge via
+      specflow merge, fingerprint seeding, autoresearch/ops recipe fixes, baseline-name
+      guard test'
+    status: verified
+    tags:
+    - consistency
+    - v1.17.7
+    fingerprint: sha256:bb83b250f03a
+    children: []
+  STORY-747:
+    id: STORY-747
+    title: 'W-2 docs: correct all SPIKE-008 docs-code sites (architecture, authoring
+      guides, decisions, commands, comparison, getting-started, cli-reference, team-setup,
+      lifecycle, README, ROADMAP)'
+    status: verified
+    tags:
+    - consistency
+    - v1.17.7
+    fingerprint: sha256:25a8c51f8e97
+    children: []
+  STORY-748:
+    id: STORY-748
+    title: 'W-3 engine: deterministic ci generate job order + ci-gate default, brief
+      complete-phase routing, open status categories, hook staged-rename RBAC, role-matrix
+      DDD guided_by, severity rank, help texts'
+    status: verified
+    tags:
+    - consistency
+    - v1.17.7
+    fingerprint: sha256:255beba861ab
+    children: []
+  STORY-749:
+    id: STORY-749
+    title: W-4/W-5 ledger amendments (command renames, go auto-commit notes, REQ-044/047
+      cascade, PREV-003 tags) and the AGENTS.md release ledger step; release v1.17.7
+    status: verified
+    tags:
+    - consistency
+    - v1.17.7
+    fingerprint: sha256:1e371cd38cff
+    children: []
+  STORY-750:
+    id: STORY-750
+    title: Baseline diff pairs renumbered artifacts (same type, equal fingerprint
+      or title) and reports them as renumbered, not removed
+    status: verified
+    tags:
+    - consistency
+    - v1.17.7
+    fingerprint: sha256:983e9ca9aae5
+    children: []
+next_id: 751

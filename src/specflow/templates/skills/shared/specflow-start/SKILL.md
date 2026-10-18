@@ -34,7 +34,7 @@ A thin, host-neutral router: orient on project state, then point at the right ne
 
 ## Delegating to subagents
 
-When you fan work out to subagents, each brief carries: the skill to follow (name it — `/specflow-execute`, `/specflow-plan` — so the subagent reads that SKILL.md first), the current `specflow brief --next` output, and the exact STORY/REQ IDs in scope — never "the next story". Allocate IDs serially in the parent before fan-out (`specflow create ...` once per artifact, then pass the IDs); parallel creates race the index. Tell subagents to read skill references with a bounded read (`sed -n 1,80p <file>`, or the host's file-read tool with a line range), never `cat <file> | head` — a closed pipe aborts the command. Subagents report back the IDs they changed and the exact `specflow update ...` commands they ran; the parent runs `specflow artifact-lint` once after the wave.
+When you fan work out to subagents, each brief carries: the skill to follow (name it — `/specflow-execute`, `/specflow-plan` — so the subagent reads that SKILL.md first), the current `specflow brief --next` output, and the exact STORY/REQ IDs in scope — never "the next story". Allocate IDs serially in the parent before fan-out (`specflow create ...` once per artifact, then pass the IDs) so every subagent works on stable IDs. Tell subagents to read skill references with a bounded read (`sed -n 1,80p <file>`, or the host's file-read tool with a line range), never `cat <file> | head` — a closed pipe aborts the command. Subagents report back the IDs they changed and the exact `specflow update ...` commands they ran; the parent runs `specflow artifact-lint` once after the wave.
 
 ## Rules
 - Always run `brief --next` first — the recommendation is deterministic and free.

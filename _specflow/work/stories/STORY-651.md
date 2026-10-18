@@ -12,8 +12,9 @@ links:
 - target: REQ-039
   role: implements
 created: '2026-09-11'
-fingerprint: sha256:b9a8cc5b419b
+fingerprint: sha256:593f22496e86
 modified: '2026-09-13'
+version: 1
 ---
 
 # Closure-readiness accounting in autoresearch status
@@ -21,4 +22,7 @@ modified: '2026-09-13'
 ## Acceptance Criteria
 
 1. `specflow autoresearch status` reports closure-readiness signals (goals met, confirmed FINDs, open agenda directions) deterministically.
+
+> Amended 2026-10-18 (SPIKE-008 R1-143): `autoresearch status` echoes the goals and reports the confirmed-FIND count, open agenda directions and a LOOP census; it makes no goal-met judgment (commands/autoresearch.py:746).
+
 2. A repo with no active LOOP reports closure-readiness + Phase 0 checks only, exiting 0 when clean (tests/test_autoresearch_cli.py).

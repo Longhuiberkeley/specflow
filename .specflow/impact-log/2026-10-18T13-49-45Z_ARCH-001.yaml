@@ -1,0 +1,10 @@
+changed: ARCH-001
+change_type: content_modified
+fingerprint_old: sha256:9796f65acf40
+fingerprint_new: sha256:b93f246dbee4
+update_type: minor
+flagged_suspects: []
+resolved: true
+timestamp: '2026-10-18T13:49:45Z'
+resolved_by: system
+resolved_at: '2026-10-18T13:49:45Z'

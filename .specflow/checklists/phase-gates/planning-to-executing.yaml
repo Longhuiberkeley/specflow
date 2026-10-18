@@ -18,7 +18,7 @@ items:
     severity: blocking
 
   - id: CKL-GATE-004-03
-    check: "STORY artifacts exist and link to approved specs"
+    check: "STORY artifacts exist"
     automated: true
     script: "ls _specflow/work/stories/*.md 2>/dev/null | grep -v _index.yaml | head -1 | grep -q . && exit 0 || exit 1"
     severity: blocking

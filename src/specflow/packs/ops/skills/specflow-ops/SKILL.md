@@ -65,7 +65,7 @@ Domain-neutral by design. Quant specifics (drift, oos_decay) belong in the quant
 
 - **What's live right now?** `specflow trace RUN-NNN` — shows the REQ/ARCH/EXPT lineage and all MONITORs.
 - **How is it trending?** Read the chain of MONITORs under a RUN (newest last) — that *is* the metric/drift ledger.
-- **Stale or drifting?** `specflow brief --next` (ops pack active) flags, in priority order: a breached MONITOR (status `flagged`, or `health: breached` and not yet `resolved`), a `deployed` RUN awaiting live confirmation, and live RUN(s) when no MONITOR exists at all. It does not judge how recent a MONITOR is; read the chain under `specflow trace RUN-NNN` for staleness.
+- **Stale or drifting?** `specflow brief --next` (ops pack active) flags, in priority order: a breached MONITOR (status `flagged` until resolved, credited or not; or `health: breached`, not yet `resolved` and not credited), a `deployed` RUN awaiting live confirmation, and live RUN(s) when no MONITOR exists at all. It does not judge how recent a MONITOR is; read the chain under `specflow trace RUN-NNN` for staleness.
 - **Why is it still nagging?** A resolved breach with no follow-up reads as "vanished without prevention record": link a DEF (`defect-from-monitor`), a follow-up (`derives_from` the MONITOR), or a correcting MONITOR.
 
 ## Rules

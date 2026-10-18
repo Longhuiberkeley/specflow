@@ -44,7 +44,7 @@ adds_directories:
 |-------|----------|-------------|
 | `name` | Yes | Pack identifier. Use lowercase with hyphens (e.g., `iso26262`, `soc2-type2`). |
 | `version` | Yes | Version string. Follow semantic versioning or use a label like `"0.1-draft"`. |
-| `description` | Yes | One-line summary. This appears in `specflow init` output. |
+| `description` | Yes | One-line human summary. `specflow pack-validate` requires it; `specflow init` does not print it. |
 | `adds_artifact_types` | No | List of artifact type IDs that this pack introduces. Each must have a matching schema file in `schemas/`. |
 | `adds_directories` | No | List of `_specflow/` relative paths to create when the pack is installed. One per new artifact type, matching the `directory` field in each schema. |
 
@@ -87,11 +87,11 @@ clauses:
 | `title` | Yes | Short clause title. |
 | `description` | Yes | Clause text or summary. Use normative language ("shall", "should", "may"). |
 
-You can add additional fields to clause objects if your standard requires them (e.g., `asil_level`, `severity`, `verification_method`). The compliance engine will include all fields in audit reports.
+Clause objects may carry `severity` (`high` / `medium` / `low`, default `medium`), `category` and `priority`; these three sort and label gaps in `specflow standards gaps`. Other fields (e.g. `asil_level`, `verification_method`) are tolerated and stay in the YAML, but no command reports them.
 
 ## Step 3: Define New Artifact Types (Optional)
 
-If your standard requires tracking artifact types beyond the built-in ones (`requirement`, `story`, `test`, `hazard`, `decision`, `spike`, `defect`, `audit`, `challenge`), create a schema for each.
+If your standard requires tracking artifact types beyond the built-in ones (`requirement`, `architecture`, `detailed-design`, `unit-test`, `integration-test`, `qualification-test`, `story`, `spike`, `decision`, `defect`, `audit`, `challenge`, `review`, `best-practice`; plus the optional core types `hazard`, `control` and `risk` enabled by `init --with-types`), create a schema for each. Do not name a pack type after a core type.
 
 Create `schemas/{type}.yaml`:
 
@@ -223,30 +223,13 @@ specflow init --preset {name}
 
 ### Option B: Project-Local Pack
 
-For a single project, manually copy the pack's content into the project's `.specflow/` internals:
+For a single project, put the pack directory at `.specflow/packs/{name}/` and install it:
 
 ```bash
-# Copy standards
-cp .specflow/packs/{name}/standards/*.yaml .specflow/standards/
-
-# Copy schemas (if any)
-cp .specflow/packs/{name}/schemas/*.yaml .specflow/schema/
-
-# Create directories (if any)
-mkdir -p _specflow/specs/{new-type}/
-touch _specflow/specs/{new-type}/_index.yaml
-echo "artifacts: {}" > _specflow/specs/{new-type}/_index.yaml
-echo "next_id: 1" >> _specflow/specs/{new-type}/_index.yaml
+specflow init --preset {name}
 ```
 
-Then update `.specflow/config.yaml` to register the new artifact types:
-
-```yaml
-active_packs:
-  - {name}
-artifact_types:
-  - security-finding    # add your new types
-```
+`init` resolves the pack from `.specflow/packs/{name}/`. On an initialized project it runs in merge mode, keeps your config, installs the standards, schemas, directories, checklists, skills and context block, and registers the pack in `active_packs`. After editing an installed pack, run `specflow refresh --packs --force` to sync it. Do not copy pack files into `.specflow/` or edit `config.yaml` by hand: the pack would not be registered, so its skills, context block and later syncs would be missing.
 
 ## Step 8: Declare Coverage in Artifacts
 
@@ -268,41 +251,35 @@ links:
 
 `target` must match a clause `id` exactly as written in your `standards/{name}.yaml`.
 
-You can link any artifact type — requirements, architecture specs, stories, test records — to clause IDs. Multiple artifacts can cover the same clause; the audit report lists all of them.
+You can link any artifact type — requirements, architecture specs, stories, test records — to clause IDs. Multiple artifacts can cover the same clause; a clause counts as covered once any artifact links to it, and the reports list the clauses that remain uncovered.
 
-## Step 9: Audit Coverage with `specflow project-audit`
+## Step 9: Check Coverage with `specflow standards gaps`
 
-Once at least one artifact has a `complies_with` link, run the audit command to see your coverage gap:
+Once at least one artifact has a `complies_with` link, list the uncovered clauses. The command is read-only:
 
 ```bash
-specflow project-audit
+specflow standards gaps
 ```
 
 If you have multiple standards installed, specify which one:
 
 ```bash
-specflow project-audit --standard my-standard
+specflow standards gaps --standard my-standard
 ```
 
 **Example output:**
 
 ```
-Project Audit — Standards Coverage: my-standard — My Internal Security Compliance Standard
-──────────────────────────────────────────────────────────
-  Covered Clauses (2/3):
-    ✓ SEC-1  Access Control
-        → REQ-001
-    ✓ SEC-2  Audit Logging
-        → REQ-001, ARCH-003
+Standard: My Internal Security Compliance Standard
+  Total: 3 clauses | Covered: 2 (66.7%) | Uncovered: 1
 
-  Compliance Gaps (1 uncovered):
-    ✗ SEC-3  Data Encryption
-
-──────────────────────────────────────────────────────────
-  Coverage: 2/3 clauses (66%)
+  Uncovered (sorted by severity):
+    [MED ]  SEC-3 — Data Encryption
+           → Consider creating a requirement or detailed-design
+           run: specflow create --from-standard SEC-3
 ```
 
-Each uncovered clause is a gap — add a `complies_with` link from an existing artifact, or create a new one. Re-run the audit after each change to track progress.
+Each uncovered clause is a gap — add a `complies_with` link from an existing artifact, or create a new one. Re-run `specflow standards gaps` after each change to track progress. `specflow project-audit` reports the same coverage as one finding (`N/M clauses uncovered in <standard>`) as part of the full audit, and writes AUD/CHL artifacts unless run with `--dry-run`.
 
 ## Complete Example: Minimal Pack
 
@@ -362,7 +339,10 @@ links:
 ```
 
 ```bash
-specflow project-audit
-# Covered Clauses (1/3): ✓ POL-1  Password Policy → REQ-001
-# Compliance Gaps (2 uncovered): ✗ POL-2  Session Timeout, ✗ POL-3  Access Review
+specflow standards gaps
+# Standard: Internal Security Policy
+#   Total: 3 clauses | Covered: 1 (33.3%) | Uncovered: 2
+#   Uncovered (sorted by severity):
+#     [MED ]  POL-2 — Session Timeout
+#     [MED ]  POL-3 — Access Review
 ```

@@ -10,7 +10,7 @@ Install with `/specflow-init --preset ops`, then talk to `/specflow-ops`.
 ## What you get
 
 - Deploy, observe, pause, resume, retire — each a `specflow create`/`update` the skill drives.
-- `specflow brief --next` nudges only on real states: a breached MONITOR, a `deployed` RUN awaiting live confirmation, live RUNs nobody has observed. A resolved (or credited) MONITOR stops nagging; a resolved breach with no follow-up shows as "vanished without prevention record" until a DEF, follow-up or correcting MONITOR points back at it (`derives_from`).
+- `specflow brief --next` nudges only on real states: a breached MONITOR, a `deployed` RUN awaiting live confirmation, live RUNs nobody has observed. A resolved MONITOR stops nagging, and so does a credited `logged` breach (a DEF `exposed_by` it, or a LOOP/correcting MONITOR that `derives_from` it); a `flagged` MONITOR keeps nagging until it is resolved, even with a DEF or LOOP follow-up linked; a resolved breach with no follow-up shows as "vanished without prevention record" until a DEF, follow-up or correcting MONITOR points back at it (`derives_from`).
 - `specflow defect-from-monitor MON-NNN --req REQ-NNN` freezes a breach into a DEF with full traceability.
 
 ## Human gates

@@ -15,11 +15,11 @@ links:
   role: derives_from
 created: '2026-04-21'
 modified: '2026-10-08'
-fingerprint: sha256:fa273ee409ec
+fingerprint: sha256:8a136a4ccf50
 thinking_techniques:
 - assumption_surfacing
 - devils_advocate
-version: 1
+version: 2
 ---
 
 # Audit & Review Engine
@@ -101,6 +101,8 @@ Provides deterministic health checks, LLM-assisted review, adversarial analysis,
 **States**: `open` → `stale` (if underlying issue resolved without explicit close)
 **Links**: CHL artifacts link to source artifact via `refers_to`
 **Deduplication**: `project_audit.py` checks existing CHLs before creating new ones
+
+> Amended 2026-10-18 (SPIKE-008 R1-104): the CHL schema (templates/schemas/challenge.yaml:7) allows open, addressed, accepted and stale, with transitions among them, plus an optional `resolution` field. CHL creation and dedup live in lib/challenges.py and project_audit.py; lib/challenge.py only extracts proactive items. `--method llm` is a hidden flag (cli.py:654); only `--method programmatic` is supported.
 
 ## Acceptance Criteria
 

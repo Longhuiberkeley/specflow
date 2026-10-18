@@ -18,7 +18,7 @@ Durable knowledge lives **in artifacts** (DEC, ARCH, DDD, artifact-attached refe
 ## Commands
 
 ```bash
-specflow rebuild-index        # write the derived _specflow/docs-index.yaml (doc → citations reverse index)
+specflow rebuild-index        # write the derived _specflow/docs-index.yaml (bare form only; a type argument skips it)
 specflow brief                # Docs surface block: counts, areas, top-cited docs
 specflow detect stale-docs    # docs citing superseded/cancelled/deprecated artifacts (warning only)
 specflow project-audit        # same staleness signal inside a whole-project audit

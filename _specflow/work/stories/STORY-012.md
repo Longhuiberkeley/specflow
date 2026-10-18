@@ -28,8 +28,8 @@ checklists_applied:
 - checklist: check-STORY-012
   timestamp: '2026-04-14T17:03:23Z'
 modified: '2026-04-22'
-fingerprint: sha256:61abebf22c95
-version: 1
+fingerprint: sha256:a66fd5b7b176
+version: 2
 ---
 
 # Implement standards pack architecture and compliance gap analysis
@@ -45,6 +45,8 @@ Implement the standards pack system (specflow init --preset) that adds industry-
 2. Given a project with 45 artifacts mapped to standard clauses via complies_with links and 50 total standard clauses, when specflow compliance --standard iso26262 runs, then the output shows 45 covered clauses with their linked artifact IDs and 5 uncovered clauses listed as compliance gaps
 
 3. Given a project with no standards imported, when specflow compliance runs, then a clear error message explains that no standards are installed and suggests using --preset during init
+
+> Amended 2026-10-18 (SPIKE-008 R1-128): no `specflow compliance` command exists (deleted by STORY-022). Uncovered clauses are listed by `specflow standards gaps [--standard <name>] [--json]` (cli.py:487).
 
 ## Out of Scope
 

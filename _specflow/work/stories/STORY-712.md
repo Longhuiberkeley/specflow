@@ -13,7 +13,7 @@ links:
 - target: REQ-046
   role: implements
 created: '2026-10-08'
-fingerprint: sha256:6f6c17dd3eef
+fingerprint: sha256:95ae991e6e1c
 modified: '2026-10-09'
 output_files:
 - .claude/skills/specflow-adapter/SKILL.md
@@ -72,6 +72,7 @@ output_files:
 - tests/test_readme_pin.py
 - tests/test_scaffold_scratch_gitignore.py
 - tests/test_review_skill_doc_parity.py
+version: 1
 ---
 
 # Wave P-6: docs, README, ROADMAP, CHANGELOG, AGENTS.md and pack-reference consistency with guard tests
@@ -83,6 +84,9 @@ Findings F-049, F-093, F-106, F-108, F-133, F-134, F-128, F-136, F-144, F-145, F
 
 - [ ] AC1: Given docs/cli-reference.md, when compared against argparse, then every subcommand has a heading, pinned by a test.
 - [ ] AC2: Given README.md, when compared against specflow.__version__, then the git+ pin matches, pinned by a test.
-- [ ] AC3: Given AGENTS.md, when read, then step 10 says do not publish to PyPI, the CHANGELOG template says DEC-NNN and the SKILL budget line matches DEC-083.
+- [ ] AC3: Given AGENTS.md, when read, then the Release Process step "Do NOT publish to PyPI" says do not publish to PyPI, the CHANGELOG template says DEC-NNN and the SKILL budget line matches DEC-083.
+
+> Amended 2026-10-18 (SPIKE-008 R1-145): AC3 cited the step by number ("step 10"); the release steps were renumbered, so it now cites the step by name.
+
 - [ ] AC4: Given the pack-author references, when read, then the iso26262-demo section matches the real pack tree.
 - [ ] AC5: Given autoresearch, when plan --inherit on a plateaued LOOP and status with no COMP, then inherit succeeds and status exits 0 with a neutral line.

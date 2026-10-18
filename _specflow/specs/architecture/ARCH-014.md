@@ -9,16 +9,19 @@ links:
   role: derives_from
 created: '2026-04-22'
 modified: '2026-10-08'
-fingerprint: sha256:dae45f1d864e
+fingerprint: sha256:262f46d13047
 thinking_techniques:
 - assumption_surfacing
+version: 1
 ---
 
 # Test Engine
 
 ## Component
 
-The test suite uses `pytest` as its runner and is located in `tests/`. Test modules mirror the library structure: `tests/test_artifacts.py`, `tests/test_lint.py`, `tests/test_rbac.py`, `tests/test_standards.py`, `tests/test_baselines.py`, and additional modules for newer features.
+The test suite uses `pytest` as its runner and is located in `tests/`. Test modules mirror the library structure: `tests/test_artifacts.py`, `tests/test_artifact_lint.py`, `tests/test_rbac.py`, `tests/test_standards.py`, `tests/test_baselines.py`, and additional modules for newer features.
+
+> Amended 2026-10-18 (SPIKE-008 R1-106): `tests/test_lint.py` never existed under that name; lint tests live in tests/test_artifact_lint.py and tests/test_lint_*.py. Corrected in place.
 
 ## Structure
 

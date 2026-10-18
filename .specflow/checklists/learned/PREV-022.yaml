@@ -1,0 +1,20 @@
+id: PREV-022
+name: 'Prevent recurrence of: specflow status drops schema categories outside the
+  hard-coded four (ops RUN/MON never get a row) (violated REQ-033)'
+discovered_from: DEF-021
+mode: reactive
+pattern: 'Prevent recurrence of: specflow status drops schema categories outside the
+  hard-coded four (ops RUN/MON never get a row) (violated REQ-033)'
+applies_to:
+  tags:
+  - consistency
+  - autoresearch
+  - status
+  - dashboard
+items:
+- id: PREV-022-01
+  check: Verify that changes touching REQ-033 have a regression test covering the
+    failure mode of DEF-021.
+  severity: warning
+  automated: false
+  mode: reactive

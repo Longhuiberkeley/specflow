@@ -4,6 +4,11 @@ SpecFlow ships incrementally. This document tracks what shipped in each release,
 
 For the original implementation plan (phase breakdown, dependency graph — now historical, superseded by the release history below), see [docs/.archive/plan.md](docs/.archive/plan.md).
 
+## v1.17.7
+
+- **Consistency-review burn-down (SPIKE-008, DEC-105, REQ-070, STORY-745..749, DEF-021..023)** — 214 drift sites between prose, packs, checklists, docs and ledger and the engine as built; every blocking/warning site fixed. Owner decisions: delegated autonomy narrowed to the direct user in-session (never a release or Tier 2); release process records the ledger before the commit (no backfill of v1.17.2..6); adoption baseline `v0.0.0-adoption.<n>`; open status categories; severity mapping documented; GitHub gate wording measured from GitHub docs (require both display-named checks, ci-gate default on, CODEOWNERS any-of). Engine: deterministic `ci generate`, complete-phase routing, open categories, RBAC staged-rename, role matrix vs schema, severity rank, shared ARCH depth rule.
+- **Next (v1.17.8, from SPIKE-008):** ARCH/DDD body rewrites (ARCH-001/003/004/007/009/010/011/015/016/017/018/020/025/027/031/035, DDD-020), test-spec promotion (UT-153.., practice spine UT-089..102 / IT-055..070 / QT-054..073), output_files misattribution sweep, stale test-file citations in IT/QT/UT, STORY-035 descope or implement, severity unification (minor), `adopt status` listing merged ARCHs, PREV-003 text residue (CLI gap: `patterns update` sets tags only).
+
 ## v1.17.6
 
 - **Framing inside `/specflow-discover` (DEC-104, REQ-069, STORY-744)** — a persona-free front door for a fuzzy idea: silent trigger at the zero end of the readiness curve, five-question cap with recommended answers, premise ledger, option briefs plus do-nothing, hard stop, go / clarify / kill DEC tagged `framing`, exchange-count restart on go, `guided_by` from the REQs it produces; `links/orphan` exempts framing DECs. Positioning narrowed in comparison.md / README / lifecycle / commands. **Follow-up:** lint for a REQ `guided_by` a draft or killed framing DEC (ships with its negative fixture); promote `framing.md` to a `/specflow-frame` skill only if hosts miss the discover trigger.
@@ -40,7 +45,7 @@ For the original implementation plan (phase breakdown, dependency graph — now 
 - **Index store (SPIKE-003, DEC-093, STORY-696, DEF-006..010/013/015)** — exclusive-create allocation, index as cache, one mutation lock, journaled renumber; `tests/formal/` harness; disposable TLA+ models in `formal/tla/`; BP-008 records the event-triggered model-checking practice (0-1 spikes a year, never calendar-driven).
 - **v1.17.0 sweep (REQ-056, STORY-685..695)** — nine broken shipped paths fixed, cry-wolf sources removed, six guard tests.
 - **Verification semantics (REQ-058, STORY-699), CI gate history (SPIKE-004, STORY-698), cascade/merge legality (STORY-697), semver ordering (STORY-700), format versioning (REQ-057, STORY-678).**
-- **Open follow-ups:** CHL-349 (cascade promotes a REQ on sibling status, not AC coverage — linked `challenges` STORY-697, the cascade-status closure rule it disputes; its only REQ, REQ-054, is deprecated, so the fix is minted as a new REQ when P5 evidence-backed status is scheduled); DEF-014 wontfix (DDD-034 operating assumption); REQ-054 parked deprecated (re-derive at P5); per-skill line-budget exceptions (adapter 176, init 157, pack-author 187, autoresearch 383) to trim; `_run_gate_check` still skips script-less items; `checklist-run` exits 0 on a parse failure; `verify.py` tick still uses its own pass rule; migrate command (REQ-057 AC3) lands with 2.0.0.
+- **Open follow-ups:** CHL-349 (cascade promotes a REQ on sibling status, not AC coverage — linked `challenges` STORY-697, the cascade-status closure rule it disputes; its only REQ, REQ-054, is deprecated, so the fix is minted as a new REQ when P5 evidence-backed status is scheduled); DEF-014 wontfix (DDD-034 operating assumption); REQ-054 parked deprecated (re-derive at P5); per-skill line-budget exceptions (adapter 176, init 157, pack-author 187, autoresearch 383) to trim; `_run_gate_check` still skips script-less items; `checklist-run` exits 0 on a parse failure; `verify.py` tick still uses its own pass rule; migrate command (REQ-057 AC4) lands with 2.0.0.
 
 ## v1.16.0
 
@@ -91,7 +96,7 @@ Operator directive (2026-08-30): **stop before per-harness customization; make t
 - **lint schema-bypass cleanup** — move the hardcoded `condensation_brief_<N>` regex (lint.py) to schema-level pattern support, killing the last code-side special case.
 - ~~**STORY-642** — unify `compute_chain_depth` with the typed edge matrix~~ *(deprecated at v1.16.0 per owner decision 2026-09-26; the guided_by chain-depth work shipped there covers the adjacent surface — re-derive via a new REQ if the unification is still wanted)*.
 - **`trace.py` renderers** — COMP lineage + LOOP escalation-source sections (make existing edges visible where users look).
-- **LOW pack defects** — `--show-family` doc drift, ops SKILL.md:162 edge form.
+- **LOW pack defects** — `--show-family` doc drift, ops pack edge form (the old `ops SKILL.md:162` pointer is dead: `src/specflow/packs/ops/skills/specflow-ops/SKILL.md` has 75 lines; re-locate the defect, or close it if already fixed, before working it).
 - **Review-finding burn-down** — open / stale review-finding counts: see the `review` line of `specflow brief`; docs-staleness sweep (only 2 docs cite artifacts).
 - **brief.py derives_from credit doc** — the suppression surface (any incoming derives_from, incl. MON corrections) is broader than the CHANGELOG wording; document the semantics in the docstring/ops handbook.
 

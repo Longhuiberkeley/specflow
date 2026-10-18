@@ -73,7 +73,7 @@ specflow practices validate
 
 ## How Skills Consume BPs
 
-- Skills load approved BPs from `_specflow/specs/best-practices/` whose `applicability` matches the artifact (legacy BPs fall back to tag match against `specflow domain`).
+- Skills load approved BPs from `_specflow/specs/best-practices/` whose `applicability` matches the artifact (legacy BPs without `applicability` match by an `applies_to` link to the artifact or by the artifact's tags intersecting the BP's tags; the project domain is not consulted).
 - The agent audits its own output against them *before* presenting to the user.
 - BPs are guidance, not blocking gates: they shape reasoning; `practices validate` checks only their structure.
 

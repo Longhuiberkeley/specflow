@@ -25,11 +25,11 @@ links:
 - target: ARCH-023
   role: derives_from
 created: '2026-08-03'
-fingerprint: sha256:8daf7ce33155
+fingerprint: sha256:2ef3e3d840b6
 thinking_techniques:
 - assumption_surfacing
 modified: '2026-10-08'
-version: 1
+version: 2
 ---
 
 # Autoresearch pack — schema-driven capability surface
@@ -93,6 +93,8 @@ core CLI: specflow autoresearch plan|run|review|leaderboard
         ▼  read-back
   artifact-lint._check_autoresearch_logging (domain-aware warnings)
 ```
+
+> Amended 2026-10-18 (SPIKE-008 R1-109): the subcommand tree also has the read-only `status` (closure and LOOP accounting, see ARCH-031) and `frontier` (research-frontier ledger) subcommands (cli.py:966, :974).
 
 The multi-objective model lives in the schema, not the engine: `objective_type`
 (single | family_of_good | pareto) + `diversity_metrics` lets `explore-exploit-protocol`

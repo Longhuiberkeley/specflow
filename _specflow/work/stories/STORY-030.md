@@ -34,8 +34,8 @@ checklists_applied:
 - checklist: check-STORY-030
   timestamp: '2026-04-14T17:03:23Z'
 modified: '2026-04-22'
-fingerprint: sha256:8d8779ab40c0
-version: 1
+fingerprint: sha256:ed6978edc8c3
+version: 2
 output_files:
 - tests/test_project_audit.py
 ---
@@ -96,7 +96,9 @@ Wings are prompt-engineered in the SKILL reference docs, not Python code. The CL
 
 5. Fingerprint cache at `.specflow/audits/.cache/{fingerprint}.md` reuses previous findings when target fingerprints haven't changed
 
-6. AUD artifact is created in `_specflow/specs/audits/` with `review_status: open` per the audit schema from STORY-025
+6. AUD artifact is created in `_specflow/specs/audits/` with `status: open` and `review_status: unreviewed` per the audit schema from STORY-025
+
+> Amended 2026-10-18 (SPIKE-008 R1-132): AC6 said `review_status: open`; `project-audit` writes `status: open` and `review_status: unreviewed` (commands/project_audit.py:1924), and `open` is not a legal review_status.
 
 7. Exit codes: 0 = clean, 2 = findings ≥ warn, 3 = findings ≥ error, 4 = tool error
 

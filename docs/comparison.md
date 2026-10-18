@@ -28,7 +28,7 @@ SpecFlow starts when you have an idea worth framing. Here's how the workflow map
 
 | Phase | What it does | Closest equivalent in other tools |
 |-------|-------------|-----------------------------------|
-| `/specflow-discover` | Frames a fuzzy idea first (go / clarify / kill, five-question cap), then structured elicitation — one question at a time, silent readiness assessment, 15-20 question cap. | gstack's `/office-hours` mechanics without the persona; spec-kit's Specify + Clarify steps |
+| `/specflow-discover` | Frames a fuzzy idea first (go / clarify / kill, five-question cap), then structured elicitation — readiness assessed silently; lean path after a complete first message, full path otherwise. | gstack's `/office-hours` mechanics without the persona; spec-kit's Specify + Clarify steps |
 | `/specflow-plan` | Architecture proposal → detailed design → SPIDR story decomposition with full V-model links. | spec-kit's Plan + Tasks, but with traceability |
 | `/specflow-execute` | Implement stories, generate V-model verification tests (UT/IT/QT), phase closure. | Most tools' "implement" step, but with test generation tied to the spec chain |
 

@@ -162,4 +162,44 @@ artifacts:
     - robustness
     fingerprint: sha256:71d1b7dfd389
     children: []
-next_id: 21
+  DEF-021:
+    id: DEF-021
+    title: specflow status drops schema categories outside the hard-coded four (ops
+      RUN/MON never get a row)
+    status: closed
+    tags:
+    - consistency
+    - v1.17.7
+    fingerprint: sha256:6de0f7b6df11
+    children: []
+  DEF-022:
+    id: DEF-022
+    title: brief --next in phase complete routes back to /specflow-ship instead of
+      the next cycle
+    status: closed
+    tags:
+    - consistency
+    - v1.17.7
+    fingerprint: sha256:a4b2f7126c6a
+    children: []
+  DEF-023:
+    id: DEF-023
+    title: Local pre-commit RBAC check skips a staged rename that also changes status
+      (diff-filter=AM drops R entries)
+    status: closed
+    tags:
+    - consistency
+    - v1.17.7
+    fingerprint: sha256:7f36107ae629
+    children: []
+  DEF-024:
+    id: DEF-024
+    title: project-audit baseline drift reports a renumbered draft as removed since
+      last baseline
+    status: closed
+    tags:
+    - consistency
+    - v1.17.7
+    fingerprint: sha256:a89003fd07e0
+    children: []
+next_id: 25

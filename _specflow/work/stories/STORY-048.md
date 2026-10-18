@@ -25,8 +25,8 @@ links:
   role: verified_by
 created: '2026-04-22'
 modified: '2026-04-22'
-fingerprint: sha256:7e7ac8a5b7d1
-version: 2
+fingerprint: sha256:2481b3bdfb5d
+version: 4
 output_files:
 - src/specflow/commands/schema_cmd.py
 - src/specflow/templates/schemas/best-practice.yaml
@@ -48,11 +48,14 @@ Ship optional artifact type schemas (hazard, risk, control) and integrate them i
 
 ## Description
 
-The 12 built-in artifact types cover most use cases, but regulated industries sometimes need genuinely different schemas (different status lifecycles, required fields, or link roles). This story adds three optional schema files under `src/specflow/schemas/optional/` and updates `specflow init` to offer them as opt-in choices. No standard content ships — users create their own via `/specflow-pack-author`.
+The 12 built-in artifact types cover most use cases, but regulated industries sometimes need genuinely different schemas (different status lifecycles, required fields, or link roles). This story adds three optional schema files under `src/specflow/templates/schemas/optional/` and updates `specflow init` to offer them as opt-in choices. No standard content ships — users create their own via `/specflow-pack-author`.
 
 ## Acceptance Criteria
 
-1. Given `src/specflow/schemas/optional/`, when the directory is inspected, then `hazard.yaml`, `risk.yaml`, and `control.yaml` schema files exist with valid type, prefix, id_format, required_fields, allowed_status, and allowed_link_roles
+1. Given `src/specflow/templates/schemas/optional/`, when the directory is inspected, then `hazard.yaml`, `risk.yaml`, and `control.yaml` schema files exist with valid type, prefix, id_format, required_fields, allowed_status, and allowed_link_roles
+
+> Amended 2026-10-18 (SPIKE-008 R1-137): the optional schemas live in `src/specflow/templates/schemas/optional/` (commands/init.py `_install_optional_types`); the paths above now say so. Selection is non-interactive via `specflow init --with-types hazard,risk,control`; there is no prompt (AC2).
+
 2. Given `specflow init`, when run interactively, then optional artifact types are offered as selections
 3. Given a user who selects the hazard type, when init completes, then `.specflow/schema/hazard.yaml` exists and `_specflow/specs/hazards/` directory is created
 4. Given the hazard schema installed, when `specflow create --type hazard --title "Identify brake failure" --status draft` is run, then a HAZ-001 artifact is created in `_specflow/specs/hazards/`

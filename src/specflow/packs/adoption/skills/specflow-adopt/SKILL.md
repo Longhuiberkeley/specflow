@@ -56,7 +56,7 @@ Bring an existing codebase into SpecFlow by **recording its current state**, the
   - `git ls-files` grouped by top-level dir (and module markers: npm/pnpm workspaces, `go.mod`, `Cargo.toml` workspaces, monorepo packages) → candidate boundaries / component structure.
   - `specflow detect orphan-code` → source files not yet referenced by any STORY/REQ/ARCH/DDD, with coverage %. *(Pre-backfill, everything is "orphan" — use this as the post-pass gap check and the progress meter; use `git ls-files` for the initial map.)*
   - Existing docs: `README.md`, `docs/**/*.md`, any `adr/` or `decisions/` dir, `REQUIREMENTS*.md`, `CONTRIBUTING.md` → candidate REQ/DEC source.
-  - **Register the docs surface:** note the `docs/` root + 3-5 notable docs (architecture, decisions, getting-started, README) for the as-built baseline. These are a **recognized knowledge surface**, not code orphans — SpecFlow indexes them, and `specflow brief`/`specflow adopt status` will show a Docs surface line. They are NOT artifacts and need no `output_files` coverage.
+  - **Docs surface:** `docs/` and root markdown are recognized automatically — there is nothing to register. If the docs live elsewhere, configure the `docs:` block through `/specflow-doc`. Note 3-5 notable docs (architecture, decisions, getting-started, README) as REQ/DEC sources. They are a **recognized knowledge surface**, not code orphans: `specflow brief`/`specflow adopt status` show a Docs surface line. They are NOT artifacts and need no `output_files` coverage.
   - Existing tests (`**/test_*.py`, `*.test.ts`, `*_test.go`, …) → evidence for `verified` + candidate UT/IT/QT. A common conflict source when tests disagree with docs.
   - Commit ticket refs: `git log --oneline | grep -oE '[A-Z][A-Z0-9]+-[0-9]+'` → candidate DEF/DEC + provenance.
   Present a structured inventory summary and the proposed artifacts to backfill for this boundary.
@@ -68,20 +68,20 @@ Bring an existing codebase into SpecFlow by **recording its current state**, the
   - **DEC** from existing ADRs / `git log` "why" commits / framework choices in manifests.
   - **UT/IT/QT only where an existing test maps cleanly** to a backfilled spec — link `verified_by`. Don't fabricate.
   - Tag every backfilled artifact: `--tags backfilled`.
-  - Record provenance in `--rationale` (e.g. `"Backfilled from src/auth/ at adoption-v0"`; or `"README vs code conflict — user confirmed code authoritative"`).
+  - Record provenance in `--rationale` (e.g. `"Backfilled from src/auth/ at v0.0.0-adoption.1"`; or `"README vs code conflict — user confirmed code authoritative"`).
   - **Set status honestly, and sanction it.** `implemented` for code that exists, `verified` where a test confirms it, `approved` for specs that match shipped reality (a DEC is `approved` at most — the decision schema has no `implemented`/`verified`). Creating past `draft` is gated: every backfill `create` carries `--sanctioned "as-built: <why this status is true>"` (kept as `sanctioned_justification`); without it `create` exits 1. Accounting, not policing.
   - **Worked example** (an ARCH plus the existing test that verifies it): see below. The ARCH body needs ~50+ words under a `## Component`-style header, or lint warns.
 
-- **4 · As-built baseline.** `specflow baseline create adoption-v0 --evidence` (or `adoption-<boundary>-v0` for an interim checkpoint in a multi-pass adoption). State plainly: this is the handshake — from here, drift is measured against this snapshot. Record the docs surface in the baseline `--rationale` (e.g. `"...; docs surface registered: docs/ (N files), README.md"`) so the knowledge baseline is acknowledged at adoption — pre-existing docs aren't orphaned or silently stale.
+- **4 · As-built baseline.** `specflow baseline create v0.0.0-adoption.<n> --evidence`, with `<n>` = 1 for the first cut and the next integer for each later one (baseline names MUST be semver-shaped; the highest `<n>` is the headline, earlier ones are interim boundary checkpoints). Then run `specflow fingerprint-refresh --source`: it seeds the source fingerprints that `specflow adopt status` compares against, so drift means "files changed since this seed". Re-run it after each later pass so newly backfilled ARCHs get an entry. State plainly: this is the handshake into the forward lifecycle. A repo that already has a legacy `adoption-v0` baseline keeps it (baselines are write-once) and anchors audits with `specflow project-audit --baseline adoption-v0`.
 
 - **5 · Wire remaining files & completeness check.**
-  - Per boundary: widen the ARCH glob with `specflow update ARCH-NNN --output-files 'src/a/**/*.py,src/b/**/*.py'` (comma-separated; **replaces** the list, so restate existing entries).
+  - Per boundary: widen the ARCH glob with `specflow update ARCH-NNN --output-files 'src/a/**/*.py,src/b/**/*.py'` (comma-separated; **replaces** the list, so restate existing entries), then `specflow fingerprint-refresh --source ARCH-NNN` so the newly covered files are tracked for drift.
   - `specflow detect orphan-code --retro-link ARCH-NNN` is **project-wide**, not per-boundary: it links *every* unreferenced file in the repo to that one ARCH. Use it once, in the final pass, only to sweep a deliberate residual (frozen legacy) into a single catch-all ARCH. Never use `--adopt` in an adoption run — it mints a STORY, and adoption creates none.
   - `specflow adopt status` — the project/boundary dashboard. Confirm coverage rose this pass and note the biggest remaining cluster.
-  - `specflow adopt status <REQ-NNN|ARCH-NNN>` for any artifact whose completeness is in doubt — it surfaces realization, acceptance-criteria count, linked tests, provenance, depth (skeleton/full), gaps, and post-adoption drift.
+  - `specflow adopt status <REQ-NNN|ARCH-NNN>` for any artifact whose completeness is in doubt — it surfaces realization, acceptance-criteria count, linked tests, provenance, depth (`full` = parent REQ and child DDD; `skeleton` = anything less, including the bare skeleton-sweep ARCH), gaps, and source drift since the `fingerprint-refresh --source` seed. `specflow brief` counts skeleton/full ARCHs by the same rule.
 
 - **6 · Validate & handoff.**
-  - `specflow artifact-lint` on the backfilled graph; optionally `/specflow-audit`. Skeleton ARCHs legitimately warn (no verifying IT, never challenged, no STORY for a backfilled REQ) — see `references/as-built-baseline-protocol.md` (Lint expectations). Record `specflow update ARCH-NNN --thinking-techniques premortem` only after `/specflow-artifact-review` has actually run that lens.
+  - `specflow artifact-lint` on the backfilled graph; optionally `/specflow-audit`. Skeleton ARCHs legitimately warn (no verifying IT, never challenged, no STORY for a backfilled REQ) — see `references/as-built-baseline-protocol.md` (Lint expectations). Once a findings baseline exists, these warnings escalate and a full lint exits 1; after the user reviews the pass, record the skeleton debt with `specflow findings-baseline update --accept-new` (approval-gated). Record `specflow update ARCH-NNN --thinking-techniques premortem` only after `/specflow-artifact-review` has actually run that lens.
   - Close resolved AUDs: after an audit, run `specflow update AUD-NNN --status closed` for any AUD whose findings are provably resolved. Don't leave resolved audits as `status: open` — they accumulate and lose signal.
   - Report from `specflow adopt status`: coverage %, what was adopted this pass, the biggest un-adopted cluster (what's left). Recommend the next boundary, or declare adoption "done enough."
   - Tell the user: forward work uses `/specflow-discover` → plan → execute; the as-built baseline is the reference for `/specflow-change-impact-review` and `/specflow-ship`. Any future change to an adopted component creates a real (non-`backfilled`) STORY `specified_by` that component's ARCH. `specflow brief` now shows a **Docs surface** block, and `specflow detect stale-docs` / `/specflow-audit` will warn if a doc cites a superseded artifact — so the adopted docs stay honest going forward.
@@ -91,7 +91,7 @@ Bring an existing codebase into SpecFlow by **recording its current state**, the
 ```bash
 specflow create --type architecture --title "Payments" --status implemented \
   --sanctioned "as-built: code already ships in src/payments/" \
-  --tags backfilled --rationale "Backfilled from src/payments/ at adoption-v0" \
+  --tags backfilled --rationale "Backfilled from src/payments/ at v0.0.0-adoption.1" \
   --set 'output_files=["src/payments/**/*.py"]' \
   --body "$(cat <<'EOF'
 ## Component
@@ -124,7 +124,7 @@ Other essentials (full protocol in `references/incremental-adoption-protocol.md`
 1. `specflow brief` — the Adoption section reconstructs adoption state in one call (coverage %, backfilled counts, biggest cluster).
 2. Find open conflicts: `specflow list --tags needs-decision`. Resolve them first (see `references/conflict-resolution-protocol.md`).
 3. `specflow adopt status` — the boundary dashboard; pick the next boundary from the biggest un-adopted cluster.
-4. Read the latest `adoption-*` baseline — see what's already recorded and snapshotted.
+4. Read the highest `v0.0.0-adoption.<n>` baseline under `.specflow/baselines/` (or a legacy `adoption-v0`) — see what's already recorded and snapshotted; `specflow baseline diff <older> <newer>` compares two cuts.
 5. Skip anything already `tags: [backfilled]`; continue at Phase 1.
 
 ## Deterministic core (zero-token, always available)
@@ -141,7 +141,9 @@ Everything this skill does is composed from CLI commands — no new Python per p
 | Backfill REQ/DDD | same shape: `--type <requirement\|detailed-design> --status <approved\|implemented\|verified> --sanctioned "as-built: …" --tags backfilled --rationale "…"` |
 | Backfill DEC | `--type decision --status approved --sanctioned "as-built: …" --tags backfilled --rationale "…"` (decisions have no `implemented`/`verified`) |
 | Open conflicts | `specflow list --tags needs-decision` |
-| Snapshot | `specflow baseline create adoption-v0 --evidence` |
+| Snapshot | `specflow baseline create v0.0.0-adoption.<n> --evidence` |
+| Seed source drift | `specflow fingerprint-refresh --source` |
+| Merge duplicates | `specflow merge <loser-ID> <survivor-ID>` |
 | Widen a glob (per boundary) | `specflow update ARCH-NNN --output-files '<glob>,<glob>'` |
 | Sweep residual (project-wide, final pass) | `specflow detect orphan-code --retro-link ARCH-NNN` |
 | Validate | `specflow artifact-lint` |

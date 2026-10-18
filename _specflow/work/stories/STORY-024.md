@@ -27,8 +27,8 @@ checklists_applied:
 - checklist: check-STORY-024
   timestamp: '2026-04-14T17:03:23Z'
 modified: '2026-04-22'
-fingerprint: sha256:b95df92dbbbb
-version: 1
+fingerprint: sha256:32fc29f0bcca
+version: 2
 output_files:
 - src/specflow/commands/ci.py
 - src/specflow/commands/export_cmd.py
@@ -93,6 +93,8 @@ New schema: `templates/schemas/challenge.yaml`. Fields include `id`, `title`, `t
 5. Technique selection UX reads existing checklists for target artifacts first, then presents available thinking techniques (not duplicating checklist coverage) with estimated token spend before launching subagents
 
 6. Hygiene detect (dead-code, similarity) runs silently as a pre-step inside review; `specflow detect` CLI remains for CI
+
+> Amended 2026-10-18 (SPIKE-008 R1-044): AC6 does not hold. `artifact-review` runs lint, checklist-run and thinking-technique prompts for the host agent only (commands/artifact_review.py:289-393); `specflow detect` stays a separate CLI/CI command. The CHL field is `technique`, not `lens` (templates/schemas/challenge.yaml).
 
 7. Exit codes: 0 = clean, 2 = open findings, 3 = tool error
 

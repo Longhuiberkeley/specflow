@@ -7,7 +7,7 @@ version: 1
 
 items:
   - id: CKL-IP-004-01
-    check: "Story links to at least one specification artifact (implements, guided_by or specified_by)"
+    check: "Story carries a spec-role link (implements, guided_by or specified_by; the role is checked, not the target — a guided_by DEC alone passes here but fails story-linkage, which needs a REQ/ARCH/DDD target)"
     automated: true
     # Frontmatter-only grep (no python3/PyYAML): take the frontmatter, keep the
     # top-level `links:` block, and look for a spec-link role on the artifact ("$1").

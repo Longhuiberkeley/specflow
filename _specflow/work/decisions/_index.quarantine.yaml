@@ -1,0 +1,19 @@
+DEC-106:
+  fingerprint: sha256:425339e14113
+  id: DEC-106
+  quarantined_at: '2026-10-18T14:13:42Z'
+  status: draft
+  tags:
+  - change-record
+  - auto-generated
+  title: 'Change Record: wip: merge worktree-wf_83d50c1c-d43-5'
+DEC-107:
+  fingerprint: sha256:555c50de3d73
+  id: DEC-107
+  quarantined_at: '2026-10-18T14:13:42Z'
+  status: draft
+  tags:
+  - change-record
+  - auto-generated
+  title: 'Change Record: wip: v1.17.7 ledger setup (SPIKE-008, REQ-070, DEC-105, DEF-021..023,
+    STORY-745..749)'

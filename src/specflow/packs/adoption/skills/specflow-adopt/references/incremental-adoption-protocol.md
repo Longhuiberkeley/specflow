@@ -6,10 +6,10 @@ A single pass can't adopt a large codebase: context can't hold it, the user can'
 
 Don't go boundary-by-boundary at full V-model depth from the start. For a large repo, **skeleton-first** gets the whole project under coverage fast, then deepens where it matters:
 
-1. **Skeleton sweep (first passes).** One ARCH per component across the *whole* project, `output_files` = component glob, status `implemented`. No REQ, no DDD, no STORY. Goal: every component under an ARCH — coverage rises fast with maybe 15-30 artifacts, not 300. Cut an interim `adoption-<boundary>-v0` baseline per pass if useful.
+1. **Skeleton sweep (first passes).** One ARCH per component across the *whole* project, `output_files` = component glob, status `implemented`. No REQ, no DDD, no STORY. Goal: every component under an ARCH — coverage rises fast with maybe 15-30 artifacts, not 300. Cut an interim `v0.0.0-adoption.<n>` baseline per pass if useful (next `<n>` each time), then `specflow fingerprint-refresh --source`.
 
 2. **Steer deepening with `specflow adopt status`.** The completeness view flags which components deserve REQ (behavior) + DDD (internals):
-   - high churn (files changed since the as-built baseline = drift),
+   - high churn (files changed since `specflow fingerprint-refresh --source` seeded them at adoption = drift; an ARCH with no seeded entry shows no drift),
    - thin specs (REQ with 0 acceptance criteria),
    - missing tests (no linked UT/IT/QT),
    - "inference debt" (rationale says "inferred / not confirmed").
@@ -46,10 +46,10 @@ Each `/specflow-adopt` invocation runs Phases 1–6 scoped to the chosen boundar
 Adoption routinely spans sessions. To resume:
 
 1. **`specflow brief`** — the Adoption section reconstructs adoption state in one call (coverage %, backfilled counts by type, biggest un-adopted cluster).
-2. **`specflow adopt status`** — the boundary dashboard. Each ARCH is a row with its file count, depth (skeleton/full), drift flag, and parent REQ. Pick the next boundary from the biggest-cluster hint.
-3. **Read the latest `adoption-*` baseline** — what's already been recorded and snapshotted.
+2. **`specflow adopt status`** — the boundary dashboard. Each ARCH is a row with its file count, depth (`full` = parent REQ and child DDD; `skeleton` = anything less, including the bare skeleton-sweep ARCH), drift flag, and parent REQ. `specflow brief` counts its skeleton/full split by the same rule. Pick the next boundary from the biggest-cluster hint.
+3. **Read the highest `v0.0.0-adoption.<n>` baseline** under `.specflow/baselines/` (or a legacy `adoption-v0`) — what's already been recorded and snapshotted.
 4. **Skip anything already `tags: [backfilled]`** — idempotent. Don't redo a boundary that's already adopted (unless the user asks to refresh it because the code changed).
-5. **Propose the next boundary** from what `adopt status` still flags as skeleton/empty, confirm with the user, and continue at Phase 1.
+5. **Propose the next boundary** from what `adopt status` still flags as `skeleton` or uncovered, confirm with the user, and continue at Phase 1.
 
 Nothing is redone. The `backfilled` tag + the baseline + `adopt status` together make adoption safely interruptible.
 
@@ -81,11 +81,12 @@ Boundaries aren't perfectly independent — cross-cutting concerns (auth, loggin
 ### Merge recipe (when two artifacts cover the same concern)
 
 1. **Pick the survivor.** The artifact with more files / greater coverage wins. If both are equal, keep the first-created (lower ID number).
-2. **Copy unique content.** Move any unique body text, acceptance criteria, or rationale from the losing artifact into the survivor.
-3. **Expand output_files.** Add the losing artifact's globs/paths to the survivor's `output_files` list.
-4. **Re-link.** Find all artifacts that link to the losing artifact (via `specflow trace <losing-ID>`) and repoint them to the survivor: `specflow update <linked-ID> --links '[{"target":"<survivor-ID>","role":"derives_from"}]'`.
-5. **Delete or archive** the losing artifact. Move it to a `_specflow/archive/` dir or delete it.
-6. **Lint.** `specflow artifact-lint` to catch broken links or orphaned references.
+2. **Copy unique content.** Move any unique body text, acceptance criteria, or rationale from the losing artifact into the survivor (a body hand-edit is followed by `specflow fingerprint-refresh <survivor-ID>`).
+3. **Widen output_files.** `specflow update <survivor-ID> --output-files '<existing>,<loser paths>'` — the flag replaces the list, so restate the survivor's current entries. `merge` does not union `output_files`.
+4. **Merge.** `specflow merge <loser-ID> <survivor-ID>` retargets every inbound link to the survivor (each link keeps its role), adds a `supersedes` link from the survivor, and moves the loser to a legal terminal status (it says so if none is legal).
+5. **Lint.** `specflow artifact-lint` to catch broken links or orphaned references.
+
+Never repoint links with `update --links` (it replaces the whole link list and erases the other edges); to move one link by hand, use `--remove-link <loser-ID> --add-link <survivor-ID>:<original-role>`. Never move or delete artifact files by hand — `_specflow/` is CLI-managed.
 
 ### ID collisions (parallel fan-out)
 

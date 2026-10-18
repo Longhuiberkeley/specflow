@@ -11,11 +11,12 @@ links:
 - target: DEC-088
   role: guided_by
 created: '2026-09-25'
-fingerprint: sha256:bbc529903821
+fingerprint: sha256:b5af9edafb5c
 modified: '2026-10-08'
 thinking_techniques:
 - premortem
 - dependency_shock
+version: 1
 ---
 
 # Autoresearch steering: frontier ledger, EDA lenses, error analysis, knowledge flow
@@ -29,7 +30,9 @@ Turn the autoresearch pack into a complete, self-measuring researcher: the zero-
 - EXPT change_category gains analysis; no_op runs exempt from every evidence-free streak window when anchored
 
 ## Dependencies
-Reads EXPT/LOOP frontmatter that autoresearch log already mandates; optional EXPT lineage field; practices list --scope consumed as prose guidance only (no hard dependency on the spine).
+Reads EXPT/LOOP frontmatter that autoresearch log already mandates; optional EXPT lineage field; `specflow list --type best-practice` consumed as prose guidance only (no hard dependency on the spine).
+
+> Amended 2026-10-18 (SPIKE-008 R1-042): corrected in place. The earlier text named `practices list --scope`, which does not exist (`practices` has only seed, validate and migrate, cli.py:508).
 
 ## Data flow
 EXPT/LOOP frontmatter -> frontier computation (lineage depth noise-adjusted via noise probe sigma, family width, agenda coverage) -> advisory rendering -> model decides; LOOP completion -> condensation brief -> plan --inherit seeds the next agenda.

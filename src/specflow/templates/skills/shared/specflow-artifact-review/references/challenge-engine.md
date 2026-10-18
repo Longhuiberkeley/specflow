@@ -27,7 +27,11 @@ When proactive challenges identify alternative approaches, a DEC (decision) arti
 
 ## Reactive Mode (Learning)
 
-After work completes, `specflow done` extracts prevention patterns.
+Prevention patterns (PREVs) are seeded from three sources:
+
+- **DEF closure** — `specflow update <DEF-ID> --status closed` seeds a PREV that inherits the DEF's tags and the tags of the REQs it `fails_to_meet` (the main source).
+- **`specflow done`** — extracts patterns from implemented STORY bodies, tagged with the STORY's own tags.
+- **`specflow verify --seed-prev`** — opt-in outcome feedback from a verify run.
 
 ### PREV-*.yaml format
 
@@ -50,10 +54,14 @@ items:
 ### How learned patterns auto-load
 
 When `specflow checklist-run` reviews an artifact:
-1. Read all `PREV-*.yaml` from `.specflow/checklists/learned/`
+1. Read every `PREV-*.yaml` from `.specflow/checklists/learned/`, skipping any with `retired: true`
 2. If the artifact's tags intersect with the pattern's `applies_to.tags`
 3. Include the pattern's items in the assembled checklist
-4. Items appear in the "reactive" section of the review
+4. Items are listed under "Agent-judged checks" with a `[reactive]` label
+
+### Maintenance
+
+A PREV with empty `applies_to.tags` is inert: it never matches an artifact (`brief` and `project-audit` report it). Repair it with `specflow patterns update <PREV-ID> --tags a,b` (replaces the list); retire it with `specflow patterns retire <PREV-ID>` (the file stays; listing and assembly skip it).
 
 ## Usage
 

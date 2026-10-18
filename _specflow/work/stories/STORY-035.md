@@ -25,8 +25,8 @@ links:
 - target: UT-016
   role: verified_by
 created: '2026-04-17'
-fingerprint: sha256:5d458c39e8b8
-version: 2
+fingerprint: sha256:40f4c8071685
+version: 3
 modified: '2026-09-30'
 output_files:
 - src/specflow/templates/checklists/in-process/architecture-writing.yaml
@@ -106,6 +106,8 @@ Add `conventions` to the checklist pipeline:
 - `checklists.py` `assemble_checklist()` — add `conventions` as a loadable category so `checklist-run` picks up convention checks when relevant
 
 ## Acceptance Criteria
+
+> Amended 2026-10-18 (SPIKE-008 R1-045): the conventions deliverable never shipped. There is no `templates/checklists/conventions/`, `_CHECKLIST_CATEGORIES` has no `conventions` (lib/scaffold.py:265), and init has no convention step or `convention-patterns.md`. Only the in-process `*-writing.yaml` checklists in output_files shipped. ACs 1 and 3-8 do not hold; the descope is recorded for v1.17.8.
 
 1. `templates/checklists/conventions/` contains at least 5 starter checklist YAML files (layout, test-mirroring, naming, boundaries, interface-contracts)
 2. Every checklist item with `automated: true` has a working `script:` field that runs deterministically (zero tokens)

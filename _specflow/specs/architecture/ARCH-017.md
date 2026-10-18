@@ -9,9 +9,10 @@ links:
   role: derives_from
 created: '2026-05-04'
 modified: '2026-10-08'
-fingerprint: sha256:88f0010c1fb2
+fingerprint: sha256:982fcfc224da
 thinking_techniques:
 - assumption_surfacing
+version: 1
 ---
 
 # Spec Quality Gate
@@ -40,6 +41,8 @@ src/specflow/lib/lint.py                — Extended quality validation helpers
 - `_check_spec_body(artifacts) -> (blocking, warnings, details)` — new check function in artifact_lint.py
 - `_check_coverage_arch(artifacts) -> (blocking, warnings, details)` — extends coverage check
 - `_check_story_min_ac(artifacts) -> (blocking, warnings, details)` — extends story size check
+
+> Amended 2026-10-18 (SPIKE-008 R1-107): there are no `coverage-arch` or `story-min-ac` checks and no `_check_coverage_arch` / `_check_story_min_ac` functions. The ARCH-coverage rule lives in `check_coverage` (commands/artifact_lint.py:804) and the minimum-AC rule in `_check_story_size` (:1018, finding `story-size/ac-min`).
 
 ## Dependencies
 

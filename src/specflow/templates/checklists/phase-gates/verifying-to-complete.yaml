@@ -6,16 +6,16 @@ version: 1
 
 items:
   - id: CKL-GATE-006-01
-    check: "All spec artifacts have status: verified"
+    check: "All spec artifacts have status: verified (advisory: unverified specs never block a release; list them in the handoff)"
     automated: false
     llm_prompt: "List the spec artifacts in scope (`specflow list --type REQ`, and likewise for ARCH and DDD). Confirm each in-scope spec is verified (deprecated specs are out of scope). Flag each spec still in draft, approved or implemented. (`artifact-lint --type status` only checks that statuses are legal, not that they reached verified.)"
-    severity: blocking
+    severity: warning
 
   - id: CKL-GATE-006-02
     check: "All fingerprints are current"
     automated: true
     script: "specflow artifact-lint --type fingerprints"
-    severity: blocking
+    severity: warning
 
   - id: CKL-GATE-006-03
     check: "No broken links in any artifact"
@@ -36,7 +36,7 @@ items:
     severity: warning
 
   - id: CKL-GATE-006-07
-    check: "Baseline created for this phase completion"
+    check: "A baseline exists (any earlier one passes; the ship skill creates this release's baseline after this gate)"
     automated: true
     script: "test -d .specflow/baselines && ls .specflow/baselines/*.yaml 2>/dev/null | head -1 | grep -q . && exit 0 || exit 1"
     severity: info

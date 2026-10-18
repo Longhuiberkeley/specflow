@@ -24,7 +24,7 @@ items:
     severity: warning
 
   - id: CKL-GATE-005-04
-    check: "No suspect flags unresolved on implemented artifacts"
+    check: "Fingerprints are current (stale body hashes are reported, not the suspect flag)"
     automated: true
     script: "specflow artifact-lint --type fingerprints"
     severity: warning

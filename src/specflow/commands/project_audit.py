@@ -169,7 +169,9 @@ _AUD_OUTPUT_TYPES = frozenset({"challenge", "audit"})
 # findings, and the non-artifact input signature now folds in the learned
 # PREV files (.specflow/checklists/learned/) — a `patterns update` repair must
 # clear the row on the next run instead of replaying it from cache.
-_CACHE_GENERATION = 8
+# gen 9 (STORY-748): _severity_rank ranks the "warning" spelling with "warn"
+# (it ranked as info), so a grouped CHL's severity can change.
+_CACHE_GENERATION = 10
 
 # Audit-relevant frontmatter fields folded into the project cache fingerprint
 # (gen 5). The body fingerprint captures content drift; these are the STABLE
@@ -696,6 +698,14 @@ def _cross_cutting_analysis(
                     baseline_findings.append({
                         "severity": "info",
                         "message": f"{fp['id']}: content changed (fingerprint drift)",
+                    })
+                for rn in diff.get("renumbered", []):
+                    baseline_findings.append({
+                        "severity": "info",
+                        "message": (
+                            f"{rn['old']}: renumbered to {rn['new']} "
+                            f"(matched by {rn['matched_by']})"
+                        ),
                     })
                 for rm in diff.get("removed", []):
                     baseline_findings.append({
@@ -1601,7 +1611,9 @@ def _finding_category(f: dict[str, str]) -> str:
 
 
 def _severity_rank(s: str) -> int:
-    return {"error": 2, "warn": 1}.get(s, 0)
+    # Both spellings reach this ranker (core/findings.py maps the vocabulary);
+    # "warning" used to fall through to 0 and rank as info.
+    return {"error": 2, "blocking": 2, "warn": 1, "warning": 1}.get(s, 0)
 
 
 def _group_findings_to_chls(findings: list[dict[str, str]]) -> list[TechniqueFinding]:

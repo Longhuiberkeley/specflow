@@ -9,9 +9,10 @@ links:
   role: derives_from
 created: '2026-05-04'
 modified: '2026-10-08'
-fingerprint: sha256:34da9eef4d92
+fingerprint: sha256:5a212e6493ab
 thinking_techniques:
 - assumption_surfacing
+version: 1
 ---
 
 # File Traceability Layer
@@ -33,6 +34,8 @@ src/specflow/lib/artifacts.py           — Updated render to include output_fil
 1. **Schema Extension**: Adds `output_files` to the `optional_fields` list in ARCH, DDD, and STORY schemas. The field holds a list of path strings, resolved relative to the project root.
 
 2. **File Existence Verifier**: New lint check that reads `output_files` from artifact frontmatter. For each entry: if it contains glob characters (`*`, `?`, `[`), skip the check; otherwise, verify the file exists relative to the project root.
+
+> Amended 2026-10-18 (SPIKE-008 R1-033): globs are expanded, and one that matches nothing emits `output-files/glob-empty` (commands/artifact_lint.py:1347). The helpers are `files_lib.literal_missing`, `glob_entries` and `expand_output_files`; `validate_output_files` and `parse_output_files` do not exist. `--output-files` replaces the list and `''` clears it.
 
 3. **CLI Update Flag**: Extends `specflow update <ID>` with `--output-files` flag accepting a comma-separated list of paths. Parses and writes to the artifact's frontmatter.
 

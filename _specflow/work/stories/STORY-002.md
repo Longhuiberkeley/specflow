@@ -27,13 +27,13 @@ links:
   role: verified_by
 created: '2026-04-11'
 modified: '2026-04-22'
-fingerprint: sha256:e6c357dd6dd6
+fingerprint: sha256:7132cc977d7c
 checklists_applied:
 - checklist: check-STORY-002
   timestamp: '2026-04-11T13:45:49Z'
 - checklist: check-STORY-002
   timestamp: '2026-04-14T17:03:22Z'
-version: 1
+version: 2
 output_files:
 - tests/test_reverse_impact.py
 ---
@@ -42,17 +42,19 @@ output_files:
 
 ## Description
 
-Implement the specflow impact CLI command that reads impact-log events and artifact state to display unresolved suspect flags with source lineage, and allows resolving individual flags after review.
+Implement the specflow change-impact CLI command that reads impact-log events and artifact state to display unresolved suspect flags with source lineage, and allows resolving individual flags after review.
 
 ## Acceptance Criteria
 
-1. Given 3 artifacts with suspect: true (flagged from 2 different source changes), when running specflow impact, then the output groups suspects by source artifact, shows each suspect's link role, displays the oldest unresolved flag age, and suggests the resolve command
+1. Given 3 artifacts with suspect: true (flagged from 2 different source changes), when running specflow change-impact, then the output groups suspects by source artifact, shows each suspect's link role, displays the oldest unresolved flag age, and suggests the resolve command
 
-2. Given ARCH-001 has suspect: true from a change to REQ-001, when running specflow impact --resolve ARCH-001, then ARCH-001's suspect is set to false, the impact-log event is updated with resolved: true, resolved_by and resolved_at fields, and subsequent specflow impact output no longer shows ARCH-001
+2. Given ARCH-001 has suspect: true from a change to REQ-001, when running specflow change-impact --resolve ARCH-001, then ARCH-001's suspect is set to false, the impact-log event is updated with resolved: true, resolved_by and resolved_at fields, and subsequent specflow change-impact output no longer shows ARCH-001
 
-3. Given no unresolved suspect flags exist, when running specflow impact, then the output shows 'No unresolved suspect flags' and returns exit code 0
+3. Given no unresolved suspect flags exist, when running specflow change-impact, then the output shows 'No unresolved suspect flags' and returns exit code 0
 
-4. Given specflow impact REQ-001 is run, then only flags caused by changes to REQ-001 are shown, filtering out flags from other sources
+4. Given specflow change-impact REQ-001 is run, then only flags caused by changes to REQ-001 are shown, filtering out flags from other sources
+
+> Amended 2026-10-18 (SPIKE-008 R1-126): no `specflow impact` command exists; the command is `specflow change-impact [ID] [--resolve ID] [--flag]` (cli.py:787), and the ACs now name it.
 
 ## Out of Scope
 

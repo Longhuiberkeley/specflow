@@ -27,8 +27,8 @@ checklists_applied:
 - checklist: check-STORY-027
   timestamp: '2026-04-14T17:03:23Z'
 modified: '2026-04-22'
-fingerprint: sha256:283b8b4cca4f
-version: 1
+fingerprint: sha256:9c0476d6bc9e
+version: 2
 output_files:
 - src/specflow/commands/adopt.py
 - src/specflow/commands/locks.py
@@ -95,6 +95,8 @@ Execute the dead-code disposition from retrospective §12. Expose 5 recovery pri
 6. `rbac.check_gpg_signature` disposition is decided: either wired into the pre-commit hook or deleted with documented rationale
 
 7. Shell wrapper scripts in `scripts/` are created for each new CLI command
+
+> Amended 2026-10-18 (SPIKE-008 R1-131): per-command wrapper scripts were retired. scripts/ keeps only the repo-local artifact-lint-*.sh, change-impact.sh and checklist-run-acceptance.sh, which are not shipped.
 
 ## Out of Scope
 

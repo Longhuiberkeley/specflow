@@ -10,7 +10,7 @@ links:
 - target: REQ-003
   role: implements
 created: '2026-08-27'
-fingerprint: sha256:d2a28767e509
+fingerprint: sha256:7700c9f85813
 authorization_note: UT+IT+QT contracts created and stamped green; full suite 1421
   green; gates clean (owner-pre-authorized overnight run 2026-08-27). Listed in morning
   report.
@@ -21,7 +21,7 @@ output_files:
 - src/specflow/commands/unlock.py
 - src/specflow/lib/executor.py
 - tests/test_create_locking.py
-version: 2
+version: 3
 review_note: 'Post-implementation review (fix pass 1): stale-break now payload-reverified
   (cannot unlink a lock a concurrent acquirer just placed across the parse gap), release
   ownership-checked, PermissionError reads as live PID, docstring claims scoped honestly.
@@ -35,6 +35,9 @@ Concurrent `specflow create` calls race on next_id read→write (lib/artifacts.p
 ## Acceptance Criteria
 
 1. `acquire_lock` becomes atomic (O_CREAT|O_EXCL); check-then-write race eliminated.
+
+> Amended 2026-10-18 (SPIKE-008 R1-142): the mechanism is a unique temp file linked into place with `os.link` (lib/locks.py `_try_exclusive_create`), because O_CREAT|O_EXCL alone exposes an empty-file window; O_EXCL is only a fallback.
+
 2. A type-scoped create lock covers ID allocation, duplicate-check, file write, next_id bump, and index write inside `create_artifact` (draft-ID title branch included); released via try/finally.
 3. Stale create locks auto-break (pid liveness + age); `specflow unlock` can break type-scoped create locks.
 4. Dead `acquire_lock`/`release_lock` import in executor.py:14 cleaned up.

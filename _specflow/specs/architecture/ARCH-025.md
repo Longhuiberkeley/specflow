@@ -18,9 +18,10 @@ links:
   role: refined_by
 created: '2026-06-07'
 modified: '2026-10-08'
-fingerprint: sha256:667cabf7f862
+fingerprint: sha256:8f8f04704f99
 thinking_techniques:
 - assumption_surfacing
+version: 1
 ---
 
 # Research-aware traceability chain
@@ -28,6 +29,8 @@ thinking_techniques:
 ## Component
 
 `specflow trace` uses the link-role taxonomy from ARCH-023 to render research chains. The trace engine in `lib/artifacts.py:trace_chain` performs generic role-based traversal — no special research branch exists in the code.
+
+> Amended 2026-10-18 (SPIKE-008 R1-035): `trace` does branch: COMP, LOOP and EXPT ids route to dedicated renderers (`_render_comp`, `_render_loop`, `_render_expt`, commands/trace.py:175); every other type goes through the generic `trace_chain`.
 
 ## Structure
 

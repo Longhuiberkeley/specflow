@@ -33,7 +33,7 @@ Check the project root for platform detection markers (from `platforms.yaml`):
 | `.trae/` | `trae` | Trae |
 | `.junie/` | `junie` | Junie |
 
-Scan markers in order. If a marker exists, use that platform code. If multiple markers are found, prefer the first match (table order). `specflow init` also warns when multiple AI-host platform dirs are detected, since skills are only installed to the one you targeted. Claude Code and OpenCode share the `.claude/skills` tree, so only genuinely different hosts (Cursor, Windsurf, …) need `specflow refresh --all-platforms` to get their own copy.
+Scan markers in order. If a marker exists, use that platform code. If multiple markers are found, prefer the first match (table order) and tell the user yourself that skills install only for that host — the CLI's multi-host warning is suppressed under an explicit `--platform`, which this skill always passes. Claude Code and OpenCode share the `.claude/skills` tree (Codex and Junie share `.agents/skills`), so only genuinely different hosts (Cursor, Windsurf, …) need `specflow refresh --all-platforms` after init to get their own copy.
 
 If **no** marker is found, ask:
 
@@ -85,7 +85,7 @@ Append flags as needed:
 - `--no-ci` only if the user chose None for CI (init installs the GitHub Actions workflow by default)
 - `--force` only for an intentional clean re-initialization (backs up existing config, state, and schemas first)
 
-This scaffolds `.specflow/`, `_specflow/`, config files, schemas, checklists, and installs skill directories for the target platform. Preset-declared skills install during the same init run. When `--domain` is provided, it also persists the domain classification and attempts to generate project-level best practices (the "process booklet"). The deterministic fallback reads the configured project domain; preview the best practices with `specflow practices seed` or write them as draft BP artifacts with `specflow practices seed --create`, then check them with `specflow practices validate`.
+This scaffolds `.specflow/`, `_specflow/`, config files, schemas, checklists, and installs skill directories for the target platform. Preset-declared skills install during the same init run. When `--domain` is provided, it persists the domain classification; init does not seed best practices. Preview them with `specflow practices seed` or write them as draft BP artifacts with `specflow practices seed --create`, then check them with `specflow practices validate`.
 
 For an **already initialized** project, do not rerun full init just to receive schema updates. Preview with `specflow refresh --schemas --dry-run`; normal `--schemas` installs missing schemas and preserves changed local files, while explicit `--force` restores shipped defaults.
 
@@ -99,19 +99,19 @@ The instruction file for the chosen platform must contain the SpecFlow sentinel 
 
 #### 4b. Target instruction file
 
-The file depends on the platform: `AGENTS.md` for Claude Code, OpenCode, Codex and Junie; `.github/copilot-instructions.md` for GitHub Copilot; `.cursor/rules/specflow.md` (Cursor), `.windsurf/rules/specflow.md` (Windsurf), `.clinerules/specflow.md` (Cline), `.roo/rules/specflow.md` (Roo Code), `.qwen/rules/specflow.md` (QwenCoder), `.kiro/steering/specflow.md` (Kiro), `.kilocode/rules/specflow.md` (KiloCoder), `.trae/rules/specflow.md` (Trae).
+The file depends on the platform: `AGENTS.md` for Claude Code (which loads it only through a `CLAUDE.md` containing `@AGENTS.md`; init adds that line only when `CLAUDE.md` already exists, so on a fresh project create `CLAUDE.md` with `@AGENTS.md`), OpenCode, Codex and Junie; `.github/copilot-instructions.md` for GitHub Copilot; `.cursor/rules/specflow.md` (Cursor), `.windsurf/rules/specflow.md` (Windsurf), `.clinerules/specflow.md` (Cline), `.roo/rules/specflow.md` (Roo Code), `.qwen/rules/specflow.md` (QwenCoder), `.kiro/steering/specflow.md` (Kiro), `.kilocode/rules/specflow.md` (KiloCoder), `.trae/rules/specflow.md` (Trae).
 
 If the marker is missing (unusual), run `specflow refresh` to re-inject the block; do not paste it by hand.
 
 ### 5. Verify git hook installation
 
-The `specflow init` command installs a pre-commit hook automatically when `.git/` exists. Check the command output for:
+The `specflow init` command installs a pre-commit hook automatically when `.git/` exists, into the hooks directory git actually runs (it honors `core.hooksPath`; a hooksPath from global or system config is refused). Check the command output for:
 
 ```
-+ Installed .git/hooks/pre-commit
++ Installed <hooks-dir>/pre-commit
 ```
 
-If the project has no `.git/` directory yet, inform the user they can run `specflow hook install` after initializing git.
+An existing hook that SpecFlow does not own is left as-is and reported with `!`. If the project has no `.git/` directory yet, inform the user they can run `specflow hook install` after initializing git.
 
 ### 6. Confirm the CI workflow
 
@@ -140,7 +140,7 @@ Then recommend:
 >
 > If **brownfield** (adoption preset): "Your project is ready. Run `/specflow-adopt` to inventory your existing code and backfill an as-built baseline (forward work for new features then resumes through `/specflow-discover`). Or `/specflow-adapter` to configure CI."
 
-**Upgrade note.** After upgrading SpecFlow (`uv tool install --force git+https://github.com/Longhuiberkeley/specflow`), remind the user to run `specflow refresh` — it updates the copied skills, agent-context block, and templates in this repo without a full re-init. (SpecFlow is distributed from Git only — it is not on PyPI, where the `specflow` name belongs to an unrelated package — so install and upgrade always use the Git source.)
+**Upgrade note.** After upgrading SpecFlow (`uv tool install --force git+https://github.com/Longhuiberkeley/specflow`), remind the user to run `specflow refresh` — it updates the copied skills and agent-context block without a full re-init; add `--schemas --checklists` (and `--packs`) to receive schema, checklist and pack updates, and preview with `--dry-run`. (SpecFlow is distributed from Git only — it is not on PyPI, where the `specflow` name belongs to an unrelated package — so install and upgrade always use the Git source.)
 
 ## Rules
 
@@ -150,6 +150,5 @@ Then recommend:
 - Every choice offered to the user includes "(Recommended)" on the suggested default.
 - Platform detection should be automatic when possible. Only ask when no marker is found.
 - If the user says "skip" or "move on", accept all defaults and continue without further questions.
-- Never overwrite existing instruction file content. Only append the SpecFlow block.
+- The SpecFlow block between the sentinels is rewritten in place (idempotent when unchanged); text outside it is never touched. A re-init also re-copies the shipped skill directories.
 - The `--platform` flag must always be passed explicitly to `specflow init`.
-- Instruction injection is idempotent: if `<!-- SpecFlow section` is already present, do nothing.

@@ -7,11 +7,8 @@ pattern: 'Prevent recurrence of: Baseline ordering ignores SemVer 2.0 section 11
   and build-metadata rules (violated REQ-035) (caught by UT-124)'
 applies_to:
   tags:
-  - autoresearch
-  - logging
-  - domain-awareness
-  - quant
-  - safety
+  - baselines
+  - semver
 items:
 - id: PREV-003-01
   check: Verify that changes touching REQ-035 are exercised by UT-124 before approval.

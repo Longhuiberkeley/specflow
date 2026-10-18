@@ -24,12 +24,13 @@ links:
 - target: UT-034
   role: verified_by
 created: '2026-08-03'
-fingerprint: sha256:29ac4ed67fa9
+fingerprint: sha256:6b5ac74a122c
 output_files:
 - src/specflow/commands/verify.py
 - src/specflow/lib/verification.py
 - tests/test_verify.py
 modified: '2026-08-04'
+version: 1
 ---
 
 # Verification arc: specflow verify + verify_run_* evidence + entry-point sync
@@ -38,9 +39,12 @@ The evidence-recorder half of REQ-037 / ARCH-026.
 
 ## Scope
 
-- `specflow verify [ID|--all|--type T] [--evidence-file PATH] [--dry-run]` —
+- `specflow verify [ID|--all|--type T] [--evidence-file] [--dry-run]` —
   executes a declared `verify_command` and records `verify_run_at` +
   `verify_run_exit_code` (+ `verify_run_evidence`) on the artifact's frontmatter.
+
+> Amended 2026-10-18 (SPIKE-008 R1-046): `--evidence-file` takes no value (cli.py:929); it hashes the first file matching the artifact's `verify_evidence` field. `verify` also has `--timeout` and `--seed-prev`.
+
 - Contract fields: `verify_command`, `verify_exit_code`, `verify_evidence`
   (declared) and `verify_run_at`, `verify_run_exit_code`, `verify_run_evidence`
   (recorded by the command).

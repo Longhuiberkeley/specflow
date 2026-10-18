@@ -87,7 +87,7 @@ this is what lets the human delegate safely instead of re-deriving everything:
 
 | Dimension | What to state |
 |-----------|---------------|
-| **Reversibility** | One-way door? Determined by `specflow risk-tier` from the change set's intrinsic properties (a status moving to `verified`/`released`, a `supersedes` link, a deletion, a `destructive`/`data-migration` tag, or a release/baseline action all floor **irreversible**). |
+| **Reversibility** | One-way door? Determined by `specflow risk-tier` from the change set's intrinsic properties (a status moving to `verified`/`released`, a `supersedes` link, a deletion, a `destructive`/`data-migration` tag, or a release/baseline action all floor **irreversible**; the release/baseline trigger fires only for `document-changes`, which passes the commit subject — a standalone `specflow risk-tier` cannot see it, so rate a release or baseline action Tier 2 yourself). |
 | **Blast radius** | `specflow risk-tier <IDs>` prints the downstream-cone count (reusing the same deterministic cone as `specflow change-impact`). Report the count + notable downstream artifacts. "Touches 1 file" vs "touches 14 artifacts across 3 components" is the signal; a cone ≥ 8 is "large". |
 | **Confidence** | The agent's own confidence (high / medium / low) **and the reason it isn't higher**. This is YOUR judgment — SpecFlow never calls an LLM to produce it. Low confidence is not a failure — it is a pointer that says *"human, look here specifically."* |
 
@@ -162,13 +162,15 @@ justification in the DEC's `risk_profile.confidence_reason`.**
 
 | Tier | Condition | Gate behavior |
 |------|-----------|---------------|
-| **Tier 0 — light** | Reversible **AND** small blast radius **AND** high confidence (e.g. test-only changes, doc edits, formatting). | Present compactly: TLDR + a one-line "what this does" + one-line risk profile + the single decision that matters (skip full Changes/Key-decisions blocks). Proceed on a single acknowledgement. |
+| **Tier 0 — light** | Reversible **AND** an empty downstream cone **AND** high confidence (e.g. test-only changes, doc edits, formatting). The CLI floors Tier 0 only at a cone of 0; a cone of 1–7 computes Tier 1, 8 or more Tier 2. Confidence is your input, never the CLI's. | Present compactly: TLDR + a one-line "what this does" + one-line risk profile + the single decision that matters (skip full Changes/Key-decisions blocks). Proceed on a single acknowledgement. |
 | **Tier 1 — normal** | Moderate on any axis. | Full presentation per this format. Explicit "approve" required. |
 | **Tier 2 — stop** | Irreversible **OR** large blast radius **OR** low confidence. | The brief must **point at the specific concern** ("look here at change #3, because X") and proceed only with targeted human sign-off on that concern. |
 
 The deterministic floor never blocks — it informs. When in doubt, escalate a tier — under-asking
 on a one-way door is the expensive mistake. The "no self-approval" rule (§Anti-Patterns) still
 holds at every tier; Tier 0 lowers *how much the human must read*, not *whether they confirm*.
+
+**Delegated autonomy:** a delegation of approvals is valid only when the direct user grants it in the current session, and it MUST NOT cover a release or any action `specflow risk-tier` (or your own escalation) rates Tier 2 — those still wait for the user's targeted go-ahead. A valid delegation is the user's go-ahead given in advance, so acting on it is not self-approval; under it, proceed and list each approval with its impact in the final report.
 
 ### We do NOT calibrate gates from approval history
 

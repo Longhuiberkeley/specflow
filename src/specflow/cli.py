@@ -745,7 +745,8 @@ def _add_export_parser(subparsers):
     p = subparsers.add_parser("export", help="Export artifacts to an external format or skills to platform formats")
     # Artifact export: --adapter flag (no subcommands — see _add_import_parser)
     p.add_argument("--adapter", help="Adapter name (e.g. reqif)")
-    p.add_argument("--output", help="Path to write the exported file")
+    p.add_argument("--output", help="Artifact export: FILE to write (required with --adapter). "
+                                    "Skill export: target directory (default: .)")
     # Skill export: --format flag
     p.add_argument("--format", dest="export_format", choices=["cursor-rules", "codex-agents", "markdown"],
                    help="Export SPECFLOW skills to a platform-specific format (references/**/*.md inlined; use --output to set target dir)")
@@ -764,7 +765,8 @@ def _add_detect_parser(subparsers):
     op = sub.add_parser("orphan-code", help="Report source files not referenced by any STORY/REQ/ARCH/DDD "
                                            "(read-only; writes only with --retro-link or --adopt)")
     op.add_argument("--retro-link", dest="retro_link_target",
-                    help="Artifact ID (STORY/ARCH/DDD/REQ) to retroactively link all orphan files to")
+                    help="Artifact ID that owns output_files (any type, e.g. STORY/ARCH/DDD/REQ) "
+                         "to retroactively link all orphan files to")
     op.add_argument("--adopt", dest="adopt_target",
                     help="One-step adoption: retro-link all orphan files into ARCH's output_files AND create a backfilled STORY (tagged 'backfilled') tracing to it")
     op.add_argument("--story-title", dest="story_title",

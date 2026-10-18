@@ -26,7 +26,7 @@ specflow init [--platform PLATFORM] [--preset PRESET] [--with-types TYPES] [--no
 | `--no-ci` | Skip CI workflow installation (CI workflow is installed by default) |
 | `--domain` | Project domain (e.g., `embedded`, `api-service`, `web-app`, `quant`, `ml`) |
 | `--domain-tags` | Comma-separated domain tags (e.g., `real-time,safety-critical`) |
-| `--force` | Force a clean re-initialization (backs up existing config/state/schemas first) |
+| `--force` | Force a clean re-initialization. Backs up config, state, schemas, checklists, the findings baseline and source fingerprints to `.specflow/cache/backups/<timestamp>/` first, and keeps an existing findings baseline. |
 
 `init` also writes an empty `.specflow/findings-baseline.yaml`, so new projects start with the lint ratchet on (see [`specflow findings-baseline`](#specflow-findings-baseline)).
 
@@ -47,7 +47,7 @@ specflow refresh [--platform <code>] [--all-platforms] [--no-skills] [--no-conte
 | `--schemas` | Also update base schema files. Installs missing schemas; **preserves** schemas that have drifted from shipped defaults (prints which ones). |
 | `--checklists` | Also update base checklist templates (writes missing, repairs unparseable; preserves changed unless `--force`) |
 | `--packs` | Also refresh assets for the configured active packs |
-| `--force` | Replace drifted generated schemas, checklists, and pack skills with shipped defaults instead of preserving them (applies to `--schemas`, `--checklists`, `--packs`). |
+| `--force` | Replace drifted generated schemas, checklists, and pack skills with shipped defaults instead of preserving them (applies to `--schemas`, `--checklists`, `--packs`). Each overwritten file is first backed up under `.specflow/cache/backups/<timestamp>/`. |
 | `--dry-run` | Show what would change (new / identical / changed) without writing anything. |
 
 `--schemas` is safe by default: a schema you (or prior tooling) edited is never silently overwritten — it is preserved with an actionable hint (`run specflow refresh --schemas --force to replace`). `--force` explicitly restores shipped defaults for drifted schemas. `brief` surfaces the same drift signal as a health nag.
@@ -81,10 +81,10 @@ The working tree comes from one read-only `git status` call, bucketed relative t
 List uncovered standard clauses — clauses in `.specflow/standards/` with no REQ linking to them via `complies_with`.
 
 ```bash
-specflow standards gaps
+specflow standards gaps [--standard NAME] [--json]
 ```
 
-Always exits 0 (informational, not blocking).
+Read-only. Exits 0 when no standards are installed (neutral note) or the check succeeds, whatever the gap count; exits 1 only when the compliance check itself errors (an unknown `--standard`, or several standards installed and none named).
 
 ---
 
@@ -113,6 +113,7 @@ specflow create --from-standard CLAUSE_ID
 | `--add-link` | Append one `TARGET:ROLE` link (repeatable; dedups on target+role) — append-style parity with `update --add-link` |
 | `--body` | Markdown body content |
 | `--force` | Skip duplicate-check prompt |
+| `--skip-dedup-check` | Bypass search-before-create (non-interactive runs surface candidates and proceed without it) |
 | `--nfr-category` | NFR category — frozen vocabulary enforced at the create boundary: `functional`, `performance`, `security`, `reliability`, `usability`, `maintainability`, `scalability`, `compliance` (`functional` is the sanctioned bookkeeping value for functional REQs). The generic `update --set non_functional_category=...` path stays freeform; artifact-lint's `nfr-category` check is its typo net. |
 
 Run `specflow schema <type>` to see a type's settable fields, statuses, and transition map.
@@ -254,7 +255,7 @@ specflow verify --all --seed-prev
 |------|---------|
 | `ID` | Run one artifact's declared `verify_command`; records `verify_run_at`, `verify_run_exit_code`, `verify_run_out_hash` |
 | `--all` | Run every declared verification contract across the project in one pass |
-| `--type` | Scope to one V-model level (`unit-test`, `integration-test`, `qualification-test`, `story`) |
+| `--type` | Scope to one V-model level: `UT`, `IT`, `QT` or `STORY` (other values are rejected) |
 | `--dry-run` | Print the resolved command(s) and target artifact(s) without executing or recording |
 | `--evidence-file` | Boolean flag (no path). Resolve the first file matching the artifact's `verify_evidence` glob(s) and record its hash (`verify_run_evidence_hash`) and mtime (`verify_run_evidence_mtime`). Command stdout+stderr are summarized into `verify_run_out_hash` regardless of this flag |
 | `--timeout` | Per-command timeout in seconds (default: 600) |
@@ -273,7 +274,10 @@ Get or set the project's domain (drives domain-aware checklists and review synth
 ```bash
 specflow domain set NAME [--tag TAG]...
 specflow domain show
+specflow domain suggest
 ```
+
+`domain suggest` detects a likely domain from dependency signals; it is read-only and does not set it.
 
 | Flag | Purpose |
 |------|---------|
@@ -426,7 +430,7 @@ Advisory checks such as `dec-risk-profile` and `ac-observable` are warn-only and
 
 Two ledger-hygiene checks are warn-only too: `placeholder` (rule `placeholder/unfilled`) names any artifact past `draft` whose body, outside code, still carries the `generate-tests` placeholder; `challenge` (rule `challenge/disposition-without-reason`) names an `accepted` CHL with no `resolution`, counting only CHLs modified (else created) on or after the challenge schema's `resolution_since` date. Record the reason with `specflow update <CHL-ID> --set resolution="<reason>"`.
 
-A full run (no `--type`) is read-only and prints an `Inputs:` line (the as-of date and the source-drift store state); its exit code depends only on the repository, that date, and the committed findings baseline below. Escalating warnings not recorded in the baseline fail the run; accounting-class checks (fingerprint-drift, bp-application, dead-oracle, conflicts, quality, ac-observable, dec-risk-profile, spike staleness, placeholder, challenge disposition) never escalate (@DEC-099).
+A full run (no `--type`) is read-only and prints an `Inputs:` line (the as-of date and the source-drift store state); its exit code depends only on the repository, that date, and the committed findings baseline below. Escalating warnings not recorded in the baseline fail the run; accounting-class checks (fingerprint-drift, bp-application, dead-oracle, conflicts, quality, ac-observable, dec-risk-profile, spike staleness, story-size, wave-cycles/fan-in, placeholder, challenge disposition) never escalate (@DEC-099).
 
 ### `specflow findings-baseline`
 
@@ -478,7 +482,7 @@ specflow artifact-review [ARTIFACT_ID] [--all] [--depth {quick,normal,deep}] [--
 Full-project health review — horizontal + vertical + cross-cutting checks.
 
 ```bash
-specflow project-audit [--standard STANDARD] [--baseline BASELINE] [--quick] [--sample-pct PCT]
+specflow project-audit [--standard STANDARD] [--baseline BASELINE] [--quick] [--sample-pct PCT] [--dry-run]
 ```
 
 | Flag | Purpose |
@@ -487,6 +491,7 @@ specflow project-audit [--standard STANDARD] [--baseline BASELINE] [--quick] [--
 | `--baseline` | Drift anchor: drift compares `<baseline>` → newest release. Omitted → auto-detects the newest pair. An unknown name warns and falls back to the auto pair (never fails the audit). Anchored runs bypass the findings cache. |
 | `--quick` | Skip cross-cutting analysis (horizontal + vertical only) |
 | `--sample-pct` | Sample percentage for STORYs (default: 100) |
+| `--dry-run` | Print findings without writing the snapshot, AUD/CHL artifacts, or cache (read-only) |
 
 **Baseline naming policy.** Drift selection prefers semver-parseable baselines: with a mix of release names (`v1.13.4`) and freeform names (`snapshot`), the drift diff and evidence predecessor compare the two newest *releases*, falling back to the raw newest pair only when fewer than two names parse as semver. To keep that guarantee honest, `baseline create` enforces semver-shaped names (`v1.2`, `v1.2.3`, `v1.2.3-rc1`) and rejects freeform names with a loud error. **Consumer-visible breaking change:** automation that creates freeform-named baselines must switch to version-shaped names. Existing freeform baselines on disk are grandfathered — baselines are write-once and immutable, no migration runs — and still list/diff normally.
 
@@ -495,7 +500,7 @@ specflow project-audit [--standard STANDARD] [--baseline BASELINE] [--quick] [--
 Bidirectional requirements-traceability matrix: one row per REQ, with columns for linked ARCH, STORY, and verifying tests (UT/IT/QT). Gap markers flag empty columns per row; a footer lists orphan tests (tests with no REQ lineage).
 
 ```bash
-specflow rtm [--req ID] [--format table|markdown|csv] [--gaps]
+specflow rtm [--req ID] [--format table|markdown|csv] [--gaps] [--include-terminal]
 ```
 
 | Flag | Purpose |
@@ -503,6 +508,7 @@ specflow rtm [--req ID] [--format table|markdown|csv] [--gaps]
 | `--req` | Filter to a single REQ ID |
 | `--format` | `table` (default), `markdown`, or `csv` |
 | `--gaps` | Only show rows with at least one empty column |
+| `--include-terminal` | With `--gaps`, also list REQs in a terminal status (cancelled/deprecated/superseded) |
 
 ---
 
@@ -513,9 +519,11 @@ specflow rtm [--req ID] [--format table|markdown|csv] [--gaps]
 Create and compare immutable baseline snapshots.
 
 ```bash
-specflow baseline create TAG
+specflow baseline create TAG [--evidence]
 specflow baseline diff BASELINE_A BASELINE_B
 ```
+
+`--evidence` also writes a compliance evidence report to `.specflow/baselines/<name>-evidence.md`.
 
 Names must be semver-shaped (`v1.2`, `v1.2.3`, `v1.2.3-rc1`): freeform names are rejected at create time so drift selection always has release versions to prefer (@CHL-351). Pre-existing freeform baselines are grandfathered — baselines are write-once, so nothing on disk is migrated or rejected after the fact.
 
@@ -527,6 +535,7 @@ Drive an installed autoresearch pack from any harness. The command reads and wri
 specflow autoresearch plan --competition COMP-001 --profile
 specflow autoresearch run --competition COMP-001 [--no-start]
 specflow autoresearch status [--competition COMP-001]
+specflow autoresearch frontier [--competition COMP-001] [--json]
 specflow autoresearch review --competition COMP-001
 specflow autoresearch leaderboard [--competition COMP-001 | --all]
 specflow autoresearch log --loop LOOP-001 --status kept --metric-value 0.73 --change-category features --summary "..."
@@ -540,6 +549,7 @@ specflow autoresearch suggest-finds --loop LOOP-001
 | `plan` | Create/update a LOOP or print the setup checklist; `--profile` includes the host-run three-sample noise probe in that checklist |
 | `run` | Print the loop protocol and start a draft LOOP unless `--no-start`; refuses a second concurrent running LOOP |
 | `status` | Print COMP-level closure-readiness (goals echo, confirmed FIND count, open agenda directions, LOOP census) even when every LOOP is completed/plateaued, then LOOP readiness/budget accounting when a running or draft LOOP resolves. Exit codes: `0` clear · `3` warns (missing agenda, evidence-free streak — reassess, don't rotate) · `1`/`2` fail (no git repo, concurrent running LOOPs, budget exhausted). A prioritized direction without a `progress` note is an advisory (exit stays `0`), not a warn. |
+| `frontier` | Show the COMP research-frontier ledger (read-only); `--json` emits the full ledger |
 | `review` | Summarize all loops, experiments, and candidate findings for one competition |
 | `leaderboard` | Rank experiments for one competition or all competitions |
 | `log` | Record an experiment outcome and optional structured fields (`--set KEY=VALUE`, `--research-progress JSON`: `{evidence_ref, finding, next_decision}` with evidence_ref anchored to the EXPT) |
@@ -558,8 +568,10 @@ specflow document-changes --since GIT_REF
 Report and resolve suspect flags from change propagation.
 
 ```bash
-specflow change-impact [ARTIFACT_ID] [--resolve ARTIFACT_ID]
+specflow change-impact [ARTIFACT_ID] [--resolve ARTIFACT_ID] [--flag]
 ```
+
+Read-only unless `--resolve` or `--flag` is given. `--resolve ID` clears the suspect flag on ID and closes the impact-log events that flagged it. `--flag` marks the artifacts matched by source-file impact (files changed in the last commit) as suspect.
 
 ### `specflow defect-from-suspect`
 
@@ -687,7 +699,7 @@ specflow import --adapter reqif FILE
 Export artifacts to external formats, or SpecFlow skills to single-file platform formats.
 
 ```bash
-specflow export --adapter reqif [--output FILE]            # artifact export
+specflow export --adapter reqif --output FILE              # artifact export (--output required)
 specflow export --skills --format <fmt> [--output DIR]     # skill export
 ```
 
@@ -753,7 +765,11 @@ Update content fingerprint without triggering suspect cascade.
 
 ```bash
 specflow fingerprint-refresh [TARGET ...]
+specflow fingerprint-refresh --source [ID ...]
+specflow fingerprint-refresh --source --all
 ```
+
+`--source` works on the source-drift store instead: it seeds missing `output_files` hashes, or re-accepts the current hashes for the given IDs; `--source --all` re-accepts current hashes for every artifact.
 
 Targets are artifact IDs (preferred, like every other command) or file paths; both may be mixed and multiple targets may be given in one invocation. Each target reports its own result line; the exit code is non-zero only if *all* targets fail. With **no targets** the command is report-only: it lists stale fingerprints and exits 0 without modifying anything — a safe "what's drifted?" check that preserves the explicit-repair drift signal.
 

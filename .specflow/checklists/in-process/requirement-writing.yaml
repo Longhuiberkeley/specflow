@@ -13,7 +13,7 @@ items:
     severity: blocking
 
   - id: CKL-IP-001-02
-    check: "Every statement uses SHALL/SHOULD/MAY (normative language)"
+    check: "Requirement contains normative language (shall/should/may/must/will anywhere in the file; per-statement judgement is CKL-GATE-002-04)"
     automated: true
     script: "grep -qiE '\\b(shall|should|may|must|will)\\b' \"$1\" && exit 0 || exit 1"
     severity: blocking

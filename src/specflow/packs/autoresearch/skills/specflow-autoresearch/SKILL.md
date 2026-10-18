@@ -39,14 +39,14 @@ Every subcommand has a CLI backend. Use the CLI for deterministic operations (ar
 | `/specflow-autoresearch:log` | `specflow autoresearch log` | Log an EXPT and auto-update LOOP counters |
 | `/specflow-autoresearch:suggest-finds` | `specflow autoresearch suggest-finds` | Draft FINDs from a completed LOOP's EXPTs |
 
-For multi-competition repos, `run`, `plan`, `status`, `review`, `leaderboard` and `frontier` accept `--competition COMP-NNN` (`frontier` also `--comp`); omit it to auto-detect the single active COMP. `log` and `suggest-finds` take `--loop LOOP-NNN` instead (the COMP follows from the LOOP). `leaderboard` also accepts `--all` for a cross-COMP view.
+For multi-competition repos, `run`, `plan`, `status`, `review`, `leaderboard` and `frontier` accept `--competition COMP-NNN` (`frontier` also `--comp`); omit it to auto-detect the only COMP (whatever its status), or the single `active` one when there are several. `log` and `suggest-finds` take `--loop LOOP-NNN` instead (the COMP follows from the LOOP). `leaderboard` also accepts `--all` for a cross-COMP view.
 
 ## Context Loading (Before Execution)
 
 Before any subcommand, load the pack's current state so decisions are grounded in the artifacts, not assumptions. The CLI is the single source of truth — never reason about COMP/LOOP state from memory.
 
 ```bash
-# 1. Which COMP is active, and is a LOOP already running? (auto-detects the single active COMP)
+# 1. Which COMP is active, and is a LOOP already running? (auto-detects the only COMP, or the single active one)
 specflow autoresearch status
 specflow autoresearch status --competition COMP-NNN   # explicit when multiple COMPs exist
 
@@ -242,7 +242,7 @@ A COMP reaches `completed` only when **every entry in `COMP.goals` is either sat
 
 **No self-approval on competitions:** `COMP active → completed` is a human gate. You (and any reviewer you delegate to) may assemble the goal-by-goal disposition and present the `specflow autoresearch status` Closure-readiness block (goals echo, confirmed FIND count, open agenda directions), but only the direct user's explicit go-ahead moves the COMP to `completed` — reviewers never close COMPs, and metrics are evidence, not approval. Present the disposition and the status block, and let the user confirm or reject.
 
-`completed` is **frozen**: the leaderboard and evidence chain are immutable. Continuing research is a new LOOP on a still-active COMP, or a successor COMP (`derives_from`, FINDs carried) when the evaluation protocol changes. Never mutate `verify_command`, metric, or dataset of a completed COMP.
+`completed` is **frozen**: the leaderboard and evidence chain are immutable. The CLI does not refuse a LOOP or EXPT on a completed or paused COMP, so keeping it frozen is your rule. Continuing research is a new LOOP on a still-active COMP, or a successor COMP (`derives_from`, FINDs carried) when the evaluation protocol changes. Never mutate `verify_command`, metric, or dataset of a completed COMP.
 
 `paused` is **reversible** (`paused → active`): pausing parks a COMP without stranding it; resuming is a normal transition.
 
@@ -269,9 +269,8 @@ After a LOOP completes, draft FINDs from its EXPTs with `specflow autoresearch s
 specflow create --type finding \
   --title "Feature engineering outperforms model tuning" \
   --status draft \
-  --set competition=COMP-001 \
-  --set source_loop=LOOP-001 \
-  --set confidence=medium \
+  --set competition=COMP-001 --set source_loop=LOOP-001 --set confidence=medium \
+  --links '[{"target":"COMP-001","role":"belongs_to"},{"target":"LOOP-001","role":"condenses"}]' \
   --set summary="Tenure and usage features drove largest improvements. Model changes had minimal impact."
 ```
 

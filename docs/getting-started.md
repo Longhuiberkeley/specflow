@@ -28,7 +28,7 @@ In your project repository, invoke:
 /specflow-init
 ```
 
-The skill will ask a few questions about your project type, whether you want a standards preset, and which CI provider you use. It then scaffolds everything: directory structure, schemas, checklists, skill files, git hooks, and optionally a CI workflow.
+The skill will ask a few questions about your project type, whether you want an optional preset (e.g. `adoption` for an existing codebase), and which CI provider you use. No shipped preset is a compliance standard; if you follow one, the skill routes you to `/specflow-pack-author`. It then scaffolds everything: directory structure, schemas, checklists, skill files, git hooks, and optionally a CI workflow.
 
 What gets created:
 
@@ -41,10 +41,13 @@ _specflow/
 │   ├── unit-tests/           # UT artifacts
 │   ├── integration-tests/    # IT artifacts
 │   ├── qualification-tests/  # QT artifacts
+│   ├── reviews/              # REVIEW artifacts
+│   └── best-practices/       # BP artifacts
 └── work/
     ├── stories/              # STORY artifacts
     ├── spikes/               # SPIKE artifacts
-    └── decisions/            # DEC artifacts
+    ├── decisions/            # DEC artifacts
+    └── defects/              # DEF artifacts
 .specflow/                    # Framework internals (don't edit manually)
 .claude/skills/               # 13 skill directories (incl. the specflow-start router, specflow-doc, specflow-references)
                               # OpenCode2 reads this same tree — do not copy specflow-* into .opencode/skills
@@ -59,7 +62,7 @@ The walkthrough below assumes a greenfield project. If you're bringing an **exis
 /specflow-adopt
 ```
 
-`/specflow-adopt` inventories your current code, docs, and tests; backfills **one ARCH per component** (with `output_files` package globs linking the code) plus REQ/DDD/DEC where they add value, all tagged `backfilled` with statuses like `implemented`/`verified` that reflect reality; cuts an **as-built baseline** (`adoption-v0`); and retro-links any remaining orphan code. **STORY is not backfilled** — it's reserved for forward action and appears only when someone changes adopted code.
+`/specflow-adopt` inventories your current code, docs, and tests; backfills **one ARCH per component** (with `output_files` package globs linking the code) plus REQ/DDD/DEC where they add value, all tagged `backfilled` with statuses like `implemented`/`verified` that reflect reality; cuts an **as-built baseline** (`v0.0.0-adoption.1`); and retro-links any remaining orphan code. **STORY is not backfilled** — it's reserved for forward action and appears only when someone changes adopted code.
 
 For large repos the default strategy is **skeleton-first**: one ARCH per component across the whole project gets every component under coverage fast, then `specflow adopt status` flags which components deserve REQ (behavior) + DDD (internals) deepening. Adoption is incremental (one subsystem per pass) and resumable, surfaces conflicting sources for you to resolve, and **hands off to the normal lifecycle** — so once a subsystem is adopted, new work there flows through `/specflow-discover` → plan → execute as below. Greenfield projects skip this entirely.
 
@@ -69,9 +72,9 @@ For large repos the default strategy is **skeleton-first**: one ARCH per compone
 /specflow-discover
 ```
 
-This starts a guided conversation to capture what your system needs to do. The skill asks one question at a time, assesses readiness after each exchange, and takes the appropriate path:
+This starts a guided conversation to capture what your system needs to do. The skill assesses readiness silently after each exchange and takes the appropriate path:
 
-- **Lean path** — for simple changes (bug fixes, small features). One exchange, auto-approves a REQ + STORY.
+- **Lean path** — for simple changes (bug fixes, small features). One exchange, creates a draft REQ + STORY and asks you to approve them.
 - **Full path** — for new capabilities. Multi-exchange with domain deep-dive and cross-cutting concerns.
 
 Each REQ includes acceptance criteria written in Given/When/Then format.
@@ -156,7 +159,7 @@ The `complies_with` link provides **traceability** — "this REQ exists because 
 
 ### Workflow
 
-1. Install a standards pack (via `/specflow-init --preset` or `/specflow-pack-author`)
+1. Author a standards pack with `/specflow-pack-author` (or put your own pack in `.specflow/packs/<name>/` and run `specflow init --preset <name>`)
 2. Run `/specflow-discover` — the skill detects uncovered standard clauses and offers to scaffold REQs for them
 3. Each scaffolded REQ comes pre-populated with the clause's title, description, and a `complies_with` link
 4. Adapt the REQ text to your project's context — you own it now
@@ -165,7 +168,7 @@ Power users can check coverage directly:
 
 ```bash
 specflow standards gaps              # Show clauses with no linked REQs
-specflow create --from-standard ISO26262-3.7   # Scaffold a REQ from a specific clause
+specflow create --from-standard <clause-id>    # Scaffold a REQ from a clause in your installed pack
 ```
 
 ### Authoring Custom Standards
