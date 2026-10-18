@@ -350,7 +350,7 @@ These are the **primary user interface** — skill file invocations via `/specfl
 | `/specflow-init` | `specflow-init/` | Bootstrap project: scaffolds directories, installs skills, optional CI and standards packs. |
 | `/specflow-discover` | `specflow-discover/` | Discovery conversation (3-phase progressive disclosure with readiness assessment). Generates REQ artifacts. Adapts ceremony to ambiguity — bounded changes get lean artifacts automatically. |
 | `/specflow-plan` | `specflow-plan/` | Architecture and story breakdown discussion. Proposes architecture, design, stories. Populates `specs/` and `work/`. |
-| `/specflow-execute` | `specflow-execute/` | Orchestrates parallel subagent execution per story wave. Reports progress, handles locks, auto-commits per task. |
+| `/specflow-execute` | `specflow-execute/` | Orchestrates parallel subagent execution per story wave. Reports progress, handles locks, assembles per-story context (`specflow go` never commits — DEC-103). |
 | `/specflow-artifact-review` | `specflow-artifact-review/` | Context-specific review. Assembles criteria from artifact type + domain tags + shared + learned checklists. Runs automated then agent-judged checks. |
 | `/specflow-change-impact-review` | `specflow-change-impact-review/` | Blast-radius review of recent commits/PRs via unreviewed change records. Idempotent. |
 | `/specflow-audit` | `specflow-audit/` | Full-project periodic health check. Deterministic core with optional adversarial wings. |

@@ -1292,4 +1292,47 @@ artifacts:
     tags: []
     fingerprint: sha256:c3c44995678e
     children: []
-next_id: 155
+  UT-155:
+    id: UT-155
+    title: Unit tests for STORY-738 go context-only executor
+    status: implemented
+    tags: []
+    fingerprint: sha256:62e5ba649fbe
+    children: []
+  UT-156:
+    id: UT-156
+    title: Unit tests for STORY-739 brief working-tree helper
+    status: implemented
+    tags: []
+    fingerprint: sha256:828cdb1092d4
+    children: []
+  UT-157:
+    id: UT-157
+    title: Unit tests for STORY-740 PREV tag inheritance, patterns update/retire,
+      inert helpers
+    status: implemented
+    tags: []
+    fingerprint: sha256:be483ee08400
+    children: []
+  UT-158:
+    id: UT-158
+    title: Unit tests for STORY-741 placeholder and challenge-disposition lint checks
+    status: implemented
+    tags: []
+    fingerprint: sha256:64821a125b5f
+    children: []
+  UT-159:
+    id: UT-159
+    title: Unit tests for STORY-742 skill-catalog backstop pins
+    status: implemented
+    tags: []
+    fingerprint: sha256:25529d812e33
+    children: []
+  UT-160:
+    id: UT-160
+    title: Unit tests for STORY-743 craft-discipline and evidence-label sentence pins
+    status: implemented
+    tags: []
+    fingerprint: sha256:5fd299f5ce82
+    children: []
+next_id: 161

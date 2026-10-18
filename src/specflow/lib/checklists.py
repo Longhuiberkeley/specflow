@@ -287,7 +287,7 @@ def _load_learned_patterns(
     items: list[ChecklistItem] = []
     for pattern_path in sorted(learned_dir.glob("PREV-*.yaml")):
         data = _load_checklist_yaml(pattern_path, errors)
-        if data is None:
+        if data is None or data.get("retired") is True:  # `specflow patterns retire`
             continue
 
         applies_to = data.get("applies_to", {})

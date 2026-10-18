@@ -1812,4 +1812,68 @@ artifacts:
     tags: []
     fingerprint: sha256:19ac50f7b7b2
     children: []
-next_id: 738
+  STORY-738:
+    id: STORY-738
+    title: 'Fix DEF-020: specflow go assembles context only, never stages or commits'
+    status: verified
+    tags:
+    - core
+    - cli
+    - robustness
+    fingerprint: sha256:b0ca2cae46c0
+    children: []
+  STORY-739:
+    id: STORY-739
+    title: brief reports the uncommitted working tree and --next carries an advisory
+    status: verified
+    tags:
+    - core
+    - cli
+    - robustness
+    fingerprint: sha256:fefd1bf410b8
+    children: []
+  STORY-740:
+    id: STORY-740
+    title: 'Revive the PREV loop: tag inheritance on DEF closure, patterns update/retire,
+      prev/inert audit row, backfill'
+    status: verified
+    tags:
+    - core
+    - cli
+    - robustness
+    - review
+    fingerprint: sha256:cea2a39b1ff7
+    children: []
+  STORY-741:
+    id: STORY-741
+    title: Lint rules placeholder/unfilled and challenge/disposition-without-reason,
+      CHL resolution field, legacy placeholder cleanup
+    status: verified
+    tags:
+    - core
+    - cli
+    - robustness
+    - review
+    fingerprint: sha256:64dff80597e0
+    children: []
+  STORY-742:
+    id: STORY-742
+    title: 'Test-only: skill-catalog backstop pins (description shape, references
+      and routes resolve)'
+    status: verified
+    tags:
+    - core
+    - skills
+    fingerprint: sha256:2b06856e5fde
+    children: []
+  STORY-743:
+    id: STORY-743
+    title: Craft-discipline reference, evidence-labels extensions, severity/readiness/scope/option-brief
+      sentences, pins
+    status: verified
+    tags:
+    - core
+    - skills
+    fingerprint: sha256:c1ee5c274b10
+    children: []
+next_id: 744

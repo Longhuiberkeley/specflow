@@ -3,7 +3,7 @@ category: review
 prefix: CHL
 id_format: "CHL-\\d{3,5}$"
 required_fields: [id, title, type, status, created, severity, technique]
-optional_fields: [review_status, rationale, tags, links, modified, thinking_techniques]
+optional_fields: [review_status, rationale, resolution, tags, links, modified, thinking_techniques]
 allowed_status:
   open: []
   addressed: [open, stale]
@@ -12,3 +12,7 @@ allowed_status:
 allowed_review_status: [unreviewed, reviewed, flagged, addressed, accepted, stale]
 allowed_link_roles: [challenges, refers_to]
 directory: _specflow/specs/challenges/
+# `resolution` records why an accepted CHL was disposed; artifact-lint's
+# challenge/disposition-without-reason rule asks for it only on CHLs
+# modified (else created) on or after this date — older ones are history.
+resolution_since: '2026-10-18'

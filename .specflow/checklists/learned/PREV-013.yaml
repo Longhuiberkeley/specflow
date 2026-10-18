@@ -8,7 +8,11 @@ pattern: 'Prevent recurrence of: cascade-status proposes illegal transitions (ap
   to verified, self-loops), promotes a REQ past an unverified sibling STORY, and exits
   0 on failure (violated REQ-003) (caught by UT-130)'
 applies_to:
-  tags: []
+  tags:
+  - functional
+  - traceability
+  - impact
+  - core
 items:
 - id: PREV-013-01
   check: Verify that changes touching REQ-003 are exercised by UT-130 before approval.

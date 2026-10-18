@@ -2,6 +2,8 @@
 
 ## Definitions
 
+An agent or lens finding is `blocking` only with `measured` evidence; `inferred` evidence caps it at warning and `guess` evidence caps it at info (labels: `../../specflow-references/references/evidence-labels.md`).
+
 ### Blocking (must fix)
 
 The artifact violates a core rule and cannot proceed in its lifecycle until fixed — missing required frontmatter fields, broken links, invalid status, REQ with no acceptance criteria, implementation detail in a requirement, missing public interface in an architecture.

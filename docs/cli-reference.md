@@ -62,7 +62,7 @@ specflow status
 
 ### `specflow brief`
 
-One-call recall digest for resuming any session: project phase, inventory by category/status, open suspect flags, the next executable wave, and recent `_specflow/` changes. Deterministic aggregation of existing data — the cheap way to reconstruct project state instead of scanning every `_index.yaml` by hand.
+One-call recall digest for resuming any session: project phase, inventory by category/status, open suspect flags, the next executable wave, the uncommitted working tree, and recent `_specflow/` changes. Deterministic aggregation of existing data — the cheap way to reconstruct project state instead of scanning every `_index.yaml` by hand.
 
 ```bash
 specflow brief [--since "7 days ago"]
@@ -73,6 +73,8 @@ specflow brief [--since "7 days ago"]
 | `--since` | Window for the "recent changes" git log (default: `7 days ago`) |
 
 `brief --next` appends an unreviewed-DEC blast-radius note when one or more human-authored ADRs have no review — reporting the change-impact downstream cone as a union (an artifact downstream of several DECs counts once), computed in a single discover pass. Auto-generated change records are excluded by `dec_kind: change_record` (with tags as a backward-compatible fallback), and the Recent decisions section shows ADRs only. Quiet projects stay quiet (fires only on presence).
+
+The working tree comes from one read-only `git status` call, bucketed relative to the project root: `_specflow/` (ledger), `.specflow/` (engine state) and everything else (source). When ledger or source paths are uncommitted, `brief` prints a `⚠ Working tree` line under the Next block (counts per bucket plus up to three example paths) and `brief --next` appends one trailing advisory line: `Working tree: N uncommitted _specflow/ path(s) and M source path(s) — commit or review before shipping`. `.specflow/`-only changes, a clean tree, or a directory outside git print nothing. Exit codes are unaffected.
 
 ### `specflow standards gaps`
 
@@ -165,17 +167,16 @@ Approval is a human act: the command prints the full ID list and asks for one co
 
 ### `specflow go`
 
-Execute approved stories in parallel waves.
+Plan approved stories into dependency waves and assemble each story's context for the AI host. It never runs a story, changes its status, stages files or commits; the only write is the execution-state block in `.specflow/state.yaml`. The summary lists the stories under "Context assembled" — the implementation, `specflow update <STORY-ID> --status implemented` and any commit are yours.
 
 ```bash
-specflow go [--dry-run] [--wave WAVE] [--timeout TIMEOUT]
+specflow go [--dry-run] [--wave WAVE]
 ```
 
 | Flag | Purpose |
 |------|---------|
-| `--dry-run` | Show wave plan without executing |
-| `--wave` | Execute only a specific wave number |
-| `--timeout` | Per-story timeout in seconds (default: 600) |
+| `--dry-run` | Show the wave plan without assembling context or writing state (read-only) |
+| `--wave` | Assemble context only for this wave number |
 
 ### `specflow done`
 
@@ -292,17 +293,23 @@ BPs are traceable: `derives_from` → standards, `applies_to` → REQ/ARCH/DDD/S
 
 ### `specflow patterns`
 
-Inspect learned prevention patterns — rules extracted from artifact reviews with blocking/warning findings.
+Inspect and maintain learned prevention patterns — rules extracted from artifact reviews with blocking/warning findings and from closed DEFs.
 
 ```bash
 specflow patterns list
 specflow patterns show PATTERN_ID
+specflow patterns update PATTERN_ID --tags TAG[,TAG...]
+specflow patterns retire PATTERN_ID
 ```
 
 | Subcommand | Purpose |
 |------------|---------|
-| `list` | List all learned patterns with ID, severity, source, and check preview |
-| `show` | Print a specific pattern's full YAML (e.g., `specflow patterns show PREV-001`) |
+| `list` | List live (non-retired) learned patterns with ID, severity, source, tags, and check preview; an untagged pattern is marked inert with its repair command |
+| `show` | Print a specific pattern's full YAML, retired ones included (e.g., `specflow patterns show PREV-001`) |
+| `update` | Replace a pattern's `applies_to.tags` with exactly the comma-separated `--tags` list (e.g., `specflow patterns update PREV-003 --tags core,review`) — the CLI repair for an inert pattern |
+| `retire` | Set `retired: true`; `patterns list` and checklist assembly skip it (the file stays, so the PREV id is never reused) |
+
+A pattern matches an artifact when they share a tag; a pattern with empty tags is **inert** and never surfaces. Closing a DEF seeds a PREV tagged with the DEF's tags plus the tags of its `fails_to_meet` REQs (release tags such as `v1.17.5` excluded) and prints a WARNING with the repair command when that set is empty. `specflow project-audit` reports each inert pattern as a `prev/inert` accounting row (never changes the exit code) and `specflow brief` shows `PREV N (M inert)`.
 
 Patterns accumulate automatically during `artifact-review`. Configure learning via `config.yaml`:
 
@@ -417,7 +424,9 @@ The authoritative list of `--type` names is the command's `--help`; the ones mos
 
 Advisory checks such as `dec-risk-profile` and `ac-observable` are warn-only and never part of `--type gate`.
 
-A full run (no `--type`) is read-only and prints an `Inputs:` line (the as-of date and the source-drift store state); its exit code depends only on the repository, that date, and the committed findings baseline below. Escalating warnings not recorded in the baseline fail the run; accounting-class checks (fingerprint-drift, bp-application, dead-oracle, conflicts, quality, ac-observable, dec-risk-profile, spike staleness) never escalate (@DEC-099).
+Two ledger-hygiene checks are warn-only too: `placeholder` (rule `placeholder/unfilled`) names any artifact past `draft` whose body, outside code, still carries the `generate-tests` placeholder; `challenge` (rule `challenge/disposition-without-reason`) names an `accepted` CHL with no `resolution`, counting only CHLs modified (else created) on or after the challenge schema's `resolution_since` date. Record the reason with `specflow update <CHL-ID> --set resolution="<reason>"`.
+
+A full run (no `--type`) is read-only and prints an `Inputs:` line (the as-of date and the source-drift store state); its exit code depends only on the repository, that date, and the committed findings baseline below. Escalating warnings not recorded in the baseline fail the run; accounting-class checks (fingerprint-drift, bp-application, dead-oracle, conflicts, quality, ac-observable, dec-risk-profile, spike staleness, placeholder, challenge disposition) never escalate (@DEC-099).
 
 ### `specflow findings-baseline`
 

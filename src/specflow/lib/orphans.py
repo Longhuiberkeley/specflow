@@ -22,9 +22,11 @@ from specflow.lib import artifacts as art_lib
 from specflow.lib import files as files_lib
 
 
-# auto_commit_wave (lib/executor.py) writes commit subjects of the form:
+# Legacy wave commits (written by `specflow go` before DEC-103 removed the
+# auto-commit at v1.17.5) carry subjects of the form:
 #   "specflow: wave {n} prepared [STORY-001, STORY-002]"
-# capture_phase_output_files parses the bracketed STORY ids back out of these.
+# capture_phase_output_files still parses the bracketed STORY ids out of these
+# for history; new work is attributed via `specflow update --output-files`.
 _WAVE_COMMIT_RE = re.compile(
     r"^specflow:\s+wave\s+\d+\s+prepared\s*\[(.*)\]", re.IGNORECASE
 )
@@ -36,7 +38,7 @@ _FIELD_MARK = "\x1f"
 
 
 def parse_wave_commit_stories(subject: str) -> list[str]:
-    """Parse STORY ids embedded in an ``auto_commit_wave`` commit subject.
+    """Parse STORY ids embedded in a legacy wave-commit subject.
 
     Returns the parsed ids (e.g. ``["STORY-001", "STORY-002"]``), or an empty
     list when ``subject`` is not a wave-commit. Pure function so it is unit-
@@ -342,8 +344,8 @@ def capture_phase_output_files(
 
     Walks ``git log --name-only`` back to the phase-start commit (the current
     phase's ``entered`` date in ``.specflow/state.yaml``, or ``since`` when
-    given), parses the STORY ids embedded in wave-commit messages by
-    ``auto_commit_wave`` (``lib/executor.py``), and for each new/modified file
+    given), parses the STORY ids embedded in legacy wave-commit messages (``specflow
+    go`` stopped committing at v1.17.5, DEC-103), and for each new/modified file
     within the ``scan_source_files`` scope that is not already referenced,
     appends it to the owning STORY's ``output_files`` via :func:`retro_link`.
 

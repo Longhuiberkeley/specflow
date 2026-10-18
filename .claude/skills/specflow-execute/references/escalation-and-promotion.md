@@ -41,7 +41,7 @@ specflow create --type architecture --title "Market-data ingestion module" \
 specflow update REQ-0NN --add-link ARCH-0NN:refined_by
 
 # 3. If it has non-trivial internal logic (state, transforms, protocol, retries),
-#    add a DDD (see the plan skill's references/ddd-selection.md for the 6-question test),
+#    add a DDD (see ../../specflow-plan/references/ddd-selection.md for the 6-question test),
 #    linked from its ARCH in the same direction.
 specflow create --type detailed-design --title "Klines backfill + rate-limit handling" \
   --status approved \

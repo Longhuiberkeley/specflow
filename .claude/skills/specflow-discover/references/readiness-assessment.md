@@ -30,6 +30,8 @@ After each user message, re-evaluate. As soon as threshold is met:
 - If within the **first exchange** (first user message after your opening question): lean path.
 - If after **multiple exchanges**: full path, but skip already-answered questions.
 
+An irreversible change or a large blast radius (auth, data migration, public interface, safety) forces the full path regardless of exchange count; when unsure, take the full path.
+
 ## Escalating a SPIKE into specs
 
 This assessment chooses lean-vs-full for *new* requirements. A separate, common case is when a **SPIKE** (or ad-hoc chat work) produces something durable — a reusable component, an interface, or a second-pass iteration. That work should be **promoted** into permanent artifacts rather than left in a closed spike. Apply the Permanence Test and follow `../../specflow-execute/references/escalation-and-promotion.md` for the promotion recipe.

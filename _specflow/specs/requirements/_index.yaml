@@ -607,4 +607,24 @@ artifacts:
     tags: []
     fingerprint: sha256:b67b434e0a8a
     children: []
-next_id: 67
+  REQ-067:
+    id: REQ-067
+    title: 'Deterministic robustness signals: honest go, working-tree-aware brief,
+      live PREV loop, placeholder and disposition lint'
+    status: verified
+    tags:
+    - core
+    - cli
+    - robustness
+    fingerprint: sha256:60d8b669aa9a
+    children: []
+  REQ-068:
+    id: REQ-068
+    title: Craft-discipline and evidence-contract extensions in lifecycle skills
+    status: verified
+    tags:
+    - core
+    - skills
+    fingerprint: sha256:27fd15fc4fd2
+    children: []
+next_id: 69

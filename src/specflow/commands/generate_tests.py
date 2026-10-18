@@ -20,6 +20,11 @@ TEST_TYPE_NAMES = {
     "detailed-design": "unit-test",
 }
 
+# The one placeholder the generator writes when a spec has no acceptance
+# criteria to derive cases from. `artifact-lint` matches this constant (the
+# ``placeholder/unfilled`` rule, REQ-067 OBL-4), never a hand-copied string.
+PLACEHOLDER_TEST_CASES = "TODO: Define test cases"
+
 TEST_LEVEL_LABELS = {
     "requirement": "Qualification Test",
     "architecture": "Integration Test",
@@ -91,7 +96,7 @@ def _build_test_body(art: art_lib.Artifact, test_level: str) -> str:
         lines.append("")
     else:
         lines.append("## Test Cases\n")
-        lines.append("- [ ] TODO: Define test cases\n")
+        lines.append(f"- [ ] {PLACEHOLDER_TEST_CASES}\n")
 
     return "\n".join(lines)
 

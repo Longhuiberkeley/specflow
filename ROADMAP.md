@@ -4,6 +4,11 @@ SpecFlow ships incrementally. This document tracks what shipped in each release,
 
 For the original implementation plan (phase breakdown, dependency graph — now historical, superseded by the release history below), see [docs/.archive/plan.md](docs/.archive/plan.md).
 
+## v1.17.5
+
+- **Landscape-survey adoption, increments 1+2 (DEC-103, REQ-067/068, DEF-020, STORY-738..743)** — `specflow go` never commits (DEF-020; REQ-001 §6 amended); `brief` reports the working tree and `--next` carries an advisory; the PREV loop revived (tag inheritance on DEF closure, `patterns update|retire`, `prev/inert` audit row, PREV-003..020 backfilled); `placeholder/unfilled` and `challenge/disposition-without-reason` accounting lint (CHL `resolution` field, DEC-102 T4 slice A); shared `craft-discipline.md` + evidence-labels verdict states / untrusted sources / rationalizations; skill-catalog test pins. 30 stacks surveyed; personas, modes, external state, model routing and LLM-scored gates rejected on record.
+- **Next (v1.17.6):** framing a fuzzy idea inside `/specflow-discover` (go / clarify / kill DEC), narrowing the docs/comparison.md positioning. **Recorded candidates after that:** code-diff review core (`artifact-review --diff <base>`), host turn-end hooks (still under the per-harness deferral). DEC-102 T1/T3/T4-B/T6 stay parked.
+
 ## v1.17.4
 
 - **pstack-derived craft layer (DEC-102, REQ-065/066, STORY-736/737)** — Track 2: lint negative fixtures (every `artifact-lint` rule id provably trips a fixture; rule ids enumerated from source; both-directions coverage). Track 5: the evidence-label contract (`measured` / `inferred` / `guess` in-sentence, citation integrity, consumer-and-maintainer impact first, run deterministic checks instead of describing them), pointed to from execute / artifact-review / ship. Test-only + prose-only; no engine change.

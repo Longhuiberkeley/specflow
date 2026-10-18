@@ -222,6 +222,7 @@ def _knowledge_summary(root: Path, artifacts: list[art_lib.Artifact]) -> dict:
         "bp_total": len(bps),
         "bp_by_status": bp_by_status,
         "prev_count": len(prevs),
+        "prev_inert": sum(1 for p in prevs if learn_lib.is_inert(p)),
         "find_count": len(finds),
         "chl_open": chl_open,
         "chl_done": chl_done,
@@ -282,6 +283,87 @@ def _last_ledger_commit(root: Path) -> str:
     if result.returncode != 0:
         return ""
     return result.stdout.strip()
+
+
+def _working_tree(root: Path) -> dict[str, list[str]] | None:
+    """Uncommitted paths under `root`, bucketed (STORY-739, REQ-067 OBL-2).
+
+    Returns ``{"ledger": [...], "source": [...], "engine": [...]}`` — paths
+    relative to `root`: ``_specflow/`` is the ledger, ``.specflow/`` is engine
+    state (informational only), everything else is source. Returns None
+    outside git or on any git failure. One read-only git call: short format
+    honours ``status.relativePaths`` (porcelain is always repo-root-relative,
+    which would misbucket a project nested in a larger repo), ``-- .`` drops
+    paths outside the project, and ``--no-optional-locks`` keeps the digest
+    from taking ``index.lock`` while another agent runs git. A repository
+    with no commit yet (unborn HEAD) also returns None: before the first
+    commit every path is "uncommitted", which is setup, not drift.
+    """
+    try:
+        head = subprocess.run(
+            ["git", "rev-parse", "--verify", "-q", "HEAD"],
+            cwd=str(root), capture_output=True, text=True, timeout=15, check=False,
+        )
+        if head.returncode != 0:
+            return None
+        result = subprocess.run(
+            ["git", "--no-optional-locks",
+             "-c", "color.status=false", "-c", "status.relativePaths=true",
+             "-c", "core.quotePath=false",
+             "status", "--short", "--untracked-files=all", "--", "."],
+            cwd=str(root), capture_output=True, text=True, timeout=15, check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if result.returncode != 0:
+        return None
+    buckets: dict[str, list[str]] = {"ledger": [], "source": [], "engine": []}
+    for line in result.stdout.splitlines():
+        if len(line) < 4:
+            continue
+        path = line[3:]
+        if " -> " in path:
+            path = path.split(" -> ", 1)[1]
+        path = path.strip()
+        if len(path) >= 2 and path.startswith('"') and path.endswith('"'):
+            path = path[1:-1]
+        while path.startswith("./"):
+            path = path[2:]
+        if not path:
+            continue
+        head = path.split("/", 1)[0]
+        if head == "_specflow":
+            buckets["ledger"].append(path)
+        elif head == ".specflow":
+            buckets["engine"].append(path)
+        else:
+            buckets["source"].append(path)
+    return buckets
+
+
+def _working_tree_advisory(tree: dict[str, list[str]] | None) -> str:
+    """The one-line `brief --next` advisory, or '' when ledger and source are clean."""
+    if not tree or not (tree["ledger"] or tree["source"]):
+        return ""
+    return (
+        f"Working tree: {len(tree['ledger'])} uncommitted _specflow/ path(s) and "
+        f"{len(tree['source'])} source path(s) — commit or review before shipping"
+    )
+
+
+def _working_tree_line(tree: dict[str, list[str]] | None) -> str:
+    """Rendered-brief summary: counts per bucket + up to three example paths.
+
+    '' when ledger and source are clean — `.specflow/`-only engine churn
+    (caches, fingerprints) stays silent.
+    """
+    if not tree or not (tree["ledger"] or tree["source"]):
+        return ""
+    parts = [f"{len(tree['ledger'])} _specflow/", f"{len(tree['source'])} source"]
+    if tree["engine"]:
+        parts.append(f"{len(tree['engine'])} .specflow/ (engine)")
+    examples = (tree["ledger"] + tree["source"])[:3]
+    return f"{' · '.join(parts)} uncommitted — e.g. {', '.join(examples)}"
 
 
 def _recent_changes(root: Path, since: str) -> list[str]:
@@ -1205,9 +1287,17 @@ def run(root: Path, args: dict[str, Any]) -> int:
         state.get("history", []),
     )
 
+    # STORY-739: uncommitted working tree (one git call, None outside git).
+    tree = _working_tree(root)
+
     # --next: emit only the deterministic next-skill recommendation and stop.
+    # The working-tree advisory is its own trailing line, never folded into
+    # `recommendation` (the rendered brief splits that into the → Next block).
     if args.get("next"):
         print(recommendation)
+        advisory = _working_tree_advisory(tree)
+        if advisory:
+            print(advisory)
         return 0
 
     docs_sum = _docs_summary(root)
@@ -1228,6 +1318,9 @@ def run(root: Path, args: dict[str, Any]) -> int:
         print(f"    {ln}")
     if next_wave:
         print(f"  {BOLD}In-scope (next wave){NC}: {', '.join(next_wave)}")
+    wt_line = _working_tree_line(tree)
+    if wt_line:
+        print(f"  {YELLOW}⚠ Working tree{NC}: {wt_line}")
 
     print(f"\n  {BOLD}Inventory{NC}")
     for cat in _CATEGORY_ORDER:
@@ -1263,7 +1356,7 @@ def run(root: Path, args: dict[str, Any]) -> int:
     bp_parts = [f"{n} {s}" for s, n in sorted(knowledge["bp_by_status"].items())] or ["none"]
     print(f"\n  {BOLD}Knowledge surfaces{NC}")
     print(f"    BP {knowledge['bp_total']} ({', '.join(bp_parts)})   "
-          f"PREV {knowledge['prev_count']}   "
+          f"PREV {knowledge['prev_count']} ({knowledge['prev_inert']} inert)   "
           f"FIND {knowledge['find_count']}   "
           f"CHL {knowledge['chl_open']} open / {knowledge['chl_done']} done")
     practice_bindings = knowledge["practice_bindings"]

@@ -8,7 +8,11 @@ pattern: 'Prevent recurrence of: Allocators ignore a crashed renumber journal an
   rewritten frontmatter ids: a create before the re-run takes a journalled id, duplicates
   it, and the resume stops on a collision (violated REQ-002) (caught by UT-132)'
 applies_to:
-  tags: []
+  tags:
+  - functional
+  - core
+  - format
+  - mvp
 items:
 - id: PREV-015-01
   check: Verify that changes touching REQ-002 are exercised by UT-132 before approval.

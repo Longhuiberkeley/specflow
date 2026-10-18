@@ -1,0 +1,21 @@
+id: PREV-021
+name: 'Prevent recurrence of: specflow go stages the whole working tree and reports
+  Completed for stories it never executed (violated REQ-001)'
+discovered_from: DEF-020
+mode: reactive
+pattern: 'Prevent recurrence of: specflow go stages the whole working tree and reports
+  Completed for stories it never executed (violated REQ-001)'
+applies_to:
+  tags:
+  - core
+  - cli
+  - robustness
+  - functional
+  - mvp
+items:
+- id: PREV-021-01
+  check: Verify that changes touching REQ-001 have a regression test covering the
+    failure mode of DEF-020.
+  severity: warning
+  automated: false
+  mode: reactive

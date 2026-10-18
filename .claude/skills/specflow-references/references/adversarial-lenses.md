@@ -103,7 +103,7 @@ Each lifecycle phase has a default set of lenses applied automatically. Users ca
 | **Audit** | All 23 available | User selects via adversarial wings |
 | **Ship** | `temporal_drift`, `regulator` | +`cost_scaling` for paid services; +`premortem` if release has cross-cutting changes |
 
-> **Note on the Execute phase:** In addition to the two adversarial lenses listed above (`worst_case_user`, `composition`), the execute phase uses lightweight mental prompts (graceful degradation, partial-rollout safety, observability) that are not adversarial lenses. These are documented in `specflow-execute/references/thinking-techniques.md`. Only the two catalog lenses are recorded via `--thinking-techniques`.
+> **Note on the Execute phase:** In addition to the two adversarial lenses listed above (`worst_case_user`, `composition`), the execute phase uses lightweight mental prompts (graceful degradation, partial-rollout safety, observability) that are not adversarial lenses. These are documented in `../../specflow-execute/references/thinking-techniques.md`. Only the two catalog lenses are recorded via `--thinking-techniques`.
 
 ## Recording applied lenses
 

@@ -4,6 +4,32 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.17.5] - 2026-10-18
+
+### Highlights
+- **Landscape-survey adoption, increment 1+2 (DEC-103, REQ-067/068, DEF-020, STORY-738..743).** A 30-stack survey of AI-coding skill stacks (gstack, superpowers, spec-kit, compound-engineering, GSD, flow-next, trailofbits/skills and 23 more) was judged against AGENTS.md; what survived two independent refuters lands here. Personas, mode toggles, state outside the repo, model routing, LLM-scored gates and headless skip-permissions loops are recorded REJECTED in DEC-103 with rationale.
+- **`specflow go` never commits (DEF-020, amends REQ-001 §6).** Before this release a non-dry-run `go` ran `git add -A && git commit` per wave after a stub executor that always reported success, so it printed "Completed" for stories nobody executed and swept every uncommitted file into a "wave N prepared" commit. `go` now assembles per-story context, prints "Context assembled", and stages nothing; the dead `--timeout` flag is gone. `done`'s output_files auto-capture still parses legacy wave commits; new work is attributed through `specflow update --output-files`.
+- **`brief` sees the working tree.** A "Working tree" line buckets uncommitted paths into `_specflow/` ledger, source, and `.specflow/`-only engine state; `brief --next` appends one advisory line when ledger or source paths are uncommitted. A repository with no commit yet, a non-git directory, and `.specflow/`-only churn stay silent. Exit codes unchanged.
+- **The PREV loop is alive again.** 18 of 20 learned prevention patterns carried `applies_to.tags: []` and could never be assembled (tag matching is a set intersection). A PREV seeded on DEF closure now inherits the DEF's tags plus its `fails_to_meet` REQs' tags (release tags `^v\d` excluded) and warns when the result is empty; `specflow patterns update <PREV> --tags …` and `specflow patterns retire <PREV>` repair or retire through the CLI; `project-audit` gains an accounting `prev/inert` row; `brief` reads "PREV N (M inert)"; PREV-003..020 were backfilled through the new command (PREV 21, 0 inert). DEF-020's own closure seeded PREV-021 with inherited tags.
+- **Two accounting lint rules.** `placeholder/unfilled` warns when an artifact past `draft` still carries the test-spec generator placeholder (matched from the single constant in `generate_tests.py`; code spans and fences ignored); the 20 legacy specs that carried it now list real test cases. `challenge/disposition-without-reason` warns when an `accepted` CHL created on or after `resolution_since` (schema key, 2026-10-18) has no `resolution` — the optional field DEC-102 Track 4 slice A asked for; 90 of 94 historical accepted CHLs had a rationale identical to their title because the schema had no disposition slot. Both rule ids are registered accounting and ship with negative fixtures.
+- **Craft layer in prose (REQ-068).** One shared `specflow-execute/references/craft-discipline.md` (search→reuse→stdlib→shortest diff; never weaken validation, data-loss or security handling; no stubs; write the failing test before the step-3 baseline so the delta shows it as fixed; count pass/fail/skip; stop after two failed fixes on the same check; spill verbose output). `evidence-labels.md` gains verdict states, a "Skipped or substituted:" closing line, untrusted-source handling (pointed to from pack-author, adapter import and adopt), and a rationalizations-to-reject table, pinned at ≤95 lines. One-sentence additions: evidence caps finding severity (severity-levels), irreversible or large-blast-radius changes force the full discover path (readiness-assessment), out-of-scope problems become a DEF or follow-up (execute stop list), real structural choices get 2-3 option briefs before an ARCH (plan step 3). `verification-contracts.md` names the field the engine writes (`verify_run_out_hash`).
+- **Skill-catalog backstop (test-only).** `tests/test_reference_lint.py` now pins description shape, that every cited `references/` path and every `/specflow-*` route resolves in the shipped tree, and the core-skill count at 13.
+
+### Fixes
+- `specflow go` no longer stages or commits, and no longer reports unexecuted stories as completed (DEF-020).
+- `brief --next` no longer routes to `/specflow-ship` over an uncommitted ledger without saying so.
+- Two shipped skill citations that did not resolve were fixed (found by the new catalog pins).
+- Stale "auto-commits per task" prose in docs/architecture.md and legacy wave-commit comments in `lib/orphans.py`.
+
+### Decisions / Docs
+- DEC-103 (adopt multi-stack craft-layer and robustness practices; adopted / deferred / rejected table + attribution) approved under the owner's 2026-10-18 plan approval; REQ-067 and REQ-068 verified; STORY-738..743 verified with UT-155..160 / IT-115..120 / QT-116..121 (all `specflow verify` exit 0, moved to implemented); DEF-020 closed (seeded PREV-021); AUD-144 records the release self-audit (CLEAN, 0 errors, 61 accounting warnings). DEC-102 Tracks 1, 3, 4 slice B and 6 remain deferred; DEC-084 remains draft.
+- docs/cli-reference.md: `go` section rewritten, `patterns update|retire`, the two new lint checks, the brief working-tree line.
+- **Upgrade notes:** `_CACHE_GENERATION` 7 → 8 (learned PREVs are now a project-audit cache input). Consumer projects need a schema refresh (`specflow refresh --schemas`) to accept `resolution` on CHLs; the lint rule falls back to the 2026-10-18 constant until then. Anything that relied on `go`'s wave commit must commit itself (no known consumer did; the stub never executed work).
+
+### Tests
+- +97 (3166 → 3263): `tests/test_go_executor.py` (TestGoNeverCommits replaces TestAutoCommitWave), `tests/test_brief_working_tree.py`, `tests/test_prev_loop.py`, `tests/test_lint_placeholder_disposition.py`, two new negative fixtures, catalog pins in `tests/test_reference_lint.py`, craft/evidence/severity/readiness/scope/option-brief pins in `tests/test_core_skill_text.py`.
+- Total: 3263 tests passing (19 skipped, 1 strict xfail for DEF-014)
+
 ## [1.17.4] - 2026-10-18
 
 ### Highlights

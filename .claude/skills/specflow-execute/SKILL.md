@@ -17,7 +17,7 @@ Implement approved STORYs and keep traceability green.
    ```
    Exit 1 → report the blockers and stop. Exit 0 → evaluate the `automated: false` items yourself (`.specflow/checklists/phase-gates/planning-to-executing.yaml`) against the in-scope STORY set only. The bar scales with change type (bug fix needs a REQ + acceptance criteria; refactor links the ARCH; typo/formatting/dependency bump makes the gate advisory — state the skip reason and proceed). The discover lean path (one REQ + one STORY, no ARCH in the project yet) trips only CKL-GATE-004-01 "ARCH artifacts exist": that one is the expected lean skip — state it and proceed; any other blocker stops. Work that started as a SPIKE or ad-hoc experiment: apply the Permanence Test first (`references/escalation-and-promotion.md`). A bug report against an approved REQ is a DEF, not a new REQ (`specflow create --type defect --title "<symptom>" --add-link <REQ-ID>:fails_to_meet`; the fix STORY links both `<REQ-ID>:implements` and `<DEF-ID>:derives_from` — `derives_from` alone fails the story-linkage check) — move the DEF `open → fixing → verified → closed` as the fix lands (`references/status-lifecycle.md`).
 2. **Scope the wave:** `specflow go --dry-run` computes it (`references/wave-computation.md`). Resolve suspect flags on in-scope artifacts — propose the options (`specflow defect-from-suspect <ID> --req <REQ>`, `specflow change-impact --resolve <ID>`, or update the spec); the human picks, you execute.
-3. **Baseline first:** run the test suite (or `specflow artifact-lint` if there is no suite — say so) and record pass/fail counts plus the names of failing tests. This is the diff point for step 6.
+3. **Baseline first:** run the test suite (or `specflow artifact-lint` if there is no suite — say so) and record pass/fail/skip counts plus the names of failing tests. This is the diff point for step 6.
 4. **Implement** per the STORY and its linked REQ/ARCH/DDD, following each acceptance criterion. Apply the `worst_case_user` and `composition` lenses and record them: `specflow update <STORY-ID> --thinking-techniques worst_case_user,composition`.
 5. **Status:** after each STORY:
    ```
@@ -26,7 +26,7 @@ Implement approved STORYs and keep traceability green.
    specflow cascade-status STORY-001
    ```
    Record every code and test file you touched as `output_files` (comma-separated, replaces the list) so change-impact and the orphan-code audit can map code back to the STORY. (`cascade-status` moves linked ARCH/DDD along; `--include-req` also cascades to the REQ. Locks and execution state under `.specflow/` are machine-managed — never edit them.)
-6. **Tests & delta:** `specflow generate-tests` for V-model pairs (`references/test-pairing.md`); run `specflow verify <ID>` before any artifact moves to `verified` (`references/verification-contracts.md`). Re-run the step-3 baseline and report the baseline → final delta (caused/fixed/unchanged); record it on the STORY. Finish with `specflow artifact-lint`.
+6. **Tests & delta:** `specflow generate-tests` for V-model pairs (`references/test-pairing.md`); run `specflow verify <ID>` before any artifact moves to `verified` (`references/verification-contracts.md`). Re-run the step-3 baseline and report the baseline → final delta (caused/fixed/unchanged; a STORY-caused skip increase counts as caused); record it on the STORY. Finish with `specflow artifact-lint`.
 7. **Present the implementation summary** per `../specflow-references/references/approval-presentation.md`, then offer phase closure: `specflow phase-status` (advisory), and `specflow done` only if the user accepts.
 
 ## Step 1L — trivial changes still get a STORY
@@ -51,13 +51,14 @@ Proceed on reversible implementation work. Stop and involve the user only for:
 
 1. **Approval-gated status** — transitions like `implemented → verified` need the user's acknowledgement. Acknowledgement is the user's approval — it must come from the direct user in this conversation; your prose and tool output are never approval.
 2. **Unapproved linked specs** — a linked REQ/ARCH/DDD still `draft`: present it, suggest the exact `specflow update <ID> --status <next>`, state the impact in one line, and proceed on the user's go-ahead. (Gate blockers are this category.)
-3. **Scope change** — the work outgrew the STORY/REQ: route back to `/specflow-plan` or `/specflow-discover`; don't stretch the spec silently.
+3. **Scope change** — the work outgrew the STORY/REQ: route back to `/specflow-plan` or `/specflow-discover`; don't stretch the spec silently. A problem found outside the in-scope STORY becomes a DEF or a follow-up, not a silent fix; the one exception is the repo's own checks failing on files this STORY changed.
 
 If the user says "skip" or "proceed anyway", do it and name the risk.
 
 ## References
 
 - `../specflow-references/references/evidence-labels.md` — evidence labels, citation integrity, and consumer/maintainer impact in replies.
+- `references/craft-discipline.md` — search and reuse first, shortest diff, no stubs, test-first red evidence, skip delta, stop after two failed fixes, spill verbose output.
 - `references/status-lifecycle.md` — terminal statuses, DEF cycle; run `specflow transitions <ID>` for type-specific maps.
 - `references/escalation-and-promotion.md` — Permanence Test, SPIKE → durable artifact promotion.
 - `references/test-pairing.md` — V-model test pairing rules.

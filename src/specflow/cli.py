@@ -543,11 +543,21 @@ def _add_domain_parser(subparsers):
 
 
 def _add_patterns_parser(subparsers):
-    p = subparsers.add_parser("patterns", help="Inspect learned prevention patterns")
+    p = subparsers.add_parser("patterns", help="Inspect and maintain learned prevention patterns")
     sub = p.add_subparsers(dest="patterns_subcommand")
     sub.add_parser("list", help="List all learned patterns (read-only)")
     show_p = sub.add_parser("show", help="Show a specific pattern's full YAML (read-only)")
     show_p.add_argument("pattern_id", help="Pattern ID (e.g., PREV-001)")
+    update_p = sub.add_parser(
+        "update", help="Set a pattern's applies_to.tags (repairs an inert, untagged PREV)"
+    )
+    update_p.add_argument("pattern_id", help="Pattern ID (e.g., PREV-003)")
+    update_p.add_argument("--tags", required=True,
+                          help="Comma-separated tags, replaces the list (e.g., --tags core,review)")
+    retire_p = sub.add_parser(
+        "retire", help="Mark a pattern retired so listing and checklist assembly skip it"
+    )
+    retire_p.add_argument("pattern_id", help="Pattern ID (e.g., PREV-003)")
 
 
 def _add_update_parser(subparsers):
@@ -578,12 +588,12 @@ def _add_update_parser(subparsers):
 
 
 def _add_go_parser(subparsers):
-    p = subparsers.add_parser("go", help="Execute approved stories in parallel waves "
-                                         "(writes: runs each story and updates its status; --dry-run only shows the wave plan)")
+    p = subparsers.add_parser("go", help="Plan approved stories into dependency waves and assemble each story's context "
+                                         "(writes: execution state in .specflow/state.yaml; never runs stories, "
+                                         "changes their status, stages or commits; --dry-run only shows the wave plan)")
     p.add_argument("--dry-run", action="store_true", dest="dry_run",
-                   help="Show the wave plan without executing or updating any story (read-only with --dry-run)")
-    p.add_argument("--wave", type=int, help="Execute only a specific wave number")
-    p.add_argument("--timeout", type=int, default=600, help="Per-story timeout (default: 600)")
+                   help="Show the wave plan without assembling context or writing execution state (read-only with --dry-run)")
+    p.add_argument("--wave", type=int, help="Assemble context only for this wave number")
 
 
 def _add_done_parser(subparsers):

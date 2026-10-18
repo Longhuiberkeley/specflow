@@ -24,7 +24,7 @@ from specflow.lib.domain_constants import DOMAIN_RECOMMENDED
 # One role set with `specflow cascade-status` (STORY-697 AC3).
 from specflow.commands.cascade_status import cascade_targets
 
-CHECK_NAMES = ["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "fingerprint-drift", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "bp-application", "thinking-techniques", "autoresearch-logging", "autoresearch-comp-closure", "spike-lifecycle", "source-drift", "dec-risk-profile", "ac-observable", "nfr-category", "backfilled-links", "role-target", "dead-oracle"]
+CHECK_NAMES = ["schema", "links", "status", "status-cascade", "story-linkage", "ids", "fingerprints", "fingerprint-drift", "acceptance", "conflicts", "coverage", "story-size", "chain-report", "quality", "spec-body", "output-files", "spidr-coverage", "wave-cycles", "compliance-evidence", "bp-application", "thinking-techniques", "autoresearch-logging", "autoresearch-comp-closure", "spike-lifecycle", "source-drift", "dec-risk-profile", "ac-observable", "nfr-category", "backfilled-links", "role-target", "dead-oracle", "placeholder", "challenge"]
 
 def _emit(bucket: list, rule_id: str, subjects, severity: str, **args) -> None:
     """Record one typed finding (REQ-053 AC3) beside a check's counter.
@@ -161,6 +161,10 @@ def _run_check(
         return _check_role_targets(artifacts, root)
     elif check_name == "dead-oracle":
         return _check_dead_oracle(artifacts, root)
+    elif check_name == "placeholder":
+        return _check_placeholders(artifacts)
+    elif check_name == "challenge":
+        return _check_challenge_disposition(artifacts, schema_dir)
 
     return {"status_icon": "?", "detail": f"Unknown check: {check_name}",
             "blocking_count": 0, "warning_count": 0}
@@ -2687,6 +2691,138 @@ def _check_dead_oracle(
         detail = (
             f"Every verify_command names paths that exist ({declared} contract(s))"
             if declared else "No verify_command declared"
+        )
+    return {
+        "status_icon": icon,
+        "detail": detail,
+        "blocking_count": 0,
+        "warning_count": len(warnings),
+        "findings": findings,
+    }
+
+
+# Statuses the placeholder rule leaves alone: still being authored (draft/open)
+# or retired, where an unfilled list is history rather than a live gap.
+_PLACEHOLDER_SKIP_STATUSES = frozenset({"draft", "open"}) | _DEAD_ORACLE_SKIP_STATUSES
+
+
+def _check_placeholders(artifacts: list[art_lib.Artifact]) -> dict[str, str | int]:
+    """Warn when an artifact past ``draft`` still carries the generator placeholder.
+
+    ``specflow generate-tests`` writes ``generate_tests.PLACEHOLDER_TEST_CASES``
+    when a spec has no acceptance criteria to derive cases from; a spec that
+    moved on with it unfilled verifies nothing (REQ-067 OBL-4, STORY-741).
+    The match is that single constant — never a hand-copied string — over the
+    body with fenced blocks, indented code and inline code spans stripped, so
+    a document that *quotes* the placeholder is not flagged.
+
+    Accounting, not policing — WARNING only, a DEDICATED check (the
+    dead-oracle isolation pattern) so it never routes through
+    ``check_schema`` → project-audit's consistency lens. One finding per artifact.
+    """
+    from specflow.commands.generate_tests import PLACEHOLDER_TEST_CASES
+    from specflow.lib.docs import _strip_code
+
+    warnings: list[str] = []
+    findings: list = []
+    for art in sorted(artifacts, key=lambda a: a.id):
+        if (art.status or "") in _PLACEHOLDER_SKIP_STATUSES:
+            continue
+        if PLACEHOLDER_TEST_CASES not in _strip_code(art.body or ""):
+            continue
+        _emit(findings, "placeholder/unfilled", (art.id,), "warning")
+        warnings.append(
+            f"{art.id} ({art.status}): still carries the generator placeholder "
+            f"\"{PLACEHOLDER_TEST_CASES}\" — replace it with real test cases"
+        )
+    if warnings:
+        icon = YELLOW + "⚠" + NC
+        detail = "\n".join(f"  ⚠ {w}" for w in warnings)
+    else:
+        icon = GREEN + "✓" + NC
+        detail = "No generator placeholders past draft"
+    return {
+        "status_icon": icon,
+        "detail": detail,
+        "blocking_count": 0,
+        "warning_count": len(warnings),
+        "findings": findings,
+    }
+
+
+# Fallback for ``resolution_since`` when a project's challenge schema predates
+# the key (consumers that have not refreshed their schemas): the date the
+# optional ``resolution`` field shipped. CHLs last touched before it are history
+# and are never asked for a reason retroactively.
+CHALLENGE_RESOLUTION_SINCE = date(2026, 10, 18)
+
+
+def _as_date(value: object) -> date | None:
+    """A frontmatter/schema date (YAML ``date`` or ISO string) or ``None``."""
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
+    if isinstance(value, str):
+        try:
+            return date.fromisoformat(value.strip()[:10])
+        except ValueError:
+            return None
+    return None
+
+
+def _check_challenge_disposition(
+    artifacts: list[art_lib.Artifact],
+    schema_dir: Path,
+) -> dict[str, str | int]:
+    """Warn when an ``accepted`` CHL records no ``resolution`` (REQ-067 OBL-5).
+
+    Accepting a challenge is a disposition; without the reason the next reader
+    cannot tell a judged trade-off from a dismissed finding. Scoped forward:
+    only CHLs whose ``modified`` (else ``created``) date is on or after the
+    challenge schema's ``resolution_since`` key (fallback
+    ``CHALLENGE_RESOLUTION_SINCE``) are asked; older dispositions are history.
+
+    Accounting, not policing — WARNING only, a DEDICATED check. One finding
+    per CHL.
+    """
+    since = CHALLENGE_RESOLUTION_SINCE
+    schema_file = schema_dir / "challenge.yaml"
+    if schema_file.is_file():
+        try:
+            schema = yaml.safe_load(schema_file.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError):
+            schema = {}
+        if isinstance(schema, dict):
+            since = _as_date(schema.get("resolution_since")) or since
+
+    warnings: list[str] = []
+    findings: list = []
+    accepted = 0
+    for art in sorted(artifacts, key=lambda a: a.id):
+        if art.type != "challenge" or art.status != "accepted":
+            continue
+        fm = art.frontmatter or {}
+        touched = _as_date(fm.get("modified")) or _as_date(fm.get("created"))
+        if touched is None or touched < since:
+            continue
+        accepted += 1
+        resolution = fm.get("resolution")
+        if resolution is not None and str(resolution).strip():
+            continue
+        _emit(findings, "challenge/disposition-without-reason", (art.id,), "warning")
+        warnings.append(
+            f"{art.id}: accepted with no resolution — record why: "
+            f"specflow update {art.id} --set resolution=\"<reason>\""
+        )
+    if warnings:
+        icon = YELLOW + "⚠" + NC
+        detail = "\n".join(f"  ⚠ {w}" for w in warnings)
+    else:
+        icon = GREEN + "✓" + NC
+        detail = (
+            f"Every accepted CHL since {since.isoformat()} records a resolution ({accepted})"
+            if accepted else f"No accepted CHL since {since.isoformat()}"
         )
     return {
         "status_icon": icon,

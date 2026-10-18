@@ -897,4 +897,47 @@ artifacts:
     tags: []
     fingerprint: sha256:4a6efc8f0d5d
     children: []
-next_id: 115
+  IT-115:
+    id: IT-115
+    title: Integration test for STORY-738 go never stages or commits
+    status: implemented
+    tags: []
+    fingerprint: sha256:8339f72a6f8a
+    children: []
+  IT-116:
+    id: IT-116
+    title: Integration test for STORY-739 brief and brief --next working-tree lines
+    status: implemented
+    tags: []
+    fingerprint: sha256:333ccd9aaabe
+    children: []
+  IT-117:
+    id: IT-117
+    title: Integration test for STORY-740 prev/inert audit row and brief inert count
+    status: implemented
+    tags: []
+    fingerprint: sha256:9e7901396220
+    children: []
+  IT-118:
+    id: IT-118
+    title: Integration test for STORY-741 negative fixtures and dogfood placeholder
+      cleanup
+    status: implemented
+    tags: []
+    fingerprint: sha256:231e1b057fbe
+    children: []
+  IT-119:
+    id: IT-119
+    title: Integration test for STORY-742 shipped-tree catalog rules
+    status: implemented
+    tags: []
+    fingerprint: sha256:cc3ae04321ed
+    children: []
+  IT-120:
+    id: IT-120
+    title: Integration test for STORY-743 skill trees and budgets
+    status: implemented
+    tags: []
+    fingerprint: sha256:be7d598f09db
+    children: []
+next_id: 121

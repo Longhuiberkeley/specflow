@@ -151,4 +151,15 @@ artifacts:
     tags: []
     fingerprint: sha256:7a588f959344
     children: []
-next_id: 20
+  DEF-020:
+    id: DEF-020
+    title: specflow go stages the whole working tree and reports Completed for stories
+      it never executed
+    status: closed
+    tags:
+    - core
+    - cli
+    - robustness
+    fingerprint: sha256:71d1b7dfd389
+    children: []
+next_id: 21

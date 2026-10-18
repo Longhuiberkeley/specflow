@@ -33,6 +33,11 @@ ACCOUNTING_RULES: frozenset[str] = frozenset({
     "spike-lifecycle/stale",
     "story-size",
     "wave-cycles/fan-in",
+    # Ledger-hygiene accounting (REQ-067 OBL-4/5): an unfilled generator
+    # placeholder and an accepted CHL with no recorded reason are review
+    # signals, never debt the ratchet holds.
+    "placeholder/unfilled",
+    "challenge/disposition-without-reason",
 })
 
 # Staged rules: a test-linkage gap is a standing fact while the subject is

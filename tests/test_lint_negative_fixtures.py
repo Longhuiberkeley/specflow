@@ -329,6 +329,28 @@ def _build_dead_oracle_missing_path(root: Path) -> None:
     )
 
 
+def _build_placeholder_unfilled(root: Path) -> None:
+    from specflow.commands.generate_tests import PLACEHOLDER_TEST_CASES
+
+    write_artifact(
+        root, "UT-001", "unit-test", "Unfilled unit test", status="verified",
+        body=f"## Test Cases\n\n- [ ] {PLACEHOLDER_TEST_CASES}\n",
+    )
+
+
+def _build_challenge_disposition_without_reason(root: Path) -> None:
+    # The scaffold has no challenge schema; write the shipped shape. The writer
+    # stamps today's date, so an early horizon keeps the fixture clock-free.
+    (root / ".specflow" / "schema" / "challenge.yaml").write_text(yaml.dump({
+        "type": "challenge", "prefix": "CHL",
+        "required_fields": ["id", "title", "type", "status", "created"],
+        "optional_fields": ["resolution", "tags", "links", "modified"],
+        "allowed_status": {"open": [], "accepted": ["open"]},
+        "resolution_since": "2000-01-01",
+    }), encoding="utf-8")
+    write_artifact(root, "CHL-001", "challenge", "Accepted, no reason", status="accepted")
+
+
 def _build_output_files_missing(root: Path) -> None:
     write_artifact(
         root, "ARCH-001", "architecture", "Missing implementation output",
@@ -577,6 +599,8 @@ FIXTURES: dict[str, Callable[[Path], None]] = {
     "spec-body/headers": _build_spec_body_headers,
     "nfr-category/vocabulary": _build_nfr_category_vocabulary,
     "dead-oracle/missing-path": _build_dead_oracle_missing_path,
+    "placeholder/unfilled": _build_placeholder_unfilled,
+    "challenge/disposition-without-reason": _build_challenge_disposition_without_reason,
     "output-files/missing": _build_output_files_missing,
     "output-files/glob-empty": _build_output_files_glob_empty,
     "dec-risk-profile/missing": _build_dec_risk_profile_missing,

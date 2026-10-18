@@ -1,16 +1,17 @@
-"""`specflow go` + ``lib/executor.py`` (STORY-718).
+"""`specflow go` + ``lib/executor.py`` (STORY-718, STORY-738).
 
-The executor had zero tests although it is on the execute skill path
-(``go --dry-run`` is step 2) and its commit path runs ``git add -A``. These
+The executor is on the execute skill path (``go --dry-run`` is step 2). These
 tests cover the pure functions (wave computation, execution-state round-trip,
-subagent context assembly), ``auto_commit_wave`` inside a throwaway ``git
-init``, and the ``go --dry-run`` invariant that nothing on disk changes.
-``execute_story`` is intentionally untested: the AI host does the work.
+subagent context assembly), the ``go --dry-run`` invariant that nothing on disk
+changes, and the DEF-020 invariant that a real ``go`` run inside a throwaway
+``git init`` never stages or commits and reports "Context assembled", never
+"Completed". The AI host does the implementation work, not ``execute_story``.
 """
 
 from __future__ import annotations
 
 import hashlib
+import inspect
 import subprocess
 from pathlib import Path
 
@@ -164,41 +165,76 @@ class TestSubagentContext:
         assert 0 < len(ctx.agents_md) < executor.MAX_CONTEXT_CHARS
 
 
-# ── auto-commit ─────────────────────────────────────────────────────────────
+# ── go (non-dry-run) never stages or commits (DEF-020, REQ-067 OBL-1) ──────
 
-class TestAutoCommitWave:
+_ENGINE_STATE = ".specflow/"
+
+
+def _dirty_outside_engine_state(root: Path) -> list[str]:
+    """Porcelain lines for every path outside ``.specflow/`` (engine state).
+
+    ``go`` records its execution state in ``.specflow/state.yaml`` by design;
+    REQ-067 OBL-2 draws the same line between engine state and ledger/source
+    paths. Everything else in the tree must be byte-for-byte untouched.
+    """
+    out = _git(root, "status", "--porcelain", "--untracked-files=all").stdout
+    return [ln for ln in out.splitlines() if ln and not ln[3:].startswith(_ENGINE_STATE)]
+
+
+class TestGoNeverCommits:
     @pytest.fixture
-    def repo(self, tmp_path: Path) -> Path:
-        assert _git(tmp_path, "init", "-q").returncode == 0
-        (tmp_path / "base.txt").write_text("base\n", encoding="utf-8")
-        assert _git(tmp_path, "add", "-A").returncode == 0
-        assert _git(tmp_path, "commit", "-q", "-m", "base").returncode == 0
-        return tmp_path
+    def repo(self, tmp_path: Path, monkeypatch) -> Path:
+        for var in ("GIT_AUTHOR_EMAIL", "GIT_COMMITTER_EMAIL"):
+            monkeypatch.setenv(var, "t@example.com")
+        for var in ("GIT_AUTHOR_NAME", "GIT_COMMITTER_NAME"):
+            monkeypatch.setenv(var, "t")
+        root = tmp_path / "p"
+        root.mkdir()
+        # init before `git init` so no pre-commit hook lands in the throwaway repo
+        assert init_cmd.run(root, {"platform": "claude-code", "no_ci": True}) == 0
+        write_artifact(root, "STORY-001", "story", "First", status="approved")
+        write_artifact(root, "STORY-002", "story", "Second", status="approved",
+                       links=[{"target": "STORY-001", "role": "derives_from"}])
+        assert _git(root, "init", "-q").returncode == 0
+        assert _git(root, "add", "-A").returncode == 0
+        assert _git(root, "commit", "-q", "--no-verify", "-m", "base").returncode == 0
+        # unrelated uncommitted work: one modified tracked file, one untracked file
+        (root / "AGENTS.md").write_text("# local edit\n", encoding="utf-8")
+        (root / "scratch.py").write_text("x = 1\n", encoding="utf-8")
+        monkeypatch.chdir(root)
+        return root
 
-    def test_commits_pending_changes_with_wave_message(self, repo: Path, monkeypatch):
-        monkeypatch.setenv("GIT_AUTHOR_EMAIL", "t@example.com")
-        monkeypatch.setenv("GIT_AUTHOR_NAME", "t")
-        monkeypatch.setenv("GIT_COMMITTER_EMAIL", "t@example.com")
-        monkeypatch.setenv("GIT_COMMITTER_NAME", "t")
-        (repo / "new.py").write_text("x = 1\n", encoding="utf-8")
-        (repo / "base.txt").write_text("changed\n", encoding="utf-8")
+    def test_go_assembles_context_without_staging_or_committing(self, repo: Path, capsys):
+        head = _git(repo, "rev-parse", "HEAD").stdout.strip()
+        full_before = set(_git(repo, "status", "--porcelain", "--untracked-files=all").stdout.splitlines())
+        dirty = _dirty_outside_engine_state(repo)
+        assert dirty == [" M AGENTS.md", "?? scratch.py"]
 
-        assert executor.auto_commit_wave(repo, 1, ["STORY-001", "STORY-002"]) is True
+        assert cli.main(["go"]) == 0
+        out = capsys.readouterr().out
 
-        subject = _git(repo, "log", "-1", "--format=%s").stdout.strip()
-        assert subject == "specflow: wave 1 prepared [STORY-001, STORY-002]"
-        assert _git(repo, "status", "--porcelain").stdout.strip() == "", "everything was staged"
-        files = _git(repo, "show", "--name-only", "--format=", "HEAD").stdout.split()
-        assert sorted(files) == ["base.txt", "new.py"]
+        assert _git(repo, "rev-parse", "HEAD").stdout.strip() == head, "go must never commit"
+        assert _git(repo, "diff", "--cached", "--name-only").stdout.strip() == "", "go must never stage"
+        assert _dirty_outside_engine_state(repo) == dirty, "user's working tree is untouched"
+        full_after = set(_git(repo, "status", "--porcelain", "--untracked-files=all").stdout.splitlines())
+        assert full_after - full_before == {" M .specflow/state.yaml"}, "only the execution-state block changes"
+        assert full_before - full_after == set()
+        assert "Context assembled" in out and "STORY-001" in out and "STORY-002" in out
+        assert "Completed" not in out and "Execution Complete" not in out
 
-    def test_returns_false_when_nothing_to_commit(self, repo: Path):
-        before = _git(repo, "rev-parse", "HEAD").stdout.strip()
-        assert executor.auto_commit_wave(repo, 2, ["STORY-003"]) is False
-        assert _git(repo, "rev-parse", "HEAD").stdout.strip() == before
+    def test_executor_has_no_git_or_subprocess_path(self):
+        source = inspect.getsource(executor)
+        assert "subprocess" not in source and '"git"' not in source
 
-    def test_returns_false_outside_a_git_repository(self, tmp_path: Path):
-        (tmp_path / "f.txt").write_text("x", encoding="utf-8")
-        assert executor.auto_commit_wave(tmp_path, 1, ["STORY-001"]) is False
+
+def test_go_help_offers_no_timeout_and_claims_no_status_update(capsys):
+    with pytest.raises(SystemExit) as exc:
+        cli.main(["go", "--help"])
+    assert exc.value.code == 0
+    out = capsys.readouterr().out
+    assert "--timeout" not in out
+    assert "updates its status" not in out and "Execute" not in out
+    # the subcommand summary line is pinned in test_cli_hints (help of "go")
 
 
 # ── go --dry-run ────────────────────────────────────────────────────────────

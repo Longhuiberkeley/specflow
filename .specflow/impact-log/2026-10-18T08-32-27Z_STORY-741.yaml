@@ -1,0 +1,10 @@
+changed: STORY-741
+change_type: content_modified
+fingerprint_old: sha256:554c3da5655f
+fingerprint_new: sha256:64dff80597e0
+update_type: minor
+flagged_suspects: []
+resolved: true
+timestamp: '2026-10-18T08:32:27Z'
+resolved_by: system
+resolved_at: '2026-10-18T08:32:27Z'

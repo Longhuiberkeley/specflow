@@ -243,8 +243,10 @@ class TestFlagWiring:
         assert "close the impact-log events" in text and "only stale events are closed" in text
 
     def test_go_help_names_it_as_a_writer(self):
-        assert "updates its status" in _help_of("go")
-        assert "read-only" not in _help_of("go")  # the command itself writes
+        text = _help_of("go")
+        assert "writes: execution state" in text and "never runs stories" in text  # DEF-020
+        assert "updates its status" not in text
+        assert "read-only" not in text  # the command itself writes
 
     @pytest.mark.parametrize("path", ["go", "refresh", "verify", "project-audit"])
     def test_dry_run_flags_say_read_only(self, path):

@@ -908,4 +908,46 @@ artifacts:
     tags: []
     fingerprint: sha256:3cec075297f5
     children: []
-next_id: 116
+  QT-116:
+    id: QT-116
+    title: Qualification test for REQ-067 go assembles context only
+    status: implemented
+    tags: []
+    fingerprint: sha256:a3c014402448
+    children: []
+  QT-117:
+    id: QT-117
+    title: Qualification test for REQ-067 AC3 working-tree-aware brief
+    status: implemented
+    tags: []
+    fingerprint: sha256:4a845caca02e
+    children: []
+  QT-118:
+    id: QT-118
+    title: Qualification test for REQ-067 AC4-AC7 live PREV loop
+    status: implemented
+    tags: []
+    fingerprint: sha256:62ce213273a0
+    children: []
+  QT-119:
+    id: QT-119
+    title: Qualification test for REQ-067 AC8-AC11 placeholder and disposition lint
+    status: implemented
+    tags: []
+    fingerprint: sha256:6fe39a0dec9f
+    children: []
+  QT-120:
+    id: QT-120
+    title: Qualification test for REQ-067 skill-catalog backstop
+    status: implemented
+    tags: []
+    fingerprint: sha256:ce45d7f0c8d9
+    children: []
+  QT-121:
+    id: QT-121
+    title: Qualification test for REQ-068 craft and evidence prose
+    status: implemented
+    tags: []
+    fingerprint: sha256:d17bda8b9607
+    children: []
+next_id: 122

@@ -143,3 +143,192 @@ def test_seeded_budget_violation_fails():
     assert failures and "> budget 10" in failures[0]
     # A named exception lifts the ceiling for that file only.
     assert check_budgets([(start, 10)], {str(start.relative_to(REPO_ROOT)): 10_000}) == []
+
+
+# --- STORY-742: skill-catalog backstop pins (REQ-042 R2/R4) ----------------
+# Shipped skills install side by side (`<skills-dir>/<skill>/`), core and pack
+# alike, so cross-skill citations (`../specflow-references/...`) and routes
+# (`/specflow-<name>`) resolve against the union of both trees.
+
+CORE_SKILLS_DIR = SRC / "templates" / "skills" / "shared"
+DESCRIPTION_MAX = 160
+_FRONTMATTER = re.compile(r"\A---\n(.*?)\n---\n", re.DOTALL)
+_REF_CITE = re.compile(r"(?<![\w./-])((?:\.\./)*(?:specflow-[\w-]+/)?references/[^\s`'\")\]]+)")
+_ROUTE = re.compile(r"(?<![\w/.-])/specflow-([a-z][\w-]*)")
+_PLACEHOLDER = set("<>{}*")
+
+
+def _skill_dirs() -> dict[str, Path]:
+    """Installed skill name -> source dir (core + pack, including the
+    references-only `specflow-references` dir that holds shared references)."""
+    dirs = {p.name: p for p in sorted(CORE_SKILLS_DIR.iterdir()) if p.is_dir()}
+    for p in sorted((SRC / "packs").glob("*/skills/*")):
+        if p.is_dir():
+            dirs[p.name] = p
+    return dirs
+
+
+def _skill_text_files(skill_dirs: dict[str, Path]) -> list[tuple[Path, Path]]:
+    """(file, its skill dir) for every SKILL.md and references/**/*.md."""
+    out = []
+    for skill_dir in skill_dirs.values():
+        for path in sorted(skill_dir.glob("SKILL.md")) + sorted(skill_dir.glob("references/**/*.md")):
+            out.append((path, skill_dir))
+    return out
+
+
+def _rel(path: Path) -> str:
+    try:
+        return str(path.relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path)
+
+
+def check_descriptions(skill_md_files) -> list[str]:
+    """Frontmatter `description` is one line, <= DESCRIPTION_MAX characters
+    (unquoted), and carries no "NOT for" negation."""
+    failures = []
+    for path in skill_md_files:
+        m = _FRONTMATTER.match(path.read_text(encoding="utf-8"))
+        lines = m.group(1).splitlines() if m else []
+        idx = next((i for i, ln in enumerate(lines) if ln.startswith("description:")), None)
+        if idx is None:
+            failures.append(f"{_rel(path)}: no frontmatter description")
+            continue
+        value = lines[idx][len("description:"):].strip()
+        continued = idx + 1 < len(lines) and lines[idx + 1][:1] in (" ", "\t")
+        if value[:1] in (">", "|") or continued or not value:
+            failures.append(f"{_rel(path)}: description is not a single line")
+            continue
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+            value = value[1:-1]
+        if len(value) > DESCRIPTION_MAX:
+            failures.append(f"{_rel(path)}: description is {len(value)} chars > {DESCRIPTION_MAX}")
+        if re.search(r"\bnot for\b", value, re.IGNORECASE):
+            failures.append(f"{_rel(path)}: description carries a 'NOT for' negation")
+    return failures
+
+
+def _resolves(cite: str, path: Path, skill_dir: Path, skill_dirs: dict[str, Path]) -> bool:
+    # File-relative (`../../specflow-execute/...` from inside references/).
+    if (path.parent / cite).is_file():
+        return True
+    # Skill-root-relative: bare `references/x.md` from anywhere in the skill,
+    # and `../<skill>/...` resolved through the installed (flattened) layout.
+    parts = Path(cite).parts
+    if parts and parts[0] == "references":
+        return (skill_dir / cite).is_file()
+    if len(parts) > 2 and parts[0] == ".." and parts[1] in skill_dirs:
+        return (skill_dirs[parts[1]].joinpath(*parts[2:])).is_file()
+    # `../../<skill>/...` from a references file, via the installed layout.
+    if path.parent.name == "references" and len(parts) > 3 and parts[:2] == ("..", "..") and parts[2] in skill_dirs:
+        return (skill_dirs[parts[2]].joinpath(*parts[3:])).is_file()
+    return False
+
+
+def check_reference_paths(files, skill_dirs: dict[str, Path]) -> list[str]:
+    """Every cited `references/...` path resolves to an existing file."""
+    failures = []
+    for path, skill_dir in files:
+        for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            for m in _REF_CITE.finditer(_URL.sub("", line)):
+                cite = m.group(1).rstrip(".,;:")
+                if _PLACEHOLDER & set(cite) or not cite.endswith(".md"):
+                    continue
+                if not _resolves(cite, path, skill_dir, skill_dirs):
+                    failures.append(f"{_rel(path)}:{lineno}: unresolved reference {cite!r}")
+    return failures
+
+
+def check_routes(files, known: set[str]) -> list[str]:
+    """Every `/specflow-<name>` route names an invocable shipped skill."""
+    failures = []
+    for path in files:
+        for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            for m in _ROUTE.finditer(_URL.sub("", line)):
+                name = "specflow-" + m.group(1).rstrip("-")
+                if name not in known:
+                    failures.append(f"{_rel(path)}:{lineno}: unknown route '/{name}'")
+    return failures
+
+
+def _invocable(skill_dirs: dict[str, Path]) -> set[str]:
+    return {name for name, d in skill_dirs.items() if (d / "SKILL.md").is_file()}
+
+
+def test_skill_descriptions_are_single_short_lines():
+    files = [p for p, _ in _skill_files()]
+    assert len(files) >= 15
+    failures = check_descriptions(files)
+    assert not failures, "\n".join(failures)
+
+
+def test_cited_reference_paths_resolve():
+    skill_dirs = _skill_dirs()
+    files = _skill_text_files(skill_dirs)
+    assert len(files) > 50
+    failures = check_reference_paths(files, skill_dirs)
+    assert not failures, "\n".join(failures)
+
+
+def test_skill_routes_resolve():
+    skill_dirs = _skill_dirs()
+    known = _invocable(skill_dirs)
+    assert {"specflow-start", "specflow-adopt", "specflow-autoresearch"} <= known
+    assert "specflow-references" not in known  # reference-only, not invocable
+    failures = check_routes([p for p, _ in _skill_text_files(skill_dirs)], known)
+    assert not failures, "\n".join(failures)
+
+
+def test_core_skill_count_pinned():
+    # A 14th core skill directory (or a 13th invocable core skill) is a
+    # conscious catalog change: update this pin together with the always-on
+    # catalog, the Tier-1 table (test_cli_reference_coverage.py) and the
+    # "13 skill directories" lines in the getting-started/commands docs.
+    dirs = sorted(p.name for p in CORE_SKILLS_DIR.iterdir() if p.is_dir())
+    assert len(dirs) == 13, dirs
+    with_skill_md = [d for d in dirs if (CORE_SKILLS_DIR / d / "SKILL.md").is_file()]
+    assert len(with_skill_md) == 12, with_skill_md
+    assert set(dirs) - set(with_skill_md) == {"specflow-references"}
+
+
+def _write_skill(root: Path, name: str, frontmatter: str, body: str = "") -> Path:
+    d = root / name
+    d.mkdir(parents=True)
+    p = d / "SKILL.md"
+    p.write_text(f"---\nname: {name}\n{frontmatter}\n---\n\n{body}\n", encoding="utf-8")
+    return p
+
+
+def test_seeded_bad_descriptions_fail(tmp_path):
+    long_desc = "x" * (DESCRIPTION_MAX + 1)
+    multi = _write_skill(tmp_path, "specflow-multi", "description: >\n  Folded\n  text")
+    over = _write_skill(tmp_path, "specflow-over", f'description: "{long_desc}"')
+    neg = _write_skill(tmp_path, "specflow-neg", 'description: "Plan work. NOT for audits."')
+    ok = _write_skill(tmp_path, "specflow-ok", 'description: "Plan work."',
+                      body='description: "{body text is not frontmatter}"')
+    failures = check_descriptions([multi, over, neg, ok])
+    assert len(failures) == 3, failures
+    assert "specflow-multi" in failures[0] and "single line" in failures[0]
+    assert "specflow-over" in failures[1] and f"> {DESCRIPTION_MAX}" in failures[1]
+    assert "specflow-neg" in failures[2] and "NOT for" in failures[2]
+
+
+def test_seeded_dead_reference_fails(tmp_path):
+    skill = _write_skill(tmp_path, "specflow-a", 'description: "A."',
+                         body="See `references/nope.md` and `references/ok.md`, "
+                              "`references/<type>.md`, https://x.io/references/gone.md.")
+    (skill.parent / "references").mkdir()
+    (skill.parent / "references" / "ok.md").write_text("ok\n", encoding="utf-8")
+    failures = check_reference_paths([(skill, skill.parent)], {"specflow-a": skill.parent})
+    assert len(failures) == 1, failures
+    assert "specflow-a/SKILL.md" in failures[0] and "references/nope.md" in failures[0]
+
+
+def test_seeded_unknown_route_fails(tmp_path):
+    skill = _write_skill(tmp_path, "specflow-a", 'description: "A."',
+                         body="Route to `/specflow-a` or /specflow-nonexistent; "
+                              "path .claude/skills/specflow-ghost is not a route.")
+    failures = check_routes([skill], {"specflow-a"})
+    assert len(failures) == 1, failures
+    assert "SKILL.md" in failures[0] and "/specflow-nonexistent" in failures[0]

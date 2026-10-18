@@ -1,16 +1,20 @@
-"""Execution orchestrator: wave-based parallel story execution with context isolation."""
+"""Wave orchestrator for `specflow go`: per-story context assembly, never execution.
+
+The engine computes dependency waves and assembles an isolated context prompt
+for each ready story; the AI host does the implementation work. Nothing here
+runs a story, changes its status, stages files, or commits (DEF-020, REQ-067
+OBL-1). The only write is the execution-state block in ``.specflow/state.yaml``.
+"""
 
 from __future__ import annotations
 
-import subprocess
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 import yaml
 
-from specflow.lib.artifacts import Artifact, discover_artifacts, parse_artifact, resolve_link_target
+from specflow.lib.artifacts import Artifact, discover_artifacts
 from specflow.lib.locks import check_lock
 from specflow.lib.waves import compute_waves, filter_executable_stories
 
@@ -189,38 +193,15 @@ def load_execution_state(root: Path) -> ExecutionState | None:
     )
 
 
-def auto_commit_wave(root: Path, wave_num: int, story_ids: list[str]) -> bool:
-    """Create a git commit after a wave completes."""
-    ids_str = ", ".join(story_ids)
-    message = f"specflow: wave {wave_num} prepared [{ids_str}]"
+def execute_story(context: SubagentContext, root: Path) -> dict[str, Any]:
+    """Report a story's assembled context; the story itself is not executed.
 
-    try:
-        subprocess.run(["git", "add", "-A"], cwd=str(root), capture_output=True, check=True)
-        subprocess.run(
-            ["git", "commit", "-m", message],
-            cwd=str(root),
-            capture_output=True,
-            check=True,
-        )
-        return True
-    except (subprocess.CalledProcessError, Exception):
-        return False
+    The AI host (driven by the /specflow-execute skill) implements the story
+    from this context. ``ok`` means the context was assembled, not that any
+    work was done.
 
-
-def execute_story(
-    context: SubagentContext,
-    root: Path,
-    timeout: int = 600,
-) -> dict[str, Any]:
-    """Execute a single story using its assembled context.
-
-    In the Python CLI, this runs sequentially. The skill SKILL.md handles
-    actual parallel subagent spawning via the AI platform.
-
-    Returns {"ok": True/False, "story_id": str, "detail": str}.
+    Returns {"ok": True, "story_id": str, "detail": str, "context_prompt": str}.
     """
-    # In sequential mode, we prepare the context and report it.
-    # The actual implementation work is done by the AI agent reading the context.
     story_id = context.story.id
     return {
         "ok": True,
@@ -233,19 +214,22 @@ def execute_story(
 def run_execution(
     root: Path,
     stories: list[Artifact] | None = None,
-    timeout: int = 600,
     dry_run: bool = False,
 ) -> dict[str, Any]:
-    """Main entry point: orchestrate wave-based execution.
+    """Main entry point: compute waves and assemble each ready story's context.
+
+    Never stages or commits; the only write is the execution-state block in
+    ``.specflow/state.yaml`` (skipped with ``dry_run``).
 
     Args:
         root: Project root.
         stories: Optional pre-filtered story list. If None, loads approved stories.
-        timeout: Per-story timeout in seconds.
-        dry_run: If True, show wave plan without executing.
+        dry_run: If True, return the wave plan without assembling context.
 
     Returns:
-        Summary dict with wave results.
+        Summary dict; ``context_assembled`` lists the story ids whose context
+        was built (the persisted ``ExecutionState.completed`` field keeps its
+        legacy name).
     """
     if stories is None:
         all_stories = discover_artifacts(root, "story")
@@ -310,7 +294,7 @@ def run_execution(
             else:
                 ready.append(sid)
 
-        # Execute ready stories
+        # Assemble context for ready stories
         wave_results: list[dict[str, Any]] = []
         for sid in ready:
             story = story_index.get(sid)
@@ -322,9 +306,9 @@ def run_execution(
                 state.queued.remove(sid)
             save_execution_state(root, state)
 
-            # Build context and execute
+            # Assemble context only; the AI host does the implementation work
             context = build_subagent_context(root, story, all_artifacts)
-            result = execute_story(context, root, timeout=timeout)
+            result = execute_story(context, root)
             wave_results.append(result)
 
             if result["ok"]:
@@ -342,9 +326,6 @@ def run_execution(
 
         save_execution_state(root, state)
 
-        if ready:
-            auto_commit_wave(root, wave_num, ready)
-
         wave_summaries.append({
             "wave": wave_num,
             "executed": ready,
@@ -355,7 +336,7 @@ def run_execution(
     return {
         "ok": True,
         "total_waves": len(waves),
-        "completed": state.completed,
+        "context_assembled": state.completed,
         "failed": state.failed,
         "deferred": state.queued,
         "wave_summaries": wave_summaries,

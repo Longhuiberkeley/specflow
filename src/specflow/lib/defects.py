@@ -59,6 +59,11 @@ def on_closure(root: Path, defect_id: str) -> dict[str, Any]:
         )
         pattern["mode"] = "reactive"
         pattern["discovered_from"] = defect.id
+        # REQ-067 OBL-3: inherit matchable tags (DEF ∪ fails_to_meet REQs,
+        # minus release tags) — DEFs are usually untagged, so the DEF's own
+        # tags alone left almost every seeded PREV inert.
+        tags = learn_lib.inherited_tags(root, defect)
+        pattern["applies_to"] = {"tags": tags}
         persisted = learn_lib.persist_prevention_pattern(root, pattern)
     except Exception as exc:
         return {
@@ -67,12 +72,27 @@ def on_closure(root: Path, defect_id: str) -> dict[str, Any]:
             "defect": defect.id,
         }
 
+    pattern_id = persisted.stem
+    inert = not tags
+    repair = f"specflow patterns update {pattern_id} --tags <a,b>"
+    if inert:
+        # Accounting, never a failure: the closure already happened.
+        print(
+            f"  WARNING: {pattern_id} is inert — {defect.id} and its fails_to_meet "
+            f"REQs carry no matchable tags, so checklist assembly will never "
+            f"surface it. Repair: {repair}"
+        )
+
     return {
         "ok": True,
         "defect": defect.id,
         "broken_requirements": broken_reqs,
         "catching_tests": catching_tests,
         "pattern_path": str(persisted),
+        "pattern_id": pattern_id,
+        "tags": tags,
+        "inert": inert,
+        "repair_command": repair if inert else None,
     }
 
 

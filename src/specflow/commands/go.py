@@ -1,4 +1,7 @@
-"""CLI handler for 'specflow go' — parallel subagent execution."""
+"""CLI handler for 'specflow go' — wave planning and per-story context assembly.
+
+Never runs a story, changes its status, stages files, or commits (DEF-020).
+"""
 
 from pathlib import Path
 from typing import Any
@@ -10,9 +13,8 @@ from specflow.lib.waves import compute_waves, filter_executable_stories
 
 
 def run(root: Path, args: dict[str, Any]) -> int:
-    """Run the go command — execute approved stories in parallel waves."""
+    """Run the go command — assemble context for approved stories, wave by wave."""
     dry_run = args.get("dry_run", False)
-    timeout = args.get("timeout", 600)
     wave_filter = args.get("wave")
 
     # Load approved stories
@@ -45,27 +47,30 @@ def run(root: Path, args: dict[str, Any]) -> int:
         print(f"\n{BOLD}Execution Plan{NC} — {len(waves)} wave(s), {len(stories)} stories\n")
         for i, wave in enumerate(waves, 1):
             print(f"  Wave {i}: {', '.join(wave)}")
-        print(f"\nRun without --dry-run to execute.")
+        print("\nRun without --dry-run to assemble each story's context.")
         return 0
 
-    # Execute
-    result = run_execution(root, stories=stories, timeout=timeout, dry_run=False)
+    # Assemble context (never stages or commits)
+    result = run_execution(root, stories=stories, dry_run=False)
 
     if not result["ok"]:
-        print(f"{RED}✗ {result.get('error', 'Execution failed')}{NC}")
+        print(f"{RED}✗ {result.get('error', 'Context assembly failed')}{NC}")
         return 1
 
     # Print summary
-    completed = result.get("completed", [])
+    assembled = result.get("context_assembled", [])
     failed = result.get("failed", [])
     deferred = result.get("deferred", [])
 
-    print(f"\n{BOLD}Execution Complete{NC} — {result['total_waves']} wave(s)")
-    if completed:
-        print(f"  {GREEN}Completed{NC}: {', '.join(completed)}")
+    print(f"\n{BOLD}Context Assembly{NC} — {result['total_waves']} wave(s)")
+    if assembled:
+        print(f"  {GREEN}Context assembled{NC}: {', '.join(assembled)}")
     if failed:
         print(f"  {RED}Failed{NC}: {', '.join(failed)}")
     if deferred:
         print(f"  {YELLOW}Deferred{NC}: {', '.join(deferred)}")
+    if assembled:
+        print("  Nothing was implemented, staged or committed. Implement each story, "
+              "then: specflow update <STORY-ID> --status implemented")
 
     return 1 if failed else 0

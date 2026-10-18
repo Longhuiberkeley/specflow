@@ -1,0 +1,10 @@
+changed: IT-019
+change_type: content_modified
+fingerprint_old: sha256:8e9d99f53313
+fingerprint_new: sha256:6bed98c7c4b7
+update_type: minor
+flagged_suspects: []
+resolved: true
+timestamp: '2026-10-18T08:25:20Z'
+resolved_by: system
+resolved_at: '2026-10-18T08:25:20Z'

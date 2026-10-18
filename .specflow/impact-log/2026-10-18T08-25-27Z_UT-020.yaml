@@ -1,0 +1,10 @@
+changed: UT-020
+change_type: content_modified
+fingerprint_old: sha256:da1704e2b670
+fingerprint_new: sha256:f92b0ac53b07
+update_type: minor
+flagged_suspects: []
+resolved: true
+timestamp: '2026-10-18T08:25:27Z'
+resolved_by: system
+resolved_at: '2026-10-18T08:25:27Z'

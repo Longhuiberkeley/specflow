@@ -970,4 +970,15 @@ artifacts:
     tags: []
     fingerprint: sha256:4a2990b3d3a2
     children: []
-next_id: 103
+  DEC-103:
+    id: DEC-103
+    title: Adopt multi-stack craft-layer and robustness practices (2026-10 landscape
+      survey)
+    status: approved
+    tags:
+    - core
+    - skills
+    - robustness
+    fingerprint: sha256:68efe5d0bcdd
+    children: []
+next_id: 104

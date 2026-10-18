@@ -6,7 +6,10 @@ mode: reactive
 pattern: 'Prevent recurrence of: CI gate judges a PR by its net base-to-head diff
   and the oldest commit author (violated REQ-008) (caught by IT-089)'
 applies_to:
-  tags: []
+  tags:
+  - rbac
+  - ci
+  - adapters
 items:
 - id: PREV-004-01
   check: Verify that changes touching REQ-008 are exercised by IT-089 before approval.

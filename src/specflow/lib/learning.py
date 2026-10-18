@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 import yaml
 
-from specflow.lib.artifacts import Artifact, discover_artifacts
+from specflow.lib.artifacts import Artifact, _normalize_str_list, discover_artifacts
 from specflow.lib.config import read_config, read_state, write_state
 
 
@@ -243,8 +244,13 @@ def persist_prevention_pattern(root: Path, pattern: dict[str, Any]) -> Path:
             num += 1
 
 
-def list_learned_patterns(root: Path) -> list[dict[str, Any]]:
-    """Read all PREV-*.yaml from .specflow/checklists/learned/."""
+def list_learned_patterns(root: Path, *, include_retired: bool = False) -> list[dict[str, Any]]:
+    """Read all PREV-*.yaml from .specflow/checklists/learned/.
+
+    Retired patterns (``retired: true``, set by ``specflow patterns retire``)
+    are skipped unless ``include_retired`` — their files stay on disk so the
+    PREV number is never reused.
+    """
     learned_dir = root / ".specflow" / "checklists" / "learned"
     if not learned_dir.exists():
         return []
@@ -254,11 +260,115 @@ def list_learned_patterns(root: Path) -> list[dict[str, Any]]:
         try:
             data = yaml.safe_load(f.read_text(encoding="utf-8"))
             if isinstance(data, dict):
+                if not include_retired and is_retired(data):
+                    continue
                 patterns.append(data)
         except Exception:
             continue
 
     return patterns
+
+
+# Release tags (``v1.17``, ``v1.17.5``) mark WHEN an artifact shipped, not
+# WHAT it touches — a PREV keyed on one never matches the next release's work.
+_RELEASE_TAG = re.compile(r"^v\d")
+_PREV_ID = re.compile(r"PREV-\d+")
+
+
+def is_retired(pattern: dict[str, Any]) -> bool:
+    return pattern.get("retired") is True
+
+
+def pattern_tags(pattern: dict[str, Any]) -> list[str]:
+    """The pattern's ``applies_to.tags`` as a normalized ``list[str]``."""
+    applies_to = pattern.get("applies_to")
+    if not isinstance(applies_to, dict):
+        return []
+    return _normalize_str_list(applies_to.get("tags", []))
+
+
+def is_inert(pattern: dict[str, Any]) -> bool:
+    """A live PREV with no tags never matches an artifact (set intersection),
+    so checklist assembly can never surface it. The one shared definition used
+    by DEF closure, ``project-audit`` (prev/inert) and ``brief``."""
+    return not is_retired(pattern) and not pattern_tags(pattern)
+
+
+def inert_patterns(root: Path) -> list[dict[str, Any]]:
+    return [p for p in list_learned_patterns(root) if is_inert(p)]
+
+
+def inherited_tags(root: Path, defect: Artifact) -> list[str]:
+    """Matchable tags for a PREV seeded from ``defect`` (REQ-067 OBL-3).
+
+    The DEF's own tags plus the tags of every REQ it ``fails_to_meet``,
+    order-preserving and de-duplicated, minus release tags (``^v\\d``).
+    """
+    from specflow.lib import artifacts as art_lib
+
+    collected: list[str] = list(_normalize_str_list(defect.tags))
+    for link in defect.links:
+        if link.role != "fails_to_meet":
+            continue
+        path = art_lib.resolve_link_target(root, link.target)
+        req = art_lib.parse_artifact(path) if path else None
+        if req is not None:
+            collected.extend(_normalize_str_list(req.tags))
+    out: list[str] = []
+    for tag in collected:
+        if tag and not _RELEASE_TAG.match(tag) and tag not in out:
+            out.append(tag)
+    return out
+
+
+def _learned_pattern_path(root: Path, pattern_id: str) -> Path:
+    if not _PREV_ID.fullmatch(pattern_id or ""):
+        raise ValueError(f"'{pattern_id}' is not a PREV id (expected PREV-NNN)")
+    path = root / ".specflow" / "checklists" / "learned" / f"{pattern_id}.yaml"
+    if not path.is_file():
+        raise ValueError(f"pattern {pattern_id} not found under .specflow/checklists/learned/")
+    return path
+
+
+def _rewrite_pattern(root: Path, pattern_id: str, mutate) -> dict[str, Any]:
+    """Read-modify-write one PREV YAML under the mutation lock (atomic replace)."""
+    from specflow.lib import locks as locks_lib
+
+    with locks_lib.mutation_lock(root, holder="prev-pattern"):
+        path = _learned_pattern_path(root, pattern_id)
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        if not isinstance(data, dict):
+            raise ValueError(f"pattern {pattern_id} is not a YAML mapping")
+        mutate(data)
+        locks_lib.atomic_write(
+            path, yaml.dump(data, default_flow_style=False, sort_keys=False, allow_unicode=True)
+        )
+        return data
+
+
+def update_pattern_tags(root: Path, pattern_id: str, tags: list[str]) -> dict[str, Any]:
+    """Set a PREV's ``applies_to.tags`` to exactly ``tags`` (order kept, deduped)."""
+    clean: list[str] = []
+    for tag in tags:
+        tag = str(tag).strip()
+        if tag and tag not in clean:
+            clean.append(tag)
+    if not clean:
+        raise ValueError("at least one non-empty tag is required (empty tags leave the pattern inert)")
+
+    def _set(data: dict[str, Any]) -> None:
+        applies_to = data.get("applies_to")
+        if not isinstance(applies_to, dict):
+            applies_to = {}
+            data["applies_to"] = applies_to
+        applies_to["tags"] = clean
+
+    return _rewrite_pattern(root, pattern_id, _set)
+
+
+def retire_pattern(root: Path, pattern_id: str) -> dict[str, Any]:
+    """Mark a PREV ``retired: true``; listing and checklist assembly skip it."""
+    return _rewrite_pattern(root, pattern_id, lambda data: data.__setitem__("retired", True))
 
 
 def close_phase(root: Path) -> dict[str, Any]:

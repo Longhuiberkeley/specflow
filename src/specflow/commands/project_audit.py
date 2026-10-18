@@ -105,6 +105,12 @@ _ACCOUNTING_CONCERNS: frozenset[str] = frozenset({
     # holes. Deliberately NOT lens:general (that is the shared rule id of the
     # escalating no-ARCH/no-STORY rows — registering it would blind the gate).
     "ddd-shape",
+    # prev/inert: a learned PREV whose applies_to.tags is empty never matches
+    # an artifact, so checklist assembly can never surface it (REQ-067 OBL-3).
+    # Accounting, not policing — never escalates: a dormant prevention pattern
+    # is learning-surface bookkeeping with a one-command CLI repair
+    # (`specflow patterns update PREV-NNN --tags a,b`), not a release blocker.
+    "prev/inert",
 })
 
 
@@ -159,7 +165,11 @@ _AUD_OUTPUT_TYPES = frozenset({"challenge", "audit"})
 # STORY) and the DDD walk learned the parent-held / specified_by shapes —
 # concern classification is part of the cached findings (gen-3 doctrine), so
 # a gen-6 cache would replay the row with its old escalating treatment.
-_CACHE_GENERATION = 7
+# gen 8 (STORY-740): the prev/inert accounting lens joined the cross-cutting
+# findings, and the non-artifact input signature now folds in the learned
+# PREV files (.specflow/checklists/learned/) — a `patterns update` repair must
+# clear the row on the next run instead of replaying it from cache.
+_CACHE_GENERATION = 8
 
 # Audit-relevant frontmatter fields folded into the project cache fingerprint
 # (gen 5). The body fingerprint captures content drift; these are the STABLE
@@ -240,6 +250,7 @@ def _non_artifact_inputs_signature(root: Path) -> str:
     - standards (standards-coverage): content of ``.specflow/standards/``
     - baselines (baseline-drift): content of ``.specflow/baselines/``
     - schemas (consistency): content of ``.specflow/schema/``
+    - learned PREVs (prev/inert): content of ``.specflow/checklists/learned/``
     - source tree (orphan-code): the sorted set of ``scan_source_files`` paths
       — orphan-code depends on WHICH files exist, not their bytes, so the set
       is the exact input and content edits to code do not churn the cache.
@@ -261,6 +272,7 @@ def _non_artifact_inputs_signature(root: Path) -> str:
         ("standards", lambda: _content_sig(root, _dir_files(sd / "standards"))),
         ("baselines", lambda: _content_sig(root, _dir_files(sd / "baselines"))),
         ("schema", lambda: _content_sig(root, _dir_files(sd / "schema"))),
+        ("learned", lambda: _content_sig(root, _dir_files(sd / "checklists" / "learned"))),
         ("source", _source_sig),
     )
     parts = []
@@ -830,7 +842,42 @@ def _cross_cutting_analysis(
 
     _run_lens(results, "ac-observability", _ac_observability)
 
+    # PREV-inert lens (accounting, not policing — see _prev_inert_lens).
+    def _prev_inert() -> None:
+        prev_findings = _prev_inert_lens(root)
+        if prev_findings:
+            results.setdefault("prev/inert", []).extend(prev_findings)
+
+    _run_lens(results, "prev/inert", _prev_inert)
+
     return results
+
+
+def _prev_inert_lens(root: Path) -> list[dict[str, str]]:
+    """One warn row per live learned PREV with empty ``applies_to.tags``.
+
+    Tag matching is a set intersection, so an untagged PREV never reaches a
+    checklist — the reactive learning loop records the lesson and then never
+    applies it. Accounting, not policing — never escalates: "prev/inert" is
+    registered in ``_ACCOUNTING_CONCERNS``, so these warns never drive exit-2.
+    Retired patterns are skipped (lib/learning.is_inert is the one shared
+    definition, also used by DEF closure and ``brief``).
+    """
+    from specflow.lib import learning as learn_lib
+
+    findings: list[dict[str, str]] = []
+    for pattern in learn_lib.inert_patterns(root):
+        pid = str(pattern.get("id") or "PREV-?")
+        findings.append({
+            "severity": "warn",
+            "concern": "prev/inert",
+            "message": (
+                f"{pid}: learned pattern has no applies_to.tags — inert, checklist "
+                f"assembly never surfaces it. Repair: specflow patterns update "
+                f"{pid} --tags <a,b> (or specflow patterns retire {pid})"
+            ),
+        })
+    return findings
 
 
 def _verification_lens(artifacts: list[art_lib.Artifact]) -> list[dict[str, str]]:

@@ -25,7 +25,8 @@ the same artifact's frontmatter:
 |-------|-------------|---------|
 | `verify_run_at` | `specflow verify` | ISO-8601 timestamp of the run. Absent ⇒ the contract was declared but never executed. |
 | `verify_run_exit_code` | `specflow verify` | The actual exit code the command returned. |
-| `verify_run_evidence` | `specflow verify` | Captured output of the run (see `--evidence-file` for report files). |
+| `verify_run_out_hash` | `specflow verify` | `sha256:` hash of the run's combined stdout and stderr (the output itself is not stored). |
+| `verify_run_evidence_hash`, `verify_run_evidence_mtime` | `specflow verify --evidence-file` | Hash and modification time of the first file matching `verify_evidence`. |
 
 ## The keystone invariant — a failing run is RECORDED, never blocks
 

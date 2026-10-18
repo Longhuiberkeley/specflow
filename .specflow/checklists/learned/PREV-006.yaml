@@ -6,7 +6,9 @@ mode: reactive
 pattern: 'Prevent recurrence of: Verify-run readers disagree on the expected exit
   code (planned DEF-010) (violated REQ-037) (caught by UT-126)'
 applies_to:
-  tags: []
+  tags:
+  - verification
+  - accounting-not-policing
 items:
 - id: PREV-006-01
   check: Verify that changes touching REQ-037 are exercised by UT-126 before approval.
