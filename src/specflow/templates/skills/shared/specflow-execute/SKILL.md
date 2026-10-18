@@ -57,6 +57,7 @@ If the user says "skip" or "proceed anyway", do it and name the risk.
 
 ## References
 
+- `../specflow-references/references/evidence-labels.md` — evidence labels, citation integrity, and consumer/maintainer impact in replies.
 - `references/status-lifecycle.md` — terminal statuses, DEF cycle; run `specflow transitions <ID>` for type-specific maps.
 - `references/escalation-and-promotion.md` — Permanence Test, SPIKE → durable artifact promotion.
 - `references/test-pairing.md` — V-model test pairing rules.

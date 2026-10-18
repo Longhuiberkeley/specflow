@@ -593,4 +593,18 @@ artifacts:
     - accounting-not-policing
     fingerprint: sha256:7aa453452d91
     children: []
-next_id: 65
+  REQ-065:
+    id: REQ-065
+    title: Lint negative-fixture coverage
+    status: verified
+    tags: []
+    fingerprint: sha256:30cc8b8e5904
+    children: []
+  REQ-066:
+    id: REQ-066
+    title: Evidence-labeled claims in lifecycle skill output
+    status: verified
+    tags: []
+    fingerprint: sha256:b67b434e0a8a
+    children: []
+next_id: 67

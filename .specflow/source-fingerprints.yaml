@@ -80,11 +80,15 @@ IT-107:
 IT-108:
   tests/test_artifact_lint_rendering.py: eae50602905dddc7
 IT-109:
-  tests/test_core_skill_text.py: b518be4ad9372373
+  tests/test_core_skill_text.py: 729ef9f615cd13ba
 IT-110:
   tests/test_release_consistency.py: 9dc2e02b9e593848
 IT-111:
   tests/test_denylist_gate.py: f278fd8f7585d96c
+IT-113:
+  tests/test_lint_negative_fixtures.py: d527829e0230fd54
+IT-114:
+  tests/test_core_skill_text.py: 729ef9f615cd13ba
 QT-074:
   tests/test_autoresearch_cli.py: 3c2fdc36012793c5
 QT-075:
@@ -172,6 +176,10 @@ QT-111:
   tests/test_brownfield_upgrade.py: e45d9e939bc2ba14
 QT-112:
   tests/test_pack_healthy_fixtures.py: 9a5ff79058be592b
+QT-114:
+  tests/test_lint_negative_fixtures.py: d527829e0230fd54
+QT-115:
+  tests/test_core_skill_text.py: 729ef9f615cd13ba
 STORY-001:
   tests/test_rebuild_index.py: 18724d224a454506
 STORY-002:
@@ -451,7 +459,7 @@ STORY-635:
   src/specflow/templates/skills/shared/specflow-audit/SKILL.md: e0d60b76c75cb76b
   src/specflow/templates/skills/shared/specflow-change-impact-review/SKILL.md: b7b5f7c293cb068c
   src/specflow/templates/skills/shared/specflow-discover/SKILL.md: 7ed6e31fbc7ea768
-  src/specflow/templates/skills/shared/specflow-execute/SKILL.md: b70e4f6fdc0454f4
+  src/specflow/templates/skills/shared/specflow-execute/SKILL.md: 616244fab9de834c
   src/specflow/templates/skills/shared/specflow-execute/references/escalation-and-promotion.md: 80d6949f4e7494cb
   src/specflow/templates/skills/shared/specflow-references/references/bp-authoring.md: 30ad4daeaf6f1310
   tests/test_approval_guardrail.py: 9e736610581e1f2f
@@ -487,14 +495,14 @@ STORY-640:
   src/specflow/commands/handbook.py: 3d8ab65cbcc5dbb9
   src/specflow/lib/lint.py: 0d9ac44f398e1058
   src/specflow/templates/skills/shared/specflow-discover/SKILL.md: 7ed6e31fbc7ea768
-  src/specflow/templates/skills/shared/specflow-execute/SKILL.md: b70e4f6fdc0454f4
+  src/specflow/templates/skills/shared/specflow-execute/SKILL.md: 616244fab9de834c
   src/specflow/templates/skills/shared/specflow-execute/references/escalation-and-promotion.md: 80d6949f4e7494cb
   src/specflow/templates/skills/shared/specflow-references/references/bp-authoring.md: 30ad4daeaf6f1310
   tests/test_creation_status_gate.py: 82ce01ab1b435707
   tests/test_handbook.py: 1fb101436ff1ddcb
   tests/test_v1143_integration.py: 2429e9725d6d9925
 STORY-641:
-  src/specflow/templates/skills/shared/specflow-artifact-review/SKILL.md: a78c8c22f9917a74
+  src/specflow/templates/skills/shared/specflow-artifact-review/SKILL.md: 8be276474333e877
   tests/test_approval_guardrail.py: 9e736610581e1f2f
   tests/test_v1143_integration.py: 2429e9725d6d9925
 STORY-647:
@@ -593,13 +601,13 @@ STORY-688:
 STORY-689:
   src/specflow/packs/autoresearch/pack.yaml: 91324eb92a100aa7
   src/specflow/templates/agent-context.md: 7b6f3018450c6338
-  src/specflow/templates/skills/shared/specflow-artifact-review/SKILL.md: a78c8c22f9917a74
+  src/specflow/templates/skills/shared/specflow-artifact-review/SKILL.md: 8be276474333e877
   src/specflow/templates/skills/shared/specflow-change-impact-review/SKILL.md: b7b5f7c293cb068c
   src/specflow/templates/skills/shared/specflow-discover/SKILL.md: 7ed6e31fbc7ea768
   src/specflow/templates/skills/shared/specflow-discover/references/thinking-techniques.md: 4f8027cef64f4c1b
   src/specflow/templates/skills/shared/specflow-doc/SKILL.md: 537527b66d3337da
   src/specflow/templates/skills/shared/specflow-doc/references/citation-syntax.md: bb96381c3a794991
-  src/specflow/templates/skills/shared/specflow-execute/SKILL.md: b70e4f6fdc0454f4
+  src/specflow/templates/skills/shared/specflow-execute/SKILL.md: 616244fab9de834c
   src/specflow/templates/skills/shared/specflow-execute/references/verification-contracts.md: d3c3b8172fae1540
   src/specflow/templates/skills/shared/specflow-init/SKILL.md: 6fe67e00a2bf0cf6
   src/specflow/templates/skills/shared/specflow-plan/SKILL.md: 35c0ccbc9537f02c
@@ -608,9 +616,9 @@ STORY-689:
   src/specflow/templates/skills/shared/specflow-references/references/adversarial-lenses.md: 1eaa6dfe523c744d
   src/specflow/templates/skills/shared/specflow-references/references/approval-presentation.md: 3487b75f3ee8e0db
   src/specflow/templates/skills/shared/specflow-references/references/bp-authoring.md: 30ad4daeaf6f1310
-  src/specflow/templates/skills/shared/specflow-ship/SKILL.md: cdd986f38af45e4b
+  src/specflow/templates/skills/shared/specflow-ship/SKILL.md: 6fba017952b95b70
   src/specflow/templates/skills/shared/specflow-start/SKILL.md: 15190c01b2eb8d4e
-  tests/test_core_skill_text.py: b518be4ad9372373
+  tests/test_core_skill_text.py: 729ef9f615cd13ba
 STORY-690:
   README.md: 3c0e27f000c5bc19
   docs/architecture.md: 40314995c5772640
@@ -629,7 +637,7 @@ STORY-690:
   src/specflow/templates/skills/shared/specflow-pack-author/references/pack-structure.md: 55290d4e350fb848
   src/specflow/templates/skills/shared/specflow-pack-author/references/schema-template.md: a41064d4865563e3
   src/specflow/templates/skills/shared/specflow-pack-author/scripts/validate-pack.sh: 9d71b709256eb45b
-  tests/test_core_skill_text.py: b518be4ad9372373
+  tests/test_core_skill_text.py: 729ef9f615cd13ba
   tests/test_prose_cli_surface.py: 256298695570b613
 STORY-691:
   src/specflow/commands/detect.py: c13cd3f2872292e3
@@ -668,7 +676,7 @@ STORY-695:
   src/specflow/packs/tldr-communication/README.md: cdb3bda2bbd535be
   src/specflow/packs/tldr-communication/pack.yaml: ba1581f142be22fa
   src/specflow/templates/skills/shared/specflow-init/SKILL.md: 6fe67e00a2bf0cf6
-  tests/test_core_skill_text.py: b518be4ad9372373
+  tests/test_core_skill_text.py: 729ef9f615cd13ba
   tests/test_iso26262_demo_pack.py: 1d6b0282861f2d98
   tests/test_pack_healthy_fixtures.py: 9a5ff79058be592b
   tests/test_spidr_coverage.py: 332a7b87e2391bf4
@@ -722,7 +730,7 @@ STORY-699:
   tests/test_verify_expected_exit_cli.py: 8de114e02a54b709
 STORY-700:
   src/specflow/lib/baselines.py: 8aa8505c519b81ac
-  src/specflow/templates/skills/shared/specflow-ship/SKILL.md: cdd986f38af45e4b
+  src/specflow/templates/skills/shared/specflow-ship/SKILL.md: 6fba017952b95b70
   src/specflow/templates/skills/shared/specflow-ship/references/baseline-naming.md: 918693f33cd2cd52
   tests/test_baseline_ordering.py: b35a424962295757
 STORY-701:
@@ -819,7 +827,7 @@ STORY-711:
   tests/test_thinking_techniques_normalization.py: 246c75149d31c6ca
 STORY-712:
   .claude/skills/specflow-adapter/SKILL.md: 4d7b3f3586e8bf08
-  .claude/skills/specflow-artifact-review/SKILL.md: a78c8c22f9917a74
+  .claude/skills/specflow-artifact-review/SKILL.md: 8be276474333e877
   .claude/skills/specflow-artifact-review/references/challenge-engine.md: 5dac0543639ca968
   .claude/skills/specflow-artifact-review/references/checklist-assembly.md: 6d6e32622a7b94da
   .claude/skills/specflow-discover/references/thinking-techniques.md: 4f8027cef64f4c1b
@@ -852,7 +860,7 @@ STORY-712:
   src/specflow/packs/autoresearch/schemas/competition.yaml: 1e5e1339e43daba7
   src/specflow/packs/autoresearch/skills/specflow-autoresearch/SKILL.md: 5937b0d1673ca387
   src/specflow/templates/skills/shared/specflow-adapter/SKILL.md: 4d7b3f3586e8bf08
-  src/specflow/templates/skills/shared/specflow-artifact-review/SKILL.md: a78c8c22f9917a74
+  src/specflow/templates/skills/shared/specflow-artifact-review/SKILL.md: 8be276474333e877
   src/specflow/templates/skills/shared/specflow-artifact-review/references/challenge-engine.md: 5dac0543639ca968
   src/specflow/templates/skills/shared/specflow-artifact-review/references/checklist-assembly.md: 6d6e32622a7b94da
   src/specflow/templates/skills/shared/specflow-discover/references/thinking-techniques.md: 4f8027cef64f4c1b
@@ -919,18 +927,18 @@ STORY-716:
   tests/test_verify.py: 8d61b8c5ebd9e8b4
 STORY-717:
   .claude/skills/specflow-discover/SKILL.md: 7ed6e31fbc7ea768
-  .claude/skills/specflow-execute/SKILL.md: b70e4f6fdc0454f4
+  .claude/skills/specflow-execute/SKILL.md: 616244fab9de834c
   .claude/skills/specflow-execute/references/status-lifecycle.md: 210f0d77c3c9b452
   .claude/skills/specflow-plan/references/link-roles.md: 4817e7578c71f388
-  .claude/skills/specflow-ship/SKILL.md: cdd986f38af45e4b
+  .claude/skills/specflow-ship/SKILL.md: 6fba017952b95b70
   .claude/skills/specflow-start/SKILL.md: 15190c01b2eb8d4e
   src/specflow/templates/skills/shared/specflow-discover/SKILL.md: 7ed6e31fbc7ea768
-  src/specflow/templates/skills/shared/specflow-execute/SKILL.md: b70e4f6fdc0454f4
+  src/specflow/templates/skills/shared/specflow-execute/SKILL.md: 616244fab9de834c
   src/specflow/templates/skills/shared/specflow-execute/references/status-lifecycle.md: 210f0d77c3c9b452
   src/specflow/templates/skills/shared/specflow-plan/references/link-roles.md: 4817e7578c71f388
-  src/specflow/templates/skills/shared/specflow-ship/SKILL.md: cdd986f38af45e4b
+  src/specflow/templates/skills/shared/specflow-ship/SKILL.md: 6fba017952b95b70
   src/specflow/templates/skills/shared/specflow-start/SKILL.md: 15190c01b2eb8d4e
-  tests/test_core_skill_text.py: b518be4ad9372373
+  tests/test_core_skill_text.py: 729ef9f615cd13ba
   tests/test_link_roles_doc.py: f29e5f0defa87041
 STORY-718:
   pyproject.toml: ce8a08f0055901d3
@@ -1030,9 +1038,9 @@ UT-110:
 UT-111:
   tests/test_init_checklist_categories.py: cb3246978fd2ac2d
 UT-112:
-  tests/test_core_skill_text.py: b518be4ad9372373
+  tests/test_core_skill_text.py: 729ef9f615cd13ba
 UT-113:
-  tests/test_core_skill_text.py: b518be4ad9372373
+  tests/test_core_skill_text.py: 729ef9f615cd13ba
 UT-114:
   tests/test_coverage_semantics.py: 054826c950edcd65
 UT-115:
@@ -1124,3 +1132,7 @@ UT-150:
   tests/test_go_executor.py: 5bb0ff3fbf0ff73b
 UT-151:
   tests/test_thinking_techniques_normalization.py: 246c75149d31c6ca
+UT-153:
+  tests/test_lint_negative_fixtures.py: d527829e0230fd54
+UT-154:
+  tests/test_core_skill_text.py: 729ef9f615cd13ba

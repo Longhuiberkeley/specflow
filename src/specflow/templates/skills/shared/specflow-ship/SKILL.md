@@ -30,3 +30,4 @@ A release is a one-way door. Everything that can reject it runs BEFORE the immut
 - **Gate severity:** `blocking` → stop, report, ask for a fix · `warning` → present, ask whether to proceed · `info` → note and proceed.
 - **Escape hatch:** on "skip" / "proceed anyway" do exactly that, after naming the risk: "Proceeding past [item]. Risk: [what could go wrong]. Noted."
 - Never skip `project-audit --quick`. Tag format follows project conventions; baseline naming and ordering: `references/baseline-naming.md`.
+- Reply evidence, citations, and consumer/maintainer impact: `../specflow-references/references/evidence-labels.md`.

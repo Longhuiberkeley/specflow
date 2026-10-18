@@ -883,4 +883,18 @@ artifacts:
     tags: []
     fingerprint: sha256:144f99b020ed
     children: []
-next_id: 113
+  IT-113:
+    id: IT-113
+    title: Integration tests for STORY-736 lint negative fixtures
+    status: draft
+    tags: []
+    fingerprint: sha256:2a906c0752d0
+    children: []
+  IT-114:
+    id: IT-114
+    title: Integration tests for STORY-737 evidence-label skill pointers
+    status: draft
+    tags: []
+    fingerprint: sha256:4a6efc8f0d5d
+    children: []
+next_id: 115

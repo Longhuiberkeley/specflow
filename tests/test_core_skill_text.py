@@ -78,6 +78,65 @@ class TestExecuteAndReview:
         assert text.count("learned prevention patterns") == 1
 
 
+class TestEvidenceLabels:
+    def test_claim_labels_and_confidence(self):
+        text = _read("specflow-references/references/evidence-labels.md")
+        # DEC-102: each claim carries evidence or a label in its own sentence.
+        assert "Every claim MUST carry its evidence or its label in the same sentence." in text
+        # DEC-102: stable labels distinguish observations, deductions, and predictions.
+        assert "The labels are `measured`, `inferred`, and `guess`." in text
+        # DEC-102: predictions and unseen causes cannot masquerade as observations.
+        assert "A prediction or an unseen cause MUST be labeled `guess`." in text
+
+    def test_citation_integrity(self):
+        text = _read("specflow-references/references/evidence-labels.md")
+        # DEC-102: invented citations and locations are forbidden.
+        assert "Writers MUST NOT fabricate links, citations, artifact IDs, file locations, or output." in text
+        # DEC-102: citation evidence is limited to this session's material.
+        assert "Writers MUST cite only artifact IDs, `file:line` locations, commands, and output they produced or read this session." in text
+        # DEC-102: artifact existence must be checked before citation.
+        assert "Writers MUST verify artifact IDs with `specflow trace <ID>` or `specflow list` before citing them." in text
+
+    def test_impact_and_available_checks(self):
+        text = _read("specflow-references/references/evidence-labels.md")
+        # DEC-102: both audiences' impact precedes implementation detail.
+        assert "Writers MUST frame impact for the consumer and the maintainer before implementation detail." in text
+        # DEC-102: runnable checks belong to the agent, not the handoff.
+        assert "Writers MUST NOT hand the user a check they could run themselves." in text
+        # DEC-102: deterministic evidence requires execution, not a proposed check.
+        assert "If a deterministic CLI check exists for the claim, writers MUST run it rather than merely describe it." in text
+        # DEC-102: the evidence contract preserves existing approval gates.
+        assert "This contract MUST NOT bypass approval gates or authorize state changes by itself." in text
+
+    @pytest.mark.parametrize("skill", ["specflow-execute", "specflow-artifact-review", "specflow-ship"])
+    def test_lifecycle_reference_is_reachable(self, skill):
+        text = _read(f"{skill}/SKILL.md")
+        # DEC-102: lifecycle routers must expose the shared evidence contract once.
+        assert text.count("../specflow-references/references/evidence-labels.md") == 1
+
+    @pytest.mark.parametrize("sentence", [
+        "Evidence MUST identify the observation that supports the claim.",
+        "A label MUST NOT turn an unsupported claim into a verified fact.",
+        "An inferred claim MUST name its supporting observation in the same sentence.",
+        "A measured claim MUST cite its supporting command, output, or read material in the same sentence.",
+        "Writers SHOULD separate claims with different confidence levels into separate sentences.",
+        "A file citation MUST point to lines actually read this session.",
+        "A command citation MUST distinguish the command run from a suggested command.",
+        "Reported check results MUST include the exit code and relevant output.",
+        "Unavailable evidence MUST be described as unavailable rather than invented.",
+        "The consumer statement MUST name who uses the result and what changes for them.",
+        "The maintainer statement MUST name what the next engineer inherits.",
+        "Impact claims MUST follow the same evidence and labeling rules as technical claims.",
+        "Writers SHOULD use short declarative sentences without dropping tradeoffs or open decisions.",
+        "If a check is blocked by access, environment, or approval, writers MUST report the blocker and label the unverified claim.",
+        "A proposed check MUST NOT be reported as completed evidence.",
+        "Writers MUST report observed failures instead of presenting a planned rerun as a pass.",
+    ])
+    def test_supporting_normative_sentences(self, sentence):
+        # DEC-102: preserve supporting obligations alongside the central evidence rules.
+        assert sentence in _read("specflow-references/references/evidence-labels.md")
+
+
 class TestLensKeys:
     _FILES = (
         "specflow-change-impact-review/SKILL.md",

@@ -1278,4 +1278,18 @@ artifacts:
     tags: []
     fingerprint: sha256:57f6de7ee2ac
     children: []
-next_id: 153
+  UT-153:
+    id: UT-153
+    title: Unit tests for STORY-736 lint negative fixtures
+    status: draft
+    tags: []
+    fingerprint: sha256:4e16b93896a9
+    children: []
+  UT-154:
+    id: UT-154
+    title: Unit tests for STORY-737 evidence-label sentence pins
+    status: draft
+    tags: []
+    fingerprint: sha256:c3c44995678e
+    children: []
+next_id: 155

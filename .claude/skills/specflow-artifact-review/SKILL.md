@@ -30,6 +30,7 @@ One question, if scope could match a sibling skill: **one specific artifact** �
 
 ## References
 
+- `../specflow-references/references/evidence-labels.md` — evidence labels, citation integrity, and consumer/maintainer impact in replies.
 - `references/severity-levels.md` — severity definitions, escalation, user override.
 - `references/challenge-engine.md` — proactive/reactive challenge modes.
 - `../specflow-references/references/adversarial-lenses.md` — full 23-lens catalog and lens-selection UX.

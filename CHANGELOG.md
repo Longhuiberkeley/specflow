@@ -4,6 +4,23 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.17.4] - 2026-10-18
+
+### Highlights
+- **pstack-derived craft-layer practices (DEC-102, REQ-065/066, STORY-736/737).** A cross-examination of poteto/pstack and michael-denyer/pstack-claude (both MIT) against SpecFlow's lifecycle surfaced candidate practices; the owner sanctioned the least-controversial subset. Two tracks land here as a test-only change and a prose-only change — no engine behaviour change, no new gate, no mode toggle. Tracks 1 (decision trail), 3 (playbooks), 4 (review synthesis) and 6 (verification feature map) are recorded DEFERRED in DEC-102; model routing, TLA+/Lean verification, issue triage, benchmark checklists, watch-pr machinery and multi-harness codegen are recorded REJECTED with rationale.
+- **Lint negative fixtures (Track 2).** Every `artifact-lint` rule id now has a fixture that provably trips it. The rule-id set is enumerated from the `artifact_lint.py` source rather than a hand-copied list, so a new or renamed rule fails the coverage test in both directions (a rule without a fixture, or a fixture naming no rule). Measured at v1.17.3, 28 of the 48 rule ids — including the blocking `story-linkage/beyond-draft`, `ids/duplicate` and `status/invalid` — appeared in zero test files; all 48 now trip, with zero "check that matches nothing" survivors.
+- **Evidence-label contract (Track 5).** New shared reference `specflow-references/references/evidence-labels.md` (RFC 2119): every claim in an implementation summary, artifact review or release reply carries `measured` / `inferred` / `guess` in the same sentence; citation integrity (no fabricated artifact IDs or `file:line`, verify IDs with `specflow trace` before citing); consumer-and-maintainer impact framed before implementation detail; and the SpecFlow twist — never hand the user a deterministic check you could run yourself (`artifact-lint`, `verify`, `cascade-status`). Pointed to from the execute, artifact-review and ship routers.
+
+### Fixes
+- The pstack-claude attribution handle in DEC-102 / REQ-065 / REQ-066 read `michael-denwer`; the repository is `michael-denyer/pstack-claude` (fingerprints refreshed).
+
+### Decisions / Docs
+- DEC-102 (adopt pstack-derived craft-layer practices; adopted / deferred / rejected table + MIT attribution) approved under the owner's sanction; REQ-065 and REQ-066 verified; STORY-736 and STORY-737 verified with UT-153/IT-113/QT-114 and UT-154/IT-114/QT-115; AUD-138..142 record the session's audit runs (AUD-142 is the release self-audit: CLEAN, 0 errors, 57 accounting warnings); IT-109 re-verified after its fingerprinted source (`tests/test_core_skill_text.py`) gained the new pins. DEC-084 remains draft and out of scope.
+
+### Tests
+- +71 (3095 → 3166): `tests/test_lint_negative_fixtures.py` (49 tests: rule-id enumeration from source, fixture registry, both-directions coverage, parametrized trip test per rule) and `TestEvidenceLabels` in `tests/test_core_skill_text.py` (central-rule pins, supporting normative sentences, one reachable pointer per lifecycle router, each with `# DEC-102` provenance).
+- Total: 3166 tests passing (19 skipped, 1 strict xfail for DEF-014)
+
 ## [1.17.3] - 2026-10-09
 
 ### Highlights

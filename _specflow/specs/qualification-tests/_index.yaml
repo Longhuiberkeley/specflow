@@ -894,4 +894,18 @@ artifacts:
     tags: []
     fingerprint: sha256:85e0e632c02b
     children: []
-next_id: 114
+  QT-114:
+    id: QT-114
+    title: Qualification test for REQ-065 lint negative-fixture coverage
+    status: draft
+    tags: []
+    fingerprint: sha256:a906932d2db0
+    children: []
+  QT-115:
+    id: QT-115
+    title: Qualification test for REQ-066 evidence-labeled claims
+    status: draft
+    tags: []
+    fingerprint: sha256:3cec075297f5
+    children: []
+next_id: 116

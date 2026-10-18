@@ -963,4 +963,11 @@ artifacts:
     tags: []
     fingerprint: sha256:6ea63e72841f
     children: []
-next_id: 102
+  DEC-102:
+    id: DEC-102
+    title: Adopt pstack-derived craft-layer practices
+    status: approved
+    tags: []
+    fingerprint: sha256:4a2990b3d3a2
+    children: []
+next_id: 103

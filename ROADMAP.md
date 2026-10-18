@@ -4,6 +4,11 @@ SpecFlow ships incrementally. This document tracks what shipped in each release,
 
 For the original implementation plan (phase breakdown, dependency graph — now historical, superseded by the release history below), see [docs/.archive/plan.md](docs/.archive/plan.md).
 
+## v1.17.4
+
+- **pstack-derived craft layer (DEC-102, REQ-065/066, STORY-736/737)** — Track 2: lint negative fixtures (every `artifact-lint` rule id provably trips a fixture; rule ids enumerated from source; both-directions coverage). Track 5: the evidence-label contract (`measured` / `inferred` / `guess` in-sentence, citation integrity, consumer-and-maintainer impact first, run deterministic checks instead of describing them), pointed to from execute / artifact-review / ship. Test-only + prose-only; no engine change.
+- **Parked (owner sleeping on them, recorded in DEC-102):** Track 1 decision trail, Track 3 execution playbooks, Track 4 review-synthesis contract, Track 6 verification feature map. DEC-084 remains draft.
+
 ## v1.17.3
 
 - **Gate-greening patch (frontier-review AMEND verdict, DEC-101, STORY-735)** — the tag-run Release gate goes green for the first time since v1.16.0 (0 escalating audit warns; AUD-137). Both halves landed before the tag: the engine policy change (staged `ddd-shape` accounting — a REQ whose V-model thread has an implementing STORY owes no DDD refinement, amends DEC-099; truthful DDD-thread walk crediting parent-held `refined_by` and DDD-held `specified_by` shapes; cache generation 6 → 7) AND the 9-orphan ledger trace (9 files retro-linked via `output_files` onto their true implementing STORYs). Concern-less no-ARCH/no-STORY rows keep escalating; `audit/lens:general` is never registered accounting.

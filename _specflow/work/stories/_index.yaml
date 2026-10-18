@@ -1798,4 +1798,18 @@ artifacts:
     tags: []
     fingerprint: sha256:7900dc443e8c
     children: []
-next_id: 736
+  STORY-736:
+    id: STORY-736
+    title: 'Test-only: lint negative fixtures (tests/test_lint_negative_fixtures.py)'
+    status: verified
+    tags: []
+    fingerprint: sha256:33ec90e5fb81
+    children: []
+  STORY-737:
+    id: STORY-737
+    title: Evidence-labels reference, skill pointers, and sentence pins
+    status: verified
+    tags: []
+    fingerprint: sha256:19ac50f7b7b2
+    children: []
+next_id: 738
