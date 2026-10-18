@@ -950,4 +950,11 @@ artifacts:
     tags: []
     fingerprint: sha256:d17bda8b9607
     children: []
-next_id: 122
+  QT-122:
+    id: QT-122
+    title: Qualification test for REQ-069 framing a fuzzy idea inside discover
+    status: implemented
+    tags: []
+    fingerprint: sha256:8597893843b5
+    children: []
+next_id: 123

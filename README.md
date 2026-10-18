@@ -5,7 +5,7 @@
 [![uv](https://img.shields.io/badge/uv-managed-purple.svg)](https://docs.astral.sh/uv/)
 
 TLDR: I want to make a framework that can build production level codebase easier
-- You should know what you want to build more or less
+- You should know what you want to build, or at least have an idea worth framing
 - I designed this to be somewhat token efficient
 - SpecFlow is basically a 1. python based ALM software, and 2. a set of agent skills that helps you do V-model like development methodology.
   - the ALM part is where the agent can use a CLI tool to edit/ write the artifact tickets
@@ -26,13 +26,13 @@ SpecFlow keeps the rigor (V-model traceability, impact analysis, audit baselines
 
 ## What SpecFlow expects you to bring
 
-SpecFlow does not do ideation. It does not have a PM persona that interrogates your product idea, a CEO agent that validates your business model, or a brainstorming mode that figures out what you should build. That work should happen *before* SpecFlow — on a whiteboard, in a conversation with your team, with your favorite AI chatbot, wherever.
+SpecFlow has no PM persona, no CEO agent and no brainstorming mode. It does **frame** a fuzzy idea: `/specflow-discover` grounds it in your repo, asks at most five questions, lists the premises, offers options plus do-nothing, and records a go / clarify / kill decision before any requirement is written. Market validation and product-market fit remain yours to bring.
 
-SpecFlow starts when you know what you want to build. `/specflow-discover` captures and structures what's already in your head through a guided conversation (specify + clarify). `/specflow-plan` breaks it into architecture and implementable stories. `/specflow-execute` builds it.
+SpecFlow starts when you have an idea worth framing. `/specflow-discover` frames it, then captures and structures requirements through a guided conversation (specify + clarify). `/specflow-plan` breaks it into architecture and implementable stories. `/specflow-execute` builds it.
 
 **Already have a codebase?** Install the optional **adoption pack** (`/specflow-init --preset adoption`) and run `/specflow-adopt` — it inventories your existing code/docs/tests, backfills artifacts describing what already exists, and cuts an as-built baseline so forward change is governed from there. Greenfield projects skip this and start at `/specflow-discover`.
 
-If you need help deciding *what* to build, use a tool that does ideation well. When you're ready to specify, track, and build it with full V-model traceability — that's SpecFlow.
+If you need market validation or pricing research, use a tool built for it. When you have an idea to frame, specify, track, and build with full V-model traceability — that's SpecFlow.
 
 ## Two ways to drive, one engine
 
@@ -266,7 +266,7 @@ Everything is Markdown with YAML frontmatter. Your repo is the database.
 uv tool install git+https://github.com/Longhuiberkeley/specflow
 
 # Pin to a release
-uv tool install git+https://github.com/Longhuiberkeley/specflow@v1.17.5
+uv tool install git+https://github.com/Longhuiberkeley/specflow@v1.17.6
 
 # Run without installing (ephemeral)
 uvx --from git+https://github.com/Longhuiberkeley/specflow specflow init

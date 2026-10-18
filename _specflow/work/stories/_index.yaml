@@ -1876,4 +1876,14 @@ artifacts:
     - skills
     fingerprint: sha256:c1ee5c274b10
     children: []
-next_id: 744
+  STORY-744:
+    id: STORY-744
+    title: Framing reference, discover step 0 and description, start-router clause,
+      positioning docs, pins
+    status: verified
+    tags:
+    - core
+    - skills
+    fingerprint: sha256:19cd0e4dbe2b
+    children: []
+next_id: 745

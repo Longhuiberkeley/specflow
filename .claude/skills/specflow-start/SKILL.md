@@ -27,6 +27,7 @@ A thin, host-neutral router: orient on project state, then point at the right ne
    - (c) → `/specflow-audit`
 
    Another: "build X" — no REQs yet → `/specflow-discover`; approved REQs but no STORYs → `/specflow-plan`; approved STORYs (or a trivial change that still needs a STORY) → `/specflow-execute`. `brief --next` routes approved REQs with no STORY to `/specflow-plan`; the discover lean path (one REQ + one STORY, no ARCH by design) goes to `/specflow-execute` while a covering STORY is approved, and to `/specflow-artifact-review` → `/specflow-ship` once every covering STORY is implemented/verified.
+   Fuzzy idea — "not sure it's worth building", "some kind of …" → `/specflow-discover` (it frames first: go / clarify / kill, then elicitation).
    Docs intent — "write/update the docs or README", "cite the spec from a doc", "are the docs stale / out of date" → `/specflow-doc`.
 
 5. **Do not call the Skill tool yourself.** Tell the user which slash-command to run. This keeps routing host-neutral — it works identically on Claude Code, OpenCode, Codex, and the ALM/CLI lane.

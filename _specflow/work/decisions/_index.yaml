@@ -981,4 +981,14 @@ artifacts:
     - robustness
     fingerprint: sha256:68efe5d0bcdd
     children: []
-next_id: 104
+  DEC-104:
+    id: DEC-104
+    title: Fold framing into /specflow-discover; narrow the bring-your-own-ideation
+      positioning
+    status: approved
+    tags:
+    - core
+    - skills
+    fingerprint: sha256:c361218210c6
+    children: []
+next_id: 105

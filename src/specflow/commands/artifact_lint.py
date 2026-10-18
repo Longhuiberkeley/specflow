@@ -279,10 +279,17 @@ def _check_links(
             _emit(findings, "links/broken", (art.id, link.target), "blocking")
             details.append(f"  ✗ [{art.id}] broken link: {link.target} (not found)")
 
-    # Orphans (SPIKEs exempt — they're expected to be standalone research)
+    # Orphans (SPIKEs exempt — they're expected to be standalone research;
+    # DECs tagged `framing` exempt — a go/clarify/kill ruling on a fuzzy idea
+    # is complete in itself when nothing related exists yet, REQ-069 OBL-7).
     orphans = art_lib.find_orphans(artifacts)
     spike_orphans = [a for a in orphans if art_lib.get_prefix_from_id(a.id) == "SPIKE"]
-    non_spike_orphans = [a for a in orphans if art_lib.get_prefix_from_id(a.id) != "SPIKE"]
+    framing_orphans = [
+        a for a in orphans
+        if art_lib.get_prefix_from_id(a.id) == "DEC" and "framing" in (a.tags or [])
+    ]
+    exempt_ids = {a.id for a in spike_orphans} | {a.id for a in framing_orphans}
+    non_spike_orphans = [a for a in orphans if a.id not in exempt_ids]
     if non_spike_orphans:
         warnings += len(non_spike_orphans)
         pre_planning = _pre_planning(root)
@@ -295,6 +302,8 @@ def _check_links(
         details.append(f"  ⚠ {len(non_spike_orphans)} orphan(s) with no links: {orphan_ids}")
     if spike_orphans:
         details.append(f"  ℹ {len(spike_orphans)} SPIKE(s) with no links (expected for research artifacts)")
+    if framing_orphans:
+        details.append(f"  ℹ {len(framing_orphans)} framing DEC(s) with no links (a ruling on an idea with no related artifact yet)")
 
     # Missing V-model pairs
     missing_pairs = art_lib.find_missing_v_pairs(artifacts)

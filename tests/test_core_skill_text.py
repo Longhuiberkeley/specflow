@@ -629,6 +629,79 @@ class TestWaveP12SkillParity:
         assert "STORY-B `depends_on` STORY-A" in waves
 
 
+class TestFraming:
+    """DEC-104 / REQ-069: framing a fuzzy idea lives inside discover."""
+
+    _REF = "specflow-discover/references/framing.md"
+
+    def test_discover_description_claims_fuzzy_ideas(self):
+        text = _read("specflow-discover/SKILL.md")
+        # DEC-104: hosts must route a vague opening to discover.
+        assert 'description: "Shape a fuzzy idea, or author/revise REQs' in text
+        # DEC-104: step 0 plus the References bullet — framing is cited, not inlined.
+        assert text.count("references/framing.md") == 2
+        assert "**go / clarify / kill**" in text
+        assert len(text.splitlines()) <= 120
+
+    @pytest.mark.parametrize("sentence", [
+        "Framing decides WHETHER and WHICH; elicitation decides WHAT.",
+        "Framing MUST NOT run when the ask already satisfies the readiness threshold, names a bounded deliverable",
+        "Otherwise framing MUST start silently when the opening message satisfies at most one of the four required readiness dimensions, or satisfies two or three and carries uncertainty language",
+        "Never ask what the repository answers.",
+        "If an approved `Dropped:` or kill DEC matches the ask, the opening question MUST be whether that ruling still holds",
+        "Open with one message: an opt-out line plus one question about a concrete moment",
+        "Every question MUST carry a recommended answer the user can accept with one word.",
+        "Framing MUST stop asking after five questions. Premise and option turns do not count against the five.",
+        "The user accepts or rejects each premise explicitly. Silence is unresolved, never acceptance.",
+        "Any premise that is unresolved or tagged `guess` blocks a **go** verdict; the verdict is then clarify or kill.",
+        "Offer two or three mechanistically distinct options plus do-nothing.",
+        "**Hard stop.** Framing MUST NOT continue into elicitation, create REQs, or write code until the user picks an option or a verdict.",
+        "a picked option other than do-nothing with every premise resolved is **go**; do-nothing is **kill**; anything else is **clarify**",
+        "Exactly one framing DEC is created per framed idea, tagged `framing`",
+        "DECs tagged `framing` are exempt from the `links/orphan` lint row when nothing related exists yet.",
+        "**go** — continue at discover step 1 with the chosen option as the ask",
+        "The lean/full exchange count restarts at that point",
+        "`specflow update <REQ-ID> --add-link <DEC-ID>:guided_by`",
+        "**kill** — record an approved `Dropped:` framing DEC. A kill counts as a successful framing",
+        "At most two rounds of adversarial lenses",
+    ])
+    def test_framing_rules_pinned(self, sentence):
+        # DEC-104: the framing contract's load-bearing sentences.
+        assert sentence in _read(self._REF)
+
+    def test_framing_reference_budget_and_no_personas(self):
+        text = _read(self._REF)
+        assert len(text.splitlines()) <= 60
+        assert "persona" not in text.lower().replace("no persona", "")
+
+    def test_readiness_and_start_router_carry_the_trigger(self):
+        readiness = _read("specflow-discover/references/readiness-assessment.md")
+        # DEC-104: trigger and restart rule live beside the lean/full decision.
+        assert "## Framing trigger" in readiness
+        assert "An ask that meets the threshold, names a bounded change, or reports a bug never frames." in readiness
+        assert "A **go** verdict from framing restarts the exchange count" in readiness
+        skill = _read("specflow-discover/SKILL.md")
+        # DEC-104: step 5 adds the guided_by link where REQs are actually created.
+        assert skill.count("--add-link <framing-DEC-ID>:guided_by") == 1
+        start = _read("specflow-start/SKILL.md")
+        assert start.count("it frames first") == 1
+
+    def test_positioning_docs_narrowed(self):
+        root = _ROOT
+        comparison = (root / "docs/comparison.md").read_text(encoding="utf-8")
+        readme = (root / "README.md").read_text(encoding="utf-8")
+        lifecycle = (root / "docs/lifecycle.md").read_text(encoding="utf-8")
+        # DEC-104: the "bring your own ideation" stance is narrowed, not deleted.
+        assert "SpecFlow does not have this" not in comparison
+        assert "SpecFlow does not do ideation" not in readme
+        for doc in (comparison, readme, lifecycle):
+            assert "go / clarify / kill" in doc
+        assert "Market validation" in comparison and "Market validation" in readme
+        assert "use a tool that does ideation well" not in readme
+        commands = (root / "docs/commands.md").read_text(encoding="utf-8")
+        assert "go / clarify / kill" in commands
+
+
 class TestDefectTransitions:
     """STORY-717 AC4 / F-030: a DEF goes open → fixing without the ceremony hop."""
 

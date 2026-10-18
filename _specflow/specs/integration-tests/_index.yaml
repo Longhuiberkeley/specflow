@@ -940,4 +940,11 @@ artifacts:
     tags: []
     fingerprint: sha256:be7d598f09db
     children: []
-next_id: 121
+  IT-121:
+    id: IT-121
+    title: Integration test for STORY-744 discover, start router and positioning docs
+    status: implemented
+    tags: []
+    fingerprint: sha256:ecbfbf894198
+    children: []
+next_id: 122

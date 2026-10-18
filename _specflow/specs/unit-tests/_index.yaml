@@ -1335,4 +1335,11 @@ artifacts:
     tags: []
     fingerprint: sha256:5fd299f5ce82
     children: []
-next_id: 161
+  UT-161:
+    id: UT-161
+    title: Unit tests for STORY-744 framing sentence pins
+    status: implemented
+    tags: []
+    fingerprint: sha256:3704c86adc5d
+    children: []
+next_id: 162

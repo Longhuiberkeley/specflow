@@ -22,19 +22,17 @@ A plain-language guide to what SpecFlow is, what it isn't, and how it relates to
 
 ## What SpecFlow expects you to bring
 
-Several AI coding frameworks include an upfront ideation or validation phase — a PM persona that interrogates your product idea, a CEO agent that stress-tests your business model, or a mandatory brainstorming session that figures out what you should build. SpecFlow does not have this, and that's deliberate.
+Several AI coding frameworks include an upfront ideation or validation phase — a PM persona that interrogates your product idea, a CEO agent that stress-tests your business model, or a mandatory brainstorming session. SpecFlow has no personas and no brainstorming mode. What it does have is **framing** (DEC-104): when you arrive with a fuzzy idea, `/specflow-discover` grounds it in the repository, asks at most five questions, lists the premises the idea rests on, offers two or three options plus do-nothing, and records a **go / clarify / kill** verdict as a decision before any requirement is written.
 
-SpecFlow starts when you know what you want to build. Here's how the workflow maps:
+SpecFlow starts when you have an idea worth framing. Here's how the workflow maps:
 
 | Phase | What it does | Closest equivalent in other tools |
 |-------|-------------|-----------------------------------|
-| `/specflow-discover` | Structured elicitation — captures and clarifies requirements you already have. One question at a time, silent readiness assessment, 15-20 question cap. | spec-kit's Specify + Clarify steps |
+| `/specflow-discover` | Frames a fuzzy idea first (go / clarify / kill, five-question cap), then structured elicitation — one question at a time, silent readiness assessment, 15-20 question cap. | gstack's `/office-hours` mechanics without the persona; spec-kit's Specify + Clarify steps |
 | `/specflow-plan` | Architecture proposal → detailed design → SPIDR story decomposition with full V-model links. | spec-kit's Plan + Tasks, but with traceability |
 | `/specflow-execute` | Implement stories, generate V-model verification tests (UT/IT/QT), phase closure. | Most tools' "implement" step, but with test generation tied to the spec chain |
 
-If you need help deciding *what* to build — product validation, market fit, MVP scoping — do that first. Use a whiteboard, a conversation with your team, or one of the tools that does ideation well (BMAD's PM persona, gstack's `/office-hours`, superpowers' brainstorming phase). When you're ready to specify, track, and build with compliance-grade rigor, SpecFlow picks up from there.
-
-SpecFlow trusts that you've done the thinking. Our job is to make sure the thinking survives into the codebase — structured, traceable, and validated.
+Market validation, pricing and product-market fit are still yours to bring — a whiteboard, a conversation with your team, or a tool built for it. SpecFlow frames the idea into a decision, then makes the decision survive into the codebase — structured, traceable, and validated.
 
 > **Existing codebase?** SpecFlow's default flow is greenfield, but the optional **adoption pack** (`/specflow-init --preset adoption` → `/specflow-adopt`) inventories an existing codebase, backfills specs for what already exists, and cuts an as-built baseline — so you can adopt SpecFlow mid-project rather than start over.
 

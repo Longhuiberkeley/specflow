@@ -627,4 +627,14 @@ artifacts:
     - skills
     fingerprint: sha256:27fd15fc4fd2
     children: []
-next_id: 69
+  REQ-069:
+    id: REQ-069
+    title: Frame a fuzzy idea inside /specflow-discover with a go / clarify / kill
+      verdict
+    status: verified
+    tags:
+    - core
+    - skills
+    fingerprint: sha256:acc31127a7b2
+    children: []
+next_id: 70

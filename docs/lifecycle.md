@@ -182,7 +182,7 @@ These are what a user learns and uses day-to-day in the AI-first lane. Each is d
 |---|---------------|-------------|
 | 1 | `/specflow-start` | Vague intent / "what's next?" — runs `specflow brief --next` and routes |
 | 2 | `/specflow-init` | Starting a new project; installing skills, packs, CI |
-| 3 | `/specflow-discover` | Capturing a new requirement through conversation |
+| 3 | `/specflow-discover` | Framing a fuzzy idea (go / clarify / kill), then capturing a new requirement through conversation |
 | 4 | `/specflow-plan` | Breaking approved REQs into architecture + stories |
 | 5 | `/specflow-execute` | Implementing approved stories with test generation |
 | 6 | `/specflow-artifact-review` | Quality review of one or more specific artifacts |

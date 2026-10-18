@@ -45,11 +45,12 @@ Interface specs for each `/specflow-*` slash command. For a lifecycle overview, 
 
 ## /specflow-discover
 
-**One-line:** Author requirement artifacts through guided conversation.
+**One-line:** Frame a fuzzy idea, then author requirement artifacts through guided conversation.
 
 **Composes:** `specflow status`, `specflow standards gaps`, `specflow create`, `specflow artifact-lint`
 
 **Flow:**
+0. Frame a fuzzy idea first (only when readiness is near zero): ≤5 questions with recommended answers, premise ledger, option briefs plus do-nothing, hard stop, go / clarify / kill DEC tagged `framing`
 1. Read project state; assess existing artifacts
 2. Progressive disclosure conversation — one question at a time
 3. Silent readiness assessment after each exchange (problem clarity, users, scope, success criteria)
@@ -63,7 +64,7 @@ Interface specs for each `/specflow-*` slash command. For a lifecycle overview, 
 - For lean path: `_specflow/work/stories/STORY-*.md`
 - `.specflow/state.yaml` (phase transition)
 
-**Key rules:** 15-20 question cap; escape hatch on "move on"/"skip"; `(Recommended)` labels on defaults.
+**Key rules:** five-question framing cap, then a 15-20 question elicitation cap; escape hatch on "move on"/"skip"; `(Recommended)` labels on defaults; no self-approval of framing DECs.
 
 ---
 

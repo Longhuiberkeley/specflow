@@ -4,10 +4,14 @@ SpecFlow ships incrementally. This document tracks what shipped in each release,
 
 For the original implementation plan (phase breakdown, dependency graph — now historical, superseded by the release history below), see [docs/.archive/plan.md](docs/.archive/plan.md).
 
+## v1.17.6
+
+- **Framing inside `/specflow-discover` (DEC-104, REQ-069, STORY-744)** — a persona-free front door for a fuzzy idea: silent trigger at the zero end of the readiness curve, five-question cap with recommended answers, premise ledger, option briefs plus do-nothing, hard stop, go / clarify / kill DEC tagged `framing`, exchange-count restart on go, `guided_by` from the REQs it produces; `links/orphan` exempts framing DECs. Positioning narrowed in comparison.md / README / lifecycle / commands. **Follow-up:** lint for a REQ `guided_by` a draft or killed framing DEC (ships with its negative fixture); promote `framing.md` to a `/specflow-frame` skill only if hosts miss the discover trigger.
+
 ## v1.17.5
 
 - **Landscape-survey adoption, increments 1+2 (DEC-103, REQ-067/068, DEF-020, STORY-738..743)** — `specflow go` never commits (DEF-020; REQ-001 §6 amended); `brief` reports the working tree and `--next` carries an advisory; the PREV loop revived (tag inheritance on DEF closure, `patterns update|retire`, `prev/inert` audit row, PREV-003..020 backfilled); `placeholder/unfilled` and `challenge/disposition-without-reason` accounting lint (CHL `resolution` field, DEC-102 T4 slice A); shared `craft-discipline.md` + evidence-labels verdict states / untrusted sources / rationalizations; skill-catalog test pins. 30 stacks surveyed; personas, modes, external state, model routing and LLM-scored gates rejected on record.
-- **Next (v1.17.6):** framing a fuzzy idea inside `/specflow-discover` (go / clarify / kill DEC), narrowing the docs/comparison.md positioning. **Recorded candidates after that:** code-diff review core (`artifact-review --diff <base>`), host turn-end hooks (still under the per-harness deferral). DEC-102 T1/T3/T4-B/T6 stay parked.
+- **Recorded candidates after v1.17.6:** code-diff review core (`artifact-review --diff <base>`), host turn-end hooks (still under the per-harness deferral). DEC-102 T1/T3/T4-B/T6 stay parked.
 
 ## v1.17.4
 

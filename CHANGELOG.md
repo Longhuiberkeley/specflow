@@ -4,6 +4,21 @@ All notable changes to SpecFlow are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.17.6] - 2026-10-18
+
+### Highlights
+- **Framing a fuzzy idea inside `/specflow-discover` (DEC-104, REQ-069, STORY-744).** SpecFlow still has no personas and no brainstorming mode, but it no longer sends a vague idea elsewhere. When the opening message names no bounded deliverable and meets at most one required readiness dimension (or two or three plus uncertainty language), discover runs the new `references/framing.md` first: ground in the repository (`brief`, `list`, `trace`, README, touched code — never ask what the repo answers), one question per message with a recommended answer and a hard cap of five, a premise ledger the user accepts or rejects explicitly (silence is unresolved; any unresolved or `guess` premise blocks go), two or three option briefs plus do-nothing, a **hard stop**, then a **go / clarify / kill** verdict recorded as a DEC tagged `framing` (go and kill `--sanctioned` with the user's quoted verdict; clarify stays draft, optionally with a SPIKE whose kill criteria are written before approval). A go verdict re-enters discover step 1 with the chosen option as the ask and restarts the lean/full exchange count, so a framed small idea still takes the lean path; REQs born from it link `guided_by` to the ruling. A kill counts as a successful framing and conflict-check re-surfaces it if the idea returns. Design panel: fold-into-discover 8.6 vs dedicated skill 7.9 vs two-skill pair 6.3 — framing is the zero end of the existing readiness curve, not a new stage; `framing.md` moves unchanged into a `/specflow-frame` skill if dogfooding shows hosts miss the trigger.
+- **Positioning narrowed, not reversed.** docs/comparison.md, README, docs/lifecycle.md and docs/commands.md now say SpecFlow frames a fuzzy idea into a decision; market validation, pricing and product-market fit remain yours to bring. The discover description reads "Shape a fuzzy idea, or author/revise REQs …" so hosts route a vague opening to it; `/specflow-start` gains the same route.
+- **One deterministic exemption.** A DEC tagged `framing` with no links is a complete ruling on an idea with no related artifact yet, so `artifact-lint` no longer counts it under `links/orphan` (REQ-069 OBL-7; rule id unchanged, so the negative-fixture registry is untouched; the row still fires for any untagged DEC and for other types carrying the tag).
+
+### Decisions / Docs
+- DEC-104 (fold framing into discover; narrow the bring-your-own-ideation positioning) approved under the owner's 2026-10-18 decision; REQ-069 verified; STORY-744 verified with UT-161 / IT-121 / QT-122 (`specflow verify` exit 0); AUD-145 records the release self-audit (CLEAN, 0 errors, 63 accounting warnings). Three-lens adversarial review before release: one blocking (the `load-bearing` qualifier contradicted REQ-069 AC4 — removed) and nine warnings (trigger precedence, lean-example exemption, re-entry at step 1's conflict-check, `guided_by` at step 5, kill/clarify orphan rows, verdict mapping, clarify-via-SPIKE commands, README/commands.md leftovers, under-pinned sentences) all addressed. DEC-084 remains draft.
+- Deferred follow-up (recorded in DEC-104): a lint rule for a REQ `guided_by` a framing DEC that is still draft or resolved as kill, which ships only with its negative fixture.
+
+### Tests
+- +27 (3263 → 3290): `TestFraming` in `tests/test_core_skill_text.py` (description, 20 framing sentences, budgets, trigger/restart/step-5 pins, positioning docs) and `tests/test_framing_dec_orphan.py` (tagged DEC exempt; untagged DEC and tagged REQ still trip).
+- Total: 3290 tests passing (19 skipped, 1 strict xfail for DEF-014)
+
 ## [1.17.5] - 2026-10-18
 
 ### Highlights

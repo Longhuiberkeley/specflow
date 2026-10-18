@@ -24,11 +24,16 @@
 - "I want a better app" satisfies zero dimensions.
 - "Our mobile app users need offline mode because they work in areas with poor connectivity, targeting field workers in construction" satisfies: problem clarity (yes), user identification (yes), scope boundary (partial — need to know what "offline" covers), success criteria (no — no measurable target).
 
+## Framing trigger
+
+When the opening message names no bounded deliverable and satisfies at most one required dimension — or two or three plus uncertainty language ("not sure it's worth", "some kind of", "maybe we should") — run `framing.md` before any elicitation question. An ask that meets the threshold, names a bounded change, or reports a bug never frames. Framing decides WHETHER and WHICH; elicitation decides WHAT.
+
 ## Lean vs Full Decision
 
 After each user message, re-evaluate. As soon as threshold is met:
 - If within the **first exchange** (first user message after your opening question): lean path.
 - If after **multiple exchanges**: full path, but skip already-answered questions.
+- A **go** verdict from framing restarts the exchange count: restate the chosen option against the four required dimensions using the ledger answers — if all four hold, lean path with no new question; otherwise the first elicitation message after the verdict is the first exchange.
 
 An irreversible change or a large blast radius (auth, data migration, public interface, safety) forces the full path regardless of exchange count; when unsure, take the full path.
 
